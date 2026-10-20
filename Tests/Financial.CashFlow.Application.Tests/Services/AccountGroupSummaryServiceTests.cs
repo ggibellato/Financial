@@ -6,6 +6,7 @@ using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -175,6 +176,7 @@ public class AccountGroupSummaryServiceTests
 
         act.Should().Throw<ArgumentOutOfRangeException>();
         _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.AccountGroupSummaryService.GetDefaultGroupSummary");
+        _logger.Entries.Should().NotContain(entry => entry.Exception != null || entry.Level >= LogLevel.Warning);
     }
 
     [Fact]
@@ -186,6 +188,7 @@ public class AccountGroupSummaryServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountGroupSummaryService.GetDefaultGroupSummary");
+        _logger.Entries.Should().NotContain(entry => entry.Exception != null || entry.Level >= LogLevel.Warning);
     }
 
     private void AddExpenseWithRoundUp(DateOnly date, decimal value, decimal roundUp, Account account)

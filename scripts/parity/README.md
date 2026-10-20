@@ -68,7 +68,7 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 The month range runs from the first month with any record in the input to the later of the
 current month and the last month with any record, so future invoice months are included. It is
 computed once from the input, before migration, and both sides use it. Keys use display names.
-Two figures with the same key stop the run. Names are assumed not to contain `/`, which separates
+Two figures with the same key stop the run. Income sources are keyed by name, so two sources sharing a name would stop it too. Names are assumed not to contain `/`, which separates
 key segments; none do in the live data.
 
 | Family | Endpoint (under `/api/v1/financial/`) | Keys |

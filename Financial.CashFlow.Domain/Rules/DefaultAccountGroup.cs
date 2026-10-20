@@ -19,8 +19,8 @@ public static class DefaultAccountGroup
 
         return accounts
             .Where(account => account.JoinsDefaultGroup)
-            .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
             .Where(account => account.IsActive || StillMattersIn(account, start, end, records))
+            .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
     }
 
