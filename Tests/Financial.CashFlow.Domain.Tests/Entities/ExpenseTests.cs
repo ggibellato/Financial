@@ -133,6 +133,29 @@ public class ExpenseTests
     }
 
     [Fact]
+    public void ListingDate_BankExpense_IsItsDate()
+    {
+        CreateImmediateExpense().ListingDate.Should().Be(new DateOnly(2026, 7, 1));
+    }
+
+    [Fact]
+    public void ListingDate_CardChargeWithPinnedInvoice_IsTheInvoiceDate()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 20), "Charge", 10m, Extras, null, ChaseMaster4023, invoiceDate: new DateOnly(2026, 8, 1));
+
+        expense.ListingDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    public void ListingDate_SettledCharge_KeepsTheInvoiceDate()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 20), "Charge", 10m, Extras, null, ChaseMaster4023, invoiceDate: new DateOnly(2026, 8, 1));
+        expense.Settle(Barclays, new DateOnly(2026, 9, 2));
+
+        expense.ListingDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
     public void Create_WithNeitherPaymentSourceNorCreditCard_Throws()
     {
         var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Invalid", 10m, Casa, null, null);

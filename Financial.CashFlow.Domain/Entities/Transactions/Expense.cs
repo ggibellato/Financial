@@ -57,6 +57,8 @@ public class Expense : IAccountTransaction
             ? InvoiceDate.Value
             : Date;
 
+    public DateOnly ListingDate => InvoiceDate ?? ChargeDate ?? Date;
+
     private Expense() { }
 
     public static Expense Create(
