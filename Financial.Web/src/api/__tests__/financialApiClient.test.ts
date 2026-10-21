@@ -3,6 +3,7 @@ import { ApiError } from '../apiError'
 import { API_BASE_URL } from '../config'
 import { createFinancialApiClient } from '../financialApiClient'
 import type {
+  AccountGroupSummaryDto,
   ArchiveAssetRequestDto,
   AssetAdminCreateDto,
   AssetAdminDto,
@@ -10,7 +11,6 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   BalanceAdjustmentDto,
-  BankBalanceDto,
   BankCreateDto,
   BankDto,
   BankUpdateDto,
@@ -2099,15 +2099,25 @@ describe('financialApiClient', () => {
     expect(init?.method).toBe('DELETE')
   })
 
-  it('gets bank balances by month', async () => {
-    const responseBody: BankBalanceDto[] = [{ bank: 'Barclays', balance: 1500 }]
+  it('gets the default group summary by month', async () => {
+    const responseBody: AccountGroupSummaryDto = {
+      year: 2026,
+      month: 7,
+      members: [
+        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, roundUpTotal: 0.5 },
+      ],
+      totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5 }],
+      categoryTotalsSum: 320,
+      incomeTotals: [{ incomeSourceId: 's1', name: 'Salary', netValue: 2000, grossValue: 2500 }],
+      totalIncoming: 2000,
+    }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const result = await client.getBankBalancesByMonth(2026, 7)
+    const result = await client.getDefaultGroupSummary(2026, 7)
 
     expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/banks/month/2026/7/balances`)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/default/summary/2026/7`)
   })
 
   it('posts an expense create request', async () => {
