@@ -1,3 +1,4 @@
+import type { CurrencyTotalDto } from '../api/types'
 import type { BankTotal } from '../hooks/useMonthly'
 import { formatN2 } from '../utils/formatters'
 import TotalsGrid from './TotalsGrid'
@@ -6,15 +7,28 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 
 interface BanksGridProps {
   bankTotals: BankTotal[]
-  bankTotalsSum: number
-  roundUpTotalsSum: number
+  currencyTotals: CurrencyTotalDto[]
 }
 
 const FILTER_ACCESSORS = {
   bank: (b: BankTotal) => b.bank,
 }
 
-export default function BanksGrid({ bankTotals, bankTotalsSum, roundUpTotalsSum }: BanksGridProps) {
+function footerItemsFor(currencyTotals: CurrencyTotalDto[]) {
+  if (currencyTotals.length <= 1) {
+    const [total] = currencyTotals
+    return [
+      { label: 'Bank Balance', value: formatN2(total?.balance ?? 0) },
+      { label: 'Round-Up', value: formatN2(total?.roundUpTotal ?? 0) },
+    ]
+  }
+  return currencyTotals.flatMap((total) => [
+    { label: `Bank Balance ${total.currency}`, value: formatN2(total.balance) },
+    { label: `Round-Up ${total.currency}`, value: formatN2(total.roundUpTotal) },
+  ])
+}
+
+export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(bankTotals, FILTER_ACCESSORS)
 
@@ -56,10 +70,7 @@ export default function BanksGrid({ bankTotals, bankTotalsSum, roundUpTotalsSum 
       rows={filteredRows}
       isFiltered={isColumnFiltered('bank')}
       rowKey={(b) => b.bank}
-      footerItems={[
-        { label: 'Bank Balance', value: formatN2(bankTotalsSum) },
-        { label: 'Round-Up', value: formatN2(roundUpTotalsSum) },
-      ]}
+      footerItems={footerItemsFor(currencyTotals)}
     />
   )
 }

@@ -50,8 +50,7 @@ export default function MonthlyPage() {
     categories,
     adjustmentTotal,
     bankTotals,
-    bankTotalsSum,
-    roundUpTotalsSum,
+    bankCurrencyTotals,
     isLoading,
     error,
     retry,
@@ -242,7 +241,7 @@ export default function MonthlyPage() {
               />
             </div>
             <div className="monthly-page__grids-row">
-              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={bankCurrencyTotals} />
               <IncomingGrid
                 incomeTotals={incomeTotals}
                 totalIncoming={totalIncoming}
@@ -258,7 +257,7 @@ export default function MonthlyPage() {
 
           {activeTab === 'expense' && (
             <>
-              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={bankCurrencyTotals} />
 
               {expenseFormElement}
 
@@ -349,7 +348,7 @@ export default function MonthlyPage() {
 
           {activeTab === 'bank' && !bankOperations.isLoading && !bankOperations.error && (
             <>
-              <BanksGrid bankTotals={bankTotals} bankTotalsSum={bankTotalsSum} roundUpTotalsSum={roundUpTotalsSum} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={bankCurrencyTotals} />
 
               {transferForm.isOpen && (
                 <TransferForm

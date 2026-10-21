@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type {
-  BankBalanceDto,
+  AccountGroupSummaryDto,
   BankDto,
   CardStatementDto,
   CategoryDto,
@@ -35,7 +35,7 @@ const {
   unmarkCardStatementPaidMock,
   getIncomesByMonthMock,
   deleteIncomeMock,
-  getBankBalancesByMonthMock,
+  getDefaultGroupSummaryMock,
   getTitheSummaryByMonthMock,
   updateTitheCarryForwardMock,
 } = vi.hoisted(() => ({
@@ -51,7 +51,7 @@ const {
   unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
   getIncomesByMonthMock: vi.fn<FinancialApiClient['getIncomesByMonth']>(),
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
-  getBankBalancesByMonthMock: vi.fn<FinancialApiClient['getBankBalancesByMonth']>(),
+  getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
   updateTitheCarryForwardMock: vi.fn<FinancialApiClient['updateTitheCarryForward']>(),
 }))
@@ -70,7 +70,7 @@ vi.mock('../../api/financialApiClient', () => ({
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
     getIncomesByMonth: getIncomesByMonthMock,
     deleteIncome: deleteIncomeMock,
-    getBankBalancesByMonth: getBankBalancesByMonthMock,
+    getDefaultGroupSummary: getDefaultGroupSummaryMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
     updateTitheCarryForward: updateTitheCarryForwardMock,
   } as Partial<FinancialApiClient>,
@@ -138,11 +138,22 @@ const INCOMES: IncomeDto[] = [
   },
 ]
 
-const BANK_BALANCES: BankBalanceDto[] = [
-  { bank: 'Barclays', balance: 42.5 },
-  { bank: 'Trading212', balance: 0 },
-  { bank: 'Chase', balance: 0 },
-]
+const SUMMARY: AccountGroupSummaryDto = {
+  year: CURRENT_YEAR,
+  month: CURRENT_MONTH,
+  members: [
+    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0 },
+    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1 },
+    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6 },
+  ],
+  totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7 }],
+  categoryTotalsSum: 1234.56,
+  incomeTotals: [
+    { incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 },
+    { incomeSourceId: '3', name: 'Lottery', netValue: 50, grossValue: null },
+  ],
+  totalIncoming: 770,
+}
 
 const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245, carryForward: null }
 
@@ -160,7 +171,7 @@ describe('useMonthly', () => {
     unmarkCardStatementPaidMock.mockReset()
     getIncomesByMonthMock.mockReset()
     deleteIncomeMock.mockReset()
-    getBankBalancesByMonthMock.mockReset()
+    getDefaultGroupSummaryMock.mockReset()
     getTitheSummaryByMonthMock.mockReset()
     updateTitheCarryForwardMock.mockReset()
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
@@ -171,7 +182,7 @@ describe('useMonthly', () => {
     getIncomeSourcesMock.mockResolvedValue(INCOME_SOURCES)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
-    getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
+    getDefaultGroupSummaryMock.mockResolvedValue(SUMMARY)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
   })
 
@@ -212,18 +223,57 @@ describe('useMonthly', () => {
     expect(result.current.adjustmentTotal).toBe(100)
   })
 
-  it('computes category totals sum and per-bank totals from the fetched banks and expenses', async () => {
+  it('[AC P60-F04-default-account-group-and-summary-query-06] reads the summary figures from one summary request without summing in the browser', async () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.categoryTotalsSum).toBe(42.5)
+    expect(getDefaultGroupSummaryMock).toHaveBeenCalledOnce()
+    expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
+    expect(result.current.categoryTotalsSum).toBe(1234.56)
     expect(result.current.bankTotals).toEqual([
-      { bankId: 'bank-barclays', bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
-      { bankId: 'bank-trading212', bank: 'Trading212', balance: 0, roundUpTotal: 0 },
-      { bankId: 'bank-chase', bank: 'Chase', balance: 0, roundUpTotal: 0 },
+      { bankId: 'bank-barclays', bank: 'Barclays', balance: 1875.32, roundUpTotal: 0 },
+      { bankId: 'bank-chase', bank: 'Chase', balance: -50, roundUpTotal: 0.1 },
+      { bankId: 'bank-trading212', bank: 'Trading212', balance: 420.1, roundUpTotal: 0.6 },
     ])
-    expect(result.current.bankTotalsSum).toBe(42.5)
-    expect(result.current.roundUpTotalsSum).toBe(0)
+    expect(result.current.bankCurrencyTotals).toEqual(SUMMARY.totals)
+    expect(result.current.incomeTotals).toEqual([
+      { incomeSourceId: '2', source: 'Ariana', netValue: 720, grossValue: 820 },
+      { incomeSourceId: '3', source: 'Lottery', netValue: 50, grossValue: null },
+    ])
+    expect(result.current.totalIncoming).toBe(770)
+  })
+
+  it('keys bank rows by the member account Id, not by matching a bank name', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0 }],
+    })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.bankTotals).toEqual([{ bankId: 'bank-new', bank: 'Barclays', balance: 10, roundUpTotal: 0 }])
+  })
+
+  it('shows a member without a round-up total as 0', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null }],
+    })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.bankTotals[0].roundUpTotal).toBe(0)
+  })
+
+  it('exposes empty summary figures before the summary has loaded', () => {
+    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useMonthly())
+
+    expect(result.current.bankTotals).toEqual([])
+    expect(result.current.bankCurrencyTotals).toEqual([])
+    expect(result.current.incomeTotals).toEqual([])
+    expect(result.current.categoryTotalsSum).toBe(0)
+    expect(result.current.totalIncoming).toBe(0)
   })
 
   it('re-fetches for a new month when the month input changes', async () => {
@@ -333,70 +383,6 @@ describe('useMonthly', () => {
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
   })
 
-  it("sources each bank's balance from the fetched bank-balances data, not from summing the month's expenses", async () => {
-    getBankBalancesByMonthMock.mockResolvedValue([
-      { bank: 'Barclays', balance: 1875.32 },
-      { bank: 'Trading212', balance: 420.1 },
-      { bank: 'Chase', balance: -50 },
-    ])
-    getExpensesByMonthMock.mockResolvedValue([
-      { ...EXPENSES[0], value: 999999, paymentSourceBankId: 'bank-barclays', paymentSourceBankName: 'Barclays' },
-    ])
-    const { result } = renderHook(() => useMonthly())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    expect(getBankBalancesByMonthMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
-    expect(result.current.bankTotals).toEqual([
-      { bankId: 'bank-barclays', bank: 'Barclays', balance: 1875.32, roundUpTotal: 0 },
-      { bankId: 'bank-trading212', bank: 'Trading212', balance: 420.1, roundUpTotal: 0 },
-      { bankId: 'bank-chase', bank: 'Chase', balance: -50, roundUpTotal: 0 },
-    ])
-    expect(result.current.bankTotalsSum).toBeCloseTo(2245.42)
-  })
-
-  it("sums each bank's round-up total from the month's expenses independent of the fetched balance", async () => {
-    getBankBalancesByMonthMock.mockResolvedValue([
-      { bank: 'Barclays', balance: 0 },
-      { bank: 'Trading212', balance: 100 },
-      { bank: 'Chase', balance: 200 },
-    ])
-    getExpensesByMonthMock.mockResolvedValue([
-      {
-        ...EXPENSES[0],
-        id: 'e7',
-        value: 9.4,
-        paymentSourceBankId: 'bank-trading212',
-        paymentSourceBankName: 'Trading212',
-        roundUpAmount: 0.6,
-      },
-      {
-        ...EXPENSES[0],
-        id: 'e8',
-        value: 5,
-        paymentSourceBankId: 'bank-trading212',
-        paymentSourceBankName: 'Trading212',
-        roundUpAmount: null,
-      },
-      {
-        ...EXPENSES[0],
-        id: 'e9',
-        value: 20,
-        paymentSourceBankId: 'bank-chase',
-        paymentSourceBankName: 'Chase',
-        roundUpAmount: 0.1,
-      },
-    ])
-    const { result } = renderHook(() => useMonthly())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    expect(result.current.bankTotals).toEqual([
-      { bankId: 'bank-barclays', bank: 'Barclays', balance: 0, roundUpTotal: 0 },
-      { bankId: 'bank-trading212', bank: 'Trading212', balance: 100, roundUpTotal: 0.6 },
-      { bankId: 'bank-chase', bank: 'Chase', balance: 200, roundUpTotal: 0.1 },
-    ])
-    expect(result.current.roundUpTotalsSum).toBeCloseTo(0.7)
-  })
-
   it('fetches the tithe summary for the current month and exposes it', async () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -464,55 +450,13 @@ describe('useMonthly', () => {
     await waitFor(() => expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2))
   })
 
-  it('groups income totals by source, summing net values and gross values only when present', async () => {
-    getIncomesByMonthMock.mockResolvedValue([
-      {
-        id: 'i1',
-        date: `${CURRENT_YEAR}-07-01`,
-        incomeSourceId: '2',
-        incomeSourceName: 'Ariana',
-        grossValue: 400,
-        netValue: 350,
-        bankId: 'bank-chase',
-        bankName: 'Chase',
-        description: null,
-        splitToReserve: false,
-      },
-      {
-        id: 'i2',
-        date: `${CURRENT_YEAR}-07-08`,
-        incomeSourceId: '2',
-        incomeSourceName: 'Ariana',
-        grossValue: 420,
-        netValue: 370,
-        bankId: 'bank-chase',
-        bankName: 'Chase',
-        description: null,
-        splitToReserve: false,
-      },
-      {
-        id: 'i3',
-        date: `${CURRENT_YEAR}-07-10`,
-        incomeSourceId: '3',
-        incomeSourceName: 'Lottery',
-        grossValue: null,
-        netValue: 50,
-        bankId: 'bank-chase',
-        bankName: 'Chase',
-        description: null,
-        splitToReserve: false,
-      },
-    ])
+  it('refetches the summary after a silent refresh', async () => {
+    deleteIncomeMock.mockResolvedValue(undefined)
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.incomeTotals).toEqual(
-      expect.arrayContaining([
-        { source: 'Ariana', netValue: 720, grossValue: 820 },
-        { source: 'Lottery', netValue: 50, grossValue: null },
-      ]),
-    )
-    expect(result.current.incomeTotals).toHaveLength(2)
-    expect(result.current.totalIncoming).toBe(770)
+    act(() => result.current.deleteIncome('i1'))
+
+    await waitFor(() => expect(getDefaultGroupSummaryMock).toHaveBeenCalledTimes(2))
   })
 })

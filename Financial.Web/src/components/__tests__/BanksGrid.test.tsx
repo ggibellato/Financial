@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import BanksGrid from '../BanksGrid'
+import type { CurrencyTotalDto } from '../../api/types'
 import type { BankTotal } from '../../hooks/useMonthly'
 
 const BANK_TOTALS: BankTotal[] = [
@@ -8,9 +9,15 @@ const BANK_TOTALS: BankTotal[] = [
   { bankId: 'bank-trading212', bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
 ]
 
+const GBP_TOTALS: CurrencyTotalDto[] = [{ currency: 'GBP', balance: 51.3, roundUpTotal: 0.6 }]
+
+function footer() {
+  return document.querySelector('.monthly-page__section-total')!.textContent
+}
+
 describe('BanksGrid', () => {
   it('renders a row per bank with balance and round-up columns, plus footer totals', () => {
-    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     const barclaysRow = screen.getByRole('row', { name: /Barclays/ })
     expect(within(barclaysRow).getByText('42.50')).toBeInTheDocument()
@@ -23,14 +30,14 @@ describe('BanksGrid', () => {
   })
 
   it('renders no expand control and no row-level action buttons, only the sort and filter buttons', () => {
-    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     // 3 header sort buttons (Bank, Bank Balance, Round-Up) + 1 filter button (Bank).
     expect(screen.getAllByRole('button')).toHaveLength(4)
   })
 
   it('filters rows by Bank via the header checklist', () => {
-    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
@@ -43,7 +50,7 @@ describe('BanksGrid', () => {
   })
 
   it('shows the "no rows match" message when every value is unchecked', () => {
-    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
@@ -53,7 +60,7 @@ describe('BanksGrid', () => {
   })
 
   it('renders exactly three data columns in the header', () => {
-    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     expect(screen.getAllByRole('columnheader')).toHaveLength(3)
     expect(screen.getByRole('columnheader', { name: 'Bank' })).toBeInTheDocument()
@@ -62,12 +69,35 @@ describe('BanksGrid', () => {
   })
 
   it('sorts rows by Bank Balance ascending when its header is clicked', () => {
-    render(<BanksGrid bankTotals={BANK_TOTALS} bankTotalsSum={51.3} roundUpTotalsSum={0.6} />)
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Bank Balance' }))
 
     const dataRows = screen.getAllByRole('row').slice(1)
     expect(within(dataRows[0]).getByText('Trading212')).toBeInTheDocument()
     expect(within(dataRows[1]).getByText('Barclays')).toBeInTheDocument()
+  })
+
+  it('keeps the single-currency footer unlabelled by currency', () => {
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
+
+    expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
+  })
+
+  it('labels each footer total with its currency when the members hold several currencies', () => {
+    render(
+      <BanksGrid
+        bankTotals={BANK_TOTALS}
+        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
+      />,
+    )
+
+    expect(footer()).toBe('Bank Balance GBP: 51.30 · Round-Up GBP: 0.60 · Bank Balance BRL: 640.50 · Round-Up BRL: 0.00')
+  })
+
+  it('shows zero footer totals when there are no currency totals', () => {
+    render(<BanksGrid bankTotals={[]} currencyTotals={[]} />)
+
+    expect(footer()).toBe('Bank Balance: 0.00 · Round-Up: 0.00')
   })
 })

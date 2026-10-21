@@ -4,8 +4,9 @@ import { render } from '../../test/renderWithFluent'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type {
+  AccountGroupMemberDto,
+  AccountGroupSummaryDto,
   BalanceAdjustmentDto,
-  BankBalanceDto,
   BankDto,
   CardStatementDto,
   CategoryDto,
@@ -37,7 +38,7 @@ const {
   createIncomeMock,
   updateIncomeMock,
   deleteIncomeMock,
-  getBankBalancesByMonthMock,
+  getDefaultGroupSummaryMock,
   getTitheSummaryByMonthMock,
   updateTitheCarryForwardMock,
   getTransfersByMonthMock,
@@ -67,7 +68,7 @@ const {
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
   updateIncomeMock: vi.fn<FinancialApiClient['updateIncome']>(),
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
-  getBankBalancesByMonthMock: vi.fn<FinancialApiClient['getBankBalancesByMonth']>(),
+  getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
   updateTitheCarryForwardMock: vi.fn<FinancialApiClient['updateTitheCarryForward']>(),
   getTransfersByMonthMock: vi.fn<FinancialApiClient['getTransfersByMonth']>(),
@@ -100,7 +101,7 @@ vi.mock('../../api/financialApiClient', () => ({
     createIncome: createIncomeMock,
     updateIncome: updateIncomeMock,
     deleteIncome: deleteIncomeMock,
-    getBankBalancesByMonth: getBankBalancesByMonthMock,
+    getDefaultGroupSummary: getDefaultGroupSummaryMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
     updateTitheCarryForward: updateTitheCarryForwardMock,
     getTransfersByMonth: getTransfersByMonthMock,
@@ -202,11 +203,19 @@ const INCOMES: IncomeDto[] = [
   },
 ]
 
-const BANK_BALANCES: BankBalanceDto[] = [
-  { bank: 'Barclays', balance: 42.5 },
-  { bank: 'Trading212', balance: 0 },
-  { bank: 'Chase', balance: 0 },
-]
+function member(accountId: string, name: string, balance: number, roundUpTotal = 0): AccountGroupMemberDto {
+  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal }
+}
+
+const SUMMARY: AccountGroupSummaryDto = {
+  year: 2026,
+  month: 7,
+  members: [member('bank-barclays', 'Barclays', 42.5), member('bank-chase', 'Chase', 0), member('bank-trading212', 'Trading212', 0)],
+  totals: [{ currency: 'GBP', balance: 42.5, roundUpTotal: 0 }],
+  categoryTotalsSum: 42.5,
+  incomeTotals: [{ incomeSourceId: '1', name: 'Gleison', netValue: 2450, grossValue: 3200 }],
+  totalIncoming: 2450,
+}
 
 const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245, carryForward: null }
 
@@ -262,7 +271,7 @@ describe('MonthlyPage', () => {
     createIncomeMock.mockReset()
     updateIncomeMock.mockReset()
     deleteIncomeMock.mockReset()
-    getBankBalancesByMonthMock.mockReset()
+    getDefaultGroupSummaryMock.mockReset()
     getTitheSummaryByMonthMock.mockReset()
     updateTitheCarryForwardMock.mockReset()
     getTransfersByMonthMock.mockReset()
@@ -282,7 +291,7 @@ describe('MonthlyPage', () => {
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
     getIncomesByMonthMock.mockResolvedValue(INCOMES)
-    getBankBalancesByMonthMock.mockResolvedValue(BANK_BALANCES)
+    getDefaultGroupSummaryMock.mockResolvedValue(SUMMARY)
     getTitheSummaryByMonthMock.mockResolvedValue(TITHE_SUMMARY)
     getTransfersByMonthMock.mockResolvedValue(TRANSFERS)
     getAdjustmentsByBankMock.mockImplementation((bankId: string) =>
@@ -362,7 +371,15 @@ describe('MonthlyPage', () => {
     getCardStatementsByMonthMock.mockResolvedValue([
       { id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55, accumulatedOutstandingTotal: 55, warning: null },
     ])
-    getBankBalancesByMonthMock.mockResolvedValue([{ bank: 'Barclays', balance: 300 }])
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      month: 8,
+      members: [member('bank-barclays', 'Barclays', 300)],
+      totals: [{ currency: 'GBP', balance: 300, roundUpTotal: 0 }],
+      categoryTotalsSum: 300,
+      incomeTotals: [{ incomeSourceId: '3', name: 'Lottery', netValue: 50, grossValue: null }],
+      totalIncoming: 50,
+    })
     getIncomesByMonthMock.mockResolvedValue([
       {
         id: 'i2',
@@ -1208,6 +1225,11 @@ describe('MonthlyPage', () => {
       description: null,
       splitToReserve: false,
     }])
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      incomeTotals: [...SUMMARY.incomeTotals, { incomeSourceId: '3', name: 'Lottery', netValue: 100, grossValue: null }],
+      totalIncoming: 2550,
+    })
     fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
 
     await waitFor(() => expect(createIncomeMock).toHaveBeenCalled())
@@ -1309,11 +1331,10 @@ describe('MonthlyPage', () => {
         roundUpAmount: 0.6,
       },
     ])
-    getBankBalancesByMonthMock.mockResolvedValue([
-      { bank: 'Barclays', balance: 0 },
-      { bank: 'Trading212', balance: 8.8 },
-      { bank: 'Chase', balance: 0 },
-    ])
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [member('bank-barclays', 'Barclays', 0), member('bank-chase', 'Chase', 0), member('bank-trading212', 'Trading212', 8.8, 0.6)],
+    })
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument())
@@ -1375,7 +1396,7 @@ describe('MonthlyPage', () => {
 
     expect(screen.getByText('New Transfer', { selector: 'h2' })).toBeInTheDocument()
 
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length
     const transfersCallsBefore = getTransfersByMonthMock.mock.calls.length
 
     fireEvent.change(screen.getByLabelText(/^To/), { target: { value: 'bank-trading212' } })
@@ -1384,7 +1405,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Add Transfer' }))
 
     await waitFor(() => expect(createTransferMock).toHaveBeenCalled())
-    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    await waitFor(() => expect(getDefaultGroupSummaryMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
     expect(getTransfersByMonthMock.mock.calls.length).toBeGreaterThan(transfersCallsBefore)
   })
 
@@ -1403,7 +1424,7 @@ describe('MonthlyPage', () => {
     fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-barclays' } })
     expect(correctBalanceFormPanel).toHaveTextContent('Current calculated balance for Barclays: £42.50')
 
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
     fireEvent.change(screen.getByRole('spinbutton', { name: /^Target Balance/ }), { target: { value: '45' } })
@@ -1415,7 +1436,7 @@ describe('MonthlyPage', () => {
     await waitFor(() =>
       expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Adjustment of £2.50 recorded'),
     )
-    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    await waitFor(() => expect(getDefaultGroupSummaryMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
     expect(getAdjustmentsByBankMock.mock.calls.length).toBeGreaterThan(adjustmentsCallsBefore)
   })
 
@@ -1450,13 +1471,13 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Edit Transfer')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Amount/)).toHaveValue(100)
 
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length
     fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '150' } })
     const transferFormPanel = screen.getByTestId('transfer-form-panel')
     fireEvent.click(within(transferFormPanel).getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(updateTransferMock).toHaveBeenCalledWith('t1', expect.objectContaining({ amount: 150 })))
-    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    await waitFor(() => expect(getDefaultGroupSummaryMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 
   it('edits an adjustment from the operations list with the bank fixed, and persists the change', async () => {
@@ -1471,7 +1492,7 @@ describe('MonthlyPage', () => {
     expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveValue(42.5)
 
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length
     fireEvent.change(screen.getByRole('spinbutton', { name: /^Target Balance/ }), { target: { value: '50' } })
     const adjustmentFormPanel = screen.getByTestId('balance-adjustment-form-panel')
     fireEvent.click(within(adjustmentFormPanel).getByRole('button', { name: 'Save' }))
@@ -1479,7 +1500,7 @@ describe('MonthlyPage', () => {
     await waitFor(() =>
       expect(updateBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1', expect.objectContaining({ targetBalance: 50 })),
     )
-    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    await waitFor(() => expect(getDefaultGroupSummaryMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 
   it('does not delete a transfer when the user cancels the confirmation', async () => {
@@ -1499,11 +1520,11 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Bank balance adjustment' }))
 
     await waitFor(() => expect(screen.getByText('Transfer')).toBeInTheDocument())
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: 'Delete transfer' }))
 
     await waitFor(() => expect(deleteTransferMock).toHaveBeenCalledWith('t1'))
-    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    await waitFor(() => expect(getDefaultGroupSummaryMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 
   it('deletes an adjustment from the operations list after confirmation, and refreshes balances', async () => {
@@ -1512,11 +1533,11 @@ describe('MonthlyPage', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Bank balance adjustment' }))
 
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
-    const balancesCallsBefore = getBankBalancesByMonthMock.mock.calls.length
+    const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length
     fireEvent.click(screen.getByRole('button', { name: 'Delete balance adjustment' }))
 
     await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', 'a1'))
-    await waitFor(() => expect(getBankBalancesByMonthMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
+    await waitFor(() => expect(getDefaultGroupSummaryMock.mock.calls.length).toBeGreaterThan(balancesCallsBefore))
   })
 
   it('shows an error state with retry when the Bank tab operations fetch fails', async () => {

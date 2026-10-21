@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type {
-  BankBalanceDto,
+  AccountGroupSummaryDto,
   BankDto,
   CardStatementDto,
   CategoryDto,
   CategoryTotalDto,
+  CurrencyTotalDto,
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
@@ -23,6 +24,7 @@ export interface BankTotal {
 }
 
 export interface IncomeTotal {
+  incomeSourceId: string
   source: string
   netValue: number
   grossValue: number | null
@@ -36,7 +38,7 @@ interface MonthlyState {
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   categories: CategoryDto[]
-  bankBalances: BankBalanceDto[]
+  summary: AccountGroupSummaryDto | null
   incomes: IncomeDto[]
   titheSummary: TitheSummaryDto | null
   carryForwardUpdating: boolean
@@ -60,7 +62,7 @@ type MonthlyAction =
         banks: BankDto[]
         incomeSources: IncomeSourceDto[]
         categories: CategoryDto[]
-        bankBalances: BankBalanceDto[]
+        summary: AccountGroupSummaryDto
         incomes: IncomeDto[]
         titheSummary: TitheSummaryDto
       }
@@ -81,7 +83,7 @@ const INITIAL_STATE: MonthlyState = {
   banks: [],
   incomeSources: [],
   categories: [],
-  bankBalances: [],
+  summary: null,
   incomes: [],
   titheSummary: null,
   carryForwardUpdating: false,
@@ -133,8 +135,7 @@ export interface MonthlyData {
   categories: CategoryDto[]
   adjustmentTotal: number
   bankTotals: BankTotal[]
-  bankTotalsSum: number
-  roundUpTotalsSum: number
+  bankCurrencyTotals: CurrencyTotalDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -171,7 +172,7 @@ export function useMonthly(): MonthlyData {
       apiClient.getIncomeSources(),
       apiClient.getCategories(),
       apiClient.getIncomesByMonth(year, month),
-      apiClient.getBankBalancesByMonth(year, month),
+      apiClient.getDefaultGroupSummary(year, month),
       apiClient.getTitheSummaryByMonth(year, month),
     ])
       .then(
@@ -184,7 +185,7 @@ export function useMonthly(): MonthlyData {
           incomeSources,
           categories,
           incomes,
-          bankBalances,
+          summary,
           titheSummary,
         ]) =>
           dispatch({
@@ -198,7 +199,7 @@ export function useMonthly(): MonthlyData {
               incomeSources,
               categories,
               incomes,
-              bankBalances,
+              summary,
               titheSummary,
             },
           }),
@@ -303,36 +304,19 @@ export function useMonthly(): MonthlyData {
 
   const adjustmentTotal = state.cardStatements.reduce((sum, statement) => sum + statement.outstandingTotal, 0)
 
-  const categoryTotalsSum = state.categoryTotals.reduce((sum, c) => sum + c.totalValue, 0)
-
-  const bankTotals: BankTotal[] = state.banks.map((bank) => {
-    const bankExpenses = state.expenses.filter((expense) => expense.paymentSourceBankId === bank.id)
-    const roundUpTotal = bankExpenses.reduce((sum, expense) => sum + (expense.roundUpAmount ?? 0), 0)
-    const balance = state.bankBalances.find((b) => b.bank === bank.name)?.balance ?? 0
-    return { bankId: bank.id, bank: bank.name, balance, roundUpTotal }
-  })
-  const bankTotalsSum = bankTotals.reduce((sum, b) => sum + b.balance, 0)
-  const roundUpTotalsSum = bankTotals.reduce((sum, b) => sum + b.roundUpTotal, 0)
-
-  const incomeTotals: IncomeTotal[] = Array.from(
-    state.incomes
-      .reduce((bySource, income) => {
-        const entry = bySource.get(income.incomeSourceName) ?? { netValue: 0, grossValue: 0, hasGross: false }
-        entry.netValue += income.netValue
-        if (income.grossValue != null) {
-          entry.grossValue += income.grossValue
-          entry.hasGross = true
-        }
-        bySource.set(income.incomeSourceName, entry)
-        return bySource
-      }, new Map<string, { netValue: number; grossValue: number; hasGross: boolean }>())
-      .entries(),
-  ).map(([source, v]) => ({
-    source,
-    netValue: v.netValue,
-    grossValue: v.hasGross ? v.grossValue : null,
+  const bankTotals: BankTotal[] = (state.summary?.members ?? []).map((member) => ({
+    bankId: member.accountId,
+    bank: member.name,
+    balance: member.balance,
+    roundUpTotal: member.roundUpTotal ?? 0,
   }))
-  const totalIncoming = incomeTotals.reduce((sum, i) => sum + i.netValue, 0)
+
+  const incomeTotals: IncomeTotal[] = (state.summary?.incomeTotals ?? []).map((income) => ({
+    incomeSourceId: income.incomeSourceId,
+    source: income.name,
+    netValue: income.netValue,
+    grossValue: income.grossValue,
+  }))
 
   return {
     year,
@@ -342,15 +326,14 @@ export function useMonthly(): MonthlyData {
     expenses: state.expenses,
     unpaidCardCharges: state.unpaidCardCharges,
     categoryTotals: state.categoryTotals,
-    categoryTotalsSum,
+    categoryTotalsSum: state.summary?.categoryTotalsSum ?? 0,
     cardStatements: state.cardStatements,
     banks: state.banks,
     incomeSources: state.incomeSources,
     categories: state.categories,
     adjustmentTotal,
     bankTotals,
-    bankTotalsSum,
-    roundUpTotalsSum,
+    bankCurrencyTotals: state.summary?.totals ?? [],
     isLoading: state.isLoading,
     error: state.error,
     retry,
@@ -362,7 +345,7 @@ export function useMonthly(): MonthlyData {
     unmarkStatementPaid,
     incomes: state.incomes,
     incomeTotals,
-    totalIncoming,
+    totalIncoming: state.summary?.totalIncoming ?? 0,
     titheSummary: state.titheSummary,
     carryForwardUpdating: state.carryForwardUpdating,
     updateCarryForwardInclusion,

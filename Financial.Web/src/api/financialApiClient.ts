@@ -12,7 +12,6 @@ import type {
   ArchiveAssetRequestDto,
   AssetPriceDto,
   BankCreateDto,
-  BankBalanceDto,
   BankDto,
   BankUpdateDto,
   BrokerCreateDto,
@@ -241,7 +240,6 @@ export interface FinancialApiClient {
   createInvestmentAccount: (request: InvestmentAccountCreateDto) => Promise<InvestmentAccountDto>
   updateInvestmentAccount: (id: string, request: InvestmentAccountUpdateDto) => Promise<InvestmentAccountDto>
   deleteInvestmentAccount: (id: string) => Promise<void>
-  getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
   getDefaultGroupSummary: (year: number, month: number) => Promise<AccountGroupSummaryDto>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
@@ -682,7 +680,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteInvestmentAccount: (id) => requestVoid(`/investment-accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    getBankBalancesByMonth: (year, month) => request<BankBalanceDto[]>(`/banks/month/${year}/${month}/balances`),
     getDefaultGroupSummary: (year, month) =>
       request<AccountGroupSummaryDto>(`/accounts/groups/default/summary/${year}/${month}`),
     createExpense: (requestBody) =>

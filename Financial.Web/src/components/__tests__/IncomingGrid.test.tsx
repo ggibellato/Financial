@@ -4,8 +4,8 @@ import IncomingGrid from '../IncomingGrid'
 import type { IncomeTotal } from '../../hooks/useMonthly'
 
 const INCOME_TOTALS: IncomeTotal[] = [
-  { source: 'Gleison', grossValue: 3200, netValue: 2450 },
-  { source: 'Lottery', grossValue: null, netValue: 100 },
+  { incomeSourceId: 'source-gleison', source: 'Gleison', grossValue: 3200, netValue: 2450 },
+  { incomeSourceId: 'source-lottery', source: 'Lottery', grossValue: null, netValue: 100 },
 ]
 
 function renderGrid(overrides: Partial<Parameters<typeof IncomingGrid>[0]> = {}) {
