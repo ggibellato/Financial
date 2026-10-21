@@ -1,11 +1,10 @@
 import { Checkbox } from '@fluentui/react-components'
-import type { IncomeTotal } from '../hooks/useMonthly'
-import type { TitheSummaryDto } from '../api/types'
+import type { IncomeSourceTotalDto, TitheSummaryDto } from '../api/types'
 import { formatMonthYear, formatN2, formatN2OrDash } from '../utils/formatters'
 import TotalsGrid from './TotalsGrid'
 
 interface IncomingGridProps {
-  incomeTotals: IncomeTotal[]
+  incomeTotals: IncomeSourceTotalDto[]
   totalIncoming: number
   titheSummary: TitheSummaryDto | null
   carryForwardUpdating: boolean
@@ -46,22 +45,22 @@ export default function IncomingGrid({
           {
             key: 'source',
             header: 'Source',
-            render: (i: IncomeTotal) => i.source,
-            sortAccessor: (i: IncomeTotal) => i.source,
+            render: (i: IncomeSourceTotalDto) => i.name,
+            sortAccessor: (i: IncomeSourceTotalDto) => i.name,
           },
           {
             key: 'gross',
             header: 'Gross',
             numeric: true,
-            render: (i: IncomeTotal) => formatN2OrDash(i.grossValue),
-            sortAccessor: (i: IncomeTotal) => i.grossValue,
+            render: (i: IncomeSourceTotalDto) => formatN2OrDash(i.grossValue),
+            sortAccessor: (i: IncomeSourceTotalDto) => i.grossValue,
           },
           {
             key: 'net',
             header: 'Net',
             numeric: true,
-            render: (i: IncomeTotal) => formatN2(i.netValue),
-            sortAccessor: (i: IncomeTotal) => i.netValue,
+            render: (i: IncomeSourceTotalDto) => formatN2(i.netValue),
+            sortAccessor: (i: IncomeSourceTotalDto) => i.netValue,
           },
         ]}
         rows={incomeTotals}

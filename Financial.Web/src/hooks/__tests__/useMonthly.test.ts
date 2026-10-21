@@ -237,8 +237,8 @@ describe('useMonthly', () => {
     ])
     expect(result.current.bankCurrencyTotals).toEqual(SUMMARY.totals)
     expect(result.current.incomeTotals).toEqual([
-      { incomeSourceId: '2', source: 'Ariana', netValue: 720, grossValue: 820 },
-      { incomeSourceId: '3', source: 'Lottery', netValue: 50, grossValue: null },
+      { incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 },
+      { incomeSourceId: '3', name: 'Lottery', netValue: 50, grossValue: null },
     ])
     expect(result.current.totalIncoming).toBe(770)
   })

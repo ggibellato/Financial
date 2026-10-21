@@ -10,6 +10,7 @@ import type {
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
+  IncomeSourceTotalDto,
   TitheCarryForwardUpdateDto,
   TitheSummaryDto,
 } from '../api/types'
@@ -22,13 +23,6 @@ export interface BankTotal {
   currency: string
   balance: number
   roundUpTotal: number
-}
-
-export interface IncomeTotal {
-  incomeSourceId: string
-  source: string
-  netValue: number
-  grossValue: number | null
 }
 
 interface MonthlyState {
@@ -147,7 +141,7 @@ export interface MonthlyData {
   markStatementPaid: (id: string, paymentSourceBankId: string) => void
   unmarkStatementPaid: (id: string) => void
   incomes: IncomeDto[]
-  incomeTotals: IncomeTotal[]
+  incomeTotals: IncomeSourceTotalDto[]
   totalIncoming: number
   titheSummary: TitheSummaryDto | null
   carryForwardUpdating: boolean
@@ -313,13 +307,6 @@ export function useMonthly(): MonthlyData {
     roundUpTotal: member.roundUpTotal ?? 0,
   }))
 
-  const incomeTotals: IncomeTotal[] = (state.summary?.incomeTotals ?? []).map((income) => ({
-    incomeSourceId: income.incomeSourceId,
-    source: income.name,
-    netValue: income.netValue,
-    grossValue: income.grossValue,
-  }))
-
   return {
     year,
     month,
@@ -346,7 +333,7 @@ export function useMonthly(): MonthlyData {
     markStatementPaid,
     unmarkStatementPaid,
     incomes: state.incomes,
-    incomeTotals,
+    incomeTotals: state.summary?.incomeTotals ?? [],
     totalIncoming: state.summary?.totalIncoming ?? 0,
     titheSummary: state.titheSummary,
     carryForwardUpdating: state.carryForwardUpdating,

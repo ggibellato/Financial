@@ -14,8 +14,15 @@ const FILTER_ACCESSORS = {
   bank: (b: BankTotal) => b.bank,
 }
 
-function footerItemsFor(currencyTotals: CurrencyTotalDto[]) {
-  if (currencyTotals.length <= 1) {
+const CURRENCY_COLUMN = {
+  key: 'currency',
+  header: 'Currency',
+  render: (b: BankTotal) => b.currency,
+  sortAccessor: (b: BankTotal) => b.currency,
+}
+
+function footerItemsFor(currencyTotals: CurrencyTotalDto[], isMultiCurrency: boolean) {
+  if (!isMultiCurrency) {
     const [total] = currencyTotals
     return [
       { label: 'Bank Balance', value: formatN2(total?.balance ?? 0) },
@@ -31,12 +38,7 @@ function footerItemsFor(currencyTotals: CurrencyTotalDto[]) {
 export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(bankTotals, FILTER_ACCESSORS)
-  const currencyColumn = {
-    key: 'currency',
-    header: 'Currency',
-    render: (b: BankTotal) => b.currency,
-    sortAccessor: (b: BankTotal) => b.currency,
-  }
+  const isMultiCurrency = currencyTotals.length > 1
 
   return (
     <TotalsGrid
@@ -59,7 +61,7 @@ export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps
             />
           ),
         },
-        ...(currencyTotals.length > 1 ? [currencyColumn] : []),
+        ...(isMultiCurrency ? [CURRENCY_COLUMN] : []),
         {
           key: 'balance',
           header: 'Bank Balance',
@@ -79,7 +81,7 @@ export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps
       isFiltered={isColumnFiltered('bank')}
       rowKey={(b) => b.bankId}
       emptyMessage="No accounts in the default group for this month"
-      footerItems={footerItemsFor(currencyTotals)}
+      footerItems={footerItemsFor(currencyTotals, isMultiCurrency)}
     />
   )
 }

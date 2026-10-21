@@ -26,7 +26,7 @@ interface TotalsGridProps<T> {
   footerItems: TotalsGridFooterItem[]
   /** True when `rows` has already been narrowed by an active column filter (used only to pick the empty-state message). */
   isFiltered?: boolean
-  emptyMessage?: string
+  emptyMessage: string
 }
 
 export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItems, isFiltered, emptyMessage }: TotalsGridProps<T>) {
@@ -54,7 +54,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && (isFiltered || emptyMessage) ? (
+            {rows.length === 0 ? (
               <TableRow>
                 <TableCell className="data-table__cell--message" colSpan={columns.length}>
                   {isFiltered ? 'No rows match the current filters' : emptyMessage}
