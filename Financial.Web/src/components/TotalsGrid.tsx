@@ -19,6 +19,7 @@ interface TotalsGridFooterItem {
 }
 
 interface TotalsGridProps<T> {
+  label: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
@@ -28,14 +29,14 @@ interface TotalsGridProps<T> {
   emptyMessage?: string
 }
 
-export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFiltered, emptyMessage }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItems, isFiltered, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
       <div className="monthly-page__table-scroll">
-        <Table className="monthly-page__table data-table">
+        <Table className="monthly-page__table data-table" aria-label={label}>
           <TableHeader>
             <TableRow>
               {columns.map((col) => (

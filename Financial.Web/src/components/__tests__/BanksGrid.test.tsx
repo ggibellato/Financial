@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import BanksGrid from '../BanksGrid'
 import type { CurrencyTotalDto } from '../../api/types'
 import type { BankTotal } from '../../hooks/useMonthly'
 
 const BANK_TOTALS: BankTotal[] = [
-  { bankId: 'bank-barclays', bank: 'Barclays', balance: 42.5, roundUpTotal: 0 },
-  { bankId: 'bank-trading212', bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
+  { bankId: 'bank-barclays', bank: 'Barclays', currency: 'GBP', balance: 42.5, roundUpTotal: 0 },
+  { bankId: 'bank-trading212', bank: 'Trading212', currency: 'GBP', balance: 8.8, roundUpTotal: 0.6 },
 ]
 
 const GBP_TOTALS: CurrencyTotalDto[] = [{ currency: 'GBP', balance: 51.3, roundUpTotal: 0.6 }]
@@ -16,6 +16,10 @@ function footer() {
 }
 
 describe('BanksGrid', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   it('renders a row per bank with balance and round-up columns, plus footer totals', () => {
     render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
@@ -112,8 +116,8 @@ describe('BanksGrid', () => {
     render(
       <BanksGrid
         bankTotals={[
-          { bankId: 'bank-a', bank: 'Chase', balance: 1, roundUpTotal: 0 },
-          { bankId: 'bank-b', bank: 'Chase', balance: 2, roundUpTotal: 0 },
+          { bankId: 'bank-a', bank: 'Chase', currency: 'GBP', balance: 1, roundUpTotal: 0 },
+          { bankId: 'bank-b', bank: 'Chase', currency: 'GBP', balance: 2, roundUpTotal: 0 },
         ]}
         currencyTotals={GBP_TOTALS}
       />,
@@ -121,6 +125,23 @@ describe('BanksGrid', () => {
 
     expect(screen.getAllByRole('row', { name: /Chase/ })).toHaveLength(2)
     expect(consoleError).not.toHaveBeenCalled()
-    consoleError.mockRestore()
+  })
+
+  it('adds a Currency column when the members hold several currencies', () => {
+    render(
+      <BanksGrid
+        bankTotals={[...BANK_TOTALS, { bankId: 'bank-itau', bank: 'Itaú', currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
+        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
+      />,
+    )
+
+    expect(screen.getByRole('columnheader', { name: 'Currency' })).toBeInTheDocument()
+    expect(within(screen.getByRole('row', { name: /Itaú/ })).getByText('BRL')).toBeInTheDocument()
+  })
+
+  it('names the table Bank balances', () => {
+    render(<BanksGrid bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
+
+    expect(screen.getByRole('table', { name: 'Bank balances' })).toBeInTheDocument()
   })
 })

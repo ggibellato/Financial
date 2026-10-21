@@ -231,9 +231,9 @@ describe('useMonthly', () => {
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(CURRENT_YEAR, CURRENT_MONTH)
     expect(result.current.categoryTotalsSum).toBe(1234.56)
     expect(result.current.bankTotals).toEqual([
-      { bankId: 'bank-barclays', bank: 'Barclays', balance: 1875.32, roundUpTotal: 0 },
-      { bankId: 'bank-chase', bank: 'Chase', balance: -50, roundUpTotal: 0.1 },
-      { bankId: 'bank-trading212', bank: 'Trading212', balance: 420.1, roundUpTotal: 0.6 },
+      { bankId: 'bank-barclays', bank: 'Barclays', currency: 'GBP', balance: 1875.32, roundUpTotal: 0 },
+      { bankId: 'bank-chase', bank: 'Chase', currency: 'GBP', balance: -50, roundUpTotal: 0.1 },
+      { bankId: 'bank-trading212', bank: 'Trading212', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6 },
     ])
     expect(result.current.bankCurrencyTotals).toEqual(SUMMARY.totals)
     expect(result.current.incomeTotals).toEqual([
@@ -251,7 +251,7 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.bankTotals).toEqual([{ bankId: 'bank-new', bank: 'Barclays', balance: 10, roundUpTotal: 0 }])
+    expect(result.current.bankTotals).toEqual([{ bankId: 'bank-new', bank: 'Barclays', currency: 'GBP', balance: 10, roundUpTotal: 0 }])
   })
 
   it('shows a member without a round-up total as 0', async () => {

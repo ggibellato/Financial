@@ -146,7 +146,6 @@ export type IncomeSourceUpdateDto = Schema<'IncomeSourceUpdateDTO'>
 export type CategoryDto = Schema<'CategoryDTO'>
 export type CategoryCreateDto = Schema<'CategoryCreateDTO'>
 export type CategoryUpdateDto = Schema<'CategoryUpdateDTO'>
-export type BankBalanceDto = Schema<'BankBalanceDTO'>
 export type AccountGroupSummaryDto = Schema<'AccountGroupSummaryDTO'>
 export type AccountGroupMemberDto = Schema<'AccountGroupMemberDTO'>
 export type CurrencyTotalDto = Schema<'CurrencyTotalDTO'>

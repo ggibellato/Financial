@@ -19,6 +19,7 @@ import { useMonthSelection } from './useMonthSelection'
 export interface BankTotal {
   bankId: string
   bank: string
+  currency: string
   balance: number
   roundUpTotal: number
 }
@@ -307,6 +308,7 @@ export function useMonthly(): MonthlyData {
   const bankTotals: BankTotal[] = (state.summary?.members ?? []).map((member) => ({
     bankId: member.accountId,
     bank: member.name,
+    currency: member.currency,
     balance: member.balance,
     roundUpTotal: member.roundUpTotal ?? 0,
   }))

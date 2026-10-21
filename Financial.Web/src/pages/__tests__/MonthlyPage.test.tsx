@@ -1463,7 +1463,7 @@ describe('MonthlyPage', () => {
     expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Add Balance Correction' })).toBeDisabled()
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-barclays' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Bank/ }), { target: { value: 'bank-barclays' } })
     expect(correctBalanceFormPanel).toHaveTextContent('Current calculated balance for Barclays: £42.50')
 
     const balancesCallsBefore = getDefaultGroupSummaryMock.mock.calls.length

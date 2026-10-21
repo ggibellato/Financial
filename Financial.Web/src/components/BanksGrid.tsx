@@ -31,9 +31,16 @@ function footerItemsFor(currencyTotals: CurrencyTotalDto[]) {
 export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(bankTotals, FILTER_ACCESSORS)
+  const currencyColumn = {
+    key: 'currency',
+    header: 'Currency',
+    render: (b: BankTotal) => b.currency,
+    sortAccessor: (b: BankTotal) => b.currency,
+  }
 
   return (
     <TotalsGrid
+      label="Bank balances"
       columns={[
         {
           key: 'bank',
@@ -52,6 +59,7 @@ export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps
             />
           ),
         },
+        ...(currencyTotals.length > 1 ? [currencyColumn] : []),
         {
           key: 'balance',
           header: 'Bank Balance',
