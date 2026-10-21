@@ -19,16 +19,19 @@ public class Account
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
+    public string TemplateName => Template.ToString();
+    public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
 
     private Account() { }
 
     public static Account Create(string name, AccountTemplate template, Currency currency)
         => Build(name, template, currency, capabilitiesOverride: null);
 
-    internal static Account CreateWithCapabilities(string name, Currency currency, IReadOnlySet<Capability> capabilities, bool isActive = true)
+    internal static Account CreateWithCapabilities(
+        string name, Currency currency, IReadOnlySet<Capability> capabilities, bool isActive = true, AccountTemplate template = AccountTemplate.Bank)
     {
         ArgumentNullException.ThrowIfNull(capabilities);
-        var account = Build(name, AccountTemplate.Bank, currency, capabilities);
+        var account = Build(name, template, currency, capabilities);
         account.IsActive = isActive;
         return account;
     }

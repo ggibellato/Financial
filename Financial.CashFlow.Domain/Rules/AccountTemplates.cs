@@ -23,8 +23,12 @@ public static class AccountTemplates
             }.ToFrozenSet()
         }.ToFrozenDictionary();
 
+    private static readonly FrozenSet<AccountTemplate> DefaultGroupTemplates = new[] { AccountTemplate.Bank }.ToFrozenSet();
+
     public static IReadOnlySet<Capability> CapabilitiesOf(AccountTemplate template) =>
         CapabilitySets.TryGetValue(template, out var capabilities)
             ? capabilities
             : throw new ArgumentException($"Account template '{template}' is not defined.");
+
+    public static bool JoinsDefaultGroup(AccountTemplate template) => DefaultGroupTemplates.Contains(template);
 }

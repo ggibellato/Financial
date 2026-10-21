@@ -30,4 +30,16 @@ public class AccountTemplatesTests
 
         act.Should().Throw<ArgumentException>().WithMessage("Account template '99' is not defined.");
     }
+
+    [Fact]
+    public void JoinsDefaultGroup_Bank_IsTrue()
+    {
+        AccountTemplates.JoinsDefaultGroup(AccountTemplate.Bank).Should().BeTrue();
+    }
+
+    [Fact]
+    public void JoinsDefaultGroup_UndefinedTemplate_IsFalse()
+    {
+        AccountTemplates.JoinsDefaultGroup((AccountTemplate)99).Should().BeFalse();
+    }
 }

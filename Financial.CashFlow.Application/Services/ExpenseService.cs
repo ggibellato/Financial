@@ -138,9 +138,9 @@ public sealed class ExpenseService : IExpenseService
         try
         {
             var result = _repository.GetExpenses()
-                .Where(e => ListGroupingDate(e).Year == year && ListGroupingDate(e).Month == month)
+                .Where(e => e.ListingDate.Year == year && e.ListingDate.Month == month)
                 .Where(e => e.PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
-                .OrderByDescending(ListGroupingDate)
+                .OrderByDescending(e => e.ListingDate)
                 .Select(ToDto)
                 .ToList();
 
@@ -161,10 +161,10 @@ public sealed class ExpenseService : IExpenseService
         try
         {
             var result = _repository.GetExpenses()
-                .Where(e => ListGroupingDate(e).Year == year && ListGroupingDate(e).Month == month)
+                .Where(e => e.ListingDate.Year == year && e.ListingDate.Month == month)
                 .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
                 // Every unpaid charge in a given month shares the same InvoiceDate (the 1st of that
-                // month), so ordering by ListGroupingDate here is a no-op tie that leaves rows in
+                // month), so ordering by ListingDate here is a no-op tie that leaves rows in
                 // repository storage order. Order by the actual charge date instead.
                 .OrderByDescending(e => e.ChargeDate ?? e.Date)
                 .Select(ToDto)
@@ -220,14 +220,6 @@ public sealed class ExpenseService : IExpenseService
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(ExpenseService), operationName, EntityType);
     }
-
-    /// <summary>
-    /// The month/year an expense is grouped and sorted under in the Expense/Card tab lists: a
-    /// credit card expense (paid or unpaid) always uses its assigned <see cref="Expense.InvoiceDate"/>,
-    /// which never changes across Settle()/Unsettle(), so an expense never moves to a different
-    /// month's view purely because it was marked paid. Bank expenses fall back to <see cref="Expense.Date"/>.
-    /// </summary>
-    private static DateOnly ListGroupingDate(Expense expense) => expense.InvoiceDate ?? expense.ChargeDate ?? expense.Date;
 
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
