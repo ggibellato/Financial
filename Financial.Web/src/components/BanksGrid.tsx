@@ -69,7 +69,8 @@ export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps
       ]}
       rows={filteredRows}
       isFiltered={isColumnFiltered('bank')}
-      rowKey={(b) => b.bank}
+      rowKey={(b) => b.bankId}
+      emptyMessage="No accounts in the default group for this month"
       footerItems={footerItemsFor(currencyTotals)}
     />
   )

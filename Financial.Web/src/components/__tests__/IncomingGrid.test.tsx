@@ -117,4 +117,11 @@ describe('IncomingGrid', () => {
 
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to update carry-forward')
   })
+
+  it('shows its empty message when no income was recorded in the month', () => {
+    renderGrid({ incomeTotals: [], totalIncoming: 0 })
+
+    expect(screen.getByText('No income recorded for this month')).toBeInTheDocument()
+    expect(screen.getByText('0.00')).toBeInTheDocument()
+  })
 })

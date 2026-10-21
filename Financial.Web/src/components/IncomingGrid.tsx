@@ -64,7 +64,8 @@ export default function IncomingGrid({
           },
         ]}
         rows={incomeTotals}
-        rowKey={(i) => i.source}
+        rowKey={(i) => i.incomeSourceId}
+        emptyMessage="No income recorded for this month"
         footerItems={[
           { label: 'Total Incoming', value: formatN2(totalIncoming) },
           ...(titheSummary

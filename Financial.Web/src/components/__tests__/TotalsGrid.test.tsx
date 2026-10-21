@@ -72,4 +72,31 @@ describe('TotalsGrid', () => {
 
     expect(screen.getAllByRole('button')).toHaveLength(2)
   })
+
+  it('shows the empty message when there are no rows and no filter applies', () => {
+    render(<TotalsGrid columns={COLUMNS} rows={[]} rowKey={(r) => r.id} footerItems={[]} emptyMessage="Nothing here" />)
+
+    expect(screen.getByRole('cell', { name: 'Nothing here' })).toBeInTheDocument()
+  })
+
+  it('prefers the filter message over the empty message when a filter emptied the rows', () => {
+    render(
+      <TotalsGrid columns={COLUMNS} rows={[]} rowKey={(r) => r.id} footerItems={[]} isFiltered emptyMessage="Nothing here" />,
+    )
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.queryByText('Nothing here')).not.toBeInTheDocument()
+  })
+
+  it('hides the empty message while there are rows', () => {
+    render(<TotalsGrid columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} emptyMessage="Nothing here" />)
+
+    expect(screen.queryByText('Nothing here')).not.toBeInTheDocument()
+  })
+
+  it('renders no message row when there are no rows and no empty message', () => {
+    render(<TotalsGrid columns={COLUMNS} rows={[]} rowKey={(r) => r.id} footerItems={[]} />)
+
+    expect(screen.getAllByRole('row')).toHaveLength(1)
+  })
 })

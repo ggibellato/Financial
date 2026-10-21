@@ -25,9 +25,10 @@ interface TotalsGridProps<T> {
   footerItems: TotalsGridFooterItem[]
   /** True when `rows` has already been narrowed by an active column filter (used only to pick the empty-state message). */
   isFiltered?: boolean
+  emptyMessage?: string
 }
 
-export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFiltered }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFiltered, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
 
@@ -52,10 +53,10 @@ export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFi
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && isFiltered ? (
+            {rows.length === 0 && (isFiltered || emptyMessage) ? (
               <TableRow>
                 <TableCell className="data-table__cell--message" colSpan={columns.length}>
-                  No rows match the current filters
+                  {isFiltered ? 'No rows match the current filters' : emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (

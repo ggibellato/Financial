@@ -320,6 +320,48 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Network down')).toBeInTheDocument()
   })
 
+  it('[AC P60-F04-default-account-group-and-summary-query-07] shows loading while the summary request is pending', () => {
+    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+
+    render(<MonthlyPage />)
+
+    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.queryByText(/Bank Balance:/, { selector: 'p' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F04-default-account-group-and-summary-query-07] shows an error with Try again when the summary request fails, and Try again reloads it', async () => {
+    getDefaultGroupSummaryMock.mockRejectedValueOnce(new Error('Summary down'))
+
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
+    expect(screen.getByText('Summary down')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+
+    await waitFor(() => expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument())
+    expect(getDefaultGroupSummaryMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('[AC P60-F04-default-account-group-and-summary-query-07] shows an empty message in each summary grid for a month with nothing recorded', async () => {
+    getCategoryTotalsByMonthMock.mockResolvedValue([])
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [],
+      totals: [],
+      categoryTotalsSum: 0,
+      incomeTotals: [],
+      totalIncoming: 0,
+    })
+
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText('No accounts in the default group for this month')).toBeInTheDocument())
+    expect(screen.getByText('No expenses recorded for this month')).toBeInTheDocument()
+    expect(screen.getByText('No income recorded for this month')).toBeInTheDocument()
+    expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toHaveTextContent('Bank Balance: 0.00 · Round-Up: 0.00')
+  })
+
   it('shows the error/retry state regardless of the active tab', async () => {
     getExpensesByMonthMock.mockRejectedValue(new Error('Network down'))
 

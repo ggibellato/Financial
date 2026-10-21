@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import BanksGrid from '../BanksGrid'
 import type { CurrencyTotalDto } from '../../api/types'
 import type { BankTotal } from '../../hooks/useMonthly'
@@ -99,5 +99,28 @@ describe('BanksGrid', () => {
     render(<BanksGrid bankTotals={[]} currencyTotals={[]} />)
 
     expect(footer()).toBe('Bank Balance: 0.00 · Round-Up: 0.00')
+  })
+
+  it('shows its empty message when no account is in the default group', () => {
+    render(<BanksGrid bankTotals={[]} currencyTotals={[]} />)
+
+    expect(screen.getByText('No accounts in the default group for this month')).toBeInTheDocument()
+  })
+
+  it('keys rows by account Id, so two accounts with the same name render without a key clash', () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    render(
+      <BanksGrid
+        bankTotals={[
+          { bankId: 'bank-a', bank: 'Chase', balance: 1, roundUpTotal: 0 },
+          { bankId: 'bank-b', bank: 'Chase', balance: 2, roundUpTotal: 0 },
+        ]}
+        currencyTotals={GBP_TOTALS}
+      />,
+    )
+
+    expect(screen.getAllByRole('row', { name: /Chase/ })).toHaveLength(2)
+    expect(consoleError).not.toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 })
