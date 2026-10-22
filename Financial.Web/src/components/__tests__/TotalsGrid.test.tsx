@@ -26,7 +26,7 @@ const COLUMNS = [
 
 describe('TotalsGrid', () => {
   it('renders rows in their original order with no sort applied', () => {
-    render(<TotalsGrid columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
+    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
 
     const dataRows = screen.getAllByRole('row').slice(1)
     expect(within(dataRows[0]).getByText('Bravo')).toBeInTheDocument()
@@ -34,7 +34,7 @@ describe('TotalsGrid', () => {
   })
 
   it('sorts rows by the clicked column ascending, then descending, then back to original order', () => {
-    render(<TotalsGrid columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
+    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
 
     const amountHeader = screen.getByRole('button', { name: 'Amount' })
 
@@ -54,6 +54,8 @@ describe('TotalsGrid', () => {
   it('renders footer items outside the sortable row set, unaffected by sorting', () => {
     render(
       <TotalsGrid
+        label="Totals"
+        emptyMessage="Nothing here"
         columns={COLUMNS}
         rows={ROWS}
         rowKey={(r) => r.id}
@@ -68,8 +70,35 @@ describe('TotalsGrid', () => {
   })
 
   it('renders a sort button per column and nothing else interactive', () => {
-    render(<TotalsGrid columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
+    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
 
     expect(screen.getAllByRole('button')).toHaveLength(2)
+  })
+
+  it('shows the empty message when there are no rows and no filter applies', () => {
+    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={[]} rowKey={(r) => r.id} footerItems={[]} />)
+
+    expect(screen.getByRole('cell', { name: 'Nothing here' })).toBeInTheDocument()
+  })
+
+  it('prefers the filter message over the empty message when a filter emptied the rows', () => {
+    render(
+      <TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={[]} rowKey={(r) => r.id} footerItems={[]} isFiltered />,
+    )
+
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.queryByText('Nothing here')).not.toBeInTheDocument()
+  })
+
+  it('hides the empty message while there are rows', () => {
+    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
+
+    expect(screen.queryByText('Nothing here')).not.toBeInTheDocument()
+  })
+
+  it('names the table with its label', () => {
+    render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
+
+    expect(screen.getByRole('table', { name: 'Totals' })).toBeInTheDocument()
   })
 })

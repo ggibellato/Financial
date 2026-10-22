@@ -1,6 +1,7 @@
 import { ApiError } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
+  AccountGroupSummaryDto,
   AggregatedSummaryDto,
   AllocationBreakdownDto,
   DataQualityReportDto,
@@ -10,7 +11,6 @@ import type {
   AssetDetailsDto,
   ArchiveAssetRequestDto,
   AssetPriceDto,
-  BankBalanceDto,
   BankCreateDto,
   BankDto,
   BankUpdateDto,
@@ -240,7 +240,7 @@ export interface FinancialApiClient {
   createInvestmentAccount: (request: InvestmentAccountCreateDto) => Promise<InvestmentAccountDto>
   updateInvestmentAccount: (id: string, request: InvestmentAccountUpdateDto) => Promise<InvestmentAccountDto>
   deleteInvestmentAccount: (id: string) => Promise<void>
-  getBankBalancesByMonth: (year: number, month: number) => Promise<BankBalanceDto[]>
+  getDefaultGroupSummary: (year: number, month: number) => Promise<AccountGroupSummaryDto>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
@@ -680,7 +680,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteInvestmentAccount: (id) => requestVoid(`/investment-accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    getBankBalancesByMonth: (year, month) => request<BankBalanceDto[]>(`/banks/month/${year}/${month}/balances`),
+    getDefaultGroupSummary: (year, month) =>
+      request<AccountGroupSummaryDto>(`/accounts/groups/default/summary/${year}/${month}`),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
         method: 'POST',

@@ -704,14 +704,14 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F04. Default Account Group and Summary Query
-- [ ] The default group lists the active Bank accounts ordered by name, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
-- [ ] A newly created bank joins the default group with no other change; a Pots or Settlement account (from F09/F11) never does
-- [ ] The summary for any month returns each member's balance and round-up total equal to today's values
-- [ ] Totals are per currency; no figure in a different currency is added into another
-- [ ] Category totals sum, round-up total, income totals per source (grouped by income source Id) and total incoming equal the values Monthly computes today
-- [ ] Monthly's summary area loads from one summary request and performs no client-side sums of bank balances, round-ups, category totals or income totals (card outstanding moves in F07); bank rows match by account Id
-- [ ] Monthly's summary area shows loading, error with Retry and empty states
-- [ ] Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] The default group lists the active Bank accounts ordered by name, plus an inactive one only for a month where it has a non-zero month-end balance or a record in that month
+- [x] A newly created bank joins the default group with no other change; a Pots or Settlement account (from F09/F11) never does
+- [x] The summary for any month returns each member's balance and round-up total equal to today's values
+- [x] Totals are per currency; no figure in a different currency is added into another
+- [x] Category totals sum, round-up total, income totals per source (grouped by income source Id) and total incoming equal the values Monthly computes today
+- [x] Monthly's summary area loads from one summary request and performs no client-side sums of bank balances, round-ups, category totals or income totals (card outstanding moves in F07); bank rows match by account Id
+- [x] Monthly's summary area shows loading, error with Retry and empty states
+- [x] Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F05. Bank Account Screen
 - [ ] The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen

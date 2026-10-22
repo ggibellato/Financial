@@ -20,8 +20,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BANK_TOTALS: BankTotal[] = [
-  { bankId: 'bank-barclays', bank: 'Barclays', balance: 100, roundUpTotal: 0 },
-  { bankId: 'bank-trading212', bank: 'Trading212', balance: 8.8, roundUpTotal: 0.6 },
+  { bankId: 'bank-barclays', bank: 'Barclays', currency: 'GBP', balance: 100, roundUpTotal: 0 },
+  { bankId: 'bank-trading212', bank: 'Trading212', currency: 'GBP', balance: 8.8, roundUpTotal: 0.6 },
 ]
 
 const ADJUSTMENT: BalanceAdjustmentDto = {

@@ -19,22 +19,24 @@ interface TotalsGridFooterItem {
 }
 
 interface TotalsGridProps<T> {
+  label: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
   footerItems: TotalsGridFooterItem[]
   /** True when `rows` has already been narrowed by an active column filter (used only to pick the empty-state message). */
   isFiltered?: boolean
+  emptyMessage: string
 }
 
-export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFiltered }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItems, isFiltered, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
       <div className="monthly-page__table-scroll">
-        <Table className="monthly-page__table data-table">
+        <Table className="monthly-page__table data-table" aria-label={label}>
           <TableHeader>
             <TableRow>
               {columns.map((col) => (
@@ -52,10 +54,10 @@ export default function TotalsGrid<T>({ columns, rows, rowKey, footerItems, isFi
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.length === 0 && isFiltered ? (
+            {rows.length === 0 ? (
               <TableRow>
                 <TableCell className="data-table__cell--message" colSpan={columns.length}>
-                  No rows match the current filters
+                  {isFiltered ? 'No rows match the current filters' : emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (

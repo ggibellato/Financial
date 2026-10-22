@@ -1,11 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import IncomingGrid from '../IncomingGrid'
-import type { IncomeTotal } from '../../hooks/useMonthly'
+import type { IncomeSourceTotalDto } from '../../api/types'
 
-const INCOME_TOTALS: IncomeTotal[] = [
-  { source: 'Gleison', grossValue: 3200, netValue: 2450 },
-  { source: 'Lottery', grossValue: null, netValue: 100 },
+const INCOME_TOTALS: IncomeSourceTotalDto[] = [
+  { incomeSourceId: 'source-gleison', name: 'Gleison', grossValue: 3200, netValue: 2450 },
+  { incomeSourceId: 'source-lottery', name: 'Lottery', grossValue: null, netValue: 100 },
 ]
 
 function renderGrid(overrides: Partial<Parameters<typeof IncomingGrid>[0]> = {}) {
@@ -116,5 +116,12 @@ describe('IncomingGrid', () => {
     renderGrid({ carryForwardActionError: 'Failed to update carry-forward' })
 
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to update carry-forward')
+  })
+
+  it('shows its empty message when no income was recorded in the month', () => {
+    renderGrid({ incomeTotals: [], totalIncoming: 0 })
+
+    expect(screen.getByText('No income recorded for this month')).toBeInTheDocument()
+    expect(screen.getByText('0.00')).toBeInTheDocument()
   })
 })
