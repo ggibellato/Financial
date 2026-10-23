@@ -335,9 +335,29 @@ describe('ExpenseForm with a locked bank', () => {
   it('shows the locked bank as read-only text instead of the payment source picker', () => {
     render(<ExpenseForm {...baseProps} paymentSource="bank-trading212" lockedBank={{ id: 'bank-trading212', name: 'Trading212' }} />)
 
-    expect(screen.getByLabelText('Payment Source')).toHaveValue('Trading212')
-    expect(screen.getByLabelText('Payment Source')).toHaveAttribute('readonly')
+    expect(screen.getByText('Payment Source')).toBeInTheDocument()
+    expect(screen.getByText('Trading212')).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: 'Payment Source' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Payment Source' })).not.toBeInTheDocument()
     expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
+  })
+
+  it('saves when the form is submitted with Enter', () => {
+    const onSave = vi.fn()
+    render(<ExpenseForm {...baseProps} onSave={onSave} />)
+
+    fireEvent.submit(screen.getByLabelText(/^Description/).closest('form') as HTMLFormElement)
+
+    expect(onSave).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Add Expense' })).toHaveAttribute('type', 'submit')
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveAttribute('type', 'button')
+  })
+
+  it('shows a save error above the fields', () => {
+    render(<ExpenseForm {...baseProps} saveError="Could not save. Check the connection and try again." />)
+
+    const message = screen.getByText('Could not save. Check the connection and try again.')
+    const dateField = screen.getByLabelText(/^Date/)
+    expect(message.compareDocumentPosition(dateField) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 })

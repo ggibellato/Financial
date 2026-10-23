@@ -1,12 +1,12 @@
 import { Button } from '@fluentui/react-components'
-import { ACTION_LABELS, formActionsOf } from './accountActions'
+import { ACTION_LABELS, formActionsOf, type AccountFormAction } from './accountActions'
 
 interface AccountActionBarProps {
   allowedActions: string[]
-  activeAction: string | null
+  activeAction: AccountFormAction | null
   formAreaId: string
   disabled?: boolean
-  onAction: (action: string, button: HTMLButtonElement) => void
+  onAction: (action: AccountFormAction, button: HTMLButtonElement) => void
 }
 
 export default function AccountActionBar({ allowedActions, activeAction, formAreaId, disabled, onAction }: AccountActionBarProps) {

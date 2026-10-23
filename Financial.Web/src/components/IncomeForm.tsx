@@ -55,10 +55,22 @@ export default function IncomeForm({
   const showSplitField = incomeSources.find((s) => s.id === incomeSource)?.autoSplitToReserve === true
 
   return (
-    <div className={styles.panel}>
+    <form
+      className={styles.panel}
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
       <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Income' : 'New Income'}
       </Text>
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
 
       <div className={styles.grid}>
         <Field
@@ -87,7 +99,7 @@ export default function IncomeForm({
 
         <Field label="Bank">
           {lockedBank ? (
-            <Input value={lockedBank.name} readOnly />
+            <Text weight="semibold">{lockedBank.name}</Text>
           ) : (
             <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
               <option value="">— No bank —</option>
@@ -101,7 +113,7 @@ export default function IncomeForm({
         </Field>
 
         <Field label="Description">
-          <Input value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
+          <Input name="description" value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
         </Field>
 
         {showGrossValueField && (
@@ -145,19 +157,13 @@ export default function IncomeForm({
       </div>
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
+        <Button type="submit" appearance="primary" disabled={isSaving}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Income'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
-
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+    </form>
   )
 }

@@ -325,7 +325,7 @@ export function useExpenseForm(
           creditCardId: state.creditCardId.trim() === '' ? null : state.creditCardId,
         }
       : {
-          paymentSourceBankId: state.paymentMode === 'bank' ? state.paymentSource : null,
+          paymentSourceBankId: state.paymentMode === 'bank' ? (lockedBank?.id ?? state.paymentSource) : null,
           creditCardId: state.paymentMode === 'card' ? state.creditCardId : null,
         }
 

@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
+import { ApiError } from '../../api/apiError'
 import type { IncomeDto, IncomeSourceDto } from '../../api/types'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
@@ -374,6 +375,27 @@ describe('useIncomeForm account settings', () => {
     await addIncome(result)
 
     expect(result.current.isIncomeFormOpen).toBe(false)
+  })
+
+  it('closes the form after an edit even when keep-open is set', async () => {
+    updateIncomeMock.mockResolvedValue(SAVED)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { keepOpenAfterSave: true }))
+
+    act(() => result.current.showEditIncomeForm(SAVED))
+    await act(async () => result.current.submitIncome())
+
+    expect(result.current.isIncomeFormOpen).toBe(false)
+  })
+
+  it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
+    createIncomeMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+
+    await addIncome(result)
+
+    expect(result.current.saveIncomeError).toBe('Could not save. Check the connection and try again.')
+    expect(result.current.incomeDescription).toBe('Bonus')
+    expect(result.current.isIncomeFormOpen).toBe(true)
   })
 
   it('reports dirty only while the values differ from those the form opened with', () => {

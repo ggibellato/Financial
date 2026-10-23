@@ -23,7 +23,7 @@ export default function AccountScreenPage() {
   const hasFormActions = formActionsOf(account?.allowedActions ?? []).length > 0
   const formOptions = useAccountFormOptions(hasFormActions)
   const { showSuccess } = useSuccessToast()
-  const forms = useAccountActionForms(account, formOptions.options, (message) => {
+  const forms = useAccountActionForms(screen.accountId, account, formOptions.options, (message) => {
     void screen.refreshSilently()
     showSuccess(message)
   })
@@ -32,10 +32,11 @@ export default function AccountScreenPage() {
     incomeForm,
     discardPrompt,
     lockedBank,
+    isAccountCurrent,
     activeAction,
     formAreaRef,
     openAction,
-    cancelActiveForm,
+    closeActiveForm,
     guardMonthChange,
     guardAccountChange,
   } = forms
@@ -81,7 +82,7 @@ export default function AccountScreenPage() {
           allowedActions={account.allowedActions}
           activeAction={activeAction}
           formAreaId={FORM_AREA_ID}
-          disabled={!formOptions.isReady}
+          disabled={!formOptions.isReady || !isAccountCurrent}
           onAction={openAction}
         />
       )}
@@ -115,7 +116,7 @@ export default function AccountScreenPage() {
             saveErrorFields={expenseForm.saveErrorFields}
             onFieldChange={expenseForm.setField}
             onSave={expenseForm.submit}
-            onCancel={cancelActiveForm}
+            onCancel={closeActiveForm}
           />
         )}
         {incomeForm.isIncomeFormOpen && (
@@ -136,7 +137,7 @@ export default function AccountScreenPage() {
             saveErrorFields={incomeForm.saveIncomeErrorFields}
             onFieldChange={incomeForm.setIncomeField}
             onSave={incomeForm.submitIncome}
-            onCancel={cancelActiveForm}
+            onCancel={closeActiveForm}
           />
         )}
       </div>

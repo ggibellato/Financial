@@ -1,8 +1,14 @@
-export const ACTION_LABELS: Record<string, string> = {
+export type AccountFormAction = 'AddExpense' | 'AddIncome'
+
+export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'Add expense',
   AddIncome: 'Add income',
 }
 
-export function formActionsOf(allowedActions: readonly string[]): string[] {
-  return allowedActions.filter((action) => action in ACTION_LABELS)
+export function isFormAction(action: string): action is AccountFormAction {
+  return Object.hasOwn(ACTION_LABELS, action)
+}
+
+export function formActionsOf(allowedActions: readonly string[]): AccountFormAction[] {
+  return allowedActions.filter(isFormAction)
 }

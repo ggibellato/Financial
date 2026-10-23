@@ -1,6 +1,8 @@
 import { Button, Dialog, DialogBody, DialogContent, DialogSurface, DialogTitle } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
 
+const DESCRIPTION_ID = 'discard-changes-description'
+
 interface DiscardChangesDialogProps {
   open: boolean
   onKeepEditing: () => void
@@ -17,11 +19,11 @@ export default function DiscardChangesDialog({ open, onKeepEditing, onDiscard }:
         if (!data.open) onKeepEditing()
       }}
     >
-      <DialogSurface aria-describedby={undefined}>
+      <DialogSurface aria-describedby={DESCRIPTION_ID}>
         <DialogBody>
           <DialogTitle>Discard unsaved changes?</DialogTitle>
           <DialogContent>
-            <p>Your changes to this form will be lost.</p>
+            <p id={DESCRIPTION_ID}>Your changes to this form will be lost.</p>
           </DialogContent>
           <div className={styles.actions}>
             <Button appearance="primary" onClick={onDiscard}>

@@ -77,10 +77,22 @@ export default function ExpenseForm({
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
 
   return (
-    <div className={styles.panel}>
+    <form
+      className={styles.panel}
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
       <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Expense' : 'New Expense'}
       </Text>
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
 
       <div className={styles.grid}>
         <Field
@@ -99,7 +111,7 @@ export default function ExpenseForm({
           validationState={fieldError('description') ? 'error' : 'none'}
           validationMessage={fieldError('description')}
         >
-          <Input value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
+          <Input name="description" value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
         </Field>
 
         {isSettled ? (
@@ -111,7 +123,7 @@ export default function ExpenseForm({
           </div>
         ) : lockedBank ? (
           <Field label="Payment Source">
-            <Input value={lockedBank.name} readOnly />
+            <Text weight="semibold">{lockedBank.name}</Text>
           </Field>
         ) : paymentMode === 'bank' ? (
           <Field
@@ -208,19 +220,13 @@ export default function ExpenseForm({
       </div>
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
+        <Button type="submit" appearance="primary" disabled={isSaving}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Expense'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
-
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+    </form>
   )
 }

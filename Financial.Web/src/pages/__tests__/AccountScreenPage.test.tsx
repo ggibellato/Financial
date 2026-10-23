@@ -1,5 +1,5 @@
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -87,9 +87,19 @@ function LocationText() {
   return <p>{`${location.pathname}${location.search}`}</p>
 }
 
-function renderScreen(entry: string) {
+function BrowserBackButton() {
+  const navigate = useNavigate()
+  return (
+    <button type="button" onClick={() => navigate(-1)}>
+      Browser back
+    </button>
+  )
+}
+
+function renderScreen(entry: string, previousEntries: string[] = []) {
+  const entries = [...previousEntries, entry]
   return render(
-    <MemoryRouter initialEntries={[entry]}>
+    <MemoryRouter initialEntries={entries} initialIndex={entries.length - 1}>
       <Routes>
         <Route
           path="/cashflow/accounts/:accountId"
@@ -98,6 +108,7 @@ function renderScreen(entry: string) {
               <Toaster toasterId={APP_TOASTER_ID} />
               <AccountScreenPage />
               <LocationText />
+              <BrowserBackButton />
             </>
           }
         />
@@ -321,7 +332,7 @@ describe('AccountScreenPage actions', () => {
     expect(screen.queryByRole('heading', { name: 'New Income' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
-    await user.click(screen.getByRole('button', { name: 'Discard' }))
+    await user.click(await screen.findByRole('button', { name: 'Discard' }))
 
     expect(screen.getByRole('heading', { name: 'New Income' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
@@ -345,7 +356,7 @@ describe('AccountScreenPage actions', () => {
     getAccountTransactionsMock.mockClear()
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
-    expect(screen.getByLabelText('Payment Source')).toHaveValue('Barclays')
+    expect(screen.getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
     await user.selectOptions(screen.getByLabelText(/^Category/), 'category-home')
@@ -374,12 +385,72 @@ describe('AccountScreenPage actions', () => {
     expect(screen.getByLabelText(/^Value/)).toHaveValue(null)
   })
 
+  it('moves focus to Description after a save so the next entry can be typed at once', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.type(screen.getByLabelText(/^Description/), 'Lidl')
+    await user.type(screen.getByLabelText(/^Value/), '12.40{Enter}')
+
+    expect(await screen.findByText('Expense added')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
+  })
+
+  it('says the income was split to reserve when it was', async () => {
+    const user = userEvent.setup()
+    createIncomeMock.mockResolvedValue({ ...SAVED_INCOME, splitToReserve: true })
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Add income' }))
+    await user.type(screen.getByLabelText(/^Net Value/), '2500')
+    await user.click(screen.getByRole('button', { name: 'Add Income' }))
+
+    expect(await screen.findByText('Income added and split to reserve')).toBeInTheDocument()
+  })
+
+  it('closes the open form when the open action is pressed again, returning focus to it', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+    const addExpense = screen.getByRole('button', { name: 'Add expense' })
+
+    await user.click(addExpense)
+    await user.click(addExpense)
+
+    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(addExpense).toHaveAttribute('aria-expanded', 'false')
+    expect(addExpense).toHaveFocus()
+  })
+
+  it('closes the open form when the browser goes back to another account, so nothing saves to the wrong bank', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${CHASE_ID}?month=2026-10`, [`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`])
+    await screen.findByRole('heading', { level: 1, name: 'Chase' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    expect(within(screen.getByRole('heading', { name: 'New Expense' }).closest('form') as HTMLElement).getByText('Chase')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Browser back' }))
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.type(screen.getByLabelText(/^Description/), 'Lidl')
+    await user.type(screen.getByLabelText(/^Value/), '12.40')
+    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ paymentSourceBankId: BARCLAYS_ID })),
+    )
+  })
+
   it('Add income saves with this bank, shows the toast and stays open', async () => {
     const user = userEvent.setup()
     await openScreen()
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
-    expect(screen.getByLabelText('Bank')).toHaveValue('Barclays')
+    expect(screen.getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
     await user.type(screen.getByLabelText(/^Net Value/), '2500')
     await user.click(screen.getByRole('button', { name: 'Add Income' }))
 
@@ -439,7 +510,7 @@ describe('AccountScreenPage actions', () => {
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
-    await user.click(screen.getByRole('button', { name: 'Discard' }))
+    await user.click(await screen.findByRole('button', { name: 'Discard' }))
 
     expect(await screen.findByText('Balance at end of September 2026')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
@@ -455,7 +526,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(screen.getByRole('option', { name: 'Chase' }))
 
     expect(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Discard' }))
+    await user.click(await screen.findByRole('button', { name: 'Discard' }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Chase' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()

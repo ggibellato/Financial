@@ -1,3 +1,5 @@
+import { Button } from '@fluentui/react-components'
+
 interface ErrorStateProps {
   message: string
   onRetry?: () => void
@@ -8,9 +10,9 @@ export default function ErrorState({ message, onRetry }: ErrorStateProps) {
     <div role="alert">
       <p>{message}</p>
       {onRetry ? (
-        <button type="button" onClick={onRetry}>
+        <Button appearance="primary" onClick={onRetry}>
           Try again
-        </button>
+        </Button>
       ) : null}
     </div>
   )

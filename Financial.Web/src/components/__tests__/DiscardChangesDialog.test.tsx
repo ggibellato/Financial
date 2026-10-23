@@ -7,7 +7,7 @@ describe('DiscardChangesDialog', () => {
     render(<DiscardChangesDialog open onKeepEditing={vi.fn()} onDiscard={vi.fn()} />)
 
     expect(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
-    expect(screen.getByText('Your changes to this form will be lost.')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toHaveAccessibleDescription('Your changes to this form will be lost.')
   })
 
   it('reports Discard', () => {

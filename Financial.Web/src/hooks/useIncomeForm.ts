@@ -196,7 +196,7 @@ export interface UseIncomeFormResult {
 
 export function useIncomeForm(
   incomeSources: IncomeSourceDto[],
-  onSaved: () => void,
+  onSaved: (saved: IncomeDto) => void,
   { lockedBank, keepOpenAfterSave = false }: AccountFormSettings = {},
 ): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
@@ -269,7 +269,7 @@ export function useIncomeForm(
       incomeSourceId: state.incomeSource,
       grossValue,
       netValue: netValue as number,
-      bankId: state.bank || null,
+      bankId: lockedBank?.id ?? (state.bank || null),
       description: state.description || null,
       splitToReserve: state.splitToReserve === 'true',
     }
@@ -288,7 +288,7 @@ export function useIncomeForm(
         } else {
           dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })
         }
-        onSaved()
+        onSaved(savedIncome)
       })
       .catch((err: unknown) => {
         dispatch({

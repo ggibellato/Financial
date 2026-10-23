@@ -77,7 +77,7 @@ function AppShell() {
   return (
     <FluentProvider theme={colourMode === 'dark' ? financialDarkTheme : financialLightTheme}>
       <PaymentDueBanner />
-      <Toaster toasterId={APP_TOASTER_ID} position="bottom-end" />
+      <Toaster toasterId={APP_TOASTER_ID} position="bottom-end" pauseOnHover pauseOnWindowBlur />
       <div className="app">
         <Sidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
         <main className="app__content">

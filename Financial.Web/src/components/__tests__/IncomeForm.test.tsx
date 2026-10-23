@@ -159,8 +159,8 @@ describe('IncomeForm with a locked bank', () => {
   it('shows the locked bank as read-only text instead of the bank picker', () => {
     render(<IncomeForm {...baseProps} bank="bank-chase" lockedBank={{ id: 'bank-chase', name: 'Chase' }} />)
 
-    expect(screen.getByLabelText('Bank')).toHaveValue('Chase')
-    expect(screen.getByLabelText('Bank')).toHaveAttribute('readonly')
+    expect(screen.getByText('Chase')).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: 'Bank' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Bank' })).not.toBeInTheDocument()
   })
 })
