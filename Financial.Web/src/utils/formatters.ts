@@ -9,10 +9,19 @@ const percentFractionFormatter = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 })
+const signedN2Formatter = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+  signDisplay: 'exceptZero',
+})
 const percent1Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 export function formatN2(value: number): string {
   return n2Formatter.format(value)
+}
+
+export function formatSignedN2(value: number): string {
+  return signedN2Formatter.format(value)
 }
 
 export function formatN8(value: number): string {
@@ -80,11 +89,11 @@ export function formatMonthInputValue(year: number, month: number): string {
   return `${year}-${pad(month)}`
 }
 
+const MONTH_INPUT_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])$/
+
 export function parseMonthInputValue(value: string): { year: number; month: number } | null {
-  const [yearStr, monthStr] = value.split('-')
-  const year = Number(yearStr)
-  const month = Number(monthStr)
-  return Number.isFinite(year) && Number.isFinite(month) ? { year, month } : null
+  const match = MONTH_INPUT_PATTERN.exec(value)
+  return match ? { year: Number(match[1]), month: Number(match[2]) } : null
 }
 
 export function previousYearJanuaryFirst(): string {
@@ -98,6 +107,10 @@ export function todayIsoDate(): string {
 
 export function formatMonthYear(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
+}
+
+export function formatLongMonthYear(year: number, month: number): string {
+  return new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
 // Monthly chart axis label, shared by every "value by month" chart

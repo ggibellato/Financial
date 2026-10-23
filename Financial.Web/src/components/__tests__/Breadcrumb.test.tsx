@@ -31,6 +31,20 @@ describe('Breadcrumb', () => {
     }
   })
 
+  it('renders a detail page as the current segment after a link to its parent page', () => {
+    renderBreadcrumb('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
+
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('CashFlowAccountsAccount')
+    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/cashflow/accounts')
+    expect(screen.getByText('Account')).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('does not treat an undeclared path below a page as that page', () => {
+    renderBreadcrumb('/cashflow/monthly/archive')
+
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
   it('renders an em dash for an unmatched route', () => {
     renderBreadcrumb('/unknown')
 

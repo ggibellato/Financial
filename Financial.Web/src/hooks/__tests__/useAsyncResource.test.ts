@@ -67,6 +67,33 @@ describe('useAsyncResource', () => {
     expect(result.current.data).toBe('value-b')
   })
 
+  it('ignores a response that arrives after a newer dependency change', async () => {
+    const slow = deferred<string>()
+    const fast = deferred<string>()
+    const { result, rerender } = renderResource((key) => (key === 'a' ? slow.promise : fast.promise))
+
+    rerender({ key: 'b' })
+    await act(async () => fast.resolve('value-b'))
+    await act(async () => slow.resolve('value-a'))
+
+    expect(result.current.data).toBe('value-b')
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it('ignores a failure that arrives after a newer dependency change', async () => {
+    let rejectSlow!: (reason: unknown) => void
+    const slow = new Promise<string>((_resolve, reject) => {
+      rejectSlow = reject
+    })
+    const { result, rerender } = renderResource((key) => (key === 'a' ? slow : Promise.resolve('value-b')))
+
+    rerender({ key: 'b' })
+    await waitFor(() => expect(result.current.data).toBe('value-b'))
+    await act(async () => rejectSlow(new Error('stale failure')))
+
+    expect(result.current.error).toBeNull()
+  })
+
   it('refresh re-fetches without flipping isLoading', async () => {
     const fetcher = vi.fn<(key: string) => Promise<string>>().mockResolvedValueOnce('first')
     const { result } = renderResource(fetcher)

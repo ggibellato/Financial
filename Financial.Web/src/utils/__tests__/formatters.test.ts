@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   currentYearMonth,
   formatDateTime,
+  formatLongMonthYear,
   formatMonthInputValue,
   formatN2,
   formatN2OrDash,
@@ -11,6 +12,7 @@ import {
   formatPercentFraction,
   formatPercentFractionOrDash,
   formatShortDate,
+  formatSignedN2,
   pad,
   parseMonthInputValue,
   previousYearJanuaryFirst,
@@ -32,6 +34,26 @@ describe('pad', () => {
 describe('formatN2', () => {
   it('formatN2_FormatsWithTwoDecimalsAndGrouping', () => {
     expect(formatN2(1234.5)).toBe('1,234.50')
+  })
+})
+
+describe('formatSignedN2', () => {
+  it('formatSignedN2_Positive_PrefixesPlusSign', () => {
+    expect(formatSignedN2(1234.5)).toBe('+1,234.50')
+  })
+
+  it('formatSignedN2_Negative_PrefixesMinusSign', () => {
+    expect(formatSignedN2(-42.1)).toBe('-42.10')
+  })
+
+  it('formatSignedN2_Zero_HasNoSign', () => {
+    expect(formatSignedN2(0)).toBe('0.00')
+  })
+})
+
+describe('formatLongMonthYear', () => {
+  it('formatLongMonthYear_YearAndMonth_ReturnsFullMonthNameAndYear', () => {
+    expect(formatLongMonthYear(2026, 10)).toBe('October 2026')
   })
 })
 
@@ -197,6 +219,10 @@ describe('parseMonthInputValue', () => {
 
   it('parseMonthInputValue_NonNumericValue_ReturnsNull', () => {
     expect(parseMonthInputValue('not-a-value')).toBeNull()
+  })
+
+  it('parseMonthInputValue_MonthOutOfRange_ReturnsNull', () => {
+    expect(parseMonthInputValue('2026-13')).toBeNull()
   })
 })
 

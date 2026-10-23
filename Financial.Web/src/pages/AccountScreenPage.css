@@ -1,0 +1,102 @@
+.account-screen {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 24px 24px 0;
+  gap: 24px;
+}
+
+.account-screen__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  flex-shrink: 0;
+}
+
+.account-screen__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 32px;
+  min-width: 0;
+}
+
+.account-screen__summary--busy {
+  opacity: 0.6;
+}
+
+.account-screen__identity,
+.account-screen__balance {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.account-screen__title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.account-screen__name {
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.account-screen__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.account-screen__header-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 480px;
+}
+
+.account-screen__transactions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+  min-height: 0;
+}
+
+.account-screen__transactions h2 {
+  margin: 0;
+}
+
+.account-screen__grid-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.account-screen__grid-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 24px;
+}
+
+@media (max-width: 599px) {
+  .account-screen {
+    padding: 16px 16px 0;
+  }
+
+  .account-screen__controls {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .account-screen__grid-scroll {
+    overflow: visible;
+  }
+}

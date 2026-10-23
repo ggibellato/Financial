@@ -1,5 +1,7 @@
 import type { ReactElement } from 'react'
 import {
+  AccountScreenPage,
+  AccountsPage,
   ActiveInvestmentsPage,
   AnnualSummaryPage,
   AppearancePage,
@@ -50,6 +52,7 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'investments/dividend-check', element: <DividendCheckPage /> },
   { path: 'investments/current-values', element: <CurrentValuesPage /> },
   { path: 'investments/tax', element: <TaxPage /> },
+  { path: 'cashflow/accounts', element: <AccountsPage /> },
   { path: 'cashflow/monthly', element: <MonthlyPage /> },
   { path: 'cashflow/investment-snapshots', element: <InvestmentSnapshotsPage /> },
   { path: 'cashflow/annual-summary', element: <AnnualSummaryPage /> },
@@ -71,3 +74,9 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'settings/reporting-currency', element: <ReportingCurrencyPage /> },
   { path: 'settings/integrations', element: <IntegrationsPage /> },
 ]
+
+export const DETAIL_ROUTES: PageRoute[] = [
+  { path: 'cashflow/accounts/:accountId', element: <AccountScreenPage /> },
+]
+
+export const ALL_ROUTES: PageRoute[] = [...PAGE_ROUTES, ...DETAIL_ROUTES]

@@ -27,5 +27,9 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Annual summary | Current year, 2024 | Category totals (annual, average), income summary, result | | | |
 | Annual summary | Current year | Investment annual result: net position monthly values and full-year change | | | |
 | Investment snapshots | M1, M2 | Suggested and current value per account; accounts not updated and why | | | |
+| Bank screen (after only) | M1, M2, M3 | **B1:** the Barclays header balance equals Monthly's Barclays balance for the month | — | | |
+| Bank screen (after only) | M1, M2, M3 | **B2:** the Barclays grid has every expense, income, transfer and adjustment Monthly shows for Barclays that month, with the same amounts, and round-ups in their own column | — | | |
+| Bank screen (after only) | A month with no records | **B3:** the grid shows "No transactions in <Month Year>" | — | | |
+| Bank screen (after only) | M1 | **B4:** at 320 px wide there's no horizontal page scroll | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.

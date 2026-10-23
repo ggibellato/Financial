@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NAV_TREE } from '../navTree'
-import { PAGE_ROUTES } from '../routes'
+import { ALL_ROUTES, DETAIL_ROUTES, PAGE_ROUTES } from '../routes'
 
 // The sidebar and the router are two independent lists that have to describe the same set of
 // pages. Nothing in the type system connects them, and neither failure mode is visible at build
@@ -27,11 +27,19 @@ describe('route and sidebar agreement', () => {
   })
 
   it('declares no duplicate route paths', () => {
-    expect(new Set(declaredRoutes).size).toBe(declaredRoutes.length)
+    const allRoutes = ALL_ROUTES.map((route) => route.path)
+
+    expect(new Set(allRoutes).size).toBe(allRoutes.length)
+  })
+
+  it('declares a route for every sidebar detail page, and no other detail route', () => {
+    const navDetailRoutes = NAV_TREE.flatMap((category) => category.children.flatMap((child) => (child.detail ? [child.detail.route] : [])))
+
+    expect(DETAIL_ROUTES.map((route) => `/${route.path}`).sort()).toEqual(navDetailRoutes.sort())
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {
-    const absolute = PAGE_ROUTES.filter((route) => route.path.startsWith('/'))
+    const absolute = ALL_ROUTES.filter((route) => route.path.startsWith('/'))
 
     expect(absolute.map((route) => route.path)).toEqual([])
   })

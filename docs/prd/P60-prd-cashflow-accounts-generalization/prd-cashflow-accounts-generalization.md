@@ -314,7 +314,7 @@ Rules that apply to every feature:
 **Capabilities:**
 - **Accounts page** `/cashflow/accounts` (new CashFlow menu entry above Monthly): the default group's members with balance per row and totals per currency (from F04); each row opens the account screen. F09 adds an "Other accounts" section (Pots, then Settlement from F11) when the first account outside the default group exists. *Why not now:* in F05 the section would always be empty.
 - **Account screen** `/cashflow/accounts/:accountId?month=YYYY-MM`:
-  - **Picker** (Fluent `Combobox`) listing active accounts grouped by template; changing it keeps the selected month.
+  - **Picker** (Fluent `Dropdown`: a short, known list, and focus stays on it across an account switch) listing active accounts grouped by template; changing it keeps the selected month.
   - **Header:** name, template name, balance at the end of the selected month (the current month included, as on Monthly; records can be dated later in the month), currency.
   - **No tab bar in F05:** the screen shows the Transactions grid only. F08 adds the tab bar (Fluent `TabList`, Transactions as the default tab) with Statements, and F10 adds Pots. *Why:* a tab bar with a single tab adds a control with nothing to choose.
   - **Month selector:** one month at a time, as on Monthly; defaults to the current month.
