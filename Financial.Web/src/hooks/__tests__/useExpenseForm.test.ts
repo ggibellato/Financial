@@ -7,6 +7,7 @@ import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
 import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
+import { setStoredDefault } from '../../utils/createFormDefaults'
 
 const { createExpenseMock, updateExpenseMock } = vi.hoisted(() => ({
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
@@ -697,6 +698,39 @@ describe('useExpenseForm account settings', () => {
     await addExpense(result)
 
     expect(result.current.isOpen).toBe(false)
+  })
+
+  it('opens on the last day of a past viewed month when the last-used date is in another month', () => {
+    pinDate('2026-10-15T12:00:00+01:00')
+    setStoredDefault('expense.date', '2026-08-30')
+    const { result } = renderHook(() =>
+      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 9 } }),
+    )
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current.date).toBe('2026-09-30')
+  })
+
+  it('keeps the date just used after a keep-open save in a past viewed month', async () => {
+    pinDate('2026-10-15T12:00:00+01:00')
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() =>
+      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, {
+        lockedBank: LOCKED_CHASE,
+        keepOpenAfterSave: true,
+        viewedMonth: { year: 2026, month: 9 },
+      }),
+    )
+
+    act(() => result.current.showCreateForm('bank'))
+    act(() => result.current.setField('date', '2026-09-12'))
+    act(() => result.current.setField('description', 'Tesco'))
+    act(() => result.current.setField('value', '42.10'))
+    await act(async () => result.current.submit())
+
+    expect(result.current.isOpen).toBe(true)
+    expect(result.current.date).toBe('2026-09-12')
   })
 
   it('closes the form after an edit even when keep-open is set', async () => {

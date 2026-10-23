@@ -2,8 +2,8 @@ import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
-import { getSaveErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
-import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -231,7 +231,7 @@ export function useExpenseForm(
   categories: CategoryDto[],
   creditCards: CreditCardDto[],
   onSaved: () => void,
-  { lockedBank, keepOpenAfterSave = false }: AccountFormSettings = {},
+  { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseExpenseFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -244,7 +244,7 @@ export function useExpenseForm(
 
   function showCreateForm(requestedMode: PaymentMode) {
     const mode = lockedBank ? 'bank' : requestedMode
-    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
     const creditCardId = mode === 'card' ? (getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null

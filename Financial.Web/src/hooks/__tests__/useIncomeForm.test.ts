@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { IncomeDto, IncomeSourceDto } from '../../api/types'
+import { setStoredDefault } from '../../utils/createFormDefaults'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
 const { createIncomeMock, updateIncomeMock } = vi.hoisted(() => ({
@@ -375,6 +376,18 @@ describe('useIncomeForm account settings', () => {
     await addIncome(result)
 
     expect(result.current.isIncomeFormOpen).toBe(false)
+  })
+
+  it('opens on today when viewing the current month and the last-used date is in another month', () => {
+    vi.setSystemTime(new Date('2026-10-15T12:00:00+01:00'))
+    setStoredDefault('income.date', '2026-08-30')
+    const { result } = renderHook(() =>
+      useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 10 } }),
+    )
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeDate).toBe('2026-10-15')
   })
 
   it('closes the form after an edit even when keep-open is set', async () => {
