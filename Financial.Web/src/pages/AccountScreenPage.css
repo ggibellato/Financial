@@ -54,6 +54,21 @@
   gap: 16px;
 }
 
+.account-screen__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.account-screen__form-area {
+  flex-shrink: 0;
+}
+
+.account-screen__form-area:empty {
+  display: none;
+}
+
 .account-screen__header-skeleton {
   display: flex;
   flex-direction: column;
