@@ -618,3 +618,120 @@ describe('computeRoundUpSuggestion', () => {
     },
   )
 })
+
+describe('useExpenseForm account settings', () => {
+  const LOCKED_CHASE = { id: 'bank-chase', name: 'Chase' }
+  let onSaved: () => void
+
+  beforeEach(() => {
+    createExpenseMock.mockReset()
+    updateExpenseMock.mockReset()
+    onSaved = vi.fn<() => void>()
+    sessionStorage.clear()
+  })
+
+  async function addExpense(result: { current: ReturnType<typeof useExpenseForm> }) {
+    act(() => result.current.showCreateForm('bank'))
+    act(() => result.current.setField('date', '2026-10-14'))
+    act(() => result.current.setField('description', 'Tesco'))
+    act(() => result.current.setField('value', '42.10'))
+    act(() => result.current.setField('categoryId', 'category-extras'))
+    act(() => result.current.setField('countsAsTithe', 'false'))
+    await act(() => result.current.submit())
+  }
+
+  it('fixes the locked bank as the payment source in the request', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() =>
+      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE }),
+    )
+
+    act(() => result.current.showCreateForm('card'))
+
+    expect(result.current.paymentMode).toBe('bank')
+    expect(result.current.paymentSource).toBe('bank-chase')
+
+    await addExpense(result)
+
+    expect(createExpenseMock).toHaveBeenCalledWith(
+      expect.objectContaining({ paymentSourceBankId: 'bank-chase', creditCardId: null, roundUpAmount: 0.9 }),
+    )
+  })
+
+  it('does not remember the locked bank as the default payment source', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const locked = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE }))
+    await addExpense(locked.result)
+
+    const monthly = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    act(() => monthly.result.current.showCreateForm('bank'))
+
+    expect(monthly.result.current.paymentSource).toBe('bank-barclays')
+  })
+
+  it('keeps the form open after a create with the same date and category, clearing the rest', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() =>
+      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE, keepOpenAfterSave: true }),
+    )
+
+    await addExpense(result)
+
+    expect(onSaved).toHaveBeenCalledOnce()
+    expect(result.current.isOpen).toBe(true)
+    expect(result.current.date).toBe('2026-10-14')
+    expect(result.current.categoryId).toBe('category-extras')
+    expect(result.current.paymentSource).toBe('bank-chase')
+    expect(result.current.description).toBe('')
+    expect(result.current.value).toBe('')
+    expect(result.current.roundUpAmount).toBe('')
+    expect(result.current.countsAsTithe).toBe('true')
+    expect(result.current.isDirty).toBe(false)
+  })
+
+  it('closes the form after a create when keep-open is not set', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    await addExpense(result)
+
+    expect(result.current.isOpen).toBe(false)
+  })
+
+  it('closes the form after an edit even when keep-open is set', async () => {
+    updateExpenseMock.mockResolvedValue(EXPENSE)
+    const { result } = renderHook(() =>
+      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { keepOpenAfterSave: true }),
+    )
+
+    act(() => result.current.showEditForm(EXPENSE))
+    await act(() => result.current.submit())
+
+    expect(result.current.isOpen).toBe(false)
+  })
+
+  it('reports dirty only while the values differ from those the form opened with', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    expect(result.current.isDirty).toBe(false)
+    act(() => result.current.showCreateForm('bank'))
+    expect(result.current.isDirty).toBe(false)
+
+    act(() => result.current.setField('description', 'Tesco'))
+    expect(result.current.isDirty).toBe(true)
+
+    act(() => result.current.setField('description', ''))
+    expect(result.current.isDirty).toBe(false)
+  })
+
+  it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
+    createExpenseMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    await addExpense(result)
+
+    expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
+    expect(result.current.description).toBe('Tesco')
+    expect(result.current.isOpen).toBe(true)
+  })
+})

@@ -1,5 +1,6 @@
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
+import type { LockedBank } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -34,6 +35,7 @@ interface ExpenseFormProps {
   creditCards: CreditCardDto[]
   isSettled: boolean
   isSaving: boolean
+  lockedBank?: LockedBank
   saveError: string | null
   saveErrorFields: Partial<Record<ExpenseFormField, string>>
   onFieldChange: (field: ExpenseFormField, value: string) => void
@@ -59,6 +61,7 @@ export default function ExpenseForm({
   creditCards,
   isSettled,
   isSaving,
+  lockedBank,
   saveError,
   saveErrorFields,
   onFieldChange,
@@ -106,6 +109,10 @@ export default function ExpenseForm({
               card statement — unmark the statement paid to change these fields.
             </Text>
           </div>
+        ) : lockedBank ? (
+          <Field label="Payment Source">
+            <Input value={lockedBank.name} readOnly />
+          </Field>
         ) : paymentMode === 'bank' ? (
           <Field
             label="Payment Source"

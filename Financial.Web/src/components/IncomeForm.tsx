@@ -1,5 +1,6 @@
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto, IncomeSourceDto } from '../api/types'
+import type { LockedBank } from '../hooks/formSettings'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -18,6 +19,7 @@ interface IncomeFormProps {
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
+  lockedBank?: LockedBank
   saveError: string | null
   saveErrorFields: Partial<Record<IncomeFormField, string>>
   onFieldChange: (field: IncomeFormField, value: string) => void
@@ -37,6 +39,7 @@ export default function IncomeForm({
   banks,
   incomeSources,
   isSaving,
+  lockedBank,
   saveError,
   saveErrorFields,
   onFieldChange,
@@ -83,14 +86,18 @@ export default function IncomeForm({
         </Field>
 
         <Field label="Bank">
-          <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
-            <option value="">— No bank —</option>
-            {banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
+          {lockedBank ? (
+            <Input value={lockedBank.name} readOnly />
+          ) : (
+            <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
+              <option value="">— No bank —</option>
+              {banks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
 
         <Field label="Description">

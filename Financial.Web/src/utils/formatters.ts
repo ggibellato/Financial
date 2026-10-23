@@ -128,6 +128,12 @@ export function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
 }
 
+export const NETWORK_SAVE_ERROR = 'Could not save. Check the connection and try again.'
+
+export function getSaveErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof TypeError ? NETWORK_SAVE_ERROR : getErrorMessage(err, fallback)
+}
+
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {
   const parsed = Number(value)
   if (!value.trim() || !isFinite(parsed)) return null

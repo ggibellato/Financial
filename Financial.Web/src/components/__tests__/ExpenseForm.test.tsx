@@ -330,3 +330,14 @@ describe('ExpenseForm', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 })
+
+describe('ExpenseForm with a locked bank', () => {
+  it('shows the locked bank as read-only text instead of the payment source picker', () => {
+    render(<ExpenseForm {...baseProps} paymentSource="bank-trading212" lockedBank={{ id: 'bank-trading212', name: 'Trading212' }} />)
+
+    expect(screen.getByLabelText('Payment Source')).toHaveValue('Trading212')
+    expect(screen.getByLabelText('Payment Source')).toHaveAttribute('readonly')
+    expect(screen.queryByRole('combobox', { name: 'Payment Source' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
+  })
+})

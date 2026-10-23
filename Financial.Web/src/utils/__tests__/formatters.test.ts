@@ -13,6 +13,7 @@ import {
   formatPercentFractionOrDash,
   formatShortDate,
   formatSignedN2,
+  getSaveErrorMessage,
   pad,
   parseMonthInputValue,
   previousYearJanuaryFirst,
@@ -271,5 +272,19 @@ describe('number formatters follow the host locale', () => {
   it('formatPercent1_PtBr_UsesCommaDecimal', async () => {
     const { formatPercent1 } = await importFormattersFor('pt-BR')
     expect(formatPercent1(12.5)).toBe('12,5%')
+  })
+})
+
+describe('getSaveErrorMessage', () => {
+  it('getSaveErrorMessage_NetworkFailure_ReturnsConnectionMessage', () => {
+    expect(getSaveErrorMessage(new TypeError('Failed to fetch'), 'Fallback')).toBe('Could not save. Check the connection and try again.')
+  })
+
+  it('getSaveErrorMessage_ServerError_ReturnsItsMessage', () => {
+    expect(getSaveErrorMessage(new Error('Category is inactive'), 'Fallback')).toBe('Category is inactive')
+  })
+
+  it('getSaveErrorMessage_NonError_ReturnsFallback', () => {
+    expect(getSaveErrorMessage('boom', 'Fallback')).toBe('Fallback')
   })
 })
