@@ -30,8 +30,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         try
         {
             var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
-            var expenses = _repository.GetExpenses().ToList();
-            var records = ReadAccountTransactions(expenses);
+            var records = AccountTransactionReader.Read(_repository);
+            var expenses = records.OfType<Expense>().ToList();
             var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
 
             var members = DefaultAccountGroup.MembersFor(_repository.GetAccounts(), year, month, records)
@@ -99,14 +99,6 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             .ToList();
 
     private static bool IsInMonth(DateOnly date, int year, int month) => date.Year == year && date.Month == month;
-
-    private List<IAccountTransaction> ReadAccountTransactions(IEnumerable<Expense> expenses) =>
-    [
-        .. _repository.GetIncomes(),
-        .. expenses,
-        .. _repository.GetTransfers(),
-        .. _repository.GetBalanceAdjustments()
-    ];
 
     private ITelemetrySpan StartSpan(string operationName)
     {

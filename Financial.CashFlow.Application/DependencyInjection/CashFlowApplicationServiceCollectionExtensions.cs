@@ -31,6 +31,7 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<ITransferService, TransferService>();
         services.AddSingleton<IAccountTransferService, AccountTransferService>();
         services.AddSingleton<IAccountGroupSummaryService, AccountGroupSummaryService>();
+        services.AddSingleton<IAccountQueryService, AccountQueryService>();
         services.AddSingleton<IBalanceAdjustmentService, BalanceAdjustmentService>();
         services.AddSingleton<IPaymentsDueService, PaymentsDueService>();
         services.AddSingleton<ICalendarIntegrationService, CalendarIntegrationService>();

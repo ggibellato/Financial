@@ -1,6 +1,84 @@
 ﻿{
   "components": {
     "schemas": {
+      "AccountDTO": {
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "templateName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "templateName",
+          "currency",
+          "isActive"
+        ],
+        "type": "object"
+      },
+      "AccountDetailDTO": {
+        "properties": {
+          "allowedActions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "balance": {
+            "format": "double",
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "templateName",
+          "currency",
+          "isActive",
+          "year",
+          "month",
+          "balance",
+          "allowedActions"
+        ],
+        "type": "object"
+      },
       "AccountGroupMemberDTO": {
         "properties": {
           "accountId": {
@@ -82,6 +160,101 @@
           "categoryTotalsSum",
           "incomeTotals",
           "totalIncoming"
+        ],
+        "type": "object"
+      },
+      "AccountTransactionDTO": {
+        "properties": {
+          "adjustment": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/BalanceAdjustmentDTO"
+              }
+            ]
+          },
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "canEdit": {
+            "type": "boolean"
+          },
+          "categoryName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "counterpart": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "expense": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ExpenseDTO"
+              }
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "income": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/IncomeDTO"
+              }
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "roundUp": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "transfer": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccountTransferDTO"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "date",
+          "amount",
+          "canEdit"
         ],
         "type": "object"
       },
@@ -5975,6 +6148,29 @@
   },
   "openapi": "3.1.1",
   "paths": {
+    "/accounts": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
     "/accounts/groups/default/summary/{year}/{month}": {
       "get": {
         "parameters": [
@@ -6224,6 +6420,83 @@
         ]
       }
     },
+    "/accounts/{id}/transactions/{year}/{month}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountTransactionDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
     "/accounts/{id}/transfer-destinations": {
       "get": {
         "parameters": [
@@ -6311,6 +6584,80 @@
         "summary": "",
         "tags": [
           "AccountTransfers"
+        ]
+      }
+    },
+    "/accounts/{id}/{year}/{month}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDetailDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
         ]
       }
     },
@@ -14413,6 +14760,9 @@
   "tags": [
     {
       "name": "AccountGroups"
+    },
+    {
+      "name": "Accounts"
     },
     {
       "name": "AccountTransfers"
