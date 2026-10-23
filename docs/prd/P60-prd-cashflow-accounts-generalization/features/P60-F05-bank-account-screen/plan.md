@@ -1,7 +1,7 @@
 # Implementation Plan: Bank Account Screen
 
 **Prerequisites:**
-- .NET 10 SDK and Node, as for F04. No new packages: Fluent UI v9 already ships `Toaster`, `Combobox`, `Skeleton` and `Dialog`.
+- .NET 10 SDK and Node, as for F04. No new packages: Fluent UI v9 already ships `Toaster`, `Dropdown`, `Skeleton` and `Dialog`.
 - A fresh copy of the live `data-cashflow.json`, downloaded from Google Drive, for the parity run at the end of each PR. The parity baseline is the `p60-baseline` tag.
 - Each PR is implemented on its own branch off an up-to-date `main`. Each starts only after the previous one is merged.
 - Strict no-comments policy in all code, XML docs included.
