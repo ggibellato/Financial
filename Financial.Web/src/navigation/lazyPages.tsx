@@ -3,6 +3,8 @@ import { lazy } from 'react'
 // Split into its own module (rather than declared inline in routes.tsx) so that file can export
 // only route data: react-refresh/only-export-components requires a file to export components
 // exclusively, and PAGE_ROUTES/PageRoute are not components.
+export const AccountScreenPage = lazy(() => import('../pages/AccountScreenPage'))
+export const AccountsPage = lazy(() => import('../pages/AccountsPage'))
 export const ActiveInvestmentsPage = lazy(() => import('../pages/ActiveInvestmentsPage'))
 export const AdminEntityPlaceholderPage = lazy(() => import('../pages/AdminEntityPlaceholderPage'))
 export const AppearancePage = lazy(() => import('../pages/AppearancePage'))

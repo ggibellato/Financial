@@ -31,6 +31,18 @@ describe('Breadcrumb', () => {
     }
   })
 
+  it('renders the parent page for a detail route nested under it', () => {
+    renderBreadcrumb('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
+
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('CashFlowAccounts')
+  })
+
+  it('does not match a route that only shares a prefix with a page', () => {
+    renderBreadcrumb('/cashflow/monthly-archive')
+
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
   it('renders an em dash for an unmatched route', () => {
     renderBreadcrumb('/unknown')
 

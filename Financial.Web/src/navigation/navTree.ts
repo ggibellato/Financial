@@ -19,6 +19,10 @@ export interface NavCategory {
   groups?: NavGroup[]
 }
 
+export function isWithinRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`)
+}
+
 export const NAV_TREE: NavCategory[] = [
   {
     id: 'investments',
@@ -36,6 +40,7 @@ export const NAV_TREE: NavCategory[] = [
     id: 'cashflow',
     label: 'CashFlow',
     children: [
+      { id: 'accounts', label: 'Accounts', route: '/cashflow/accounts' },
       { id: 'monthly', label: 'Monthly', route: '/cashflow/monthly' },
       { id: 'reserva', label: 'Reserva', route: '/cashflow/reserva' },
       { id: 'mensais', label: 'Mensais', route: '/cashflow/mensais' },

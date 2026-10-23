@@ -1,0 +1,19 @@
+.accounts-page {
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  gap: 24px;
+}
+
+.accounts-page__name {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 599px) {
+  .accounts-page {
+    padding: 16px;
+  }
+}

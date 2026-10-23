@@ -134,6 +134,13 @@ describe('Sidebar', () => {
     expect(screen.getByRole('link', { name: 'Reserva' })).not.toHaveClass('active')
   })
 
+  it('highlights the parent page and its category on a detail route nested under it', () => {
+    renderSidebar('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
+
+    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveClass('active')
+    expect(screen.getAllByText('CashFlow')[0].closest('.sidebar__category-header')).toHaveClass('sidebar__category-header--active')
+  })
+
   it('category headers do not navigate', () => {
     renderSidebar()
 
