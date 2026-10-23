@@ -16,6 +16,25 @@ describe('AccountActionBar', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Add income', 'Add expense'])
   })
 
+  it('renders every bank action this stage has a form for, skipping Pay recurring bill', () => {
+    render(
+      <AccountActionBar
+        allowedActions={['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile']}
+        activeAction={null}
+        formAreaId="form"
+        onAction={vi.fn()}
+      />,
+    )
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Add expense',
+      'Add income',
+      'Transfer to',
+      'Transfer from',
+      'Reconcile',
+    ])
+  })
+
   it('renders nothing when no allowed action is known', () => {
     render(<AccountActionBar allowedActions={['Settle']} activeAction={null} formAreaId="form" onAction={vi.fn()} />)
 

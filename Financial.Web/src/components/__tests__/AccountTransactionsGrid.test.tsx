@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { AccountTransactionDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountTransactionsGrid from '../AccountTransactionsGrid'
@@ -23,6 +23,8 @@ const ROWS: AccountTransactionDto[] = [
 
 const EMPTY_MESSAGE = 'No transactions in October 2026'
 
+const NO_ROW_ACTIONS = { onEdit: vi.fn(), onDelete: vi.fn() }
+
 function bodyRows() {
   const [, ...rows] = screen.getAllByRole('row')
   return rows
@@ -30,7 +32,7 @@ function bodyRows() {
 
 describe('AccountTransactionsGrid', () => {
   it('[AC P60-F05-bank-account-screen-04] shows signed, right-aligned amounts and a separate round-up column', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} />)
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     const expenseRow = bodyRows()[0]
     const amountCell = within(expenseRow).getByText('-42.10').closest('td')
@@ -42,7 +44,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('labels each kind and shows the date, category and counterpart', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} />)
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     expect(bodyRows().map((row) => within(row).getAllByRole('cell')[2].textContent)).toEqual([
       'Type:Expense',
@@ -58,7 +60,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('lists the newest rows first and sorts by a column on request', () => {
-    render(<AccountTransactionsGrid transactions={[...ROWS].reverse()} emptyMessage={EMPTY_MESSAGE} />)
+    render(<AccountTransactionsGrid transactions={[...ROWS].reverse()} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     expect(within(bodyRows()[0]).getByText('14/10/2026')).toBeInTheDocument()
 
@@ -69,15 +71,39 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('shows the empty message when the month has no rows', () => {
-    render(<AccountTransactionsGrid transactions={[]} emptyMessage={EMPTY_MESSAGE} />)
+    render(<AccountTransactionsGrid transactions={[]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument()
   })
 
   it('shows a skeleton instead of data while loading', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} isLoading emptyMessage={EMPTY_MESSAGE} />)
+    render(<AccountTransactionsGrid transactions={ROWS} isLoading emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
     expect(screen.queryByText('Tesco')).not.toBeInTheDocument()
+  })
+
+  it('puts Edit and Delete in a trailing cell of editable rows only', () => {
+    const onEdit = vi.fn()
+    const onDelete = vi.fn()
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} onEdit={onEdit} onDelete={onDelete} />)
+
+    const expenseCells = within(bodyRows()[0]).getAllByRole('cell')
+    const editExpense = within(expenseCells[expenseCells.length - 1]).getByRole('button', { name: 'Edit expense' })
+    fireEvent.click(editExpense)
+    fireEvent.click(within(bodyRows()[3]).getByRole('button', { name: 'Delete transfer' }))
+
+    expect(onEdit).toHaveBeenCalledWith(ROWS[0], editExpense)
+    expect(onDelete).toHaveBeenCalledWith(ROWS[3])
+    expect(within(bodyRows()[1]).getByRole('button', { name: 'Edit income' })).toBeInTheDocument()
+    expect(within(bodyRows()[4]).getByRole('button', { name: 'Delete adjustment' })).toBeInTheDocument()
+    expect(within(bodyRows()[2]).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('disables Edit, but not Delete, while editing is unavailable', () => {
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} isEditDisabled {...NO_ROW_ACTIONS} />)
+
+    expect(within(bodyRows()[0]).getByRole('button', { name: 'Edit expense' })).toBeDisabled()
+    expect(within(bodyRows()[0]).getByRole('button', { name: 'Delete expense' })).toBeEnabled()
   })
 })

@@ -230,7 +230,7 @@ export function useExpenseForm(
   banks: BankDto[],
   categories: CategoryDto[],
   creditCards: CreditCardDto[],
-  onSaved: () => void,
+  onSaved: (isEdit: boolean) => void,
   { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseExpenseFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
@@ -358,7 +358,7 @@ export function useExpenseForm(
         }
         setStoredDefault(CATEGORY_KEY, state.categoryId)
         dispatch({ type: keepOpenAfterSave && !state.isEditing ? 'SAVE_SUCCESS_KEEP_OPEN' : 'SAVE_SUCCESS' })
-        onSaved()
+        onSaved(state.isEditing)
       })
       .catch((err: unknown) => {
         dispatch({

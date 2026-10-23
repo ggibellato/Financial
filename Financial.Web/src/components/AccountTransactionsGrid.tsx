@@ -1,11 +1,23 @@
 import type { ReactNode } from 'react'
-import { Skeleton, SkeletonItem, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import {
+  Button,
+  Skeleton,
+  SkeletonItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+} from '@fluentui/react-components'
+import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
+import { recordNoun } from './accountActions'
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',
@@ -54,13 +66,25 @@ const COLUMNS: TransactionColumn[] = [
 
 const ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, column.accessor]))
 
+const COLUMN_COUNT = COLUMNS.length + 1
+
 interface AccountTransactionsGridProps {
   transactions: AccountTransactionDto[]
   isLoading?: boolean
   emptyMessage: string
+  isEditDisabled?: boolean
+  onEdit: (row: AccountTransactionDto, button: HTMLButtonElement) => void
+  onDelete: (row: AccountTransactionDto) => void
 }
 
-export default function AccountTransactionsGrid({ transactions, isLoading = false, emptyMessage }: AccountTransactionsGridProps) {
+export default function AccountTransactionsGrid({
+  transactions,
+  isLoading = false,
+  emptyMessage,
+  isEditDisabled = false,
+  onEdit,
+  onDelete,
+}: AccountTransactionsGridProps) {
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
 
   return (
@@ -78,12 +102,13 @@ export default function AccountTransactionsGrid({ transactions, isLoading = fals
                 onSort={requestSort}
               />
             ))}
+            <TableHeaderCell className="data-table__col--action" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={COLUMNS.length}>
+              <TableCell colSpan={COLUMN_COUNT}>
                 <Skeleton aria-label="Loading transactions" className="account-screen__grid-skeleton">
                   <SkeletonItem />
                   <SkeletonItem />
@@ -93,7 +118,7 @@ export default function AccountTransactionsGrid({ transactions, isLoading = fals
             </TableRow>
           ) : sortedRows.length === 0 ? (
             <TableRow>
-              <TableCell className="data-table__cell--message" colSpan={COLUMNS.length}>
+              <TableCell className="data-table__cell--message" colSpan={COLUMN_COUNT}>
                 {emptyMessage}
               </TableCell>
             </TableRow>
@@ -109,6 +134,27 @@ export default function AccountTransactionsGrid({ transactions, isLoading = fals
                     {column.render(row)}
                   </DataTableCell>
                 ))}
+                <TableCell className="data-table__col--action">
+                  {row.canEdit && (
+                    <div className="data-table__actions-cell">
+                      <Button
+                        appearance="subtle"
+                        size="small"
+                        icon={<EditRegular />}
+                        disabled={isEditDisabled}
+                        aria-label={`Edit ${recordNoun(row.kind)}`}
+                        onClick={(event) => onEdit(row, event.currentTarget)}
+                      />
+                      <Button
+                        appearance="subtle"
+                        size="small"
+                        icon={<DeleteRegular />}
+                        aria-label={`Delete ${recordNoun(row.kind)}`}
+                        onClick={() => onDelete(row)}
+                      />
+                    </div>
+                  )}
+                </TableCell>
               </TableRow>
             ))
           )}

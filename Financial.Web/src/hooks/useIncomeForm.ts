@@ -196,7 +196,7 @@ export interface UseIncomeFormResult {
 
 export function useIncomeForm(
   incomeSources: IncomeSourceDto[],
-  onSaved: (saved: IncomeDto) => void,
+  onSaved: (saved: IncomeDto, isEdit: boolean) => void,
   { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
@@ -288,7 +288,7 @@ export function useIncomeForm(
         } else {
           dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })
         }
-        onSaved(savedIncome)
+        onSaved(savedIncome, state.isEditing)
       })
       .catch((err: unknown) => {
         dispatch({
