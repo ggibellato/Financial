@@ -2,14 +2,23 @@ import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
+import type { AccountFormSettings } from './formSettings'
+import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
-import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
-import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 
 const DATE_KEY = 'balanceAdjustment.date'
 const BANK_KEY = 'balanceAdjustment.bank'
 
+export type BankBalance = Pick<BankTotal, 'bankId' | 'bank' | 'balance'>
+
+const EDITABLE_FIELDS = ['bankName', 'date', 'targetBalance', 'note'] as const
+
+type EditableValues = Pick<BalanceAdjustmentFormState, (typeof EDITABLE_FIELDS)[number]>
+
 interface BalanceAdjustmentFormState {
+  openedValues: EditableValues | null
   isOpen: boolean
   isEditing: boolean
   editingId: string | null
@@ -25,6 +34,7 @@ interface BalanceAdjustmentFormState {
 }
 
 const BLANK_STATE: BalanceAdjustmentFormState = {
+  openedValues: null,
   isOpen: false,
   isEditing: false,
   editingId: null,
@@ -39,7 +49,11 @@ const BLANK_STATE: BalanceAdjustmentFormState = {
   savedDelta: null,
 }
 
-function resolveCurrentBalance(bankTotals: BankTotal[], bankId: string): number {
+function withOpenedValues(state: BalanceAdjustmentFormState): BalanceAdjustmentFormState {
+  return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
+}
+
+function resolveCurrentBalance(bankTotals: BankBalance[], bankId: string): number {
   return bankTotals.find((b) => b.bankId === bankId)?.balance ?? 0
 }
 
@@ -53,6 +67,7 @@ export interface UseBalanceAdjustmentFormResult {
   targetBalance: string
   note: string
   isSaving: boolean
+  isDirty: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<BalanceAdjustmentFormField, string>>
   savedDelta: number | null
@@ -70,39 +85,41 @@ export interface UseBalanceAdjustmentFormResult {
  * call).
  */
 export function useBalanceAdjustmentForm(
-  bankTotals: BankTotal[],
+  bankTotals: BankBalance[],
   onSaved: () => void,
+  { lockedBank, viewedMonth }: AccountFormSettings = {},
 ): UseBalanceAdjustmentFormResult {
   const [state, setState] = useState<BalanceAdjustmentFormState>(BLANK_STATE)
 
   function openCreateForm() {
-    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const storedBank = getStoredDefault(BANK_KEY)
-    const bankName = storedBank && bankTotals.some((b) => b.bankId === storedBank) ? storedBank : ''
-    setState({
-      ...BLANK_STATE,
-      isOpen: true,
-      date,
-      bankName,
-      currentBalance: resolveCurrentBalance(bankTotals, bankName),
-    })
+    const bankName = lockedBank?.id ?? (storedBank && bankTotals.some((b) => b.bankId === storedBank) ? storedBank : '')
+    setState(
+      withOpenedValues({
+        ...BLANK_STATE,
+        isOpen: true,
+        date,
+        bankName,
+        currentBalance: resolveCurrentBalance(bankTotals, bankName),
+      }),
+    )
   }
 
   function openEditForm(adjustment: BalanceAdjustmentDto) {
-    setState({
-      isOpen: true,
-      isEditing: true,
-      editingId: adjustment.id,
-      bankName: adjustment.bankId,
-      currentBalance: resolveCurrentBalance(bankTotals, adjustment.bankId),
-      date: adjustment.date,
-      targetBalance: String(adjustment.targetBalance),
-      note: adjustment.note ?? '',
-      isSaving: false,
-      saveError: null,
-      saveErrorFields: {},
-      savedDelta: null,
-    })
+    setState(
+      withOpenedValues({
+        ...BLANK_STATE,
+        isOpen: true,
+        isEditing: true,
+        editingId: adjustment.id,
+        bankName: adjustment.bankId,
+        currentBalance: resolveCurrentBalance(bankTotals, adjustment.bankId),
+        date: adjustment.date,
+        targetBalance: String(adjustment.targetBalance),
+        note: adjustment.note ?? '',
+      }),
+    )
   }
 
   function cancel() {
@@ -162,12 +179,12 @@ export function useBalanceAdjustmentForm(
     void request
       .then((result) => {
         setStoredDefault(DATE_KEY, state.date)
-        setStoredDefault(BANK_KEY, state.bankName)
+        if (!lockedBank) setStoredDefault(BANK_KEY, state.bankName)
         setState((s) => ({ ...s, isSaving: false, savedDelta: result.delta }))
         onSaved()
       })
       .catch((err: unknown) => {
-        const message = getErrorMessage(err, 'Failed to save balance adjustment')
+        const message = getSaveErrorMessage(err, 'Failed to save balance adjustment')
         const field = mapBalanceAdjustmentErrorToField(message)
         setState((s) => ({
           ...s,
@@ -182,12 +199,13 @@ export function useBalanceAdjustmentForm(
     isOpen: state.isOpen,
     isEditing: state.isEditing,
     bankName: state.bankName,
-    bankDisplayName: bankTotals.find((b) => b.bankId === state.bankName)?.bank ?? '',
+    bankDisplayName: lockedBank?.name ?? bankTotals.find((b) => b.bankId === state.bankName)?.bank ?? '',
     currentBalance: state.currentBalance,
     date: state.date,
     targetBalance: state.targetBalance,
     note: state.note,
     isSaving: state.isSaving,
+    isDirty: state.isOpen && state.savedDelta === null && hasChangedFields(state, state.openedValues, EDITABLE_FIELDS),
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
     savedDelta: state.savedDelta,

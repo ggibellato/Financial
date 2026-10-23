@@ -175,4 +175,24 @@ describe('BalanceAdjustmentForm', () => {
       'Current calculated balance for Barclays: £100.00',
     )
   })
+
+  it('shows a locked bank as text with no bank dropdown, and saves on Enter', () => {
+    const onSave = vi.fn()
+    render(
+      <BalanceAdjustmentForm
+        {...baseProps}
+        bankName="bank-chase"
+        bankDisplayName="Chase"
+        lockedBank={{ id: 'bank-chase', name: 'Chase' }}
+        onSave={onSave}
+      />,
+    )
+
+    expect(screen.getByText('Chase', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /Bank/ })).not.toBeInTheDocument()
+
+    fireEvent.submit(screen.getByTestId('balance-adjustment-form-panel'))
+
+    expect(onSave).toHaveBeenCalledOnce()
+  })
 })

@@ -1,4 +1,4 @@
-export type TransferFormField = 'date' | 'sourceBank' | 'destinationBank' | 'amount' | 'note'
+export type TransferFormField = 'date' | 'sourceBank' | 'destinationBank' | 'amount' | 'destinationAmount' | 'note'
 
 /**
  * Maps F01's known, fixed transfer validation error strings to the form field each one

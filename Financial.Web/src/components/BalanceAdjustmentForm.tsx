@@ -1,6 +1,7 @@
 import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
+import type { LockedBank } from '../hooks/formSettings'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
 import { formatN2 } from '../utils/formatters'
@@ -19,6 +20,7 @@ interface BalanceAdjustmentFormProps {
   saveError: string | null
   saveErrorFields: Partial<Record<BalanceAdjustmentFormField, string>>
   savedDelta: number | null
+  lockedBank?: LockedBank
   onFieldChange: (field: BalanceAdjustmentFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -37,6 +39,7 @@ export default function BalanceAdjustmentForm({
   saveError,
   saveErrorFields,
   savedDelta,
+  lockedBank,
   onFieldChange,
   onSave,
   onCancel,
@@ -69,12 +72,31 @@ export default function BalanceAdjustmentForm({
   const saveDisabled = isSaving || (!isEditing && !bankChosen)
 
   return (
-    <div className={styles.panel} data-testid="balance-adjustment-form-panel">
+    <form
+      className={styles.panel}
+      data-testid="balance-adjustment-form-panel"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
       <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Balance Correction' : 'New Balance Correction'}
       </Text>
+      {generalError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{generalError}</MessageBarBody>
+        </MessageBar>
+      )}
 
-      {!isEditing && (
+      {lockedBank ? (
+        <div className={styles.grid}>
+          <Field label="Bank">
+            <Text weight="semibold">{lockedBank.name}</Text>
+          </Field>
+        </div>
+      ) : !isEditing && (
         <div className={styles.grid}>
           <Field
             label="Bank"
@@ -142,19 +164,13 @@ export default function BalanceAdjustmentForm({
       )}
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={saveDisabled} onClick={onSave}>
+        <Button type="submit" appearance="primary" disabled={saveDisabled}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Balance Correction'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
-
-      {generalError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{generalError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+    </form>
   )
 }

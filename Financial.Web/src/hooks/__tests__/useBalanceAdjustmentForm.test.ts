@@ -6,6 +6,7 @@ import type { BalanceAdjustmentDto } from '../../api/types'
 import type { BankTotal } from '../useMonthly'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
 import { pinDate } from '../../test-utils/pinDate'
+import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
 
 const { createBalanceAdjustmentMock, updateBalanceAdjustmentMock } = vi.hoisted(() => ({
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
@@ -256,5 +257,83 @@ describe('useBalanceAdjustmentForm', () => {
 
     expect(result.current.targetBalance).toBe('')
     expect(result.current.note).toBe('')
+  })
+})
+
+describe('useBalanceAdjustmentForm account settings', () => {
+  const LOCKED_CHASE = { id: 'bank-chase', name: 'Chase' }
+  const CHASE_BALANCE = [{ bankId: 'bank-chase', bank: 'Chase', balance: 412.5 }]
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  beforeEach(() => {
+    createBalanceAdjustmentMock.mockReset()
+    sessionStorage.clear()
+  })
+
+  it('opens on the locked bank with its passed-in balance, ignoring the last-used bank', () => {
+    setStoredDefault('balanceAdjustment.bank', 'bank-barclays')
+    const { result } = renderHook(() => useBalanceAdjustmentForm(CHASE_BALANCE, vi.fn(), { lockedBank: LOCKED_CHASE }))
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.bankName).toBe('bank-chase')
+    expect(result.current.bankDisplayName).toBe('Chase')
+    expect(result.current.currentBalance).toBe(412.5)
+  })
+
+  it('creates on the locked bank and does not store it as the next default bank', async () => {
+    createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENT, bankId: 'bank-chase', delta: -12.5 })
+    const onSaved = vi.fn()
+    const { result } = renderHook(() => useBalanceAdjustmentForm(CHASE_BALANCE, onSaved, { lockedBank: LOCKED_CHASE }))
+
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('targetBalance', '400'))
+    await act(async () => result.current.submit())
+
+    expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('bank-chase', expect.objectContaining({ targetBalance: 400 }))
+    expect(getStoredDefault('balanceAdjustment.bank')).toBeNull()
+    expect(result.current.savedDelta).toBe(-12.5)
+    expect(result.current.isDirty).toBe(false)
+    expect(onSaved).toHaveBeenCalledOnce()
+  })
+
+  it('opens on the last day of a past viewed month', () => {
+    pinDate('2026-10-15T12:00:00+01:00')
+    const { result } = renderHook(() =>
+      useBalanceAdjustmentForm(CHASE_BALANCE, vi.fn(), { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 9 } }),
+    )
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.date).toBe('2026-09-30')
+  })
+
+  it('reports dirty only while the values differ from those the form opened with', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(CHASE_BALANCE, vi.fn(), { lockedBank: LOCKED_CHASE }))
+
+    act(() => result.current.openEditForm({ ...ADJUSTMENT, bankId: 'bank-chase' }))
+    expect(result.current.isDirty).toBe(false)
+
+    act(() => result.current.setField('note', 'Statement'))
+    expect(result.current.isDirty).toBe(true)
+
+    act(() => result.current.setField('note', ADJUSTMENT.note!))
+    expect(result.current.isDirty).toBe(false)
+  })
+
+  it('shows the connection message and keeps the values when the save cannot reach the server', async () => {
+    createBalanceAdjustmentMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    const { result } = renderHook(() => useBalanceAdjustmentForm(CHASE_BALANCE, vi.fn(), { lockedBank: LOCKED_CHASE }))
+
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('targetBalance', '400'))
+    await act(async () => result.current.submit())
+
+    expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
+    expect(result.current.saveErrorFields).toEqual({})
+    expect(result.current.targetBalance).toBe('400')
   })
 })

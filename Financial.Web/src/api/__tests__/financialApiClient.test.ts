@@ -7,6 +7,9 @@ import type {
   AccountDto,
   AccountGroupSummaryDto,
   AccountTransactionDto,
+  AccountTransferCreateDto,
+  AccountTransferDto,
+  AccountTransferUpdateDto,
   ArchiveAssetRequestDto,
   AssetAdminCreateDto,
   AssetAdminDto,
@@ -85,6 +88,7 @@ import type {
   ReserveMovementDto,
   SetReportingCurrencyEnabledRequestDto,
   SyncStatusResponseDto,
+  TransferAccountOptionDto,
   TransferDto,
   TreeNodeDto,
   BalanceAdjustmentUpdateDto,
@@ -2169,6 +2173,103 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/transactions/2026/10`)
+  })
+
+  it.each([
+    ['getTransferDestinations', 'transfer-destinations'],
+    ['getTransferSources', 'transfer-sources'],
+  ] as const)('%s lists the accounts a transfer can pair with', async (method, path) => {
+    const responseBody: TransferAccountOptionDto[] = [{ id: 'a2', name: 'Chase', currency: 'GBP' }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client[method]('a1')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/${path}`)
+  })
+
+  it('posts an account transfer', async () => {
+    const requestBody: AccountTransferCreateDto = {
+      date: '2026-10-05',
+      sourceAccountId: 'a1',
+      destinationAccountId: 'a2',
+      amount: 200,
+      destinationAmount: null,
+      note: null,
+    }
+    const responseBody: AccountTransferDto = {
+      id: 't1',
+      date: '2026-10-05',
+      sourceAccountId: 'a1',
+      sourceAccountName: 'Barclays',
+      sourceCurrency: 'GBP',
+      destinationAccountId: 'a2',
+      destinationAccountName: 'Chase',
+      destinationCurrency: 'GBP',
+      amount: 200,
+      destinationAmount: 200,
+      note: null,
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createAccountTransfer(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/transfers`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an account transfer update', async () => {
+    const requestBody: AccountTransferUpdateDto = {
+      date: '2026-10-05',
+      sourceAccountId: 'a1',
+      destinationAccountId: 'a2',
+      amount: 250,
+      destinationAmount: null,
+      note: 'Rent',
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse({}))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.updateAccountTransfer('t1', requestBody)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/transfers/t1`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes an account transfer', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteAccountTransfer('t1')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/transfers/t1`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('rejects a refused account transfer with an ApiError carrying the server message', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: 'Enter the amount received in EUR.' }), { status: 400 }),
+    )
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(
+      client.createAccountTransfer({
+        date: '2026-10-05',
+        sourceAccountId: 'a1',
+        destinationAccountId: 'a3',
+        amount: 10,
+        destinationAmount: null,
+        note: null,
+      }),
+    ).rejects.toMatchObject({ status: 400 })
   })
 
   it('throws an ApiError with the network failure status when the request cannot reach the server', async () => {

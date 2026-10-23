@@ -1,9 +1,18 @@
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
-import type { BankDto } from '../api/types'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
 import { DIFFERENT_BANKS_ERROR } from '../hooks/useTransferForm'
 import { useFormPanelStyles } from './formPanelStyles'
+
+interface TransferOption {
+  id: string
+  name: string
+}
+
+export interface LockedTransferSide {
+  side: 'source' | 'destination'
+  name: string
+}
 
 interface TransferFormProps {
   isEditing: boolean
@@ -12,7 +21,10 @@ interface TransferFormProps {
   destinationBank: string
   amount: string
   note: string
-  banks: BankDto[]
+  banks: TransferOption[]
+  lockedSide?: LockedTransferSide
+  destinationAmount?: string
+  destinationCurrency?: string | null
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransferFormField, string>>
@@ -29,6 +41,9 @@ export default function TransferForm({
   amount,
   note,
   banks,
+  lockedSide,
+  destinationAmount = '',
+  destinationCurrency = null,
   isSaving,
   saveError,
   saveErrorFields,
@@ -43,6 +58,7 @@ export default function TransferForm({
       : null
 
   const destinationBanks = banks.filter((b) => b.id !== sourceBank)
+  const placeholder = lockedSide ? 'Select an account' : 'Select a bank'
 
   const baseFieldError = useFieldError(saveErrorFields)
   const fieldError = (field: TransferFormField): string | null => {
@@ -52,11 +68,54 @@ export default function TransferForm({
 
   const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
 
+  const accountField = (side: LockedTransferSide['side'], label: string) => {
+    const field: TransferFormField = side === 'source' ? 'sourceBank' : 'destinationBank'
+    if (lockedSide?.side === side) {
+      return (
+        <Field label={label}>
+          <Text weight="semibold">{lockedSide.name}</Text>
+        </Field>
+      )
+    }
+    const options = side === 'source' ? banks : destinationBanks
+    const value = side === 'source' ? sourceBank : destinationBank
+    return (
+      <Field
+        label={label}
+        required
+        validationState={fieldError(field) ? 'error' : 'none'}
+        validationMessage={fieldError(field)}
+      >
+        <Select value={value} onChange={(e) => onFieldChange(field, e.target.value)}>
+          {(side === 'destination' || value === '') && <option value="">{placeholder}</option>}
+          {options.map((b) => (
+            <option key={b.id} value={b.id}>
+              {b.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    )
+  }
+
   return (
-    <div className={styles.panel} data-testid="transfer-form-panel">
+    <form
+      className={styles.panel}
+      data-testid="transfer-form-panel"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
       <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Transfer' : 'New Transfer'}
       </Text>
+      {generalError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{generalError}</MessageBarBody>
+        </MessageBar>
+      )}
 
       <div className={styles.grid}>
         <Field
@@ -68,36 +127,8 @@ export default function TransferForm({
           <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
         </Field>
 
-        <Field
-          label="From"
-          required
-          validationState={fieldError('sourceBank') ? 'error' : 'none'}
-          validationMessage={fieldError('sourceBank')}
-        >
-          <Select value={sourceBank} onChange={(e) => onFieldChange('sourceBank', e.target.value)}>
-            {banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
-
-        <Field
-          label="To"
-          required
-          validationState={fieldError('destinationBank') ? 'error' : 'none'}
-          validationMessage={fieldError('destinationBank')}
-        >
-          <Select value={destinationBank} onChange={(e) => onFieldChange('destinationBank', e.target.value)}>
-            <option value="">Select a bank</option>
-            {destinationBanks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        {accountField('source', 'From')}
+        {accountField('destination', 'To')}
 
         <Field
           label="Amount"
@@ -108,25 +139,39 @@ export default function TransferForm({
           <Input type="number" step="0.01" value={amount} onChange={(e) => onFieldChange('amount', e.target.value)} />
         </Field>
 
-        <Field label="Note">
+        {destinationCurrency && (
+          <Field
+            label={`Amount received (${destinationCurrency})`}
+            required
+            validationState={fieldError('destinationAmount') ? 'error' : 'none'}
+            validationMessage={fieldError('destinationAmount')}
+          >
+            <Input
+              type="number"
+              step="0.01"
+              value={destinationAmount}
+              onChange={(e) => onFieldChange('destinationAmount', e.target.value)}
+            />
+          </Field>
+        )}
+
+        <Field
+          label="Note"
+          validationState={fieldError('note') ? 'error' : 'none'}
+          validationMessage={fieldError('note')}
+        >
           <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
         </Field>
       </div>
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving || sameBankError !== null} onClick={onSave}>
+        <Button type="submit" appearance="primary" disabled={isSaving || sameBankError !== null}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Transfer'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
-
-      {generalError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{generalError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+    </form>
   )
 }
