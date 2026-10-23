@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
+import { ApiError } from '../../api/apiError'
 import type { IncomeDto, IncomeSourceDto } from '../../api/types'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
@@ -300,5 +301,110 @@ describe('useIncomeForm', () => {
     })
 
     expect(result.current.saveIncomeError).toBe('Income source is inactive')
+  })
+})
+
+describe('useIncomeForm account settings', () => {
+  const LOCKED_CHASE = { id: 'bank-chase', name: 'Chase' }
+  const SAVED: IncomeDto = {
+    id: 'i9', date: '2026-10-14', incomeSourceId: '1', incomeSourceName: 'Gleison',
+    grossValue: null, netValue: 100, bankId: 'bank-chase', bankName: 'Chase', description: 'Bonus',
+    splitToReserve: false,
+  }
+  let onSaved: () => void
+
+  beforeEach(() => {
+    createIncomeMock.mockReset()
+    updateIncomeMock.mockReset()
+    onSaved = vi.fn<() => void>()
+    sessionStorage.clear()
+  })
+
+  async function addIncome(result: { current: ReturnType<typeof useIncomeForm> }) {
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('date', '2026-10-14'))
+    act(() => result.current.setIncomeField('grossValue', '120'))
+    act(() => result.current.setIncomeField('netValue', '100'))
+    act(() => result.current.setIncomeField('description', 'Bonus'))
+    await act(async () => result.current.submitIncome())
+  }
+
+  it('opens with the locked bank and sends it in the request', async () => {
+    createIncomeMock.mockResolvedValue(SAVED)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+
+    await addIncome(result)
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: 'bank-chase' }))
+  })
+
+  it('does not remember the locked bank as the default bank', async () => {
+    createIncomeMock.mockResolvedValue(SAVED)
+    const locked = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+    await addIncome(locked.result)
+
+    const monthly = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    act(() => monthly.result.current.showCreateIncomeForm())
+
+    expect(monthly.result.current.incomeBank).toBe('')
+  })
+
+  it('keeps the form open after a create with the same date and source, clearing values and description', async () => {
+    createIncomeMock.mockResolvedValue(SAVED)
+    const { result } = renderHook(() =>
+      useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE, keepOpenAfterSave: true }),
+    )
+
+    await addIncome(result)
+
+    expect(onSaved).toHaveBeenCalledOnce()
+    expect(result.current.isIncomeFormOpen).toBe(true)
+    expect(result.current.incomeDate).toBe('2026-10-14')
+    expect(result.current.incomeSource).toBe('1')
+    expect(result.current.incomeBank).toBe('bank-chase')
+    expect(result.current.incomeGrossValue).toBe('')
+    expect(result.current.incomeNetValue).toBe('')
+    expect(result.current.incomeDescription).toBe('')
+    expect(result.current.isIncomeDirty).toBe(false)
+  })
+
+  it('closes the form after a create when keep-open is not set', async () => {
+    createIncomeMock.mockResolvedValue(SAVED)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+
+    await addIncome(result)
+
+    expect(result.current.isIncomeFormOpen).toBe(false)
+  })
+
+  it('closes the form after an edit even when keep-open is set', async () => {
+    updateIncomeMock.mockResolvedValue(SAVED)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { keepOpenAfterSave: true }))
+
+    act(() => result.current.showEditIncomeForm(SAVED))
+    await act(async () => result.current.submitIncome())
+
+    expect(result.current.isIncomeFormOpen).toBe(false)
+  })
+
+  it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
+    createIncomeMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+
+    await addIncome(result)
+
+    expect(result.current.saveIncomeError).toBe('Could not save. Check the connection and try again.')
+    expect(result.current.incomeDescription).toBe('Bonus')
+    expect(result.current.isIncomeFormOpen).toBe(true)
+  })
+
+  it('reports dirty only while the values differ from those the form opened with', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+
+    act(() => result.current.showCreateIncomeForm())
+    expect(result.current.isIncomeDirty).toBe(false)
+
+    act(() => result.current.setIncomeField('netValue', '10'))
+    expect(result.current.isIncomeDirty).toBe(true)
   })
 })

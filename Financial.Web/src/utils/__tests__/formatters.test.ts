@@ -13,12 +13,14 @@ import {
   formatPercentFractionOrDash,
   formatShortDate,
   formatSignedN2,
+  getSaveErrorMessage,
   pad,
   parseMonthInputValue,
   previousYearJanuaryFirst,
   toInputDate,
   todayIsoDate,
 } from '../formatters'
+import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
 
 describe('pad', () => {
@@ -271,5 +273,23 @@ describe('number formatters follow the host locale', () => {
   it('formatPercent1_PtBr_UsesCommaDecimal', async () => {
     const { formatPercent1 } = await importFormattersFor('pt-BR')
     expect(formatPercent1(12.5)).toBe('12,5%')
+  })
+})
+
+describe('getSaveErrorMessage', () => {
+  it('getSaveErrorMessage_NetworkFailure_ReturnsConnectionMessage', () => {
+    expect(getSaveErrorMessage(new ApiError('Failed to fetch', 0), 'Fallback')).toBe('Could not save. Check the connection and try again.')
+  })
+
+  it('getSaveErrorMessage_TypeErrorFromCode_ReturnsItsMessage', () => {
+    expect(getSaveErrorMessage(new TypeError('x is undefined'), 'Fallback')).toBe('x is undefined')
+  })
+
+  it('getSaveErrorMessage_ServerError_ReturnsItsMessage', () => {
+    expect(getSaveErrorMessage(new Error('Category is inactive'), 'Fallback')).toBe('Category is inactive')
+  })
+
+  it('getSaveErrorMessage_NonError_ReturnsFallback', () => {
+    expect(getSaveErrorMessage('boom', 'Fallback')).toBe('Fallback')
   })
 })

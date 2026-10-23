@@ -2,8 +2,10 @@ import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
 import type { IncomeDto, IncomeSourceDto } from '../api/types'
-import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { getSaveErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import type { AccountFormSettings } from './formSettings'
+import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
 
@@ -39,7 +41,16 @@ function resolveAutoSplitToReserve(sources: IncomeSourceDto[], incomeSourceId: s
   return sources.find((s) => s.id === incomeSourceId)?.autoSplitToReserve === true
 }
 
+const EDITABLE_FIELDS = ['date', 'incomeSource', 'grossValue', 'netValue', 'bank', 'description', 'splitToReserve'] as const
+
+type EditableValues = Pick<IncomeFormState, (typeof EDITABLE_FIELDS)[number]>
+
+function withOpenedValues(state: IncomeFormState): IncomeFormState {
+  return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
+}
+
 interface IncomeFormState {
+  openedValues: EditableValues | null
   isOpen: boolean
   isEditing: boolean
   editingId: string | null
@@ -63,20 +74,26 @@ type IncomeFormAction =
   | { type: 'SET_FIELD'; payload: { field: IncomeFormField; value: string } }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: IncomeDto }
+  | { type: 'SAVE_SUCCESS_KEEP_OPEN'; payload: { splitConfirmed: boolean; nextSplitToReserve: string } }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<IncomeFormField, string>> } }
   | { type: 'DISMISS_SPLIT_CONFIRMATION' }
 
-const BLANK_FORM = {
-  date: '',
-  incomeSource: '',
+const BLANK_ENTRY = {
   grossValue: '',
   netValue: '',
-  bank: '',
   description: '',
+} as const
+
+const BLANK_FORM = {
+  ...BLANK_ENTRY,
+  date: '',
+  incomeSource: '',
+  bank: '',
   splitToReserve: 'false',
 } as const
 
 const INITIAL_STATE: IncomeFormState = {
+  openedValues: null,
   isOpen: false,
   isEditing: false,
   editingId: null,
@@ -92,7 +109,7 @@ const SPLIT_CONFIRMATION_MESSAGE = 'Income saved and split to reserve'
 function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormState {
   switch (action.type) {
     case 'SHOW_CREATE_FORM':
-      return {
+      return withOpenedValues({
         ...state,
         ...BLANK_FORM,
         isOpen: true,
@@ -104,9 +121,9 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         bank: action.payload.bank,
         incomeSource: action.payload.source,
         splitToReserve: action.payload.splitToReserve,
-      }
+      })
     case 'SHOW_EDIT_FORM':
-      return {
+      return withOpenedValues({
         ...state,
         isOpen: true,
         isEditing: true,
@@ -120,7 +137,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         splitToReserve: String(action.payload.splitToReserve),
         saveError: null,
         saveErrorFields: {},
-      }
+      })
     case 'CANCEL_FORM':
       return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
@@ -137,6 +154,14 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         isSaving: false,
         splitConfirmationMessage: action.payload.splitToReserve ? SPLIT_CONFIRMATION_MESSAGE : null,
       }
+    case 'SAVE_SUCCESS_KEEP_OPEN':
+      return withOpenedValues({
+        ...state,
+        ...BLANK_ENTRY,
+        splitToReserve: action.payload.nextSplitToReserve,
+        isSaving: false,
+        splitConfirmationMessage: action.payload.splitConfirmed ? SPLIT_CONFIRMATION_MESSAGE : null,
+      })
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'DISMISS_SPLIT_CONFIRMATION':
@@ -158,6 +183,7 @@ export interface UseIncomeFormResult {
   incomeDescription: string
   incomeSplitToReserve: string
   isSavingIncome: boolean
+  isIncomeDirty: boolean
   saveIncomeError: string | null
   saveIncomeErrorFields: Partial<Record<IncomeFormField, string>>
   splitConfirmationMessage: string | null
@@ -168,7 +194,11 @@ export interface UseIncomeFormResult {
   submitIncome: () => void
 }
 
-export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => void): UseIncomeFormResult {
+export function useIncomeForm(
+  incomeSources: IncomeSourceDto[],
+  onSaved: (saved: IncomeDto) => void,
+  { lockedBank, keepOpenAfterSave = false }: AccountFormSettings = {},
+): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   useEffect(() => {
@@ -179,7 +209,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
 
   function showCreateIncomeForm() {
     const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
-    const bank = getStoredDefault(BANK_KEY) ?? ''
+    const bank = lockedBank?.id ?? getStoredDefault(BANK_KEY) ?? ''
     const storedSource = getStoredDefault(SOURCE_KEY)
     const source =
       state.incomeSource ||
@@ -239,7 +269,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
       incomeSourceId: state.incomeSource,
       grossValue,
       netValue: netValue as number,
-      bankId: state.bank || null,
+      bankId: lockedBank?.id ?? (state.bank || null),
       description: state.description || null,
       splitToReserve: state.splitToReserve === 'true',
     }
@@ -250,16 +280,21 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
     void request
       .then((savedIncome) => {
         setStoredDefault(DATE_KEY, state.date)
-        setStoredDefault(BANK_KEY, state.bank)
+        if (!lockedBank) setStoredDefault(BANK_KEY, state.bank)
         setStoredDefault(SOURCE_KEY, state.incomeSource)
-        dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })
-        onSaved()
+        if (keepOpenAfterSave && !state.isEditing) {
+          const nextSplitToReserve = resolveAutoSplitToReserve(incomeSources, state.incomeSource) ? 'true' : 'false'
+          dispatch({ type: 'SAVE_SUCCESS_KEEP_OPEN', payload: { splitConfirmed: savedIncome.splitToReserve, nextSplitToReserve } })
+        } else {
+          dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })
+        }
+        onSaved(savedIncome)
       })
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
           payload: {
-            message: getErrorMessage(err, state.isEditing ? 'Failed to update income' : 'Failed to create income'),
+            message: getSaveErrorMessage(err, state.isEditing ? 'Failed to update income' : 'Failed to create income'),
             fields: {},
           },
         })
@@ -278,6 +313,7 @@ export function useIncomeForm(incomeSources: IncomeSourceDto[], onSaved: () => v
     incomeDescription: state.description,
     incomeSplitToReserve: state.splitToReserve,
     isSavingIncome: state.isSaving,
+    isIncomeDirty: state.isOpen && hasChangedFields(state, state.openedValues, EDITABLE_FIELDS),
     saveIncomeError: state.saveError,
     saveIncomeErrorFields: state.saveErrorFields,
     splitConfirmationMessage: state.splitConfirmationMessage,

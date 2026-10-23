@@ -7,3 +7,9 @@ export class ApiError extends Error {
     this.status = status
   }
 }
+
+export const NETWORK_FAILURE_STATUS = 0
+
+export function isNetworkFailure(err: unknown): boolean {
+  return err instanceof ApiError && err.status === NETWORK_FAILURE_STATUS
+}

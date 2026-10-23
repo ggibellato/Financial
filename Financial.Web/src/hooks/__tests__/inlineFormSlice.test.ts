@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { openInlineForm, reduceInlineForm, type InlineFormStatus } from '../inlineFormSlice'
+import { hasChangedFields, openInlineForm, reduceInlineForm, snapshotFields, type InlineFormStatus } from '../inlineFormSlice'
 
 type Field = 'formDate' | 'formPrice'
 
@@ -82,5 +82,24 @@ describe('reduceInlineForm', () => {
     expect(next.isFormVisible).toBe(true)
     expect(next.saveError).toBe('Price must be a positive number')
     expect(next.saveErrorFields).toEqual({ formPrice: 'Price must be a positive number' })
+  })
+})
+
+describe('form change tracking', () => {
+  const fields = ['date', 'value'] as const
+
+  it('snapshots only the listed fields', () => {
+    expect(snapshotFields({ date: '2026-10-15', value: '1', isSaving: false }, fields)).toEqual({ date: '2026-10-15', value: '1' })
+  })
+
+  it('reports a change only while a listed field differs from the snapshot', () => {
+    const snapshot = { date: '2026-10-15', value: '' }
+
+    expect(hasChangedFields({ date: '2026-10-15', value: '', isSaving: true }, snapshot, fields)).toBe(false)
+    expect(hasChangedFields({ date: '2026-10-15', value: '5', isSaving: false }, snapshot, fields)).toBe(true)
+  })
+
+  it('reports no change without a snapshot', () => {
+    expect(hasChangedFields({ date: '2026-10-15', value: '5' }, null, fields)).toBe(false)
   })
 })

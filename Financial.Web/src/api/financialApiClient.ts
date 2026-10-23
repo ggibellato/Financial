@@ -1,4 +1,4 @@
-import { ApiError } from './apiError'
+import { ApiError, NETWORK_FAILURE_STATUS } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
   AccountDetailDto,
@@ -330,7 +330,9 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
 
   const sendRequest = async (path: string, init?: RequestInit): Promise<Response> => {
     const url = `${baseUrl}${path}`
-    const response = await fetcher(url, init)
+    const response = await fetcher(url, init).catch((err: unknown) => {
+      throw new ApiError(err instanceof Error ? err.message : 'Network request failed', NETWORK_FAILURE_STATUS)
+    })
 
     if (!response.ok) {
       const method = init?.method ?? 'GET'

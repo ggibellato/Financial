@@ -4,10 +4,12 @@ import { useAsyncResource, type AsyncResourceOptions } from '../useAsyncResource
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((res) => {
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
     resolve = res
+    reject = rej
   })
-  return { promise, resolve }
+  return { promise, resolve, reject }
 }
 
 function renderResource(fetcher: (key: string) => Promise<string> | null, options?: AsyncResourceOptions) {
@@ -91,6 +93,34 @@ describe('useAsyncResource', () => {
     await waitFor(() => expect(result.current.data).toBe('value-b'))
     await act(async () => rejectSlow(new Error('stale failure')))
 
+    expect(result.current.error).toBeNull()
+  })
+
+  it.each([
+    ['response', (stale: ReturnType<typeof deferred<string>>) => stale.resolve('refreshed-a')],
+    ['failure', (stale: ReturnType<typeof deferred<string>>) => stale.reject(new Error('stale failure'))],
+  ])('ignores a refresh %s that returns after a newer dependency change', async (_outcome, settle) => {
+    const staleRefresh = deferred<string>()
+    const fetcher = vi
+      .fn<(key: string) => Promise<string>>()
+      .mockResolvedValueOnce('value-a')
+      .mockReturnValueOnce(staleRefresh.promise)
+      .mockResolvedValueOnce('value-b')
+    const { result, rerender } = renderResource(fetcher)
+    await waitFor(() => expect(result.current.data).toBe('value-a'))
+
+    let refreshing!: Promise<void>
+    act(() => {
+      refreshing = result.current.refresh()
+    })
+    rerender({ key: 'b' })
+    await waitFor(() => expect(result.current.data).toBe('value-b'))
+    await act(async () => {
+      settle(staleRefresh)
+      await refreshing
+    })
+
+    expect(result.current.data).toBe('value-b')
     expect(result.current.error).toBeNull()
   })
 

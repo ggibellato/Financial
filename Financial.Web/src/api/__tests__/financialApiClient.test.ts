@@ -2171,6 +2171,13 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/transactions/2026/10`)
   })
 
+  it('throws an ApiError with the network failure status when the request cannot reach the server', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.getAccounts()).rejects.toMatchObject({ name: 'ApiError', status: 0, message: 'Failed to fetch' })
+  })
+
   it('throws an ApiError carrying the status when an account read fails', async () => {
     const fetchMock = vi.fn().mockResolvedValue(errorResponse())
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

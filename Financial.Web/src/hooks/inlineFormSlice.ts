@@ -25,6 +25,14 @@ export function openInlineForm<F extends string, S extends InlineFormStatus<F>>(
   return { ...state, ...formValues, isFormVisible: true, saveError: null, saveErrorFields: {}, isSaving: false }
 }
 
+export function snapshotFields<S, K extends keyof S>(state: S, fields: readonly K[]): Pick<S, K> {
+  return Object.fromEntries(fields.map((field) => [field, state[field]])) as Pick<S, K>
+}
+
+export function hasChangedFields<S, K extends keyof S>(state: S, snapshot: Pick<S, K> | null, fields: readonly K[]): boolean {
+  return snapshot !== null && fields.some((field) => state[field] !== snapshot[field])
+}
+
 export function reduceInlineForm<F extends string, S extends InlineFormStatus<F>>(
   state: S,
   action: InlineFormAction<F>,

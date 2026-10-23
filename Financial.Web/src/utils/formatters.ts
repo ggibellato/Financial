@@ -1,3 +1,5 @@
+import { isNetworkFailure } from '../api/apiError'
+
 export function pad(value: number): string {
   return String(value).padStart(2, '0')
 }
@@ -126,6 +128,12 @@ export function signClass(value: number, basePrefix: string): string {
 
 export function getErrorMessage(err: unknown, fallback: string): string {
   return err instanceof Error ? err.message : fallback
+}
+
+export const NETWORK_SAVE_ERROR = 'Could not save. Check the connection and try again.'
+
+export function getSaveErrorMessage(err: unknown, fallback: string): string {
+  return isNetworkFailure(err) ? NETWORK_SAVE_ERROR : getErrorMessage(err, fallback)
 }
 
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {

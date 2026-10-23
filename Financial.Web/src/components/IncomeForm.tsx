@@ -1,5 +1,6 @@
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto, IncomeSourceDto } from '../api/types'
+import type { LockedBank } from '../hooks/formSettings'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -18,6 +19,7 @@ interface IncomeFormProps {
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
+  lockedBank?: LockedBank
   saveError: string | null
   saveErrorFields: Partial<Record<IncomeFormField, string>>
   onFieldChange: (field: IncomeFormField, value: string) => void
@@ -37,6 +39,7 @@ export default function IncomeForm({
   banks,
   incomeSources,
   isSaving,
+  lockedBank,
   saveError,
   saveErrorFields,
   onFieldChange,
@@ -52,10 +55,22 @@ export default function IncomeForm({
   const showSplitField = incomeSources.find((s) => s.id === incomeSource)?.autoSplitToReserve === true
 
   return (
-    <div className={styles.panel}>
+    <form
+      className={styles.panel}
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
       <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Income' : 'New Income'}
       </Text>
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
 
       <div className={styles.grid}>
         <Field
@@ -83,18 +98,22 @@ export default function IncomeForm({
         </Field>
 
         <Field label="Bank">
-          <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
-            <option value="">— No bank —</option>
-            {banks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </Select>
+          {lockedBank ? (
+            <Text weight="semibold">{lockedBank.name}</Text>
+          ) : (
+            <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
+              <option value="">— No bank —</option>
+              {banks.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
 
         <Field label="Description">
-          <Input value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
+          <Input name="description" value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
         </Field>
 
         {showGrossValueField && (
@@ -138,19 +157,13 @@ export default function IncomeForm({
       </div>
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
+        <Button type="submit" appearance="primary" disabled={isSaving}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Income'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
-
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+    </form>
   )
 }

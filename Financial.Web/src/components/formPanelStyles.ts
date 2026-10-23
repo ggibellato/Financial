@@ -29,6 +29,9 @@ export const useFormPanelStyles = makeStyles({
   },
   spanTwo: {
     gridColumnEnd: 'span 2',
+    '@media (max-width: 639px)': {
+      gridColumnEnd: 'auto',
+    },
   },
   actions: {
     display: 'flex',

@@ -1,5 +1,6 @@
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
+import type { LockedBank } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -34,6 +35,7 @@ interface ExpenseFormProps {
   creditCards: CreditCardDto[]
   isSettled: boolean
   isSaving: boolean
+  lockedBank?: LockedBank
   saveError: string | null
   saveErrorFields: Partial<Record<ExpenseFormField, string>>
   onFieldChange: (field: ExpenseFormField, value: string) => void
@@ -59,6 +61,7 @@ export default function ExpenseForm({
   creditCards,
   isSettled,
   isSaving,
+  lockedBank,
   saveError,
   saveErrorFields,
   onFieldChange,
@@ -74,10 +77,22 @@ export default function ExpenseForm({
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
 
   return (
-    <div className={styles.panel}>
+    <form
+      className={styles.panel}
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
       <Text as="h2" weight="semibold" size={400}>
         {isEditing ? 'Edit Expense' : 'New Expense'}
       </Text>
+      {Object.keys(saveErrorFields).length === 0 && saveError && (
+        <MessageBar intent="error">
+          <MessageBarBody>{saveError}</MessageBarBody>
+        </MessageBar>
+      )}
 
       <div className={styles.grid}>
         <Field
@@ -96,7 +111,7 @@ export default function ExpenseForm({
           validationState={fieldError('description') ? 'error' : 'none'}
           validationMessage={fieldError('description')}
         >
-          <Input value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
+          <Input name="description" value={description} onChange={(e) => onFieldChange('description', e.target.value)} />
         </Field>
 
         {isSettled ? (
@@ -106,6 +121,10 @@ export default function ExpenseForm({
               card statement — unmark the statement paid to change these fields.
             </Text>
           </div>
+        ) : lockedBank ? (
+          <Field label="Payment Source">
+            <Text weight="semibold">{lockedBank.name}</Text>
+          </Field>
         ) : paymentMode === 'bank' ? (
           <Field
             label="Payment Source"
@@ -201,19 +220,13 @@ export default function ExpenseForm({
       </div>
 
       <div className={styles.actions}>
-        <Button appearance="primary" disabled={isSaving} onClick={onSave}>
+        <Button type="submit" appearance="primary" disabled={isSaving}>
           {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Expense'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel
         </Button>
       </div>
-
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+    </form>
   )
 }
