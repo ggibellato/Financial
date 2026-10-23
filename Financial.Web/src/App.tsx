@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import { Button, FluentProvider, makeStyles } from '@fluentui/react-components'
+import { Button, FluentProvider, Toaster, makeStyles } from '@fluentui/react-components'
 import { setStoredDomain } from './utils/domainStorage'
 import Sidebar from './components/Sidebar'
 import Breadcrumb from './components/Breadcrumb'
@@ -9,6 +9,7 @@ import SyncStatusBanner from './components/SyncStatusBanner'
 import PaymentDueBanner from './components/PaymentDueBanner'
 import ColourModeToggleButton from './components/ColourModeToggleButton'
 import { ColourModeProvider, useColourMode } from './context/ColourModeContext'
+import { APP_TOASTER_ID } from './hooks/useSuccessToast'
 import { financialDarkTheme, financialLightTheme } from './theme/fluentTheme'
 import './App.css'
 
@@ -76,6 +77,7 @@ function AppShell() {
   return (
     <FluentProvider theme={colourMode === 'dark' ? financialDarkTheme : financialLightTheme}>
       <PaymentDueBanner />
+      <Toaster toasterId={APP_TOASTER_ID} position="bottom-end" />
       <div className="app">
         <Sidebar mobileOpen={mobileNavOpen} onMobileOpenChange={setMobileNavOpen} />
         <main className="app__content">
