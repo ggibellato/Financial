@@ -3,7 +3,10 @@ import { ApiError } from '../apiError'
 import { API_BASE_URL } from '../config'
 import { createFinancialApiClient } from '../financialApiClient'
 import type {
+  AccountDetailDto,
+  AccountDto,
   AccountGroupSummaryDto,
+  AccountTransactionDto,
   ArchiveAssetRequestDto,
   AssetAdminCreateDto,
   AssetAdminDto,
@@ -94,6 +97,7 @@ import type {
   TransferUpdateDto,
   WithdrawalRequestDto,
 } from '../types'
+import { accountTransactionRow } from '../../test/accountTransactionRow'
 
 const okResponse = <T,>(payload: T) =>
   ({
@@ -2118,6 +2122,60 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/default/summary/2026/7`)
+  })
+
+  it('gets every account', async () => {
+    const responseBody: AccountDto[] = [
+      { id: 'a1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAccounts()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts`)
+  })
+
+  it('gets one account for a month', async () => {
+    const responseBody: AccountDetailDto = {
+      id: 'a1',
+      name: 'Barclays',
+      templateName: 'Bank',
+      currency: 'GBP',
+      isActive: true,
+      year: 2026,
+      month: 10,
+      balance: 1234.56,
+      allowedActions: ['AddExpense'],
+    }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAccount('a1', 2026, 10)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/2026/10`)
+  })
+
+  it('gets the transactions of one account for a month', async () => {
+    const responseBody: AccountTransactionDto[] = [
+      accountTransactionRow({ id: 't1', kind: 'Income', date: '2026-10-01', amount: 100, canEdit: true }),
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAccountTransactions('a1', 2026, 10)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/transactions/2026/10`)
+  })
+
+  it('throws an ApiError carrying the status when an account read fails', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(errorResponse())
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.getAccount('a1', 2026, 10)).rejects.toMatchObject({ name: 'ApiError', status: 500 })
   })
 
   it('posts an expense create request', async () => {
