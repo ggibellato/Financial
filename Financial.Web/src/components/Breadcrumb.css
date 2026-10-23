@@ -1,5 +1,5 @@
 .breadcrumb {
-  flex-shrink: 0;
+  min-width: 0;
   height: 44px;
   display: flex;
   align-items: center;
@@ -14,6 +14,14 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  min-width: 0;
+}
+
+.breadcrumb__list li {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .breadcrumb__list li + li::before {
