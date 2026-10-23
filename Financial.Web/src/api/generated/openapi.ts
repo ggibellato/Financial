@@ -4,6 +4,41 @@
  */
 
 export interface paths {
+    "/accounts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/groups/default/summary/{year}/{month}": {
         parameters: {
             query?: never;
@@ -190,6 +225,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/transactions/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountTransactionDTO"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/transfer-destinations": {
         parameters: {
             query?: never;
@@ -261,6 +353,63 @@ export interface paths {
                     };
                     content: {
                         "application/json": components["schemas"]["TransferAccountOptionDTO"][];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{id}/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    year: number;
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountDetailDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
                     };
                 };
                 /** @description Not Found */
@@ -6927,6 +7076,29 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        AccountDTO: {
+            currency: string;
+            /** Format: uuid */
+            id: string;
+            isActive: boolean;
+            name: string;
+            templateName: string;
+        };
+        AccountDetailDTO: {
+            allowedActions: string[];
+            /** Format: double */
+            balance: number;
+            currency: string;
+            /** Format: uuid */
+            id: string;
+            isActive: boolean;
+            /** Format: int32 */
+            month: number;
+            name: string;
+            templateName: string;
+            /** Format: int32 */
+            year: number;
+        };
         AccountGroupMemberDTO: {
             /** Format: uuid */
             accountId: string;
@@ -6950,6 +7122,25 @@ export interface components {
             totals: components["schemas"]["CurrencyTotalDTO"][];
             /** Format: int32 */
             year: number;
+        };
+        AccountTransactionDTO: {
+            adjustment?: null | components["schemas"]["BalanceAdjustmentDTO"];
+            /** Format: double */
+            amount: number;
+            canEdit: boolean;
+            categoryName?: null | string;
+            counterpart?: null | string;
+            /** Format: date */
+            date: string;
+            description?: null | string;
+            expense?: null | components["schemas"]["ExpenseDTO"];
+            /** Format: uuid */
+            id: string;
+            income?: null | components["schemas"]["IncomeDTO"];
+            kind: string;
+            /** Format: double */
+            roundUp?: null | number;
+            transfer?: null | components["schemas"]["AccountTransferDTO"];
         };
         AccountTransferCreateDTO: {
             /** Format: double */
