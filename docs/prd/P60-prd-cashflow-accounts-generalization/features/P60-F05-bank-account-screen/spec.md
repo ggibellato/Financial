@@ -7,7 +7,7 @@ Complexity: **complex**. It touches Domain, Application, the API, the parity scr
 **What.**
 - Three read endpoints:
   - `GET accounts`: every account, ordered by name.
-  - `GET accounts/{id}?year&month`: the account, its month-end balance and the actions it allows.
+  - `GET accounts/{id}/{year}/{month}`: the account, its month-end balance and the actions it allows.
   - `GET accounts/{id}/transactions/{year}/{month}`: the grid rows, each carrying its source record.
 - A Domain rule, `AccountActions`, maps capabilities to allowed actions.
 - One shared reader returns every record that affects a balance.
@@ -93,7 +93,7 @@ Financial.CashFlow.Domain
 | Decision | Choice | Why |
 |---|---|---|
 | Account list | `GET accounts` returns every account ordered by name (`StringComparer.OrdinalIgnoreCase`, stable), active and inactive, with `IsActive` | Interview Q1. The picker filters to active accounts; F06's grid shows all. |
-| Account detail route | `GET accounts/{id:guid}?year=&month=`. Both query values are required. A missing or invalid month throws `ArgumentOutOfRangeException` → 400. An unknown id → `FirstOrThrow` → 404 | PRD names `GET accounts/{id}` with a balance for a month |
+| Account detail route | `GET accounts/{id:guid}/{year:int}/{month:int}`. A month outside 1–12 throws `ArgumentOutOfRangeException` → 400. An unknown id → `FirstOrThrow` → 404 | PRD: the account with a balance for a month. The month is in the path, as on every other month route (`AccountGroupsController`, `BanksController`, `ExpensesController`); the caller always knows the month, so it is never optional |
 | Balance | `AccountBalanceRule.Balance(account, endOfMonth, records)` for every month | PRD review decision 4: equal to Monthly and F04's summary |
 | Allowed actions | A Domain enum `AccountAction` with `AddExpense`, `AddIncome`, `TransferTo`, `TransferFrom`, `PayRecurringBill`, `Reconcile`. `AccountActions.AllowedFor(account)` returns, in that order, each action whose capability the account has: `HasCategories`, `ReceivesIncome`, `CanSendTransfers`, `CanReceiveTransfers`, `CanPayBills`, `CanReconcile`. The wire value is the enum name as a string list | PRD: actions derived from capabilities. Each capability is the one its write path already checks (`Expense.cs:288`, `Income.cs:87`, `TransferPairRules`, `MensaisService.cs:251`, `BalanceAdjustment`). |
 | Inactive account | `AllowedFor` returns an empty list. Rows have `CanEdit = false`. The screen shows an "Inactive" badge and is read-only | Interview Q4 |
@@ -105,7 +105,7 @@ Financial.CashFlow.Domain
 | Row source record | Each row carries exactly one of `Expense` (`ExpenseDTO`), `Income` (`IncomeDTO`), `Transfer` (`AccountTransferDTO`) or `Adjustment` (`BalanceAdjustmentDTO`), built by the owning service's `ToDto`, which becomes `internal static` | Interview Q2 and Q9 |
 | Editable rows | `CanEdit` is false for `CardCharge` and for every row of an inactive account | Interview Q5: paid card charges stay managed through card statements |
 | Row order | Date descending. Rows with the same date keep the reader's order: incomes, expenses, transfers, adjustments. Grid columns stay sortable with `useSortableRows` | Monthly lists newest first |
-| Parity | After side only: `Add-ParityAccountFigures` reads `GET accounts` once, then `GET accounts/{id}?year&month` per account per month, recording `{month}/account/<name>/balance`. `figure-map.json` maps it to `{month}/banks/*/balance`. `Get-ParityReport` gains `-IncludeAccounts`, which `Invoke-Parity.ps1` passes for the after side | Interview Q6: AC 03 across every month |
+| Parity | After side only: `Add-ParityAccountFigures` reads `GET accounts` once, then `GET accounts/{id}/{year}/{month}` per account per month, recording `{month}/account/<name>/balance`. `figure-map.json` maps it to `{month}/banks/*/balance`. `Get-ParityReport` gains `-IncludeAccounts`, which `Invoke-Parity.ps1` passes for the after side | Interview Q6: AC 03 across every month |
 | Accounts page | The F04 summary for the current month: name (a link), template, currency and balance, with an "Inactive" badge where relevant, and per-currency totals as Monthly's Banks footer shows them. No month selector | PRD: from F04; F09 adds "Other accounts" |
 | Month in the URL | `?month=YYYY-MM`. A missing or invalid value means the current month, and the URL is replaced. A change replaces the history entry. The picker keeps it. | PRD: the picker keeps the selected month |
 | Picker | Fluent `Combobox` with one `OptionGroup` per template name, listing active accounts by name. An inactive account being viewed shows as the value but not in the list. Selecting navigates to that account with the same month | PRD |
@@ -148,7 +148,7 @@ Paths are relative to the repo root.
 | `Financial.CashFlow.Application/Services/AccountQueryService.cs` | **New.** Read-only, with the span/log/try pattern of `AccountGroupSummaryService` (`StartServiceSpan("CashFlow", nameof(AccountQueryService), <operation>, "Account")`) |
 | `Financial.CashFlow.Application/Services/ExpenseService.cs`, `IncomeService.cs`, `AccountTransferService.cs`, `BalanceAdjustmentService.cs` | `private static ToDto` → `internal static ToDto` (one word each) |
 | `Financial.CashFlow.Application/DependencyInjection/CashFlowApplicationServiceCollectionExtensions.cs` | `AddSingleton<IAccountQueryService, AccountQueryService>()` |
-| `Financial.Api/Controllers/AccountsController.cs` | **New.** `[ApiController] [Route("accounts")]`: `GET` (list), `GET {id:guid}` (`[FromQuery] int year, int month`), `GET {id:guid}/transactions/{year:int}/{month:int}`. Each declares 200, plus 400 and 404 where they apply. |
+| `Financial.Api/Controllers/AccountsController.cs` | **New.** `[ApiController] [Route("accounts")]`: `GET` (list), `GET {id:guid}/{year:int}/{month:int}`, `GET {id:guid}/transactions/{year:int}/{month:int}`. Each declares 200, plus 400 and 404 where they apply. |
 | `scripts/parity/Parity.psm1` | `Add-ParityAccountFigures`, the `-IncludeAccounts` switch on `Get-ParityReport` and its call from `Add-ParityMonthFigures` |
 | `scripts/parity/Invoke-Parity.ps1` | Passes `-IncludeAccounts` for the after side |
 | `scripts/parity/figure-map.json` | `{month}/account/*/balance` → `{month}/banks/*/balance`, `negate: false`, reason "F05 account balance" |
@@ -217,7 +217,7 @@ Base path `/api/v1/financial`. `ArgumentException` → 400 and `KeyNotFoundExcep
 ]
 ```
 
-**`GET accounts/{id}?year=2026&month=10`**: 200 with `AccountDetailDTO`. 400 when the month is missing or not 1–12. 404 when the id is unknown.
+**`GET accounts/{id}/2026/10`**: 200 with `AccountDetailDTO`. 400 when the month is not 1–12. 404 when the id is unknown.
 
 ```json
 {
