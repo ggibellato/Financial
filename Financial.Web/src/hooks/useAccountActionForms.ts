@@ -5,7 +5,7 @@ import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
 import { useIncomeForm } from './useIncomeForm'
 
-const NO_CREDIT_CARDS: CreditCardDto[] = []
+export const NO_CREDIT_CARDS: CreditCardDto[] = []
 
 export function useAccountActionForms(
   account: AccountDetailDto | null,
@@ -24,7 +24,8 @@ export function useAccountActionForms(
   const incomeForm = useIncomeForm(options.incomeSources, () => onSaved('Income added'), settings)
 
   const activeAction = expenseForm.isOpen ? 'AddExpense' : incomeForm.isIncomeFormOpen ? 'AddIncome' : null
-  const discardPrompt = useDiscardPrompt(expenseForm.isDirty || incomeForm.isIncomeDirty)
+  const isDirty = expenseForm.isDirty || incomeForm.isIncomeDirty
+  const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLButtonElement | null>(null)
   const formAreaRef = useRef<HTMLDivElement | null>(null)
 
@@ -52,6 +53,18 @@ export function useAccountActionForms(
     openerRef.current?.focus()
   }
 
+  const guardMonthChange = (changeMonth: () => void) =>
+    discardPrompt.confirmDiscard(() => {
+      if (isDirty) closeForms()
+      changeMonth()
+    })
+
+  const guardAccountChange = (changeAccount: () => void) =>
+    discardPrompt.confirmDiscard(() => {
+      closeForms()
+      changeAccount()
+    })
+
   return {
     expenseForm,
     incomeForm,
@@ -61,6 +74,7 @@ export function useAccountActionForms(
     formAreaRef,
     openAction,
     cancelActiveForm,
-    closeForms,
+    guardMonthChange,
+    guardAccountChange,
   }
 }

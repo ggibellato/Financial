@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 
 export interface DiscardPrompt {
   confirmDiscard: (action: () => void) => void
@@ -10,20 +10,17 @@ export interface DiscardPrompt {
 export function useDiscardPrompt(isDirty: boolean): DiscardPrompt {
   const [pendingAction, setPendingAction] = useState<(() => void) | null>(null)
 
-  const confirmDiscard = useCallback(
-    (action: () => void) => {
-      if (isDirty) setPendingAction(() => action)
-      else action()
-    },
-    [isDirty],
-  )
+  const confirmDiscard = (action: () => void) => {
+    if (isDirty) setPendingAction(() => action)
+    else action()
+  }
 
-  const keepEditing = useCallback(() => setPendingAction(null), [])
+  const keepEditing = () => setPendingAction(null)
 
-  const discard = useCallback(() => {
+  const discard = () => {
     setPendingAction(null)
     pendingAction?.()
-  }, [pendingAction])
+  }
 
   return { confirmDiscard, isPromptOpen: pendingAction !== null, keepEditing, discard }
 }

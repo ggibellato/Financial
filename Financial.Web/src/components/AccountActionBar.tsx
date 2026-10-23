@@ -1,9 +1,5 @@
 import { Button } from '@fluentui/react-components'
-
-const ACTION_LABELS: Record<string, string> = {
-  AddExpense: 'Add expense',
-  AddIncome: 'Add income',
-}
+import { ACTION_LABELS, formActionsOf } from './accountActions'
 
 interface AccountActionBarProps {
   allowedActions: string[]
@@ -14,7 +10,7 @@ interface AccountActionBarProps {
 }
 
 export default function AccountActionBar({ allowedActions, activeAction, formAreaId, disabled, onAction }: AccountActionBarProps) {
-  const knownActions = allowedActions.filter((action) => action in ACTION_LABELS)
+  const knownActions = formActionsOf(allowedActions)
   if (knownActions.length === 0) return null
 
   return (

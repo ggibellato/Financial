@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
+import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
 
 const { createExpenseMock, updateExpenseMock } = vi.hoisted(() => ({
@@ -725,7 +726,7 @@ describe('useExpenseForm account settings', () => {
   })
 
   it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
-    createExpenseMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
 
     await addExpense(result)

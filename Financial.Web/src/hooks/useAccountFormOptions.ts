@@ -22,11 +22,11 @@ function loadAccountFormOptions(): Promise<AccountFormOptions> {
   )
 }
 
-export function useAccountFormOptions() {
-  const resource = useAsyncResource(loadAccountFormOptions, [], FORM_OPTIONS_LOAD_ERROR, { initialLoading: true })
+export function useAccountFormOptions(isNeeded: boolean) {
+  const resource = useAsyncResource(() => (isNeeded ? loadAccountFormOptions() : null), [isNeeded], FORM_OPTIONS_LOAD_ERROR)
   return {
     options: resource.data ?? NO_OPTIONS,
-    isLoading: resource.isLoading,
+    isReady: resource.data !== null,
     error: resource.error,
     retry: resource.retry,
   }

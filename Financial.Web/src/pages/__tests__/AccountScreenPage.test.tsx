@@ -107,23 +107,24 @@ function renderScreen(entry: string) {
   )
 }
 
-describe('AccountScreenPage', () => {
-  beforeEach(() => {
-    pinDate('2026-10-15T12:00:00+01:00')
-    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
-    getAccountMock.mockReset().mockImplementation((id, year, month) => Promise.resolve(detailFor(id, year, month)))
-    getAccountTransactionsMock.mockReset().mockResolvedValue(TRANSACTIONS)
-    getBanksMock.mockReset().mockResolvedValue(BANKS)
-    getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
-    getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
-    createExpenseMock.mockReset()
-    createIncomeMock.mockReset()
-    sessionStorage.clear()
-  })
+beforeEach(() => {
+  pinDate('2026-10-15T12:00:00+01:00')
+  getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
+  getAccountMock.mockReset().mockImplementation((id, year, month) => Promise.resolve(detailFor(id, year, month)))
+  getAccountTransactionsMock.mockReset().mockResolvedValue(TRANSACTIONS)
+  getBanksMock.mockReset().mockResolvedValue(BANKS)
+  getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
+  getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
+  createExpenseMock.mockReset()
+  createIncomeMock.mockReset()
+  sessionStorage.clear()
+})
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
+afterEach(() => {
+  vi.useRealTimers()
+})
+
+describe('AccountScreenPage', () => {
 
   it('[AC P60-F05-bank-account-screen-02] switching account in the picker keeps the selected month', async () => {
     const user = userEvent.setup()
@@ -271,21 +272,9 @@ describe('AccountScreenPage actions', () => {
   }
 
   beforeEach(() => {
-    pinDate('2026-10-15T12:00:00+01:00')
-    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
-    getAccountTransactionsMock.mockReset().mockResolvedValue(TRANSACTIONS)
-    getBanksMock.mockReset().mockResolvedValue(BANKS)
-    getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
-    getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
-    createExpenseMock.mockReset().mockResolvedValue(SAVED_EXPENSE)
-    createIncomeMock.mockReset().mockResolvedValue(SAVED_INCOME)
-    getAccountMock.mockReset()
+    createExpenseMock.mockResolvedValue(SAVED_EXPENSE)
+    createIncomeMock.mockResolvedValue(SAVED_INCOME)
     withActions(BANK_ACTIONS)
-    sessionStorage.clear()
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
   })
 
   async function openScreen() {
@@ -301,13 +290,14 @@ describe('AccountScreenPage actions', () => {
     expect(actions.map((button) => button.textContent)).toEqual(['Add expense', 'Add income'])
   })
 
-  it('renders no actions for an account that allows none', async () => {
+  it('renders no actions and loads no form options for an account that allows none', async () => {
     withActions([])
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     await screen.findByRole('heading', { level: 1, name: 'Barclays' })
 
     expect(screen.queryByRole('group', { name: 'Account actions' })).not.toBeInTheDocument()
+    expect(getBanksMock).not.toHaveBeenCalled()
   })
 
   it('[AC P60-F05-bank-account-screen-06] opens one inline form above the grid, and switching with unsaved changes asks to discard', async () => {
@@ -405,7 +395,7 @@ describe('AccountScreenPage actions', () => {
 
   it('keeps the values and shows the connection message when a save cannot reach the server', async () => {
     const user = userEvent.setup()
-    createExpenseMock.mockRejectedValue(new TypeError('Failed to fetch'))
+    createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
     await openScreen()
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))

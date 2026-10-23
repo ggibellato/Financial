@@ -4,10 +4,12 @@ import { useAsyncResource, type AsyncResourceOptions } from '../useAsyncResource
 
 function deferred<T>() {
   let resolve!: (value: T) => void
-  const promise = new Promise<T>((res) => {
+  let reject!: (reason: unknown) => void
+  const promise = new Promise<T>((res, rej) => {
     resolve = res
+    reject = rej
   })
-  return { promise, resolve }
+  return { promise, resolve, reject }
 }
 
 function renderResource(fetcher: (key: string) => Promise<string> | null, options?: AsyncResourceOptions) {
@@ -94,7 +96,10 @@ describe('useAsyncResource', () => {
     expect(result.current.error).toBeNull()
   })
 
-  it('ignores a refresh that returns after a newer dependency change', async () => {
+  it.each([
+    ['response', (stale: ReturnType<typeof deferred<string>>) => stale.resolve('refreshed-a')],
+    ['failure', (stale: ReturnType<typeof deferred<string>>) => stale.reject(new Error('stale failure'))],
+  ])('ignores a refresh %s that returns after a newer dependency change', async (_outcome, settle) => {
     const staleRefresh = deferred<string>()
     const fetcher = vi
       .fn<(key: string) => Promise<string>>()
@@ -111,37 +116,11 @@ describe('useAsyncResource', () => {
     rerender({ key: 'b' })
     await waitFor(() => expect(result.current.data).toBe('value-b'))
     await act(async () => {
-      staleRefresh.resolve('refreshed-a')
+      settle(staleRefresh)
       await refreshing
     })
 
     expect(result.current.data).toBe('value-b')
-  })
-
-  it('ignores a refresh failure that returns after a newer dependency change', async () => {
-    let rejectRefresh!: (reason: unknown) => void
-    const staleRefresh = new Promise<string>((_resolve, reject) => {
-      rejectRefresh = reject
-    })
-    const fetcher = vi
-      .fn<(key: string) => Promise<string>>()
-      .mockResolvedValueOnce('value-a')
-      .mockReturnValueOnce(staleRefresh)
-      .mockResolvedValueOnce('value-b')
-    const { result, rerender } = renderResource(fetcher)
-    await waitFor(() => expect(result.current.data).toBe('value-a'))
-
-    let refreshing!: Promise<void>
-    act(() => {
-      refreshing = result.current.refresh()
-    })
-    rerender({ key: 'b' })
-    await waitFor(() => expect(result.current.data).toBe('value-b'))
-    await act(async () => {
-      rejectRefresh(new Error('stale failure'))
-      await refreshing
-    })
-
     expect(result.current.error).toBeNull()
   })
 

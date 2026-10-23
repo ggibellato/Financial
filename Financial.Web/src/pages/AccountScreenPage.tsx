@@ -1,13 +1,14 @@
 import { Skeleton, SkeletonItem, Text } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
+import { formActionsOf } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import DiscardChangesDialog from '../components/DiscardChangesDialog'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm from '../components/ExpenseForm'
 import IncomeForm from '../components/IncomeForm'
-import { useAccountActionForms } from '../hooks/useAccountActionForms'
+import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen } from '../hooks/useAccountScreen'
 import { useSuccessToast } from '../hooks/useSuccessToast'
@@ -19,14 +20,25 @@ const FORM_AREA_ID = 'account-screen-form'
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const { account } = screen
-  const formOptions = useAccountFormOptions()
+  const hasFormActions = formActionsOf(account?.allowedActions ?? []).length > 0
+  const formOptions = useAccountFormOptions(hasFormActions)
   const { showSuccess } = useSuccessToast()
   const forms = useAccountActionForms(account, formOptions.options, (message) => {
     void screen.refreshSilently()
     showSuccess(message)
   })
-  const { expenseForm, incomeForm, discardPrompt, lockedBank, activeAction, formAreaRef, openAction, cancelActiveForm, closeForms } =
-    forms
+  const {
+    expenseForm,
+    incomeForm,
+    discardPrompt,
+    lockedBank,
+    activeAction,
+    formAreaRef,
+    openAction,
+    cancelActiveForm,
+    guardMonthChange,
+    guardAccountChange,
+  } = forms
 
   if (screen.isNotFound) {
     return (
@@ -45,18 +57,6 @@ export default function AccountScreenPage() {
     )
   }
 
-  const changeMonth = (value: string) =>
-    discardPrompt.confirmDiscard(() => {
-      if (expenseForm.isDirty || incomeForm.isIncomeDirty) closeForms()
-      screen.setMonthInputValue(value)
-    })
-
-  const changeAccount = (accountId: string) =>
-    discardPrompt.confirmDiscard(() => {
-      closeForms()
-      screen.selectAccount(accountId)
-    })
-
   return (
     <div className="account-screen">
       {account ? (
@@ -66,8 +66,8 @@ export default function AccountScreenPage() {
           selectedAccountId={screen.accountId}
           monthInputValue={screen.monthInputValue}
           isBusy={screen.isLoading}
-          onMonthChange={changeMonth}
-          onAccountSelect={changeAccount}
+          onMonthChange={(value) => guardMonthChange(() => screen.setMonthInputValue(value))}
+          onAccountSelect={(accountId) => guardAccountChange(() => screen.selectAccount(accountId))}
         />
       ) : (
         <Skeleton aria-label="Loading account" className="account-screen__header-skeleton">
@@ -81,12 +81,12 @@ export default function AccountScreenPage() {
           allowedActions={account.allowedActions}
           activeAction={activeAction}
           formAreaId={FORM_AREA_ID}
-          disabled={formOptions.isLoading || formOptions.error !== null}
+          disabled={!formOptions.isReady}
           onAction={openAction}
         />
       )}
 
-      {formOptions.error && account && account.allowedActions.length > 0 && (
+      {formOptions.error && hasFormActions && (
         <ErrorState message={FORM_OPTIONS_LOAD_ERROR} onRetry={formOptions.retry} />
       )}
 
@@ -107,7 +107,7 @@ export default function AccountScreenPage() {
             paymentMode={expenseForm.paymentMode}
             banks={formOptions.options.banks}
             categories={formOptions.options.categories}
-            creditCards={[]}
+            creditCards={NO_CREDIT_CARDS}
             isSettled={expenseForm.isSettled}
             isSaving={expenseForm.isSaving}
             lockedBank={lockedBank}

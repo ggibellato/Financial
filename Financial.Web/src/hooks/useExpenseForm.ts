@@ -6,6 +6,7 @@ import { getSaveErrorMessage, parseValidatedNumber, todayIsoDate } from '../util
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import type { AccountFormSettings } from './formSettings'
+import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 
 export type PaymentMode = 'bank' | 'card'
 
@@ -49,12 +50,8 @@ const EDITABLE_FIELDS = [
 
 type EditableValues = Pick<ExpenseFormState, (typeof EDITABLE_FIELDS)[number]>
 
-function pickEditable(state: ExpenseFormState): EditableValues {
-  return Object.fromEntries(EDITABLE_FIELDS.map((field) => [field, state[field]])) as EditableValues
-}
-
 function withOpenedValues(state: ExpenseFormState): ExpenseFormState {
-  return { ...state, openedValues: pickEditable(state) }
+  return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
 }
 
 interface ExpenseFormState {
@@ -100,19 +97,23 @@ type ExpenseFormAction =
   | { type: 'SAVE_SUCCESS_KEEP_OPEN' }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<ExpenseFormField, string>> } }
 
-const BLANK_FORM = {
-  date: '',
+const BLANK_ENTRY = {
   description: '',
   value: '',
+  roundUpAmount: '',
+  roundUpAmountAuto: true,
+  countsAsTithe: 'true',
+} as const
+
+const BLANK_FORM = {
+  ...BLANK_ENTRY,
+  date: '',
   categoryId: '',
   paymentSource: '',
   creditCardId: '',
   creditCardName: '',
   invoiceDate: '',
   invoiceDateTouched: false,
-  roundUpAmount: '',
-  roundUpAmountAuto: true,
-  countsAsTithe: 'true',
   paymentMode: 'bank' as PaymentMode,
   isSettled: false,
 } as const
@@ -172,7 +173,7 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         saveErrorFields: {},
       })
     case 'CANCEL_FORM':
-      return { ...state, ...BLANK_FORM, openedValues: null, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
+      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
       if (action.payload.field === 'roundUpAmount') {
         return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
@@ -188,17 +189,9 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_FORM, openedValues: null, isOpen: false, isEditing: false, editingId: null, isSaving: false }
+      return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, isSaving: false }
     case 'SAVE_SUCCESS_KEEP_OPEN':
-      return withOpenedValues({
-        ...state,
-        description: BLANK_FORM.description,
-        value: BLANK_FORM.value,
-        roundUpAmount: BLANK_FORM.roundUpAmount,
-        roundUpAmountAuto: BLANK_FORM.roundUpAmountAuto,
-        countsAsTithe: BLANK_FORM.countsAsTithe,
-        isSaving: false,
-      })
+      return withOpenedValues({ ...state, ...BLANK_ENTRY, isSaving: false })
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     default:
@@ -242,17 +235,17 @@ export function useExpenseForm(
 ): UseExpenseFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
+  function defaultPaymentSource(): string {
+    if (lockedBank) return lockedBank.id
+    const stored = getStoredDefault(PAYMENT_SOURCE_KEY)
+    if (stored && banks.some((b) => b.id === stored)) return stored
+    return banks[0]?.id ?? ''
+  }
+
   function showCreateForm(requestedMode: PaymentMode) {
     const mode = lockedBank ? 'bank' : requestedMode
     const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
-    const storedPaymentSource = getStoredDefault(PAYMENT_SOURCE_KEY)
-    const paymentSource = lockedBank
-      ? lockedBank.id
-      : mode === 'bank'
-        ? storedPaymentSource && banks.some((b) => b.id === storedPaymentSource)
-          ? storedPaymentSource
-          : (banks[0]?.id ?? '')
-        : ''
+    const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
     const creditCardId = mode === 'card' ? (getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
     const storedCategoryId = getStoredDefault(CATEGORY_KEY)
@@ -395,7 +388,7 @@ export function useExpenseForm(
     paymentMode: state.paymentMode,
     isSettled: state.isSettled,
     isSaving: state.isSaving,
-    isDirty: state.openedValues !== null && EDITABLE_FIELDS.some((field) => state[field] !== state.openedValues?.[field]),
+    isDirty: state.isOpen && hasChangedFields(state, state.openedValues, EDITABLE_FIELDS),
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
     showCreateForm,

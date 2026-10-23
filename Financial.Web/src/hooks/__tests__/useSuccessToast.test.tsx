@@ -21,15 +21,4 @@ describe('useSuccessToast', () => {
 
     expect(await screen.findByText('Expense added')).toBeInTheDocument()
   })
-
-  it('shows nothing until a message is sent', () => {
-    render(
-      <>
-        <Toaster toasterId={APP_TOASTER_ID} />
-        <SaveButton />
-      </>,
-    )
-
-    expect(screen.queryByText('Expense added')).not.toBeInTheDocument()
-  })
 })

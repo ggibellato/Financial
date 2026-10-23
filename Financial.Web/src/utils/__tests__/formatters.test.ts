@@ -20,6 +20,7 @@ import {
   toInputDate,
   todayIsoDate,
 } from '../formatters'
+import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
 
 describe('pad', () => {
@@ -277,7 +278,11 @@ describe('number formatters follow the host locale', () => {
 
 describe('getSaveErrorMessage', () => {
   it('getSaveErrorMessage_NetworkFailure_ReturnsConnectionMessage', () => {
-    expect(getSaveErrorMessage(new TypeError('Failed to fetch'), 'Fallback')).toBe('Could not save. Check the connection and try again.')
+    expect(getSaveErrorMessage(new ApiError('Failed to fetch', 0), 'Fallback')).toBe('Could not save. Check the connection and try again.')
+  })
+
+  it('getSaveErrorMessage_TypeErrorFromCode_ReturnsItsMessage', () => {
+    expect(getSaveErrorMessage(new TypeError('x is undefined'), 'Fallback')).toBe('x is undefined')
   })
 
   it('getSaveErrorMessage_ServerError_ReturnsItsMessage', () => {
