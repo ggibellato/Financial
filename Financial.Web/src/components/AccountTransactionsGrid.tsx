@@ -13,8 +13,6 @@ const KIND_LABELS: Record<string, string> = {
   TransferOut: 'Transfer out',
 }
 
-const SKELETON_ROW_KEYS = ['first', 'second', 'third']
-
 function kindLabel(kind: string): string {
   return KIND_LABELS[kind] ?? kind
 }
@@ -36,8 +34,8 @@ const COLUMNS: TransactionColumn[] = [
     render: (row) => <TruncatedText text={row.description} />,
   },
   { key: 'kind', header: 'Type', accessor: (row) => kindLabel(row.kind), render: (row) => kindLabel(row.kind) },
-  { key: 'category', header: 'Category', accessor: (row) => row.categoryName, render: (row) => row.categoryName },
-  { key: 'counterpart', header: 'Counterpart', accessor: (row) => row.counterpart, render: (row) => row.counterpart },
+  { key: 'category', header: 'Category', accessor: (row) => row.categoryName, render: (row) => <TruncatedText text={row.categoryName} /> },
+  { key: 'counterpart', header: 'Counterpart', accessor: (row) => row.counterpart, render: (row) => <TruncatedText text={row.counterpart} /> },
   {
     key: 'amount',
     header: 'Amount',
@@ -84,15 +82,15 @@ export default function AccountTransactionsGrid({ transactions, isLoading = fals
         </TableHeader>
         <TableBody>
           {isLoading ? (
-            SKELETON_ROW_KEYS.map((key) => (
-              <TableRow key={key}>
-                <TableCell colSpan={COLUMNS.length}>
-                  <Skeleton aria-label="Loading transactions">
-                    <SkeletonItem />
-                  </Skeleton>
-                </TableCell>
-              </TableRow>
-            ))
+            <TableRow>
+              <TableCell colSpan={COLUMNS.length}>
+                <Skeleton aria-label="Loading transactions" className="account-screen__grid-skeleton">
+                  <SkeletonItem />
+                  <SkeletonItem />
+                  <SkeletonItem />
+                </Skeleton>
+              </TableCell>
+            </TableRow>
           ) : sortedRows.length === 0 ? (
             <TableRow>
               <TableCell className="data-table__cell--message" colSpan={COLUMNS.length}>

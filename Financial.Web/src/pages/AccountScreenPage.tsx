@@ -1,9 +1,9 @@
-import { Skeleton, SkeletonItem } from '@fluentui/react-components'
+import { Skeleton, SkeletonItem, Text } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import ErrorState from '../components/ErrorState'
-import { useAccountScreen } from '../hooks/useAccountScreen'
+import { ACCOUNT_LOAD_ERROR, useAccountScreen } from '../hooks/useAccountScreen'
 import { formatLongMonthYear } from '../utils/formatters'
 import './AccountScreenPage.css'
 
@@ -20,10 +20,10 @@ export default function AccountScreenPage() {
     )
   }
 
-  if (screen.error) {
+  if (screen.error && !account) {
     return (
       <div className="account-screen">
-        <ErrorState message="Unable to load this account" onRetry={screen.retry} />
+        <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
       </div>
     )
   }
@@ -34,7 +34,9 @@ export default function AccountScreenPage() {
         <AccountHeader
           account={account}
           accounts={screen.accounts}
+          selectedAccountId={screen.accountId}
           monthInputValue={screen.monthInputValue}
+          isBusy={screen.isLoading}
           onMonthChange={screen.setMonthInputValue}
           onAccountSelect={screen.selectAccount}
         />
@@ -46,12 +48,18 @@ export default function AccountScreenPage() {
       )}
 
       <section className="account-screen__transactions" aria-labelledby="account-screen-transactions">
-        <h2 id="account-screen-transactions">Transactions</h2>
-        <AccountTransactionsGrid
-          transactions={screen.transactions}
-          isLoading={screen.isLoading}
-          emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
-        />
+        <Text as="h2" id="account-screen-transactions" size={400} weight="semibold">
+          Transactions
+        </Text>
+        {screen.error ? (
+          <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
+        ) : (
+          <AccountTransactionsGrid
+            transactions={screen.transactions}
+            isLoading={screen.isLoading}
+            emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
+          />
+        )}
       </section>
     </div>
   )

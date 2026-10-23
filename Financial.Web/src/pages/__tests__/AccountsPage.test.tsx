@@ -74,7 +74,7 @@ describe('AccountsPage', () => {
       'href',
       '/cashflow/accounts/barclays?month=2026-10',
     )
-    expect(screen.getByText('Total BRL:', { exact: false })).toHaveTextContent('Total BRL: 1,000.00 · Total GBP: 3,310.25')
+    expect(screen.getByText('Default group total BRL:', { exact: false })).toHaveTextContent('Default group total BRL: 1,000.00 · Default group total GBP: 3,310.25')
   })
 
   it('shows the month the balances belong to', async () => {

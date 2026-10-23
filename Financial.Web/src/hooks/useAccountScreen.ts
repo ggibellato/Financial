@@ -6,6 +6,8 @@ import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
 
+export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
+
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface AccountScreenData {
@@ -20,6 +22,7 @@ const NO_ACCOUNTS: AccountDto[] = []
 const NO_TRANSACTIONS: AccountTransactionDto[] = []
 
 export interface AccountScreen {
+  accountId: string
   year: number
   month: number
   monthInputValue: string
@@ -66,7 +69,7 @@ export function useAccountScreen(): AccountScreen {
   const resource = useAsyncResource<AccountScreenLoad>(
     () => (isValidId ? loadAccountScreen(accountId, year, month) : null),
     [accountId, year, month, isValidId],
-    'Unable to load this account',
+    ACCOUNT_LOAD_ERROR,
     { initialLoading: isValidId, keepDataWhileLoading: true },
   )
 
@@ -85,6 +88,7 @@ export function useAccountScreen(): AccountScreen {
   const loaded = resource.data === 'not-found' ? null : resource.data
 
   return {
+    accountId,
     year,
     month,
     monthInputValue,

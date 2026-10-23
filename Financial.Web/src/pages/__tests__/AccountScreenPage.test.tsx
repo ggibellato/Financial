@@ -108,13 +108,37 @@ describe('AccountScreenPage', () => {
     expect(within(table).getByText('-200.00')).toBeInTheDocument()
   })
 
+  it('keeps keyboard focus on the picker once the chosen account has loaded', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    const picker = await screen.findByRole('combobox', { name: 'Account' })
+
+    picker.focus()
+    await user.keyboard('{Enter}{ArrowDown}{Enter}')
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Chase' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Account' })).toHaveFocus()
+  })
+
+  it('keeps the header and shows the error in the transactions area when a later load fails', async () => {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await screen.findByRole('heading', { level: 1, name: 'Barclays' })
+    getAccountTransactionsMock.mockRejectedValueOnce(new ApiError('Server error', 500))
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Unable to load this account')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Month')).toHaveValue('2026-08')
+  })
+
   it('shows skeletons for the header and grid on first load', () => {
     getAccountMock.mockReturnValue(new Promise(() => {}))
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
-    expect(screen.getAllByLabelText('Loading transactions')).toHaveLength(3)
+    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
   })
 
   it('shows the empty message naming the month when it has no transactions', async () => {

@@ -2,7 +2,7 @@ import { useRef, useState, type FocusEvent, type KeyboardEvent, type ReactNode }
 import { NavLink, useLocation } from 'react-router-dom'
 import { Button, OverlayDrawer, DrawerBody, DrawerHeader, DrawerHeaderTitle } from '@fluentui/react-components'
 import { DismissRegular } from '@fluentui/react-icons'
-import { NAV_TREE, isWithinRoute } from '../navigation/navTree'
+import { NAV_TREE, matchNavChild } from '../navigation/navTree'
 import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../utils/sidebarStorage'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
@@ -200,8 +200,8 @@ function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const navCategories = NAV_TREE.map((category) => {
     const CategoryIcon = CATEGORY_ICONS[category.id]
     const hasActiveChild =
-      category.children.some((child) => isWithinRoute(location.pathname, child.route)) ||
-      (category.groups ?? []).some((group) => group.children.some((child) => isWithinRoute(location.pathname, child.route)))
+      category.children.some((child) => matchNavChild(location.pathname, child) !== null) ||
+      (category.groups ?? []).some((group) => group.children.some((child) => matchNavChild(location.pathname, child) !== null))
     const isOpen = effectiveCollapsed && flyoutAnchor?.categoryId === category.id
 
     return (
@@ -228,7 +228,7 @@ function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
         {!effectiveCollapsed && category.groups && (
           <ul className="sidebar__groups" aria-label={category.label}>
             {category.groups.map((group) => {
-              const groupHasActiveChild = group.children.some((child) => isWithinRoute(location.pathname, child.route))
+              const groupHasActiveChild = group.children.some((child) => matchNavChild(location.pathname, child) !== null)
               const groupExpanded = expandedGroupId === group.id
               const toggleGroup = () =>
                 setExpandedGroupId((current) => (current === group.id ? null : group.id))

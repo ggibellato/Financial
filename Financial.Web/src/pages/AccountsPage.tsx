@@ -1,35 +1,17 @@
 import { Badge, Text } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
-import { apiClient } from '../api/financialApiClient'
-import type { AccountGroupMemberDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import TotalsGrid from '../components/TotalsGrid'
-import { useAsyncResource } from '../hooks/useAsyncResource'
+import { DEFAULT_GROUP_LOAD_ERROR, useDefaultGroupAccounts } from '../hooks/useDefaultGroupAccounts'
 import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatN2 } from '../utils/formatters'
 import './AccountsPage.css'
-
-interface AccountRow extends AccountGroupMemberDto {
-  isActive: boolean
-}
 
 export default function AccountsPage() {
   const { year, month } = currentYearMonth()
   const monthParam = formatMonthInputValue(year, month)
 
-  const { data, isLoading, error, retry } = useAsyncResource(
-    () =>
-      Promise.all([apiClient.getDefaultGroupSummary(year, month), apiClient.getAccounts()]).then(([summary, accounts]) => {
-        const inactiveIds = new Set(accounts.filter((account) => !account.isActive).map((account) => account.id))
-        return {
-          rows: summary.members.map((member): AccountRow => ({ ...member, isActive: !inactiveIds.has(member.accountId) })),
-          totals: summary.totals,
-        }
-      }),
-    [year, month],
-    'Unable to load the accounts',
-    { initialLoading: true },
-  )
+  const { data, isLoading, error, retry } = useDefaultGroupAccounts(year, month)
 
   return (
     <div className="accounts-page">
@@ -38,7 +20,7 @@ export default function AccountsPage() {
       {isLoading ? (
         <LoadingState />
       ) : error || !data ? (
-        <ErrorState message="Unable to load the accounts" onRetry={retry} />
+        <ErrorState message={DEFAULT_GROUP_LOAD_ERROR} onRetry={retry} />
       ) : (
         <TotalsGrid
           label="Accounts"
@@ -78,10 +60,10 @@ export default function AccountsPage() {
               sortAccessor: (row) => row.balance,
             },
           ]}
-          rows={data.rows}
+          rows={data.members}
           rowKey={(row) => row.accountId}
           emptyMessage="No accounts in the default group for this month"
-          footerItems={data.totals.map((total) => ({ label: `Total ${total.currency}`, value: formatN2(total.balance) }))}
+          footerItems={data.totals.map((total) => ({ label: `Default group total ${total.currency}`, value: formatN2(total.balance) }))}
         />
       )}
     </div>

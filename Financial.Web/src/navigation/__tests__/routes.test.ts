@@ -32,10 +32,10 @@ describe('route and sidebar agreement', () => {
     expect(new Set(allRoutes).size).toBe(allRoutes.length)
   })
 
-  it('nests every detail route under a sidebar destination', () => {
-    const orphans = DETAIL_ROUTES.filter((route) => !declaredRoutes.some((declared) => `/${route.path}`.startsWith(`${declared}/`)))
+  it('declares a route for every sidebar detail page, and no other detail route', () => {
+    const navDetailRoutes = NAV_TREE.flatMap((category) => category.children.flatMap((child) => (child.detail ? [child.detail.route] : [])))
 
-    expect(orphans.map((route) => route.path)).toEqual([])
+    expect(DETAIL_ROUTES.map((route) => `/${route.path}`).sort()).toEqual(navDetailRoutes.sort())
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

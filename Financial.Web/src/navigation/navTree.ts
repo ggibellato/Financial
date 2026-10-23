@@ -1,9 +1,15 @@
 import { matchPath } from 'react-router-dom'
 
+export interface NavDetail {
+  label: string
+  route: string
+}
+
 export interface NavChild {
   id: string
   label: string
   route: string
+  detail?: NavDetail
 }
 
 export interface NavGroup {
@@ -21,8 +27,11 @@ export interface NavCategory {
   groups?: NavGroup[]
 }
 
-export function isWithinRoute(pathname: string, route: string): boolean {
-  return matchPath({ path: route, end: false }, pathname) !== null
+export type NavMatch = 'page' | 'detail' | null
+
+export function matchNavChild(pathname: string, child: NavChild): NavMatch {
+  if (pathname === child.route) return 'page'
+  return child.detail && matchPath(child.detail.route, pathname) ? 'detail' : null
 }
 
 export const NAV_TREE: NavCategory[] = [
@@ -42,7 +51,12 @@ export const NAV_TREE: NavCategory[] = [
     id: 'cashflow',
     label: 'CashFlow',
     children: [
-      { id: 'accounts', label: 'Accounts', route: '/cashflow/accounts' },
+      {
+        id: 'accounts',
+        label: 'Accounts',
+        route: '/cashflow/accounts',
+        detail: { label: 'Account', route: '/cashflow/accounts/:accountId' },
+      },
       { id: 'monthly', label: 'Monthly', route: '/cashflow/monthly' },
       { id: 'reserva', label: 'Reserva', route: '/cashflow/reserva' },
       { id: 'mensais', label: 'Mensais', route: '/cashflow/mensais' },

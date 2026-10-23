@@ -74,10 +74,10 @@ describe('AccountTransactionsGrid', () => {
     expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument()
   })
 
-  it('shows skeleton rows instead of data while loading', () => {
+  it('shows a skeleton instead of data while loading', () => {
     render(<AccountTransactionsGrid transactions={ROWS} isLoading emptyMessage={EMPTY_MESSAGE} />)
 
-    expect(screen.getAllByLabelText('Loading transactions')).toHaveLength(3)
+    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
     expect(screen.queryByText('Tesco')).not.toBeInTheDocument()
   })
 })

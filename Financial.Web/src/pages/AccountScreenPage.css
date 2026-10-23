@@ -8,14 +8,28 @@
 }
 
 .account-screen__header {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
   gap: 16px 24px;
   flex-shrink: 0;
 }
 
-.account-screen__identity {
+.account-screen__summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px 32px;
+  min-width: 0;
+}
+
+.account-screen__summary--busy {
+  opacity: 0.6;
+}
+
+.account-screen__identity,
+.account-screen__balance {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -29,16 +43,9 @@
   gap: 8px;
 }
 
-.account-screen__title h1 {
+.account-screen__name {
   margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.account-screen__balance {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  text-align: right;
+  overflow-wrap: break-word;
 }
 
 .account-screen__controls {
@@ -57,13 +64,19 @@
 .account-screen__transactions {
   display: flex;
   flex-direction: column;
+  gap: 12px;
   flex: 1;
   min-height: 0;
 }
 
 .account-screen__transactions h2 {
-  color: var(--text-h);
-  margin-bottom: 12px;
+  margin: 0;
+}
+
+.account-screen__grid-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .account-screen__grid-scroll {
@@ -78,16 +91,9 @@
     padding: 16px 16px 0;
   }
 
-  .account-screen__header {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .account-screen__balance {
-    text-align: left;
-  }
-
   .account-screen__controls {
     flex-direction: column;
+    width: 100%;
   }
 
   .account-screen__grid-scroll {

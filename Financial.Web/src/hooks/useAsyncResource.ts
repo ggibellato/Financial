@@ -79,10 +79,18 @@ export function useAsyncResource<T>(
       return
     }
 
+    let isCurrent = true
     dispatch({ type: 'FETCH_START', keepData: keepDataWhileLoading })
     void request
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
-      .catch((err: unknown) => dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, errorFallback) }))
+      .then((result) => {
+        if (isCurrent) dispatch({ type: 'FETCH_SUCCESS', payload: result })
+      })
+      .catch((err: unknown) => {
+        if (isCurrent) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, errorFallback) })
+      })
+    return () => {
+      isCurrent = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deps is caller-supplied; fetcher/errorFallback are intentionally excluded
   }, [...deps, state.retryCount])
 

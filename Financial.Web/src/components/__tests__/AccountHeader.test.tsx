@@ -23,12 +23,18 @@ const BARCLAYS: AccountDetailDto = {
   allowedActions: [],
 }
 
-function renderHeader(account: AccountDetailDto = BARCLAYS, handlers = { onMonthChange: vi.fn(), onAccountSelect: vi.fn() }) {
+function renderHeader(
+  account: AccountDetailDto = BARCLAYS,
+  { selectedAccountId = account.id, isBusy = false } = {},
+) {
+  const handlers = { onMonthChange: vi.fn(), onAccountSelect: vi.fn() }
   render(
     <AccountHeader
       account={account}
       accounts={ACCOUNTS}
+      selectedAccountId={selectedAccountId}
       monthInputValue="2026-10"
+      isBusy={isBusy}
       onMonthChange={handlers.onMonthChange}
       onAccountSelect={handlers.onAccountSelect}
     />,
@@ -56,7 +62,7 @@ describe('AccountHeader', () => {
     renderHeader({ ...BARCLAYS, id: 'old', name: 'Old Savings', isActive: false })
 
     expect(screen.getByText('Inactive')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Account' })).toHaveValue('Old Savings')
+    expect(screen.getByRole('combobox', { name: 'Account' })).toHaveTextContent('Old Savings')
   })
 
   it('lists only active accounts in the picker, grouped by template', async () => {
@@ -89,6 +95,25 @@ describe('AccountHeader', () => {
     await user.click(screen.getByRole('option', { name: 'Barclays' }))
 
     expect(onAccountSelect).not.toHaveBeenCalled()
+  })
+
+  it('shows the account being navigated to as the picker value while the header still shows the loaded one', () => {
+    renderHeader(BARCLAYS, { selectedAccountId: 'chase', isBusy: true })
+
+    expect(screen.getByRole('combobox', { name: 'Account' })).toHaveTextContent('Chase')
+    expect(screen.getByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
+    expect(screen.getByRole('banner')).toHaveAttribute('aria-busy', 'true')
+  })
+
+  it('keeps focus on the picker after an account is chosen with the keyboard', async () => {
+    const user = userEvent.setup()
+    renderHeader()
+    const picker = screen.getByRole('combobox', { name: 'Account' })
+
+    picker.focus()
+    await user.keyboard('{Enter}{ArrowDown}{Enter}')
+
+    expect(picker).toHaveFocus()
   })
 
   it('reports a month change', () => {

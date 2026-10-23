@@ -1,12 +1,14 @@
 import { useMemo } from 'react'
-import { Badge, Combobox, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
+import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto } from '../api/types'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
   accounts: AccountDto[]
+  selectedAccountId: string
   monthInputValue: string
+  isBusy: boolean
   onMonthChange: (value: string) => void
   onAccountSelect: (accountId: string) => void
 }
@@ -21,36 +23,53 @@ function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][]
   return [...groups.entries()]
 }
 
-export default function AccountHeader({ account, accounts, monthInputValue, onMonthChange, onAccountSelect }: AccountHeaderProps) {
+export default function AccountHeader({
+  account,
+  accounts,
+  selectedAccountId,
+  monthInputValue,
+  isBusy,
+  onMonthChange,
+  onAccountSelect,
+}: AccountHeaderProps) {
   const pickerGroups = useMemo(() => groupActiveByTemplate(accounts), [accounts])
+  const selectedName =
+    accounts.find((candidate) => candidate.id.toLowerCase() === selectedAccountId.toLowerCase())?.name ?? account.name
 
   return (
-    <header className="account-screen__header">
-      <div className="account-screen__identity">
-        <div className="account-screen__title">
-          <h1>{account.name}</h1>
-          {!account.isActive && <Badge appearance="outline" color="informative">Inactive</Badge>}
+    <header className="account-screen__header" aria-busy={isBusy}>
+      <div className={`account-screen__summary${isBusy ? ' account-screen__summary--busy' : ''}`}>
+        <div className="account-screen__identity">
+          <div className="account-screen__title">
+            <Text as="h1" size={600} weight="semibold" className="account-screen__name">
+              {account.name}
+            </Text>
+            {!account.isActive && (
+              <Badge appearance="outline" color="informative">
+                Inactive
+              </Badge>
+            )}
+          </div>
+          <Text>
+            {account.templateName} · {account.currency}
+          </Text>
         </div>
-        <Text>
-          {account.templateName} · {account.currency}
-        </Text>
-      </div>
 
-      <div className="account-screen__balance">
-        <Text size={200}>Balance at end of {formatLongMonthYear(account.year, account.month)}</Text>
-        <Text size={500} weight="semibold">
-          {formatN2(account.balance)} {account.currency}
-        </Text>
+        <div className="account-screen__balance">
+          <Text size={200}>Balance at end of {formatLongMonthYear(account.year, account.month)}</Text>
+          <Text size={500} weight="semibold">
+            {formatN2(account.balance)} {account.currency}
+          </Text>
+        </div>
       </div>
 
       <div className="account-screen__controls">
         <Field label="Account">
-          <Combobox
-            key={account.id}
-            defaultValue={account.name}
-            defaultSelectedOptions={[account.id]}
+          <Dropdown
+            value={selectedName}
+            selectedOptions={[selectedAccountId]}
             onOptionSelect={(_event, data) => {
-              if (data.optionValue && data.optionValue !== account.id) onAccountSelect(data.optionValue)
+              if (data.optionValue && data.optionValue !== selectedAccountId) onAccountSelect(data.optionValue)
             }}
           >
             {pickerGroups.map(([templateName, members]) => (
@@ -62,7 +81,7 @@ export default function AccountHeader({ account, accounts, monthInputValue, onMo
                 ))}
               </OptionGroup>
             ))}
-          </Combobox>
+          </Dropdown>
         </Field>
         <Field label="Month">
           <Input type="month" value={monthInputValue} onChange={(_event, data) => onMonthChange(data.value)} />
