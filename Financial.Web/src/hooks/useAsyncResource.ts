@@ -67,30 +67,34 @@ export function useAsyncResource<T>(
 ): AsyncResource<T> {
   const [state, dispatch] = useReducer(reducer<T>, initialLoading, initialState<T>)
   const latest = useRef({ fetcher, errorFallback })
+  const latestRequestId = useRef(0)
 
   useEffect(() => {
     latest.current = { fetcher, errorFallback }
   })
 
+  const settleLatest = useCallback((request: Promise<T>, fallback: string) => {
+    const requestId = ++latestRequestId.current
+    const isLatest = () => requestId === latestRequestId.current
+    return request
+      .then((result) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: result })
+      })
+      .catch((err: unknown) => {
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, fallback) })
+      })
+  }, [])
+
   useEffect(() => {
     const request = fetcher()
     if (!request) {
+      latestRequestId.current++
       dispatch({ type: 'RESET' })
       return
     }
 
-    let isCurrent = true
     dispatch({ type: 'FETCH_START', keepData: keepDataWhileLoading })
-    void request
-      .then((result) => {
-        if (isCurrent) dispatch({ type: 'FETCH_SUCCESS', payload: result })
-      })
-      .catch((err: unknown) => {
-        if (isCurrent) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, errorFallback) })
-      })
-    return () => {
-      isCurrent = false
-    }
+    void settleLatest(request, errorFallback)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- deps is caller-supplied; fetcher/errorFallback are intentionally excluded
   }, [...deps, state.retryCount])
 
@@ -101,10 +105,8 @@ export function useAsyncResource<T>(
     const request = currentFetcher()
     if (!request) return Promise.resolve()
 
-    return request
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
-      .catch((err: unknown) => dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, currentFallback) }))
-  }, [])
+    return settleLatest(request, currentFallback)
+  }, [settleLatest])
 
   const setData = useCallback(
     (update: (current: T | null) => T | null) => dispatch({ type: 'SET_DATA', update }),

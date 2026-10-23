@@ -94,6 +94,57 @@ describe('useAsyncResource', () => {
     expect(result.current.error).toBeNull()
   })
 
+  it('ignores a refresh that returns after a newer dependency change', async () => {
+    const staleRefresh = deferred<string>()
+    const fetcher = vi
+      .fn<(key: string) => Promise<string>>()
+      .mockResolvedValueOnce('value-a')
+      .mockReturnValueOnce(staleRefresh.promise)
+      .mockResolvedValueOnce('value-b')
+    const { result, rerender } = renderResource(fetcher)
+    await waitFor(() => expect(result.current.data).toBe('value-a'))
+
+    let refreshing!: Promise<void>
+    act(() => {
+      refreshing = result.current.refresh()
+    })
+    rerender({ key: 'b' })
+    await waitFor(() => expect(result.current.data).toBe('value-b'))
+    await act(async () => {
+      staleRefresh.resolve('refreshed-a')
+      await refreshing
+    })
+
+    expect(result.current.data).toBe('value-b')
+  })
+
+  it('ignores a refresh failure that returns after a newer dependency change', async () => {
+    let rejectRefresh!: (reason: unknown) => void
+    const staleRefresh = new Promise<string>((_resolve, reject) => {
+      rejectRefresh = reject
+    })
+    const fetcher = vi
+      .fn<(key: string) => Promise<string>>()
+      .mockResolvedValueOnce('value-a')
+      .mockReturnValueOnce(staleRefresh)
+      .mockResolvedValueOnce('value-b')
+    const { result, rerender } = renderResource(fetcher)
+    await waitFor(() => expect(result.current.data).toBe('value-a'))
+
+    let refreshing!: Promise<void>
+    act(() => {
+      refreshing = result.current.refresh()
+    })
+    rerender({ key: 'b' })
+    await waitFor(() => expect(result.current.data).toBe('value-b'))
+    await act(async () => {
+      rejectRefresh(new Error('stale failure'))
+      await refreshing
+    })
+
+    expect(result.current.error).toBeNull()
+  })
+
   it('refresh re-fetches without flipping isLoading', async () => {
     const fetcher = vi.fn<(key: string) => Promise<string>>().mockResolvedValueOnce('first')
     const { result } = renderResource(fetcher)
