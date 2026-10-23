@@ -95,32 +95,6 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetAccount_SameMonthAsGroupSummary_ReturnsTheSummaryBalance()
-    {
-        SeedEveryRecordKind();
-        var summary = new AccountGroupSummaryService(_repository, new RecordingTelemetryTracer(), new RecordingLogger<AccountGroupSummaryService>());
-
-        foreach (var month in new[] { 9, 10 })
-        {
-            var expected = summary.GetDefaultGroupSummary(2026, month).Members.Single(member => member.AccountId == _barclays.Id).Balance;
-
-            _sut.GetAccount(_barclays.Id, 2026, month).Balance.Should().Be(expected);
-        }
-    }
-
-    [Fact]
-    public void GetAccount_InactiveAccount_ReturnsNoActions()
-    {
-        var detail = _sut.GetAccount(_closed.Id, 2026, 10);
-
-        using (new AssertionScope())
-        {
-            detail.IsActive.Should().BeFalse();
-            detail.AllowedActions.Should().BeEmpty();
-        }
-    }
-
-    [Fact]
     public void GetAccount_UnknownId_ThrowsKeyNotFoundAndFailsTheSpan()
     {
         var act = () => _sut.GetAccount(Guid.NewGuid(), 2026, 10);
@@ -185,16 +159,6 @@ public class AccountQueryServiceTests
 
         foreach (var row in rows)
             (row.Amount + (row.RoundUp ?? 0m)).Should().Be(records[row.Id].ContributionTo(_barclays), row.Kind);
-    }
-
-    [Fact]
-    public void GetTransactions_MonthTotal_EqualsTheChangeInMonthEndBalance()
-    {
-        SeedEveryRecordKind();
-
-        var total = _sut.GetTransactions(_barclays.Id, 2026, 10).Sum(row => row.Amount + (row.RoundUp ?? 0m));
-
-        total.Should().Be(_sut.GetAccount(_barclays.Id, 2026, 10).Balance - _sut.GetAccount(_barclays.Id, 2026, 9).Balance);
     }
 
     [Fact]

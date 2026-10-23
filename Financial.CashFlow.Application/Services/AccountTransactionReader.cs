@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities.Transactions;
 

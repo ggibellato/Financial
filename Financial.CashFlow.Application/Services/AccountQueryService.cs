@@ -107,7 +107,7 @@ public sealed class AccountQueryService : IAccountQueryService
     private static AccountTransactionDTO ToRow(Income income, Account account) => new()
     {
         Id = income.Id,
-        Kind = nameof(TransactionKind.Income),
+        Kind = TransactionKind.Income.ToString(),
         Date = income.Date,
         Description = income.Description,
         Counterpart = income.IncomeSource.Name,
@@ -140,7 +140,7 @@ public sealed class AccountQueryService : IAccountQueryService
     private static AccountTransactionDTO ToRow(BalanceAdjustment adjustment, Account account) => new()
     {
         Id = adjustment.Id,
-        Kind = nameof(TransactionKind.Adjustment),
+        Kind = TransactionKind.Adjustment.ToString(),
         Date = adjustment.Date,
         Description = adjustment.Note,
         Amount = adjustment.Delta,
