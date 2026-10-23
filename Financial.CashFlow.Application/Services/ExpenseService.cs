@@ -249,7 +249,7 @@ public sealed class ExpenseService : IExpenseService
         return (category, parsedPaymentSourceBank, parsedCreditCard);
     }
 
-    private static ExpenseDTO ToDto(Expense expense) => new()
+    internal static ExpenseDTO ToDto(Expense expense) => new()
     {
         Id = expense.Id,
         Date = expense.Date,

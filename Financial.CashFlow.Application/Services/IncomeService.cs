@@ -209,7 +209,7 @@ public sealed class IncomeService : IIncomeService
     private static decimal ComputeSplitBase(decimal netValue) =>
         Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
 
-    private static IncomeDTO ToDto(Income income) => new()
+    internal static IncomeDTO ToDto(Income income) => new()
     {
         Id = income.Id,
         Date = income.Date,

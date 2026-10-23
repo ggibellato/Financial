@@ -157,7 +157,7 @@ public sealed class AccountTransferService : IAccountTransferService
             CashFlowReferenceResolver.ResolveAccount(accounts, destinationAccountId));
     }
 
-    private static AccountTransferDTO ToDto(Transfer transfer) => new()
+    internal static AccountTransferDTO ToDto(Transfer transfer) => new()
     {
         Id = transfer.Id,
         Date = transfer.Date,

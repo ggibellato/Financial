@@ -153,7 +153,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         _repository.GetBalanceAdjustments()
             .FirstOrThrow(a => a.Id == id && a.Account.Id == bank.Id, "Balance adjustment", id);
 
-    private static BalanceAdjustmentDTO ToDto(BalanceAdjustment adjustment) => new()
+    internal static BalanceAdjustmentDTO ToDto(BalanceAdjustment adjustment) => new()
     {
         Id = adjustment.Id,
         Date = adjustment.Date,
