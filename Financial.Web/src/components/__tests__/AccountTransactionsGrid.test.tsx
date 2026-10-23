@@ -21,6 +21,8 @@ const ROWS: AccountTransactionDto[] = [
   accountTransactionRow({ id: 'a1', kind: 'Adjustment', date: '2026-10-01', description: 'Bank fee', amount: -1.5, canEdit: true }),
 ]
 
+const EMPTY_MESSAGE = 'No transactions in October 2026'
+
 function bodyRows() {
   const [, ...rows] = screen.getAllByRole('row')
   return rows
@@ -28,7 +30,7 @@ function bodyRows() {
 
 describe('AccountTransactionsGrid', () => {
   it('[AC P60-F05-bank-account-screen-04] shows signed, right-aligned amounts and a separate round-up column', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage="No transactions in October 2026" />)
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} />)
 
     const expenseRow = bodyRows()[0]
     const amountCell = within(expenseRow).getByText('-42.10').closest('td')
@@ -40,7 +42,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('labels each kind and shows the date, category and counterpart', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage="No transactions in October 2026" />)
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} />)
 
     expect(bodyRows().map((row) => within(row).getAllByRole('cell')[2].textContent)).toEqual([
       'Type:Expense',
@@ -56,7 +58,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('lists the newest rows first and sorts by a column on request', () => {
-    render(<AccountTransactionsGrid transactions={[...ROWS].reverse()} emptyMessage="No transactions in October 2026" />)
+    render(<AccountTransactionsGrid transactions={[...ROWS].reverse()} emptyMessage={EMPTY_MESSAGE} />)
 
     expect(within(bodyRows()[0]).getByText('14/10/2026')).toBeInTheDocument()
 
@@ -67,13 +69,13 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('shows the empty message when the month has no rows', () => {
-    render(<AccountTransactionsGrid transactions={[]} emptyMessage="No transactions in October 2026" />)
+    render(<AccountTransactionsGrid transactions={[]} emptyMessage={EMPTY_MESSAGE} />)
 
-    expect(screen.getByText('No transactions in October 2026')).toBeInTheDocument()
+    expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument()
   })
 
   it('shows skeleton rows instead of data while loading', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} isLoading emptyMessage="No transactions in October 2026" />)
+    render(<AccountTransactionsGrid transactions={ROWS} isLoading emptyMessage={EMPTY_MESSAGE} />)
 
     expect(screen.getAllByLabelText('Loading transactions')).toHaveLength(3)
     expect(screen.queryByText('Tesco')).not.toBeInTheDocument()

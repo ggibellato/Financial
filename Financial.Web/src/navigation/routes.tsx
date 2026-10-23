@@ -78,3 +78,5 @@ export const PAGE_ROUTES: PageRoute[] = [
 export const DETAIL_ROUTES: PageRoute[] = [
   { path: 'cashflow/accounts/:accountId', element: <AccountScreenPage /> },
 ]
+
+export const ALL_ROUTES: PageRoute[] = [...PAGE_ROUTES, ...DETAIL_ROUTES]

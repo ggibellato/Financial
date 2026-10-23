@@ -46,7 +46,7 @@ export default function AccountsPage() {
             {
               key: 'name',
               header: 'Account',
-              render: (row: AccountRow) => (
+              render: (row) => (
                 <span className="accounts-page__name">
                   <Link to={`/cashflow/accounts/${row.accountId}?month=${monthParam}`}>{row.name}</Link>
                   {!row.isActive && (
@@ -56,26 +56,26 @@ export default function AccountsPage() {
                   )}
                 </span>
               ),
-              sortAccessor: (row: AccountRow) => row.name,
+              sortAccessor: (row) => row.name,
             },
             {
               key: 'template',
               header: 'Template',
-              render: (row: AccountRow) => row.templateName,
-              sortAccessor: (row: AccountRow) => row.templateName,
+              render: (row) => row.templateName,
+              sortAccessor: (row) => row.templateName,
             },
             {
               key: 'currency',
               header: 'Currency',
-              render: (row: AccountRow) => row.currency,
-              sortAccessor: (row: AccountRow) => row.currency,
+              render: (row) => row.currency,
+              sortAccessor: (row) => row.currency,
             },
             {
               key: 'balance',
               header: 'Balance',
               numeric: true,
-              render: (row: AccountRow) => formatN2(row.balance),
-              sortAccessor: (row: AccountRow) => row.balance,
+              render: (row) => formatN2(row.balance),
+              sortAccessor: (row) => row.balance,
             },
           ]}
           rows={data.rows}

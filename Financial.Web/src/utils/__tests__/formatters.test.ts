@@ -220,6 +220,10 @@ describe('parseMonthInputValue', () => {
   it('parseMonthInputValue_NonNumericValue_ReturnsNull', () => {
     expect(parseMonthInputValue('not-a-value')).toBeNull()
   })
+
+  it('parseMonthInputValue_MonthOutOfRange_ReturnsNull', () => {
+    expect(parseMonthInputValue('2026-13')).toBeNull()
+  })
 })
 
 describe('previousYearJanuaryFirst', () => {

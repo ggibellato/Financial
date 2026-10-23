@@ -3,11 +3,10 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../api/financialApiClient'
 import { ApiError } from '../api/apiError'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api/types'
-import { currentYearMonth, formatMonthInputValue } from '../utils/formatters'
+import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const MONTH_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])$/
 
 interface AccountScreenData {
   accounts: AccountDto[]
@@ -15,7 +14,10 @@ interface AccountScreenData {
   transactions: AccountTransactionDto[]
 }
 
-type AccountScreenLoad = { found: true; data: AccountScreenData } | { found: false }
+type AccountScreenLoad = AccountScreenData | 'not-found'
+
+const NO_ACCOUNTS: AccountDto[] = []
+const NO_TRANSACTIONS: AccountTransactionDto[] = []
 
 export interface AccountScreen {
   year: number
@@ -33,20 +35,15 @@ export interface AccountScreen {
   refreshSilently: () => Promise<void>
 }
 
-function parseMonthParam(value: string | null): { year: number; month: number } | null {
-  const match = value ? MONTH_PATTERN.exec(value) : null
-  return match ? { year: Number(match[1]), month: Number(match[2]) } : null
-}
-
 function loadAccountScreen(accountId: string, year: number, month: number): Promise<AccountScreenLoad> {
   return Promise.all([
     apiClient.getAccounts(),
     apiClient.getAccount(accountId, year, month),
     apiClient.getAccountTransactions(accountId, year, month),
   ])
-    .then(([accounts, account, transactions]): AccountScreenLoad => ({ found: true, data: { accounts, account, transactions } }))
+    .then(([accounts, account, transactions]): AccountScreenLoad => ({ accounts, account, transactions }))
     .catch((err: unknown) => {
-      if (err instanceof ApiError && err.status === 404) return { found: false }
+      if (err instanceof ApiError && err.status === 404) return 'not-found'
       throw err
     })
 }
@@ -56,8 +53,7 @@ export function useAccountScreen(): AccountScreen {
   const [searchParams, setSearchParams] = useSearchParams()
   const navigate = useNavigate()
 
-  const monthParam = searchParams.get('month')
-  const parsedMonth = parseMonthParam(monthParam)
+  const parsedMonth = parseMonthInputValue(searchParams.get('month') ?? '')
   const { year, month } = parsedMonth ?? currentYearMonth()
   const monthInputValue = formatMonthInputValue(year, month)
   const isValidId = GUID_PATTERN.test(accountId)
@@ -76,7 +72,7 @@ export function useAccountScreen(): AccountScreen {
 
   const setMonthInputValue = useCallback(
     (value: string) => {
-      if (parseMonthParam(value)) setSearchParams({ month: value }, { replace: true })
+      if (parseMonthInputValue(value)) setSearchParams({ month: value }, { replace: true })
     },
     [setSearchParams],
   )
@@ -86,7 +82,7 @@ export function useAccountScreen(): AccountScreen {
     [navigate, monthInputValue],
   )
 
-  const loaded = resource.data?.found ? resource.data.data : null
+  const loaded = resource.data === 'not-found' ? null : resource.data
 
   return {
     year,
@@ -94,11 +90,11 @@ export function useAccountScreen(): AccountScreen {
     monthInputValue,
     setMonthInputValue,
     selectAccount,
-    accounts: loaded?.accounts ?? [],
+    accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
-    transactions: loaded?.transactions ?? [],
+    transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
-    isNotFound: !isValidId || resource.data?.found === false,
+    isNotFound: !isValidId || resource.data === 'not-found',
     error: resource.error,
     retry: resource.retry,
     refreshSilently: resource.refresh,

@@ -89,11 +89,11 @@ export function formatMonthInputValue(year: number, month: number): string {
   return `${year}-${pad(month)}`
 }
 
+const MONTH_INPUT_PATTERN = /^(\d{4})-(0[1-9]|1[0-2])$/
+
 export function parseMonthInputValue(value: string): { year: number; month: number } | null {
-  const [yearStr, monthStr] = value.split('-')
-  const year = Number(yearStr)
-  const month = Number(monthStr)
-  return Number.isFinite(year) && Number.isFinite(month) ? { year, month } : null
+  const match = MONTH_INPUT_PATTERN.exec(value)
+  return match ? { year: Number(match[1]), month: Number(match[2]) } : null
 }
 
 export function previousYearJanuaryFirst(): string {

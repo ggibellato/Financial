@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Badge, Combobox, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto } from '../api/types'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
@@ -13,12 +14,16 @@ interface AccountHeaderProps {
 function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][] {
   const groups = new Map<string, AccountDto[]>()
   for (const account of accounts.filter((candidate) => candidate.isActive)) {
-    groups.set(account.templateName, [...(groups.get(account.templateName) ?? []), account])
+    const members = groups.get(account.templateName)
+    if (members) members.push(account)
+    else groups.set(account.templateName, [account])
   }
   return [...groups.entries()]
 }
 
 export default function AccountHeader({ account, accounts, monthInputValue, onMonthChange, onAccountSelect }: AccountHeaderProps) {
+  const pickerGroups = useMemo(() => groupActiveByTemplate(accounts), [accounts])
+
   return (
     <header className="account-screen__header">
       <div className="account-screen__identity">
@@ -48,7 +53,7 @@ export default function AccountHeader({ account, accounts, monthInputValue, onMo
               if (data.optionValue && data.optionValue !== account.id) onAccountSelect(data.optionValue)
             }}
           >
-            {groupActiveByTemplate(accounts).map(([templateName, members]) => (
+            {pickerGroups.map(([templateName, members]) => (
               <OptionGroup key={templateName} label={templateName}>
                 {members.map((member) => (
                   <Option key={member.id} value={member.id} text={member.name}>

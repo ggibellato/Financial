@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Skeleton, SkeletonItem, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import type { AccountTransactionDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
@@ -7,12 +8,9 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 
 const KIND_LABELS: Record<string, string> = {
-  Expense: 'Expense',
   CardCharge: 'Card charge',
-  Income: 'Income',
   TransferIn: 'Transfer in',
   TransferOut: 'Transfer out',
-  Adjustment: 'Adjustment',
 }
 
 const SKELETON_ROW_KEYS = ['first', 'second', 'third']
@@ -21,14 +19,39 @@ function kindLabel(kind: string): string {
   return KIND_LABELS[kind] ?? kind
 }
 
-const COLUMNS: { key: string; header: string; numeric?: boolean; accessor: SortAccessor<AccountTransactionDto> }[] = [
-  { key: 'date', header: 'Date', accessor: (row) => row.date },
-  { key: 'description', header: 'Description', accessor: (row) => row.description },
-  { key: 'kind', header: 'Type', accessor: (row) => kindLabel(row.kind) },
-  { key: 'category', header: 'Category', accessor: (row) => row.categoryName },
-  { key: 'counterpart', header: 'Counterpart', accessor: (row) => row.counterpart },
-  { key: 'amount', header: 'Amount', numeric: true, accessor: (row) => row.amount },
-  { key: 'roundUp', header: 'Round-up', numeric: true, accessor: (row) => row.roundUp },
+interface TransactionColumn {
+  key: string
+  header: string
+  numeric?: boolean
+  accessor: SortAccessor<AccountTransactionDto>
+  render: (row: AccountTransactionDto) => ReactNode
+}
+
+const COLUMNS: TransactionColumn[] = [
+  { key: 'date', header: 'Date', accessor: (row) => row.date, render: (row) => formatShortDateUtc(row.date) },
+  {
+    key: 'description',
+    header: 'Description',
+    accessor: (row) => row.description,
+    render: (row) => <TruncatedText text={row.description} />,
+  },
+  { key: 'kind', header: 'Type', accessor: (row) => kindLabel(row.kind), render: (row) => kindLabel(row.kind) },
+  { key: 'category', header: 'Category', accessor: (row) => row.categoryName, render: (row) => row.categoryName },
+  { key: 'counterpart', header: 'Counterpart', accessor: (row) => row.counterpart, render: (row) => row.counterpart },
+  {
+    key: 'amount',
+    header: 'Amount',
+    numeric: true,
+    accessor: (row) => row.amount,
+    render: (row) => formatSignedN2(row.amount),
+  },
+  {
+    key: 'roundUp',
+    header: 'Round-up',
+    numeric: true,
+    accessor: (row) => row.roundUp,
+    render: (row) => (row.roundUp == null ? '' : formatSignedN2(row.roundUp)),
+  },
 ]
 
 const ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, column.accessor]))
@@ -79,19 +102,15 @@ export default function AccountTransactionsGrid({ transactions, isLoading = fals
           ) : (
             sortedRows.map((row) => (
               <TableRow key={`${row.kind}-${row.id}`}>
-                <DataTableCell label="Date">{formatShortDateUtc(row.date)}</DataTableCell>
-                <DataTableCell label="Description">
-                  <TruncatedText text={row.description} />
-                </DataTableCell>
-                <DataTableCell label="Type">{kindLabel(row.kind)}</DataTableCell>
-                <DataTableCell label="Category">{row.categoryName}</DataTableCell>
-                <DataTableCell label="Counterpart">{row.counterpart}</DataTableCell>
-                <DataTableCell label="Amount" className="data-table__col--numeric">
-                  {formatSignedN2(row.amount)}
-                </DataTableCell>
-                <DataTableCell label="Round-up" className="data-table__col--numeric">
-                  {row.roundUp == null ? '' : formatSignedN2(row.roundUp)}
-                </DataTableCell>
+                {COLUMNS.map((column) => (
+                  <DataTableCell
+                    key={column.key}
+                    label={column.header}
+                    className={column.numeric ? 'data-table__col--numeric' : undefined}
+                  >
+                    {column.render(row)}
+                  </DataTableCell>
+                ))}
               </TableRow>
             ))
           )}

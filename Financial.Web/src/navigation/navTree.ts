@@ -1,3 +1,5 @@
+import { matchPath } from 'react-router-dom'
+
 export interface NavChild {
   id: string
   label: string
@@ -20,7 +22,7 @@ export interface NavCategory {
 }
 
 export function isWithinRoute(pathname: string, route: string): boolean {
-  return pathname === route || pathname.startsWith(`${route}/`)
+  return matchPath({ path: route, end: false }, pathname) !== null
 }
 
 export const NAV_TREE: NavCategory[] = [
