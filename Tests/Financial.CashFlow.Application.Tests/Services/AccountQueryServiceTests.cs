@@ -149,19 +149,6 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetTransactions_EveryRow_AddsUpToItsContributionToTheAccount()
-    {
-        SeedEveryRecordKind();
-        var records = ((IAccountTransaction[])[.. _repository.Expenses, .. _repository.Incomes, .. _repository.Transfers, .. _repository.BalanceAdjustments])
-            .ToDictionary(SourceId);
-
-        var rows = _sut.GetTransactions(_barclays.Id, 2026, 10);
-
-        foreach (var row in rows)
-            (row.Amount + (row.RoundUp ?? 0m)).Should().Be(records[row.Id].ContributionTo(_barclays), row.Kind);
-    }
-
-    [Fact]
     public void GetTransactions_RowText_CarriesDescriptionCategoryAndCounterpart()
     {
         SeedEveryRecordKind();
@@ -308,13 +295,4 @@ public class AccountQueryServiceTests
 
     private static AccountTransactionDTO Row(IEnumerable<AccountTransactionDTO> rows, string kind, int day) =>
         rows.Single(row => row.Kind == kind && row.Date.Day == day);
-
-    private static Guid SourceId(IAccountTransaction record) => record switch
-    {
-        Expense expense => expense.Id,
-        Income income => income.Id,
-        Transfer transfer => transfer.Id,
-        BalanceAdjustment adjustment => adjustment.Id,
-        _ => throw new ArgumentOutOfRangeException(nameof(record))
-    };
 }

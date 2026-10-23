@@ -34,21 +34,38 @@ public sealed class AccountQueryService : IAccountQueryService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public IReadOnlyList<AccountDTO> GetAccounts() =>
-        Run("GetAccounts", entityId: null, () =>
-            _repository.GetAccounts()
+    public IReadOnlyList<AccountDTO> GetAccounts()
+    {
+        using var span = StartSpan("GetAccounts");
+        try
+        {
+            var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(ToAccountDto)
-                .ToList());
+                .ToList();
 
-    public AccountDetailDTO GetAccount(Guid id, int year, int month) =>
-        Run("GetAccount", id, () =>
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetAccounts");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public AccountDetailDTO GetAccount(Guid id, int year, int month)
+    {
+        using var span = StartSpan("GetAccount");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
         {
             var endOfMonth = EndOfMonth(year, month);
             var account = FindAccountOrThrow(id);
             var records = AccountTransactionReader.Read(_repository);
 
-            return new AccountDetailDTO
+            var result = new AccountDetailDTO
             {
                 Id = account.Id,
                 Name = account.Name,
@@ -60,21 +77,44 @@ public sealed class AccountQueryService : IAccountQueryService
                 Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
                 AllowedActions = AccountActions.AllowedFor(account).Select(action => action.ToString()).ToList()
             };
-        });
 
-    public IReadOnlyList<AccountTransactionDTO> GetTransactions(Guid id, int year, int month) =>
-        Run("GetAccountTransactions", id, () =>
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetAccount");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public IReadOnlyList<AccountTransactionDTO> GetTransactions(Guid id, int year, int month)
+    {
+        using var span = StartSpan("GetAccountTransactions");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
         {
             var endOfMonth = EndOfMonth(year, month);
             var startOfMonth = new DateOnly(year, month, 1);
             var account = FindAccountOrThrow(id);
 
-            return AccountTransactionReader.Read(_repository)
+            var result = AccountTransactionReader.Read(_repository)
                 .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth)
                 .SelectMany(record => ToRows(record, account))
                 .OrderByDescending(row => row.Date)
                 .ToList();
-        });
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetAccountTransactions");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
 
     private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account) =>
         record switch
@@ -162,24 +202,9 @@ public sealed class AccountQueryService : IAccountQueryService
     private Account FindAccountOrThrow(Guid id) =>
         _repository.GetAccounts().FirstOrThrow(account => account.Id == id, EntityType, id);
 
-    private T Run<T>(string operationName, Guid? entityId, Func<T> query)
+    private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        using var span = _tracer.StartServiceSpan("CashFlow", nameof(AccountQueryService), operationName, EntityType);
-        if (entityId is { } id)
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
-
-        try
-        {
-            var result = query();
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", operationName);
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
+        return _tracer.StartServiceSpan("CashFlow", nameof(AccountQueryService), operationName, EntityType);
     }
 }
