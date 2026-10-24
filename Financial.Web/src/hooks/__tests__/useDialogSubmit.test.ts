@@ -1,5 +1,6 @@
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/apiError'
 import { useDialogSubmit } from '../useDialogSubmit'
 
 describe('useDialogSubmit', () => {
@@ -37,6 +38,16 @@ describe('useDialogSubmit', () => {
 
     expect(result.current.error).toBe('A bank named "Barclays" already exists.')
     expect(result.current.isSaving).toBe(false)
+  })
+
+  it('reports the status of a rejected API call, and no status for any other rejection', async () => {
+    const { result } = renderHook(() => useDialogSubmit('The account could not be saved.'))
+
+    await act(() => result.current.submit(() => Promise.reject(new ApiError('An account named "Barclays" already exists.', 409))))
+    expect(result.current.errorStatus).toBe(409)
+
+    await act(() => result.current.submit(() => Promise.reject(new Error('Server unavailable.'))))
+    expect(result.current.errorStatus).toBeNull()
   })
 
   it('falls back to the given message when the rejection is not an Error', async () => {

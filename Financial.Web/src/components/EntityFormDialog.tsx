@@ -8,11 +8,13 @@ import {
   DialogTitle,
   MessageBar,
   MessageBarBody,
+  Spinner,
 } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface EntityFormDialogProps {
   title: string
+  saveLabel?: string
   error: string | null
   isSaving: boolean
   canSave: boolean
@@ -23,6 +25,7 @@ interface EntityFormDialogProps {
 
 export default function EntityFormDialog({
   title,
+  saveLabel = 'Save',
   error,
   isSaving,
   canSave,
@@ -47,8 +50,13 @@ export default function EntityFormDialog({
             )}
           </DialogContent>
           <div className={styles.actions}>
-            <Button appearance="primary" onClick={onSave} disabled={!canSave}>
-              Save
+            <Button
+              appearance="primary"
+              onClick={onSave}
+              disabled={!canSave}
+              icon={isSaving ? <Spinner size="tiny" /> : undefined}
+            >
+              {saveLabel}
             </Button>
             <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
               Cancel
