@@ -4,6 +4,7 @@ import type { LockedBank } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
+import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
 export type ExpenseFormField =
@@ -134,7 +135,7 @@ export default function ExpenseForm({
               validationMessage={fieldError('paymentSource')}
             >
               <Select value={paymentSource} onChange={(e) => onFieldChange('paymentSource', e.target.value)}>
-                {banks.map((b) => (
+                {selectableBanks(banks, paymentSource).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>

@@ -291,6 +291,18 @@ describe('ReservaPage', () => {
       ])
     })
 
+    it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Through bank', async () => {
+      getBanksMock.mockResolvedValue([...BANKS, { ...BANKS[0], id: 'bk3', name: 'Monzo', hasReferences: true, isActive: false }])
+      await openWithdrawalForm()
+
+      const bankSelect = screen.getByRole('combobox', { name: /^Through bank/ })
+      expect(within(bankSelect).getAllByRole('option').map((o) => o.textContent)).toEqual([
+        'No bank (direct)',
+        'Chase',
+        'Barclays',
+      ])
+    })
+
     it('offers contextual help explaining Through bank', async () => {
       await openWithdrawalForm()
 

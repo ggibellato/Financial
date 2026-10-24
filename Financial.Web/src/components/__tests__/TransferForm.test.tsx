@@ -10,6 +10,10 @@ const BANKS: BankDto[] = [
   { id: 'bank-chase', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
 
+const INACTIVE_BANK = { id: 'bank-monzo', name: 'Monzo', isActive: false }
+
+const optionNames = (select: HTMLElement) => Array.from(select.querySelectorAll('option')).map((option) => option.textContent)
+
 const baseProps = {
   isEditing: false,
   date: '2026-07-25',
@@ -165,5 +169,19 @@ describe('TransferForm', () => {
     fireEvent.submit(screen.getByTestId('transfer-form-panel'))
 
     expect(onSave).toHaveBeenCalledOnce()
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of From and To on a new transfer', () => {
+    render(<TransferForm {...baseProps} banks={[...baseProps.banks, INACTIVE_BANK]} />)
+
+    expect(optionNames(screen.getByLabelText(/^From/))).not.toContain('Monzo')
+    expect(optionNames(screen.getByLabelText(/^To/))).not.toContain('Monzo')
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of a transfer being edited on its own side only', () => {
+    render(<TransferForm {...baseProps} isEditing sourceBank="bank-monzo" banks={[...baseProps.banks, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText(/^From/)).toHaveValue('bank-monzo')
+    expect(optionNames(screen.getByLabelText(/^To/))).not.toContain('Monzo')
   })
 })

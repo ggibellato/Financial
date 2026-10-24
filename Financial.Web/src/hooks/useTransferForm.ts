@@ -4,6 +4,7 @@ import type { BankDto, TransferDto } from '../api/types'
 import { mapTransferErrorToField, type TransferFormField } from './mapTransferErrorToField'
 import { getErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { selectableBanks } from '../utils/selectableBanks'
 
 const DATE_KEY = 'transfer.date'
 const SOURCE_BANK_KEY = 'transfer.sourceBank'
@@ -64,13 +65,14 @@ export function useTransferForm(banks: BankDto[], onSaved: () => void): UseTrans
 
   function openCreateForm(preselectedSourceBank?: string) {
     const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const activeBanks = selectableBanks(banks)
     const storedSourceBank = getStoredDefault(SOURCE_BANK_KEY)
     const sourceBank =
       preselectedSourceBank ??
-      (storedSourceBank && banks.some((b) => b.id === storedSourceBank) ? storedSourceBank : (banks[0]?.id ?? ''))
+      (storedSourceBank && activeBanks.some((b) => b.id === storedSourceBank) ? storedSourceBank : (activeBanks[0]?.id ?? ''))
     const storedDestinationBank = getStoredDefault(DESTINATION_BANK_KEY)
     const destinationBank =
-      storedDestinationBank && storedDestinationBank !== sourceBank && banks.some((b) => b.id === storedDestinationBank)
+      storedDestinationBank && storedDestinationBank !== sourceBank && activeBanks.some((b) => b.id === storedDestinationBank)
         ? storedDestinationBank
         : ''
     setState({

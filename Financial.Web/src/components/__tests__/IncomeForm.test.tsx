@@ -16,6 +16,10 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false, hasReferences: false },
 ]
 
+const INACTIVE_BANK: BankDto = { id: 'bank-chase', name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false }
+
+const optionNames = (select: HTMLElement) => Array.from(select.querySelectorAll('option')).map((option) => option.textContent)
+
 const baseProps = {
   isEditing: false,
   date: '',
@@ -162,5 +166,18 @@ describe('IncomeForm with a locked bank', () => {
     expect(screen.getByText('Chase')).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: 'Bank' })).not.toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Bank' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Bank on a new income', () => {
+    render(<IncomeForm {...baseProps} banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(optionNames(screen.getByLabelText('Bank'))).toEqual(['— No bank —', 'Barclays', 'Trading212'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of an income being edited', () => {
+    render(<IncomeForm {...baseProps} isEditing bank="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText('Bank')).toHaveValue('bank-chase')
+    expect(optionNames(screen.getByLabelText('Bank'))).toContain('Chase')
   })
 })

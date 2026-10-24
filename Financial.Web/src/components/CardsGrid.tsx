@@ -6,6 +6,7 @@ import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatN2OrDash } from '../utils/formatters'
+import { selectableBanks } from '../utils/selectableBanks'
 import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {
@@ -238,7 +239,7 @@ export default function CardsGrid({
                           onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
                         >
                           <option value="">Bank…</option>
-                          {banks.map((b) => (
+                          {selectableBanks(banks, markPaidSources[row.statement.id]).map((b) => (
                             <option key={b.id} value={b.id}>
                               {b.name}
                             </option>

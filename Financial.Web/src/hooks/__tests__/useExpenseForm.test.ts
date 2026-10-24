@@ -278,6 +278,16 @@ describe('useExpenseForm', () => {
     expect(result.current.creditCardId).toBe('')
   })
 
+  it("[AC P60-F06-admin-accounts-page-05] showCreateForm('bank') skips an inactive bank, remembered or first", () => {
+    setStoredDefault('expense.paymentSource', 'bank-barclays')
+    const banks = [{ ...BANKS[0], isActive: false }, ...BANKS.slice(1)]
+    const { result } = renderHook(() => useExpenseForm(banks, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current.paymentSource).toBe(BANKS[1].id)
+  })
+
   it("showCreateForm('card') defaults to an empty payment source and card tag", () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
 

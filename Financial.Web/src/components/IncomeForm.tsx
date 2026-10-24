@@ -3,6 +3,7 @@ import type { BankDto, IncomeSourceDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 import { useFieldError } from '../hooks/useFieldError'
+import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
 export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank' | 'description' | 'splitToReserve'
@@ -104,7 +105,7 @@ export default function IncomeForm({
             ) : (
               <Select value={bank} onChange={(e) => onFieldChange('bank', e.target.value)}>
                 <option value="">— No bank —</option>
-                {banks.map((b) => (
+                {selectableBanks(banks, bank).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>

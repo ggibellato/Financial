@@ -344,3 +344,34 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(tbody.getByText('BaAmex')).toBeInTheDocument()
   })
 })
+
+describe('CardsGrid paying bank', () => {
+  const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
+  const renderGrid = (markPaidSources: Record<string, string>) =>
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={[...BANKS, INACTIVE_BANK]}
+        adjustmentTotal={100}
+        markPaidSources={markPaidSources}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+      />,
+    )
+  const optionNames = () =>
+    within(screen.getByLabelText('Paying bank for BaAmex')).getAllByRole('option').map((option) => option.textContent)
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of the paying bank', () => {
+    renderGrid({})
+
+    expect(optionNames()).toEqual(['Bank…', 'Barclays', 'Trading212'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps an inactive paying bank that is already chosen', () => {
+    renderGrid({ c1: 'bank-chase' })
+
+    expect(screen.getByLabelText('Paying bank for BaAmex')).toHaveValue('bank-chase')
+    expect(optionNames()).toContain('Chase')
+  })
+})

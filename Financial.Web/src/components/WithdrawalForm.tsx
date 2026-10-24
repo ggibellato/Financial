@@ -3,6 +3,7 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, ReserveBucketDto } from '../api/types'
 import type { WithdrawalFormField } from '../hooks/useReserva'
 import { useFieldError } from '../hooks/useFieldError'
+import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface WithdrawalFormProps {
@@ -102,7 +103,7 @@ export default function WithdrawalForm({
             onChange={(e) => onFieldChange('withdrawalBankId', e.target.value)}
           >
             <option value="">No bank (direct)</option>
-            {banks.map((bank) => (
+            {selectableBanks(banks, bankId).map((bank) => (
               <option key={bank.id} value={bank.id}>
                 {bank.name}
               </option>

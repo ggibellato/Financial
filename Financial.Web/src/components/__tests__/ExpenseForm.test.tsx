@@ -20,6 +20,10 @@ const CREDIT_CARDS: CreditCardDto[] = [
   { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
+const INACTIVE_BANK: BankDto = { id: 'bank-chase', name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false }
+
+const optionNames = (select: HTMLElement) => Array.from(select.querySelectorAll('option')).map((option) => option.textContent)
+
 const baseProps = {
   isEditing: false,
   date: '',
@@ -359,5 +363,18 @@ describe('ExpenseForm with a locked bank', () => {
     const message = screen.getByText('Could not save. Check the connection and try again.')
     const dateField = screen.getByLabelText(/^Date/)
     expect(message.compareDocumentPosition(dateField) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Payment Source on a new expense', () => {
+    render(<ExpenseForm {...baseProps} banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of an expense being edited', () => {
+    render(<ExpenseForm {...baseProps} isEditing paymentSource="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText(/^Payment Source/)).toHaveValue('bank-chase')
+    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212', 'Chase'])
   })
 })
