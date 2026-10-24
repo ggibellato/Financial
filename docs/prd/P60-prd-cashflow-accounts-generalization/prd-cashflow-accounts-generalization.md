@@ -325,7 +325,7 @@ Rules that apply to every feature:
   - Transfer to / from reuse `TransferForm` the same way (this account locked on its side), and use the F03 endpoints and the destination or source list from the API.
   - Reconcile and editing or deleting an adjustment use `/banks/{id}/adjustments` until F13 moves them to an account route.
   - **Pay recurring bill:** lists all unpaid UK recurring bills (a bill has no fixed bank), the user picks one and confirms the expense fields (pre-filled from the bill), and the app calls the existing `POST mensais/{id}/paid` with this bank as the payment source. Mensais keeps paying by due date with its own bank choice. `POST mensais/{id}/status` with Paid is left as it is.
-- **Default date in the viewed month:** every account-screen form (Add expense, Add income, Reconcile, Transfer to, Transfer from) opens with a date inside the viewed month: the last-used date when it falls in that month; otherwise today when viewing the current month; otherwise the last day of the viewed month (today when viewing a future month, since future dates are rejected). Keep open after Save still keeps the date just used, and a row Edit uses the record's own date. Monthly is unchanged. *Why:* an entry made while looking at a past month lands in that month, not in today's.
+- **Default date in the viewed month:** every account-screen form (Add expense, Add income, Reconcile, Transfer to, Transfer from, Pay recurring bill) opens with a date inside the viewed month: the last-used date when it falls in that month; otherwise today when viewing the current month; otherwise the last day of the viewed month (today when viewing a future month, since future dates are rejected). Keep open after Save still keeps the date just used, and a row Edit uses the record's own date. Monthly is unchanged. *Why:* an entry made while looking at a past month lands in that month, not in today's.
 - **Inline forms, not dialogs:** each action opens one inline form between the header/actions row and the grid; only one form is open at a time; opening another asks to discard unsaved changes. Dialogs only for confirmations (delete). *Why:* Fluent v9 says modal dialogs should be used very sparingly and never nested (a delete or overdraft confirmation inside a dialog form would nest); the component-selection guide (`.claude/skills/fluent-ui/references/component-selection.md`) and `docs/ui/decisions/ADR-003-inline-dialog-drawer.md` put short, repeated entry inline next to the totals and grid it changes. No new ADR needed.
 - **Feedback building blocks (first use):** the web app has no toast and no unsaved-changes prompt today. F05 adds one Fluent `Toaster` at the app root with a small success-toast hook, and a small discard-prompt hook backed by a Fluent confirmation dialog for switching account, month or action inside the account screen (leaving through the sidebar or closing the browser tab is not intercepted, as on every other page). Delete confirmations use the existing `ConfirmDeleteDialog`.
 - **Narrow screens:** browser first; the layout meets the existing UI rules at narrow widths (header and actions stack, grid scrolls inside its container), with no mobile-specific design.
@@ -718,20 +718,20 @@ graph TD
 - [x] Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F05. Bank Account Screen
-- [ ] The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen
-- [ ] The picker switches account and keeps the selected month
-- [ ] The header shows name, template, currency and the month-end balance equal to Monthly's value
-- [ ] The Transactions grid lists every expense, income, transfer and adjustment of the account in the month, amounts signed and right-aligned
-- [ ] The rendered actions are exactly the API's allowed actions for the account; a bank shows Add expense, Add income, Transfer to, Transfer from, Pay recurring bill, Reconcile (labelled Adjust balance)
-- [ ] Each action opens one inline form above the grid; opening another with unsaved changes asks to discard
-- [ ] Add expense saves, refreshes header and grid, and keeps the form open with the last date
-- [ ] Pay recurring bill lists all unpaid UK bills and pays the chosen one through `POST mensais/{id}/paid` with this bank; the bill shows Paid on Mensais
-- [ ] Edit and Delete on a row work; Delete asks for confirmation
-- [ ] Loading, empty, validation, server error, saving, success and unsaved-changes states behave as specified
-- [ ] Keyboard-only use reaches every control with visible focus; focus moves into an opened form and back to its action button on close
-- [ ] At 320 px width the layout has no horizontal page scroll and meets `docs/ui/review-checklist.md`
-- [ ] Old pages still work unchanged
-- [ ] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen
+- [x] The picker switches account and keeps the selected month
+- [x] The header shows name, template, currency and the month-end balance equal to Monthly's value
+- [x] The Transactions grid lists every expense, income, transfer and adjustment of the account in the month, amounts signed and right-aligned
+- [x] The rendered actions are exactly the API's allowed actions for the account; a bank shows Add expense, Add income, Transfer to, Transfer from, Pay recurring bill, Reconcile (labelled Adjust balance)
+- [x] Each action opens one inline form above the grid; opening another with unsaved changes asks to discard
+- [x] Add expense saves, refreshes header and grid, and keeps the form open with the last date
+- [x] Pay recurring bill lists all unpaid UK bills and pays the chosen one through `POST mensais/{id}/paid` with this bank; the bill shows Paid on Mensais
+- [x] Edit and Delete on a row work; Delete asks for confirmation
+- [x] Loading, empty, validation, server error, saving, success and unsaved-changes states behave as specified
+- [x] Keyboard-only use reaches every control with visible focus; focus moves into an opened form and back to its action button on close
+- [x] At 320 px width the layout has no horizontal page scroll and meets `docs/ui/review-checklist.md`
+- [x] Old pages still work unchanged
+- [x] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F06. Admin Accounts Page
 - [ ] Creating a Bank account with name, currency, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change
@@ -823,8 +823,8 @@ graph TD
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
 - [ ] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
-- [ ] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
-- [ ] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
+- [x] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
+- [x] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
 - [ ] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
 - [ ] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
 - [ ] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11

@@ -16,7 +16,7 @@ describe('AccountActionBar', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Add income', 'Add expense'])
   })
 
-  it('renders every bank action this stage has a form for, skipping Pay recurring bill', () => {
+  it('renders every bank action, in the order given', () => {
     render(
       <AccountActionBar
         allowedActions={['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile']}
@@ -31,6 +31,7 @@ describe('AccountActionBar', () => {
       'Add income',
       'Transfer to',
       'Transfer from',
+      'Pay recurring bill',
       'Adjust balance',
     ])
   })

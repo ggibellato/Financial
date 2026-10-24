@@ -6,17 +6,16 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-  Field,
-  Input,
   makeStyles,
   MessageBar,
   MessageBarBody,
-  Select,
   tokens,
 } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, RecurringBillDto } from '../api/types'
 import type { ExpensePromptValues } from '../hooks/useMensais'
 import { todayIsoDate } from '../utils/formatters'
+import BillExpenseFields from './BillExpenseFields'
+import { billExpenseValuesFor, parseBillExpense, type BillExpenseField } from './billExpenseValues'
 import { useFormPanelStyles } from './formPanelStyles'
 
 // formPanelStyles' shared grid is 4 columns, sized for pages with more fields
@@ -62,24 +61,14 @@ export default function UkExpensePromptDialog({
 }: UkExpensePromptDialogProps) {
   const styles = useFormPanelStyles()
   const dialogStyles = useDialogStyles()
-  const [description, setDescription] = useState(bill.description)
-  const [value, setValue] = useState(String(bill.value))
-  const [date, setDate] = useState(todayIsoDate())
-  const [bankId, setBankId] = useState('')
-  const [categoryId, setCategoryId] = useState('')
+  const [values, setValues] = useState(() => billExpenseValuesFor(bill, todayIsoDate()))
+  const parsed = parseBillExpense(values)
+  const canConfirm = parsed !== null && !isSaving
 
-  const parsedValue = Number(value)
-  const canConfirm =
-    description.trim().length > 0 &&
-    !Number.isNaN(parsedValue) &&
-    parsedValue > 0 &&
-    bankId !== '' &&
-    categoryId !== '' &&
-    !isSaving
+  const setField = (field: BillExpenseField, value: string) => setValues((current) => ({ ...current, [field]: value }))
 
   const handleConfirm = () => {
-    if (!canConfirm) return
-    onConfirm({ description: description.trim(), value: parsedValue, date, bankId, categoryId })
+    if (parsed && !isSaving) onConfirm(parsed)
   }
 
   return (
@@ -89,49 +78,13 @@ export default function UkExpensePromptDialog({
           <DialogTitle>Generate expense for this payment?</DialogTitle>
           <DialogContent>
             <div className={dialogStyles.grid}>
-              <Field label="Date" required>
-                <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} disabled={isSaving} />
-              </Field>
-
-              <Field label="Description" required className={styles.spanTwo}>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  disabled={isSaving}
-                />
-              </Field>
-
-              <Field label="Value" required>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  disabled={isSaving}
-                />
-              </Field>
-
-              <Field label="Bank" required>
-                <Select value={bankId} onChange={(e) => setBankId(e.target.value)} disabled={isSaving}>
-                  <option value="">Select bank…</option>
-                  {banks.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
-
-              <Field label="Category" required>
-                <Select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} disabled={isSaving}>
-                  <option value="">Select category…</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </Select>
-              </Field>
+              <BillExpenseFields
+                values={values}
+                banks={banks}
+                categories={categories}
+                disabled={isSaving}
+                onFieldChange={setField}
+              />
 
               {error && (
                 <div className={styles.spanTwo}>

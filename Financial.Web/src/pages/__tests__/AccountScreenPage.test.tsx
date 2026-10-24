@@ -15,12 +15,14 @@ import type {
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
+  RecurringBillDto,
 } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { recurringBill } from '../../test/recurringBill'
 
 const {
   getAccountsMock,
@@ -41,6 +43,8 @@ const {
   deleteAccountTransferMock,
   createBalanceAdjustmentMock,
   deleteBalanceAdjustmentMock,
+  getMensaisBillsMock,
+  markMensaisBillPaidMock,
 } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
@@ -60,6 +64,8 @@ const {
   deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
   deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
+  getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
+  markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -82,6 +88,8 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteAccountTransfer: deleteAccountTransferMock,
     createBalanceAdjustment: createBalanceAdjustmentMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
+    getMensaisBills: getMensaisBillsMock,
+    markMensaisBillPaid: markMensaisBillPaidMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -119,6 +127,15 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
 ]
 
 const BANK_ACTIONS = ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile']
+
+const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
+
+const BILLS: RecurringBillDto[] = [
+  recurringBill({ id: 'water', dueDay: 20, description: 'Water', value: 35.5, status: 'Scheduled' }),
+  recurringBill({ id: 'rent', dueDay: 1, description: 'Rent', value: 900, status: 'Paid' }),
+  recurringBill({ id: 'iptu', dueDay: 2, description: 'IPTU', value: 80, area: 'BR' }),
+  COUNCIL_TAX,
+]
 
 function withActions(allowedActions: string[]) {
   getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), allowedActions }))
@@ -198,6 +215,8 @@ beforeEach(() => {
   deleteAccountTransferMock.mockReset().mockResolvedValue(undefined)
   createBalanceAdjustmentMock.mockReset()
   deleteBalanceAdjustmentMock.mockReset().mockResolvedValue(undefined)
+  getMensaisBillsMock.mockReset().mockResolvedValue(BILLS)
+  markMensaisBillPaidMock.mockReset()
   sessionStorage.clear()
 })
 
@@ -364,17 +383,120 @@ describe('AccountScreenPage actions', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
   }
 
-  it('renders the actions this stage has forms for, in the order the API sends them', async () => {
+  it('[AC P60-F05-bank-account-screen-05] renders exactly the allowed actions: six for a bank, a reduced list as sent, none when inactive', async () => {
     await openScreen()
 
+    const actionNames = () =>
+      within(screen.getByRole('group', { name: 'Account actions' }))
+        .getAllByRole('button')
+        .map((button) => button.textContent)
+    expect(actionNames()).toEqual(['Add expense', 'Add income', 'Transfer to', 'Transfer from', 'Pay recurring bill', 'Adjust balance'])
+  })
+
+  it('renders only the actions a reduced list allows, in its order', async () => {
+    withActions(['Reconcile', 'AddIncome'])
+
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add income' })).toBeEnabled())
     const actions = within(screen.getByRole('group', { name: 'Account actions' })).getAllByRole('button')
-    expect(actions.map((button) => button.textContent)).toEqual([
-      'Add expense',
-      'Add income',
-      'Transfer to',
-      'Transfer from',
-      'Adjust balance',
+    expect(actions.map((button) => button.textContent)).toEqual(['Adjust balance', 'Add income'])
+  })
+
+  it('renders no actions and no row buttons for an inactive account', async () => {
+    getAccountMock.mockImplementation((id, year, month) =>
+      Promise.resolve({ ...detailFor(id, year, month), isActive: false, allowedActions: [] }),
+    )
+    getAccountTransactionsMock.mockResolvedValue(TRANSACTIONS.map((row) => ({ ...row, canEdit: false })))
+
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    await screen.findByText('Tesco')
+    expect(screen.queryByRole('group', { name: 'Account actions' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^(Edit|Delete) / })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F05-bank-account-screen-08] Pay recurring bill lists the unpaid UK bills and pays the chosen one with this bank', async () => {
+    const user = userEvent.setup()
+    markMensaisBillPaidMock.mockResolvedValue({ ...COUNCIL_TAX, status: 'Paid' })
+    await openScreen()
+    getAccountMock.mockClear()
+    const payBill = screen.getByRole('button', { name: 'Pay recurring bill' })
+
+    await user.click(payBill)
+    const picker = await screen.findByRole('combobox', { name: /^Bill/ })
+    await waitFor(() => expect(picker).toHaveFocus())
+    expect(within(picker).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Select a bill',
+      'Due 5 · Council Tax · £120.00',
+      'Due 20 · Water · £35.50',
     ])
+    await user.selectOptions(picker, 'council')
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Council Tax')
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-15')
+    await user.selectOptions(screen.getByLabelText(/^Category/), 'category-home')
+    const form = screen.getByRole('heading', { name: 'Pay recurring bill' }).closest('form') as HTMLElement
+    await user.click(within(form).getByRole('button', { name: 'Pay recurring bill' }))
+
+    await waitFor(() =>
+      expect(markMensaisBillPaidMock).toHaveBeenCalledWith('council', {
+        expense: {
+          date: '2026-10-15',
+          description: 'Council Tax',
+          value: 120,
+          categoryId: 'category-home',
+          paymentSourceBankId: BARCLAYS_ID,
+        },
+      }),
+    )
+    expect(await screen.findByText('Bill paid')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Pay recurring bill' })).not.toBeInTheDocument()
+    await waitFor(() => expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 10))
+    await waitFor(() => expect(payBill).toHaveFocus())
+  })
+
+  it('says a bill is already paid and drops it from the list when the payment is refused for that', async () => {
+    const user = userEvent.setup()
+    markMensaisBillPaidMock.mockRejectedValue(
+      new ApiError('The bill is already Paid; recording another payment expense would duplicate it.', 400),
+    )
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Pay recurring bill' }))
+    await user.selectOptions(await screen.findByRole('combobox', { name: /^Bill/ }), 'council')
+    await user.selectOptions(screen.getByLabelText(/^Category/), 'category-home')
+    getMensaisBillsMock.mockResolvedValue(BILLS.map((bill) => (bill.id === 'council' ? { ...bill, status: 'Paid' } : bill)))
+    const form = screen.getByRole('heading', { name: 'Pay recurring bill' }).closest('form') as HTMLElement
+    await user.click(within(form).getByRole('button', { name: 'Pay recurring bill' }))
+
+    expect(await screen.findByText('This bill is already paid.')).toBeInTheDocument()
+    expect(within(screen.getByRole('combobox', { name: /^Bill/ })).queryByRole('option', { name: /Council Tax/ })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F05-bank-account-screen-10] shows the loading, server error, saving and success states; validation and unsaved changes have their own tests', async () => {
+    const user = userEvent.setup()
+    let finishSave: (expense: ExpenseDto) => void = () => {}
+    createExpenseMock
+      .mockRejectedValueOnce(new ApiError('Failed to fetch', 0))
+      .mockImplementationOnce(() => new Promise((resolve) => (finishSave = resolve)))
+
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.type(screen.getByLabelText(/^Description/), 'Lidl')
+    await user.type(screen.getByLabelText(/^Value/), '12.40')
+    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    expect(await screen.findByText('Could not save. Check the connection and try again.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
+
+    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByLabelText(/^Description/)).toBeDisabled()
+    finishSave(SAVED_EXPENSE)
+    expect(await screen.findByText('Expense added')).toBeInTheDocument()
   })
 
   it('keeps the other actions usable while the transfer counterparts are still loading', async () => {

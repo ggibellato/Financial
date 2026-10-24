@@ -7,6 +7,7 @@ import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
 import { useIncomeForm } from './useIncomeForm'
+import { usePayRecurringBill } from './usePayRecurringBill'
 import type { YearMonth } from './useMonthSelection'
 
 export const NO_CREDIT_CARDS: CreditCardDto[] = []
@@ -67,11 +68,14 @@ export function useAccountActionForms(
     settings,
   )
 
+  const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
+
   const openers: Record<AccountFormAction, () => void> = {
     AddExpense: () => expenseForm.showCreateForm('bank'),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
+    PayRecurringBill: () => payBillForm.open(),
     Reconcile: () => adjustmentForm.openCreateForm(),
   }
 
@@ -80,6 +84,7 @@ export function useAccountActionForms(
     if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return 'AddIncome'
     if (transferForm.isOpen && !transferForm.isEditing) return transferForm.direction === 'to' ? 'TransferTo' : 'TransferFrom'
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
+    if (payBillForm.isOpen) return 'PayRecurringBill'
     return null
   }
   const activeAction = createAction()
@@ -88,7 +93,8 @@ export function useAccountActionForms(
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
   const activeFormKey = activeAction ?? (editingRowKey && `edit:${editingRowKey}`)
 
-  const isDirty = expenseForm.isDirty || incomeForm.isIncomeDirty || transferForm.isDirty || adjustmentForm.isDirty
+  const isDirty =
+    expenseForm.isDirty || incomeForm.isIncomeDirty || transferForm.isDirty || adjustmentForm.isDirty || payBillForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLButtonElement | null>(null)
   const formAreaRef = useRef<HTMLDivElement | null>(null)
@@ -98,6 +104,7 @@ export function useAccountActionForms(
     if (incomeForm.isIncomeFormOpen) incomeForm.cancelIncomeForm()
     if (transferForm.isOpen) transferForm.cancel()
     if (adjustmentForm.isOpen) adjustmentForm.cancel()
+    if (payBillForm.isOpen) payBillForm.cancel()
   }
 
   const [formsAccountId, setFormsAccountId] = useState(routeAccountId)
@@ -164,6 +171,7 @@ export function useAccountActionForms(
     incomeForm,
     adjustmentForm,
     transferForm,
+    payBillForm,
     lockedBank,
     isAccountCurrent,
     activeAction,

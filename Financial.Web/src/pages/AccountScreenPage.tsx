@@ -11,6 +11,7 @@ import DiscardChangesDialog from '../components/DiscardChangesDialog'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm from '../components/ExpenseForm'
 import IncomeForm from '../components/IncomeForm'
+import PayRecurringBillForm from '../components/PayRecurringBillForm'
 import TransferForm from '../components/TransferForm'
 import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
@@ -45,6 +46,7 @@ export default function AccountScreenPage() {
     incomeForm,
     adjustmentForm,
     transferForm,
+    payBillForm,
     discardPrompt,
     lockedBank,
     isAccountCurrent,
@@ -190,6 +192,26 @@ export default function AccountScreenPage() {
             saveErrorFields={transferForm.saveErrorFields}
             onFieldChange={transferForm.setField}
             onSave={transferForm.submit}
+            onCancel={closeActiveForm}
+          />
+        )}
+        {payBillForm.isOpen && lockedBank && (
+          <PayRecurringBillForm
+            bills={payBillForm.bills}
+            isLoadingBills={payBillForm.isLoadingBills}
+            billsError={payBillForm.billsError}
+            billId={payBillForm.billId}
+            values={payBillForm.values}
+            categories={formOptions.options.categories}
+            lockedBank={lockedBank}
+            isSaving={payBillForm.isSaving}
+            saveError={payBillForm.saveError}
+            fieldErrors={payBillForm.fieldErrors}
+            billError={payBillForm.billError}
+            onRetryBills={payBillForm.retryBills}
+            onSelectBill={payBillForm.selectBill}
+            onFieldChange={payBillForm.setField}
+            onSave={payBillForm.submit}
             onCancel={closeActiveForm}
           />
         )}

@@ -126,6 +126,7 @@ export type IncomeSplitResultDto = Schema<'IncomeSplitResultDTO'>
 export type WithdrawalRequestDto = Schema<'WithdrawalRequestDTO'>
 export type ReserveMovementUpdateDto = Schema<'ReserveMovementUpdateDTO'>
 export type RecurringBillDto = Schema<'RecurringBillDTO'>
+export type RecurringBillPaymentExpenseDto = Schema<'RecurringBillPaymentExpenseDTO'>
 export type RecurringBillCreateDto = Schema<'RecurringBillCreateDTO'>
 export type RecurringBillUpdateDto = Schema<'RecurringBillUpdateDTO'>
 export type RecurringBillStatusUpdateDto = Schema<'RecurringBillStatusUpdateDTO'>
