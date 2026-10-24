@@ -98,8 +98,7 @@ public class BalanceAdjustmentTests
     [Fact]
     public void Create_OnAnInactiveBank_Throws()
     {
-        var closed = TestAccounts.Bank("Closed");
-        closed.SetActive(false);
+        var closed = TestAccounts.Bank("Closed", isActive: false);
 
         var act = () => BalanceAdjustment.Create(new DateOnly(2026, 7, 25), closed, 100m, 0m, null);
 

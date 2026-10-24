@@ -109,7 +109,7 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F06-admin-accounts-page-06")]
-    public async Task ExpenseOnAnInactiveBank_SameAccountEditAndDelete_StillWork()
+    public async Task PutAndDeleteExpense_OnItsOwnInactiveBank_Succeed()
     {
         var expense = await CreateAsync<ExpenseDTO>("expenses", Expense(ChaseId));
         await DeactivateChaseAsync();
@@ -145,7 +145,7 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F06-admin-accounts-page-06")]
-    public async Task IncomeOnAnInactiveBank_SameAccountEditAndDelete_StillWork()
+    public async Task PutAndDeleteIncome_OnItsOwnInactiveBank_Succeed()
     {
         var income = await CreateAsync<IncomeDTO>("incomes", Income(ChaseId));
         await DeactivateChaseAsync();
@@ -174,7 +174,7 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F06-admin-accounts-page-06")]
-    public async Task AdjustmentOnAnInactiveBank_Delete_StillWorks()
+    public async Task DeleteAdjustment_OnAnInactiveBank_Succeeds()
     {
         var adjustment = await CreateAsync<BalanceAdjustmentDTO>(
             $"banks/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO { Date = Date, TargetBalance = 10m });
@@ -235,8 +235,10 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
 
         var response = await Client.PostAsJsonAsync(
             $"{Api}/card-statements/{statement.Id}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = ChaseId });
+        var after = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
 
         await ShouldBeRefusedAsInactive(response);
+        after!.Single(s => s.Id == statement.Id).IsPaid.Should().BeFalse();
     }
 
     [Fact]

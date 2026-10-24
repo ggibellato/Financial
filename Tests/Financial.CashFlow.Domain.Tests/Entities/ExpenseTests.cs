@@ -792,17 +792,10 @@ public class ExpenseTests
         expense.ReportingDate.Should().Be(expense.Date);
     }
 
-    private static Account InactiveBank()
-    {
-        var account = TestAccounts.Bank("Closed");
-        account.SetActive(false);
-        return account;
-    }
-
     [Fact]
     public void Create_OnAnInactiveBank_Throws()
     {
-        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Shop", 10m, Casa, InactiveBank(), null);
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Shop", 10m, Casa, TestAccounts.Bank("Closed", isActive: false), null);
 
         act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
     }
@@ -812,7 +805,7 @@ public class ExpenseTests
     {
         var expense = CreateImmediateExpense();
 
-        var act = () => expense.UpdateDetails(expense.Date, "Moved", 10m, Casa, InactiveBank(), null);
+        var act = () => expense.UpdateDetails(expense.Date, "Moved", 10m, Casa, TestAccounts.Bank("Closed", isActive: false), null);
 
         using (new AssertionScope())
         {
@@ -842,7 +835,7 @@ public class ExpenseTests
     {
         var charge = CreateCardCharge();
 
-        var act = () => charge.Settle(InactiveBank(), new DateOnly(2026, 7, 31));
+        var act = () => charge.Settle(TestAccounts.Bank("Closed", isActive: false), new DateOnly(2026, 7, 31));
 
         using (new AssertionScope())
         {

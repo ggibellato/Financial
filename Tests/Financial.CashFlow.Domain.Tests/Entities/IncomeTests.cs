@@ -189,17 +189,10 @@ public class IncomeTests
         income.SplitToReserve.Should().BeFalse();
     }
 
-    private static Account InactiveBank()
-    {
-        var account = TestAccounts.Bank("Closed");
-        account.SetActive(false);
-        return account;
-    }
-
     [Fact]
     public void Create_OnAnInactiveBank_Throws()
     {
-        var act = () => Income.Create(new DateOnly(2026, 7, 25), Gleison, null, 100m, InactiveBank());
+        var act = () => Income.Create(new DateOnly(2026, 7, 25), Gleison, null, 100m, TestAccounts.Bank("Closed", isActive: false));
 
         act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
     }
@@ -209,7 +202,7 @@ public class IncomeTests
     {
         var income = Income.Create(new DateOnly(2026, 7, 25), Gleison, null, 100m, Barclays);
 
-        var act = () => income.UpdateDetails(income.Date, Gleison, null, 100m, InactiveBank());
+        var act = () => income.UpdateDetails(income.Date, Gleison, null, 100m, TestAccounts.Bank("Closed", isActive: false));
 
         act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
     }
