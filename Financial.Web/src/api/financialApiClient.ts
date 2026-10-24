@@ -5,6 +5,10 @@ import type {
   AccountDto,
   AccountGroupSummaryDto,
   AccountTransactionDto,
+  AccountTransferCreateDto,
+  AccountTransferDto,
+  AccountTransferUpdateDto,
+  TransferAccountOptionDto,
   AggregatedSummaryDto,
   AllocationBreakdownDto,
   DataQualityReportDto,
@@ -247,6 +251,11 @@ export interface FinancialApiClient {
   getAccounts: () => Promise<AccountDto[]>
   getAccount: (id: string, year: number, month: number) => Promise<AccountDetailDto>
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
+  getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
+  getTransferSources: (accountId: string) => Promise<TransferAccountOptionDto[]>
+  createAccountTransfer: (request: AccountTransferCreateDto) => Promise<AccountTransferDto>
+  updateAccountTransfer: (id: string, request: AccountTransferUpdateDto) => Promise<AccountTransferDto>
+  deleteAccountTransfer: (id: string) => Promise<void>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
@@ -695,6 +704,21 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<AccountDetailDto>(`/accounts/${encodeURIComponent(id)}/${year}/${month}`),
     getAccountTransactions: (id, year, month) =>
       request<AccountTransactionDto[]>(`/accounts/${encodeURIComponent(id)}/transactions/${year}/${month}`),
+    getTransferDestinations: (accountId) =>
+      request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),
+    getTransferSources: (accountId) =>
+      request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-sources`),
+    createAccountTransfer: (requestBody) =>
+      request<AccountTransferDto>('/accounts/transfers', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateAccountTransfer: (id, requestBody) =>
+      request<AccountTransferDto>(`/accounts/transfers/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteAccountTransfer: (id) => requestVoid(`/accounts/transfers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
         method: 'POST',

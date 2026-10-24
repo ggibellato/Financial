@@ -3,16 +3,24 @@ import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 
 interface RowActionsCellProps {
   itemName: string
-  deleteDisabled: boolean
-  onEdit: () => void
+  editDisabled?: boolean
+  deleteDisabled?: boolean
+  onEdit: (button: HTMLButtonElement) => void
   onDelete: () => void
 }
 
-export default function RowActionsCell({ itemName, deleteDisabled, onEdit, onDelete }: RowActionsCellProps) {
+export default function RowActionsCell({ itemName, editDisabled, deleteDisabled, onEdit, onDelete }: RowActionsCellProps) {
   return (
     <TableCell className="data-table__col--action">
       <div className="data-table__actions-cell">
-        <Button appearance="subtle" size="small" icon={<EditRegular />} aria-label={`Edit ${itemName}`} onClick={onEdit} />
+        <Button
+          appearance="subtle"
+          size="small"
+          icon={<EditRegular />}
+          aria-label={`Edit ${itemName}`}
+          disabled={editDisabled}
+          onClick={(event) => onEdit(event.currentTarget)}
+        />
         <Button
           appearance="subtle"
           size="small"

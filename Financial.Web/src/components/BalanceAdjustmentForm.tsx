@@ -1,9 +1,9 @@
-import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankDto } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
-import { formatN2 } from '../utils/formatters'
+import { formatCurrency } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface BalanceAdjustmentFormProps {
@@ -19,6 +19,9 @@ interface BalanceAdjustmentFormProps {
   saveError: string | null
   saveErrorFields: Partial<Record<BalanceAdjustmentFormField, string>>
   savedDelta: number | null
+  isBankLocked?: boolean
+  currency?: string
+  balanceLabel?: string
   onFieldChange: (field: BalanceAdjustmentFormField, value: string) => void
   onSave: () => void
   onCancel: () => void
@@ -37,6 +40,9 @@ export default function BalanceAdjustmentForm({
   saveError,
   saveErrorFields,
   savedDelta,
+  isBankLocked = false,
+  currency = 'GBP',
+  balanceLabel,
   onFieldChange,
   onSave,
   onCancel,
@@ -45,14 +51,13 @@ export default function BalanceAdjustmentForm({
   const fieldError = useFieldError(saveErrorFields)
 
   if (savedDelta !== null) {
-    const sign = savedDelta < 0 ? '-' : ''
     return (
       <div className={styles.panel} data-testid="balance-adjustment-form-panel">
         <Text as="h2" weight="semibold" size={400}>
-          Balance Corrected
+          Balance adjusted
         </Text>
         <Text as="p">
-          Adjustment of <Text weight="semibold">{sign}£{formatN2(Math.abs(savedDelta))}</Text> recorded
+          Adjustment of <Text weight="semibold">{formatCurrency(savedDelta, currency)}</Text> recorded
         </Text>
         <div className={styles.actions}>
           <Button appearance="primary" onClick={onCancel}>
@@ -69,92 +74,108 @@ export default function BalanceAdjustmentForm({
   const saveDisabled = isSaving || (!isEditing && !bankChosen)
 
   return (
-    <div className={styles.panel} data-testid="balance-adjustment-form-panel">
-      <Text as="h2" weight="semibold" size={400}>
-        {isEditing ? 'Edit Balance Correction' : 'New Balance Correction'}
-      </Text>
+    <form
+      className={styles.panel}
+      data-testid="balance-adjustment-form-panel"
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault()
+        onSave()
+      }}
+    >
+      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+        <Text as="h2" weight="semibold" size={400}>
+          {isEditing ? 'Edit balance adjustment' : 'Adjust balance'}
+        </Text>
+        {generalError && (
+          <MessageBar intent="error">
+            <MessageBarBody>{generalError}</MessageBarBody>
+          </MessageBar>
+        )}
 
-      {!isEditing && (
-        <div className={styles.grid}>
-          <Field
-            label="Bank"
-            required
-            validationState={fieldError('bankName') ? 'error' : 'none'}
-            validationMessage={fieldError('bankName')}
-          >
-            <Select value={bankName} onChange={(e) => onFieldChange('bankName', e.target.value)}>
-              <option value="">Select a bank</option>
-              {banks.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </div>
-      )}
-
-      {bankChosen && (
-        <>
-          <Text as="p" size={200}>
-            Current calculated balance for {bankDisplayName}:{' '}
-            <Text size={200} weight="semibold">
-              £{formatN2(currentBalance)}
-            </Text>
-          </Text>
+        {isBankLocked ? (
           <div className={styles.grid}>
-            <Field
-              label="Date"
-              validationState={fieldError('date') ? 'error' : 'none'}
-              validationMessage={fieldError('date')}
-            >
-              <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
-            </Field>
-
-            <Field
-              label={{
-                children: (_: unknown, props: LabelProps) => (
-                  <InfoLabel
-                    {...props}
-                    info="Enter the balance you want this bank to show after the adjustment — the app calculates and records the difference."
-                  >
-                    Target Balance
-                  </InfoLabel>
-                ),
-              }}
-              required
-              validationState={fieldError('targetBalance') ? 'error' : 'none'}
-              validationMessage={fieldError('targetBalance')}
-            >
-              <Input
-                type="number"
-                step="0.01"
-                value={targetBalance}
-                onChange={(e) => onFieldChange('targetBalance', e.target.value)}
-              />
-            </Field>
-
-            <Field label="Note">
-              <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
+            <Field label="Bank">
+              <Text weight="semibold">{bankDisplayName}</Text>
             </Field>
           </div>
-        </>
-      )}
+        ) : !isEditing && (
+          <div className={styles.grid}>
+            <Field
+              label="Bank"
+              required
+              validationState={fieldError('bankName') ? 'error' : 'none'}
+              validationMessage={fieldError('bankName')}
+            >
+              <Select value={bankName} onChange={(e) => onFieldChange('bankName', e.target.value)}>
+                <option value="">Select a bank</option>
+                {banks.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
+        )}
 
-      <div className={styles.actions}>
-        <Button appearance="primary" disabled={saveDisabled} onClick={onSave}>
-          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Balance Correction'}
-        </Button>
-        <Button appearance="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
+        {bankChosen && (
+          <>
+            <Text as="p" size={200}>
+              {balanceLabel ?? `Current calculated balance for ${bankDisplayName}`}:{' '}
+              <Text size={200} weight="semibold">
+                {formatCurrency(currentBalance, currency)}
+              </Text>
+            </Text>
+            <div className={styles.grid}>
+              <Field
+                label="Date"
+                required
+                validationState={fieldError('date') ? 'error' : 'none'}
+                validationMessage={fieldError('date')}
+              >
+                <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+              </Field>
 
-      {generalError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{generalError}</MessageBarBody>
-        </MessageBar>
-      )}
-    </div>
+              <Field
+                label={{
+                  children: (_: unknown, props: LabelProps) => (
+                    <InfoLabel
+                      {...props}
+                      info="Enter the balance you want this bank to show after the adjustment — the app calculates and records the difference."
+                    >
+                      Target Balance
+                    </InfoLabel>
+                  ),
+                }}
+                required
+                validationState={fieldError('targetBalance') ? 'error' : 'none'}
+                validationMessage={fieldError('targetBalance')}
+              >
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={targetBalance}
+                  onChange={(e) => onFieldChange('targetBalance', e.target.value)}
+                />
+              </Field>
+
+              <Field label="Note" className={styles.spanAll}>
+                <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
+              </Field>
+            </div>
+          </>
+        )}
+
+        <div className={styles.actions}>
+          <Button type="submit" appearance="primary" disabled={saveDisabled} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
+            {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Adjust balance'}
+          </Button>
+          <Button appearance="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </fieldset>
+    </form>
   )
 }

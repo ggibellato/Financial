@@ -71,7 +71,7 @@ const FILTER_ACCESSORS = {
 interface BankOperationsSectionProps {
   operations: BankOperationEntry[]
   onNewTransfer: () => void
-  onNewBalanceCorrection: () => void
+  onAdjustBalance: () => void
   onEditTransfer: (transfer: TransferDto) => void
   onEditAdjustment: (adjustment: BalanceAdjustmentDto) => void
   onDeleteTransfer: (id: string) => void
@@ -81,7 +81,7 @@ interface BankOperationsSectionProps {
 export default function BankOperationsSection({
   operations,
   onNewTransfer,
-  onNewBalanceCorrection,
+  onAdjustBalance,
   onEditTransfer,
   onEditAdjustment,
   onDeleteTransfer,
@@ -98,14 +98,14 @@ export default function BankOperationsSection({
           <Button appearance="primary" icon={<AddRegular />} onClick={onNewTransfer}>
             New Transfer
           </Button>
-          <Button appearance="primary" icon={<AddRegular />} onClick={onNewBalanceCorrection}>
-            New Balance Correction
+          <Button appearance="primary" icon={<AddRegular />} onClick={onAdjustBalance}>
+            Adjust balance
           </Button>
         </div>
       </div>
 
       {operations.length === 0 ? (
-        <p className="bank-operations-section__empty">No transfers or balance corrections this month.</p>
+        <p className="bank-operations-section__empty">No transfers or balance adjustments this month.</p>
       ) : (
         <div className="bank-operations-section__table-wrapper">
           <Table className="bank-operations-section__table data-table">

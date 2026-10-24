@@ -4,7 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { Toaster } from '@fluentui/react-components'
-import type { AccountDetailDto, AccountDto, AccountTransactionDto, BankDto, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto } from '../../api/types'
+import type {
+  AccountDetailDto,
+  AccountDto,
+  AccountTransactionDto,
+  AccountTransferDto,
+  BalanceAdjustmentDto,
+  BankDto,
+  CategoryDto,
+  ExpenseDto,
+  IncomeDto,
+  IncomeSourceDto,
+} from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
@@ -20,6 +31,16 @@ const {
   getIncomeSourcesMock,
   createExpenseMock,
   createIncomeMock,
+  updateExpenseMock,
+  deleteExpenseMock,
+  deleteIncomeMock,
+  getTransferDestinationsMock,
+  getTransferSourcesMock,
+  createAccountTransferMock,
+  updateAccountTransferMock,
+  deleteAccountTransferMock,
+  createBalanceAdjustmentMock,
+  deleteBalanceAdjustmentMock,
 } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
@@ -29,6 +50,16 @@ const {
   getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
+  updateExpenseMock: vi.fn<FinancialApiClient['updateExpense']>(),
+  deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
+  deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
+  getTransferDestinationsMock: vi.fn<FinancialApiClient['getTransferDestinations']>(),
+  getTransferSourcesMock: vi.fn<FinancialApiClient['getTransferSources']>(),
+  createAccountTransferMock: vi.fn<FinancialApiClient['createAccountTransfer']>(),
+  updateAccountTransferMock: vi.fn<FinancialApiClient['updateAccountTransfer']>(),
+  deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
+  createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
+  deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -41,11 +72,22 @@ vi.mock('../../api/financialApiClient', () => ({
     getIncomeSources: getIncomeSourcesMock,
     createExpense: createExpenseMock,
     createIncome: createIncomeMock,
+    updateExpense: updateExpenseMock,
+    deleteExpense: deleteExpenseMock,
+    deleteIncome: deleteIncomeMock,
+    getTransferDestinations: getTransferDestinationsMock,
+    getTransferSources: getTransferSourcesMock,
+    createAccountTransfer: createAccountTransferMock,
+    updateAccountTransfer: updateAccountTransferMock,
+    deleteAccountTransfer: deleteAccountTransferMock,
+    createBalanceAdjustment: createBalanceAdjustmentMock,
+    deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
   } as Partial<FinancialApiClient>,
 }))
 
 const BARCLAYS_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
 const CHASE_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
+const WISE_EUR_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000004'
 
 const ACCOUNTS: AccountDto[] = [
   { id: BARCLAYS_ID, name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true },
@@ -118,6 +160,21 @@ function renderScreen(entry: string, previousEntries: string[] = []) {
   )
 }
 
+// Under jsdom, Tabster can leave aria-hidden on a newly opened Fluent dialog, which empties its accessible name.
+function findDialog(title: string): Promise<HTMLElement> {
+  return waitFor(() => {
+    const dialog = screen
+      .getAllByRole('dialog', { hidden: true })
+      .find((candidate) => candidate.querySelector('h2')?.textContent === title)
+    expect(dialog).toBeDefined()
+    return dialog as HTMLElement
+  })
+}
+
+async function dialogButton(dialogTitle: string, buttonName: string) {
+  return within(await findDialog(dialogTitle)).getByText(buttonName, { selector: 'button' })
+}
+
 beforeEach(() => {
   pinDate('2026-10-15T12:00:00+01:00')
   getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
@@ -128,6 +185,19 @@ beforeEach(() => {
   getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
   createExpenseMock.mockReset()
   createIncomeMock.mockReset()
+  updateExpenseMock.mockReset()
+  deleteExpenseMock.mockReset().mockResolvedValue(undefined)
+  deleteIncomeMock.mockReset().mockResolvedValue(undefined)
+  getTransferDestinationsMock.mockReset().mockResolvedValue([{ id: CHASE_ID, name: 'Chase', currency: 'GBP' }])
+  getTransferSourcesMock.mockReset().mockResolvedValue([
+    { id: CHASE_ID, name: 'Chase', currency: 'GBP' },
+    { id: WISE_EUR_ID, name: 'Wise EUR', currency: 'EUR' },
+  ])
+  createAccountTransferMock.mockReset()
+  updateAccountTransferMock.mockReset()
+  deleteAccountTransferMock.mockReset().mockResolvedValue(undefined)
+  createBalanceAdjustmentMock.mockReset()
+  deleteBalanceAdjustmentMock.mockReset().mockResolvedValue(undefined)
   sessionStorage.clear()
 })
 
@@ -298,7 +368,33 @@ describe('AccountScreenPage actions', () => {
     await openScreen()
 
     const actions = within(screen.getByRole('group', { name: 'Account actions' })).getAllByRole('button')
-    expect(actions.map((button) => button.textContent)).toEqual(['Add expense', 'Add income'])
+    expect(actions.map((button) => button.textContent)).toEqual([
+      'Add expense',
+      'Add income',
+      'Transfer to',
+      'Transfer from',
+      'Adjust balance',
+    ])
+  })
+
+  it('keeps the other actions usable while the transfer counterparts are still loading', async () => {
+    getTransferDestinationsMock.mockReturnValue(new Promise(() => {}))
+
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    expect(screen.getByRole('button', { name: 'Adjust balance' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Transfer to' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Transfer from' })).toBeDisabled()
+  })
+
+  it('loads no transfer counterparts for an account that cannot transfer', async () => {
+    withActions(['AddExpense'])
+
+    await openScreen()
+
+    expect(getTransferDestinationsMock).not.toHaveBeenCalled()
+    expect(getTransferSourcesMock).not.toHaveBeenCalled()
   })
 
   it('renders no actions and loads no form options for an account that allows none', async () => {
@@ -323,16 +419,16 @@ describe('AccountScreenPage actions', () => {
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.click(screen.getByRole('button', { name: 'Add income' }))
 
-    expect(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Keep editing' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
     expect(screen.queryByRole('heading', { name: 'New Income' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
-    await user.click(await screen.findByRole('button', { name: 'Discard' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(screen.getByRole('heading', { name: 'New Income' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
@@ -345,7 +441,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
     await user.click(screen.getByRole('button', { name: 'Add income' }))
 
-    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'New Income' })).toBeInTheDocument()
   })
 
@@ -495,6 +591,29 @@ describe('AccountScreenPage actions', () => {
     expect(addIncome).toHaveFocus()
   })
 
+  it('closes a clean form on a month change without asking', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
+
+    expect(await screen.findByText('Balance at end of September 2026')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+  })
+
+  it('opens a new entry on the last day of a past viewed month', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
+    await screen.findByText('Balance at end of September 2026')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-09-30')
+  })
+
   it('asks before a month change discards unsaved changes, and keeps the month on Keep editing', async () => {
     const user = userEvent.setup()
     await openScreen()
@@ -503,14 +622,15 @@ describe('AccountScreenPage actions', () => {
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
 
-    expect(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Keep editing' }))
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+    await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
 
     expect(screen.getByLabelText('Month')).toHaveValue('2026-10')
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
-    await user.click(await screen.findByRole('button', { name: 'Discard' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(await screen.findByText('Balance at end of September 2026')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
@@ -525,8 +645,8 @@ describe('AccountScreenPage actions', () => {
     await user.click(screen.getByRole('combobox', { name: 'Account' }))
     await user.click(screen.getByRole('option', { name: 'Chase' }))
 
-    expect(screen.getByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
-    await user.click(await screen.findByRole('button', { name: 'Discard' }))
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Chase' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
@@ -543,5 +663,264 @@ describe('AccountScreenPage actions', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+  })
+})
+
+describe('AccountScreenPage transfers, reconcile and row actions', () => {
+  const EXPENSE: ExpenseDto = {
+    id: 'e1',
+    date: '2026-10-14',
+    description: 'Tesco',
+    value: 42.1,
+    categoryId: 'category-groceries',
+    categoryName: 'Groceries',
+    paymentSourceBankId: BARCLAYS_ID,
+    paymentSourceBankName: 'Barclays',
+    creditCardId: null,
+    creditCardName: null,
+    chargeDate: null,
+    invoiceDate: null,
+    paymentStatus: 'ImmediatePayment',
+    roundUpAmount: 0.9,
+    suggestedRoundUpAmount: null,
+    countsAsTithe: true,
+  }
+
+  const TRANSFER: AccountTransferDto = {
+    id: 't1',
+    date: '2026-10-05',
+    sourceAccountId: BARCLAYS_ID,
+    sourceAccountName: 'Barclays',
+    sourceCurrency: 'GBP',
+    destinationAccountId: CHASE_ID,
+    destinationAccountName: 'Chase',
+    destinationCurrency: 'GBP',
+    amount: 200,
+    destinationAmount: 200,
+    note: null,
+  }
+
+  const ADJUSTMENT: BalanceAdjustmentDto = {
+    id: 'a1',
+    date: '2026-10-01',
+    bankId: BARCLAYS_ID,
+    bankName: 'Barclays',
+    targetBalance: 2800.25,
+    delta: -1.5,
+    note: 'Bank fee',
+  }
+
+  const ROWS: AccountTransactionDto[] = [
+    accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-14', description: 'Tesco', amount: -42.1, roundUp: -0.9, expense: EXPENSE }),
+    accountTransactionRow({ id: 't1', kind: 'TransferOut', date: '2026-10-05', counterpart: 'Chase', amount: -200, transfer: TRANSFER }),
+    accountTransactionRow({ id: 'a1', kind: 'Adjustment', date: '2026-10-01', description: 'Bank fee', amount: -1.5, adjustment: ADJUSTMENT }),
+  ]
+
+  beforeEach(() => {
+    withActions(BANK_ACTIONS)
+    getAccountTransactionsMock.mockResolvedValue(ROWS)
+    createAccountTransferMock.mockResolvedValue(TRANSFER)
+    updateAccountTransferMock.mockResolvedValue(TRANSFER)
+    updateExpenseMock.mockResolvedValue(EXPENSE)
+    createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENT, id: 'a2', targetBalance: 2790, delta: -10.25 })
+  })
+
+  async function openScreen() {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await screen.findByRole('heading', { level: 1, name: 'Barclays' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Transfer to' })).toBeEnabled())
+  }
+
+  function rowOf(text: string): HTMLElement {
+    return screen.getByText(text).closest('tr') as HTMLElement
+  }
+
+  it('Transfer to sends from this account to the chosen destination, then closes and returns focus', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+    const transferTo = screen.getByRole('button', { name: 'Transfer to' })
+
+    await user.click(transferTo)
+    const form = screen.getByRole('heading', { name: 'New Transfer' }).closest('form') as HTMLElement
+    expect(within(form).getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
+    expect(within(form).queryByLabelText(/^Amount received/)).not.toBeInTheDocument()
+    await user.selectOptions(within(form).getByRole('combobox', { name: /^To/ }), CHASE_ID)
+    await user.type(within(form).getByLabelText(/^Amount/), '200')
+    await user.click(within(form).getByRole('button', { name: 'Add Transfer' }))
+
+    await waitFor(() =>
+      expect(createAccountTransferMock).toHaveBeenCalledWith({
+        date: '2026-10-15',
+        sourceAccountId: BARCLAYS_ID,
+        destinationAccountId: CHASE_ID,
+        amount: 200,
+        destinationAmount: null,
+        note: null,
+      }),
+    )
+    expect(await screen.findByText('Transfer saved')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New Transfer' })).not.toBeInTheDocument()
+    await waitFor(() => expect(transferTo).toHaveFocus())
+  })
+
+  it('Transfer from a different currency asks for the amount received in this account', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Transfer from' }))
+    await user.selectOptions(screen.getByRole('combobox', { name: /^From/ }), WISE_EUR_ID)
+    await user.type(screen.getByRole('spinbutton', { name: /^Amount(?! received)/ }), '100')
+    await user.type(screen.getByLabelText(/^Amount received \(GBP\)/), '86.20')
+    await user.click(screen.getByRole('button', { name: 'Add Transfer' }))
+
+    await waitFor(() =>
+      expect(createAccountTransferMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sourceAccountId: WISE_EUR_ID,
+          destinationAccountId: BARCLAYS_ID,
+          amount: 100,
+          destinationAmount: 86.2,
+        }),
+      ),
+    )
+  })
+
+  it('Adjust balance starts from the header balance, records the adjustment and keeps its confirmation', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Adjust balance' }))
+    const form = screen.getByTestId('balance-adjustment-form-panel')
+    expect(form).toHaveTextContent('Balance at end of October 2026: £2,800.25')
+    expect(within(form).queryByRole('combobox', { name: /Bank/ })).not.toBeInTheDocument()
+    await user.type(within(form).getByRole('spinbutton', { name: /^Target Balance/ }), '2790')
+    await user.click(within(form).getByRole('button', { name: 'Adjust balance' }))
+
+    await waitFor(() =>
+      expect(createBalanceAdjustmentMock).toHaveBeenCalledWith(BARCLAYS_ID, { date: '2026-10-15', targetBalance: 2790, note: null }),
+    )
+    await waitFor(() => expect(screen.getAllByText('Balance adjusted').length).toBeGreaterThan(1))
+    expect(screen.getByRole('heading', { name: 'Balance adjusted' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus())
+  })
+
+  it('[AC P60-F05-bank-account-screen-09] Edit opens the matching form pre-filled and Delete asks before calling the endpoint', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+    const editExpense = within(rowOf('Tesco')).getByRole('button', { name: 'Edit expense' })
+
+    await user.click(editExpense)
+    expect(screen.getByRole('heading', { name: 'Edit Expense' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Tesco')
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-14')
+    await user.clear(screen.getByLabelText(/^Value/))
+    await user.type(screen.getByLabelText(/^Value/), '45')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 45, paymentSourceBankId: BARCLAYS_ID })),
+    )
+    expect(await screen.findByText('Expense updated')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Edit Expense' })).not.toBeInTheDocument()
+    await waitFor(() => expect(editExpense).toHaveFocus())
+
+    await user.click(within(rowOf('Chase')).getByRole('button', { name: 'Delete transfer' }))
+    const dialog = await findDialog('Delete transfer')
+    expect(dialog).toHaveTextContent('Delete this transfer? This cannot be undone.')
+    await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+    await waitFor(() => expect(deleteAccountTransferMock).toHaveBeenCalledWith('t1'))
+    expect(await screen.findByText('Transfer deleted')).toBeInTheDocument()
+  })
+
+  it('deletes nothing when the delete is cancelled, and returns focus to the row Delete button', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+    const deleteExpense = within(rowOf('Tesco')).getByRole('button', { name: 'Delete expense' })
+
+    await user.click(deleteExpense)
+    await user.click(await dialogButton('Delete expense', 'Cancel'))
+
+    await waitFor(() => expect(deleteExpense).toHaveFocus())
+    expect(deleteExpenseMock).not.toHaveBeenCalled()
+  })
+
+  it('edits a transfer with this account locked on its side and its counterpart selected', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(within(rowOf('Chase')).getByRole('button', { name: 'Edit transfer' }))
+    expect(screen.getByRole('heading', { name: 'Edit Transfer' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /^To/ })).toHaveValue(CHASE_ID)
+    await user.clear(screen.getByLabelText(/^Amount/))
+    await user.type(screen.getByLabelText(/^Amount/), '250')
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateAccountTransferMock).toHaveBeenCalledWith(
+        't1',
+        expect.objectContaining({ sourceAccountId: BARCLAYS_ID, destinationAccountId: CHASE_ID, amount: 250 }),
+      ),
+    )
+    expect(await screen.findByText('Transfer updated')).toBeInTheDocument()
+  })
+
+  it('deletes an adjustment through its bank route and closes its open edit form', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: 'Edit balance adjustment' }))
+    expect(screen.getByRole('heading', { name: 'Edit balance adjustment' })).toBeInTheDocument()
+    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: 'Delete balance adjustment' }))
+    await user.click(await dialogButton('Delete balance adjustment', 'Delete'))
+
+    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith(BARCLAYS_ID, 'a1'))
+    expect(await screen.findByText('Balance adjustment deleted')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Edit balance adjustment' })).not.toBeInTheDocument()
+  })
+
+  it('keeps the delete dialog open with the reason when the delete fails', async () => {
+    const user = userEvent.setup()
+    deleteExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    await openScreen()
+
+    await user.click(within(rowOf('Tesco')).getByRole('button', { name: 'Delete expense' }))
+    const dialog = await findDialog('Delete expense')
+    await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+    expect(await within(dialog).findByText('Could not delete. Check the connection and try again.')).toBeInTheDocument()
+    expect(within(dialog).getByText('Delete', { selector: 'button' })).toBeEnabled()
+    expect(screen.queryByText('Expense deleted')).not.toBeInTheDocument()
+
+    await user.click(within(dialog).getByText('Cancel', { selector: 'button' }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+  })
+
+  it('asks to discard unsaved changes before opening a row edit', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Transfer to' }))
+    await user.type(screen.getByLabelText(/^Amount/), '10')
+    await user.click(within(rowOf('Tesco')).getByRole('button', { name: 'Edit expense' }))
+
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
+
+    expect(screen.getByRole('heading', { name: 'Edit Expense' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New Transfer' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F05-bank-account-screen-11] focus moves into a row edit and back to the row Edit button on Cancel', async () => {
+    const user = userEvent.setup()
+    await openScreen()
+    const editAdjustment = within(rowOf('Bank fee')).getByRole('button', { name: 'Edit balance adjustment' })
+
+    await user.click(editAdjustment)
+    await waitFor(() => expect(screen.getByLabelText(/^Date/)).toHaveFocus())
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('heading', { name: 'Edit balance adjustment' })).not.toBeInTheDocument()
+    expect(editAdjustment).toHaveFocus()
   })
 })

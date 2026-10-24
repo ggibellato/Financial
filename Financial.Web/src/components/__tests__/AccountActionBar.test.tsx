@@ -16,6 +16,25 @@ describe('AccountActionBar', () => {
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Add income', 'Add expense'])
   })
 
+  it('renders every bank action this stage has a form for, skipping Pay recurring bill', () => {
+    render(
+      <AccountActionBar
+        allowedActions={['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile']}
+        activeAction={null}
+        formAreaId="form"
+        onAction={vi.fn()}
+      />,
+    )
+
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
+      'Add expense',
+      'Add income',
+      'Transfer to',
+      'Transfer from',
+      'Adjust balance',
+    ])
+  })
+
   it('renders nothing when no allowed action is known', () => {
     render(<AccountActionBar allowedActions={['Settle']} activeAction={null} formAreaId="form" onAction={vi.fn()} />)
 
@@ -47,12 +66,18 @@ describe('AccountActionBar', () => {
     expect(screen.getByRole('button', { name: 'Add expense' })).toHaveAttribute('aria-controls', 'form')
   })
 
-  it('disables every action while disabled', () => {
+  it('disables only the actions the caller marks as disabled', () => {
     render(
-      <AccountActionBar allowedActions={['AddExpense', 'AddIncome']} activeAction={null} formAreaId="form" disabled onAction={vi.fn()} />,
+      <AccountActionBar
+        allowedActions={['AddExpense', 'TransferTo']}
+        activeAction={null}
+        formAreaId="form"
+        isActionDisabled={(action) => action === 'TransferTo'}
+        onAction={vi.fn()}
+      />,
     )
 
-    expect(screen.getByRole('button', { name: 'Add expense' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Add income' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Transfer to' })).toBeDisabled()
   })
 })

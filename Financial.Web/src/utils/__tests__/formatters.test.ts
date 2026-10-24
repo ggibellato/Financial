@@ -13,7 +13,10 @@ import {
   formatPercentFractionOrDash,
   formatShortDate,
   formatSignedN2,
+  formatCurrency,
+  getDeleteErrorMessage,
   getSaveErrorMessage,
+  lastDayOfMonthIsoDate,
   pad,
   parseMonthInputValue,
   previousYearJanuaryFirst,
@@ -291,5 +294,33 @@ describe('getSaveErrorMessage', () => {
 
   it('getSaveErrorMessage_NonError_ReturnsFallback', () => {
     expect(getSaveErrorMessage('boom', 'Fallback')).toBe('Fallback')
+  })
+})
+
+describe('getDeleteErrorMessage', () => {
+  it('names the connection for a network failure and keeps the server message otherwise', () => {
+    expect(getDeleteErrorMessage(new ApiError('Failed to fetch', 0), 'Failed to delete')).toBe(
+      'Could not delete. Check the connection and try again.',
+    )
+    expect(getDeleteErrorMessage(new ApiError('Income not found.', 404), 'Failed to delete')).toBe('Income not found.')
+    expect(getDeleteErrorMessage('boom', 'Failed to delete')).toBe('Failed to delete')
+  })
+})
+
+describe('formatCurrency', () => {
+  it('formats an amount in its own currency, with the sign before the symbol', () => {
+    expect(formatCurrency(2344.37, 'GBP')).toBe('£2,344.37')
+    expect(formatCurrency(-10.25, 'GBP')).toBe('-£10.25')
+    expect(formatCurrency(5, 'EUR')).toBe('€5.00')
+  })
+})
+
+describe('lastDayOfMonthIsoDate', () => {
+  it.each([
+    [2026, 9, '2026-09-30'],
+    [2024, 2, '2024-02-29'],
+    [2025, 12, '2025-12-31'],
+  ])('gives the last day of %i-%i', (year, month, expected) => {
+    expect(lastDayOfMonthIsoDate(year, month)).toBe(expected)
   })
 })

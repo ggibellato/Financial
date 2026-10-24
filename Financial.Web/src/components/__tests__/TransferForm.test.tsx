@@ -112,4 +112,58 @@ describe('TransferForm', () => {
     const button = screen.getByRole('button', { name: 'Saving...' })
     expect(button).toBeDisabled()
   })
+
+  it('disables every field and Cancel while saving', () => {
+    render(<TransferForm {...baseProps} isSaving />)
+
+    expect(screen.getByLabelText(/^Date/)).toBeDisabled()
+    expect(screen.getByLabelText(/^Amount/)).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  })
+
+  it('names the currency of both amounts when the currencies differ', () => {
+    render(<TransferForm {...baseProps} sourceCurrency="GBP" destinationCurrency="EUR" />)
+
+    expect(screen.getByLabelText(/^Amount sent \(GBP\)/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Amount received \(EUR\)/)).toBeInTheDocument()
+  })
+
+  it('shows the locked account as text on its side and lists the others on the open side', () => {
+    render(
+      <TransferForm
+        {...baseProps}
+        sourceBank=""
+        destinationBank="bank-barclays"
+        banks={[{ id: 'bank-chase', name: 'Chase' }]}
+        lockedSide={{ side: 'destination', name: 'Barclays' }}
+      />,
+    )
+
+    expect(screen.getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^To/ })).not.toBeInTheDocument()
+    const from = screen.getByRole('combobox', { name: /^From/ })
+    expect(from).toHaveValue('')
+    expect(screen.getByRole('option', { name: 'Select an account' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Chase' })).toBeInTheDocument()
+  })
+
+  it('shows the amount received only when a destination currency is given', () => {
+    const onFieldChange = vi.fn()
+    const { rerender } = render(<TransferForm {...baseProps} onFieldChange={onFieldChange} />)
+    expect(screen.queryByLabelText(/^Amount received/)).not.toBeInTheDocument()
+
+    rerender(<TransferForm {...baseProps} onFieldChange={onFieldChange} destinationCurrency="EUR" destinationAmount="" />)
+    fireEvent.change(screen.getByLabelText(/^Amount received \(EUR\)/), { target: { value: '115.40' } })
+
+    expect(onFieldChange).toHaveBeenCalledWith('destinationAmount', '115.40')
+  })
+
+  it('saves on Enter', () => {
+    const onSave = vi.fn()
+    render(<TransferForm {...baseProps} onSave={onSave} />)
+
+    fireEvent.submit(screen.getByTestId('transfer-form-panel'))
+
+    expect(onSave).toHaveBeenCalledOnce()
+  })
 })

@@ -2,8 +2,8 @@ import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
-import { getSaveErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
-import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -230,8 +230,8 @@ export function useExpenseForm(
   banks: BankDto[],
   categories: CategoryDto[],
   creditCards: CreditCardDto[],
-  onSaved: () => void,
-  { lockedBank, keepOpenAfterSave = false }: AccountFormSettings = {},
+  onSaved: (isEdit: boolean) => void,
+  { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseExpenseFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -244,7 +244,7 @@ export function useExpenseForm(
 
   function showCreateForm(requestedMode: PaymentMode) {
     const mode = lockedBank ? 'bank' : requestedMode
-    const date = getStoredDefault(DATE_KEY) ?? todayIsoDate()
+    const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
     const creditCardId = mode === 'card' ? (getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
@@ -358,7 +358,7 @@ export function useExpenseForm(
         }
         setStoredDefault(CATEGORY_KEY, state.categoryId)
         dispatch({ type: keepOpenAfterSave && !state.isEditing ? 'SAVE_SUCCESS_KEEP_OPEN' : 'SAVE_SUCCESS' })
-        onSaved()
+        onSaved(state.isEditing)
       })
       .catch((err: unknown) => {
         dispatch({
