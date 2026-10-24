@@ -1,9 +1,13 @@
 import { apiClient } from '../api/financialApiClient'
-import type { BankDto, CategoryDto, IncomeSourceDto } from '../api/types'
+import type { BankDto, CategoryDto, IncomeSourceDto, TransferAccountOptionDto } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
-import type { TransferCounterparts } from './useAccountTransferForm'
 
 export const FORM_OPTIONS_LOAD_ERROR = 'Unable to load the form options'
+
+export interface TransferCounterparts {
+  destinations: TransferAccountOptionDto[]
+  sources: TransferAccountOptionDto[]
+}
 
 export interface AccountFormOptions extends TransferCounterparts {
   banks: BankDto[]
@@ -39,14 +43,11 @@ export function useAccountFormOptions(isNeeded: boolean, transferAccountId: stri
     [transferAccountId],
     FORM_OPTIONS_LOAD_ERROR,
   )
-  const options: AccountFormOptions = {
-    ...(shared.data ?? NO_SHARED_OPTIONS),
-    ...(counterparts.data ?? NO_COUNTERPARTS),
-  }
 
   return {
-    options,
-    isReady: shared.data !== null && (transferAccountId === null || counterparts.data !== null),
+    options: { ...(shared.data ?? NO_SHARED_OPTIONS), ...(counterparts.data ?? NO_COUNTERPARTS) },
+    isReady: shared.data !== null,
+    areCounterpartsReady: counterparts.data !== null,
     error: shared.error ?? counterparts.error,
     retry: () => {
       if (shared.error) shared.retry()

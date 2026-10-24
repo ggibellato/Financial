@@ -1,13 +1,9 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import type { LockedBank } from '../hooks/formSettings'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
 import { DIFFERENT_BANKS_ERROR } from '../hooks/useTransferForm'
 import { useFormPanelStyles } from './formPanelStyles'
-
-interface TransferOption {
-  id: string
-  name: string
-}
 
 export interface LockedTransferSide {
   side: 'source' | 'destination'
@@ -21,9 +17,10 @@ interface TransferFormProps {
   destinationBank: string
   amount: string
   note: string
-  banks: TransferOption[]
+  banks: LockedBank[]
   lockedSide?: LockedTransferSide
   destinationAmount?: string
+  sourceCurrency?: string | null
   destinationCurrency?: string | null
   isSaving: boolean
   saveError: string | null
@@ -43,6 +40,7 @@ export default function TransferForm({
   banks,
   lockedSide,
   destinationAmount = '',
+  sourceCurrency = null,
   destinationCurrency = null,
   isSaving,
   saveError,
@@ -108,70 +106,73 @@ export default function TransferForm({
         onSave()
       }}
     >
-      <Text as="h2" weight="semibold" size={400}>
-        {isEditing ? 'Edit Transfer' : 'New Transfer'}
-      </Text>
-      {generalError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{generalError}</MessageBarBody>
-        </MessageBar>
-      )}
-
-      <div className={styles.grid}>
-        <Field
-          label="Date"
-          required
-          validationState={fieldError('date') ? 'error' : 'none'}
-          validationMessage={fieldError('date')}
-        >
-          <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
-        </Field>
-
-        {accountField('source', 'From')}
-        {accountField('destination', 'To')}
-
-        <Field
-          label="Amount"
-          required
-          validationState={fieldError('amount') ? 'error' : 'none'}
-          validationMessage={fieldError('amount')}
-        >
-          <Input type="number" step="0.01" value={amount} onChange={(e) => onFieldChange('amount', e.target.value)} />
-        </Field>
-
-        {destinationCurrency && (
-          <Field
-            label={`Amount received (${destinationCurrency})`}
-            required
-            validationState={fieldError('destinationAmount') ? 'error' : 'none'}
-            validationMessage={fieldError('destinationAmount')}
-          >
-            <Input
-              type="number"
-              step="0.01"
-              value={destinationAmount}
-              onChange={(e) => onFieldChange('destinationAmount', e.target.value)}
-            />
-          </Field>
+      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+        <Text as="h2" weight="semibold" size={400}>
+          {isEditing ? 'Edit Transfer' : 'New Transfer'}
+        </Text>
+        {generalError && (
+          <MessageBar intent="error">
+            <MessageBarBody>{generalError}</MessageBarBody>
+          </MessageBar>
         )}
 
-        <Field
-          label="Note"
-          validationState={fieldError('note') ? 'error' : 'none'}
-          validationMessage={fieldError('note')}
-        >
-          <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
-        </Field>
-      </div>
+        <div className={styles.grid}>
+          <Field
+            label="Date"
+            required
+            validationState={fieldError('date') ? 'error' : 'none'}
+            validationMessage={fieldError('date')}
+          >
+            <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+          </Field>
 
-      <div className={styles.actions}>
-        <Button type="submit" appearance="primary" disabled={isSaving || sameBankError !== null}>
-          {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Transfer'}
-        </Button>
-        <Button appearance="secondary" onClick={onCancel}>
-          Cancel
-        </Button>
-      </div>
+          {accountField('source', 'From')}
+          {accountField('destination', 'To')}
+
+          <Field
+            label={destinationCurrency && sourceCurrency ? `Amount sent (${sourceCurrency})` : 'Amount'}
+            required
+            validationState={fieldError('amount') ? 'error' : 'none'}
+            validationMessage={fieldError('amount')}
+          >
+            <Input type="number" step="0.01" value={amount} onChange={(e) => onFieldChange('amount', e.target.value)} />
+          </Field>
+
+          {destinationCurrency && (
+            <Field
+              label={`Amount received (${destinationCurrency})`}
+              required
+              validationState={fieldError('destinationAmount') ? 'error' : 'none'}
+              validationMessage={fieldError('destinationAmount')}
+            >
+              <Input
+                type="number"
+                step="0.01"
+                value={destinationAmount}
+                onChange={(e) => onFieldChange('destinationAmount', e.target.value)}
+              />
+            </Field>
+          )}
+
+          <Field
+            label="Note"
+            className={styles.spanAll}
+            validationState={fieldError('note') ? 'error' : 'none'}
+            validationMessage={fieldError('note')}
+          >
+            <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
+          </Field>
+        </div>
+
+        <div className={styles.actions}>
+          <Button type="submit" appearance="primary" disabled={isSaving || sameBankError !== null} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
+            {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Transfer'}
+          </Button>
+          <Button appearance="secondary" onClick={onCancel}>
+            Cancel
+          </Button>
+        </div>
+      </fieldset>
     </form>
   )
 }

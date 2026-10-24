@@ -1,33 +1,13 @@
 import type { ReactNode } from 'react'
-import {
-  Button,
-  Skeleton,
-  SkeletonItem,
-  Table,
-  TableBody,
-  TableCell,
-  TableHeader,
-  TableHeaderCell,
-  TableRow,
-} from '@fluentui/react-components'
-import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Skeleton, SkeletonItem, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import type { AccountTransactionDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import DataTableCell from './grid/DataTableCell'
+import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { recordNoun } from './accountActions'
-
-const KIND_LABELS: Record<string, string> = {
-  CardCharge: 'Card charge',
-  TransferIn: 'Transfer in',
-  TransferOut: 'Transfer out',
-}
-
-function kindLabel(kind: string): string {
-  return KIND_LABELS[kind] ?? kind
-}
+import { kindLabel, recordNoun, rowKey } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -124,7 +104,7 @@ export default function AccountTransactionsGrid({
             </TableRow>
           ) : (
             sortedRows.map((row) => (
-              <TableRow key={`${row.kind}-${row.id}`}>
+              <TableRow key={rowKey(row)}>
                 {COLUMNS.map((column) => (
                   <DataTableCell
                     key={column.key}
@@ -134,27 +114,16 @@ export default function AccountTransactionsGrid({
                     {column.render(row)}
                   </DataTableCell>
                 ))}
-                <TableCell className="data-table__col--action">
-                  {row.canEdit && (
-                    <div className="data-table__actions-cell">
-                      <Button
-                        appearance="subtle"
-                        size="small"
-                        icon={<EditRegular />}
-                        disabled={isEditDisabled}
-                        aria-label={`Edit ${recordNoun(row.kind)}`}
-                        onClick={(event) => onEdit(row, event.currentTarget)}
-                      />
-                      <Button
-                        appearance="subtle"
-                        size="small"
-                        icon={<DeleteRegular />}
-                        aria-label={`Delete ${recordNoun(row.kind)}`}
-                        onClick={() => onDelete(row)}
-                      />
-                    </div>
-                  )}
-                </TableCell>
+                {row.canEdit ? (
+                  <RowActionsCell
+                    itemName={recordNoun(row.kind)}
+                    editDisabled={isEditDisabled}
+                    onEdit={(button) => onEdit(row, button)}
+                    onDelete={() => onDelete(row)}
+                  />
+                ) : (
+                  <TableCell className="data-table__col--action" />
+                )}
               </TableRow>
             ))
           )}

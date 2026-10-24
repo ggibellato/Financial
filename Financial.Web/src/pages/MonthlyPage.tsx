@@ -390,7 +390,7 @@ export default function MonthlyPage() {
               <BankOperationsSection
                 operations={bankOperations.operations}
                 onNewTransfer={() => transferForm.openCreateForm()}
-                onNewBalanceCorrection={() => adjustmentForm.openCreateForm()}
+                onAdjustBalance={() => adjustmentForm.openCreateForm()}
                 onEditTransfer={transferForm.openEditForm}
                 onEditAdjustment={adjustmentForm.openEditForm}
                 onDeleteTransfer={confirmAndDeleteTransfer}

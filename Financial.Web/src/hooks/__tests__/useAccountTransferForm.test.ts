@@ -5,7 +5,8 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransferDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
-import { useAccountTransferForm, type TransferCounterparts } from '../useAccountTransferForm'
+import type { TransferCounterparts } from '../useAccountFormOptions'
+import { useAccountTransferForm } from '../useAccountTransferForm'
 
 const { createAccountTransferMock, updateAccountTransferMock } = vi.hoisted(() => ({
   createAccountTransferMock: vi.fn<FinancialApiClient['createAccountTransfer']>(),
@@ -44,6 +45,15 @@ const TRANSFER: AccountTransferDto = {
 
 function renderTransferForm(onSaved = vi.fn()) {
   return renderHook(() => useAccountTransferForm(BARCLAYS, COUNTERPARTS, onSaved, { viewedMonth: { year: 2026, month: 10 } }))
+}
+
+async function submitTransferToChase() {
+  const { result } = renderTransferForm()
+  act(() => result.current.openCreateForm('to'))
+  act(() => result.current.setField('destinationBank', 'chase'))
+  act(() => result.current.setField('amount', '10'))
+  await act(async () => result.current.submit())
+  return result
 }
 
 describe('useAccountTransferForm', () => {
@@ -144,7 +154,7 @@ describe('useAccountTransferForm', () => {
     await act(async () => result.current.submit())
 
     expect(result.current.saveErrorFields).toEqual({
-      destinationBank: 'Choose an account',
+      destinationBank: 'Choose the account to transfer to.',
       amount: 'Transfer amount must be greater than zero.',
     })
 
@@ -179,30 +189,30 @@ describe('useAccountTransferForm', () => {
 
   it.each([
     ['Date must not be in the future.', 'date'],
-    ['Enter the amount received in EUR.', 'destinationAmount'],
     ['Transfers from Barclays to Chase are not allowed.', 'destinationBank'],
     ['Chase is inactive.', 'destinationBank'],
   ])('shows the server message %s under its field', async (message, field) => {
     createAccountTransferMock.mockRejectedValue(new ApiError(message, 400))
-    const { result } = renderTransferForm()
 
-    act(() => result.current.openCreateForm('to'))
-    act(() => result.current.setField('destinationBank', 'chase'))
-    act(() => result.current.setField('amount', '10'))
-    await act(async () => result.current.submit())
+    const result = await submitTransferToChase()
 
     expect(result.current.saveErrorFields).toEqual({ [field]: message })
     expect(result.current.isOpen).toBe(true)
   })
 
+  it('shows an amount-received message in the banner when that field is not shown', async () => {
+    createAccountTransferMock.mockRejectedValue(new ApiError('Enter the amount received in EUR.', 400))
+
+    const result = await submitTransferToChase()
+
+    expect(result.current.saveErrorFields).toEqual({})
+    expect(result.current.saveError).toBe('Enter the amount received in EUR.')
+  })
+
   it('shows the connection message and keeps the values when the save cannot reach the server', async () => {
     createAccountTransferMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
-    const { result } = renderTransferForm()
 
-    act(() => result.current.openCreateForm('to'))
-    act(() => result.current.setField('destinationBank', 'chase'))
-    act(() => result.current.setField('amount', '10'))
-    await act(async () => result.current.submit())
+    const result = await submitTransferToChase()
 
     expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
     expect(result.current.saveErrorFields).toEqual({})

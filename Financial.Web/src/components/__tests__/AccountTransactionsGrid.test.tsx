@@ -51,7 +51,7 @@ describe('AccountTransactionsGrid', () => {
       'Type:Income',
       'Type:Card charge',
       'Type:Transfer out',
-      'Type:Adjustment',
+      'Type:Balance adjustment',
     ])
     const cardRow = bodyRows()[2]
     expect(within(cardRow).getByText('10/10/2026')).toBeInTheDocument()
@@ -96,7 +96,7 @@ describe('AccountTransactionsGrid', () => {
     expect(onEdit).toHaveBeenCalledWith(ROWS[0], editExpense)
     expect(onDelete).toHaveBeenCalledWith(ROWS[3])
     expect(within(bodyRows()[1]).getByRole('button', { name: 'Edit income' })).toBeInTheDocument()
-    expect(within(bodyRows()[4]).getByRole('button', { name: 'Delete adjustment' })).toBeInTheDocument()
+    expect(within(bodyRows()[4]).getByRole('button', { name: 'Delete balance adjustment' })).toBeInTheDocument()
     expect(within(bodyRows()[2]).queryByRole('button')).not.toBeInTheDocument()
   })
 

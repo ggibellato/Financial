@@ -46,6 +46,15 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
   })
 
+  it('disables both buttons while busy and ignores Escape', () => {
+    const { onCancel } = renderDialog({ isBusy: true })
+
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
   it('renders nothing while closed', () => {
     renderDialog({ open: false })
 

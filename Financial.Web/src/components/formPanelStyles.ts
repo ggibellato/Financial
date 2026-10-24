@@ -33,6 +33,12 @@ export const useFormPanelStyles = makeStyles({
       gridColumnEnd: 'auto',
     },
   },
+  spanAll: {
+    gridColumn: '1 / -1',
+  },
+  savingFieldset: {
+    display: 'contents',
+  },
   actions: {
     display: 'flex',
     gap: tokens.spacingHorizontalS,

@@ -11,7 +11,7 @@ import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/
 const DATE_KEY = 'balanceAdjustment.date'
 const BANK_KEY = 'balanceAdjustment.bank'
 
-export type BankBalance = Pick<BankTotal, 'bankId' | 'bank' | 'balance'>
+type BankBalance = Pick<BankTotal, 'bankId' | 'bank' | 'balance'>
 
 const EDITABLE_FIELDS = ['bankName', 'date', 'targetBalance', 'note'] as const
 
@@ -86,7 +86,7 @@ export interface UseBalanceAdjustmentFormResult {
  */
 export function useBalanceAdjustmentForm(
   bankTotals: BankBalance[],
-  onSaved: () => void,
+  onSaved: (isEdit: boolean) => void,
   { lockedBank, viewedMonth }: AccountFormSettings = {},
 ): UseBalanceAdjustmentFormResult {
   const [state, setState] = useState<BalanceAdjustmentFormState>(BLANK_STATE)
@@ -181,7 +181,7 @@ export function useBalanceAdjustmentForm(
         setStoredDefault(DATE_KEY, state.date)
         if (!lockedBank) setStoredDefault(BANK_KEY, state.bankName)
         setState((s) => ({ ...s, isSaving: false, savedDelta: result.delta }))
-        onSaved()
+        onSaved(state.isEditing)
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, 'Failed to save balance adjustment')
@@ -199,7 +199,7 @@ export function useBalanceAdjustmentForm(
     isOpen: state.isOpen,
     isEditing: state.isEditing,
     bankName: state.bankName,
-    bankDisplayName: lockedBank?.name ?? bankTotals.find((b) => b.bankId === state.bankName)?.bank ?? '',
+    bankDisplayName: bankTotals.find((b) => b.bankId === state.bankName)?.bank ?? '',
     currentBalance: state.currentBalance,
     date: state.date,
     targetBalance: state.targetBalance,

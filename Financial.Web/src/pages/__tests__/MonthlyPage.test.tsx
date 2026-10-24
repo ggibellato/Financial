@@ -1451,16 +1451,16 @@ describe('MonthlyPage', () => {
     expect(getTransfersByMonthMock.mock.calls.length).toBeGreaterThan(transfersCallsBefore)
   })
 
-  it('gates New Balance Correction on a bank being chosen, then shows the resulting delta', async () => {
+  it('gates Adjust balance on a bank being chosen, then shows the resulting delta', async () => {
     createBalanceAdjustmentMock.mockResolvedValue({ ...ADJUSTMENTS[0], id: 'a2', delta: 2.5 })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Bank balance adjustment' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'New Balance Correction' })).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Adjust balance' })).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Adjust balance' }))
 
     const correctBalanceFormPanel = screen.getByTestId('balance-adjustment-form-panel')
-    expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Add Balance Correction' })).toBeDisabled()
+    expect(within(correctBalanceFormPanel).getByRole('button', { name: 'Adjust balance' })).toBeDisabled()
     expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
 
     fireEvent.change(screen.getByRole('combobox', { name: /^Bank/ }), { target: { value: 'bank-barclays' } })
@@ -1470,7 +1470,7 @@ describe('MonthlyPage', () => {
     const adjustmentsCallsBefore = getAdjustmentsByBankMock.mock.calls.length
 
     fireEvent.change(screen.getByRole('spinbutton', { name: /^Target Balance/ }), { target: { value: '45' } })
-    fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Add Balance Correction' }))
+    fireEvent.click(within(correctBalanceFormPanel).getByRole('button', { name: 'Adjust balance' }))
 
     await waitFor(() =>
       expect(createBalanceAdjustmentMock).toHaveBeenCalledWith('bank-barclays', expect.objectContaining({ targetBalance: 45 })),
@@ -1530,7 +1530,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByText('Adjustment')).toBeInTheDocument())
     fireEvent.click(screen.getByRole('button', { name: 'Edit balance adjustment' }))
 
-    expect(screen.getByText('Edit Balance Correction')).toBeInTheDocument()
+    expect(screen.getByText('Edit balance adjustment')).toBeInTheDocument()
     expect(screen.queryByLabelText('Bank')).not.toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveValue(42.5)
 

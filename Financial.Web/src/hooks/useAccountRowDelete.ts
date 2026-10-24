@@ -1,10 +1,7 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import { isNetworkFailure } from '../api/apiError'
 import type { AccountTransactionDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
-
-export const NETWORK_DELETE_ERROR = 'Could not delete. Check the connection and try again.'
+import { getDeleteErrorMessage } from '../utils/formatters'
 
 function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
   if (row.expense) return apiClient.deleteExpense(row.expense.id)
@@ -41,7 +38,7 @@ export function useAccountRowDelete(onDeleted: (row: AccountTransactionDto) => v
         onDeleted(deleted)
       })
       .catch((err: unknown) => {
-        setError(isNetworkFailure(err) ? NETWORK_DELETE_ERROR : getErrorMessage(err, 'Failed to delete'))
+        setError(getDeleteErrorMessage(err, 'Failed to delete'))
       })
       .finally(() => setIsDeleting(false))
   }

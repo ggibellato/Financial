@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { AccountDetailDto, AccountTransactionDto, CreditCardDto, IncomeDto } from '../api/types'
-import type { AccountFormAction } from '../components/accountActions'
-import type { ViewedMonth } from '../utils/createFormDefaults'
+import { rowKey, type AccountFormAction } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
 import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
 import { useIncomeForm } from './useIncomeForm'
+import type { YearMonth } from './useMonthSelection'
 
 export const NO_CREDIT_CARDS: CreditCardDto[] = []
 
@@ -18,15 +18,11 @@ function incomeSavedMessage(saved: IncomeDto): string {
   return saved.splitToReserve ? 'Income added and split to reserve' : 'Income added'
 }
 
-export function rowKey(row: AccountTransactionDto): string {
-  return `${row.kind}-${row.id}`
-}
-
 export function useAccountActionForms(
   routeAccountId: string,
   account: AccountDetailDto | null,
   options: AccountFormOptions,
-  viewedMonth: ViewedMonth,
+  viewedMonth: YearMonth,
   onSaved: (message: string) => void,
 ) {
   const isAccountCurrent = account !== null && account.id.toLowerCase() === routeAccountId.toLowerCase()
@@ -35,10 +31,6 @@ export function useAccountActionForms(
   const accountName = currentAccount?.name
   const accountCurrency = currentAccount?.currency
   const lockedBank = useMemo(
-    () => (accountId && accountName ? { id: accountId, name: accountName } : undefined),
-    [accountId, accountName],
-  )
-  const transferAccount = useMemo(
     () => (accountId && accountName && accountCurrency ? { id: accountId, name: accountName, currency: accountCurrency } : undefined),
     [accountId, accountName, accountCurrency],
   )
@@ -63,9 +55,13 @@ export function useAccountActionForms(
     (income, isEdit) => saved(isEdit ? 'Income updated' : incomeSavedMessage(income)),
     settings,
   )
-  const adjustmentForm = useBalanceAdjustmentForm(balances, () => saved('Balance corrected'), settings)
+  const adjustmentForm = useBalanceAdjustmentForm(
+    balances,
+    (isEdit) => saved(isEdit ? 'Balance adjustment updated' : 'Balance adjusted'),
+    settings,
+  )
   const transferForm = useAccountTransferForm(
-    transferAccount,
+    lockedBank,
     options,
     (isEdit) => saved(isEdit ? 'Transfer updated' : 'Transfer saved'),
     settings,
@@ -89,7 +85,8 @@ export function useAccountActionForms(
   const activeAction = createAction()
   const isAnyFormOpen = expenseForm.isOpen || incomeForm.isIncomeFormOpen || transferForm.isOpen || adjustmentForm.isOpen
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
-  const activeFormKey = activeAction ?? (isAnyFormOpen ? `edit:${editedRowKey}` : null)
+  const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
+  const activeFormKey = activeAction ?? (editingRowKey && `edit:${editingRowKey}`)
 
   const isDirty = expenseForm.isDirty || incomeForm.isIncomeDirty || transferForm.isDirty || adjustmentForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
@@ -153,7 +150,7 @@ export function useAccountActionForms(
   }
 
   const closeFormsOf = (row: AccountTransactionDto) => {
-    if (activeAction === null && isAnyFormOpen && editedRowKey === rowKey(row)) closeForms()
+    if (editingRowKey === rowKey(row)) closeForms()
   }
 
   const guardChange = (change: () => void) =>

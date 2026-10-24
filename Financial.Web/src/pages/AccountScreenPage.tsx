@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Skeleton, SkeletonItem, Text } from '@fluentui/react-components'
 import { Link } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { formActionsOf, recordNoun } from '../components/accountActions'
+import { canTransfer, formActionsOf, isTransferAction, recordNoun, recordTitle } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
@@ -21,19 +21,13 @@ import { formatLongMonthYear } from '../utils/formatters'
 import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
-const TRANSFER_ACTIONS = ['TransferTo', 'TransferFrom']
-
-function capitalize(text: string): string {
-  return text.charAt(0).toUpperCase() + text.slice(1)
-}
 
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const { account } = screen
   const allowedActions = account?.allowedActions ?? []
   const hasFormActions = formActionsOf(allowedActions).length > 0
-  const canTransfer = allowedActions.some((action) => TRANSFER_ACTIONS.includes(action))
-  const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer ? account.id : null)
+  const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
   const notifySaved = (message: string) => {
     void screen.refreshSilently()
@@ -67,14 +61,14 @@ export default function AccountScreenPage() {
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
     isFocusAfterDeletePending.current = true
-    notifySaved(`${capitalize(recordNoun(row.kind))} deleted`)
+    notifySaved(`${recordTitle(row.kind)} deleted`)
   })
-  const deleteNoun = rowDelete.row ? recordNoun(rowDelete.row.kind) : ''
+  const deleteKind = rowDelete.row?.kind ?? ''
 
   useEffect(() => {
-    if (!isFocusAfterDeletePending.current || document.activeElement !== document.body) return
+    if (!isFocusAfterDeletePending.current) return
     isFocusAfterDeletePending.current = false
-    transactionsHeadingRef.current?.focus()
+    if (document.activeElement === document.body) transactionsHeadingRef.current?.focus()
   }, [screen.transactions])
 
   if (screen.isNotFound) {
@@ -118,7 +112,9 @@ export default function AccountScreenPage() {
           allowedActions={account.allowedActions}
           activeAction={activeAction}
           formAreaId={FORM_AREA_ID}
-          disabled={!formOptions.isReady || !isAccountCurrent}
+          isActionDisabled={(action) =>
+            !formOptions.isReady || !isAccountCurrent || (isTransferAction(action) && !formOptions.areCounterpartsReady)
+          }
           onAction={openAction}
         />
       )}
@@ -176,7 +172,7 @@ export default function AccountScreenPage() {
             onCancel={closeActiveForm}
           />
         )}
-        {transferForm.isOpen && lockedBank && (
+        {transferForm.isOpen && (
           <TransferForm
             isEditing={transferForm.isEditing}
             date={transferForm.date}
@@ -184,10 +180,11 @@ export default function AccountScreenPage() {
             destinationBank={transferForm.destinationBank}
             amount={transferForm.amount}
             destinationAmount={transferForm.destinationAmount}
+            sourceCurrency={transferForm.sourceCurrency}
             destinationCurrency={transferForm.destinationCurrency}
             note={transferForm.note}
             banks={transferForm.counterpartOptions}
-            lockedSide={{ side: transferForm.direction === 'to' ? 'source' : 'destination', name: lockedBank.name }}
+            lockedSide={transferForm.lockedSide}
             isSaving={transferForm.isSaving}
             saveError={transferForm.saveError}
             saveErrorFields={transferForm.saveErrorFields}
@@ -210,7 +207,9 @@ export default function AccountScreenPage() {
             saveError={adjustmentForm.saveError}
             saveErrorFields={adjustmentForm.saveErrorFields}
             savedDelta={adjustmentForm.savedDelta}
-            lockedBank={lockedBank}
+            isBankLocked
+            currency={account?.currency}
+            balanceLabel={`Balance at end of ${formatLongMonthYear(screen.year, screen.month)}`}
             onFieldChange={adjustmentForm.setField}
             onSave={adjustmentForm.submit}
             onCancel={closeActiveForm}
@@ -238,9 +237,9 @@ export default function AccountScreenPage() {
 
       <ConfirmDeleteDialog
         open={rowDelete.isOpen}
-        entityLabel={capitalize(deleteNoun)}
-        message={`Delete this ${deleteNoun}? This cannot be undone.`}
-        confirmDisabled={rowDelete.isDeleting}
+        entityLabel={recordNoun(deleteKind)}
+        message={`Delete this ${recordNoun(deleteKind)}? This cannot be undone.`}
+        isBusy={rowDelete.isDeleting}
         error={rowDelete.error}
         onConfirm={rowDelete.confirm}
         onCancel={rowDelete.cancel}

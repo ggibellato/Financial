@@ -113,6 +113,21 @@ describe('TransferForm', () => {
     expect(button).toBeDisabled()
   })
 
+  it('disables every field and Cancel while saving', () => {
+    render(<TransferForm {...baseProps} isSaving />)
+
+    expect(screen.getByLabelText(/^Date/)).toBeDisabled()
+    expect(screen.getByLabelText(/^Amount/)).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  })
+
+  it('names the currency of both amounts when the currencies differ', () => {
+    render(<TransferForm {...baseProps} sourceCurrency="GBP" destinationCurrency="EUR" />)
+
+    expect(screen.getByLabelText(/^Amount sent \(GBP\)/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Amount received \(EUR\)/)).toBeInTheDocument()
+  })
+
   it('shows the locked account as text on its side and lists the others on the open side', () => {
     render(
       <TransferForm

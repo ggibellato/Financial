@@ -39,7 +39,7 @@ describe('BalanceAdjustmentForm', () => {
   it('renders the create form title', () => {
     render(<BalanceAdjustmentForm {...baseProps} />)
 
-    expect(screen.getByRole('heading', { name: 'New Balance Correction' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Adjust balance' })).toBeInTheDocument()
   })
 
   it('marks Bank and Target Balance as required, leaving Note optional', () => {
@@ -63,7 +63,7 @@ describe('BalanceAdjustmentForm', () => {
   it('renders the edit form title and pre-filled values', () => {
     render(<BalanceAdjustmentForm {...baseProps} isEditing targetBalance="150" note="Matched statement" />)
 
-    expect(screen.getByRole('heading', { name: 'Edit Balance Correction' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit balance adjustment' })).toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveValue(150)
     expect(screen.getByLabelText('Note')).toHaveValue('Matched statement')
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
@@ -97,7 +97,7 @@ describe('BalanceAdjustmentForm', () => {
     const onCancel = vi.fn()
     render(<BalanceAdjustmentForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Balance Correction' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Adjust balance' }))
     expect(onSave).toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -144,7 +144,7 @@ describe('BalanceAdjustmentForm', () => {
     expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent(
       'Current calculated balance for Barclays: £100.00',
     )
-    expect(screen.getByLabelText('Date')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
   })
@@ -152,7 +152,7 @@ describe('BalanceAdjustmentForm', () => {
   it('Save stays disabled until a bank is chosen', () => {
     render(<BalanceAdjustmentForm {...baseProps} bankName="" currentBalance={0} />)
 
-    expect(screen.getByRole('button', { name: 'Add Balance Correction' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Adjust balance' })).toBeDisabled()
   })
 
   it('calls onFieldChange with the selected bank when the Bank dropdown changes', () => {
@@ -183,7 +183,7 @@ describe('BalanceAdjustmentForm', () => {
         {...baseProps}
         bankName="bank-chase"
         bankDisplayName="Chase"
-        lockedBank={{ id: 'bank-chase', name: 'Chase' }}
+        isBankLocked
         onSave={onSave}
       />,
     )
@@ -194,5 +194,11 @@ describe('BalanceAdjustmentForm', () => {
     fireEvent.submit(screen.getByTestId('balance-adjustment-form-panel'))
 
     expect(onSave).toHaveBeenCalledOnce()
+  })
+
+  it('shows balances in the given currency under the given label', () => {
+    render(<BalanceAdjustmentForm {...baseProps} currentBalance={12.5} currency="EUR" balanceLabel="Balance at end of October 2026" />)
+
+    expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Balance at end of October 2026: €12.50')
   })
 })

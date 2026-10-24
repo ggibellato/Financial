@@ -1,24 +1,14 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountTransferDto, TransferAccountOptionDto } from '../api/types'
+import type { LockedTransferSide } from '../components/TransferForm'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
+import { counterpartField, mapAccountTransferErrorToField, type TransferDirection } from './mapAccountTransferErrorToField'
 import type { TransferFormField } from './mapTransferErrorToField'
+import type { TransferCounterparts } from './useAccountFormOptions'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
-
-export type TransferDirection = 'to' | 'from'
-
-export interface TransferAccount {
-  id: string
-  name: string
-  currency: string
-}
-
-export interface TransferCounterparts {
-  destinations: TransferAccountOptionDto[]
-  sources: TransferAccountOptionDto[]
-}
 
 const DATE_KEY = 'transfer.date'
 const COUNTERPART_KEYS: Record<TransferDirection, string> = {
@@ -29,6 +19,8 @@ const COUNTERPART_KEYS: Record<TransferDirection, string> = {
 const EDITABLE_FIELDS = ['date', 'sourceBank', 'destinationBank', 'amount', 'destinationAmount', 'note'] as const
 
 type EditableValues = Pick<AccountTransferFormState, (typeof EDITABLE_FIELDS)[number]>
+
+type FieldErrors = Partial<Record<TransferFormField, string>>
 
 interface AccountTransferFormState {
   openedValues: EditableValues | null
@@ -44,7 +36,7 @@ interface AccountTransferFormState {
   note: string
   isSaving: boolean
   saveError: string | null
-  saveErrorFields: Partial<Record<TransferFormField, string>>
+  saveErrorFields: FieldErrors
 }
 
 const CLOSED_STATE: AccountTransferFormState = {
@@ -64,37 +56,19 @@ const CLOSED_STATE: AccountTransferFormState = {
   saveErrorFields: {},
 }
 
-const SERVER_ERROR_FIELDS: [string, TransferFormField][] = [
-  ['must not be in the future', 'date'],
-  ['Destination amount', 'destinationAmount'],
-  ['Enter the amount received', 'destinationAmount'],
-  ['Transfer amount', 'amount'],
-  ['Note must be', 'note'],
-]
-
 function withOpenedValues(state: AccountTransferFormState): AccountTransferFormState {
   return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
-}
-
-function counterpartField(direction: TransferDirection): 'sourceBank' | 'destinationBank' {
-  return direction === 'to' ? 'destinationBank' : 'sourceBank'
 }
 
 function counterpartIdOf(state: AccountTransferFormState): string {
   return state[counterpartField(state.direction)]
 }
 
-function mapServerErrorToField(message: string, direction: TransferDirection): TransferFormField | null {
-  const match = SERVER_ERROR_FIELDS.find(([fragment]) => message.includes(fragment))
-  if (match) return match[1]
-  if (/different accounts|not allowed|is inactive/.test(message)) return counterpartField(direction)
-  return null
-}
-
 export interface UseAccountTransferFormResult {
   isOpen: boolean
   isEditing: boolean
   direction: TransferDirection
+  lockedSide: LockedTransferSide | undefined
   date: string
   sourceBank: string
   destinationBank: string
@@ -102,11 +76,12 @@ export interface UseAccountTransferFormResult {
   destinationAmount: string
   note: string
   counterpartOptions: TransferAccountOptionDto[]
+  sourceCurrency: string | null
   destinationCurrency: string | null
   isSaving: boolean
   isDirty: boolean
   saveError: string | null
-  saveErrorFields: Partial<Record<TransferFormField, string>>
+  saveErrorFields: FieldErrors
   openCreateForm: (direction: TransferDirection) => void
   openEditForm: (transfer: AccountTransferDto) => void
   cancel: () => void
@@ -115,7 +90,7 @@ export interface UseAccountTransferFormResult {
 }
 
 export function useAccountTransferForm(
-  account: TransferAccount | undefined,
+  account: TransferAccountOptionDto | undefined,
   counterparts: TransferCounterparts,
   onSaved: (isEdit: boolean) => void,
   { viewedMonth }: AccountFormSettings = {},
@@ -128,8 +103,13 @@ export function useAccountTransferForm(
       ? [...listedCounterparts, state.editedCounterpart]
       : listedCounterparts
   const counterpart = counterpartOptions.find((option) => option.id === counterpartIdOf(state))
-  const currencies = state.direction === 'to' ? [account?.currency, counterpart?.currency] : [counterpart?.currency, account?.currency]
-  const destinationCurrency = counterpart && currencies[0] !== currencies[1] ? (currencies[1] ?? null) : null
+  const [sourceCurrency, receivedCurrency] =
+    state.direction === 'to' ? [account?.currency, counterpart?.currency] : [counterpart?.currency, account?.currency]
+  const destinationCurrency = counterpart && sourceCurrency !== receivedCurrency ? (receivedCurrency ?? null) : null
+  const lockedSide: LockedTransferSide | undefined = account && {
+    side: state.direction === 'to' ? 'source' : 'destination',
+    name: account.name,
+  }
 
   function openCreateForm(direction: TransferDirection) {
     if (!account) return
@@ -179,21 +159,23 @@ export function useAccountTransferForm(
     setState((s) => ({ ...s, [field]: value, saveError: null, saveErrorFields: {} }))
   }
 
-  function validate(): Partial<Record<TransferFormField, string>> {
-    const errors: Partial<Record<TransferFormField, string>> = {}
-    if (!state.date.trim()) errors.date = 'Date is required'
-    if (!counterpartIdOf(state)) errors[counterpartField(state.direction)] = 'Choose an account'
+  function validate() {
+    const errors: FieldErrors = {}
+    if (!state.date.trim()) errors.date = 'Enter the transfer date.'
+    if (!counterpartIdOf(state)) {
+      errors[counterpartField(state.direction)] = `Choose the account to transfer ${state.direction}.`
+    }
     const amount = parseValidatedNumber(state.amount)
     if (amount === null || amount <= 0) errors.amount = 'Transfer amount must be greater than zero.'
-    const destinationAmount = parseValidatedNumber(state.destinationAmount)
+    const destinationAmount = destinationCurrency ? parseValidatedNumber(state.destinationAmount) : null
     if (destinationCurrency && (destinationAmount === null || destinationAmount <= 0)) {
       errors.destinationAmount = `Enter the amount received in ${destinationCurrency}.`
     }
-    return errors
+    return { errors, amount: amount ?? 0, destinationAmount }
   }
 
   function submit() {
-    const errors = validate()
+    const { errors, amount, destinationAmount } = validate()
     if (Object.keys(errors).length > 0) {
       setState((s) => ({ ...s, saveError: Object.values(errors)[0] ?? null, saveErrorFields: errors }))
       return
@@ -205,25 +187,24 @@ export function useAccountTransferForm(
       date: state.date,
       sourceAccountId: state.sourceBank,
       destinationAccountId: state.destinationBank,
-      amount: Number(state.amount),
-      destinationAmount: destinationCurrency ? Number(state.destinationAmount) : null,
+      amount,
+      destinationAmount,
       note: state.note.trim() === '' ? null : state.note,
     }
-    const isEdit = state.editingId !== null
-    const request = state.editingId
-      ? apiClient.updateAccountTransfer(state.editingId, payload)
-      : apiClient.createAccountTransfer(payload)
+    const { editingId } = state
+    const request = editingId ? apiClient.updateAccountTransfer(editingId, payload) : apiClient.createAccountTransfer(payload)
 
     void request
       .then(() => {
         setStoredDefault(DATE_KEY, state.date)
         setStoredDefault(COUNTERPART_KEYS[state.direction], counterpartIdOf(state))
         setState(CLOSED_STATE)
-        onSaved(isEdit)
+        onSaved(editingId !== null)
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, 'Failed to save transfer')
-        const field = mapServerErrorToField(message, state.direction)
+        const mappedField = mapAccountTransferErrorToField(message, state.direction)
+        const field = mappedField === 'destinationAmount' && !destinationCurrency ? null : mappedField
         setState((s) => ({
           ...s,
           isSaving: false,
@@ -237,6 +218,7 @@ export function useAccountTransferForm(
     isOpen: state.isOpen,
     isEditing: state.editingId !== null,
     direction: state.direction,
+    lockedSide,
     date: state.date,
     sourceBank: state.sourceBank,
     destinationBank: state.destinationBank,
@@ -244,6 +226,7 @@ export function useAccountTransferForm(
     destinationAmount: state.destinationAmount,
     note: state.note,
     counterpartOptions,
+    sourceCurrency: sourceCurrency ?? null,
     destinationCurrency,
     isSaving: state.isSaving,
     isDirty: state.isOpen && hasChangedFields(state, state.openedValues, EDITABLE_FIELDS),

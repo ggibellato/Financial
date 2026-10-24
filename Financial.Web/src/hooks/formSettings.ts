@@ -1,4 +1,4 @@
-import type { ViewedMonth } from '../utils/createFormDefaults'
+import type { YearMonth } from './useMonthSelection'
 
 export interface LockedBank {
   id: string
@@ -8,5 +8,5 @@ export interface LockedBank {
 export interface AccountFormSettings {
   lockedBank?: LockedBank
   keepOpenAfterSave?: boolean
-  viewedMonth?: ViewedMonth
+  viewedMonth?: YearMonth
 }

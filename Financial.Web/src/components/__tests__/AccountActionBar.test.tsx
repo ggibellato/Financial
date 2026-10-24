@@ -31,7 +31,7 @@ describe('AccountActionBar', () => {
       'Add income',
       'Transfer to',
       'Transfer from',
-      'Reconcile',
+      'Adjust balance',
     ])
   })
 
@@ -66,12 +66,18 @@ describe('AccountActionBar', () => {
     expect(screen.getByRole('button', { name: 'Add expense' })).toHaveAttribute('aria-controls', 'form')
   })
 
-  it('disables every action while disabled', () => {
+  it('disables only the actions the caller marks as disabled', () => {
     render(
-      <AccountActionBar allowedActions={['AddExpense', 'AddIncome']} activeAction={null} formAreaId="form" disabled onAction={vi.fn()} />,
+      <AccountActionBar
+        allowedActions={['AddExpense', 'TransferTo']}
+        activeAction={null}
+        formAreaId="form"
+        isActionDisabled={(action) => action === 'TransferTo'}
+        onAction={vi.fn()}
+      />,
     )
 
-    expect(screen.getByRole('button', { name: 'Add expense' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Add income' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Transfer to' })).toBeDisabled()
   })
 })

@@ -102,6 +102,10 @@ export function previousYearJanuaryFirst(): string {
   return `${new Date().getFullYear() - 1}-01-01`
 }
 
+export function lastDayOfMonthIsoDate(year: number, month: number): string {
+  return `${formatMonthInputValue(year, month)}-${pad(new Date(year, month, 0).getDate())}`
+}
+
 export function todayIsoDate(): string {
   const now = new Date()
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
@@ -131,9 +135,18 @@ export function getErrorMessage(err: unknown, fallback: string): string {
 }
 
 export const NETWORK_SAVE_ERROR = 'Could not save. Check the connection and try again.'
+export const NETWORK_DELETE_ERROR = 'Could not delete. Check the connection and try again.'
 
 export function getSaveErrorMessage(err: unknown, fallback: string): string {
   return isNetworkFailure(err) ? NETWORK_SAVE_ERROR : getErrorMessage(err, fallback)
+}
+
+export function getDeleteErrorMessage(err: unknown, fallback: string): string {
+  return isNetworkFailure(err) ? NETWORK_DELETE_ERROR : getErrorMessage(err, fallback)
+}
+
+export function formatCurrency(value: number, currency: string): string {
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value)
 }
 
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {

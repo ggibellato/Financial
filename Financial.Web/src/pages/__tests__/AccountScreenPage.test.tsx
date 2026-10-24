@@ -373,8 +373,19 @@ describe('AccountScreenPage actions', () => {
       'Add income',
       'Transfer to',
       'Transfer from',
-      'Reconcile',
+      'Adjust balance',
     ])
+  })
+
+  it('keeps the other actions usable while the transfer counterparts are still loading', async () => {
+    getTransferDestinationsMock.mockReturnValue(new Promise(() => {}))
+
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    expect(screen.getByRole('button', { name: 'Adjust balance' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Transfer to' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Transfer from' })).toBeDisabled()
   })
 
   it('loads no transfer counterparts for an account that cannot transfer', async () => {
@@ -774,22 +785,22 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     )
   })
 
-  it('Reconcile starts from the header balance, records the adjustment and keeps its confirmation', async () => {
+  it('Adjust balance starts from the header balance, records the adjustment and keeps its confirmation', async () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Reconcile' }))
+    await user.click(screen.getByRole('button', { name: 'Adjust balance' }))
     const form = screen.getByTestId('balance-adjustment-form-panel')
-    expect(form).toHaveTextContent('Current calculated balance for Barclays: £2,800.25')
+    expect(form).toHaveTextContent('Balance at end of October 2026: £2,800.25')
     expect(within(form).queryByRole('combobox', { name: /Bank/ })).not.toBeInTheDocument()
     await user.type(within(form).getByRole('spinbutton', { name: /^Target Balance/ }), '2790')
-    await user.click(within(form).getByRole('button', { name: 'Add Balance Correction' }))
+    await user.click(within(form).getByRole('button', { name: 'Adjust balance' }))
 
     await waitFor(() =>
       expect(createBalanceAdjustmentMock).toHaveBeenCalledWith(BARCLAYS_ID, { date: '2026-10-15', targetBalance: 2790, note: null }),
     )
-    expect(await screen.findByText('Balance corrected')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Balance Corrected' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByText('Balance adjusted').length).toBeGreaterThan(1))
+    expect(screen.getByRole('heading', { name: 'Balance adjusted' })).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Close' })).toHaveFocus())
   })
 
@@ -814,7 +825,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await waitFor(() => expect(editExpense).toHaveFocus())
 
     await user.click(within(rowOf('Chase')).getByRole('button', { name: 'Delete transfer' }))
-    const dialog = await findDialog('Delete Transfer')
+    const dialog = await findDialog('Delete transfer')
     expect(dialog).toHaveTextContent('Delete this transfer? This cannot be undone.')
     await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
 
@@ -828,7 +839,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     const deleteExpense = within(rowOf('Tesco')).getByRole('button', { name: 'Delete expense' })
 
     await user.click(deleteExpense)
-    await user.click(await dialogButton('Delete Expense', 'Cancel'))
+    await user.click(await dialogButton('Delete expense', 'Cancel'))
 
     await waitFor(() => expect(deleteExpense).toHaveFocus())
     expect(deleteExpenseMock).not.toHaveBeenCalled()
@@ -858,14 +869,14 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: 'Edit adjustment' }))
-    expect(screen.getByRole('heading', { name: 'Edit Balance Correction' })).toBeInTheDocument()
-    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: 'Delete adjustment' }))
-    await user.click(await dialogButton('Delete Adjustment', 'Delete'))
+    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: 'Edit balance adjustment' }))
+    expect(screen.getByRole('heading', { name: 'Edit balance adjustment' })).toBeInTheDocument()
+    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: 'Delete balance adjustment' }))
+    await user.click(await dialogButton('Delete balance adjustment', 'Delete'))
 
     await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith(BARCLAYS_ID, 'a1'))
-    expect(await screen.findByText('Adjustment deleted')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Edit Balance Correction' })).not.toBeInTheDocument()
+    expect(await screen.findByText('Balance adjustment deleted')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Edit balance adjustment' })).not.toBeInTheDocument()
   })
 
   it('keeps the delete dialog open with the reason when the delete fails', async () => {
@@ -874,7 +885,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await openScreen()
 
     await user.click(within(rowOf('Tesco')).getByRole('button', { name: 'Delete expense' }))
-    const dialog = await findDialog('Delete Expense')
+    const dialog = await findDialog('Delete expense')
     await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
 
     expect(await within(dialog).findByText('Could not delete. Check the connection and try again.')).toBeInTheDocument()
@@ -903,13 +914,13 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
   it('[AC P60-F05-bank-account-screen-11] focus moves into a row edit and back to the row Edit button on Cancel', async () => {
     const user = userEvent.setup()
     await openScreen()
-    const editAdjustment = within(rowOf('Bank fee')).getByRole('button', { name: 'Edit adjustment' })
+    const editAdjustment = within(rowOf('Bank fee')).getByRole('button', { name: 'Edit balance adjustment' })
 
     await user.click(editAdjustment)
     await waitFor(() => expect(screen.getByLabelText(/^Date/)).toHaveFocus())
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
-    expect(screen.queryByRole('heading', { name: 'Edit Balance Correction' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Edit balance adjustment' })).not.toBeInTheDocument()
     expect(editAdjustment).toHaveFocus()
   })
 })

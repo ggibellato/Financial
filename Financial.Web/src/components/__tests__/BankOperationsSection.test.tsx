@@ -46,7 +46,7 @@ const ADJUSTMENT_ENTRY = {
 const baseProps = {
   operations: [] as BankOperationEntry[],
   onNewTransfer: vi.fn(),
-  onNewBalanceCorrection: vi.fn(),
+  onAdjustBalance: vi.fn(),
   onEditTransfer: vi.fn(),
   onEditAdjustment: vi.fn(),
   onDeleteTransfer: vi.fn(),
@@ -61,18 +61,18 @@ describe('BankOperationsSection', () => {
     expect(screen.getByRole('button', { name: 'Filter by Bank' })).toBeInTheDocument()
   })
 
-  it('calls onNewTransfer and onNewBalanceCorrection', () => {
+  it('calls onNewTransfer and onAdjustBalance', () => {
     const onNewTransfer = vi.fn()
-    const onNewBalanceCorrection = vi.fn()
+    const onAdjustBalance = vi.fn()
     render(
-      <BankOperationsSection {...baseProps} onNewTransfer={onNewTransfer} onNewBalanceCorrection={onNewBalanceCorrection} />,
+      <BankOperationsSection {...baseProps} onNewTransfer={onNewTransfer} onAdjustBalance={onAdjustBalance} />,
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'New Transfer' }))
-    fireEvent.click(screen.getByRole('button', { name: 'New Balance Correction' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Adjust balance' }))
 
     expect(onNewTransfer).toHaveBeenCalledOnce()
-    expect(onNewBalanceCorrection).toHaveBeenCalledOnce()
+    expect(onAdjustBalance).toHaveBeenCalledOnce()
   })
 
   it('renders a row per operation with the correct columns', () => {
@@ -130,7 +130,7 @@ describe('BankOperationsSection', () => {
   it('shows the empty state message when there are no operations at all', () => {
     render(<BankOperationsSection {...baseProps} operations={[]} />)
 
-    expect(screen.getByText('No transfers or balance corrections this month.')).toBeInTheDocument()
+    expect(screen.getByText('No transfers or balance adjustments this month.')).toBeInTheDocument()
   })
 
   it('sorts rows by Amount/Delta when the column header is clicked', () => {

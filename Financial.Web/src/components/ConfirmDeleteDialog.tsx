@@ -6,6 +6,7 @@ interface ConfirmDeleteDialogProps {
   message: ReactNode
   open?: boolean
   confirmDisabled?: boolean
+  isBusy?: boolean
   error?: string | null
   onConfirm: () => void
   onCancel: () => void

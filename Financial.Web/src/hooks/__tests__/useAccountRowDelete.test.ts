@@ -4,7 +4,8 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransactionDto, BalanceAdjustmentDto, ExpenseDto, IncomeDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { NETWORK_DELETE_ERROR, useAccountRowDelete } from '../useAccountRowDelete'
+import { NETWORK_DELETE_ERROR } from '../../utils/formatters'
+import { useAccountRowDelete } from '../useAccountRowDelete'
 
 const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteBalanceAdjustmentMock } = vi.hoisted(() => ({
   deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),

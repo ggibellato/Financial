@@ -5,11 +5,17 @@ interface AccountActionBarProps {
   allowedActions: string[]
   activeAction: AccountFormAction | null
   formAreaId: string
-  disabled?: boolean
+  isActionDisabled?: (action: AccountFormAction) => boolean
   onAction: (action: AccountFormAction, button: HTMLButtonElement) => void
 }
 
-export default function AccountActionBar({ allowedActions, activeAction, formAreaId, disabled, onAction }: AccountActionBarProps) {
+export default function AccountActionBar({
+  allowedActions,
+  activeAction,
+  formAreaId,
+  isActionDisabled = () => false,
+  onAction,
+}: AccountActionBarProps) {
   const knownActions = formActionsOf(allowedActions)
   if (knownActions.length === 0) return null
 
@@ -19,7 +25,7 @@ export default function AccountActionBar({ allowedActions, activeAction, formAre
         <Button
           key={action}
           appearance="primary"
-          disabled={disabled}
+          disabled={isActionDisabled(action)}
           aria-expanded={activeAction === action}
           aria-controls={formAreaId}
           onClick={(event) => onAction(action, event.currentTarget)}

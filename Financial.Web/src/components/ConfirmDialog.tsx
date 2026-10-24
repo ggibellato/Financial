@@ -8,6 +8,7 @@ import {
   DialogTitle,
   MessageBar,
   MessageBarBody,
+  Spinner,
 } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -18,6 +19,7 @@ export interface ConfirmDialogProps {
   confirmLabel: string
   cancelLabel: string
   confirmDisabled?: boolean
+  isBusy?: boolean
   error?: string | null
   onConfirm: () => void
   onCancel: () => void
@@ -30,6 +32,7 @@ export default function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   confirmDisabled,
+  isBusy = false,
   error,
   onConfirm,
   onCancel,
@@ -53,7 +56,7 @@ export default function ConfirmDialog({
     <Dialog
       open={open}
       onOpenChange={(_, data) => {
-        if (!data.open) onCancel()
+        if (!data.open && !isBusy) onCancel()
       }}
     >
       <DialogSurface aria-describedby={descriptionId}>
@@ -68,10 +71,15 @@ export default function ConfirmDialog({
             )}
           </DialogContent>
           <div className={styles.actions}>
-            <Button appearance="primary" onClick={onConfirm} disabled={confirmDisabled}>
+            <Button
+              appearance="primary"
+              onClick={onConfirm}
+              disabled={confirmDisabled || isBusy}
+              icon={isBusy ? <Spinner size="tiny" /> : undefined}
+            >
               {confirmLabel}
             </Button>
-            <Button appearance="secondary" onClick={onCancel}>
+            <Button appearance="secondary" onClick={onCancel} disabled={isBusy}>
               {cancelLabel}
             </Button>
           </div>
