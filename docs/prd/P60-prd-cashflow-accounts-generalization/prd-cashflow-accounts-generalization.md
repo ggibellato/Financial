@@ -354,9 +354,11 @@ Rules that apply to every feature:
 
 **Capabilities:**
 - New page Admin → **Accounts** (`/admin/cashflow/accounts`): grid with Name, Template, Currency, Active, and row actions Edit, Delete.
-- **New account** (Fluent `Dialog`, allowed for admin CRUD by ADR-006): Template (only templates available so far), Name (required, up to 60 characters, unique across all accounts, case-insensitive), Currency (GBP or BRL; Settlement picks one or both from F11), then the template's fields — Bank: opening balance (≥ 0), balance start date, round-up enabled.
+- **New account** (Fluent `Dialog`, allowed for admin CRUD by ADR-006): Template (only templates available so far), Name (required, up to 60 characters, unique across all accounts, case-insensitive; the limit lives in `Account`, so `/banks` enforces it too), Currency (each template lists the currencies it allows: Bank is GBP only, shown read-only; Settlement picks GBP, BRL or both from F11), then the template's fields — Bank: opening balance (≥ 0), balance start date, round-up enabled. *Why GBP only:* the summary's category and income totals, and the annual and tithe summaries, are single GBP figures, so a BRL bank's expenses and incomes would be added into them (user decision 2026-10-24).
 - **Edit:** name, active, template fields; template and currency are read-only once the account has any record.
 - **Delete:** only when the account has no records; otherwise 409 and the message suggests deactivating. **Deactivate:** the account disappears from pickers, destination lists and new-entry forms; its history, balance and figures stay unchanged.
+- **Inactive accounts in the old pickers:** `/banks` gains `isActive`. The new-entry pickers that still read it (Monthly, Mensais, Reserva and the account screen's form options) hide inactive banks; editing a record still shows its own bank, even when inactive. Admin Banks keeps listing every bank.
+- **Inactive accounts in the API:** expenses, incomes and balance adjustments follow F03's transfer rule. Creating one on an inactive account, or an edit that moves one onto an inactive account, is rejected; deleting, and editing without changing the account, still work. *Why:* the API already refuses inactive accounts for transfers and inactive credit cards for expenses; one rule for every record.
 - Admin Banks keeps working (same accounts) until F13. Each later stage adds its template to this page: Credit card (F07), Pots (F09), Settlement (F11). *Why:* one generic place matches the model, so a new template needs no new admin page.
 
 **Experience:**
@@ -367,6 +369,10 @@ Rules that apply to every feature:
 - Duplicate name: 409 `An account named "Barclays" already exists.` shown under Name.
 - Delete of an account with records: 409 "Barclays has transactions and cannot be deleted. Deactivate it instead."
 - Changing template or currency on an account with records: 400 (the fields are read-only in the UI).
+- A currency the template doesn't allow: 400 "Bank accounts must be GBP."
+- A name over 60 characters: 400 "Account name must be 60 characters or fewer." on every route.
+- A new expense, income or balance adjustment on an inactive account, or an edit moving one onto it: 400 `Barclays is inactive.`
+- `/banks` keeps its own duplicate-name and delete messages until F13; only the new account endpoints use the messages above.
 - Save failure: nothing persisted; dialog stays open with values.
 
 ### F07. Credit Card Template and Card Migration
@@ -587,7 +593,7 @@ Rules that apply to every feature:
 - **Client and platform:** Web UI telemetry, a mobile or React Native client, mobile-specific layouts, a second front end.
 - **Parity automation:** running the parity check in CI or as Playwright tests; parity uses scripts and a manual checklist.
 - **Deployment:** deploying between a feature's stages, or before that feature's last parity run passes.
-- **Currencies:** currencies other than GBP and BRL; automatic conversion of group totals across currencies.
+- **Currencies:** currencies other than GBP and BRL; automatic conversion of group totals across currencies; BRL banks, until category and income totals are per currency.
 - **Warnings:** a warning when the Reserva total exceeds the Trading 212 snapshot.
 
 ## 8. Dependency Graph
@@ -734,11 +740,12 @@ graph TD
 - [x] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F06. Admin Accounts Page
-- [ ] Creating a Bank account with name, currency, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change
+- [ ] Creating a Bank account with name, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change; its currency is GBP and any other currency is rejected with 400
 - [ ] A duplicate name (any case) is rejected with 409 shown under Name
 - [ ] Template and currency are read-only for an account with records; the API rejects a change with 400
 - [ ] Deleting an account with records returns 409 with the deactivate suggestion; deleting an unused account removes it
-- [ ] A deactivated account disappears from pickers, destination lists and new-entry forms while its history and figures stay unchanged
+- [ ] A deactivated account disappears from pickers, destination lists and new-entry forms (including Monthly's, Mensais's and Reserva's bank pickers) while its history and figures stay unchanged; editing a record keeps showing its own account
+- [ ] A new expense, income or balance adjustment on an inactive account, or an edit moving one onto it, is rejected with 400; deleting and same-account edits still work
 - [ ] Dialog states (loading, validation, server error, saving, unsaved changes) behave as specified and pass the review checklist
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
