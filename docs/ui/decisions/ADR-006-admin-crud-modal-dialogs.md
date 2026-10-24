@@ -26,7 +26,7 @@ internally consistent button/form implementation on both platforms.
 
 Admin lookup-entity CRUD — flat reference-data lists with no associated chart:
 Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio,
-RecurringBill, ReserveBucket, Asset — is **exempt** from the "New X create
+RecurringBill, ReserveBucket, Asset, Account — is **exempt** from the "New X create
 actions are inline forms" rule and may use a modal `Dialog` (Web) / popup
 `Window` (WPF) for create and edit instead of an inline panel.
 
@@ -51,7 +51,7 @@ a compromise forced by convenience.
 
 ## Scope
 
-Applies only to the ten named Admin CRUD entities above. It does not extend to
+Applies only to the Admin CRUD entities named above. It does not extend to
 any transactional/financial entry action — Expense, Income, Transfer,
 Withdrawal, Balance Correction, Income Split, Investment Transaction, Credit,
 Price, Recurring Bill, Mãe Ledger Entry — which remain governed by the
@@ -61,6 +61,10 @@ A future Admin entity defaults to this same modal pattern only if it shares
 the same shape (flat reference data, no chart, short form). A lookup entity
 that later grows a chart or becomes part of a repeated-entry workflow should
 move to inline instead of being grandfathered into this exception.
+
+Account (P60 F06, Admin → CashFlow → Accounts) joined the list later: it has
+the same shape, a flat list with a short per-template form (at most seven
+fields) and no chart.
 
 ## Consequences
 

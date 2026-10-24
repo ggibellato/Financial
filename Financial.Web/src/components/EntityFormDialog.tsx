@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useLayoutEffect, type ReactNode } from 'react'
 import {
   Button,
   Dialog,
@@ -34,6 +34,13 @@ export default function EntityFormDialog({
   children,
 }: EntityFormDialogProps) {
   const styles = useFormPanelStyles()
+
+  useLayoutEffect(() => {
+    const opener = document.activeElement as HTMLElement | null
+    return () => {
+      if (opener?.isConnected) opener.focus()
+    }
+  }, [])
 
   return (
     <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>

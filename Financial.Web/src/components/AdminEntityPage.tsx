@@ -9,6 +9,7 @@ interface AdminEntityPageProps {
   title: string
   createLabel: string
   onCreate: () => void
+  createDisabled?: boolean
   belowHeader?: ReactNode
   actionError?: string | null
   belowActionError?: ReactNode
@@ -25,6 +26,7 @@ export default function AdminEntityPage({
   title,
   createLabel,
   onCreate,
+  createDisabled,
   belowHeader,
   actionError,
   belowActionError,
@@ -40,7 +42,7 @@ export default function AdminEntityPage({
     <section className="admin-entity-page">
       <header className="admin-entity-page__header">
         <h2>{title}</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={onCreate}>
+        <Button appearance="primary" icon={<AddRegular />} onClick={onCreate} disabled={createDisabled}>
           {createLabel}
         </Button>
       </header>

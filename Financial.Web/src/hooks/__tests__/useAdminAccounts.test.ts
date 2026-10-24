@@ -109,19 +109,28 @@ describe('useAdminAccounts', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     getAccountsMock.mockResolvedValue([])
 
-    await act(() => result.current.deleteAccount('a1'))
+    const onDeleted = vi.fn()
 
+    act(() => result.current.deleteAccount('a1', onDeleted))
+
+    await waitFor(() => expect(result.current.accounts).toEqual([]))
     expect(deleteAccountMock).toHaveBeenCalledWith('a1')
-    expect(result.current.accounts).toEqual([])
+    expect(onDeleted).toHaveBeenCalledOnce()
   })
 
-  it('rejects a failed delete without refreshing the list', async () => {
+  it('reports a failed delete as the delete error without refreshing the list', async () => {
     deleteAccountMock.mockRejectedValue(new Error('Barclays has transactions and cannot be deleted. Deactivate it instead.'))
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    await expect(act(() => result.current.deleteAccount('a1'))).rejects.toThrow('cannot be deleted')
+    const onDeleted = vi.fn()
 
+    act(() => result.current.deleteAccount('a1', onDeleted))
+
+    await waitFor(() => expect(result.current.deleteError).not.toBeNull())
+    expect(onDeleted).not.toHaveBeenCalled()
+    expect(result.current.deleteError).toBe('Barclays has transactions and cannot be deleted. Deactivate it instead.')
+    expect(result.current.deletingId).toBeNull()
     expect(getAccountsMock).toHaveBeenCalledTimes(1)
   })
 })

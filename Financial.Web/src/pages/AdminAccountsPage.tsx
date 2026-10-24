@@ -10,76 +10,82 @@ import TruncatedText from '../components/TruncatedText'
 import { useAdminAccounts } from '../hooks/useAdminAccounts'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import type { AccountDto, AccountUpdateDto } from '../api/types'
-import { getErrorMessage } from '../utils/formatters'
+import { getSaveErrorMessage } from '../utils/formatters'
 
 type FormTarget = { mode: 'create' } | { mode: 'edit'; account: AccountDto }
 
 export default function AdminAccountsPage() {
-  const { accounts, templates, isLoading, error, retry, createAccount, updateAccount, deactivateAccount, deleteAccount } =
-    useAdminAccounts()
+  const {
+    accounts,
+    templates,
+    isLoading,
+    error,
+    retry,
+    createAccount,
+    updateAccount,
+    deactivateAccount,
+    deletingId,
+    deleteError,
+    deleteAccount,
+  } = useAdminAccounts()
   const { showSuccess } = useSuccessToast()
   const [formTarget, setFormTarget] = useState<FormTarget | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<AccountDto | null>(null)
-  const [isDeleteBusy, setIsDeleteBusy] = useState(false)
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+  const [isDeactivating, setIsDeactivating] = useState(false)
   const [deactivateError, setDeactivateError] = useState<string | null>(null)
-  const [actionError, setActionError] = useState<string | null>(null)
 
-  const handleFormSubmit = async ({ isActive, ...values }: AccountUpdateDto) => {
+  const handleFormSubmit = async (request: AccountUpdateDto) => {
     if (formTarget?.mode === 'edit') {
-      await updateAccount(formTarget.account.id, { ...values, isActive })
+      await updateAccount(formTarget.account.id, request)
       showSuccess('Account updated')
     } else {
-      await createAccount(values)
+      const { templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled } = request
+      await createAccount({ templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled })
       showSuccess('Account created')
     }
     setFormTarget(null)
   }
 
   const requestDelete = (account: AccountDto) => {
-    setActionError(null)
     setDeactivateError(null)
     setDeleteTarget(account)
+    setIsDeleteOpen(true)
   }
 
-  const closeDelete = () => setDeleteTarget(null)
+  const closeDelete = () => setIsDeleteOpen(false)
 
   const confirmDeactivate = async () => {
     if (!deleteTarget) return
-    setIsDeleteBusy(true)
+    setIsDeactivating(true)
     setDeactivateError(null)
     try {
       await deactivateAccount(deleteTarget)
-      setDeleteTarget(null)
+      setIsDeleteOpen(false)
       showSuccess('Account deactivated')
     } catch (err: unknown) {
-      setDeactivateError(getErrorMessage(err, 'The account could not be deactivated.'))
+      setDeactivateError(getSaveErrorMessage(err, 'The account could not be deactivated.'))
     } finally {
-      setIsDeleteBusy(false)
+      setIsDeactivating(false)
     }
   }
 
-  const confirmDelete = async () => {
+  const confirmDelete = () => {
     if (!deleteTarget) return
-    setIsDeleteBusy(true)
-    try {
-      await deleteAccount(deleteTarget.id)
-      showSuccess('Account deleted')
-    } catch (err: unknown) {
-      setActionError(getErrorMessage(err, 'The account could not be deleted.'))
-    } finally {
-      setIsDeleteBusy(false)
-      setDeleteTarget(null)
-    }
+    setIsDeleteOpen(false)
+    deleteAccount(deleteTarget.id, () => showSuccess('Account deleted'))
   }
 
-  const blockedName = deleteTarget?.name ?? ''
+  const targetName = deleteTarget?.name ?? ''
+  const canDeactivate = deleteTarget?.isActive === true
 
   return (
     <AdminEntityPage
       title="Accounts"
       createLabel="New account"
       onCreate={() => setFormTarget({ mode: 'create' })}
-      actionError={actionError}
+      createDisabled={templates.length === 0}
+      actionError={deleteError}
       isLoading={isLoading}
       loadError={error}
       onRetry={retry}
@@ -96,22 +102,25 @@ export default function AdminAccountsPage() {
             />
           )}
           <ConfirmDialog
-            open={deleteTarget?.hasRecords === true}
-            title={`Can't delete ${blockedName}`}
-            message={`${blockedName} has transactions and cannot be deleted. Deactivate it instead.`}
-            confirmLabel={deleteTarget?.isActive ? 'Deactivate' : undefined}
-            cancelLabel={deleteTarget?.isActive ? 'Cancel' : 'Close'}
-            isBusy={isDeleteBusy}
+            open={isDeleteOpen && deleteTarget?.hasRecords === true}
+            title={`Can't delete ${targetName}`}
+            message={
+              canDeactivate
+                ? `${targetName} has transactions and cannot be deleted. Deactivate it instead.`
+                : `${targetName} has transactions and cannot be deleted. It is already inactive.`
+            }
+            confirmLabel={canDeactivate ? 'Deactivate' : undefined}
+            cancelLabel={canDeactivate ? 'Cancel' : 'Close'}
+            isBusy={isDeactivating}
             error={deactivateError}
             onConfirm={() => void confirmDeactivate()}
             onCancel={closeDelete}
           />
           <ConfirmDeleteDialog
-            open={deleteTarget?.hasRecords === false}
-            entityLabel="Account"
-            message={<>&ldquo;{blockedName}&rdquo; will be permanently removed.</>}
-            isBusy={isDeleteBusy}
-            onConfirm={() => void confirmDelete()}
+            open={isDeleteOpen && deleteTarget?.hasRecords === false}
+            entityLabel="account"
+            message={<>&ldquo;{targetName}&rdquo; will be permanently removed.</>}
+            onConfirm={confirmDelete}
             onCancel={closeDelete}
           />
         </>
@@ -136,7 +145,7 @@ export default function AdminAccountsPage() {
               <DataTableCell label="Active">{account.isActive ? 'Active' : 'Inactive'}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
-                deleteDisabled={isDeleteBusy && deleteTarget?.id === account.id}
+                deleteDisabled={deletingId === account.id}
                 onEdit={() => setFormTarget({ mode: 'edit', account })}
                 onDelete={() => requestDelete(account)}
               />

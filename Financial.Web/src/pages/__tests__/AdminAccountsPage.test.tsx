@@ -68,6 +68,7 @@ describe('AdminAccountsPage', () => {
     renderPage()
 
     expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New account' })).toBeDisabled()
     expect(await screen.findByText('No accounts yet')).toBeInTheDocument()
   })
 
@@ -76,9 +77,24 @@ describe('AdminAccountsPage', () => {
     renderPage()
 
     expect(await screen.findByText('Network down')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New account' })).toBeDisabled()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('table', { name: 'Accounts' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New account' })).toBeEnabled()
+  })
+
+  it('returns focus to New account when the dialog is cancelled', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+    const trigger = screen.getByRole('button', { name: 'New account' })
+    trigger.focus()
+
+    fireEvent.click(trigger)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'New account' })).not.toBeInTheDocument())
+    expect(trigger).toHaveFocus()
   })
 
   it('[AC P60-F06-admin-accounts-page-01] creates a Bank account through New account, shows it in the grid and confirms with a toast', async () => {
@@ -161,6 +177,7 @@ describe('AdminAccountsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Chase' }))
     const dialog = await screen.findByRole('dialog', { name: "Can't delete Chase" })
+    expect(dialog).toHaveTextContent('Chase has transactions and cannot be deleted. It is already inactive.')
 
     expect(within(dialog).queryByRole('button', { name: 'Deactivate' })).not.toBeInTheDocument()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close' }))
@@ -174,7 +191,7 @@ describe('AdminAccountsPage', () => {
     getAccountsMock.mockResolvedValue([BARCLAYS, CHASE])
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Monzo' }))
-    const dialog = await screen.findByRole('dialog', { name: 'Delete Account' })
+    const dialog = await screen.findByRole('dialog', { name: 'Delete account' })
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('Account deleted')).toBeInTheDocument()
@@ -188,7 +205,7 @@ describe('AdminAccountsPage', () => {
     await screen.findByRole('table', { name: 'Accounts' })
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete Monzo' }))
-    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete Account' })).getByRole('button', { name: 'Delete' }))
+    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
 
     expect(await screen.findByText('Monzo has transactions and cannot be deleted. Deactivate it instead.')).toBeInTheDocument()
     expect(screen.queryByText('Account deleted')).not.toBeInTheDocument()

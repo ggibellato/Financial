@@ -12,7 +12,9 @@ export interface AdminAccountsData {
   createAccount: (request: AccountCreateDto) => Promise<AccountDto>
   updateAccount: (id: string, request: AccountUpdateDto) => Promise<AccountDto>
   deactivateAccount: (account: AccountDto) => Promise<AccountDto>
-  deleteAccount: (id: string) => Promise<void>
+  deletingId: string | null
+  deleteError: string | null
+  deleteAccount: (id: string, onDeleted: () => void) => void
 }
 
 interface AccountsAndTemplates {
@@ -46,7 +48,7 @@ export function useAdminAccounts(): AdminAccountsData {
     loadErrorMessage: 'Unable to load accounts',
     refreshMode: 'silent',
   })
-  const { mutateAndRefresh } = resource
+  const { mutateAndRefresh, runPendingMutation } = resource
 
   const createAccount = useCallback(
     (request: AccountCreateDto) => mutateAndRefresh(() => apiClient.createAccount(request)),
@@ -64,8 +66,9 @@ export function useAdminAccounts(): AdminAccountsData {
   )
 
   const deleteAccount = useCallback(
-    (id: string) => mutateAndRefresh(() => apiClient.deleteAccount(id)),
-    [mutateAndRefresh],
+    (id: string, onDeleted: () => void) =>
+      runPendingMutation(id, () => apiClient.deleteAccount(id), 'The account could not be deleted.', onDeleted),
+    [runPendingMutation],
   )
 
   return {
@@ -77,6 +80,8 @@ export function useAdminAccounts(): AdminAccountsData {
     createAccount,
     updateAccount,
     deactivateAccount,
+    deletingId: resource.pendingId,
+    deleteError: resource.pendingError,
     deleteAccount,
   }
 }

@@ -89,6 +89,18 @@ describe('EntityFormDialog', () => {
     expect(screen.queryByText('A bank named "Barclays" already exists.')).not.toBeInTheDocument()
   })
 
+  it('returns focus to the control that opened it when it closes', () => {
+    const opener = document.createElement('button')
+    document.body.appendChild(opener)
+    opener.focus()
+    const { unmount } = renderDialog()
+
+    unmount()
+
+    expect(opener).toHaveFocus()
+    opener.remove()
+  })
+
   it('names the save button by the given label', () => {
     renderDialog({ saveLabel: 'Add account' })
 

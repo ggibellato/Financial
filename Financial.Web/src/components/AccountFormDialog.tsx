@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Field, Input, Select, Switch } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
 import { useFormPanelStyles } from './formPanelStyles'
+import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
 import { todayIsoDate } from '../utils/formatters'
@@ -11,10 +12,13 @@ import { todayIsoDate } from '../utils/formatters'
 const UNSET_START_DATE = '0001-01-01'
 const NAME_MAX_LENGTH = 60
 const CONFLICT_STATUS = 409
+const LOCKED_HINT = "Can't change once the account has transactions."
 
 const FIELD_ORDER = ['template', 'name', 'currency', 'openingBalance', 'balanceStartDate'] as const
 
 type FieldName = (typeof FIELD_ORDER)[number]
+
+type FieldErrors = Partial<Record<FieldName, string>>
 
 type FieldControl = HTMLInputElement & HTMLSelectElement
 
@@ -27,6 +31,16 @@ interface FormValues {
   roundUpEnabled: boolean
   isActive: boolean
 }
+
+const FORM_FIELDS: readonly (keyof FormValues)[] = [
+  'templateName',
+  'name',
+  'currency',
+  'openingBalance',
+  'balanceStartDate',
+  'roundUpEnabled',
+  'isActive',
+]
 
 interface AccountFormDialogProps {
   account: AccountDto | null
@@ -59,8 +73,26 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
   }
 }
 
-function isSameValues(a: FormValues, b: FormValues): boolean {
-  return (Object.keys(a) as (keyof FormValues)[]).every((key) => a[key] === b[key])
+function validateAccountForm(
+  values: FormValues,
+  template: AccountTemplateDto | undefined,
+  keepsUnsetStartDate: boolean,
+): FieldErrors {
+  const errors: FieldErrors = {}
+  const name = values.name.trim()
+  const openingBalance = Number(values.openingBalance)
+  if (!template) errors.template = 'Choose a template.'
+  if (name.length === 0) errors.name = 'Account name is required.'
+  else if (name.length > NAME_MAX_LENGTH) errors.name = `Account name must be ${NAME_MAX_LENGTH} characters or fewer.`
+  if (!values.currency) errors.currency = 'Choose a currency.'
+  if (template?.capabilities.includes('HasOpeningBalance')) {
+    if (values.openingBalance.trim().length === 0) errors.openingBalance = 'Opening balance is required.'
+    else if (!Number.isFinite(openingBalance)) errors.openingBalance = 'Enter the opening balance as a number, for example 250.00.'
+    else if (openingBalance < 0) errors.openingBalance = 'Opening balance cannot be negative.'
+    if (values.balanceStartDate.length === 0 && !keepsUnsetStartDate) errors.balanceStartDate = 'Balance start date is required.'
+    else if (values.balanceStartDate > todayIsoDate()) errors.balanceStartDate = "Balance start date can't be in the future."
+  }
+  return errors
 }
 
 export default function AccountFormDialog({ account, templates, onCancel, onSubmit }: AccountFormDialogProps) {
@@ -77,33 +109,26 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
   const currencyRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
-  const discardPrompt = useDiscardPrompt(!isSameValues(values, initial))
+  const discardPrompt = useDiscardPrompt(hasChangedFields(values, initial, FORM_FIELDS))
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
   const capabilities = template?.capabilities ?? []
   const hasOpeningBalance = capabilities.includes('HasOpeningBalance')
   const supportsRoundUp = capabilities.includes('SupportsRoundUp')
   const currencies = template?.currencies ?? [values.currency]
+  const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
   const trimmedName = values.name.trim()
-  const openingBalance = Number(values.openingBalance)
-  const isNameConflict = errorStatus === CONFLICT_STATUS && submittedName === trimmedName
+  const isConflict = errorStatus === CONFLICT_STATUS
+  const isNameConflict = isConflict && submittedName === trimmedName
+  const errors = validateAccountForm(values, template, keepsUnsetStartDate)
 
-  const errors: Partial<Record<FieldName, string>> = {}
-  if (!template) errors.template = 'Choose a template.'
-  if (trimmedName.length === 0) errors.name = 'Account name is required.'
-  else if (trimmedName.length > NAME_MAX_LENGTH) errors.name = `Account name must be ${NAME_MAX_LENGTH} characters or fewer.`
-  if (!values.currency) errors.currency = 'Choose a currency.'
-  if (hasOpeningBalance) {
-    if (values.openingBalance.trim().length === 0) errors.openingBalance = 'Opening balance is required.'
-    else if (Number.isNaN(openingBalance)) errors.openingBalance = 'Enter the opening balance as a number, for example 250.00.'
-    else if (openingBalance < 0) errors.openingBalance = 'Opening balance cannot be negative.'
-    if (values.balanceStartDate.length === 0 && !keepsUnsetStartDate) errors.balanceStartDate = 'Balance start date is required.'
-    else if (values.balanceStartDate > todayIsoDate()) errors.balanceStartDate = "Balance start date can't be in the future."
-  }
+  useEffect(() => {
+    if (isNameConflict) nameRef.current?.focus()
+  }, [isNameConflict])
 
-  const fieldMessage = (field: FieldName): string | undefined => {
-    if (field === 'name' && isNameConflict) return error ?? undefined
+  const fieldMessage = (field: FieldName) => {
+    if (field === 'name' && isNameConflict) return error
     return showValidation ? errors[field] : undefined
   }
 
@@ -125,14 +150,13 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
     templateName: values.templateName,
     name: trimmedName,
     currency: values.currency,
-    openingBalance: hasOpeningBalance ? openingBalance : null,
+    openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
     balanceStartDate: hasOpeningBalance ? values.balanceStartDate || UNSET_START_DATE : null,
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
     isActive: values.isActive,
   })
 
   const handleSave = () => {
-    if (isSaving) return
     setShowValidation(true)
     const firstInvalid = FIELD_ORDER.find((field) => errors[field])
     if (firstInvalid) {
@@ -154,106 +178,119 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
     if (!isSaving) discardPrompt.confirmDiscard(onCancel)
   }
 
-
-  const lockedCurrency = isLocked || currencies.length <= 1
+  const currencyHint = isLocked ? LOCKED_HINT : isCurrencyFixed ? `${values.templateName} accounts use ${values.currency}.` : undefined
 
   return (
-      <EntityFormDialog
-        title={isEditing ? 'Edit account' : 'New account'}
-        saveLabel={isEditing ? 'Save' : 'Add account'}
-        error={errorStatus === CONFLICT_STATUS ? null : error}
-        isSaving={isSaving}
-        canSave={!isSaving}
-        onSave={handleSave}
-        onCancel={requestClose}
-      >
-        <fieldset disabled={isSaving} className={styles.savingFieldset}>
-          <Field label="Template" required validationState={fieldState('template')} validationMessage={fieldMessage('template')}>
-            {isLocked ? (
-              <Input ref={templateRef} value={values.templateName} readOnly />
-            ) : (
-              <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
-                {templates.map((candidate) => (
-                  <option key={candidate.name} value={candidate.name}>
-                    {candidate.name}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-
-          <Field label="Name" required validationState={fieldState('name')} validationMessage={fieldMessage('name')}>
-            <Input ref={nameRef} value={values.name} onChange={(_, data) => setField('name', data.value)} />
-          </Field>
-
-          <Field label="Currency" required validationState={fieldState('currency')} validationMessage={fieldMessage('currency')}>
-            {lockedCurrency ? (
-              <Input ref={currencyRef} value={values.currency} readOnly />
-            ) : (
-              <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
-                {currencies.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-
-          {hasOpeningBalance && (
-            <>
-              <Field
-                label="Opening balance"
-                required
-                validationState={fieldState('openingBalance')}
-                validationMessage={fieldMessage('openingBalance')}
-              >
-                <Input
-                  ref={openingBalanceRef}
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  inputMode="decimal"
-                  value={values.openingBalance}
-                  onChange={(_, data) => setField('openingBalance', data.value)}
-                />
-              </Field>
-
-              <Field
-                label="Balance start date"
-                required={!keepsUnsetStartDate}
-                validationState={fieldState('balanceStartDate')}
-                validationMessage={fieldMessage('balanceStartDate')}
-              >
-                <Input
-                  ref={balanceStartDateRef}
-                  type="date"
-                  max={todayIsoDate()}
-                  value={values.balanceStartDate}
-                  onChange={(_, data) => setField('balanceStartDate', data.value)}
-                />
-              </Field>
-            </>
+    <EntityFormDialog
+      title={isEditing ? 'Edit account' : 'New account'}
+      saveLabel={isEditing ? 'Save' : 'Add account'}
+      error={isConflict ? null : error}
+      isSaving={isSaving}
+      canSave={!isSaving}
+      onSave={handleSave}
+      onCancel={requestClose}
+    >
+      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+        <Field
+          label="Template"
+          required={!isLocked}
+          hint={isLocked ? LOCKED_HINT : undefined}
+          validationState={fieldState('template')}
+          validationMessage={fieldMessage('template')}
+        >
+          {isLocked ? (
+            <Input ref={templateRef} value={values.templateName} readOnly />
+          ) : (
+            <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
+              {templates.map((candidate) => (
+                <option key={candidate.name} value={candidate.name}>
+                  {candidate.name}
+                </option>
+              ))}
+            </Select>
           )}
+        </Field>
 
-          {supportsRoundUp && (
-            <Field label="Round-up">
-              <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
+        <Field label="Name" required validationState={fieldState('name')} validationMessage={fieldMessage('name')}>
+          <Input ref={nameRef} value={values.name} onChange={(_, data) => setField('name', data.value)} />
+        </Field>
+
+        <Field
+          label="Currency"
+          required={!isCurrencyFixed}
+          hint={currencyHint}
+          validationState={fieldState('currency')}
+          validationMessage={fieldMessage('currency')}
+        >
+          {isCurrencyFixed ? (
+            <Input ref={currencyRef} value={values.currency} readOnly />
+          ) : (
+            <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
+              {currencies.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+
+        {hasOpeningBalance && (
+          <>
+            <Field
+              label={`Opening balance (${values.currency})`}
+              required
+              hint={isLocked ? "Changing it changes this account's past balances." : undefined}
+              validationState={fieldState('openingBalance')}
+              validationMessage={fieldMessage('openingBalance')}
+            >
+              <Input
+                ref={openingBalanceRef}
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                value={values.openingBalance}
+                onChange={(_, data) => setField('openingBalance', data.value)}
+              />
             </Field>
-          )}
 
-          {isEditing && (
-            <Field label="Active">
-              <Switch checked={values.isActive} onChange={(_, data) => setField('isActive', data.checked)} />
+            <Field
+              label="Balance start date"
+              required={!keepsUnsetStartDate}
+              hint={keepsUnsetStartDate ? 'Not set. Leave it empty to keep it that way.' : undefined}
+              validationState={fieldState('balanceStartDate')}
+              validationMessage={fieldMessage('balanceStartDate')}
+            >
+              <Input
+                ref={balanceStartDateRef}
+                type="date"
+                max={todayIsoDate()}
+                value={values.balanceStartDate}
+                onChange={(_, data) => setField('balanceStartDate', data.value)}
+              />
             </Field>
-          )}
-        </fieldset>
+          </>
+        )}
 
-        <DiscardChangesDialog
-          open={discardPrompt.isPromptOpen}
-          onKeepEditing={discardPrompt.keepEditing}
-          onDiscard={discardPrompt.discard}
-        />
-      </EntityFormDialog>
+        {supportsRoundUp && (
+          <Field label="Round-up">
+            <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
+          </Field>
+        )}
+
+        {isEditing && (
+          <Field label="Active">
+            <Switch checked={values.isActive} onChange={(_, data) => setField('isActive', data.checked)} />
+          </Field>
+        )}
+      </fieldset>
+
+      <DiscardChangesDialog
+        open={discardPrompt.isPromptOpen}
+        onKeepEditing={discardPrompt.keepEditing}
+        onDiscard={discardPrompt.discard}
+      />
+    </EntityFormDialog>
   )
 }

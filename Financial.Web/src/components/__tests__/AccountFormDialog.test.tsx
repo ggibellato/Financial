@@ -1,9 +1,8 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { AccountTemplateDto } from '../../api/types'
 import { account } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
-import { todayIsoDate } from '../../utils/formatters'
 import AccountFormDialog from '../AccountFormDialog'
 
 const BANK: AccountTemplateDto = {
@@ -23,23 +22,35 @@ function renderDialog(props: Partial<Parameters<typeof AccountFormDialog>[0]> = 
 const save = (name = 'Add account') => fireEvent.click(screen.getByRole('button', { name }))
 
 describe('AccountFormDialog', () => {
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-10-24T12:00:00'))
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('opens New account with the template first, then the Bank fields with their defaults, and no Active switch', () => {
     renderDialog()
 
     const dialog = screen.getByRole('dialog', { name: 'New account' })
-    const labels = within(dialog).getAllByText(/^(Template|Name|Currency|Opening balance|Balance start date|Round-up)$/)
+    const labels = within(dialog).getAllByText(/^(Template|Name|Currency|Opening balance \(GBP\)|Balance start date|Round-up)$/)
     expect(labels.map((label) => label.textContent?.replace('*', ''))).toEqual([
       'Template',
       'Name',
       'Currency',
-      'Opening balance',
+      'Opening balance (GBP)',
       'Balance start date',
       'Round-up',
     ])
     expect(screen.getByLabelText(/Template/)).toHaveValue('Bank')
     expect(screen.getByLabelText(/Currency/)).toHaveValue('GBP')
     expect(screen.getByLabelText(/Opening balance/)).toHaveValue(0)
-    expect(screen.getByLabelText(/Balance start date/)).toHaveValue(todayIsoDate())
+    expect(screen.getByLabelText(/Balance start date/)).toHaveValue('2026-10-24')
+    expect(screen.getByLabelText(/Currency/)).toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/Currency/)).not.toBeRequired()
+    expect(screen.getByText('Bank accounts use GBP.')).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Round-up' })).not.toBeChecked()
     expect(screen.queryByRole('switch', { name: 'Active' })).not.toBeInTheDocument()
   })
@@ -94,13 +105,10 @@ describe('AccountFormDialog', () => {
 
   it('[AC P60-F06-admin-accounts-page-07] shows each problem under its field on submit and focuses the first one', () => {
     const { onSubmit } = renderDialog()
-    const tomorrow = new Date()
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    const future = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`
 
     expect(screen.queryByText('Account name is required.')).not.toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/Opening balance/), { target: { value: '-1' } })
-    fireEvent.change(screen.getByLabelText(/Balance start date/), { target: { value: future } })
+    fireEvent.change(screen.getByLabelText(/Balance start date/), { target: { value: '2026-10-25' } })
     save()
 
     expect(screen.getByText('Account name is required.')).toBeInTheDocument()
@@ -132,6 +140,7 @@ describe('AccountFormDialog', () => {
 
     expect(await screen.findByText(message)).toBeInTheDocument()
     expect(screen.getByLabelText(/Name/)).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText(/Name/)).toHaveFocus()
     expect(screen.getAllByText(message)).toHaveLength(1)
     expect(screen.getByLabelText(/Name/)).toHaveValue('barclays')
 
@@ -166,7 +175,10 @@ describe('AccountFormDialog', () => {
 
     expect(screen.getByRole('dialog', { name: 'Edit account' })).toBeInTheDocument()
     expect(screen.getByLabelText(/Template/)).toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/Template/)).not.toBeRequired()
     expect(screen.getByLabelText(/Currency/)).toHaveAttribute('readonly')
+    expect(screen.getAllByText("Can't change once the account has transactions.")).toHaveLength(2)
+    expect(screen.getByText("Changing it changes this account's past balances.")).toBeInTheDocument()
     expect(screen.getByRole('switch', { name: 'Active' })).toBeChecked()
   })
 
@@ -202,6 +214,8 @@ describe('AccountFormDialog', () => {
     const { onSubmit } = renderDialog({ account: account({ id: 'a1', name: 'Barclays', balanceStartDate: '0001-01-01' }) })
 
     expect(screen.getByLabelText(/Balance start date/)).toHaveValue('')
+    expect(screen.getByLabelText(/Balance start date/)).not.toBeRequired()
+    expect(screen.getByText('Not set. Leave it empty to keep it that way.')).toBeInTheDocument()
     save('Save')
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ balanceStartDate: '0001-01-01' })))
@@ -242,5 +256,15 @@ describe('AccountFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     fireEvent.click(await screen.findByRole('button', { name: 'Discard' }))
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  it('[AC P60-F06-admin-accounts-page-07] sends Escape on a changed form through the discard prompt', async () => {
+    const { onCancel } = renderDialog()
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'New account' }), { key: 'Escape' })
+
+    expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
+    expect(onCancel).not.toHaveBeenCalled()
   })
 })

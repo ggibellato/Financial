@@ -30,6 +30,12 @@ describe('AdminEntityPage', () => {
     expect(onCreate).toHaveBeenCalledOnce()
   })
 
+  it('disables the create button when asked', () => {
+    renderPage({ createDisabled: true })
+
+    expect(screen.getByRole('button', { name: 'Create Bank' })).toBeDisabled()
+  })
+
   it('renders the content when loaded and not empty', () => {
     renderPage()
 
