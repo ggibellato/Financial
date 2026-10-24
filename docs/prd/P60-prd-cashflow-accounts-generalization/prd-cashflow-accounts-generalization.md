@@ -718,20 +718,20 @@ graph TD
 - [x] Parity: summary figures mapped to the F01 browser-computed figures, 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F05. Bank Account Screen
-- [ ] The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen
-- [ ] The picker switches account and keeps the selected month
-- [ ] The header shows name, template, currency and the month-end balance equal to Monthly's value
-- [ ] The Transactions grid lists every expense, income, transfer and adjustment of the account in the month, amounts signed and right-aligned
-- [ ] The rendered actions are exactly the API's allowed actions for the account; a bank shows Add expense, Add income, Transfer to, Transfer from, Pay recurring bill, Reconcile (labelled Adjust balance)
-- [ ] Each action opens one inline form above the grid; opening another with unsaved changes asks to discard
-- [ ] Add expense saves, refreshes header and grid, and keeps the form open with the last date
-- [ ] Pay recurring bill lists all unpaid UK bills and pays the chosen one through `POST mensais/{id}/paid` with this bank; the bill shows Paid on Mensais
-- [ ] Edit and Delete on a row work; Delete asks for confirmation
-- [ ] Loading, empty, validation, server error, saving, success and unsaved-changes states behave as specified
-- [ ] Keyboard-only use reaches every control with visible focus; focus moves into an opened form and back to its action button on close
-- [ ] At 320 px width the layout has no horizontal page scroll and meets `docs/ui/review-checklist.md`
-- [ ] Old pages still work unchanged
-- [ ] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] The Accounts page lists the default group members with balances and per-currency totals; selecting one opens its account screen
+- [x] The picker switches account and keeps the selected month
+- [x] The header shows name, template, currency and the month-end balance equal to Monthly's value
+- [x] The Transactions grid lists every expense, income, transfer and adjustment of the account in the month, amounts signed and right-aligned
+- [x] The rendered actions are exactly the API's allowed actions for the account; a bank shows Add expense, Add income, Transfer to, Transfer from, Pay recurring bill, Reconcile (labelled Adjust balance)
+- [x] Each action opens one inline form above the grid; opening another with unsaved changes asks to discard
+- [x] Add expense saves, refreshes header and grid, and keeps the form open with the last date
+- [x] Pay recurring bill lists all unpaid UK bills and pays the chosen one through `POST mensais/{id}/paid` with this bank; the bill shows Paid on Mensais
+- [x] Edit and Delete on a row work; Delete asks for confirmation
+- [x] Loading, empty, validation, server error, saving, success and unsaved-changes states behave as specified
+- [x] Keyboard-only use reaches every control with visible focus; focus moves into an opened form and back to its action button on close
+- [x] At 320 px width the layout has no horizontal page scroll and meets `docs/ui/review-checklist.md`
+- [x] Old pages still work unchanged
+- [x] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F06. Admin Accounts Page
 - [ ] Creating a Bank account with name, currency, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change
@@ -823,8 +823,8 @@ graph TD
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
 - [ ] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
-- [ ] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
-- [ ] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
+- [x] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
+- [x] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
 - [ ] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
 - [ ] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
 - [ ] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
