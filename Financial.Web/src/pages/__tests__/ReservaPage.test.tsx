@@ -4,6 +4,7 @@ import ReservaPage from '../ReservaPage'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const {
   getReserveBalancesMock,
@@ -289,6 +290,13 @@ describe('ReservaPage', () => {
         'Chase',
         'Barclays',
       ])
+    })
+
+    it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Through bank', async () => {
+      getBanksMock.mockResolvedValue([...BANKS, { ...BANKS[0], id: 'bk3', name: 'Monzo', hasReferences: true, isActive: false }])
+      await openWithdrawalForm()
+
+      expect(optionNames(screen.getByRole('combobox', { name: /^Through bank/ }))).toEqual(['No bank (direct)', 'Chase', 'Barclays'])
     })
 
     it('offers contextual help explaining Through bank', async () => {

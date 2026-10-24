@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react'
+import type { ReactElement, ReactNode } from 'react'
 import { FluentProvider } from '@fluentui/react-components'
 import { render as testingLibraryRender, type RenderOptions } from '@testing-library/react'
 import { financialLightTheme } from '../theme/fluentTheme'
@@ -11,7 +11,11 @@ import { financialLightTheme } from '../theme/fluentTheme'
  * `@testing-library/react` render.
  */
 export function render(ui: ReactElement, options?: RenderOptions) {
-  return testingLibraryRender(<FluentProvider theme={financialLightTheme}>{ui}</FluentProvider>, options)
+  const InnerWrapper = options?.wrapper
+  const FluentWrapper = ({ children }: { children: ReactNode }) => (
+    <FluentProvider theme={financialLightTheme}>{InnerWrapper ? <InnerWrapper>{children}</InnerWrapper> : children}</FluentProvider>
+  )
+  return testingLibraryRender(ui, { ...options, wrapper: FluentWrapper })
 }
 
 export { fireEvent, screen, waitFor, within } from '@testing-library/react'

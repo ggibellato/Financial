@@ -1,8 +1,10 @@
+import { useState } from 'react'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { LockedBank } from '../hooks/formSettings'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
 import { DIFFERENT_BANKS_ERROR } from '../hooks/useTransferForm'
+import { selectableBanks, type SelectableBank } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
 export interface LockedTransferSide {
@@ -17,7 +19,7 @@ interface TransferFormProps {
   destinationBank: string
   amount: string
   note: string
-  banks: LockedBank[]
+  banks: (LockedBank & SelectableBank)[]
   lockedSide?: LockedTransferSide
   destinationAmount?: string
   sourceCurrency?: string | null
@@ -50,12 +52,15 @@ export default function TransferForm({
   onCancel,
 }: TransferFormProps) {
   const styles = useFormPanelStyles()
+  const [openedSourceBank] = useState(sourceBank)
+  const [openedDestinationBank] = useState(destinationBank)
   const sameBankError =
     sourceBank !== '' && destinationBank !== '' && sourceBank === destinationBank
       ? DIFFERENT_BANKS_ERROR
       : null
 
-  const destinationBanks = banks.filter((b) => b.id !== sourceBank)
+  const sourceBanks = selectableBanks(banks, sourceBank, openedSourceBank)
+  const destinationBanks = selectableBanks(banks, destinationBank, openedDestinationBank).filter((b) => b.id !== sourceBank)
   const placeholder = lockedSide ? 'Select an account' : 'Select a bank'
 
   const baseFieldError = useFieldError(saveErrorFields)
@@ -75,7 +80,7 @@ export default function TransferForm({
         </Field>
       )
     }
-    const options = side === 'source' ? banks : destinationBanks
+    const options = side === 'source' ? sourceBanks : destinationBanks
     const value = side === 'source' ? sourceBank : destinationBank
     return (
       <Field

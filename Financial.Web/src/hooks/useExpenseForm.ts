@@ -5,6 +5,7 @@ import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../api/typ
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
+import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 
@@ -238,8 +239,9 @@ export function useExpenseForm(
   function defaultPaymentSource(): string {
     if (lockedBank) return lockedBank.id
     const stored = getStoredDefault(PAYMENT_SOURCE_KEY)
-    if (stored && banks.some((b) => b.id === stored)) return stored
-    return banks[0]?.id ?? ''
+    const activeBanks = selectableBanks(banks)
+    if (stored && activeBanks.some((b) => b.id === stored)) return stored
+    return activeBanks[0]?.id ?? ''
   }
 
   function showCreateForm(requestedMode: PaymentMode) {

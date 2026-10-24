@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
 import ExpenseForm from '../ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
@@ -19,6 +20,8 @@ const CREDIT_CARDS: CreditCardDto[] = [
   { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
   { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
+
+const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
 
 const baseProps = {
   isEditing: false,
@@ -359,5 +362,27 @@ describe('ExpenseForm with a locked bank', () => {
     const message = screen.getByText('Could not save. Check the connection and try again.')
     const dateField = screen.getByLabelText(/^Date/)
     expect(message.compareDocumentPosition(dateField) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Payment Source on a new expense', () => {
+    render(<ExpenseForm {...baseProps} banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of an expense being edited', () => {
+    render(<ExpenseForm {...baseProps} isEditing paymentSource="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText(/^Payment Source/)).toHaveValue('bank-chase')
+    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212', 'Chase'])
+  })
+
+  it("[AC P60-F06-admin-accounts-page-05] keeps the edited expense's inactive bank after another bank is picked", () => {
+    const props = { ...baseProps, isEditing: true, banks: [...BANKS, INACTIVE_BANK] }
+    const { rerender } = render(<ExpenseForm {...props} paymentSource="bank-chase" />)
+
+    rerender(<ExpenseForm {...props} paymentSource="bank-barclays" />)
+
+    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toContain('Chase')
   })
 })

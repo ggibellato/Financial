@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
-import type { IncomeDto, IncomeSourceDto } from '../../api/types'
+import type { BankDto, IncomeDto, IncomeSourceDto } from '../../api/types'
 import { setStoredDefault } from '../../utils/createFormDefaults'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
@@ -17,6 +17,11 @@ vi.mock('../../api/financialApiClient', () => ({
     updateIncome: updateIncomeMock,
   } as Partial<FinancialApiClient>,
 }))
+
+const BANKS: BankDto[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: false },
@@ -56,7 +61,7 @@ describe('useIncomeForm', () => {
   })
 
   it('defaults the new-income source to the first active option and leaves bank unselected once the form opens', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
 
     act(() => result.current.showCreateIncomeForm())
 
@@ -65,7 +70,7 @@ describe('useIncomeForm', () => {
   })
 
   it('leaves the default source unset when there are no income sources', () => {
-    const { result } = renderHook(() => useIncomeForm([], onSaved))
+    const { result } = renderHook(() => useIncomeForm([], BANKS, onSaved))
 
     act(() => result.current.showCreateIncomeForm())
 
@@ -74,7 +79,7 @@ describe('useIncomeForm', () => {
 
   it('submits a create request with a null bankId and null description when both are left blank', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '42.50'))
@@ -88,7 +93,7 @@ describe('useIncomeForm', () => {
 
   it('submits a create request with the provided description', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '42.50'))
@@ -102,7 +107,7 @@ describe('useIncomeForm', () => {
   })
 
   it('defaults splitToReserve to false when the default source is ineligible', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
 
     act(() => result.current.showCreateIncomeForm())
 
@@ -111,7 +116,7 @@ describe('useIncomeForm', () => {
   })
 
   it('switching to an eligible source sets splitToReserve to true', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
 
     act(() => result.current.setIncomeField('incomeSource', '2'))
@@ -120,7 +125,7 @@ describe('useIncomeForm', () => {
   })
 
   it('switching back to an ineligible source sets splitToReserve to false', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('incomeSource', '2'))
 
@@ -130,7 +135,7 @@ describe('useIncomeForm', () => {
   })
 
   it('populates incomeSplitToReserve as true for a split income', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     const income: IncomeDto = {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
@@ -143,7 +148,7 @@ describe('useIncomeForm', () => {
   })
 
   it('populates incomeSplitToReserve as false for an unsplit income', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     const income: IncomeDto = {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
@@ -157,7 +162,7 @@ describe('useIncomeForm', () => {
 
   it('submits a create request with splitToReserve true when checked', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('incomeSource', '2'))
     act(() => result.current.setIncomeField('date', '2026-07-25'))
@@ -170,7 +175,7 @@ describe('useIncomeForm', () => {
 
   it('sets splitConfirmationMessage when the create response comes back split', async () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: true } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
@@ -184,7 +189,7 @@ describe('useIncomeForm', () => {
 
   it('leaves splitConfirmationMessage null when the create response comes back unsplit', async () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
@@ -198,7 +203,7 @@ describe('useIncomeForm', () => {
 
   it('clears splitConfirmationMessage automatically after the delay', async () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: true } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
@@ -216,7 +221,7 @@ describe('useIncomeForm', () => {
 
   it('persists date, bank, and income source after a successful create, for the next create form', async () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('bank', 'bank-barclays'))
@@ -233,9 +238,28 @@ describe('useIncomeForm', () => {
     expect(result.current.incomeSource).toBe(INCOME_SOURCES[1].id)
   })
 
+  it('[AC P60-F06-admin-accounts-page-05] leaves the bank empty when the remembered bank is inactive', () => {
+    setStoredDefault('income.bank', 'bank-barclays')
+    const banks = [{ ...BANKS[0], isActive: false }, BANKS[1]]
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, banks, onSaved))
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeBank).toBe('')
+  })
+
+  it('leaves the bank empty when the remembered bank no longer exists', () => {
+    setStoredDefault('income.bank', 'bank-deleted')
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeBank).toBe('')
+  })
+
   it('always starts gross/net value and description blank on a new create form, even after a persisted save', async () => {
     createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
@@ -252,7 +276,7 @@ describe('useIncomeForm', () => {
   })
 
   it('rejects a submit with a blank date, blank source, and a gross value below the net value, without calling the API', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', ''))
     act(() => result.current.setIncomeField('incomeSource', ''))
@@ -268,7 +292,7 @@ describe('useIncomeForm', () => {
   })
 
   it('rejects a submit with a non-numeric net value, without calling the API', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', 'not-a-number'))
@@ -280,7 +304,7 @@ describe('useIncomeForm', () => {
   })
 
   it('cancelIncomeForm closes the form and resets its fields', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('description', 'Draft'))
 
@@ -292,7 +316,7 @@ describe('useIncomeForm', () => {
 
   it('surfaces a create error returned by the backend', async () => {
     createIncomeMock.mockRejectedValue(new Error('Income source is inactive'))
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '42.50'))
@@ -332,7 +356,7 @@ describe('useIncomeForm account settings', () => {
 
   it('opens with the locked bank and sends it in the request', async () => {
     createIncomeMock.mockResolvedValue(SAVED)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE }))
 
     await addIncome(result)
 
@@ -341,10 +365,10 @@ describe('useIncomeForm account settings', () => {
 
   it('does not remember the locked bank as the default bank', async () => {
     createIncomeMock.mockResolvedValue(SAVED)
-    const locked = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+    const locked = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE }))
     await addIncome(locked.result)
 
-    const monthly = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const monthly = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => monthly.result.current.showCreateIncomeForm())
 
     expect(monthly.result.current.incomeBank).toBe('')
@@ -353,7 +377,7 @@ describe('useIncomeForm account settings', () => {
   it('keeps the form open after a create with the same date and source, clearing values and description', async () => {
     createIncomeMock.mockResolvedValue(SAVED)
     const { result } = renderHook(() =>
-      useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE, keepOpenAfterSave: true }),
+      useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE, keepOpenAfterSave: true }),
     )
 
     await addIncome(result)
@@ -371,7 +395,7 @@ describe('useIncomeForm account settings', () => {
 
   it('closes the form after a create when keep-open is not set', async () => {
     createIncomeMock.mockResolvedValue(SAVED)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
 
     await addIncome(result)
 
@@ -382,7 +406,7 @@ describe('useIncomeForm account settings', () => {
     vi.setSystemTime(new Date('2026-10-15T12:00:00+01:00'))
     setStoredDefault('income.date', '2026-08-30')
     const { result } = renderHook(() =>
-      useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 10 } }),
+      useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 10 } }),
     )
 
     act(() => result.current.showCreateIncomeForm())
@@ -392,7 +416,7 @@ describe('useIncomeForm account settings', () => {
 
   it('closes the form after an edit even when keep-open is set', async () => {
     updateIncomeMock.mockResolvedValue(SAVED)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { keepOpenAfterSave: true }))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { keepOpenAfterSave: true }))
 
     act(() => result.current.showEditIncomeForm(SAVED))
     await act(async () => result.current.submitIncome())
@@ -402,7 +426,7 @@ describe('useIncomeForm account settings', () => {
 
   it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
     createIncomeMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved, { lockedBank: LOCKED_CHASE }))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE }))
 
     await addIncome(result)
 
@@ -412,7 +436,7 @@ describe('useIncomeForm account settings', () => {
   })
 
   it('reports dirty only while the values differ from those the form opened with', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, onSaved))
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
 
     act(() => result.current.showCreateIncomeForm())
     expect(result.current.isIncomeDirty).toBe(false)

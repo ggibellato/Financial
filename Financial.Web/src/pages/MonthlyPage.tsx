@@ -135,7 +135,7 @@ export default function MonthlyPage() {
     cancelIncomeForm,
     setIncomeField,
     submitIncome,
-  } = useIncomeForm(incomeSources, refreshSilently)
+  } = useIncomeForm(incomeSources, banks, refreshSilently)
 
   const bankOperations = useBankOperations(year, month, banks, refreshSilently)
   const activeCreditCards = creditCardsData.creditCards.filter((c) => c.isActive)
@@ -144,7 +144,7 @@ export default function MonthlyPage() {
     refreshSilently()
     bankOperations.refreshSilently()
   })
-  const adjustmentForm = useBalanceAdjustmentForm(bankTotals, () => {
+  const adjustmentForm = useBalanceAdjustmentForm(bankTotals, banks, () => {
     refreshSilently()
     bankOperations.refreshSilently()
   })

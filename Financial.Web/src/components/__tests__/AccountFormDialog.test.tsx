@@ -134,6 +134,7 @@ describe('AccountFormDialog', () => {
   it('[AC P60-F06-admin-accounts-page-02] shows a duplicate-name 409 under Name, and clears it once the name changes', async () => {
     const message = 'An account named "Barclays" already exists.'
     renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409)) })
+    await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus())
 
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'barclays' } })
     save()

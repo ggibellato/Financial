@@ -3,11 +3,14 @@ import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BalanceAdjustmentForm from '../BalanceAdjustmentForm'
 import type { BankDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
+
+const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
 
 const baseProps = {
   isEditing: false,
@@ -200,5 +203,17 @@ describe('BalanceAdjustmentForm', () => {
     render(<BalanceAdjustmentForm {...baseProps} currentBalance={12.5} currency="EUR" balanceLabel="Balance at end of October 2026" />)
 
     expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Balance at end of October 2026: €12.50')
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Bank on a new adjustment', () => {
+    render(<BalanceAdjustmentForm {...baseProps} banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(optionNames(screen.getByLabelText(/^Bank/))).toEqual(['Select a bank', 'Barclays', 'Trading212'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps an inactive bank that is already selected', () => {
+    render(<BalanceAdjustmentForm {...baseProps} bankName="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText(/^Bank/)).toHaveValue('bank-chase')
   })
 })

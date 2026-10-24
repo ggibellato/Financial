@@ -5,6 +5,7 @@ import { ApiError } from '../../api/apiError'
 import type { BankDto, TransferDto } from '../../api/types'
 import { useTransferForm } from '../useTransferForm'
 import { pinDate } from '../../test-utils/pinDate'
+import { setStoredDefault } from '../../utils/createFormDefaults'
 
 const { createTransferMock, updateTransferMock } = vi.hoisted(() => ({
   createTransferMock: vi.fn<FinancialApiClient['createTransfer']>(),
@@ -61,6 +62,18 @@ describe('useTransferForm', () => {
     expect(result.current.isEditing).toBe(false)
     expect(result.current.date).toBe('2026-07-01')
     expect(result.current.sourceBank).toBe('bank-barclays')
+    expect(result.current.destinationBank).toBe('')
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] openCreateForm skips inactive banks for the remembered and first source and destination', () => {
+    setStoredDefault('transfer.sourceBank', 'bank-barclays')
+    setStoredDefault('transfer.destinationBank', 'bank-barclays')
+    const banks = [{ ...BANKS[0], isActive: false }, ...BANKS.slice(1)]
+    const { result } = renderHook(() => useTransferForm(banks, vi.fn()))
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.sourceBank).toBe(BANKS[1].id)
     expect(result.current.destinationBank).toBe('')
   })
 

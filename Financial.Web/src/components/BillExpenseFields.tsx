@@ -1,6 +1,7 @@
 import { Field, Input, Select, Text } from '@fluentui/react-components'
 import type { BankDto, CategoryDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
+import { selectableBanks } from '../utils/selectableBanks'
 import type { BillExpenseErrors, BillExpenseField, BillExpenseValues } from './billExpenseValues'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -55,7 +56,7 @@ export default function BillExpenseFields({
         <Field label="Bank" required {...validation('bankId')}>
           <Select value={values.bankId} onChange={(e) => onFieldChange('bankId', e.target.value)} disabled={disabled}>
             <option value="">Select bank…</option>
-            {banks.map((b) => (
+            {selectableBanks(banks, values.bankId).map((b) => (
               <option key={b.id} value={b.id}>
                 {b.name}
               </option>

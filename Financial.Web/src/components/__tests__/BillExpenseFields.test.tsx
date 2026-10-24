@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { recurringBill } from '../../test/recurringBill'
+import { optionNames } from '../../test-utils/optionNames'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import BillExpenseFields from '../BillExpenseFields'
 import {
@@ -98,6 +99,9 @@ describe('parseBillExpense', () => {
   })
 })
 
+const BARCLAYS = { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true }
+const BANKS = [BARCLAYS, { ...BARCLAYS, id: 'bank-chase', name: 'Chase', isActive: false }]
+
 describe('BillExpenseFields', () => {
   it('shows a locked bank as text instead of a bank dropdown', () => {
     render(
@@ -122,5 +126,17 @@ describe('BillExpenseFields', () => {
 
     expect(onFieldChange).toHaveBeenCalledWith('value', '95')
     expect(onFieldChange).toHaveBeenCalledWith('categoryId', '')
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Bank', () => {
+    render(<BillExpenseFields values={VALID} banks={BANKS} categories={CATEGORIES} onFieldChange={vi.fn()} />)
+
+    expect(optionNames(screen.getByLabelText(/^Bank/))).toEqual(['Select bank…', 'Barclays'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps an inactive bank that is already selected', () => {
+    render(<BillExpenseFields values={{ ...VALID, bankId: 'bank-chase' }} banks={BANKS} categories={CATEGORIES} onFieldChange={vi.fn()} />)
+
+    expect(screen.getByLabelText(/^Bank/)).toHaveValue('bank-chase')
   })
 })

@@ -3,12 +3,15 @@ import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import TransferForm from '../TransferForm'
 import type { BankDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
   { id: 'bank-chase', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
+
+const INACTIVE_BANK = { id: 'bank-monzo', name: 'Monzo', isActive: false }
 
 const baseProps = {
   isEditing: false,
@@ -165,5 +168,35 @@ describe('TransferForm', () => {
     fireEvent.submit(screen.getByTestId('transfer-form-panel'))
 
     expect(onSave).toHaveBeenCalledOnce()
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of From and To on a new transfer', () => {
+    render(<TransferForm {...baseProps} banks={[...baseProps.banks, INACTIVE_BANK]} />)
+
+    expect(optionNames(screen.getByLabelText(/^From/))).not.toContain('Monzo')
+    expect(optionNames(screen.getByLabelText(/^To/))).not.toContain('Monzo')
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of a transfer being edited on its own side only', () => {
+    render(<TransferForm {...baseProps} isEditing sourceBank="bank-monzo" banks={[...baseProps.banks, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText(/^From/)).toHaveValue('bank-monzo')
+    expect(optionNames(screen.getByLabelText(/^To/))).not.toContain('Monzo')
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps the inactive destination of a transfer being edited', () => {
+    render(<TransferForm {...baseProps} isEditing destinationBank="bank-monzo" banks={[...baseProps.banks, INACTIVE_BANK]} />)
+
+    expect(screen.getByLabelText(/^To/)).toHaveValue('bank-monzo')
+    expect(optionNames(screen.getByLabelText(/^From/))).not.toContain('Monzo')
+  })
+
+  it("[AC P60-F06-admin-accounts-page-05] keeps the edited transfer's inactive bank after another bank is picked", () => {
+    const props = { ...baseProps, isEditing: true, banks: [...baseProps.banks, INACTIVE_BANK] }
+    const { rerender } = render(<TransferForm {...props} sourceBank="bank-monzo" />)
+
+    rerender(<TransferForm {...props} sourceBank="bank-chase" />)
+
+    expect(optionNames(screen.getByLabelText(/^From/))).toContain('Monzo')
   })
 })

@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import CardsGrid from '../CardsGrid'
 import type { BankDto, CardStatementDto, CreditCardDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
@@ -342,5 +343,35 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(tbody.queryByText('ChaseMaster4023')).not.toBeInTheDocument()
     expect(tbody.queryByText('PaypalCredit')).not.toBeInTheDocument()
     expect(tbody.getByText('BaAmex')).toBeInTheDocument()
+  })
+})
+
+describe('CardsGrid paying bank', () => {
+  const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
+  const renderGrid = (markPaidSources: Record<string, string>) =>
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={[...BANKS, INACTIVE_BANK]}
+        adjustmentTotal={100}
+        markPaidSources={markPaidSources}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+      />,
+    )
+  const payingBankOptions = () => optionNames(screen.getByLabelText('Paying bank for BaAmex'))
+
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of the paying bank', () => {
+    renderGrid({})
+
+    expect(payingBankOptions()).toEqual(['Bank…', 'Barclays', 'Trading212'])
+  })
+
+  it('[AC P60-F06-admin-accounts-page-05] keeps an inactive paying bank that is already chosen', () => {
+    renderGrid({ c1: 'bank-chase' })
+
+    expect(screen.getByLabelText('Paying bank for BaAmex')).toHaveValue('bank-chase')
+    expect(payingBankOptions()).toContain('Chase')
   })
 })

@@ -4,6 +4,7 @@ import type { BankDto } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
 import { formatCurrency } from '../utils/formatters'
+import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface BalanceAdjustmentFormProps {
@@ -109,7 +110,7 @@ export default function BalanceAdjustmentForm({
             >
               <Select value={bankName} onChange={(e) => onFieldChange('bankName', e.target.value)}>
                 <option value="">Select a bank</option>
-                {banks.map((b) => (
+                {selectableBanks(banks, bankName).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>

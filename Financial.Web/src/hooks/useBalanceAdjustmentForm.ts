@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { BalanceAdjustmentDto } from '../api/types'
+import type { BalanceAdjustmentDto, BankDto } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { selectableBanks } from '../utils/selectableBanks'
 
 const DATE_KEY = 'balanceAdjustment.date'
 const BANK_KEY = 'balanceAdjustment.bank'
@@ -80,12 +81,13 @@ export interface UseBalanceAdjustmentFormResult {
 
 /**
  * Create defaults the bank to the last successfully used one (P38-F10), validated against the
- * currently fetched bankTotals so a since-removed bank never gets silently re-selected; picking
- * a bank resolves its current calculated balance client-side from bankTotals (no new network
- * call).
+ * currently fetched bankTotals and the active banks so a removed or inactive bank never gets
+ * silently re-selected; picking a bank resolves its current calculated balance client-side from
+ * bankTotals (no new network call).
  */
 export function useBalanceAdjustmentForm(
   bankTotals: BankBalance[],
+  banks: BankDto[],
   onSaved: (isEdit: boolean) => void,
   { lockedBank, viewedMonth }: AccountFormSettings = {},
 ): UseBalanceAdjustmentFormResult {
@@ -94,7 +96,7 @@ export function useBalanceAdjustmentForm(
   function openCreateForm() {
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const storedBank = getStoredDefault(BANK_KEY)
-    const bankName = lockedBank?.id ?? (storedBank && bankTotals.some((b) => b.bankId === storedBank) ? storedBank : '')
+    const bankName = lockedBank?.id ?? (storedBank && bankTotals.some((b) => b.bankId === storedBank) && selectableBanks(banks).some((b) => b.id === storedBank) ? storedBank : '')
     setState(
       withOpenedValues({
         ...BLANK_STATE,
