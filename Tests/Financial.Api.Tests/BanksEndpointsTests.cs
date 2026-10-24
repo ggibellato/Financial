@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -48,6 +49,16 @@ public class BanksEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("Barclays").And.Contain("already exists");
+    }
+
+    [Fact]
+    public async Task CreateBank_DuplicateNameInAnotherCase_ReturnsConflictWithTheBankMessage()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/banks", new BankCreateDTO { Name = "barclays", RoundUpEnabled = false });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        problem!.Detail.Should().Be("A bank named \"barclays\" already exists.");
     }
 
     [Fact]

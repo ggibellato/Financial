@@ -91,17 +91,20 @@ public class BankServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateBankAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("Barclays")]
+    [InlineData("barclays")]
+    [InlineData(" BARCLAYS ")]
+    public async Task CreateBankAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         _repository.Accounts.Add(TestAccounts.Bank("Barclays", roundUpEnabled: false));
-        var request = new BankCreateDTO { Name = "Barclays", RoundUpEnabled = true };
+        var request = new BankCreateDTO { Name = name, RoundUpEnabled = true };
 
         var act = async () => await _sut.CreateBankAsync(request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).Which.Message.Should().StartWith("A bank named");
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }

@@ -8,6 +8,7 @@ import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../../
 import { pinDate } from '../../test-utils/pinDate'
 import { useAccountScreen } from '../useAccountScreen'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { account } from '../../test/account'
 
 const { getAccountsMock, getAccountMock, getAccountTransactionsMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -25,7 +26,7 @@ vi.mock('../../api/financialApiClient', () => ({
 
 const BARCLAYS_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
 
-const ACCOUNTS: AccountDto[] = [{ id: BARCLAYS_ID, name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true }]
+const ACCOUNTS: AccountDto[] = [account({ id: BARCLAYS_ID, name: 'Barclays' })]
 
 const DETAIL: AccountDetailDto = {
   id: BARCLAYS_ID,

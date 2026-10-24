@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Exceptions;
+using Financial.CashFlow.Domain.Entities;
 
 namespace Financial.CashFlow.Application.Validation;
 
@@ -15,12 +16,18 @@ public static class EntityLookupExtensions
         Guid? excludingId,
         Func<T, string> nameSelector,
         Func<T, Guid> idSelector,
-        string entityDisplayName)
+        string entityDisplayName,
+        IEqualityComparer<string>? comparer = null)
     {
-        var collision = items.FirstOrDefault(item => nameSelector(item) == name && idSelector(item) != excludingId);
+        comparer ??= StringComparer.Ordinal;
+        var collision = items.FirstOrDefault(item => comparer.Equals(nameSelector(item), name) && idSelector(item) != excludingId);
         if (collision is not null)
         {
             throw new DuplicateNameException($"{entityDisplayName} named \"{name}\" already exists.");
         }
     }
+
+    public static void EnsureAccountNameIsUnique(this IEnumerable<Account> accounts, string? name, Guid? excludingId, string entityDisplayName) =>
+        accounts.EnsureNameIsUnique(
+            name?.Trim() ?? string.Empty, excludingId, a => a.Name, a => a.Id, entityDisplayName, StringComparer.OrdinalIgnoreCase);
 }

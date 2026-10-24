@@ -1,10 +1,59 @@
 ﻿{
   "components": {
     "schemas": {
-      "AccountDTO": {
+      "AccountCreateDTO": {
         "properties": {
+          "balanceStartDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "currency": {
             "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "openingBalance": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "roundUpEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "templateName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "templateName",
+          "name",
+          "currency"
+        ],
+        "type": "object"
+      },
+      "AccountDTO": {
+        "properties": {
+          "balanceStartDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "hasRecords": {
+            "type": "boolean"
           },
           "id": {
             "format": "uuid",
@@ -16,6 +65,19 @@
           "name": {
             "type": "string"
           },
+          "openingBalance": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "roundUpEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
           "templateName": {
             "type": "string"
           }
@@ -25,7 +87,8 @@
           "name",
           "templateName",
           "currency",
-          "isActive"
+          "isActive",
+          "hasRecords"
         ],
         "type": "object"
       },
@@ -160,6 +223,31 @@
           "categoryTotalsSum",
           "incomeTotals",
           "totalIncoming"
+        ],
+        "type": "object"
+      },
+      "AccountTemplateDTO": {
+        "properties": {
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "currencies",
+          "capabilities"
         ],
         "type": "object"
       },
@@ -394,6 +482,49 @@
           "sourceAccountId",
           "destinationAccountId",
           "amount"
+        ],
+        "type": "object"
+      },
+      "AccountUpdateDTO": {
+        "properties": {
+          "balanceStartDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "openingBalance": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "roundUpEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "templateName": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "templateName",
+          "name",
+          "currency",
+          "isActive"
         ],
         "type": "object"
       },
@@ -6169,6 +6300,84 @@
         "tags": [
           "Accounts"
         ]
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDTO"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
+        ]
       }
     },
     "/accounts/groups/default/summary/{year}/{month}": {
@@ -6222,6 +6431,29 @@
         "summary": "",
         "tags": [
           "AccountGroups"
+        ]
+      }
+    },
+    "/accounts/templates": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountTemplateDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
         ]
       }
     },
@@ -6417,6 +6649,151 @@
         "summary": "",
         "tags": [
           "AccountTransfers"
+        ]
+      }
+    },
+    "/accounts/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/AccountUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
         ]
       }
     },

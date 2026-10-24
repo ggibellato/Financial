@@ -58,7 +58,7 @@ public sealed class BankService : IBankService
                 throw new ArgumentException("Bank name is required.", nameof(request));
             }
 
-            _repository.GetAccounts().EnsureNameIsUnique(request.Name, null, a => a.Name, a => a.Id, "A bank");
+            _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, null, "A bank");
 
             var bank = Account.Create(request.Name, AccountTemplate.Bank, Currency.GBP);
             bank.SetRoundUp(request.RoundUpEnabled);
@@ -96,7 +96,7 @@ public sealed class BankService : IBankService
 
             var bank = FindBankOrThrow(id);
 
-            _repository.GetAccounts().EnsureNameIsUnique(request.Name, id, a => a.Name, a => a.Id, "A bank");
+            _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, "A bank");
 
             await _repository.ApplyAndSaveAsync(() =>
             {

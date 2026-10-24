@@ -5,6 +5,7 @@ import type { AccountDto, AccountGroupSummaryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
+import { account } from '../../test/account'
 
 const { getDefaultGroupSummaryMock, getAccountsMock } = vi.hoisted(() => ({
   getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
@@ -37,10 +38,10 @@ const SUMMARY: AccountGroupSummaryDto = {
 }
 
 const ACCOUNTS: AccountDto[] = [
-  { id: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true },
-  { id: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', isActive: true },
-  { id: 'itau', name: 'Itau', templateName: 'Bank', currency: 'BRL', isActive: true },
-  { id: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', isActive: false },
+  account({ id: 'barclays', name: 'Barclays' }),
+  account({ id: 'chase', name: 'Chase' }),
+  account({ id: 'itau', name: 'Itau', currency: 'BRL' }),
+  account({ id: 'old', name: 'Old Savings', isActive: false }),
 ]
 
 function renderPage() {
