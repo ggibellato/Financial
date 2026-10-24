@@ -1,5 +1,6 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
@@ -28,6 +29,7 @@ public class Income : IAccountTransaction
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
         ValidateAccount(account);
+        ActiveAccountRule.EnsureUsable(null, account);
 
         return new()
         {
@@ -54,6 +56,7 @@ public class Income : IAccountTransaction
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
         ValidateAccount(account);
+        ActiveAccountRule.EnsureUsable(Account, account);
 
         Date = date;
         IncomeSource = incomeSource;

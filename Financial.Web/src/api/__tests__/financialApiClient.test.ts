@@ -1884,7 +1884,7 @@ describe('financialApiClient', () => {
   })
 
   it('gets the bank list', async () => {
-    const responseBody: BankDto[] = [{ id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false }]
+    const responseBody: BankDto[] = [{ id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -1896,7 +1896,7 @@ describe('financialApiClient', () => {
 
   it('posts a bank create request', async () => {
     const requestBody: BankCreateDto = { name: 'Barclays', roundUpEnabled: true }
-    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false }
+    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -1911,7 +1911,7 @@ describe('financialApiClient', () => {
 
   it('puts a bank update', async () => {
     const requestBody: BankUpdateDto = { name: 'Barclays Renamed', roundUpEnabled: false }
-    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays Renamed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false }
+    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays Renamed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

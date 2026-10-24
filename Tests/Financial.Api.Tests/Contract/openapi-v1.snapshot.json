@@ -1334,6 +1334,9 @@
             "format": "uuid",
             "type": "string"
           },
+          "isActive": {
+            "type": "boolean"
+          },
           "name": {
             "type": "string"
           },
@@ -1355,7 +1358,8 @@
           "roundUpEnabled",
           "openingBalance",
           "openingBalanceDate",
-          "hasReferences"
+          "hasReferences",
+          "isActive"
         ],
         "type": "object"
       },

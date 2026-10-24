@@ -114,8 +114,8 @@ const TRANSACTIONS: AccountTransactionDto[] = [
 ]
 
 const BANKS: BankDto[] = [
-  { id: BARCLAYS_ID, name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true },
-  { id: CHASE_ID, name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true },
+  { id: BARCLAYS_ID, name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+  { id: CHASE_ID, name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
 ]
 
 const CATEGORIES: CategoryDto[] = [

@@ -17,7 +17,7 @@ const BILL: RecurringBillDto = {
 }
 
 const BANKS: BankDto[] = [
-  { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
+  { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
 
 const CATEGORIES: CategoryDto[] = [

@@ -1,5 +1,6 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
@@ -73,6 +74,7 @@ public class Expense : IAccountTransaction
     {
         ValidateFields(description, value);
         ValidatePaymentShape(paymentSourceAccount, creditCard);
+        ActiveAccountRule.EnsureUsable(null, paymentSourceAccount);
 
         return new()
         {
@@ -111,6 +113,7 @@ public class Expense : IAccountTransaction
         else
         {
             ValidatePaymentShape(paymentSourceAccount, creditCard);
+            ActiveAccountRule.EnsureUsable(PaymentSourceAccount, paymentSourceAccount);
 
             var wasCardCharge = PaymentStatus == ExpensePaymentStatus.CreditCardCharge;
 
@@ -150,6 +153,7 @@ public class Expense : IAccountTransaction
         }
 
         EnsureCanBePaymentSource(paymentSourceAccount);
+        ActiveAccountRule.EnsureUsable(null, paymentSourceAccount);
         PaymentSourceAccount = paymentSourceAccount;
         Date = paymentDate;
     }

@@ -54,7 +54,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             banks.Should().Be(
-                $$"""[{"id":"{{BarclaysId}}","name":"Barclays","roundUpEnabled":false,"openingBalance":0,"openingBalanceDate":"0001-01-01","hasReferences":true},{"id":"{{Trading212Id}}","name":"Trading212","roundUpEnabled":true,"openingBalance":0,"openingBalanceDate":"0001-01-01","hasReferences":true},{"id":"{{ChaseId}}","name":"Chase","roundUpEnabled":true,"openingBalance":100.50,"openingBalanceDate":"2026-09-01","hasReferences":true}]""");
+                $$"""[{"id":"{{BarclaysId}}","name":"Barclays","roundUpEnabled":false,"openingBalance":0,"openingBalanceDate":"0001-01-01","hasReferences":true,"isActive":true},{"id":"{{Trading212Id}}","name":"Trading212","roundUpEnabled":true,"openingBalance":0,"openingBalanceDate":"0001-01-01","hasReferences":true,"isActive":true},{"id":"{{ChaseId}}","name":"Chase","roundUpEnabled":true,"openingBalance":100.50,"openingBalanceDate":"2026-09-01","hasReferences":true,"isActive":true}]""");
             expenses.Should().Be(
                 $$"""[{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}]""");
             transfers.Should().Be(

@@ -16,4 +16,6 @@ public sealed class BankDTO
     /// <summary>Whether a balance adjustment, income, expense, or transfer still references this
     /// bank - Delete is refused (409) while this is true.</summary>
     public required bool HasReferences { get; init; }
+
+    public required bool IsActive { get; init; }
 }

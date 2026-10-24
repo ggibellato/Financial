@@ -7647,6 +7647,7 @@ export interface components {
             hasReferences: boolean;
             /** Format: uuid */
             id: string;
+            isActive: boolean;
             name: string;
             /** Format: double */
             openingBalance: number;

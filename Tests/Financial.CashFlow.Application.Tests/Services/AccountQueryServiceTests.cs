@@ -209,9 +209,12 @@ public class AccountQueryServiceTests
     [Fact]
     public void GetTransactions_InactiveAccount_ListsRowsThatCannotBeEdited()
     {
-        _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 10, 3), _closed, 0m, 0m, null));
+        var closing = TestAccounts.Bank("Closing");
+        _repository.Accounts.Add(closing);
+        _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 10, 3), closing, 0m, 0m, null));
+        closing.SetActive(false);
 
-        var rows = _sut.GetTransactions(_closed.Id, 2026, 10);
+        var rows = _sut.GetTransactions(closing.Id, 2026, 10);
 
         rows.Should().ContainSingle().Which.CanEdit.Should().BeFalse();
     }
