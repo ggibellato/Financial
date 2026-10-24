@@ -14,7 +14,7 @@
 
 **3. Admin service and endpoints** - Add the three DTOs, extend `AccountDTO`, and fill the new fields in `AccountQueryService`. Add `IAccountAdminService` and `AccountAdminService` with the rules and messages of spec §5, register it, and add the four routes to `AccountsController`. Regenerate the OpenAPI snapshot and the web types, and check that the diff only adds.
 
-**4. Acceptance tests** - Add the tagged API acceptance tests for ACs 01–05 and the F05 half of cross-feature line 832, on seeded data with one used and one unused account.
+**4. Acceptance tests** - Add the tagged API acceptance tests for ACs 01–05 and the F05 half of cross-feature line 839, on seeded data with one used and one unused account.
 
 **5. PR 1 verification and hand-off** - Run the full .NET suite and parity on the fresh live copy, expecting 0 differences and an unchanged SHA-256. Run `/simplify` and the architecture-reviewer, then push the branch and open the PR, without merging.
 
