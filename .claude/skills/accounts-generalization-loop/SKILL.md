@@ -27,7 +27,7 @@ This session is the **controller**. It reviews, writes documents, opens docs PRs
 - **Never switch branches in the main working tree while an implementation session may be using it.** Check `git status` and `git branch --show-current` first. If that tree is on a feature branch or has changes, put controller work in a worktree outside the repo: `git worktree add ../financial-wt-<topic> -b <branch> origin/main`. Remove the worktree after its PR merges.
 - **No `git stash`.** Never run migrations against `data/data-cashflow.json`. Never smoke-test on port 8080. Never print values from `.env` or `scripts/deploy.local.json`.
 - **Strict no-comments policy** in all code, and it is stated in every hand-off prompt.
-- **Deploy only at the end of P60**, so the parity baseline stays the original pre-P60 app.
+- **Deploy only after a feature's last stage**, never between stages, once its parity run passes and the user asks for it (the PRD's "Deploys only after a feature's last stage"). After a deploy, the parity baseline is that deploy's tag (`p60-deployed-<feature>`), so parity reads fresh live copies in the deployed format.
 - **The PRD stays the source of truth.** Whenever a decision at any step (feature review, spec review, implementation deviation) contradicts the PRD or the design doc, update them in the same PR as the change that made the decision. Later features are reviewed against the PRD, so drift there spreads.
 - **One question at a time.** For each one, offer options with a recommendation first. When the user asks to clarify, answer before asking again.
 

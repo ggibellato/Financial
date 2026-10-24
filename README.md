@@ -273,10 +273,11 @@ After deploying, start it with `deploy/start-web.ps1`.
 
 When a release changes the data file version, migrate the Drive copy before starting it:
 
-1. Download `data-cashflow.json` from Google Drive and keep the download as the backup.
-2. Run `dotnet run --project Tools/CashFlowSpreadsheetImport -- migrate --input <download> --output <new>`.
-3. Upload `<new>` to Google Drive in place of `data-cashflow.json`.
-4. Run `./scripts/deploy.ps1` and start the app.
+1. Stop the running app, so it can't save its copy of the data back to Google Drive while you migrate.
+2. Download `data-cashflow.json` from Google Drive and keep the download as the backup.
+3. Run `dotnet run --project Tools/CashFlowSpreadsheetImport -- migrate --input <download> --output <new>`.
+4. Upload `<new>` to Google Drive in place of `data-cashflow.json`.
+5. Run `./scripts/deploy.ps1` and start the app.
 
 A local `LocalJson` or `docker-compose up` install reads `data/data-cashflow.json`, which `migrate` refuses as input or output:
 

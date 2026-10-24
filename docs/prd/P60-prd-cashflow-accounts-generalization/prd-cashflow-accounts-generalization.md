@@ -6,7 +6,7 @@ CashFlow Accounts Generalization replaces the separate Bank, Credit Card, Reserv
 
 The product is the single-user, self-hosted Financial tool. Its React front end (`Financial.Web`, the only front end since ADR-002) gains an **account-centred UI**: the user picks one account and does everything for it from one screen — pay a card statement from the card, transfer or pay a recurring bill from a bank, deposit to or withdraw from the Reserva pots, add an entry or settle with Mãe — instead of today's tasks spread across Monthly, Reserva, Controle Mãe and the card statement section. Overview screens about time or the whole household (Monthly summary, annual summary, Mensais, investment snapshots) stay.
 
-The core value is one place per account, a new account from an existing template with no code, multiple Pots and Settlement accounts (the user's son's GBP account is expected soon), and a server-side summary in place of browser arithmetic — all while every balance, total and summary on the user's real data stays exactly as it is today. Nothing is deployed until all stages are done; each stage proves parity by running its data migration chain on a fresh copy of the live data file and comparing a full figures report before and after.
+The core value is one place per account, a new account from an existing template with no code, multiple Pots and Settlement accounts (the user's son's GBP account is expected soon), and a server-side summary in place of browser arithmetic — all while every balance, total and summary on the user's real data stays exactly as it is today. Nothing is deployed in the middle of a feature; a deploy may follow a feature's last stage, the first one after F05. Each stage proves parity by running its data migration chain on a fresh copy of the live data file and comparing a full figures report before and after.
 
 **Stages.** The design document's five slices are delivered as five stages of 13 features:
 
@@ -58,7 +58,7 @@ The core value is one place per account, a new account from an existing template
 **Household finance owner (single user)**
 - Records daily expenses, incomes, card charges, transfers, Reserva deposits and withdrawals and Mãe entries across UK banks (Barclays, Chase, Trading 212 cash), 5 credit cards (2 Barclays, Chase, BA Amex, PayPal) and a BRL/GBP running balance with their mother.
 - Wants each account's tasks in one place, and wants to add a new account (e.g. a GBP Settlement account with their son) without waiting for code.
-- Relies on the balances, category totals, tithe and annual summaries being exactly right; brings copies of the live data file to validate each stage before the single deploy.
+- Relies on the balances, category totals, tithe and annual summaries being exactly right; brings copies of the live data file to validate each stage before each deploy.
 
 ## 4. Objectives
 
@@ -74,7 +74,7 @@ The core value is one place per account, a new account from an existing template
 
 | Objective | Metric | Measurement condition |
 |---|---|---|
-| Preserve figures | 0 differences in the figures report, for every month in the data | Parity run on the latest live copy with the full V1 → V5 chain, before the single deploy |
+| Preserve figures | 0 differences in the figures report, for every month in the data | Parity run on the latest live copy, through every migration step the copy still needs (up to V5), before each deploy |
 | Preserve figures | 0 differences at the end of each of the 13 features | Parity run on the latest live copy available when the feature finishes |
 | No-code accounts | 4 of 4 templates create a working account through Admin → Accounts with 0 code changes | Manual check after F11: create one account per template, see it in the account list and use one action on it |
 | Centralise tasks | 14 of 14 per-account tasks reachable from the account screen (bank: add expense, add income, transfer, pay recurring bill, reconcile; card: add charge, pay statement, move charge, unmark paid; Pots: deposit, withdraw, manage pots; Settlement: add entry, settle) | Task checklist ticked before F13 retires the old pages |
@@ -172,7 +172,7 @@ Rules that apply to every feature:
 - **Definition of Done for every feature:** (1) the parity check passes with 0 differences on the latest live copy, (2) `/simplify` has been run on the feature's diff and its findings applied or explicitly declined, (3) tests follow the `testing-guide-Financial` skill — Unit per capability rule and handler, Integration (`ApiEndpointTests`) for endpoints and AC-traced tests tagged `[Trait("AC", "P60-Fxx-...")]`, negative paths at every layer, (4) the architecture-reviewer agent has reviewed it, and the ui-reviewer agent for features with UI, (5) a changed API updates the OpenAPI snapshot and `Financial.Web/src/api/generated/openapi.ts`, (6) every PR stays within 8 non-test code files unless it is one change repeated, (7) no code comments beyond genuine non-obvious WHYs.
 - **Testing capabilities** (design doc, unchanged): each capability is its own unit tested against a minimal test account with only that capability; the balance calculation is tested once; linked operations and transfer pair rules have contract tests every capability plugs into; one combination test per built-in template; an architecture test forbids template-name checks.
 - **Forward-only migrations.** Each step makes the data correct for the new model from now on; past records keep working as they are today and are not rebuilt.
-- **No deploy between stages.** The live system keeps running today's version until F13 is done and the final parity run on the latest live copy passes.
+- **Deploys only after a feature's last stage.** Never between a feature's stages. A deploy may follow a feature's last stage once its parity run on that day's live copy passes; the first follows F05 (user decision 2026-10-24, to use the account screen on real data while F06–F13 are designed). Each deploy follows the steps in F13's final parity run. After a deploy, parity's before side is the deployed commit, tagged `p60-deployed-<feature>` (the first is `p60-deployed-f05`): fresh live copies are then in the deployed format, which the `p60-baseline` build can't read. Every later run proves no figure changed against the version in use, and each deployed version was proven against the one before it, back to `p60-baseline`.
 
 ### F01. Parity Toolkit
 
@@ -182,7 +182,7 @@ Rules that apply to every feature:
 **Capabilities:**
 - Lives in `scripts/parity/` as PowerShell (like `scripts/deploy.ps1`); no production code. *Why:* the design doc allows scripts, the report must read what the screens read (the API), and a script adds nothing to deploy.
 - One entry point `scripts/parity/Invoke-Parity.ps1 -Step Baseline|Migrate|After|Compare|All -LiveCopy <path>`; `All` runs the 4 steps in order. Each run gets a fresh work folder `%TEMP%\financial-parity\<yyyyMMdd-HHmmss>\`.
-- **Baseline:** git tag `p60-baseline` is created on `main` when F01 starts (today's released behaviour). The step checks the tag out in a temp git worktree, builds `Financial.Api` in Release, copies the live copy to `before\data-cashflow.json`, starts the API with `CashFlow__Repository__Provider=LocalJson`, `CashFlow__DataJsonFile=<that copy>` and the Investment file pointed at a temp copy of `data/data-investment.example.json`, on port 5291, and exports `before-report.json`.
+- **Baseline:** git tag `p60-baseline` is created on `main` when F01 starts (today's released behaviour). The step checks the tag out in a temp git worktree, builds `Financial.Api` in Release, copies the live copy to `before\data-cashflow.json`, starts the API with `CashFlow__Repository__Provider=LocalJson`, `CashFlow__DataJsonFile=<that copy>` and the Investment file pointed at a temp copy of `data/data-investment.example.json`, on port 5291, and exports `before-report.json`. After a deploy, `-BaselineTag` defaults to that deploy's tag (see "Deploys only after a feature's last stage").
 - **Migrate:** copies the live copy to `after\data-cashflow.json` and runs the migration chain (`migrate` command, from F02 on) on it. In F01 the step is a plain copy, because no migration exists yet.
 - **After:** builds the current working tree and runs it against the migrated copy on port 5292, exporting `after-report.json`.
 - **Compare:** compares both reports key by key; amounts are compared as exact decimals; prints `path | before | after` for every difference and exits with code 1 if there is at least one.
@@ -205,7 +205,7 @@ Rules that apply to every feature:
 
 **Experience:**
 - The user runs `.\scripts\parity\Invoke-Parity.ps1 -Step All -LiveCopy D:\copies\data-cashflow-2026-10-20.json`.
-- Progress lines name each step (`[1/4] Baseline: building p60-baseline…`, `[2/4] Migrate…`, `[3/4] After…`, `[4/4] Compare…`).
+- Progress lines name each step (`[1/4] Baseline: building <baseline tag>…`, `[2/4] Migrate…`, `[3/4] After…`, `[4/4] Compare…`).
 - Success ends with `Parity OK: 0 differences in 1,234 figures across 117 months` and exit code 0.
 - Failure lists each difference (`2026-09 / banks / Barclays / balance | 130.83 | 131.83`) and ends with `Parity FAILED: 1 difference`, exit code 1, and keeps the work folder for inspection.
 
@@ -214,7 +214,7 @@ Rules that apply to every feature:
 - Port busy or 8080: `Port 5291 is in use (or is the live port 8080). Free it or pass -BeforePort/-AfterPort.` — nothing runs.
 - Build or start failure: the step prints the build/API output path, stops any started process, removes the worktree and exits 1.
 - Live copy changed during the run (hash differs): `The input copy changed during the run; results discarded.` exit 1.
-- Missing baseline tag: `Tag p60-baseline not found. Create it on main before the first run.` exit 1.
+- Missing baseline tag: `Tag <baseline tag> not found. Create it on main before the first run.` exit 1.
 
 ### F02. Account Model and Bank Migration
 
@@ -567,7 +567,7 @@ Rules that apply to every feature:
 - **Removed code (design doc's list):** the 4 old balance calculations (already replaced), name-string joins, the fixed-name Reserva lookups, the duplicated card filter, client-side summary maths, single-instance Mãe/Reserva code, and the per-type pages.
 - **E2E journeys** (Playwright, `Financial.Web/tests/e2e`): add-expense moves to the account screen; new smoke journeys: pay a card statement, deposit into pots from a manual deposit, settle a Settlement account. Test seed data contains one account per template.
 - **Docs:** `context.md`, README, `data/data-cashflow.example.json`, `docs/ui/` references to retired pages, and the design document's status updated.
-- **Final parity run** on the latest live copy with the full V1 → V5 chain is the go-ahead for the single deploy (download `data-cashflow.json` from Google Drive and keep it as the backup, `migrate --input <download> --output <new>`, upload `<new>` to Drive, then `scripts/deploy.ps1`, run by the user).
+- **Final parity run** on the latest live copy, through every migration step the copy still needs (up to V5), is the go-ahead for the final deploy. Every deploy, this one and the earlier ones after a feature's last stage, follows the same steps, run by the user: stop the running app, so it can't save its copy back to Drive; download `data-cashflow.json` from Google Drive and keep it as the backup; `migrate --input <download> --output <new>`; upload `<new>` to Drive; `scripts/deploy.ps1` and start the app; tag the deployed commit `p60-deployed-<feature>`.
 
 **Experience:**
 - Opening CashFlow lands on Accounts; Monthly shows the overview with a link per account row to its account screen; bookmarks to retired pages land on the matching account screen.
@@ -586,7 +586,7 @@ Rules that apply to every feature:
 - **Other contexts and controls:** the Investment bounded context, investment accounts as accounts, income sources, categories and recurring bills as accounts, Tithe as an account; lazy writes in the tithe and investment snapshot GETs.
 - **Client and platform:** Web UI telemetry, a mobile or React Native client, mobile-specific layouts, a second front end.
 - **Parity automation:** running the parity check in CI or as Playwright tests; parity uses scripts and a manual checklist.
-- **Deployment:** deploying any stage before F13 and the final parity run.
+- **Deployment:** deploying between a feature's stages, or before that feature's last parity run passes.
 - **Currencies:** currencies other than GBP and BRL; automatic conversion of group totals across currencies.
 - **Warnings:** a warning when the Reserva total exceeds the Trading 212 snapshot.
 

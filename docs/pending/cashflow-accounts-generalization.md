@@ -166,7 +166,7 @@ Every slice, with or without a migration, must leave the user's real figures unc
 - **The figures report** covers, for every month in the data: each bank's balance, each card's balance and statement totals, each pot's balance and the Reserva total, the Mãe BRL and GBP totals, category totals, the monthly summary, tithe, the annual summary, historic averages and the investment snapshot suggestions. It reads them from the API, the same values the screens show. It is built in F01 and extended by each slice as new figures appear (e.g. group summaries).
 - **Screens:** after the report matches, a short check of the main screens on both versions confirms they show the same values (main page, Monthly, card statements, Reserva, Controle Mãe, and the new account screen for the migrated templates). It can be a manual checklist or a Playwright script; it does not have to be an automated test in CI.
 - **Tools:** a script or process run during implementation is enough; it does not have to be a CI test. It must be repeatable with one command per step, so it is cheap to run on every new live copy.
-- The final run, on the latest live copy with the full F01–F05 chain, is the go-ahead for the single deploy.
+- The final run, on the latest live copy with the full F01–F05 chain, is the go-ahead for the final deploy. The PRD also allows a deploy after a feature's last stage once its run passes; parity then compares against the deployed version.
 
 ### Account-centred UI
 
