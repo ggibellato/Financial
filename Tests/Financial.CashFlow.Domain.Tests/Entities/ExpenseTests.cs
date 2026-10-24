@@ -791,4 +791,69 @@ public class ExpenseTests
         act.Should().NotThrow();
         expense.ReportingDate.Should().Be(expense.Date);
     }
+
+    [Fact]
+    public void Create_OnAnInactiveBank_Throws()
+    {
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Shop", 10m, Casa, TestAccounts.Bank("Closed", isActive: false), null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+    }
+
+    [Fact]
+    public void UpdateDetails_MovingOntoAnInactiveBank_ThrowsAndKeepsTheBank()
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.UpdateDetails(expense.Date, "Moved", 10m, Casa, TestAccounts.Bank("Closed", isActive: false), null);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+            expense.PaymentSourceAccount.Should().Be(Chase);
+        }
+    }
+
+    [Fact]
+    public void UpdateDetails_OnItsOwnInactiveBank_Succeeds()
+    {
+        var closed = TestAccounts.Bank("Closed");
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Shop", 10m, Casa, closed, null);
+        closed.SetActive(false);
+
+        expense.UpdateDetails(expense.Date, "Corrected", 12m, Casa, closed, null);
+
+        using (new AssertionScope())
+        {
+            expense.Description.Should().Be("Corrected");
+            expense.PaymentSourceAccount.Should().Be(closed);
+        }
+    }
+
+    [Fact]
+    public void Settle_FromAnInactiveBank_ThrowsAndLeavesTheChargeUnsettled()
+    {
+        var charge = CreateCardCharge();
+
+        var act = () => charge.Settle(TestAccounts.Bank("Closed", isActive: false), new DateOnly(2026, 7, 31));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        }
+    }
+
+    [Fact]
+    public void Unsettle_WhenTheBankIsNowInactive_Succeeds()
+    {
+        var bank = TestAccounts.Bank("Closing");
+        var charge = CreateCardCharge();
+        charge.Settle(bank, new DateOnly(2026, 7, 31));
+        bank.SetActive(false);
+
+        charge.Unsettle();
+
+        charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+    }
 }

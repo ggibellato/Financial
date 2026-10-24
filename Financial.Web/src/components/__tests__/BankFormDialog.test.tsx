@@ -21,6 +21,7 @@ describe('BankFormDialog', () => {
           openingBalance: 0,
           openingBalanceDate: '2026-01-01',
           hasReferences: false,
+          isActive: true,
         }}
         onCancel={vi.fn()}
         onSubmit={vi.fn()}

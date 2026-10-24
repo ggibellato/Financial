@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BANKS: BankDto[] = [
-  { id: 'b1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true },
-  { id: 'b2', name: 'Chase', roundUpEnabled: true, openingBalance: 100, openingBalanceDate: '2026-01-01', hasReferences: false },
+  { id: 'b1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+  { id: 'b2', name: 'Chase', roundUpEnabled: true, openingBalance: 100, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
 
 describe('useBanks', () => {
@@ -70,6 +70,7 @@ describe('useBanks', () => {
       openingBalance: 0,
       openingBalanceDate: '2026-01-01',
       hasReferences: false,
+      isActive: true,
     })
     const { result } = renderHook(() => useBanks())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -100,6 +101,7 @@ describe('useBanks', () => {
       openingBalance: 0,
       openingBalanceDate: '2026-01-01',
       hasReferences: true,
+      isActive: true,
     })
     const { result } = renderHook(() => useBanks())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

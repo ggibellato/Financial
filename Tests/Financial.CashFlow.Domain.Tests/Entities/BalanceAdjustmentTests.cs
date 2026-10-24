@@ -94,4 +94,26 @@ public class BalanceAdjustmentTests
 
         act.Should().Throw<ArgumentException>().WithMessage("*cannot be negative*");
     }
+
+    [Fact]
+    public void Create_OnAnInactiveBank_Throws()
+    {
+        var closed = TestAccounts.Bank("Closed", isActive: false);
+
+        var act = () => BalanceAdjustment.Create(new DateOnly(2026, 7, 25), closed, 100m, 0m, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+    }
+
+    [Fact]
+    public void UpdateDetails_OnAnAccountThatIsNowInactive_Succeeds()
+    {
+        var closing = TestAccounts.Bank("Closing");
+        var adjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), closing, 100m, 0m, null);
+        closing.SetActive(false);
+
+        adjustment.UpdateDetails(adjustment.Date, 150m, 50m, "Corrected");
+
+        adjustment.Delta.Should().Be(50m);
+    }
 }
