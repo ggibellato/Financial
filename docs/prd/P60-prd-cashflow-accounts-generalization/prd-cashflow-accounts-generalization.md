@@ -740,14 +740,14 @@ graph TD
 - [x] Parity: 0 differences and screen checklist rows for the bank screen ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F06. Admin Accounts Page
-- [ ] Creating a Bank account with name, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change; its currency is GBP and any other currency is rejected with 400
-- [ ] A duplicate name (any case) is rejected with 409 shown under Name
-- [ ] Template and currency are read-only for an account with records; the API rejects a change with 400
-- [ ] Deleting an account with records returns 409 with the deactivate suggestion; deleting an unused account removes it
-- [ ] A deactivated account disappears from pickers, destination lists and new-entry forms (including Monthly's, Mensais's and Reserva's bank pickers) while its history and figures stay unchanged; editing a record keeps showing its own account
-- [ ] A new expense, income or balance adjustment on an inactive account, or an edit moving one onto it, is rejected with 400; deleting and same-account edits still work
-- [ ] Dialog states (loading, validation, server error, saving, unsaved changes) behave as specified and pass the review checklist
-- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] Creating a Bank account with name, opening balance, start date and round-up makes it appear in Admin → Accounts, the Accounts page and the default group, with no code change; its currency is GBP and any other currency is rejected with 400
+- [x] A duplicate name (any case) is rejected with 409 shown under Name
+- [x] Template and currency are read-only for an account with records; the API rejects a change with 400
+- [x] Deleting an account with records returns 409 with the deactivate suggestion; deleting an unused account removes it
+- [x] A deactivated account disappears from pickers, destination lists and new-entry forms (including Monthly's, Mensais's and Reserva's bank pickers) while its history and figures stay unchanged; editing a record keeps showing its own account
+- [x] A new expense, income or balance adjustment on an inactive account, or an edit moving one onto it, is rejected with 400; deleting and same-account edits still work
+- [x] Dialog states (loading, validation, server error, saving, unsaved changes) behave as specified and pass the review checklist
+- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F07. Credit Card Template and Card Migration
 - [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids, active flags and due dates; charges, statements and investment accounts reference them; cards appear in the default group
