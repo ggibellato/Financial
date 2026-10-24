@@ -102,6 +102,7 @@ import type {
   WithdrawalRequestDto,
 } from '../types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { account } from '../../test/account'
 
 const okResponse = <T,>(payload: T) =>
   ({
@@ -2130,7 +2131,7 @@ describe('financialApiClient', () => {
 
   it('gets every account', async () => {
     const responseBody: AccountDto[] = [
-      { id: 'a1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true },
+      account({ id: 'a1', name: 'Barclays' }),
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

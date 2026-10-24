@@ -39,9 +39,10 @@ public sealed class AccountQueryService : IAccountQueryService
         using var span = StartSpan("GetAccounts");
         try
         {
+            var referencedIds = AccountReferenceReader.ReferencedAccountIds(_repository);
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(ToAccountDto)
+                .Select(account => ToAccountDto(account, referencedIds.Contains(account.Id)))
                 .ToList();
 
             span.MarkSuccess();
@@ -188,13 +189,17 @@ public sealed class AccountQueryService : IAccountQueryService
         Adjustment = BalanceAdjustmentService.ToDto(adjustment)
     };
 
-    private static AccountDTO ToAccountDto(Account account) => new()
+    internal static AccountDTO ToAccountDto(Account account, bool hasRecords) => new()
     {
         Id = account.Id,
         Name = account.Name,
         TemplateName = account.TemplateName,
         Currency = account.Currency.ToString(),
-        IsActive = account.IsActive
+        IsActive = account.IsActive,
+        HasRecords = hasRecords,
+        OpeningBalance = account.OpeningBalance?.Amount,
+        BalanceStartDate = account.OpeningBalance?.StartDate,
+        RoundUpEnabled = account.RoundUp?.Enabled
     };
 
     private static DateOnly EndOfMonth(int year, int month) => new(year, month, DateTime.DaysInMonth(year, month));

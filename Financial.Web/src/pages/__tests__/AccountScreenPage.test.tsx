@@ -23,6 +23,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
+import { account } from '../../test/account'
 
 const {
   getAccountsMock,
@@ -98,8 +99,8 @@ const CHASE_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
 const WISE_EUR_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000004'
 
 const ACCOUNTS: AccountDto[] = [
-  { id: BARCLAYS_ID, name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true },
-  { id: CHASE_ID, name: 'Chase', templateName: 'Bank', currency: 'GBP', isActive: true },
+  account({ id: BARCLAYS_ID, name: 'Barclays' }),
+  account({ id: CHASE_ID, name: 'Chase' }),
 ]
 
 function detailFor(id: string, year: number, month: number): AccountDetailDto {

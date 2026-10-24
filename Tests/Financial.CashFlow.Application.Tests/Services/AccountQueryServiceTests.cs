@@ -295,4 +295,37 @@ public class AccountQueryServiceTests
 
     private static AccountTransactionDTO Row(IEnumerable<AccountTransactionDTO> rows, string kind, int day) =>
         rows.Single(row => row.Kind == kind && row.Date.Day == day);
+
+    [Fact]
+    public void GetAccounts_FillsOpeningBalanceRoundUpAndHasRecords()
+    {
+        _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 10, 3), _chase, 200m, 0m, "Checked"));
+
+        var accounts = _sut.GetAccounts().ToDictionary(account => account.Name);
+
+        using (new AssertionScope())
+        {
+            accounts["chase"].HasRecords.Should().BeTrue();
+            accounts["Barclays"].HasRecords.Should().BeFalse();
+            accounts["Barclays"].OpeningBalance.Should().Be(1000m);
+            accounts["Barclays"].BalanceStartDate.Should().Be(StartDate);
+            accounts["Barclays"].RoundUpEnabled.Should().BeTrue();
+            accounts["chase"].RoundUpEnabled.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void GetAccounts_TemplateWithoutOpeningBalanceOrRoundUp_LeavesThemNull()
+    {
+        _repository.Accounts.Add(Account.CreateWithCapabilities("Wallet", Currency.GBP, new HashSet<Capability>()));
+
+        var wallet = _sut.GetAccounts().Single(account => account.Name == "Wallet");
+
+        using (new AssertionScope())
+        {
+            wallet.OpeningBalance.Should().BeNull();
+            wallet.BalanceStartDate.Should().BeNull();
+            wallet.RoundUpEnabled.Should().BeNull();
+        }
+    }
 }

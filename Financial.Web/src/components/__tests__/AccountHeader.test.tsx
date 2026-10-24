@@ -3,12 +3,13 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AccountDetailDto, AccountDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountHeader from '../AccountHeader'
+import { account } from '../../test/account'
 
 const ACCOUNTS: AccountDto[] = [
-  { id: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', isActive: true },
-  { id: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', isActive: true },
-  { id: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', isActive: false },
-  { id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL', isActive: true },
+  account({ id: 'barclays', name: 'Barclays' }),
+  account({ id: 'chase', name: 'Chase' }),
+  account({ id: 'old', name: 'Old Savings', isActive: false }),
+  account({ id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL' }),
 ]
 
 const BARCLAYS: AccountDetailDto = {
