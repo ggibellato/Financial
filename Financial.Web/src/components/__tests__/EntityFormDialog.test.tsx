@@ -6,6 +6,7 @@ interface RenderOptions {
   error?: string | null
   isSaving?: boolean
   canSave?: boolean
+  saveLabel?: string
   onSave?: () => void
   onCancel?: () => void
 }
@@ -14,6 +15,7 @@ const renderDialog = ({
   error = null,
   isSaving = false,
   canSave = true,
+  saveLabel,
   onSave = vi.fn(),
   onCancel = vi.fn(),
 }: RenderOptions = {}) =>
@@ -23,6 +25,7 @@ const renderDialog = ({
       error={error}
       isSaving={isSaving}
       canSave={canSave}
+      saveLabel={saveLabel}
       onSave={onSave}
       onCancel={onCancel}
     >
@@ -84,6 +87,33 @@ describe('EntityFormDialog', () => {
     renderDialog()
 
     expect(screen.queryByText('A bank named "Barclays" already exists.')).not.toBeInTheDocument()
+  })
+
+  it('returns focus to the control that opened it when it closes', () => {
+    const opener = document.createElement('button')
+    document.body.appendChild(opener)
+    opener.focus()
+    const { unmount } = renderDialog()
+
+    unmount()
+
+    expect(opener).toHaveFocus()
+    opener.remove()
+  })
+
+  it('names the save button by the given label', () => {
+    renderDialog({ saveLabel: 'Add account' })
+
+    expect(screen.getByRole('button', { name: 'Add account' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
+  })
+
+  it('shows progress on the save button while saving', () => {
+    renderDialog({ isSaving: true, canSave: false })
+
+    const save = screen.getByRole('button', { name: 'Save' })
+    expect(save).toBeDisabled()
+    expect(save.querySelector('.fui-Spinner')).toBeInTheDocument()
   })
 
   it('shows the save error inside the dialog', () => {

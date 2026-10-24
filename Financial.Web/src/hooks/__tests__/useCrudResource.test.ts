@@ -175,6 +175,18 @@ describe('useCrudResource', () => {
     expect(load).toHaveBeenCalledTimes(1)
   })
 
+  it('runPendingMutation calls onSuccess only when the mutation succeeds', async () => {
+    const { result } = await renderLoaded()
+    const onSuccess = vi.fn()
+
+    act(() => result.current.runPendingMutation('a', () => Promise.reject(new Error('Still referenced')), 'Failed to delete item', onSuccess))
+    await waitFor(() => expect(result.current.pendingError).toBe('Still referenced'))
+    expect(onSuccess).not.toHaveBeenCalled()
+
+    act(() => result.current.runPendingMutation('b', () => Promise.resolve(), 'Failed to delete item', onSuccess))
+    await waitFor(() => expect(onSuccess).toHaveBeenCalledOnce())
+  })
+
   it('runPendingMutation uses the fallback message for a non-Error rejection and clears it on the next attempt', async () => {
     const { result } = await renderLoaded()
 

@@ -28,6 +28,14 @@ describe('ConfirmDialog', () => {
     expect(dialog).toHaveAccessibleDescription('Delete this expense? This cannot be undone.')
   })
 
+  it('shows only the cancel button when there is no confirm label', () => {
+    const { onCancel } = renderDialog({ confirmLabel: undefined, cancelLabel: 'Close' })
+
+    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
   it('reports confirm and cancel, and Escape counts as cancel', () => {
     const { onConfirm, onCancel } = renderDialog()
 

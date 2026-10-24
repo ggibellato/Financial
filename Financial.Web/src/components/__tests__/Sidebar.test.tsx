@@ -34,6 +34,8 @@ const renderSidebar = (
     </MemoryRouter>,
   )
 
+const linkTo = (route: string) => screen.queryAllByRole('link').find((link) => link.getAttribute('href') === route)
+
 describe('Sidebar', () => {
   afterEach(() => {
     localStorage.clear()
@@ -61,7 +63,7 @@ describe('Sidebar', () => {
     const adminGroups = NAV_TREE.find((c) => c.id === 'admin')!.groups!
     for (const group of adminGroups) {
       for (const child of group.children) {
-        expect(screen.queryByRole('link', { name: child.label })).not.toBeInTheDocument()
+        expect(linkTo(child.route)).toBeUndefined()
       }
     }
   })
@@ -89,7 +91,7 @@ describe('Sidebar', () => {
       const groupHeader = screen.getAllByText(group.label).find((el) => el.closest('.sidebar__group-header'))!
       fireEvent.click(groupHeader)
       for (const child of group.children) {
-        fireEvent.click(screen.getByRole('link', { name: child.label }))
+        fireEvent.click(linkTo(child.route)!)
         expect(screen.getByTestId('location')).toHaveTextContent(child.route)
       }
     }

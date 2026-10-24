@@ -1,6 +1,7 @@
 import { ApiError, NETWORK_FAILURE_STATUS } from './apiError'
 import { API_BASE_URL } from './config'
 import type {
+  AccountCreateDto,
   AccountDetailDto,
   AccountDto,
   AccountGroupSummaryDto,
@@ -8,6 +9,8 @@ import type {
   AccountTransferCreateDto,
   AccountTransferDto,
   AccountTransferUpdateDto,
+  AccountTemplateDto,
+  AccountUpdateDto,
   TransferAccountOptionDto,
   AggregatedSummaryDto,
   AllocationBreakdownDto,
@@ -249,6 +252,10 @@ export interface FinancialApiClient {
   deleteInvestmentAccount: (id: string) => Promise<void>
   getDefaultGroupSummary: (year: number, month: number) => Promise<AccountGroupSummaryDto>
   getAccounts: () => Promise<AccountDto[]>
+  getAccountTemplates: () => Promise<AccountTemplateDto[]>
+  createAccount: (request: AccountCreateDto) => Promise<AccountDto>
+  updateAccount: (id: string, request: AccountUpdateDto) => Promise<AccountDto>
+  deleteAccount: (id: string) => Promise<void>
   getAccount: (id: string, year: number, month: number) => Promise<AccountDetailDto>
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
   getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
@@ -700,6 +707,15 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getDefaultGroupSummary: (year, month) =>
       request<AccountGroupSummaryDto>(`/accounts/groups/default/summary/${year}/${month}`),
     getAccounts: () => request<AccountDto[]>('/accounts'),
+    getAccountTemplates: () => request<AccountTemplateDto[]>('/accounts/templates'),
+    createAccount: (requestBody) =>
+      request<AccountDto>('/accounts', { method: 'POST', body: JSON.stringify(requestBody) }),
+    updateAccount: (id, requestBody) =>
+      request<AccountDto>(`/accounts/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    deleteAccount: (id) => requestVoid(`/accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getAccount: (id, year, month) =>
       request<AccountDetailDto>(`/accounts/${encodeURIComponent(id)}/${year}/${month}`),
     getAccountTransactions: (id, year, month) =>

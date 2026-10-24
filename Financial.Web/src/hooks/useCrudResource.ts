@@ -55,7 +55,7 @@ export interface CrudResource<T> {
   mutateAndRefresh: <R>(mutation: () => Promise<R>) => Promise<R>
   pendingId: string | null
   pendingError: string | null
-  runPendingMutation: (id: string, mutation: () => Promise<unknown>, errorMessage: string) => void
+  runPendingMutation: (id: string, mutation: () => Promise<unknown>, errorMessage: string, onSuccess?: () => void) => void
 }
 
 interface PendingState {
@@ -123,12 +123,13 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
 
   const { start, succeed, fail } = pending
   const runPendingMutation = useCallback(
-    (id: string, mutation: () => Promise<unknown>, errorMessage: string) => {
+    (id: string, mutation: () => Promise<unknown>, errorMessage: string, onSuccess?: () => void) => {
       start(id)
 
       void mutation()
         .then(() => {
           succeed()
+          onSuccess?.()
           void refresh()
         })
         .catch((err: unknown) => {

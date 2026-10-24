@@ -3,6 +3,7 @@ import { ApiError } from '../apiError'
 import { API_BASE_URL } from '../config'
 import { createFinancialApiClient } from '../financialApiClient'
 import type {
+  AccountCreateDto,
   AccountDetailDto,
   AccountDto,
   AccountGroupSummaryDto,
@@ -10,6 +11,8 @@ import type {
   AccountTransferCreateDto,
   AccountTransferDto,
   AccountTransferUpdateDto,
+  AccountTemplateDto,
+  AccountUpdateDto,
   ArchiveAssetRequestDto,
   AssetAdminCreateDto,
   AssetAdminDto,
@@ -250,7 +253,7 @@ describe('financialApiClient', () => {
   })
 
   it('deletes an empty portfolio, scoped', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     await client.deleteEmptyPortfolio('Trading 212', 'ETF ISA', 'historic')
@@ -261,7 +264,7 @@ describe('financialApiClient', () => {
   })
 
   it('defaults an empty-portfolio deletion to the active scope', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     await client.deleteEmptyPortfolio('XPI', 'Stale')
@@ -2140,6 +2143,85 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts`)
+  })
+
+  it('gets the account templates', async () => {
+    const responseBody: AccountTemplateDto[] = [{ name: 'Bank', currencies: ['GBP'], capabilities: ['HasOpeningBalance'] }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAccountTemplates()
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/templates`)
+  })
+
+  it('posts an account create request', async () => {
+    const requestBody: AccountCreateDto = {
+      templateName: 'Bank',
+      name: 'Monzo',
+      currency: 'GBP',
+      openingBalance: 250,
+      balanceStartDate: '2026-10-24',
+      roundUpEnabled: true,
+    }
+    const responseBody = account({ id: 'a9', name: 'Monzo' })
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.createAccount(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('puts an account update', async () => {
+    const requestBody: AccountUpdateDto = {
+      templateName: 'Bank',
+      name: 'Monzo',
+      currency: 'GBP',
+      openingBalance: 250,
+      balanceStartDate: '2026-10-24',
+      roundUpEnabled: true,
+      isActive: false,
+    }
+    const responseBody = account({ id: 'a9', name: 'Monzo', isActive: false })
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.updateAccount('a9', requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/a9`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('deletes an account', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.deleteAccount('a9')
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/a9`)
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('throws an ApiError carrying the status when an account delete is refused', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      problemDetailsResponse('Barclays has transactions and cannot be deleted. Deactivate it instead.'),
+    )
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.deleteAccount('a1')).rejects.toMatchObject({
+      name: 'ApiError',
+      message: 'Barclays has transactions and cannot be deleted. Deactivate it instead.',
+    })
   })
 
   it('gets one account for a month', async () => {

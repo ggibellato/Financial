@@ -581,8 +581,8 @@ row may still use a real dialog — this rule is specifically about the
 create/edit-a-row action, not dialogs in general.
 
 **Exception — Admin lookup-entity CRUD:** Bank, Broker, Category, CreditCard,
-IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket, and
-Asset create/edit forms are exempt from this rule and may use a modal
+IncomeSource, InvestmentAccount, Portfolio, RecurringBill, ReserveBucket,
+Asset, and Account create/edit forms are exempt from this rule and may use a modal
 `Dialog` instead of an inline panel — see
 `decisions/ADR-006-admin-crud-modal-dialogs.md` for the rationale (no
 associated chart/running total, rarely edited, genuinely short forms). Do not
