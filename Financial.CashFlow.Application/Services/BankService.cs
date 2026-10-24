@@ -32,7 +32,7 @@ public sealed class BankService : IBankService
         using var span = StartSpan("GetBanks");
         try
         {
-            var referencedAccountIds = BuildReferencedAccountIds();
+            var referencedAccountIds = AccountReferenceReader.ReferencedAccountIds(_repository);
             var result = BankAccounts().Select(bank => ToDto(bank, referencedAccountIds.Contains(bank.Id))).ToList();
 
             span.MarkSuccess();
@@ -232,30 +232,10 @@ public sealed class BankService : IBankService
 
     private void EnsureNotReferenced(Guid accountId)
     {
-        if (IsReferenced(accountId))
+        if (AccountReferenceReader.IsReferenced(_repository, accountId))
         {
             throw new EntityInUseException("Cannot delete a bank that still has balance history or transactions.");
         }
-    }
-
-    private bool IsReferenced(Guid accountId) =>
-        _repository.GetBalanceAdjustments().Any(a => a.Account.Id == accountId) ||
-        _repository.GetIncomes().Any(i => i.Account?.Id == accountId) ||
-        _repository.GetExpenses().Any(e => e.PaymentSourceAccount?.Id == accountId) ||
-        _repository.GetTransfers().Any(t => t.SourceAccount.Id == accountId || t.DestinationAccount.Id == accountId);
-
-    private HashSet<Guid> BuildReferencedAccountIds()
-    {
-        var ids = new HashSet<Guid>();
-        foreach (var adjustment in _repository.GetBalanceAdjustments()) ids.Add(adjustment.Account.Id);
-        foreach (var income in _repository.GetIncomes()) if (income.Account is not null) ids.Add(income.Account.Id);
-        foreach (var expense in _repository.GetExpenses()) if (expense.PaymentSourceAccount is not null) ids.Add(expense.PaymentSourceAccount.Id);
-        foreach (var transfer in _repository.GetTransfers())
-        {
-            ids.Add(transfer.SourceAccount.Id);
-            ids.Add(transfer.DestinationAccount.Id);
-        }
-        return ids;
     }
 
     private ITelemetrySpan StartSpan(string operationName)
@@ -264,7 +244,7 @@ public sealed class BankService : IBankService
         return _tracer.StartServiceSpan("CashFlow", nameof(BankService), operationName, EntityType);
     }
 
-    private BankDTO ToDto(Account bank) => ToDto(bank, IsReferenced(bank.Id));
+    private BankDTO ToDto(Account bank) => ToDto(bank, AccountReferenceReader.IsReferenced(_repository, bank.Id));
 
     private static BankDTO ToDto(Account bank, bool hasReferences) => new()
     {
@@ -273,6 +253,7 @@ public sealed class BankService : IBankService
         RoundUpEnabled = bank.RoundsUp,
         OpeningBalance = bank.OpeningBalance?.Amount ?? 0m,
         OpeningBalanceDate = bank.OpeningBalance?.StartDate ?? default,
-        HasReferences = hasReferences
+        HasReferences = hasReferences,
+        IsActive = bank.IsActive
     };
 }

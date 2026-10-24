@@ -67,8 +67,8 @@ const BUCKETS: ReserveBucketDto[] = [
 ]
 
 const BANKS: BankDto[] = [
-  { id: 'bk1', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
-  { id: 'bk2', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false },
+  { id: 'bk1', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+  { id: 'bk2', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
 
 const CATEGORIES: CategoryDto[] = [

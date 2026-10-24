@@ -51,6 +51,19 @@ public class BankServiceTests
     }
 
     [Fact]
+    public void GetBanks_InactiveBank_IsListedAsInactive()
+    {
+        var closed = TestAccounts.Bank("Closed");
+        closed.SetActive(false);
+        _repository.Accounts.Add(TestAccounts.Bank("Barclays"));
+        _repository.Accounts.Add(closed);
+
+        var result = _sut.GetBanks();
+
+        result.Select(bank => (bank.Name, bank.IsActive)).Should().Equal(("Barclays", true), ("Closed", false));
+    }
+
+    [Fact]
     public void GetBanks_WithNoBanks_ReturnsEmptyList()
     {
         var result = _sut.GetBanks();

@@ -27,6 +27,7 @@ public class BanksEndpointsTests : ApiEndpointTests
         banks.Should().ContainSingle(b => b.Id == BarclaysId && b.Name == "Barclays" && !b.RoundUpEnabled);
         banks.Should().ContainSingle(b => b.Id == Trading212Id && b.Name == "Trading212" && b.RoundUpEnabled);
         banks.Should().ContainSingle(b => b.Id == ChaseId && b.Name == "Chase" && b.RoundUpEnabled);
+        banks.Should().OnlyContain(b => b.IsActive);
     }
 
     [Fact]
