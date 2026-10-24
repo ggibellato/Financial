@@ -1,19 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { RecurringBillDto } from '../../api/types'
+import { recurringBill } from '../../test/recurringBill'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import PayRecurringBillForm from '../PayRecurringBillForm'
 
-const COUNCIL_TAX: RecurringBillDto = {
-  id: 'council',
-  dueDay: 5,
-  description: 'Council Tax',
-  value: 120,
-  area: 'UK',
-  note: '',
-  status: 'Unset',
-  minimumWageValue: null,
-  nitNumber: null,
-}
+const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
 
 const CATEGORIES = [{ id: 'cat-home', name: 'Home', active: true, isInvestment: false, isTithe: false, hasReferences: true }]
 
@@ -24,10 +14,11 @@ const baseProps = {
   billId: '',
   values: null,
   categories: CATEGORIES,
-  lockedBank: { id: 'barclays', name: 'Barclays' },
-  canSubmit: false,
+  lockedBank: { id: 'barclays', name: 'Barclays', currency: 'GBP' },
   isSaving: false,
   saveError: null,
+  fieldErrors: {},
+  billError: null,
   onRetryBills: vi.fn(),
   onSelectBill: vi.fn(),
   onFieldChange: vi.fn(),
@@ -59,12 +50,28 @@ describe('PayRecurringBillForm', () => {
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Council Tax')
     expect(screen.getByLabelText(/^Value/)).toHaveValue(120)
     expect(screen.getByText('Barclays')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Pay recurring bill' })).toBeDisabled()
+    expect(screen.queryByRole('option', { name: 'Select a bill' })).not.toBeInTheDocument()
   })
 
-  it('saves on Enter once the values are valid', () => {
+  it('shows field and bill validation messages next to their fields', () => {
+    const { rerender } = render(<PayRecurringBillForm {...baseProps} billError="Choose a bill." />)
+    expect(screen.getByText('Choose a bill.')).toBeInTheDocument()
+
+    rerender(<PayRecurringBillForm {...baseProps} {...SELECTED} fieldErrors={{ categoryId: 'Choose a category.' }} />)
+
+    expect(screen.getByText('Choose a category.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Category/)).toHaveAttribute('aria-invalid', 'true')
+  })
+
+  it('warns when the bank is not in the bills\' currency', () => {
+    render(<PayRecurringBillForm {...baseProps} lockedBank={{ id: 'wise', name: 'Wise', currency: 'EUR' }} />)
+
+    expect(screen.getByText("Recurring bills are in GBP; the expense is recorded in Wise's EUR.")).toBeInTheDocument()
+  })
+
+  it('saves on Enter', () => {
     const onSave = vi.fn()
-    render(<PayRecurringBillForm {...baseProps} {...SELECTED} canSubmit onSave={onSave} />)
+    render(<PayRecurringBillForm {...baseProps} {...SELECTED} onSave={onSave} />)
 
     expect(screen.getByRole('button', { name: 'Pay recurring bill' })).toBeEnabled()
     fireEvent.submit(screen.getByRole('button', { name: 'Pay recurring bill' }).closest('form') as HTMLFormElement)
@@ -78,10 +85,12 @@ describe('PayRecurringBillForm', () => {
     expect(screen.getByText('Loading bills…')).toBeInTheDocument()
   })
 
-  it('says when there are no unpaid UK bills', () => {
+  it('says when there are no unpaid UK bills and offers only Cancel', () => {
     render(<PayRecurringBillForm {...baseProps} bills={[]} />)
 
-    expect(screen.getByText('No unpaid UK bills.')).toBeInTheDocument()
+    expect(screen.getByText('No unpaid UK bills. Bills are managed on Mensais.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Pay recurring bill' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeEnabled()
   })
 
   it('offers Try again when the bills fail to load', () => {

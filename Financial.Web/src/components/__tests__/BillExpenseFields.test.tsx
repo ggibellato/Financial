@@ -1,20 +1,17 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { RecurringBillDto } from '../../api/types'
+import { recurringBill } from '../../test/recurringBill'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import BillExpenseFields from '../BillExpenseFields'
-import { billExpenseValuesFor, parseBillExpense, type BillExpenseValues } from '../billExpenseValues'
+import {
+  billExpenseValuesFor,
+  mapBillExpenseErrorToField,
+  parseBillExpense,
+  toBillPaymentExpense,
+  validateBillExpense,
+  type BillExpenseValues,
+} from '../billExpenseValues'
 
-const BILL: RecurringBillDto = {
-  id: 'bill-1',
-  dueDay: 5,
-  description: 'Council Tax',
-  value: 120,
-  area: 'UK',
-  note: '',
-  status: 'Unset',
-  minimumWageValue: null,
-  nitNumber: null,
-}
+const BILL = recurringBill({ id: 'bill-1', dueDay: 5, description: 'Council Tax', value: 120 })
 
 const VALID: BillExpenseValues = {
   date: '2026-10-05',
@@ -38,6 +35,43 @@ describe('billExpenseValuesFor', () => {
   })
 })
 
+describe('validateBillExpense', () => {
+  it('names every invalid field, a missing date included', () => {
+    expect(validateBillExpense({ date: '', description: ' ', value: '-1', bankId: '', categoryId: '' })).toEqual({
+      date: 'Enter a payment date.',
+      description: 'Enter a description.',
+      value: 'Enter a value greater than 0.',
+      bankId: 'Choose a bank.',
+      categoryId: 'Choose a category.',
+    })
+    expect(validateBillExpense(VALID)).toEqual({})
+  })
+})
+
+describe('toBillPaymentExpense', () => {
+  it('sends the bank as the payment source', () => {
+    expect(toBillPaymentExpense({ date: '2026-10-05', description: 'Council Tax', value: 120, bankId: 'bank-1', categoryId: 'cat-1' })).toEqual({
+      date: '2026-10-05',
+      description: 'Council Tax',
+      value: 120,
+      categoryId: 'cat-1',
+      paymentSourceBankId: 'bank-1',
+    })
+  })
+})
+
+describe('mapBillExpenseErrorToField', () => {
+  it.each([
+    ['Date must not be in the future.', 'date'],
+    ['Description must be 200 characters or fewer.', 'description'],
+    ['Value must be greater than zero.', 'value'],
+    ['Category is inactive.', 'categoryId'],
+    ['Bank is inactive.', null],
+  ])('maps "%s" to %s', (message, field) => {
+    expect(mapBillExpenseErrorToField(message)).toBe(field)
+  })
+})
+
 describe('parseBillExpense', () => {
   it('returns the trimmed expense values when every field is valid', () => {
     expect(parseBillExpense(VALID)).toEqual({
@@ -47,6 +81,10 @@ describe('parseBillExpense', () => {
       bankId: 'bank-1',
       categoryId: 'cat-1',
     })
+  })
+
+  it('accepts an empty date, as the Mensais prompt always has', () => {
+    expect(parseBillExpense({ ...VALID, date: '' })).not.toBeNull()
   })
 
   it.each([
@@ -65,7 +103,6 @@ describe('BillExpenseFields', () => {
     render(
       <BillExpenseFields
         values={VALID}
-        banks={[]}
         categories={CATEGORIES}
         lockedBank={{ id: 'bank-1', name: 'Barclays' }}
         onFieldChange={vi.fn()}
@@ -78,7 +115,7 @@ describe('BillExpenseFields', () => {
 
   it('reports each field change', () => {
     const onFieldChange = vi.fn()
-    render(<BillExpenseFields values={VALID} banks={[]} categories={CATEGORIES} onFieldChange={onFieldChange} />)
+    render(<BillExpenseFields values={VALID} categories={CATEGORIES} onFieldChange={onFieldChange} />)
 
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '95' } })
     fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: '' } })

@@ -204,9 +204,10 @@ export default function AccountScreenPage() {
             values={payBillForm.values}
             categories={formOptions.options.categories}
             lockedBank={lockedBank}
-            canSubmit={payBillForm.canSubmit}
             isSaving={payBillForm.isSaving}
             saveError={payBillForm.saveError}
+            fieldErrors={payBillForm.fieldErrors}
+            billError={payBillForm.billError}
             onRetryBills={payBillForm.retryBills}
             onSelectBill={payBillForm.selectBill}
             onFieldChange={payBillForm.setField}

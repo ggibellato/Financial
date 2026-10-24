@@ -2,10 +2,10 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { RecurringBillDto } from '../../api/types'
+import { recurringBill } from '../../test/recurringBill'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
-import { ALREADY_PAID_ERROR, unpaidUkBills, usePayRecurringBill } from '../usePayRecurringBill'
+import { ALREADY_PAID_ERROR, CHOOSE_BILL_ERROR, unpaidUkBills, usePayRecurringBill } from '../usePayRecurringBill'
 
 const { getMensaisBillsMock, markMensaisBillPaidMock } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -19,14 +19,10 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-function bill(fields: Partial<RecurringBillDto> & Pick<RecurringBillDto, 'id' | 'dueDay' | 'description'>): RecurringBillDto {
-  return { value: 50, area: 'UK', note: '', status: 'Unset', minimumWageValue: null, nitNumber: null, ...fields }
-}
-
-const COUNCIL_TAX = bill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
-const WATER = bill({ id: 'water', dueDay: 20, description: 'Water', value: 35.5, status: 'Scheduled' })
-const RENT_PAID = bill({ id: 'rent', dueDay: 1, description: 'Rent', status: 'Paid' })
-const BRAZIL = bill({ id: 'iptu', dueDay: 2, description: 'IPTU', area: 'BR' })
+const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
+const WATER = recurringBill({ id: 'water', dueDay: 20, description: 'Water', value: 35.5, status: 'Scheduled' })
+const RENT_PAID = recurringBill({ id: 'rent', dueDay: 1, description: 'Rent', value: 900, status: 'Paid' })
+const BRAZIL = recurringBill({ id: 'iptu', dueDay: 2, description: 'IPTU', value: 80, area: 'BR' })
 const BILLS = [WATER, RENT_PAID, BRAZIL, COUNCIL_TAX]
 
 const BARCLAYS = { id: 'barclays', name: 'Barclays' }
@@ -81,7 +77,36 @@ describe('usePayRecurringBill', () => {
       categoryId: '',
     })
     expect(result.current.isDirty).toBe(true)
-    expect(result.current.canSubmit).toBe(false)
+  })
+
+  it('keeps the chosen category and date when another bill is picked', async () => {
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+
+    act(() => result.current.setField('categoryId', 'cat-home'))
+    act(() => result.current.setField('date', '2026-10-03'))
+    act(() => result.current.selectBill('water'))
+
+    expect(result.current.values).toMatchObject({ description: 'Water', value: '35.5', categoryId: 'cat-home', date: '2026-10-03' })
+  })
+
+  it('asks for a bill, then names each invalid field, instead of saving', async () => {
+    const { result } = renderPayBill()
+    act(() => result.current.open())
+    await waitFor(() => expect(result.current.bills).toHaveLength(2))
+
+    act(() => result.current.submit())
+    expect(result.current.billError).toBe(CHOOSE_BILL_ERROR)
+
+    act(() => result.current.selectBill('council'))
+    act(() => result.current.setField('value', '0'))
+    act(() => result.current.submit())
+
+    expect(result.current.fieldErrors).toEqual({ value: 'Enter a value greater than 0.', categoryId: 'Choose a category.' })
+    expect(markMensaisBillPaidMock).not.toHaveBeenCalled()
+
+    act(() => result.current.setField('categoryId', 'cat-home'))
+    expect(result.current.fieldErrors.categoryId).toBeUndefined()
   })
 
   it('opens on the last day of a past viewed month, keeping a last-used date inside it', async () => {
@@ -135,15 +160,20 @@ describe('usePayRecurringBill', () => {
     expect(result.current.isOpen).toBe(true)
   })
 
-  it('shows the server message for any other refusal', async () => {
-    markMensaisBillPaidMock.mockRejectedValue(new ApiError('Category is required.', 400))
+  it('shows a server message for a field under that field, and any other refusal above the form', async () => {
+    markMensaisBillPaidMock.mockRejectedValueOnce(new ApiError('Date must not be in the future.', 400))
     const { result } = renderPayBill()
     await openWithCouncilTax(result)
 
     act(() => result.current.setField('categoryId', 'cat-home'))
     await act(async () => result.current.submit())
+    await waitFor(() => expect(result.current.fieldErrors).toEqual({ date: 'Date must not be in the future.' }))
+    expect(result.current.saveError).toBeNull()
 
-    await waitFor(() => expect(result.current.saveError).toBe('Category is required.'))
+    markMensaisBillPaidMock.mockRejectedValueOnce(new ApiError('Bank is inactive.', 400))
+    await act(async () => result.current.submit())
+
+    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
     expect(result.current.billId).toBe('council')
   })
 

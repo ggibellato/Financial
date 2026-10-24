@@ -92,7 +92,6 @@ export function useAccountActionForms(
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
   const activeFormKey = activeAction ?? (editingRowKey && `edit:${editingRowKey}`)
-  const focusKey = activeFormKey && `${activeFormKey}:${payBillForm.isLoadingBills}`
 
   const isDirty =
     expenseForm.isDirty || incomeForm.isIncomeDirty || transferForm.isDirty || adjustmentForm.isDirty || payBillForm.isDirty
@@ -115,12 +114,12 @@ export function useAccountActionForms(
   }
 
   useEffect(() => {
-    if (focusKey) {
+    if (activeFormKey) {
       formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD_SELECTOR)?.focus()
     } else if (document.activeElement === document.body) {
       openerRef.current?.focus()
     }
-  }, [focusKey])
+  }, [activeFormKey])
 
   useEffect(() => {
     if (!isNextEntryFocusPending.current) return

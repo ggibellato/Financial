@@ -2,7 +2,16 @@ import { useMemo, useState } from 'react'
 import { ApiError } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { RecurringBillDto } from '../api/types'
-import { billExpenseValuesFor, parseBillExpense, type BillExpenseField, type BillExpenseValues } from '../components/billExpenseValues'
+import {
+  billExpenseValuesFor,
+  mapBillExpenseErrorToField,
+  parseBillExpense,
+  toBillPaymentExpense,
+  validateBillExpense,
+  type BillExpenseErrors,
+  type BillExpenseField,
+  type BillExpenseValues,
+} from '../components/billExpenseValues'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { getSaveErrorMessage } from '../utils/formatters'
 import type { AccountFormSettings, LockedBank } from './formSettings'
@@ -10,11 +19,18 @@ import { useAsyncResource } from './useAsyncResource'
 
 export const BILLS_LOAD_ERROR = 'Unable to load the recurring bills'
 export const ALREADY_PAID_ERROR = 'This bill is already paid.'
+export const CHOOSE_BILL_ERROR = 'Choose a bill.'
+export const BILL_CURRENCY = 'GBP'
 
 const DATE_KEY = 'payRecurringBill.date'
 const UK_AREA = 'UK'
 const PAID_STATUS = 'Paid'
 const BAD_REQUEST_STATUS = 400
+
+interface BillSelection {
+  billId: string
+  values: BillExpenseValues
+}
 
 export function unpaidUkBills(bills: readonly RecurringBillDto[]): RecurringBillDto[] {
   return bills
@@ -28,84 +44,96 @@ export function usePayRecurringBill(
   { viewedMonth }: AccountFormSettings = {},
 ) {
   const [isOpen, setIsOpen] = useState(false)
-  const [defaultDate, setDefaultDate] = useState('')
-  const [billId, setBillId] = useState('')
-  const [values, setValues] = useState<BillExpenseValues | null>(null)
+  const [selection, setSelection] = useState<BillSelection | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<BillExpenseErrors>({})
+  const [billError, setBillError] = useState<string | null>(null)
   const bills = useAsyncResource(() => (isOpen ? apiClient.getMensaisBills() : null), [isOpen], BILLS_LOAD_ERROR)
   const unpaidBills = useMemo(() => unpaidUkBills(bills.data ?? []), [bills.data])
-  const parsed = values && parseBillExpense(values)
 
-  const clearSelection = () => {
-    setBillId('')
-    setValues(null)
+  const clearErrors = () => {
+    setSaveError(null)
+    setFieldErrors({})
+    setBillError(null)
   }
 
   const open = () => {
-    setDefaultDate(getCreateFormDate(DATE_KEY, viewedMonth))
-    clearSelection()
-    setSaveError(null)
+    setSelection(null)
+    clearErrors()
     setIsOpen(true)
   }
 
   const cancel = () => {
     setIsOpen(false)
-    clearSelection()
-    setSaveError(null)
+    setSelection(null)
+    clearErrors()
   }
 
   const selectBill = (id: string) => {
     const bill = unpaidBills.find((candidate) => candidate.id === id)
-    setSaveError(null)
-    if (!bill) {
-      clearSelection()
-      return
-    }
-    setBillId(id)
-    setValues(billExpenseValuesFor(bill, values?.date ?? defaultDate, lockedBank?.id))
+    if (!bill) return
+    clearErrors()
+    setSelection((current) => ({
+      billId: id,
+      values: billExpenseValuesFor(
+        bill,
+        current?.values.date ?? getCreateFormDate(DATE_KEY, viewedMonth),
+        lockedBank?.id,
+        current?.values.categoryId,
+      ),
+    }))
   }
 
   const setField = (field: BillExpenseField, value: string) => {
-    setValues((current) => current && { ...current, [field]: value })
+    setSelection((current) => current && { ...current, values: { ...current.values, [field]: value } })
     setSaveError(null)
+    setFieldErrors((current) => ({ ...current, [field]: undefined }))
   }
 
-  const showRejection = (message: string) =>
+  const refreshAfterRejection = (billId: string, message: string) =>
     apiClient
       .getMensaisBills()
       .then((freshBills) => {
         bills.setData(() => freshBills)
         if (freshBills.find((bill) => bill.id === billId)?.status === PAID_STATUS) {
-          clearSelection()
+          setSelection(null)
           setSaveError(ALREADY_PAID_ERROR)
-        } else {
-          setSaveError(message)
+          return
         }
+        const field = mapBillExpenseErrorToField(message)
+        if (field) setFieldErrors({ [field]: message })
+        else setSaveError(message)
       })
       .catch(() => setSaveError(message))
 
   const submit = () => {
-    if (!parsed || !lockedBank || isSaving) return
-    setIsSaving(true)
-    setSaveError(null)
-    const expense = {
-      date: parsed.date,
-      description: parsed.description,
-      value: parsed.value,
-      categoryId: parsed.categoryId,
-      paymentSourceBankId: lockedBank.id,
+    if (isSaving) return
+    if (!selection) {
+      setBillError(CHOOSE_BILL_ERROR)
+      return
     }
+    const errors = validateBillExpense(selection.values)
+    const expense = parseBillExpense(selection.values)
+    if (Object.keys(errors).length > 0 || !expense) {
+      setFieldErrors(errors)
+      return
+    }
+    const { billId } = selection
+    setIsSaving(true)
+    clearErrors()
     void apiClient
-      .markMensaisBillPaid(billId, { expense })
+      .markMensaisBillPaid(billId, { expense: toBillPaymentExpense(expense) })
       .then(() => {
-        setStoredDefault(DATE_KEY, parsed.date)
+        setStoredDefault(DATE_KEY, expense.date)
         cancel()
         onPaid()
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, 'Failed to pay the bill')
-        return err instanceof ApiError && err.status === BAD_REQUEST_STATUS ? showRejection(message) : setSaveError(message)
+        return err instanceof ApiError && err.status === BAD_REQUEST_STATUS
+          ? refreshAfterRejection(billId, message)
+          : setSaveError(message)
       })
       .finally(() => setIsSaving(false))
   }
@@ -113,15 +141,16 @@ export function usePayRecurringBill(
   return {
     isOpen,
     bills: unpaidBills,
-    isLoadingBills: bills.isLoading,
+    isLoadingBills: bills.isLoading || (isOpen && bills.data === null && bills.error === null),
     billsError: bills.error,
     retryBills: bills.retry,
-    billId,
-    values,
-    canSubmit: parsed !== null && !isSaving,
+    billId: selection?.billId ?? '',
+    values: selection?.values ?? null,
     isSaving,
-    isDirty: isOpen && billId !== '',
+    isDirty: selection !== null,
     saveError,
+    fieldErrors,
+    billError,
     open,
     cancel,
     selectBill,

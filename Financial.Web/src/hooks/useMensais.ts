@@ -4,17 +4,12 @@ import type { BankDto, CategoryDto, RecurringBillCreateDto, RecurringBillDto } f
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { useMonthSelection } from './useMonthSelection'
+import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
 
-export interface ExpensePromptValues {
-  description: string
-  value: number
-  date: string
-  bankId: string
-  categoryId: string
-}
+export type ExpensePromptValues = BillExpense
 
 const AREA_KEY = 'addBill.area'
 const AREAS = ['Brasil', 'UK']
@@ -445,13 +440,7 @@ export function useMensais(): MensaisData {
   }
 
   function markBillPaid(billId: string, values: ExpensePromptValues | null) {
-    const expense = values && {
-      date: values.date,
-      description: values.description,
-      value: values.value,
-      categoryId: values.categoryId,
-      paymentSourceBankId: values.bankId,
-    }
+    const expense = values && toBillPaymentExpense(values)
     runStatusUpdate(billId, () => apiClient.markMensaisBillPaid(billId, { expense }), 'Failed to mark the bill as Paid')
   }
 

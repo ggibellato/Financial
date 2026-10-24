@@ -22,6 +22,7 @@ import { fireEvent, render, screen, waitFor, within } from '../../test/renderWit
 import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { recurringBill } from '../../test/recurringBill'
 
 const {
   getAccountsMock,
@@ -126,10 +127,6 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
 ]
 
 const BANK_ACTIONS = ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile']
-
-function recurringBill(fields: Pick<RecurringBillDto, 'id' | 'dueDay' | 'description' | 'value'> & Partial<RecurringBillDto>): RecurringBillDto {
-  return { area: 'UK', note: '', status: 'Unset', minimumWageValue: null, nitNumber: null, ...fields }
-}
 
 const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
 

@@ -1,13 +1,12 @@
 import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { CategoryDto, RecurringBillDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
+import { BILL_CURRENCY } from '../hooks/usePayRecurringBill'
 import { formatCurrency } from '../utils/formatters'
 import BillExpenseFields from './BillExpenseFields'
-import type { BillExpenseField, BillExpenseValues } from './billExpenseValues'
+import type { BillExpenseErrors, BillExpenseField, BillExpenseValues } from './billExpenseValues'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
-
-const BILL_CURRENCY = 'GBP'
 
 function billLabel(bill: RecurringBillDto): string {
   return `Due ${bill.dueDay} · ${bill.description} · ${formatCurrency(bill.value, BILL_CURRENCY)}`
@@ -20,10 +19,11 @@ interface PayRecurringBillFormProps {
   billId: string
   values: BillExpenseValues | null
   categories: CategoryDto[]
-  lockedBank: LockedBank
-  canSubmit: boolean
+  lockedBank: LockedBank & { currency: string }
   isSaving: boolean
   saveError: string | null
+  fieldErrors: BillExpenseErrors
+  billError: string | null
   onRetryBills: () => void
   onSelectBill: (billId: string) => void
   onFieldChange: (field: BillExpenseField, value: string) => void
@@ -39,9 +39,10 @@ export default function PayRecurringBillForm({
   values,
   categories,
   lockedBank,
-  canSubmit,
   isSaving,
   saveError,
+  fieldErrors,
+  billError,
   onRetryBills,
   onSelectBill,
   onFieldChange,
@@ -49,16 +50,23 @@ export default function PayRecurringBillForm({
   onCancel,
 }: PayRecurringBillFormProps) {
   const styles = useFormPanelStyles()
+  const canPickBill = !billsError && !isLoadingBills && (bills.length > 0 || billId !== '')
 
   const billPicker = () => {
     if (billsError) return <ErrorState message={billsError} onRetry={onRetryBills} />
     if (isLoadingBills) return <Spinner size="tiny" label="Loading bills…" labelPosition="after" />
-    if (bills.length === 0 && billId === '') return <Text>No unpaid UK bills.</Text>
+    if (!canPickBill) return <Text>No unpaid UK bills. Bills are managed on Mensais.</Text>
     return (
       <div className={styles.grid}>
-        <Field label="Bill" required className={styles.spanTwo}>
-          <Select value={billId} onChange={(e) => onSelectBill(e.target.value)}>
-            <option value="">Select a bill</option>
+        <Field
+          label="Bill"
+          required
+          className={styles.spanTwo}
+          validationState={billError ? 'error' : 'none'}
+          validationMessage={billError}
+        >
+          <Select value={billId} autoFocus onChange={(e) => onSelectBill(e.target.value)}>
+            {billId === '' && <option value="">Select a bill</option>}
             {bills.map((bill) => (
               <option key={bill.id} value={bill.id}>
                 {billLabel(bill)}
@@ -90,13 +98,20 @@ export default function PayRecurringBillForm({
         )}
 
         {billPicker()}
+        {lockedBank.currency !== BILL_CURRENCY && (
+          <MessageBar intent="warning">
+            <MessageBarBody>
+              {`Recurring bills are in ${BILL_CURRENCY}; the expense is recorded in ${lockedBank.name}'s ${lockedBank.currency}.`}
+            </MessageBarBody>
+          </MessageBar>
+        )}
 
         {values && (
           <div className={styles.grid}>
             <BillExpenseFields
               values={values}
-              banks={[]}
               categories={categories}
+              errors={fieldErrors}
               lockedBank={lockedBank}
               onFieldChange={onFieldChange}
             />
@@ -104,14 +119,11 @@ export default function PayRecurringBillForm({
         )}
 
         <div className={styles.actions}>
-          <Button
-            type="submit"
-            appearance="primary"
-            disabled={!canSubmit}
-            icon={isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {isSaving ? 'Saving...' : 'Pay recurring bill'}
-          </Button>
+          {canPickBill && (
+            <Button type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
+              {isSaving ? 'Saving...' : 'Pay recurring bill'}
+            </Button>
+          )}
           <Button appearance="secondary" onClick={onCancel}>
             Cancel
           </Button>
