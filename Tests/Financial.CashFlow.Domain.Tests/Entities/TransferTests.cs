@@ -28,9 +28,6 @@ public class TransferTests
     private Transfer CreateCrossCurrencyTransfer() =>
         Transfer.Create(Date, _barclays, _itau, 100m, destinationAmount: 640.50m, note: null, Today);
 
-    private static void Deactivate(Account account) =>
-        typeof(Account).GetProperty(nameof(Account.IsActive))!.SetValue(account, false);
-
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
@@ -259,8 +256,8 @@ public class TransferTests
     public void UpdateDetails_UnchangedInactiveAccount_Succeeds()
     {
         var transfer = CreateValidTransfer();
-        Deactivate(_barclays);
-        Deactivate(_trading212);
+        _barclays.SetActive(false);
+        _trading212.SetActive(false);
 
         transfer.UpdateDetails(Date, _barclays, _trading212, 250m, destinationAmount: null, "Corrected", Today);
 

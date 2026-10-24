@@ -214,4 +214,150 @@ public class AccountTests
             account.Name.Should().Be("Chase");
         }
     }
+
+    [Fact]
+    public void Create_TrimsTheName()
+    {
+        var account = Account.Create("  Monzo  ", AccountTemplate.Bank, Currency.GBP);
+
+        account.Name.Should().Be("Monzo");
+    }
+
+    [Fact]
+    public void Create_WithASixtyCharacterName_Succeeds()
+    {
+        var name = new string('a', 60);
+
+        var account = Account.Create(name, AccountTemplate.Bank, Currency.GBP);
+
+        account.Name.Should().Be(name);
+    }
+
+    [Fact]
+    public void Create_WithASixtyOneCharacterName_Throws()
+    {
+        var act = () => Account.Create(new string('a', 61), AccountTemplate.Bank, Currency.GBP);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Account name must be 60 characters or fewer.");
+    }
+
+    [Theory]
+    [InlineData(Currency.BRL)]
+    [InlineData(Currency.USD)]
+    public void Create_BankInAnotherCurrency_Throws(Currency currency)
+    {
+        var act = () => Account.Create("Itaú", AccountTemplate.Bank, currency);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Bank accounts must be GBP.");
+    }
+
+    [Fact]
+    public void CreateWithCapabilities_InAnyCurrency_Succeeds()
+    {
+        var account = Account.CreateWithCapabilities("Itaú", Currency.BRL, new HashSet<Capability>());
+
+        account.Currency.Should().Be(Currency.BRL);
+    }
+
+    [Fact]
+    public void Update_TrimsTheName()
+    {
+        var account = CreateBank();
+
+        account.Update(" Barclays ");
+
+        account.Name.Should().Be("Barclays");
+    }
+
+    [Fact]
+    public void Update_WithASixtyOneCharacterName_ThrowsAndLeavesNameUntouched()
+    {
+        var account = CreateBank();
+
+        var act = () => account.Update(new string('a', 61));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Account name must be 60 characters or fewer.");
+            account.Name.Should().Be("Chase");
+        }
+    }
+
+    [Fact]
+    public void SetActive_DeactivatesAndReactivates()
+    {
+        var account = CreateBank();
+
+        account.SetActive(false);
+        var afterDeactivate = account.IsActive;
+        account.SetActive(true);
+
+        using (new AssertionScope())
+        {
+            afterDeactivate.Should().BeFalse();
+            account.IsActive.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_ToATemplateWithMoreCapabilities_DefaultsTheGainedFields()
+    {
+        var account = CreateMinimal(Capability.ReceivesIncome);
+
+        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+
+        using (new AssertionScope())
+        {
+            account.Template.Should().Be(AccountTemplate.Bank);
+            Enum.GetValues<Capability>().Should().OnlyContain(capability => account.Has(capability));
+            account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, default));
+            account.RoundUp.Should().Be(new RoundUpSetting(false));
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_ToAnUndefinedTemplate_ThrowsAndLeavesTheAccountUntouched()
+    {
+        var account = Account.CreateWithCapabilities(
+            "Pots", Currency.GBP, new HashSet<Capability> { Capability.HasOpeningBalance, Capability.SupportsRoundUp });
+
+        var act = () => account.ChangeTemplate((AccountTemplate)99, Currency.GBP);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Account template '99' is not defined.");
+            account.Has(Capability.ReceivesIncome).Should().BeFalse();
+            account.OpeningBalance.Should().NotBeNull();
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_ToTheSameTemplate_KeepsOpeningBalanceAndRoundUp()
+    {
+        var account = CreateBank();
+        account.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
+        account.SetRoundUp(true);
+
+        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+
+        using (new AssertionScope())
+        {
+            account.OpeningBalance.Should().Be(OpeningBalance.Create(100m, new DateOnly(2026, 7, 1)));
+            account.RoundUp.Should().Be(new RoundUpSetting(true));
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_ToANotAllowedCurrency_ThrowsAndLeavesTheAccountUntouched()
+    {
+        var account = CreateBank();
+
+        var act = () => account.ChangeTemplate(AccountTemplate.Bank, Currency.BRL);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Bank accounts must be GBP.");
+            account.Currency.Should().Be(Currency.GBP);
+        }
+    }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Rules;
 
@@ -23,11 +24,24 @@ public static class AccountTemplates
             }.ToFrozenSet()
         }.ToFrozenDictionary();
 
+    private static readonly FrozenDictionary<AccountTemplate, Currency[]> CurrencyLists =
+        new Dictionary<AccountTemplate, Currency[]>
+        {
+            [AccountTemplate.Bank] = [Currency.GBP]
+        }.ToFrozenDictionary();
+
     private static readonly FrozenSet<AccountTemplate> DefaultGroupTemplates = new[] { AccountTemplate.Bank }.ToFrozenSet();
 
     public static IReadOnlySet<Capability> CapabilitiesOf(AccountTemplate template) =>
         CapabilitySets.TryGetValue(template, out var capabilities)
             ? capabilities
+            : throw new ArgumentException($"Account template '{template}' is not defined.");
+
+    public static IReadOnlyList<AccountTemplate> Available { get; } = [AccountTemplate.Bank];
+
+    public static IReadOnlyList<Currency> AllowedCurrencies(AccountTemplate template) =>
+        CurrencyLists.TryGetValue(template, out var currencies)
+            ? currencies
             : throw new ArgumentException($"Account template '{template}' is not defined.");
 
     public static bool JoinsDefaultGroup(AccountTemplate template) => DefaultGroupTemplates.Contains(template);

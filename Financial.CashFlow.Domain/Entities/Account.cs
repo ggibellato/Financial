@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Domain.ValueObjects;
@@ -9,6 +10,8 @@ namespace Financial.CashFlow.Domain.Entities;
 
 public class Account
 {
+    public const int MaxNameLength = 60;
+
     private IReadOnlySet<Capability>? _capabilitiesOverride;
 
     public Guid Id { get; private set; }
@@ -25,7 +28,10 @@ public class Account
     private Account() { }
 
     public static Account Create(string name, AccountTemplate template, Currency currency)
-        => Build(name, template, currency, capabilitiesOverride: null);
+    {
+        EnsureCurrencyIsAllowed(template, currency);
+        return Build(name, template, currency, capabilitiesOverride: null);
+    }
 
     internal static Account CreateWithCapabilities(
         string name, Currency currency, IReadOnlySet<Capability> capabilities, bool isActive = true, AccountTemplate template = AccountTemplate.Bank)
@@ -41,8 +47,21 @@ public class Account
 
     public void Update(string name)
     {
-        EnsureNameIsPresent(name);
-        Name = name;
+        Name = ValidName(name);
+    }
+
+    public void SetActive(bool isActive)
+    {
+        IsActive = isActive;
+    }
+
+    public void ChangeTemplate(AccountTemplate template, Currency currency)
+    {
+        EnsureCurrencyIsAllowed(template, currency);
+        Template = template;
+        Currency = currency;
+        _capabilitiesOverride = null;
+        ApplyCapabilityDefaults();
     }
 
     public void SetOpeningBalance(decimal amount, DateOnly startDate)
@@ -67,36 +86,48 @@ public class Account
 
     private static Account Build(string name, AccountTemplate template, Currency currency, IReadOnlySet<Capability>? capabilitiesOverride)
     {
-        EnsureNameIsPresent(name);
-
         var account = new Account
         {
             Id = Guid.NewGuid(),
-            Name = name,
+            Name = ValidName(name),
             Template = template,
             Currency = currency,
             IsActive = true,
             _capabilitiesOverride = capabilitiesOverride
         };
 
-        if (account.Has(Capability.HasOpeningBalance))
-        {
-            account.OpeningBalance = OpeningBalance.Create(0m, default);
-        }
-
-        if (account.Has(Capability.SupportsRoundUp))
-        {
-            account.RoundUp = new RoundUpSetting(false);
-        }
-
+        account.ApplyCapabilityDefaults();
         return account;
     }
 
-    private static void EnsureNameIsPresent(string name)
+    private void ApplyCapabilityDefaults()
     {
-        if (string.IsNullOrWhiteSpace(name))
+        OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
+        RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
+    }
+
+    private static string ValidName(string name)
+    {
+        var trimmed = name?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
         {
             throw new ArgumentException("Account name is required.");
+        }
+
+        if (trimmed.Length > MaxNameLength)
+        {
+            throw new ArgumentException($"Account name must be {MaxNameLength} characters or fewer.");
+        }
+
+        return trimmed;
+    }
+
+    private static void EnsureCurrencyIsAllowed(AccountTemplate template, Currency currency)
+    {
+        var allowed = AccountTemplates.AllowedCurrencies(template);
+        if (!allowed.Contains(currency))
+        {
+            throw new ArgumentException($"{template} accounts must be {string.Join(" or ", allowed)}.");
         }
     }
 }
