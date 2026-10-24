@@ -8,6 +8,7 @@ using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
+using Financial.Shared.Abstractions.Validation;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -57,7 +58,8 @@ public sealed class AccountAdminService : IAccountAdminService
             ArgumentNullException.ThrowIfNull(request);
 
             var account = Account.Create(request.Name, ParseTemplate(request.TemplateName), ParseCurrency(request.Currency));
-            EnsureNameIsUnique(account.Name, excludingId: null);
+            _repository.GetAccounts().EnsureAccountNameIsUnique(account.Name, null, DisplayName);
+            EnsureCapabilityFieldsArePresent(account.Has, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -90,18 +92,20 @@ public sealed class AccountAdminService : IAccountAdminService
             var template = ParseTemplate(request.TemplateName);
             var currency = ParseCurrency(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
-            var changesTemplate = request.TemplateName != account.TemplateName || currency != account.Currency;
+            var changesTemplate = template.ToString() != account.TemplateName || currency != account.Currency;
 
             if (changesTemplate && hasRecords)
             {
                 throw new ArgumentException("Template and currency can't change once the account has transactions.");
             }
 
-            EnsureNameIsUnique(request.Name?.Trim() ?? string.Empty, id);
+            _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DisplayName);
+            Func<Capability, bool> targetHas = changesTemplate ? AccountTemplates.CapabilitiesOf(template).Contains : account.Has;
+            EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                account.Update(request.Name!);
+                account.Update(request.Name);
                 if (changesTemplate)
                 {
                     account.ChangeTemplate(template, currency);
@@ -151,39 +155,55 @@ public sealed class AccountAdminService : IAccountAdminService
         }
     }
 
-    private void ApplyCapabilityFields(Account account, decimal? openingBalance, DateOnly? balanceStartDate, bool? roundUpEnabled)
+    private void EnsureCapabilityFieldsArePresent(
+        Func<Capability, bool> has, decimal? openingBalance, DateOnly? balanceStartDate, bool? roundUpEnabled)
     {
-        if (account.Has(Capability.HasOpeningBalance))
+        if (has(Capability.HasOpeningBalance))
         {
-            var amount = openingBalance ?? throw new ArgumentException("Opening balance is required.");
-            var startDate = balanceStartDate ?? throw new ArgumentException("Balance start date is required.");
+            if (openingBalance is null)
+            {
+                throw new ArgumentException("Opening balance is required.");
+            }
+
+            if (balanceStartDate is not { } startDate)
+            {
+                throw new ArgumentException("Balance start date is required.");
+            }
+
             if (startDate > _timeProvider.GetLocalToday())
             {
                 throw new ArgumentException("Balance start date can't be in the future.");
             }
-            account.SetOpeningBalance(amount, startDate);
-        }
-        else if (openingBalance is not null || balanceStartDate is not null)
-        {
-            account.SetOpeningBalance(openingBalance ?? 0m, balanceStartDate ?? default);
         }
 
-        if (account.Has(Capability.SupportsRoundUp) || roundUpEnabled is not null)
+        if (has(Capability.SupportsRoundUp) && roundUpEnabled is null)
         {
-            account.SetRoundUp(roundUpEnabled ?? throw new ArgumentException("Round-up is required."));
+            throw new ArgumentException("Round-up is required.");
         }
     }
 
-    private void EnsureNameIsUnique(string name, Guid? excludingId) =>
-        _repository.GetAccounts().EnsureNameIsUnique(name, excludingId, a => a.Name, a => a.Id, DisplayName, StringComparer.OrdinalIgnoreCase);
+    private static void ApplyCapabilityFields(Account account, decimal? openingBalance, DateOnly? balanceStartDate, bool? roundUpEnabled)
+    {
+        if (openingBalance is not null || balanceStartDate is not null)
+        {
+            account.SetOpeningBalance(openingBalance.GetValueOrDefault(), balanceStartDate.GetValueOrDefault());
+        }
+
+        if (roundUpEnabled is { } enabled)
+        {
+            account.SetRoundUp(enabled);
+        }
+    }
 
     private static AccountTemplate ParseTemplate(string? name) =>
-        AccountTemplates.Available.Where(template => template.ToString() == name).Select(template => (AccountTemplate?)template).SingleOrDefault()
-            ?? throw new ArgumentException($"Unknown account template '{name}'.");
+        EnumParser.TryParseEnum<AccountTemplate>(name, out var template) && AccountTemplates.Available.Contains(template)
+            ? template
+            : throw new ArgumentException($"Unknown account template '{name}'.");
 
     private static Currency ParseCurrency(string? code) =>
-        Enum.GetValues<Currency>().Where(currency => currency.ToString() == code).Select(currency => (Currency?)currency).SingleOrDefault()
-            ?? throw new ArgumentException($"Unknown currency '{code}'.");
+        CurrencyParser.TryParse(code, out var currency)
+            ? currency
+            : throw new ArgumentException($"Unknown currency '{code}'.");
 
     private static AccountTemplateDTO ToTemplateDto(AccountTemplate template)
     {

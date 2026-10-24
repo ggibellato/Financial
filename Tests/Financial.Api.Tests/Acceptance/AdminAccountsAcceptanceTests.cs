@@ -179,6 +179,27 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F06-admin-accounts-page-02")]
+    public async Task PutAccount_RenameToAnotherAccountInAnotherCase_IsRejectedWith409()
+    {
+        var response = await Client.PutAsJsonAsync($"{AccountsUrl}/{ChaseId}", new AccountUpdateDTO
+        {
+            TemplateName = "Bank", Name = "BARCLAYS", Currency = "GBP", OpeningBalance = 200m,
+            BalanceStartDate = new DateOnly(2026, 1, 1), RoundUpEnabled = true, IsActive = true
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    public async Task PutAccount_UnknownId_Returns404()
+    {
+        var response = await Client.PutAsJsonAsync($"{AccountsUrl}/{Guid.NewGuid()}", EditBarclays());
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task DeleteAccount_UnknownId_Returns404()
     {
         var response = await Client.DeleteAsync($"{AccountsUrl}/{Guid.NewGuid()}");

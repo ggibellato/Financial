@@ -238,7 +238,57 @@ public class AccountAdminServiceTests
                 .WithMessage("Template and currency can't change once the account has transactions.");
             _barclays.Currency.Should().Be(Currency.GBP);
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
         }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_MissingOrFutureCapabilityFields_ThrowsAndLeavesTheAccountUntouched()
+    {
+        var withoutRoundUp = () => _sut.UpdateAsync(_chase.Id, Edit(_chase, name: "Chase Saver", roundUpEnabled: null));
+        var futureStart = () => _sut.UpdateAsync(_chase.Id, new AccountUpdateDTO
+        {
+            TemplateName = "Bank", Name = "Chase Saver", Currency = "GBP", OpeningBalance = 0m,
+            BalanceStartDate = Today.AddDays(1), RoundUpEnabled = false, IsActive = true
+        });
+
+        using (new AssertionScope())
+        {
+            (await withoutRoundUp.Should().ThrowAsync<ArgumentException>()).WithMessage("Round-up is required.");
+            (await futureStart.Should().ThrowAsync<ArgumentException>()).WithMessage("Balance start date can't be in the future.");
+            _chase.Name.Should().Be("Chase");
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_CapabilityFieldTheTemplateLacks_Throws()
+    {
+        var wallet = Account.CreateWithCapabilities("Wallet", Currency.GBP, new HashSet<Capability>());
+        _repository.Accounts.Add(wallet);
+        var request = new AccountUpdateDTO
+        {
+            TemplateName = wallet.TemplateName, Name = "Wallet", Currency = "GBP", OpeningBalance = 10m, IsActive = true
+        };
+
+        var act = () => _sut.UpdateAsync(wallet.Id, request);
+
+        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Wallet has no opening balance.");
+    }
+
+    [Fact]
+    public async Task UpdateAsync_RoundUpOnATemplateWithoutIt_Throws()
+    {
+        var wallet = Account.CreateWithCapabilities("Wallet", Currency.GBP, new HashSet<Capability>());
+        _repository.Accounts.Add(wallet);
+        var request = new AccountUpdateDTO
+        {
+            TemplateName = wallet.TemplateName, Name = "Wallet", Currency = "GBP", RoundUpEnabled = true, IsActive = true
+        };
+
+        var act = () => _sut.UpdateAsync(wallet.Id, request);
+
+        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Wallet does not support round-up.");
     }
 
     [Fact]

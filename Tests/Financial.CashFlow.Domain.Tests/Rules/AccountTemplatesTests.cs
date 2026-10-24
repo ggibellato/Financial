@@ -2,6 +2,7 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Domain.Tests.Rules;
 
@@ -62,5 +63,18 @@ public class AccountTemplatesTests
     public void Available_ListsBank()
     {
         AccountTemplates.Available.Should().Equal(AccountTemplate.Bank);
+    }
+
+    public static TheoryData<AccountTemplate> AvailableTemplates => new(AccountTemplates.Available);
+
+    [Theory]
+    [MemberData(nameof(AvailableTemplates))]
+    public void Available_EveryTemplate_HasCapabilitiesAndAtLeastOneCurrency(AccountTemplate template)
+    {
+        using (new AssertionScope())
+        {
+            AccountTemplates.CapabilitiesOf(template).Should().NotBeEmpty();
+            AccountTemplates.AllowedCurrencies(template).Should().NotBeEmpty();
+        }
     }
 }
