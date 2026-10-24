@@ -65,12 +65,13 @@ public class DefaultAccountGroupTests
     [Trait("AC", "P60-F04-default-account-group-and-summary-query-01")]
     public void MembersFor_InactiveBankWithRecordInMonth_IsIncludedThatMonthOnly()
     {
-        var closed = InactiveBank("Closed", openingAmount: 0m);
+        var closed = TestAccounts.Bank("Closed");
         var records = new IAccountTransaction[]
         {
             Income.Create(new DateOnly(2026, 9, 3), _salary, null, 40m, closed),
             Expense.Create(new DateOnly(2026, 9, 20), "Closing", 40m, _groceries, closed, creditCard: null)
         };
+        closed.SetActive(false);
 
         using (new AssertionScope())
         {

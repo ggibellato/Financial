@@ -42,8 +42,8 @@ public class Transfer : IAccountTransaction
         DateOnly today)
     {
         EnsurePairIsValid(sourceAccount, destinationAccount);
-        EnsureIsActiveWhenChanged(SourceAccount, sourceAccount);
-        EnsureIsActiveWhenChanged(DestinationAccount, destinationAccount);
+        ActiveAccountRule.EnsureUsable(SourceAccount, sourceAccount);
+        ActiveAccountRule.EnsureUsable(DestinationAccount, destinationAccount);
         EnsureAmountsAreValid(amount, destinationAmount, sourceAccount.Currency, destinationAccount.Currency);
         EnsureDateAndNoteAreValid(date, note, today);
 
@@ -80,14 +80,6 @@ public class Transfer : IAccountTransaction
         if (!TransferPairRules.Default.Allows(sourceAccount, destinationAccount))
         {
             throw new ArgumentException($"Transfers from {sourceAccount.Name} to {destinationAccount.Name} are not allowed.");
-        }
-    }
-
-    private static void EnsureIsActiveWhenChanged(Account? currentAccount, Account newAccount)
-    {
-        if (currentAccount?.Id != newAccount.Id && !newAccount.IsActive)
-        {
-            throw new ArgumentException($"{newAccount.Name} is inactive.");
         }
     }
 

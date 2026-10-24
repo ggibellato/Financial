@@ -188,4 +188,41 @@ public class IncomeTests
 
         income.SplitToReserve.Should().BeFalse();
     }
+
+    private static Account InactiveBank()
+    {
+        var account = TestAccounts.Bank("Closed");
+        account.SetActive(false);
+        return account;
+    }
+
+    [Fact]
+    public void Create_OnAnInactiveBank_Throws()
+    {
+        var act = () => Income.Create(new DateOnly(2026, 7, 25), Gleison, null, 100m, InactiveBank());
+
+        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+    }
+
+    [Fact]
+    public void UpdateDetails_MovingOntoAnInactiveBank_Throws()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 25), Gleison, null, 100m, Barclays);
+
+        var act = () => income.UpdateDetails(income.Date, Gleison, null, 100m, InactiveBank());
+
+        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+    }
+
+    [Fact]
+    public void UpdateDetails_OnItsOwnInactiveBank_Succeeds()
+    {
+        var closed = TestAccounts.Bank("Closed");
+        var income = Income.Create(new DateOnly(2026, 7, 25), Gleison, null, 100m, closed);
+        closed.SetActive(false);
+
+        income.UpdateDetails(income.Date, Gleison, null, 120m, closed);
+
+        income.NetValue.Should().Be(120m);
+    }
 }

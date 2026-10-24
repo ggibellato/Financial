@@ -1,5 +1,6 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
@@ -28,6 +29,8 @@ public class BalanceAdjustment : IAccountTransaction
         {
             throw new ArgumentException($"Account '{account.Name}' cannot be reconciled.");
         }
+
+        ActiveAccountRule.EnsureUsable(null, account);
 
         return new()
         {
