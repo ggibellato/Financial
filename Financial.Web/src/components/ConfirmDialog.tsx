@@ -16,7 +16,7 @@ export interface ConfirmDialogProps {
   open: boolean
   title: string
   message: ReactNode
-  confirmLabel: string
+  confirmLabel?: string
   cancelLabel: string
   confirmDisabled?: boolean
   isBusy?: boolean
@@ -71,14 +71,16 @@ export default function ConfirmDialog({
             )}
           </DialogContent>
           <div className={styles.actions}>
-            <Button
-              appearance="primary"
-              onClick={onConfirm}
-              disabled={confirmDisabled || isBusy}
-              icon={isBusy ? <Spinner size="tiny" /> : undefined}
-            >
-              {confirmLabel}
-            </Button>
+            {confirmLabel && (
+              <Button
+                appearance="primary"
+                onClick={onConfirm}
+                disabled={confirmDisabled || isBusy}
+                icon={isBusy ? <Spinner size="tiny" /> : undefined}
+              >
+                {confirmLabel}
+              </Button>
+            )}
             <Button appearance="secondary" onClick={onCancel} disabled={isBusy}>
               {cancelLabel}
             </Button>

@@ -6,6 +6,7 @@ import { lazy } from 'react'
 export const AccountScreenPage = lazy(() => import('../pages/AccountScreenPage'))
 export const AccountsPage = lazy(() => import('../pages/AccountsPage'))
 export const ActiveInvestmentsPage = lazy(() => import('../pages/ActiveInvestmentsPage'))
+export const AdminAccountsPage = lazy(() => import('../pages/AdminAccountsPage'))
 export const AdminEntityPlaceholderPage = lazy(() => import('../pages/AdminEntityPlaceholderPage'))
 export const AppearancePage = lazy(() => import('../pages/AppearancePage'))
 export const AssetsPage = lazy(() => import('../pages/AssetsPage'))

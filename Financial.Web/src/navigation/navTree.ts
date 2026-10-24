@@ -84,6 +84,7 @@ export const NAV_TREE: NavCategory[] = [
         id: 'cashflow',
         label: 'CashFlow',
         children: [
+          { id: 'accounts', label: 'Accounts', route: '/admin/cashflow/accounts' },
           { id: 'banks', label: 'Banks', route: '/admin/cashflow/banks' },
           { id: 'categories', label: 'Categories', route: '/admin/cashflow/categories' },
           { id: 'credit-cards', label: 'Credit Cards', route: '/admin/cashflow/credit-cards' },
