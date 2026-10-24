@@ -102,7 +102,7 @@ Layers:
 | Delete with records | Delete on an account with `hasRecords` opens `ConfirmDialog`: title "Can't delete Barclays", body "Barclays has transactions and cannot be deleted. Deactivate it instead.", primary "Deactivate" (calls `PUT` with `isActive: false`) and "Cancel". An already inactive account shows only "Close". An unused account gets `ConfirmDeleteDialog`. A 409 that slips through shows on the page's action error. | A disabled Delete button, or showing the 409 | Interview Q4. |
 | Toasts | "Account created", "Account updated", "Account deactivated", "Account deleted" through `useSuccessToast`. | — | F05 building block. |
 | Navigation | "Accounts" first under Admin → CashFlow (alphabetical), route `admin/cashflow/accounts`, lazy like its siblings. | — | `navTree.ts`, `routes.tsx` |
-| Picker filtering | `utils/selectableBanks.ts`: `selectableBanks(banks, selectedId?)` returns the active banks plus the currently selected one, in the given order. It's used by `ExpenseForm`, `IncomeForm`, `BalanceAdjustmentForm`, `TransferForm` (source and destination, each keeping its own selection), `BillExpenseFields`, `WithdrawalForm` and `CardsGrid`'s statement payment bank. | Filtering in each page hook | F06 review decision 2. The current value covers edits and a stale open form. Order stays as `/banks` gives it, until F13. |
+| Picker filtering | `utils/selectableBanks.ts`: `selectableBanks(banks, ...keptIds)` returns the active banks plus the kept ones, in the given order. The expense, income and transfer forms keep both the current value and the bank they opened with, so an edit can switch away from its inactive bank and back. It's used by `ExpenseForm`, `IncomeForm`, `BalanceAdjustmentForm`, `TransferForm` (source and destination, each keeping its own selection), `BillExpenseFields`, `WithdrawalForm` and `CardsGrid`'s statement payment bank. A new entry's default bank (remembered or first) skips inactive banks in `useExpenseForm`, `useTransferForm`, `useIncomeForm` and `useBalanceAdjustmentForm`; the last two take `banks` from `MonthlyPage` and `useAccountActionForms`. | Filtering in each page hook | F06 review decision 2. The current value covers edits and a stale open form. Order stays as `/banks` gives it, until F13. Without the default check, a remembered inactive bank would count as the selected one and stay preselected on a new entry. |
 | PRD ticks | In PR 4, in their own commit. No cross-feature box is ticked: both F06 boxes also name F07, F09 or F11. | — | `feedback_prd_ac_ticks_in_last_pr` |
 
 ## 4. Component Overview
@@ -148,6 +148,7 @@ Layers:
 | `navigation/navTree.ts`, `navigation/routes.tsx` | Modified | 3 | Entry and route |
 | `utils/selectableBanks.ts` | New | 4 | Active banks plus the selected one |
 | `components/ExpenseForm.tsx`, `IncomeForm.tsx`, `BalanceAdjustmentForm.tsx`, `TransferForm.tsx`, `BillExpenseFields.tsx`, `WithdrawalForm.tsx`, `CardsGrid.tsx` | Modified | 4 | Render `selectableBanks(banks, currentValue)` |
+| `hooks/useExpenseForm.ts`, `useTransferForm.ts`, `useIncomeForm.ts`, `useBalanceAdjustmentForm.ts`, `useAccountActionForms.ts`, `pages/MonthlyPage.tsx` | Modified | 4 | New-entry default bank skips inactive banks; `banks` passed to the income and adjustment hooks |
 
 No data-file change, no migration, no new package.
 
@@ -254,6 +255,7 @@ Following the `testing-guide-Financial` skill:
 | `Financial.Web/src/pages/__tests__/AdminAccountsPage.test.tsx` | 3 | Integration (frontend) | ACs 01–04 and 07 (UI halves); loading, empty, error with retry; delete with records offers Deactivate; unused account deleted; toasts |
 | `Financial.Web/src/utils/__tests__/selectableBanks.test.ts` | 4 | Unit | Inactive hidden; selected inactive kept; order kept |
 | Component tests of the seven forms (`ExpenseForm`, `IncomeForm`, `BalanceAdjustmentForm`, `TransferForm`, `BillExpenseFields`, `WithdrawalForm`, `CardsGrid`) | 4 | Unit | AC 05 (UI half): inactive bank absent when creating, present when editing a record on it |
+| `useExpenseForm`, `useTransferForm`, `useIncomeForm` and `useBalanceAdjustmentForm` hook tests | 4 | Unit | AC 05: a remembered or first inactive bank is not the new entry's default |
 
 **Acceptance criteria → tests** (`P60-F06-admin-accounts-page-NN`):
 
