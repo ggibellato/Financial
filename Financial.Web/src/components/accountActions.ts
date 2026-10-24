@@ -1,12 +1,13 @@
 import type { AccountTransactionDto } from '../api/types'
 
-export type AccountFormAction = 'AddExpense' | 'AddIncome' | 'TransferTo' | 'TransferFrom' | 'Reconcile'
+export type AccountFormAction = 'AddExpense' | 'AddIncome' | 'TransferTo' | 'TransferFrom' | 'PayRecurringBill' | 'Reconcile'
 
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'Add expense',
   AddIncome: 'Add income',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
+  PayRecurringBill: 'Pay recurring bill',
   Reconcile: 'Adjust balance',
 }
 
