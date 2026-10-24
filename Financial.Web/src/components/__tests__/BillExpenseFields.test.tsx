@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { recurringBill } from '../../test/recurringBill'
+import { optionNames } from '../../test-utils/optionNames'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import BillExpenseFields from '../BillExpenseFields'
 import {
@@ -98,12 +99,8 @@ describe('parseBillExpense', () => {
   })
 })
 
-const BANKS = [
-  { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
-  { id: 'bank-chase', name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false },
-]
-
-const optionNames = (select: HTMLElement) => Array.from(select.querySelectorAll('option')).map((option) => option.textContent)
+const BARCLAYS = { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true }
+const BANKS = [BARCLAYS, { ...BARCLAYS, id: 'bank-chase', name: 'Chase', isActive: false }]
 
 describe('BillExpenseFields', () => {
   it('shows a locked bank as text instead of a bank dropdown', () => {

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
@@ -70,6 +71,7 @@ export default function ExpenseForm({
   onCancel,
 }: ExpenseFormProps) {
   const styles = useFormPanelStyles()
+  const [openedPaymentSource] = useState(paymentSource)
   const fieldError = useFieldError(saveErrorFields)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
@@ -135,7 +137,7 @@ export default function ExpenseForm({
               validationMessage={fieldError('paymentSource')}
             >
               <Select value={paymentSource} onChange={(e) => onFieldChange('paymentSource', e.target.value)}>
-                {selectableBanks(banks, paymentSource).map((b) => (
+                {selectableBanks(banks, paymentSource, openedPaymentSource).map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name}
                   </option>

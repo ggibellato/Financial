@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
 import ExpenseForm from '../ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
@@ -20,9 +21,7 @@ const CREDIT_CARDS: CreditCardDto[] = [
   { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
-const INACTIVE_BANK: BankDto = { id: 'bank-chase', name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false }
-
-const optionNames = (select: HTMLElement) => Array.from(select.querySelectorAll('option')).map((option) => option.textContent)
+const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
 
 const baseProps = {
   isEditing: false,
@@ -376,5 +375,14 @@ describe('ExpenseForm with a locked bank', () => {
 
     expect(screen.getByLabelText(/^Payment Source/)).toHaveValue('bank-chase')
     expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212', 'Chase'])
+  })
+
+  it("[AC P60-F06-admin-accounts-page-05] keeps the edited expense's inactive bank after another bank is picked", () => {
+    const props = { ...baseProps, isEditing: true, banks: [...BANKS, INACTIVE_BANK] }
+    const { rerender } = render(<ExpenseForm {...props} paymentSource="bank-chase" />)
+
+    rerender(<ExpenseForm {...props} paymentSource="bank-barclays" />)
+
+    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toContain('Chase')
   })
 })

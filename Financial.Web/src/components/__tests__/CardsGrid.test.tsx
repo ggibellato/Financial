@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import CardsGrid from '../CardsGrid'
 import type { BankDto, CardStatementDto, CreditCardDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
@@ -359,19 +360,18 @@ describe('CardsGrid paying bank', () => {
         unmarkStatementPaid={vi.fn()}
       />,
     )
-  const optionNames = () =>
-    within(screen.getByLabelText('Paying bank for BaAmex')).getAllByRole('option').map((option) => option.textContent)
+  const payingBankOptions = () => optionNames(screen.getByLabelText('Paying bank for BaAmex'))
 
   it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of the paying bank', () => {
     renderGrid({})
 
-    expect(optionNames()).toEqual(['Bank…', 'Barclays', 'Trading212'])
+    expect(payingBankOptions()).toEqual(['Bank…', 'Barclays', 'Trading212'])
   })
 
   it('[AC P60-F06-admin-accounts-page-05] keeps an inactive paying bank that is already chosen', () => {
     renderGrid({ c1: 'bank-chase' })
 
     expect(screen.getByLabelText('Paying bank for BaAmex')).toHaveValue('bank-chase')
-    expect(optionNames()).toContain('Chase')
+    expect(payingBankOptions()).toContain('Chase')
   })
 })

@@ -1,9 +1,10 @@
 import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
-import type { IncomeDto, IncomeSourceDto } from '../api/types'
+import type { BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 
@@ -196,6 +197,7 @@ export interface UseIncomeFormResult {
 
 export function useIncomeForm(
   incomeSources: IncomeSourceDto[],
+  banks: BankDto[],
   onSaved: (saved: IncomeDto, isEdit: boolean) => void,
   { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseIncomeFormResult {
@@ -209,7 +211,8 @@ export function useIncomeForm(
 
   function showCreateIncomeForm() {
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
-    const bank = lockedBank?.id ?? getStoredDefault(BANK_KEY) ?? ''
+    const storedBank = getStoredDefault(BANK_KEY)
+    const bank = lockedBank?.id ?? (storedBank && selectableBanks(banks).some((b) => b.id === storedBank) ? storedBank : '')
     const storedSource = getStoredDefault(SOURCE_KEY)
     const source =
       state.incomeSource ||

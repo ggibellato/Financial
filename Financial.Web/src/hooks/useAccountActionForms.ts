@@ -53,11 +53,13 @@ export function useAccountActionForms(
   )
   const incomeForm = useIncomeForm(
     options.incomeSources,
+    options.banks,
     (income, isEdit) => saved(isEdit ? 'Income updated' : incomeSavedMessage(income)),
     settings,
   )
   const adjustmentForm = useBalanceAdjustmentForm(
     balances,
+    options.banks,
     (isEdit) => saved(isEdit ? 'Balance adjustment updated' : 'Balance adjusted'),
     settings,
   )

@@ -4,6 +4,7 @@ import ReservaPage from '../ReservaPage'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const {
   getReserveBalancesMock,
@@ -295,12 +296,7 @@ describe('ReservaPage', () => {
       getBanksMock.mockResolvedValue([...BANKS, { ...BANKS[0], id: 'bk3', name: 'Monzo', hasReferences: true, isActive: false }])
       await openWithdrawalForm()
 
-      const bankSelect = screen.getByRole('combobox', { name: /^Through bank/ })
-      expect(within(bankSelect).getAllByRole('option').map((o) => o.textContent)).toEqual([
-        'No bank (direct)',
-        'Chase',
-        'Barclays',
-      ])
+      expect(optionNames(screen.getByRole('combobox', { name: /^Through bank/ }))).toEqual(['No bank (direct)', 'Chase', 'Barclays'])
     })
 
     it('offers contextual help explaining Through bank', async () => {

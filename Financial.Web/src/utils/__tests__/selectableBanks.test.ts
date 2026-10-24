@@ -14,6 +14,10 @@ describe('selectableBanks', () => {
     expect(selectableBanks([BARCLAYS, CHASE, MONZO], 'bank-chase')).toEqual([BARCLAYS, CHASE, MONZO])
   })
 
+  it('[AC P60-F06-admin-accounts-page-05] keeps every kept inactive bank', () => {
+    expect(selectableBanks([BARCLAYS, CHASE, MONZO], 'bank-barclays', 'bank-chase')).toEqual([BARCLAYS, CHASE, MONZO])
+  })
+
   it('keeps every bank in the given order while all are active', () => {
     expect(selectableBanks([MONZO, BARCLAYS], 'bank-barclays')).toEqual([MONZO, BARCLAYS])
   })

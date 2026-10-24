@@ -5,8 +5,8 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
-import { formatN2, formatN2OrDash } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
+import { formatN2, formatN2OrDash } from '../utils/formatters'
 import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {

@@ -3,15 +3,14 @@ import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BalanceAdjustmentForm from '../BalanceAdjustmentForm'
 import type { BankDto } from '../../api/types'
+import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
 ]
 
-const INACTIVE_BANK: BankDto = { id: 'bank-chase', name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false }
-
-const optionNames = (select: HTMLElement) => Array.from(select.querySelectorAll('option')).map((option) => option.textContent)
+const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
 
 const baseProps = {
   isEditing: false,
