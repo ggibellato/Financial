@@ -24,6 +24,23 @@ public class CardStatementTests
             statement.Year.Should().Be(2026);
             statement.Month.Should().Be(7);
             statement.IsPaid.Should().BeFalse();
+            statement.DueDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void SetDueDate_SetsAndClearsTheDueDate()
+    {
+        var statement = CardStatement.Create(BaAmex, 2026, 11);
+
+        statement.SetDueDate(new DateOnly(2026, 11, 18));
+        var set = statement.DueDate;
+        statement.SetDueDate(null);
+
+        using (new AssertionScope())
+        {
+            set.Should().Be(new DateOnly(2026, 11, 18));
+            statement.DueDate.Should().BeNull();
         }
     }
 

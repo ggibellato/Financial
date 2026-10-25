@@ -10,6 +10,7 @@ public class CardStatement
     public int Year { get; private set; }
     public int Month { get; private set; }
     public bool IsPaid { get; private set; }
+    public DateOnly? DueDate { get; private set; }
 
     private CardStatement() { }
 
@@ -37,5 +38,10 @@ public class CardStatement
     public void MarkUnpaid()
     {
         IsPaid = false;
+    }
+
+    public void SetDueDate(DateOnly? dueDate)
+    {
+        DueDate = dueDate;
     }
 }
