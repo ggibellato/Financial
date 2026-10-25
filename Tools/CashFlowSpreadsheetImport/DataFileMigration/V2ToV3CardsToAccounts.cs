@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using static Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration.DataFileMigrationJson;
 
@@ -43,16 +44,25 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
             statement["DueDate"] = null;
         }
 
-        var statementCountBefore = statements.Count;
-
         var charges = Objects(root, "Expenses")
             .Where(expense => expense["CreditCardId"] is not null && expense["InvoiceDate"] is not null)
             .Select(expense => new Charge(
                 IdText(expense["CreditCardId"], $"Expense {expense["Id"]} CreditCardId"),
-                DateOnly.Parse(expense["InvoiceDate"]!.GetValue<string>()),
+                ParseDate(expense["InvoiceDate"]!),
                 expense["PaymentSourceAccountId"] is not null))
             .ToList();
 
+        var added = BackfillStatements(statements, cardIds, charges);
+        var (moved, addedForDueDates) = MoveDueDates(statements, cards, cardIds, charges);
+
+        root.Remove("CreditCards");
+
+        return $"{cards.Count} cards became accounts; {added + addedForDueDates} statements added; {moved} due dates moved to statements";
+    }
+
+    private static int BackfillStatements(JsonArray statements, IReadOnlyList<string> cardIds, IReadOnlyList<Charge> charges)
+    {
+        var countBefore = statements.Count;
         foreach (var cardId in cardIds)
         {
             var months = charges
@@ -67,19 +77,28 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
             }
         }
 
+        return statements.Count - countBefore;
+    }
+
+    private static (int Moved, int Added) MoveDueDates(
+        JsonArray statements, IReadOnlyList<JsonObject> cards, IReadOnlyList<string> cardIds, IReadOnlyList<Charge> charges)
+    {
+        var countBefore = statements.Count;
         var dueDates = cards.Zip(cardIds, (card, cardId) => (DueDate: card["NextInvoiceDueDate"], CardId: cardId))
             .Where(card => card.DueDate is not null)
             .ToList();
+
         foreach (var (dueDateNode, cardId) in dueDates)
         {
-            var dueDate = DateOnly.Parse(dueDateNode!.GetValue<string>());
-            EnsureStatement(statements, cardId, dueDate.Year, dueDate.Month, charges)["DueDate"] = dueDateNode.DeepClone();
+            var dueDate = ParseDate(dueDateNode!);
+            EnsureStatement(statements, cardId, dueDate.Year, dueDate.Month, charges)["DueDate"] = dueDateNode!.DeepClone();
         }
 
-        root.Remove("CreditCards");
-
-        return $"{cards.Count} cards became accounts; {statements.Count - statementCountBefore} statements added; {dueDates.Count} due dates moved to statements";
+        return (dueDates.Count, statements.Count - countBefore);
     }
+
+    private static DateOnly ParseDate(JsonNode date) =>
+        DateOnly.ParseExact(date.GetValue<string>(), "yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     private static JsonObject ToAccount(JsonObject card) => new()
     {

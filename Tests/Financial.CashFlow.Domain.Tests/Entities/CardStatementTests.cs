@@ -110,4 +110,16 @@ public class CardStatementTests
 
         act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
     }
+
+    [Theory]
+    [InlineData(2026, 6, true)]
+    [InlineData(2025, 12, true)]
+    [InlineData(2026, 7, false)]
+    [InlineData(2026, 8, false)]
+    public void IsAfter_ComparesYearThenMonth(int year, int month, bool expected)
+    {
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
+
+        statement.IsAfter(year, month).Should().Be(expected);
+    }
 }

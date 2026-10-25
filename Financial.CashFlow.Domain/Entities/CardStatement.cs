@@ -30,6 +30,8 @@ public class CardStatement
     public bool IsFor(Guid creditCardId, int year, int month) =>
         CreditCard.Id == creditCardId && Year == year && Month == month;
 
+    public bool IsAfter(int year, int month) => (Year, Month).CompareTo((year, month)) > 0;
+
     public void MarkPaid()
     {
         IsPaid = true;

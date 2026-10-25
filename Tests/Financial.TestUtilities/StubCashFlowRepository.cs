@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.TestUtilities;
 
@@ -149,11 +150,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public void SetCardDueDate(Account card, DateOnly? dueDate)
     {
-        foreach (var dated in CardStatements.Where(statement => statement.CreditCard.Id == card.Id
-            && (dueDate is null || (statement.Year, statement.Month).CompareTo((dueDate.Value.Year, dueDate.Value.Month)) > 0)))
-        {
-            dated.SetDueDate(null);
-        }
+        CardDueDate.ClearSupersededBy(card, CardStatements, dueDate);
 
         if (dueDate is not { } date)
         {

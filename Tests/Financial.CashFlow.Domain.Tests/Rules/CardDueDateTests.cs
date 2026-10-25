@@ -62,4 +62,30 @@ public class CardDueDateTests
 
         CardDueDate.For(_amex, statements).Should().BeNull();
     }
+
+    [Fact]
+    public void ClearSupersededBy_NewDueDate_ClearsOnlyTheCardsLaterDatesSoTheNewOneIsTheLatest()
+    {
+        var september = Statement(_amex, 2026, 9, new DateOnly(2026, 9, 18));
+        var november = Statement(_amex, 2026, 11, new DateOnly(2026, 11, 18));
+        var december = Statement(_amex, 2026, 12, new DateOnly(2026, 12, 18));
+        var otherCard = Statement(_visa, 2026, 12, new DateOnly(2026, 12, 5));
+
+        CardDueDate.ClearSupersededBy(_amex, [september, november, december, otherCard], new DateOnly(2026, 11, 20));
+
+        new[] { september.DueDate, november.DueDate, december.DueDate, otherCard.DueDate }.Should().Equal(
+            new DateOnly(2026, 9, 18), new DateOnly(2026, 11, 18), null, new DateOnly(2026, 12, 5));
+    }
+
+    [Fact]
+    public void ClearSupersededBy_NoDueDate_ClearsEveryDateOfTheCard()
+    {
+        var september = Statement(_amex, 2026, 9, new DateOnly(2026, 9, 18));
+        var november = Statement(_amex, 2026, 11, new DateOnly(2026, 11, 18));
+        var otherCard = Statement(_visa, 2026, 11, new DateOnly(2026, 11, 5));
+
+        CardDueDate.ClearSupersededBy(_amex, [september, november, otherCard], null);
+
+        new[] { september.DueDate, november.DueDate, otherCard.DueDate }.Should().Equal(null, null, new DateOnly(2026, 11, 5));
+    }
 }
