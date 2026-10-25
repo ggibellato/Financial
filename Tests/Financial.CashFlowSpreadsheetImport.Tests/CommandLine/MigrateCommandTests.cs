@@ -49,13 +49,13 @@ public sealed class MigrateCommandTests : IDisposable
             File.ReadAllText(_outputPath).Should().Be(DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, _inputPath).Json);
             File.ReadAllText(_inputPath).Should().Be(V1DataFile.Json);
             _output.ToString().Trim().Should().Be(
-                $"Migrated {_inputPath} from version 1 to 2: 3 banks became accounts; 5 references renamed. Wrote {_outputPath}.");
+                $"Migrated {_inputPath} from version 1 to 3: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements. Wrote {_outputPath}.");
         }
     }
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-02")]
-    public void Run_Version2Input_CopiesTheBytesUnchanged()
+    public void Run_CurrentVersionInput_CopiesTheBytesUnchanged()
     {
         File.WriteAllText(_inputPath, V1DataFile.Json);
         Run("--input", _inputPath, "--output", _outputPath);
@@ -70,7 +70,7 @@ public sealed class MigrateCommandTests : IDisposable
         {
             exitCode.Should().Be(0);
             File.ReadAllBytes(_outputPath).Should().Equal(version2Bytes);
-            _output.ToString().Trim().Should().Be($"{version2Path} is already version 2; copied unchanged to {_outputPath}.");
+            _output.ToString().Trim().Should().Be($"{version2Path} is already version 3; copied unchanged to {_outputPath}.");
         }
     }
 
@@ -152,14 +152,14 @@ public sealed class MigrateCommandTests : IDisposable
     [Fact]
     public void Run_VersionAboveCurrent_RefusedAndWritesNothing()
     {
-        File.WriteAllText(_inputPath, """{ "Version": 3 }""");
+        File.WriteAllText(_inputPath, """{ "Version": 4 }""");
 
         var exitCode = Run("--input", _inputPath, "--output", _outputPath);
 
         using (new AssertionScope())
         {
             exitCode.Should().Be(1);
-            _error.ToString().Trim().Should().Be($"{_inputPath} is version 3; this build needs version 2.");
+            _error.ToString().Trim().Should().Be($"{_inputPath} is version 4; this build needs version 3.");
             File.Exists(_outputPath).Should().BeFalse();
         }
     }

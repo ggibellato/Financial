@@ -74,12 +74,12 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         var act = () => Services;
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.");
+            .WithMessage("data-cashflow.json is version 1; this build needs version 3. Run the migrate command first.");
     }
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-05")]
-    public async Task ApiHost_Version2File_Starts()
+    public async Task ApiHost_CurrentVersionFile_Starts()
     {
         var response = await Client.GetAsync("/api/v1/financial/banks");
 
@@ -90,7 +90,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F02-account-model-and-bank-migration-11")]
     [InlineData("TestData", "data-cashflow.test.json")]
     [InlineData("ExampleData", "data-cashflow.example.json")]
-    public void SeedAndExampleData_AreVersion2(string folder, string fileName)
+    public void SeedAndExampleData_AreTheCurrentVersion(string folder, string fileName)
     {
         var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, folder, fileName));
 
@@ -98,7 +98,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32().Should().Be(2);
+            JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32().Should().Be(3);
             act.Should().NotThrow();
         }
     }

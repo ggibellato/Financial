@@ -27,14 +27,12 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
             { "Id": "{{ChaseId}}", "Name": "Chase", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 200, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": true } },
             { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
             { "Id": "{{ClosedId}}", "Name": "Closed", "Template": "Bank", "Currency": "GBP", "IsActive": false, "OpeningBalance": { "Amount": 0, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
-            { "Id": "{{ClosedSavingsId}}", "Name": "Closed Savings", "Template": "Bank", "Currency": "GBP", "IsActive": false, "OpeningBalance": { "Amount": 120, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } }
+            { "Id": "{{ClosedSavingsId}}", "Name": "Closed Savings", "Template": "Bank", "Currency": "GBP", "IsActive": false, "OpeningBalance": { "Amount": 120, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
+            { "Id": "{{AmexId}}", "Name": "Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null }
           ],
           "Categories": [
             { "Id": "{{GroceriesId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
             { "Id": "{{HomeId}}", "Name": "Casa", "Active": true, "IsInvestment": false, "IsTithe": false }
-          ],
-          "CreditCards": [
-            { "Id": "{{AmexId}}", "Name": "Amex", "IsActive": true }
           ],
           "IncomeSources": [
             { "Id": "{{SalaryId}}", "Name": "Salary", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
@@ -55,7 +53,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000003", "Date": "2026-09-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": 2500, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": null, "SplitToReserve": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000004", "Date": "2026-09-15", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 100, "AccountId": "{{ChaseId}}", "Description": null, "SplitToReserve": false }
           ],
-          "Version": 2
+          "Version": 3
         }
         """;
 

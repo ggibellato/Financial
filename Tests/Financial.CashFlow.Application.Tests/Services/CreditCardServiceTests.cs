@@ -409,4 +409,94 @@ public class CreditCardServiceTests
 
         _sut.GetCreditCards().Should().ContainSingle().Which.HasReferences.Should().BeTrue();
     }
+
+    private CardStatement AddStatement(Account card, int year, int month, DateOnly? dueDate = null)
+    {
+        var statement = CardStatement.Create(card, year, month);
+        statement.SetDueDate(dueDate);
+        _repository.CardStatements.Add(statement);
+        return statement;
+    }
+
+    private Task<CreditCardDTO> SetDueDateAsync(Account card, DateOnly? dueDate) =>
+        _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO { Name = card.Name, IsActive = true, NextInvoiceDueDate = dueDate });
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
+    public async Task Update_DueDate_WritesItOnTheStatementOfThatMonth()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        var october = AddStatement(card, 2026, 10);
+
+        var result = await SetDueDateAsync(card, new DateOnly(2026, 11, 18));
+
+        var november = _repository.CardStatements.Single(s => s.IsFor(card.Id, 2026, 11));
+        using (new AssertionScope())
+        {
+            november.DueDate.Should().Be(new DateOnly(2026, 11, 18));
+            november.IsPaid.Should().BeFalse();
+            october.DueDate.Should().BeNull();
+            result.NextInvoiceDueDate.Should().Be(new DateOnly(2026, 11, 18));
+            _sut.GetCreditCards().Single().NextInvoiceDueDate.Should().Be(new DateOnly(2026, 11, 18));
+        }
+    }
+
+    [Fact]
+    public async Task Update_DueDateInAMonthWithAStatement_SetsItWithoutAddingOne()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        var november = AddStatement(card, 2026, 11, new DateOnly(2026, 11, 10));
+        november.MarkPaid();
+
+        await SetDueDateAsync(card, new DateOnly(2026, 11, 18));
+
+        using (new AssertionScope())
+        {
+            _repository.CardStatements.Should().ContainSingle();
+            november.DueDate.Should().Be(new DateOnly(2026, 11, 18));
+            november.IsPaid.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task Update_EarlierDueDate_ClearsLaterDatesSoTheCardTakesTheNewDate()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        var september = AddStatement(card, 2026, 9, new DateOnly(2026, 9, 18));
+        var december = AddStatement(card, 2026, 12, new DateOnly(2026, 12, 18));
+
+        var result = await SetDueDateAsync(card, new DateOnly(2026, 11, 18));
+
+        using (new AssertionScope())
+        {
+            result.NextInvoiceDueDate.Should().Be(new DateOnly(2026, 11, 18));
+            december.DueDate.Should().BeNull();
+            september.DueDate.Should().Be(new DateOnly(2026, 9, 18));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
+    public async Task Update_NullDueDate_ClearsTheCardsDatesSoItHasNone()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        var other = TestAccounts.CreditCard("Nubank");
+        _repository.Accounts.AddRange([card, other]);
+        AddStatement(card, 2026, 10, new DateOnly(2026, 10, 18));
+        AddStatement(card, 2026, 11, new DateOnly(2026, 11, 18));
+        var otherNovember = AddStatement(other, 2026, 11, new DateOnly(2026, 11, 5));
+
+        var result = await SetDueDateAsync(card, null);
+
+        using (new AssertionScope())
+        {
+            result.NextInvoiceDueDate.Should().BeNull();
+            _repository.CardStatements.Where(s => s.CreditCard.Id == card.Id).Should().OnlyContain(s => s.DueDate == null);
+            otherNovember.DueDate.Should().Be(new DateOnly(2026, 11, 5));
+            _repository.CardStatements.Should().HaveCount(3);
+        }
+    }
 }

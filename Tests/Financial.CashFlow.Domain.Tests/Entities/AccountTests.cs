@@ -375,7 +375,6 @@ public class AccountTests
             account.Has(Capability.CanPayBills).Should().BeFalse();
             account.OpeningBalance.Should().BeNull();
             account.RoundUp.Should().BeNull();
-            account.NextInvoiceDueDate.Should().BeNull();
             account.JoinsDefaultGroup.Should().BeFalse();
         }
     }
@@ -386,46 +385,5 @@ public class AccountTests
         var act = () => Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.BRL);
 
         act.Should().Throw<ArgumentException>().WithMessage("CreditCard accounts must be GBP.");
-    }
-
-    [Fact]
-    public void SetNextInvoiceDueDate_OnACardAccount_SetsAndClearsIt()
-    {
-        var account = Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.GBP);
-
-        account.SetNextInvoiceDueDate(new DateOnly(2026, 11, 18));
-        var set = account.NextInvoiceDueDate;
-        account.SetNextInvoiceDueDate(null);
-
-        using (new AssertionScope())
-        {
-            set.Should().Be(new DateOnly(2026, 11, 18));
-            account.NextInvoiceDueDate.Should().BeNull();
-        }
-    }
-
-    [Fact]
-    public void SetNextInvoiceDueDate_OnABank_ThrowsAndLeavesItNull()
-    {
-        var account = CreateBank();
-
-        var act = () => account.SetNextInvoiceDueDate(new DateOnly(2026, 11, 18));
-
-        using (new AssertionScope())
-        {
-            act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
-            account.NextInvoiceDueDate.Should().BeNull();
-        }
-    }
-
-    [Fact]
-    public void ChangeTemplate_FromCreditCardToBank_ClearsTheDueDate()
-    {
-        var account = Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.GBP);
-        account.SetNextInvoiceDueDate(new DateOnly(2026, 11, 18));
-
-        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
-
-        account.NextInvoiceDueDate.Should().BeNull();
     }
 }

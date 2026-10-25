@@ -24,7 +24,16 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
     {
         var record = JsonSerializer.Deserialize<AccountRecord>(ref reader, RecordOptions)!;
 
-        var account = Restore(record.Id, record.Name, record.Template, record.Currency, record.IsActive);
+        var identity = new JsonObject
+        {
+            [nameof(Account.Id)] = record.Id,
+            [nameof(Account.Name)] = record.Name,
+            [nameof(Account.Template)] = record.Template.ToString(),
+            [nameof(Account.Currency)] = record.Currency.ToString(),
+            [nameof(Account.IsActive)] = record.IsActive
+        };
+
+        var account = identity.Deserialize<Account>(AccountOptions)!;
 
         if (record.OpeningBalance is { } openingBalance)
         {
@@ -37,20 +46,6 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
         }
 
         return account;
-    }
-
-    internal static Account Restore(Guid id, string name, AccountTemplate template, Currency currency, bool isActive)
-    {
-        var identity = new JsonObject
-        {
-            [nameof(Account.Id)] = id,
-            [nameof(Account.Name)] = name,
-            [nameof(Account.Template)] = template.ToString(),
-            [nameof(Account.Currency)] = currency.ToString(),
-            [nameof(Account.IsActive)] = isActive
-        };
-
-        return identity.Deserialize<Account>(AccountOptions)!;
     }
 
     public override void Write(Utf8JsonWriter writer, Account value, JsonSerializerOptions options)

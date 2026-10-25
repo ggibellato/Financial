@@ -10,6 +10,7 @@ public class CardStatement
     public int Year { get; private set; }
     public int Month { get; private set; }
     public bool IsPaid { get; private set; }
+    public DateOnly? DueDate { get; private set; }
 
     private CardStatement() { }
 
@@ -29,6 +30,8 @@ public class CardStatement
     public bool IsFor(Guid creditCardId, int year, int month) =>
         CreditCard.Id == creditCardId && Year == year && Month == month;
 
+    public bool IsAfter(int year, int month) => (Year, Month).CompareTo((year, month)) > 0;
+
     public void MarkPaid()
     {
         IsPaid = true;
@@ -37,5 +40,10 @@ public class CardStatement
     public void MarkUnpaid()
     {
         IsPaid = false;
+    }
+
+    public void SetDueDate(DateOnly? dueDate)
+    {
+        DueDate = dueDate;
     }
 }

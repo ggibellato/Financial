@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.TestUtilities;
 
@@ -146,6 +147,25 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
         Accounts.First(b => b.Name == bankName).SetOpeningBalance(openingBalance, openingBalanceDate);
+
+    public void SetCardDueDate(Account card, DateOnly? dueDate)
+    {
+        CardDueDate.ClearSupersededBy(card, CardStatements, dueDate);
+
+        if (dueDate is not { } date)
+        {
+            return;
+        }
+
+        var statement = CardStatements.FirstOrDefault(existing => existing.IsFor(card.Id, date.Year, date.Month));
+        if (statement is null)
+        {
+            statement = CardStatement.Create(card, date.Year, date.Month);
+            CardStatements.Add(statement);
+        }
+
+        statement.SetDueDate(date);
+    }
 
     public IEnumerable<Expense> GetExpenses() => CheckThrow(Expenses);
     public void AddExpense(Expense expense) => Expenses.Add(expense);

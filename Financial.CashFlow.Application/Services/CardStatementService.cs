@@ -33,10 +33,6 @@ public sealed class CardStatementService : ICardStatementService
         using var span = StartSpan("GetStatementsForMonth");
         try
         {
-            var existingStatements = _repository.GetCardStatements()
-                .Where(s => s.Year == year && s.Month == month)
-                .ToList();
-
             var activeCards = _repository.GetCreditCardAccounts().Where(c => c.IsActive).ToList();
             if (activeCards.Count == 0)
             {
@@ -45,22 +41,18 @@ public sealed class CardStatementService : ICardStatementService
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var created = false;
+                var countBefore = _repository.GetCardStatements().Count();
                 foreach (var card in activeCards)
                 {
-                    if (existingStatements.Any(s => s.IsFor(card.Id, year, month)))
-                    {
-                        continue;
-                    }
-
-                    var statement = CardStatement.Create(card, year, month);
-                    _repository.AddCardStatement(statement);
-                    existingStatements.Add(statement);
-                    created = true;
+                    CardStatementCreation.EnsureFor(_repository, card, year, month);
                 }
 
-                return created;
+                return _repository.GetCardStatements().Count() > countBefore;
             }).ConfigureAwait(false);
+
+            var existingStatements = _repository.GetCardStatements()
+                .Where(s => s.Year == year && s.Month == month)
+                .ToList();
 
             var expenses = _repository.GetExpenses().ToList();
             var records = AccountTransactionReader.Read(_repository);

@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -91,8 +92,9 @@ public sealed class PaymentsDueService : IPaymentsDueService
             var statements = _repository.GetCardStatements().ToList();
 
             return _repository.GetCreditCardAccounts()
-                .Where(card => card.NextInvoiceDueDate is not null)
-                .Select(card => (Card: card, DueDate: card.NextInvoiceDueDate!.Value))
+                .Select(card => (Card: card, DueDate: CardDueDate.For(card, statements)))
+                .Where(x => x.DueDate is not null)
+                .Select(x => (x.Card, DueDate: x.DueDate!.Value))
                 .Where(x => !statements.Any(s => s.IsFor(x.Card.Id, x.DueDate.Year, x.DueDate.Month) && s.IsPaid))
                 .Select(x => TryBuildPayment(CreditCardType, x.Card.Name, x.DueDate, today))
                 .Where(payment => payment is not null)

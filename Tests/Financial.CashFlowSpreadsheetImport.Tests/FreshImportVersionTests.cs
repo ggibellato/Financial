@@ -32,7 +32,8 @@ public sealed class FreshImportVersionTests : IDisposable
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-04")]
-    public void Import_FreshWorkbook_WritesVersion2WithBankAccounts()
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-13")]
+    public void Import_FreshWorkbook_WritesVersion3WithCardAccounts()
     {
         var exitCode = RunImport(_workbookPath, "--output", _outputPath);
 
@@ -41,12 +42,14 @@ public sealed class FreshImportVersionTests : IDisposable
         using (new AssertionScope())
         {
             exitCode.Should().Be(0);
-            JsonNode.Parse(json)!["Version"]!.GetValue<int>().Should().Be(2);
+            var root = JsonNode.Parse(json)!.AsObject();
+            root["Version"]!.GetValue<int>().Should().Be(3);
+            root.ContainsKey("CreditCards").Should().BeFalse();
             var banks = data.Accounts.Where(a => a.Template == AccountTemplate.Bank).ToList();
             banks.Select(a => (a.Name, a.RoundsUp)).Should().Equal(("Barclays", false), ("Trading212", true), ("Chase", true));
             banks.Should().OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance!.Amount == 0m);
             data.Accounts.Where(a => a.Template == AccountTemplate.CreditCard).Should().HaveCount(5)
-                .And.OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.NextInvoiceDueDate == null);
+                .And.OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance == null && a.RoundUp == null);
         }
     }
 
@@ -71,23 +74,23 @@ public sealed class FreshImportVersionTests : IDisposable
         File.WriteAllText(_outputPath, V1DataFile.Json);
 
         ExistingOutputVersionGuard.RefusalFor(_outputPath).Should().Be(
-            $"{_outputPath} is version 1; this build needs version 2. Run the migrate command first.");
+            $"{_outputPath} is version 1; this build needs version 3. Run the migrate command first.");
     }
 
     [Fact]
-    public void RefusalFor_Version3Output_RefusesWithoutTheMigrateHint()
+    public void RefusalFor_Version4Output_RefusesWithoutTheMigrateHint()
     {
-        File.WriteAllText(_outputPath, """{ "Version": 3 }""");
+        File.WriteAllText(_outputPath, """{ "Version": 4 }""");
 
         ExistingOutputVersionGuard.RefusalFor(_outputPath).Should().Be(
-            $"{_outputPath} is version 3; this build needs version 2.");
+            $"{_outputPath} is version 4; this build needs version 3.");
     }
 
     [Fact]
-    public void RefusalFor_Version2OrMissingOutput_AllowsTheImport()
+    public void RefusalFor_Version3OrMissingOutput_AllowsTheImport()
     {
         var missing = ExistingOutputVersionGuard.RefusalFor(_outputPath);
-        File.WriteAllText(_outputPath, """{ "Version": 2 }""");
+        File.WriteAllText(_outputPath, """{ "Version": 3 }""");
 
         using (new AssertionScope())
         {

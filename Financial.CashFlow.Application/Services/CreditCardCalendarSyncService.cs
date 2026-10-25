@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Models;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -80,7 +81,8 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
 
     public void TriggerSyncIfInvoiceSynced(Guid creditCardId, DateOnly invoiceDate)
     {
-        var dueDate = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId)?.NextInvoiceDueDate;
+        var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
+        var dueDate = card is null ? null : _repository.GetCardDueDate(card);
         if (dueDate is not null && dueDate.Value.Year == invoiceDate.Year && dueDate.Value.Month == invoiceDate.Month)
         {
             TriggerSync(creditCardId);
@@ -189,14 +191,15 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
 
             var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
             var hasEventMapping = connection.CardEventIds.TryGetValue(creditCardId, out var existingEventId);
+            var dueDate = card is null ? null : _repository.GetCardDueDate(card);
 
-            if (card is null || !card.IsActive || card.NextInvoiceDueDate is null)
+            if (card is null || !card.IsActive || dueDate is null)
             {
                 await SyncRemovalAsync(creditCardId, connection, accessToken, hasEventMapping, existingEventId, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                await SyncUpsertAsync(creditCardId, connection, accessToken, card.Name, card.NextInvoiceDueDate.Value, hasEventMapping, existingEventId, cancellationToken)
+                await SyncUpsertAsync(creditCardId, connection, accessToken, card.Name, dueDate.Value, hasEventMapping, existingEventId, cancellationToken)
                     .ConfigureAwait(false);
             }
 
@@ -315,8 +318,11 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
         }
     }
 
-    private List<Guid> QualifyingCreditCardIds() =>
-        _repository.GetCreditCardAccounts().Where(c => c.IsActive && c.NextInvoiceDueDate is not null).Select(c => c.Id).ToList();
+    private List<Guid> QualifyingCreditCardIds()
+    {
+        var statements = _repository.GetCardStatements().ToList();
+        return _repository.GetCreditCardAccounts().Where(c => c.IsActive && CardDueDate.For(c, statements) is not null).Select(c => c.Id).ToList();
+    }
 
     private void SetEventMapping(Guid creditCardId, string eventId, CalendarConnection connection)
     {

@@ -1,6 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
-using Financial.CashFlow.Domain.Enums;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -9,7 +8,6 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
     private static readonly JsonSerializerOptions UnresolvedOptions = CashFlowElementOptions.Create(context: null);
-    private static readonly JsonSerializerOptions CreditCardV2Options = new() { Converters = { new CreditCardV2JsonConverter() } };
 
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -20,7 +18,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var accounts = DeserializeCollection<Account>(root, "Accounts", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
-        accounts.AddRange(DeserializeCollection<Account>(root, "CreditCards", CreditCardV2Options));
         var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
@@ -79,10 +76,9 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "MaeLedgerEntries", value.MaeLedgerEntries, elementOptions);
         WriteCollection(writer, "InvestmentSnapshots", value.InvestmentSnapshots, elementOptions);
         WriteCollection(writer, "InvestmentAccounts", value.InvestmentAccounts, elementOptions);
-        WriteCollection(writer, "Accounts", value.Accounts.Where(account => !account.Has(Capability.HasStatements)), elementOptions);
+        WriteCollection(writer, "Accounts", value.Accounts, elementOptions);
         WriteCollection(writer, "IncomeSources", value.IncomeSources, elementOptions);
         WriteCollection(writer, "Incomes", value.Incomes, elementOptions);
-        WriteCollection(writer, "CreditCards", value.Accounts.Where(account => account.Has(Capability.HasStatements)), CreditCardV2Options);
         WriteCollection(writer, "Categories", value.Categories, elementOptions);
         WriteCollection(writer, "Transfers", value.Transfers, elementOptions);
         WriteCollection(writer, "BalanceAdjustments", value.BalanceAdjustments, elementOptions);

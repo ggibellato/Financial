@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Interfaces;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
 
@@ -18,21 +20,20 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
     private const string UnusedId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000003";
     private const string LinkedId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000004";
     private const string AmexOctoberStatementId = "8f3b1c1a-2e3a-4b1a-9a7f-700000000001";
+    private const string AmexNovemberStatementId = "8f3b1c1a-2e3a-4b1a-9a7f-700000000002";
     private const string CardPayerMessage = "BA Amex is a card account and can't pay.";
 
     private const string SeededData = $$"""
         {
           "Accounts": [
-            { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } }
+            { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
+            { "Id": "{{AmexId}}", "Name": "BA Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
+            { "Id": "{{VisaId}}", "Name": "Platinum Visa 8003", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
+            { "Id": "{{UnusedId}}", "Name": "Unused", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
+            { "Id": "{{LinkedId}}", "Name": "Linked", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null }
           ],
           "Categories": [
             { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
-          ],
-          "CreditCards": [
-            { "Id": "{{AmexId}}", "Name": "BA Amex", "IsActive": true, "NextInvoiceDueDate": "2026-11-18" },
-            { "Id": "{{VisaId}}", "Name": "Platinum Visa 8003", "IsActive": true, "NextInvoiceDueDate": null },
-            { "Id": "{{UnusedId}}", "Name": "Unused", "IsActive": true, "NextInvoiceDueDate": null },
-            { "Id": "{{LinkedId}}", "Name": "Linked", "IsActive": true, "NextInvoiceDueDate": null }
           ],
           "Expenses": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Date": "2026-09-10", "Description": "September taxi", "Value": 10, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-09-10", "InvoiceDate": "2026-09-01", "RoundUpAmount": null, "CountsAsTithe": true },
@@ -41,12 +42,13 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000004", "Date": "2026-10-07", "Description": "Shop", "Value": 40, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{VisaId}}", "ChargeDate": "2026-10-07", "InvoiceDate": "2026-10-01", "RoundUpAmount": null, "CountsAsTithe": true }
           ],
           "CardStatements": [
-            { "Id": "{{AmexOctoberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 10, "IsPaid": false }
+            { "Id": "{{AmexOctoberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 10, "IsPaid": false, "DueDate": null },
+            { "Id": "{{AmexNovemberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 11, "IsPaid": false, "DueDate": "2026-11-18" }
           ],
           "InvestmentAccounts": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-800000000001", "Name": "Linked balance", "IsActive": true, "IsLiability": true, "Source": "CreditCard", "CreditCardId": "{{LinkedId}}" }
           ],
-          "Version": 2
+          "Version": 3
         }
         """;
 
@@ -205,6 +207,45 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
                     ("Linked", 2026, 10, false, 0m, 0m)
                 });
             statements.Single(s => s.CreditCardName == "BA Amex").Id.Should().Be(Guid.Parse(AmexOctoberStatementId));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-03")]
+    public async Task AddOrEditCardCharge_CreatesTheMissingStatementOnce()
+    {
+        ExpenseCreateDTO DecemberCharge(decimal value) => new()
+        {
+            Date = new DateOnly(2026, 12, 2),
+            Description = "December shop",
+            Value = value,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(VisaId),
+            InvoiceDate = new DateOnly(2026, 12, 1)
+        };
+
+        var first = await Client.PostAsJsonAsync($"{Api}/expenses", DecemberCharge(12m));
+        var second = await Client.PostAsJsonAsync($"{Api}/expenses", DecemberCharge(8m));
+        var moved = await Client.PutAsJsonAsync($"{Api}/expenses/8f3b1c1a-2e3a-4b1a-9a7f-600000000004", new ExpenseUpdateDTO
+        {
+            Date = new DateOnly(2026, 10, 7),
+            Description = "Shop",
+            Value = 40m,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(VisaId),
+            InvoiceDate = new DateOnly(2027, 1, 1)
+        });
+
+        var visaStatements = Services.GetRequiredService<ICashFlowRepository>().GetCardStatements()
+            .Where(s => s.CreditCard.Id == Guid.Parse(VisaId))
+            .Select(s => (s.Year, s.Month, s.IsPaid))
+            .ToList();
+        using (new AssertionScope())
+        {
+            first.StatusCode.Should().Be(HttpStatusCode.OK);
+            second.StatusCode.Should().Be(HttpStatusCode.OK);
+            moved.StatusCode.Should().Be(HttpStatusCode.OK);
+            visaStatements.Should().Equal((2026, 12, false), (2027, 1, false));
         }
     }
 }

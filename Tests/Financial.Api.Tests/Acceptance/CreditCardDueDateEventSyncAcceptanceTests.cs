@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
@@ -114,14 +115,14 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P45-F02-credit-card-due-date-event-sync-03")]
-    public async Task ClearingDueDateDeactivatingOrDeletingACard_RemovesItsEvent()
+    public async Task ClearingDueDateOrDeactivatingACard_RemovesItsEvent_AndADatedCardIsInUse()
     {
         Connect();
         var clearedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
         var deactivatedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003"); // ChaseMaster4023
-        var deletedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000005"); // PaypalCredit
+        var datedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000005");
 
-        foreach (var (id, name) in new[] { (clearedCardId, "BaAmex"), (deactivatedCardId, "ChaseMaster4023"), (deletedCardId, "PaypalCredit") })
+        foreach (var (id, name) in new[] { (clearedCardId, "BaAmex"), (deactivatedCardId, "ChaseMaster4023"), (datedCardId, "PaypalCredit") })
         {
             await SetDueDateAsync(id, name, isActive: true, new DateOnly(2026, 9, 10));
             await WaitForResolvedSyncStatusAsync(id);
@@ -135,10 +136,10 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         await SetDueDateAsync(deactivatedCardId, "ChaseMaster4023", isActive: false, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(deactivatedCardId);
 
-        (await Client.DeleteAsync($"{CreditCardsRoute}/{deletedCardId}")).EnsureSuccessStatusCode();
-        await WaitForResolvedSyncStatusAsync(deletedCardId);
+        var deleteResponse = await Client.DeleteAsync($"{CreditCardsRoute}/{datedCardId}");
 
-        _provider.DeletedEvents.Should().HaveCount(3);
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        _provider.DeletedEvents.Should().HaveCount(2);
     }
 
     [Fact]
