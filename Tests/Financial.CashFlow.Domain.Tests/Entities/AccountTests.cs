@@ -375,7 +375,7 @@ public class AccountTests
             account.Has(Capability.CanPayBills).Should().BeFalse();
             account.OpeningBalance.Should().BeNull();
             account.RoundUp.Should().BeNull();
-            account.JoinsDefaultGroup.Should().BeFalse();
+            account.JoinsDefaultGroup.Should().BeTrue();
         }
     }
 

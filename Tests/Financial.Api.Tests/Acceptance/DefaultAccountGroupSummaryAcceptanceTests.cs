@@ -69,7 +69,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
     {
         var summary = await SummaryAsync(9);
 
-        summary.Members.Select(member => member.Name).Should().Equal("Barclays", "Chase", "Closed Savings", "Itaú");
+        BankMembers(summary).Select(member => member.Name).Should().Equal("Barclays", "Chase", "Closed Savings", "Itaú");
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             created.StatusCode.Should().Be(HttpStatusCode.OK);
-            summary.Members.Select(member => member.Name).Should().Equal("Barclays", "Chase", "Closed Savings", "Halifax", "Itaú");
+            BankMembers(summary).Select(member => member.Name).Should().Equal("Barclays", "Chase", "Closed Savings", "Halifax", "Itaú");
             summary.Members.Single(member => member.Name == "Halifax").TemplateName.Should().Be("Bank");
         }
     }
@@ -114,7 +114,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            foreach (var member in summary.Members)
+            foreach (var member in BankMembers(summary))
             {
                 member.Balance.Should().Be(balances!.Single(balance => balance.Bank == member.Name).Balance, member.Name);
                 member.RoundUpTotal.Should().Be(
@@ -129,7 +129,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
     {
         var summary = await SummaryAsync(9);
 
-        summary.Members.Select(member => (member.Name, member.Balance, member.RoundUpTotal)).Should().Equal(
+        BankMembers(summary).Select(member => (member.Name, member.Balance, member.RoundUpTotal)).Should().Equal(
             ("Barclays", 2962.34m, 0m),
             ("Chase", 292.00m, 0.90m),
             ("Closed Savings", 120m, 0m),
@@ -172,6 +172,9 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    private static IEnumerable<AccountGroupMemberDTO> BankMembers(AccountGroupSummaryDTO summary) =>
+        summary.Members.Where(member => member.Statement is null);
 
     private async Task<AccountGroupSummaryDTO> SummaryAsync(int month) =>
         (await Client.GetFromJsonAsync<AccountGroupSummaryDTO>($"/api/v1/financial/accounts/groups/default/summary/2026/{month}"))!;

@@ -104,6 +104,9 @@
             "format": "double",
             "type": "number"
           },
+          "balanceIsOwed": {
+            "type": "boolean"
+          },
           "currency": {
             "type": "string"
           },
@@ -138,6 +141,7 @@
           "year",
           "month",
           "balance",
+          "balanceIsOwed",
           "allowedActions"
         ],
         "type": "object"
@@ -152,6 +156,9 @@
             "format": "double",
             "type": "number"
           },
+          "balanceIsOwed": {
+            "type": "boolean"
+          },
           "currency": {
             "type": "string"
           },
@@ -165,6 +172,16 @@
               "number"
             ]
           },
+          "statement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccountGroupStatementDTO"
+              }
+            ]
+          },
           "templateName": {
             "type": "string"
           }
@@ -174,7 +191,24 @@
           "name",
           "templateName",
           "currency",
-          "balance"
+          "balance",
+          "balanceIsOwed"
+        ],
+        "type": "object"
+      },
+      "AccountGroupStatementDTO": {
+        "properties": {
+          "isPaid": {
+            "type": "boolean"
+          },
+          "outstandingTotal": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "outstandingTotal",
+          "isPaid"
         ],
         "type": "object"
       },
@@ -2847,6 +2881,10 @@
             "format": "double",
             "type": "number"
           },
+          "cardOutstandingTotal": {
+            "format": "double",
+            "type": "number"
+          },
           "currency": {
             "type": "string"
           },
@@ -2858,7 +2896,8 @@
         "required": [
           "currency",
           "balance",
-          "roundUpTotal"
+          "roundUpTotal",
+          "cardOutstandingTotal"
         ],
         "type": "object"
       },

@@ -37,6 +37,7 @@ const DETAIL: AccountDetailDto = {
   year: 2026,
   month: 9,
   balance: 1234.56,
+  balanceIsOwed: false,
   allowedActions: [],
 }
 

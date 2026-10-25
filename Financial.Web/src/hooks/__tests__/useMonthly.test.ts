@@ -142,11 +142,11 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: CURRENT_YEAR,
   month: CURRENT_MONTH,
   members: [
-    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0 },
-    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1 },
-    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6 },
+    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0, statement: null, balanceIsOwed: false },
+    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1, statement: null, balanceIsOwed: false },
+    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6, statement: null, balanceIsOwed: false },
   ],
-  totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7 }],
+  totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7, cardOutstandingTotal: 0 }],
   categoryTotalsSum: 1234.56,
   incomeTotals: [
     { incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 },
@@ -246,7 +246,7 @@ describe('useMonthly', () => {
   it('keys bank rows by the member account Id, not by matching a bank name', async () => {
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
-      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0 }],
+      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0, statement: null, balanceIsOwed: false }],
     })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -257,7 +257,7 @@ describe('useMonthly', () => {
   it('shows a member without a round-up total as 0', async () => {
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
-      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null }],
+      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false }],
     })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

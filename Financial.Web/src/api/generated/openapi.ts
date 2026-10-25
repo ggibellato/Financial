@@ -7289,6 +7289,7 @@ export interface components {
             allowedActions: string[];
             /** Format: double */
             balance: number;
+            balanceIsOwed: boolean;
             currency: string;
             /** Format: uuid */
             id: string;
@@ -7305,11 +7306,18 @@ export interface components {
             accountId: string;
             /** Format: double */
             balance: number;
+            balanceIsOwed: boolean;
             currency: string;
             name: string;
             /** Format: double */
             roundUpTotal?: null | number;
+            statement?: null | components["schemas"]["AccountGroupStatementDTO"];
             templateName: string;
+        };
+        AccountGroupStatementDTO: {
+            isPaid: boolean;
+            /** Format: double */
+            outstandingTotal: number;
         };
         AccountGroupSummaryDTO: {
             /** Format: double */
@@ -8072,6 +8080,8 @@ export interface components {
         CurrencyTotalDTO: {
             /** Format: double */
             balance: number;
+            /** Format: double */
+            cardOutstandingTotal: number;
             currency: string;
             /** Format: double */
             roundUpTotal: number;

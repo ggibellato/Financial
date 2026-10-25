@@ -204,14 +204,14 @@ const INCOMES: IncomeDto[] = [
 ]
 
 function member(accountId: string, name: string, balance: number, roundUpTotal = 0): AccountGroupMemberDto {
-  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal }
+  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal, statement: null, balanceIsOwed: false }
 }
 
 const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 7,
   members: [member('bank-barclays', 'Barclays', 42.5), member('bank-chase', 'Chase', 0), member('bank-trading212', 'Trading212', 0)],
-  totals: [{ currency: 'GBP', balance: 42.5, roundUpTotal: 0 }],
+  totals: [{ currency: 'GBP', balance: 42.5, roundUpTotal: 0, cardOutstandingTotal: 0 }],
   categoryTotalsSum: 42.5,
   incomeTotals: [{ incomeSourceId: '1', name: 'Gleison', netValue: 2450, grossValue: 3200 }],
   totalIncoming: 2450,
@@ -417,7 +417,7 @@ describe('MonthlyPage', () => {
       ...SUMMARY,
       month: 8,
       members: [member('bank-barclays', 'Barclays', 300)],
-      totals: [{ currency: 'GBP', balance: 300, roundUpTotal: 0 }],
+      totals: [{ currency: 'GBP', balance: 300, roundUpTotal: 0, cardOutstandingTotal: 0 }],
       categoryTotalsSum: 300,
       incomeTotals: [{ incomeSourceId: '3', name: 'Lottery', netValue: 50, grossValue: null }],
       totalIncoming: 50,

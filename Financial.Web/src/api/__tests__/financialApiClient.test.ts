@@ -2116,9 +2116,9 @@ describe('financialApiClient', () => {
       year: 2026,
       month: 7,
       members: [
-        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, roundUpTotal: 0.5 },
+        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, roundUpTotal: 0.5, statement: null, balanceIsOwed: false },
       ],
-      totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5 }],
+      totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5, cardOutstandingTotal: 0 }],
       categoryTotalsSum: 320,
       incomeTotals: [{ incomeSourceId: 's1', name: 'Salary', netValue: 2000, grossValue: 2500 }],
       totalIncoming: 2000,
@@ -2234,6 +2234,7 @@ describe('financialApiClient', () => {
       year: 2026,
       month: 10,
       balance: 1234.56,
+      balanceIsOwed: false,
       allowedActions: ['AddExpense'],
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
