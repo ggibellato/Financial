@@ -19,14 +19,20 @@ public sealed class AccountAdminService : IAccountAdminService
     private const string DisplayName = "An account";
 
     private readonly ICashFlowRepository _repository;
+    private readonly ICreditCardCalendarSyncService _calendarSyncTrigger;
     private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<AccountAdminService> _logger;
 
     public AccountAdminService(
-        ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<AccountAdminService> logger)
+        ICashFlowRepository repository,
+        ICreditCardCalendarSyncService calendarSyncTrigger,
+        TimeProvider timeProvider,
+        ITelemetryTracer tracer,
+        ILogger<AccountAdminService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _calendarSyncTrigger = calendarSyncTrigger ?? throw new ArgumentNullException(nameof(calendarSyncTrigger));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -68,6 +74,8 @@ public sealed class AccountAdminService : IAccountAdminService
                 return true;
             }).ConfigureAwait(false);
 
+            TriggerCalendarSyncIfCard(account, wasCard: false);
+
             span.SetAttribute(TelemetryAttributeKeys.EntityId, account.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "CreateAccount");
@@ -93,6 +101,7 @@ public sealed class AccountAdminService : IAccountAdminService
             var currency = ParseCurrency(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
             var changesTemplate = template.ToString() != account.TemplateName || currency != account.Currency;
+            var wasCard = account.Has(Capability.HasStatements);
 
             if (changesTemplate && hasRecords)
             {
@@ -114,6 +123,8 @@ public sealed class AccountAdminService : IAccountAdminService
                 account.SetActive(request.IsActive);
                 return true;
             }).ConfigureAwait(false);
+
+            TriggerCalendarSyncIfCard(account, wasCard);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateAccount");
@@ -144,6 +155,8 @@ public sealed class AccountAdminService : IAccountAdminService
                 _repository.DeleteAccount(id);
                 return true;
             }).ConfigureAwait(false);
+
+            TriggerCalendarSyncIfCard(account, wasCard: false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteAccount");
@@ -214,6 +227,14 @@ public sealed class AccountAdminService : IAccountAdminService
             Currencies = AccountTemplates.AllowedCurrencies(template).Select(currency => currency.ToString()).ToList(),
             Capabilities = Enum.GetValues<Capability>().Where(capabilities.Contains).Select(capability => capability.ToString()).ToList()
         };
+    }
+
+    private void TriggerCalendarSyncIfCard(Account account, bool wasCard)
+    {
+        if (wasCard || account.Has(Capability.HasStatements))
+        {
+            _calendarSyncTrigger.TriggerSync(account.Id);
+        }
     }
 
     private Account FindAccountOrThrow(Guid id) =>

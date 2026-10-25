@@ -1,22 +1,15 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Financial.CashFlow.Infrastructure.Persistence;
 
-/// <summary>
-/// Top-level (de)serializer for <see cref="CashFlowData"/>. On read, resolves the seeded
-/// Account/IncomeSource/ReserveBucket/CreditCard/Category collections first - regardless of their
-/// position in the JSON text - since none of them reference each other. InvestmentAccount is
-/// resolved next, since its optional CreditCard link depends on the CreditCards lookup already
-/// being built. Every other collection then deserializes through reference converters bound to
-/// that full resolution, assembling the result via <see cref="CashFlowData.Create"/>/<c>Add*</c>
-/// so every reference property shares the exact same instance as its owning collection entry.
-/// </summary>
 public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 {
     private static readonly JsonSerializerOptions UnresolvedOptions = CashFlowElementOptions.Create(context: null);
+    private static readonly JsonSerializerOptions CreditCardV2Options = new() { Converters = { new CreditCardV2JsonConverter() } };
 
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -27,22 +20,15 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var accounts = DeserializeCollection<Account>(root, "Accounts", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
-        var creditCards = DeserializeCollection<CreditCard>(root, "CreditCards", unresolvedOptions);
+        accounts.AddRange(DeserializeCollection<Account>(root, "CreditCards", CreditCardV2Options));
         var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
         foreach (var account in accounts) context.Accounts[account.Id] = account;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
         foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
-        foreach (var card in creditCards) context.CreditCards[card.Id] = card;
         foreach (var category in categories) context.Categories[category.Id] = category;
 
-        // InvestmentAccount's optional CreditCard reference needs context.CreditCards, already
-        // populated above - so it cannot join the fully-independent leaf set deserialized with
-        // unresolvedOptions. The same options instance is then reused as resolvedOptions below:
-        // System.Text.Json resolves and caches each type's JsonTypeInfo on first use, and nothing
-        // deserialized so far touches a type other than InvestmentAccount/CreditCard, so every
-        // later type still resolves its reference converters against the fully-populated context.
         var resolvedOptions = CashFlowElementOptions.Create(context);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", resolvedOptions);
         foreach (var investmentAccount in investmentAccounts) context.InvestmentAccounts[investmentAccount.Id] = investmentAccount;
@@ -52,7 +38,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
         foreach (var investmentAccount in investmentAccounts) data.AddInvestmentAccount(investmentAccount);
         foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
-        foreach (var card in creditCards) data.AddCreditCard(card);
         foreach (var category in categories) data.AddCategory(category);
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
@@ -94,10 +79,10 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "MaeLedgerEntries", value.MaeLedgerEntries, elementOptions);
         WriteCollection(writer, "InvestmentSnapshots", value.InvestmentSnapshots, elementOptions);
         WriteCollection(writer, "InvestmentAccounts", value.InvestmentAccounts, elementOptions);
-        WriteCollection(writer, "Accounts", value.Accounts, elementOptions);
+        WriteCollection(writer, "Accounts", value.Accounts.Where(account => !account.Has(Capability.HasStatements)), elementOptions);
         WriteCollection(writer, "IncomeSources", value.IncomeSources, elementOptions);
         WriteCollection(writer, "Incomes", value.Incomes, elementOptions);
-        WriteCollection(writer, "CreditCards", value.CreditCards, elementOptions);
+        WriteCollection(writer, "CreditCards", value.Accounts.Where(account => account.Has(Capability.HasStatements)), CreditCardV2Options);
         WriteCollection(writer, "Categories", value.Categories, elementOptions);
         WriteCollection(writer, "Transfers", value.Transfers, elementOptions);
         WriteCollection(writer, "BalanceAdjustments", value.BalanceAdjustments, elementOptions);

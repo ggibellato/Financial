@@ -8,7 +8,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -17,8 +16,8 @@ namespace Financial.CashFlow.Application.Tests.Services;
 public class ExpenseServiceTests
 {
     private static readonly Account ChaseFixture = TestAccounts.Bank("Chase", roundUpEnabled: true);
-    private static readonly CreditCard BarclaysPlatinumVisa8003Fixture = CreditCard.Create("BarclaysPlatinumVisa8003");
-    private static readonly CreditCard BaAmexFixture = CreditCard.Create("BaAmex");
+    private static readonly Account BarclaysPlatinumVisa8003Fixture = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
+    private static readonly Account BaAmexFixture = TestAccounts.CreditCard("BaAmex");
     private static readonly Category MercadoFixture = Category.Create("Mercado");
     private static readonly Microsoft.Extensions.Logging.ILogger<ExpenseService> Logger = NullLogger<ExpenseService>.Instance;
 
@@ -46,7 +45,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task AddExpenseAsync_CardExpense_ChecksItsInvoiceForCalendarSync()
     {
-        var card = _repository.CreditCards.Single(c => c.Name == "BaAmex");
+        var card = _repository.CardAccounts.Single(c => c.Name == "BaAmex");
 
         await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
 
@@ -75,7 +74,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task UpdateExpenseAsync_InvoiceMoved_ChecksBothOldAndNewInvoice()
     {
-        var card = _repository.CreditCards.Single(c => c.Name == "BaAmex");
+        var card = _repository.CardAccounts.Single(c => c.Name == "BaAmex");
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
         _calendarSyncTrigger.InvoiceChecks.Clear();
 
@@ -87,7 +86,7 @@ public class ExpenseServiceTests
     [Fact]
     public async Task DeleteExpenseAsync_CardExpense_ChecksItsInvoiceForCalendarSync()
     {
-        var card = _repository.CreditCards.Single(c => c.Name == "BaAmex");
+        var card = _repository.CardAccounts.Single(c => c.Name == "BaAmex");
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
         _calendarSyncTrigger.InvoiceChecks.Clear();
 
@@ -267,8 +266,8 @@ public class ExpenseServiceTests
     public async Task AddExpenseAsync_WithInactiveCard_ThrowsArgumentException()
     {
         var repository = CreateRepository(seedDefaultCreditCards: false);
-        var inactiveCard = CreditCard.Create("RetiredCard", isActive: false);
-        repository.CreditCards.Add(inactiveCard);
+        var inactiveCard = TestAccounts.CreditCard("RetiredCard", isActive: false);
+        repository.Accounts.Add(inactiveCard);
         var service = CreateService(repository);
         var request = new ExpenseCreateDTO
         {
@@ -288,8 +287,8 @@ public class ExpenseServiceTests
     public async Task UpdateExpenseAsync_WithInactiveCard_ThrowsArgumentException()
     {
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
-        var inactiveCard = CreditCard.Create("RetiredCard", isActive: false);
-        _repository.CreditCards.Add(inactiveCard);
+        var inactiveCard = TestAccounts.CreditCard("RetiredCard", isActive: false);
+        _repository.Accounts.Add(inactiveCard);
         var updateRequest = new ExpenseUpdateDTO
         {
             Date = new DateOnly(2026, 7, 15),
@@ -893,7 +892,7 @@ public class ExpenseServiceTests
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path rather than the "omitted" path.</summary>
     private static Guid? ResolveCreditCardId(StubCashFlowRepository _repository, string? cardName) =>
-        cardName is null ? null : _repository.CreditCards.FirstOrDefault(c => c.Name == cardName)?.Id ?? Guid.NewGuid();
+        cardName is null ? null : _repository.CardAccounts.FirstOrDefault(c => c.Name == cardName)?.Id ?? Guid.NewGuid();
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path rather than the "omitted" path.</summary>
     private static Guid ResolveCategoryId(StubCashFlowRepository _repository, string categoryName) =>

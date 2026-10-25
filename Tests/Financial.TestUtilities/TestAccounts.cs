@@ -16,4 +16,12 @@ public static class TestAccounts
         account.SetActive(isActive);
         return account;
     }
+
+    public static Account CreditCard(string name, bool isActive = true, DateOnly? nextInvoiceDueDate = null)
+    {
+        var account = Account.Create(name, AccountTemplate.CreditCard, Currency.GBP);
+        account.SetActive(isActive);
+        account.SetNextInvoiceDueDate(nextInvoiceDueDate);
+        return account;
+    }
 }

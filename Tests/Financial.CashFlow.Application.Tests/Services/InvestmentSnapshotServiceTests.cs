@@ -10,7 +10,6 @@ using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -154,10 +153,10 @@ public class InvestmentSnapshotServiceTests
 
     #region GetSuggestionsForMonthAsync
 
-    private static (StubCashFlowRepository Repository, InvestmentSnapshotService Service, CreditCard Card, InvestmentAccount CreditCardAccount, InvestmentAccount ReserveAccount, InvestmentAccount NoneAccount) CreateSuggestionsFixture()
+    private static (StubCashFlowRepository Repository, InvestmentSnapshotService Service, Account Card, InvestmentAccount CreditCardAccount, InvestmentAccount ReserveAccount, InvestmentAccount NoneAccount) CreateSuggestionsFixture()
     {
         var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true, seedDefaultCreditCards: true);
-        var card = repository.CreditCards.First(c => c.Name == "BarclaysPlatinumVisa8003");
+        var card = repository.CardAccounts.First(c => c.Name == "BarclaysPlatinumVisa8003");
 
         var creditCardAccount = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, card);
@@ -174,7 +173,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     private static Expense AddCharge(
-        StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card, DateOnly? invoiceDate = null)
+        StubCashFlowRepository repository, DateOnly date, decimal value, Account card, DateOnly? invoiceDate = null)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card, invoiceDate);
         repository.Expenses.Add(expense);
@@ -196,6 +195,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-07")]
     public async Task GetSuggestionsForMonth_CreditCardWithMatchingExpense_SuggestsSum()
     {
         var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();
@@ -209,6 +209,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-07")]
     public async Task GetSuggestionsForMonth_CreditCardWithSettledExpense_StillIncludesIt()
     {
         var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();

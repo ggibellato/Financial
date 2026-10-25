@@ -1,15 +1,16 @@
 using Financial.CashFlow.Domain.Entities;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Domain.Tests;
 
 [Trait("Category", "Unit")]
 public class CardStatementTests
 {
-    private static readonly CreditCard BarclaysPlatinumVisa8003 = CreditCard.Create("BarclaysPlatinumVisa8003");
-    private static readonly CreditCard ChaseMaster4023 = CreditCard.Create("ChaseMaster4023");
-    private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
+    private static readonly Account BarclaysPlatinumVisa8003 = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
+    private static readonly Account ChaseMaster4023 = TestAccounts.CreditCard("ChaseMaster4023");
+    private static readonly Account BaAmex = TestAccounts.CreditCard("BaAmex");
 
     [Fact]
     public void Create_AssignsAllFieldsANewIdAndDefaultsIsPaidToFalse()
@@ -83,5 +84,13 @@ public class CardStatementTests
         var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
 
         statement.IsFor(BaAmex.Id, 2026, 7).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Create_ForABank_Throws()
+    {
+        var act = () => CardStatement.Create(TestAccounts.Bank("Chase"), 2026, 7);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
     }
 }

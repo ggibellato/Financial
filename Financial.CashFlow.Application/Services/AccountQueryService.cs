@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -120,7 +121,7 @@ public sealed class AccountQueryService : IAccountQueryService
     private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account) =>
         record switch
         {
-            Expense expense when expense.PaymentSourceAccount?.Id == account.Id => [ToRow(expense, account)],
+            Expense expense when expense.PaymentSourceAccount?.Id == account.Id || expense.IsUnpaidChargeOn(account) => [ToRow(expense, account)],
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
@@ -137,7 +138,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Date = expense.Date,
             Description = expense.Description,
             CategoryName = expense.Category.Name,
-            Counterpart = expense.CreditCard?.Name,
+            Counterpart = expense.CreditCard?.Id == account.Id ? null : expense.CreditCard?.Name,
             Amount = -expense.Value,
             RoundUp = expense.RoundUpAmount is { } roundUp ? -roundUp : null,
             CanEdit = account.IsActive && kind == TransactionKind.Expense,

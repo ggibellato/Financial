@@ -5,6 +5,8 @@ using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -35,8 +37,8 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_ReturnsAllSeededCards_IncludingInactive()
     {
-        _repository.CreditCards.Add(CreditCard.Create("BaAmex", isActive: true));
-        _repository.CreditCards.Add(CreditCard.Create("PaypalCredit", isActive: false));
+        _repository.Accounts.Add(TestAccounts.CreditCard("BaAmex", isActive: true));
+        _repository.Accounts.Add(TestAccounts.CreditCard("PaypalCredit", isActive: false));
 
         var result = _sut.GetCreditCards();
 
@@ -57,7 +59,7 @@ public class CreditCardServiceTests
             result.IsActive.Should().BeTrue();
             result.NextInvoiceDueDate.Should().BeNull();
             result.HasReferences.Should().BeFalse();
-            _repository.CreditCards.Should().ContainSingle(c => c.Name == "Nubank");
+            _repository.CardAccounts.Should().ContainSingle(c => c.Name == "Nubank");
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -82,7 +84,7 @@ public class CreditCardServiceTests
     [Fact]
     public async Task CreateCreditCardAsync_WithDuplicateName_ThrowsAndWritesNothing()
     {
-        _repository.CreditCards.Add(CreditCard.Create("Nubank", isActive: true));
+        _repository.Accounts.Add(TestAccounts.CreditCard("Nubank", isActive: true));
         var request = new CreditCardCreateDTO { Name = "Nubank", IsActive = true };
 
         var act = async () => await _sut.CreateCreditCardAsync(request);
@@ -97,8 +99,8 @@ public class CreditCardServiceTests
     [Fact]
     public async Task UpdateCreditCardAsync_ExistingId_ReturnsUpdatedDtoAndPersists()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
         var dueDate = new DateOnly(2026, 9, 5);
 
         var result = await _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
@@ -120,8 +122,8 @@ public class CreditCardServiceTests
     [Fact]
     public async Task UpdateCreditCardAsync_ToItsOwnCurrentName_Succeeds()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
 
         var result = await _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
         {
@@ -150,10 +152,10 @@ public class CreditCardServiceTests
     [Fact]
     public async Task UpdateCreditCardAsync_WithDuplicateName_ThrowsAndWritesNothing()
     {
-        var baAmex = CreditCard.Create("BaAmex", isActive: true);
-        var nubank = CreditCard.Create("Nubank", isActive: true);
-        _repository.CreditCards.Add(baAmex);
-        _repository.CreditCards.Add(nubank);
+        var baAmex = TestAccounts.CreditCard("BaAmex", isActive: true);
+        var nubank = TestAccounts.CreditCard("Nubank", isActive: true);
+        _repository.Accounts.Add(baAmex);
+        _repository.Accounts.Add(nubank);
 
         var act = async () => await _sut.UpdateCreditCardAsync(baAmex.Id, new CreditCardUpdateDTO
         {
@@ -175,8 +177,8 @@ public class CreditCardServiceTests
     [InlineData("   ")]
     public async Task UpdateCreditCardAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
 
         var act = async () => await _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO
         {
@@ -195,14 +197,14 @@ public class CreditCardServiceTests
     [Fact]
     public async Task DeleteCreditCardAsync_WithNoReferences_RemovesAndSaves()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
 
         await _sut.DeleteCreditCardAsync(card.Id);
 
         using (new AssertionScope())
         {
-            _repository.CreditCards.Should().BeEmpty();
+            _repository.CardAccounts.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -218,8 +220,8 @@ public class CreditCardServiceTests
     [Fact]
     public async Task DeleteCreditCardAsync_ReferencedByExpense_ThrowsAndWritesNothing()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, Category.Create("Mercado"), null, card));
 
         var act = async () => await _sut.DeleteCreditCardAsync(card.Id);
@@ -227,7 +229,7 @@ public class CreditCardServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<EntityInUseException>();
-            _repository.CreditCards.Should().ContainSingle();
+            _repository.CardAccounts.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
@@ -235,8 +237,8 @@ public class CreditCardServiceTests
     [Fact]
     public async Task DeleteCreditCardAsync_ReferencedByCardStatement_ThrowsAndWritesNothing()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
         _repository.CardStatements.Add(CardStatement.Create(card, 2026, 7));
 
         var act = async () => await _sut.DeleteCreditCardAsync(card.Id);
@@ -247,8 +249,8 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_ReferencedCard_HasReferencesIsTrue()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
         _repository.CardStatements.Add(CardStatement.Create(card, 2026, 7));
 
         var result = _sut.GetCreditCards();
@@ -259,8 +261,8 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_CardWithNoExpenses_LatestInvoiceDateIsNull()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
 
         var result = _sut.GetCreditCards();
 
@@ -270,8 +272,8 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_CardWithMultipleExpenses_LatestInvoiceDateIsTheMaxInvoiceDate()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
         var category = Category.Create("Mercado");
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, category, null, card, new DateOnly(2026, 9, 1)));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 20), "Amazon", 20m, category, null, card, new DateOnly(2026, 8, 1)));
@@ -284,10 +286,10 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_ExpenseOnAnotherCard_DoesNotAffectLatestInvoiceDate()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        var otherCard = CreditCard.Create("Nubank", isActive: true);
-        _repository.CreditCards.Add(card);
-        _repository.CreditCards.Add(otherCard);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        var otherCard = TestAccounts.CreditCard("Nubank", isActive: true);
+        _repository.Accounts.Add(card);
+        _repository.Accounts.Add(otherCard);
         var category = Category.Create("Mercado");
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Groceries", 50m, category, null, otherCard, new DateOnly(2026, 12, 1)));
 
@@ -307,8 +309,8 @@ public class CreditCardServiceTests
     [Fact]
     public async Task UpdateCreditCardAsync_TriggersCalendarSyncForTheUpdatedCard()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
 
         await _sut.UpdateCreditCardAsync(card.Id, new CreditCardUpdateDTO { Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 10) });
 
@@ -318,8 +320,8 @@ public class CreditCardServiceTests
     [Fact]
     public async Task DeleteCreditCardAsync_TriggersCalendarSyncForTheDeletedCardId()
     {
-        var card = CreditCard.Create("BaAmex", isActive: true);
-        _repository.CreditCards.Add(card);
+        var card = TestAccounts.CreditCard("BaAmex", isActive: true);
+        _repository.Accounts.Add(card);
 
         await _sut.DeleteCreditCardAsync(card.Id);
 
@@ -329,11 +331,82 @@ public class CreditCardServiceTests
     [Fact]
     public void GetCreditCards_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
-        _repository.ThrowOnNextGetCreditCards = true;
+        _repository.ThrowOnNextRead = new InvalidOperationException("Simulated read failure.");
 
         Action act = () => _sut.GetCreditCards();
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CreditCardService.GetCreditCards");
+    }
+
+    [Fact]
+    public async Task CreateCreditCardAsync_BuildsAnInactiveGbpCreditCardAccountWhenAsked()
+    {
+        await _sut.CreateCreditCardAsync(new CreditCardCreateDTO { Name = "Nubank", IsActive = false });
+
+        var card = _repository.Accounts.Should().ContainSingle().Which;
+        using (new AssertionScope())
+        {
+            card.Template.Should().Be(AccountTemplate.CreditCard);
+            card.Currency.Should().Be(Currency.GBP);
+            card.IsActive.Should().BeFalse();
+            card.OpeningBalance.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task CreateCreditCardAsync_NameOfABankInAnotherCase_ThrowsTheAccountMessageAndWritesNothing()
+    {
+        _repository.Accounts.Add(TestAccounts.Bank("Barclays"));
+
+        var act = async () => await _sut.CreateCreditCardAsync(new CreditCardCreateDTO { Name = "barclays", IsActive = true });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<DuplicateNameException>().WithMessage("An account named \"barclays\" already exists.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<DuplicateNameException>("CashFlow.CreditCardService.CreateCreditCard");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateCreditCardAsync_BankId_ThrowsKeyNotFoundException()
+    {
+        var bank = TestAccounts.Bank("Barclays");
+        _repository.Accounts.Add(bank);
+
+        var act = async () => await _sut.UpdateCreditCardAsync(bank.Id, new CreditCardUpdateDTO { Name = "Barclays", IsActive = true });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.CreditCardService.UpdateCreditCard");
+    }
+
+    [Fact]
+    public async Task DeleteCreditCardAsync_LinkedToAnInvestmentAccount_ThrowsAndWritesNothing()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("Amex balance", true, true, InvestmentAccountSource.CreditCard, card));
+
+        var act = async () => await _sut.DeleteCreditCardAsync(card.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<EntityInUseException>()
+                .WithMessage("Cannot delete a credit card that is still referenced by a statement or expense.");
+            _repository.CardAccounts.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<EntityInUseException>("CashFlow.CreditCardService.DeleteCreditCard");
+        }
+    }
+
+    [Fact]
+    public void GetCreditCards_CardLinkedOnlyToAnInvestmentAccount_HasReferencesIsTrue()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("Amex balance", true, true, InvestmentAccountSource.CreditCard, card));
+
+        _sut.GetCreditCards().Should().ContainSingle().Which.HasReferences.Should().BeTrue();
     }
 }

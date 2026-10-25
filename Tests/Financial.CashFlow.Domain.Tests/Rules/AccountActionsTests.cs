@@ -59,4 +59,17 @@ public class AccountActionsTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void AllowedFor_CreditCardAccount_ReturnsNoActions()
+    {
+        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AllowedFor_AccountWithCategoriesAndStatements_HasNoAddExpense()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.HasCategories, Capability.HasStatements, Capability.ReceivesIncome))
+            .Should().Equal(AccountAction.AddIncome);
+    }
 }

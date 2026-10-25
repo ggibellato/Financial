@@ -22,7 +22,6 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(Account),
         typeof(IncomeSource),
         typeof(ReserveBucket),
-        typeof(CreditCard),
         typeof(Category),
         typeof(Income),
         typeof(Transfer),
@@ -117,9 +116,6 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 
         if (propertyType == typeof(ReserveBucket))
             return new ReserveBucketReferenceConverter(_context?.ReserveBuckets);
-
-        if (propertyType == typeof(CreditCard))
-            return new CreditCardReferenceConverter(_context?.CreditCards);
 
         if (propertyType == typeof(Category))
             return new CategoryReferenceConverter(_context?.Categories);

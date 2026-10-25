@@ -3,7 +3,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
-using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 
@@ -48,7 +47,7 @@ public static class MonthlyExpenseSheetImporter
 
     public static IReadOnlyList<Expense> Import(
         IXLWorksheet sheet, int year, int month, DateOnly today, ImportReport report,
-        IReadOnlyCollection<Account> banks, IReadOnlyCollection<CreditCardEntity> creditCards,
+        IReadOnlyCollection<Account> banks, IReadOnlyCollection<Account> creditCards,
         IReadOnlyCollection<Category> categories)
     {
         var cardsByName = creditCards.ToDictionary(c => c.Name, c => c, StringComparer.OrdinalIgnoreCase);
@@ -106,7 +105,7 @@ public static class MonthlyExpenseSheetImporter
             var rawPaymentSourceTag = sheet.Cell(row, PaymentSourceColumn).GetString();
             var cardName = ResolveCardTag(row, year, month, today, rawPaymentSourceTag);
             Account? paymentSourceBank = null;
-            CreditCardEntity? creditCard = null;
+            Account? creditCard = null;
             if (cardName is null)
             {
                 var paymentSourceName = ResolvePaymentSource(rawPaymentSourceTag);

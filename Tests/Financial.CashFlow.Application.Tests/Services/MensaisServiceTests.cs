@@ -406,7 +406,7 @@ public class MensaisServiceTests
         var sut = CreateService(repository);
         var bill = AddUkBill(repository);
         var account = Account.CreateWithCapabilities(
-            "No bills", Currency.GBP, Enum.GetValues<Capability>().Where(c => c != Capability.CanPayBills).ToHashSet());
+            "No bills", Currency.GBP, Enum.GetValues<Capability>().Where(c => c != Capability.CanPayBills && c != Capability.HasStatements).ToHashSet());
         repository.Accounts.Add(account);
         var expense = PaymentExpense(repository, account.Id);
 
@@ -512,5 +512,25 @@ public class MensaisServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.MensaisService.ResetAllToUnset");
+    }
+
+    [Fact]
+    public async Task MarkBillPaidAsync_CardAccountAsPaymentSource_ThrowsTheCardMessageAndLeavesBillUnpaid()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true, seedDefaultCreditCards: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        var card = repository.CardAccounts.First(c => c.Name == "BaAmex");
+        var expense = PaymentExpense(repository, card.Id);
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = expense });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("BaAmex is a card account and can't pay.");
+        using (new AssertionScope())
+        {
+            bill.Status.Should().Be(BillStatus.Unset);
+            repository.Expenses.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.MensaisService.MarkBillPaid");
+        }
     }
 }

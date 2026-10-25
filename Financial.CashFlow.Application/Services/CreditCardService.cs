@@ -3,6 +3,8 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -11,6 +13,7 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class CreditCardService : ICreditCardService
 {
     private const string EntityType = "CreditCard";
+    private const string DuplicateNameDisplayName = "An account";
 
     private readonly ICashFlowRepository _repository;
     private readonly ICreditCardCalendarSyncService _calendarSyncTrigger;
@@ -38,13 +41,10 @@ public sealed class CreditCardService : ICreditCardService
                 .Where(e => e.CreditCard is not null)
                 .GroupBy(e => e.CreditCard!.Id)
                 .ToDictionary(g => g.Key, g => g.Max(e => e.InvoiceDate));
-            var cardIdsWithStatements = _repository.GetCardStatements().Select(s => s.CreditCard.Id).ToHashSet();
+            var referencedIds = AccountReferenceReader.ReferencedAccountIds(_repository);
 
-            var result = _repository.GetCreditCards()
-                .Select(card => ToDto(
-                    card,
-                    latestInvoiceDateByCard.GetValueOrDefault(card.Id),
-                    latestInvoiceDateByCard.ContainsKey(card.Id) || cardIdsWithStatements.Contains(card.Id)))
+            var result = _repository.GetCreditCardAccounts()
+                .Select(card => ToDto(card, latestInvoiceDateByCard.GetValueOrDefault(card.Id), referencedIds.Contains(card.Id)))
                 .ToList();
 
             span.MarkSuccess();
@@ -70,13 +70,14 @@ public sealed class CreditCardService : ICreditCardService
                 throw new ArgumentException("Credit card name is required.", nameof(request));
             }
 
-            _repository.GetCreditCards().EnsureNameIsUnique(request.Name, null, c => c.Name, c => c.Id, "A credit card");
+            _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, null, DuplicateNameDisplayName);
 
-            var creditCard = CreditCard.Create(request.Name, request.IsActive);
+            var creditCard = Account.Create(request.Name, AccountTemplate.CreditCard, Currency.GBP);
+            creditCard.SetActive(request.IsActive);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.AddCreditCard(creditCard);
+                _repository.AddAccount(creditCard);
                 return true;
             }).ConfigureAwait(false);
 
@@ -108,13 +109,15 @@ public sealed class CreditCardService : ICreditCardService
                 throw new ArgumentException("Credit card name is required.", nameof(request));
             }
 
-            var creditCard = _repository.GetCreditCards().FirstOrThrow(c => c.Id == id, "Credit card", id);
+            var creditCard = FindCreditCardOrThrow(id);
 
-            _repository.GetCreditCards().EnsureNameIsUnique(request.Name, id, c => c.Name, c => c.Id, "A credit card");
+            _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DuplicateNameDisplayName);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                creditCard.Update(request.Name, request.IsActive, request.NextInvoiceDueDate);
+                creditCard.Update(request.Name);
+                creditCard.SetActive(request.IsActive);
+                creditCard.SetNextInvoiceDueDate(request.NextInvoiceDueDate);
                 return true;
             }).ConfigureAwait(false);
 
@@ -137,13 +140,13 @@ public sealed class CreditCardService : ICreditCardService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            _ = _repository.GetCreditCards().FirstOrThrow(c => c.Id == id, "Credit card", id);
+            _ = FindCreditCardOrThrow(id);
 
             EnsureNotReferenced(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.DeleteCreditCard(id);
+                _repository.DeleteAccount(id);
                 return true;
             }).ConfigureAwait(false);
 
@@ -169,16 +172,10 @@ public sealed class CreditCardService : ICreditCardService
         }
     }
 
-    /// <summary>
-    /// A CreditCard can be referenced directly by an Expense (before any CardStatement exists for
-    /// the period) or by a CardStatement once one has been generated - both must be scanned
-    /// independently. Also drives <see cref="CreditCardDTO.HasReferences"/>, so the client can
-    /// disable Delete before attempting it rather than only learning about the guard from a failed
-    /// request.
-    /// </summary>
-    private bool IsReferenced(Guid creditCardId) =>
-        _repository.GetExpenses().Any(e => e.CreditCard?.Id == creditCardId) ||
-        _repository.GetCardStatements().Any(s => s.CreditCard.Id == creditCardId);
+    private bool IsReferenced(Guid creditCardId) => AccountReferenceReader.IsReferenced(_repository, creditCardId);
+
+    private Account FindCreditCardOrThrow(Guid id) =>
+        _repository.GetCreditCardAccounts().FirstOrThrow(c => c.Id == id, "Credit card", id);
 
     private DateOnly? GetLatestInvoiceDate(Guid creditCardId) =>
         _repository.GetExpenses()
@@ -192,10 +189,10 @@ public sealed class CreditCardService : ICreditCardService
         return _tracer.StartServiceSpan("CashFlow", nameof(CreditCardService), operationName, EntityType);
     }
 
-    private CreditCardDTO ToDto(CreditCard creditCard) =>
+    private CreditCardDTO ToDto(Account creditCard) =>
         ToDto(creditCard, GetLatestInvoiceDate(creditCard.Id), IsReferenced(creditCard.Id));
 
-    private static CreditCardDTO ToDto(CreditCard creditCard, DateOnly? latestInvoiceDate, bool hasReferences) => new()
+    private static CreditCardDTO ToDto(Account creditCard, DateOnly? latestInvoiceDate, bool hasReferences) => new()
     {
         Id = creditCard.Id,
         Name = creditCard.Name,

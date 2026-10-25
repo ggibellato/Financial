@@ -9,7 +9,6 @@ using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -31,14 +30,14 @@ public class CardStatementServiceTests
     private CardStatementService CreateService(StubCashFlowRepository? repository = null) =>
         new(repository ?? _repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
 
-    private static CreditCard Card(StubCashFlowRepository repository, string name) =>
-        repository.CreditCards.First(c => c.Name == name);
+    private static Account Card(StubCashFlowRepository repository, string name) =>
+        repository.CardAccounts.First(c => c.Name == name);
 
     private static MarkCardStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
         new() { PaymentSourceBankId = repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id };
 
     private static Expense AddCharge(
-        StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card)
+        StubCashFlowRepository repository, DateOnly date, decimal value, Account card)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         repository.Expenses.Add(expense);
@@ -46,7 +45,7 @@ public class CardStatementServiceTests
     }
 
     private static Expense AddChargeWithInvoiceDate(
-        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, CreditCard card)
+        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, Account card)
     {
         var expense = Expense.Create(date, "Charge near cutoff", value, Category.Create("Mercado"), null, card, invoiceDate);
         repository.Expenses.Add(expense);
@@ -69,7 +68,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task GetStatementsForMonthAsync_InactiveCard_IsExcludedFromGeneration()
     {
-        _repository.CreditCards.Add(CreditCard.Create("RetiredCard", isActive: false));
+        _repository.Accounts.Add(TestAccounts.CreditCard("RetiredCard", isActive: false));
 
         var result = await _sut.GetStatementsForMonthAsync(2026, 7);
 
@@ -110,6 +109,7 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public async Task GetStatementsForMonthAsync_OutstandingTotalSumsThatMonthsChargesForTheCard()
     {
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
@@ -123,6 +123,7 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public async Task GetStatementsForMonthAsync_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
     {
         var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
@@ -511,5 +512,44 @@ public class CardStatementServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.GetStatementsForMonth");
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_CardAccountAsPaymentSource_ThrowsAndSavesNothing()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        var statement = CardStatement.Create(card, 2026, 7);
+        _repository.CardStatements.Add(statement);
+
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "BaAmex"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("BaAmex is a card account and can't pay.");
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
+    public async Task GetStatementsForMonthAsync_AccumulatedOutstanding_CountsEveryUnpaidChargeOfTheCardWhateverItsMonth()
+    {
+        var card = Card(_repository, "BaAmex");
+        AddCharge(_repository, new DateOnly(2026, 6, 10), 15m, card);
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 25m, card);
+        AddCharge(_repository, new DateOnly(2026, 9, 10), 40m, card);
+        var paid = AddCharge(_repository, new DateOnly(2026, 7, 12), 100m, card);
+        paid.Settle(_repository.Accounts.First(a => a.Name == "Barclays"), new DateOnly(2026, 7, 31));
+
+        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+
+        var amex = result.Single(s => s.CreditCardName == "BaAmex");
+        using (new AssertionScope())
+        {
+            amex.OutstandingTotal.Should().Be(25m);
+            amex.AccumulatedOutstandingTotal.Should().Be(80m);
+        }
     }
 }

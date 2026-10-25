@@ -80,7 +80,7 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
 
     public void TriggerSyncIfInvoiceSynced(Guid creditCardId, DateOnly invoiceDate)
     {
-        var dueDate = _repository.GetCreditCards().FirstOrDefault(c => c.Id == creditCardId)?.NextInvoiceDueDate;
+        var dueDate = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId)?.NextInvoiceDueDate;
         if (dueDate is not null && dueDate.Value.Year == invoiceDate.Year && dueDate.Value.Month == invoiceDate.Month)
         {
             TriggerSync(creditCardId);
@@ -89,7 +89,7 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
 
     public async Task<CreditCardCalendarSyncStatusDTO> ResyncAsync(Guid creditCardId, CancellationToken cancellationToken = default)
     {
-        if (!_repository.GetCreditCards().Any(c => c.Id == creditCardId))
+        if (!_repository.GetCreditCardAccounts().Any(c => c.Id == creditCardId))
         {
             throw new KeyNotFoundException($"Credit card '{creditCardId}' was not found.");
         }
@@ -187,7 +187,7 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
                 return;
             }
 
-            var card = _repository.GetCreditCards().FirstOrDefault(c => c.Id == creditCardId);
+            var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
             var hasEventMapping = connection.CardEventIds.TryGetValue(creditCardId, out var existingEventId);
 
             if (card is null || !card.IsActive || card.NextInvoiceDueDate is null)
@@ -316,7 +316,7 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
     }
 
     private List<Guid> QualifyingCreditCardIds() =>
-        _repository.GetCreditCards().Where(c => c.IsActive && c.NextInvoiceDueDate is not null).Select(c => c.Id).ToList();
+        _repository.GetCreditCardAccounts().Where(c => c.IsActive && c.NextInvoiceDueDate is not null).Select(c => c.Id).ToList();
 
     private void SetEventMapping(Guid creditCardId, string eventId, CalendarConnection connection)
     {

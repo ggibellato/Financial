@@ -105,16 +105,17 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetTemplates_ListsBankWithGbpAndItsCapabilities()
+    public async Task GetTemplates_ListsBankAndCreditCardWithGbpAndTheirCapabilities()
     {
         var templates = await Client.GetFromJsonAsync<List<AccountTemplateDTO>>($"{AccountsUrl}/templates");
 
         using (new AssertionScope())
         {
-            var bank = templates.Should().ContainSingle().Which;
-            bank.Name.Should().Be("Bank");
-            bank.Currencies.Should().Equal("GBP");
-            bank.Capabilities.Should().Contain(["HasOpeningBalance", "SupportsRoundUp"]);
+            templates!.Select(template => template.Name).Should().Equal("Bank", "CreditCard");
+            templates![0].Currencies.Should().Equal("GBP");
+            templates![0].Capabilities.Should().Contain(["HasOpeningBalance", "SupportsRoundUp"]);
+            templates![1].Currencies.Should().Equal("GBP");
+            templates![1].Capabilities.Should().Equal("HasCategories", "HasStatements", "ReceivesPayments");
         }
     }
 

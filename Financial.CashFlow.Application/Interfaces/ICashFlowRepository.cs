@@ -42,10 +42,6 @@ public interface ICashFlowRepository
     IEnumerable<ReserveBucket> GetReserveBuckets();
     void AddReserveBucket(ReserveBucket bucket);
 
-    IEnumerable<CreditCard> GetCreditCards();
-    void AddCreditCard(CreditCard card);
-    void DeleteCreditCard(Guid id);
-
     IEnumerable<Category> GetCategories();
     void AddCategory(Category category);
     void DeleteCategory(Guid id);

@@ -2,6 +2,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -100,7 +101,7 @@ public class InvestmentAccountTests
     [Fact]
     public void Create_WithSourceCreditCardAndCard_Succeeds()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
 
         var account = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
@@ -115,7 +116,7 @@ public class InvestmentAccountTests
     [Fact]
     public void Create_WithSourceReserveBucketsSumAndACard_Throws()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
 
         var act = () => InvestmentAccount.Create(
             "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.ReserveBucketsSum, creditCard);
@@ -135,7 +136,7 @@ public class InvestmentAccountTests
     [Fact]
     public void Update_SwitchingFromCreditCardToNone_ClearsCreditCard()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
         var account = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
 
@@ -151,7 +152,7 @@ public class InvestmentAccountTests
     [Fact]
     public void Update_SwitchingFromCreditCardToReserveBucketsSum_ClearsCreditCard()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
         var account = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
 
@@ -172,5 +173,14 @@ public class InvestmentAccountTests
         var act = () => account.Update("PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard);
 
         act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_CreditCardSourceLinkedToABank_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, TestAccounts.Bank("Chase"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
     }
 }

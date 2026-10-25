@@ -23,7 +23,7 @@ public class CapabilityGuardTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     private static Account MinimalWithout(Capability capability) =>
-        Minimal(Enum.GetValues<Capability>().Where(c => c != capability).ToArray());
+        Minimal(Enum.GetValues<Capability>().Where(c => c != capability && c != Capability.HasStatements).ToArray());
 
     [Fact]
     public void SetOpeningBalance_AccountWithOnlyHasOpeningBalance_Succeeds()
@@ -96,7 +96,7 @@ public class CapabilityGuardTests
     [Fact]
     public void Expense_Settle_PaymentSourceWithoutHasCategories_ThrowsAndStaysUnsettled()
     {
-        var card = CreditCard.Create("Amex");
+        var card = TestAccounts.CreditCard("Amex");
         var expense = Expense.Create(Date, "Groceries", 20m, _groceries, paymentSourceAccount: null, card);
 
         var act = () => expense.Settle(MinimalWithout(Capability.HasCategories), Date.AddDays(20));

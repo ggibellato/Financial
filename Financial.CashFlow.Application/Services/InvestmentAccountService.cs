@@ -158,14 +158,14 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         return parsed;
     }
 
-    private CreditCard? ResolveCreditCard(InvestmentAccountSource source, Guid? creditCardId)
+    private Account? ResolveCreditCard(InvestmentAccountSource source, Guid? creditCardId)
     {
         if (source != InvestmentAccountSource.CreditCard)
         {
             return null;
         }
 
-        if (!EntityIdResolver.TryResolve(creditCardId, _repository.GetCreditCards(), c => c.Id, out var creditCard))
+        if (!EntityIdResolver.TryResolve(creditCardId, _repository.GetCreditCardAccounts(), c => c.Id, out var creditCard))
         {
             throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
         }

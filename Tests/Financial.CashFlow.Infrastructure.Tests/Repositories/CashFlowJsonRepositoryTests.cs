@@ -520,16 +520,16 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void GetCreditCards_ReturnsCreditCardsFromTheUnderlyingData()
+    public void GetAccounts_IncludesCardAccountsFromTheUnderlyingData()
     {
         var path = Path.GetTempFileName();
         try
         {
             var data = CashFlowData.Create();
-            data.AddCreditCard(Domain.Entities.CreditCard.Create("Chase Freedom"));
+            data.AddAccount(TestAccounts.CreditCard("Chase Freedom"));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-            repository.GetCreditCards().Should().ContainSingle().Which.Name.Should().Be("Chase Freedom");
+            repository.GetAccounts().Should().ContainSingle().Which.Name.Should().Be("Chase Freedom");
         }
         finally
         {

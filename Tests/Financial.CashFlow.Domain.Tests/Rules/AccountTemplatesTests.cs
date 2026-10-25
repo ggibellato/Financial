@@ -26,6 +26,29 @@ public class AccountTemplatesTests
     }
 
     [Fact]
+    public void CapabilitiesOf_CreditCard_IsExactlyStatementsCategoriesAndPayments()
+    {
+        AccountTemplates.CapabilitiesOf(AccountTemplate.CreditCard).Should().BeEquivalentTo(new[]
+        {
+            Capability.HasStatements,
+            Capability.HasCategories,
+            Capability.ReceivesPayments
+        });
+    }
+
+    [Fact]
+    public void JoinsDefaultGroup_CreditCard_IsFalse()
+    {
+        AccountTemplates.JoinsDefaultGroup(AccountTemplate.CreditCard).Should().BeFalse();
+    }
+
+    [Fact]
+    public void AllowedCurrencies_CreditCard_IsGbpOnly()
+    {
+        AccountTemplates.AllowedCurrencies(AccountTemplate.CreditCard).Should().Equal(Currency.GBP);
+    }
+
+    [Fact]
     public void CapabilitiesOf_UndefinedTemplate_Throws()
     {
         var act = () => AccountTemplates.CapabilitiesOf((AccountTemplate)99);
@@ -60,9 +83,9 @@ public class AccountTemplatesTests
     }
 
     [Fact]
-    public void Available_ListsBank()
+    public void Available_ListsBankAndCreditCard()
     {
-        AccountTemplates.Available.Should().Equal(AccountTemplate.Bank);
+        AccountTemplates.Available.Should().Equal(AccountTemplate.Bank, AccountTemplate.CreditCard);
     }
 
     public static TheoryData<AccountTemplate> AvailableTemplates => new(AccountTemplates.Available);

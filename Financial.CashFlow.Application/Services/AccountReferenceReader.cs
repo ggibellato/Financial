@@ -19,9 +19,24 @@ internal static class AccountReferenceReader
         {
             yield return income.Account!.Id;
         }
-        foreach (var expense in repository.GetExpenses().Where(expense => expense.PaymentSourceAccount is not null))
+        foreach (var expense in repository.GetExpenses())
         {
-            yield return expense.PaymentSourceAccount!.Id;
+            if (expense.PaymentSourceAccount is not null)
+            {
+                yield return expense.PaymentSourceAccount.Id;
+            }
+            if (expense.CreditCard is not null)
+            {
+                yield return expense.CreditCard.Id;
+            }
+        }
+        foreach (var statement in repository.GetCardStatements())
+        {
+            yield return statement.CreditCard.Id;
+        }
+        foreach (var investmentAccount in repository.GetInvestmentAccounts().Where(account => account.CreditCard is not null))
+        {
+            yield return investmentAccount.CreditCard!.Id;
         }
         foreach (var transfer in repository.GetTransfers())
         {

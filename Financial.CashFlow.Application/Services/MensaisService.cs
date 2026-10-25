@@ -249,7 +249,7 @@ public sealed class MensaisService : IMensaisService
 
         var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), request.CategoryId);
         var bank = CashFlowReferenceResolver.ResolvePaymentSource(
-            _repository.GetAccounts().Where(account => account.Has(Capability.CanPayBills)), request.PaymentSourceBankId);
+            _repository.GetAccounts().Where(account => account.Has(Capability.CanPayBills) || account.Has(Capability.HasStatements)), request.PaymentSourceBankId);
 
         return Expense.Create(request.Date, request.Description, request.Value, category, bank, creditCard: null);
     }

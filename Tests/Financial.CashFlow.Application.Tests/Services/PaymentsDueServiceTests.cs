@@ -42,14 +42,10 @@ public class PaymentsDueServiceTests
     private static RecurringBill CreateBill(int dueDay, string description = "Internet") =>
         RecurringBill.Create(dueDay, description, 50m, Area.UK, string.Empty, null, null);
 
-    private static CreditCard CreateCard(string name, DateOnly? nextInvoiceDueDate)
-    {
-        var card = CreditCard.Create(name);
-        card.Update(name, isActive: true, nextInvoiceDueDate);
-        return card;
-    }
+    private static Account CreateCard(string name, DateOnly? nextInvoiceDueDate) =>
+        TestAccounts.CreditCard(name, nextInvoiceDueDate: nextInvoiceDueDate);
 
-    private void AddStatement(CreditCard card, DateOnly period, bool paid = false)
+    private void AddStatement(Account card, DateOnly period, bool paid = false)
     {
         var statement = CardStatement.Create(card, period.Year, period.Month);
         if (paid)
@@ -116,9 +112,10 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public void GetPaymentsDue_CreditCardWithNextInvoiceDueDateInWindow_IsIncluded()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday.AddDays(3)));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(3)));
 
         var result = _sut.GetPaymentsDue();
 
@@ -132,11 +129,12 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public void GetPaymentsDue_CreditCardWithPaidStatementForInvoicePeriod_IsExcluded()
     {
         var dueDate = PinnedToday.AddDays(3);
         var card = CreateCard("Nubank", dueDate);
-        _repository.AddCreditCard(card);
+        _repository.AddAccount(card);
         AddStatement(card, dueDate, paid: true);
 
         var result = _sut.GetPaymentsDue();
@@ -149,7 +147,7 @@ public class PaymentsDueServiceTests
     {
         var dueDate = PinnedToday.AddDays(3);
         var card = CreateCard("Nubank", dueDate);
-        _repository.AddCreditCard(card);
+        _repository.AddAccount(card);
         AddStatement(card, dueDate);
 
         var result = _sut.GetPaymentsDue();
@@ -162,7 +160,7 @@ public class PaymentsDueServiceTests
     {
         var dueDate = PinnedToday.AddDays(3);
         var card = CreateCard("Nubank", dueDate);
-        _repository.AddCreditCard(card);
+        _repository.AddAccount(card);
         AddStatement(card, dueDate.AddMonths(-1), paid: true);
 
         var result = _sut.GetPaymentsDue();
@@ -173,7 +171,7 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_CreditCardWithNullNextInvoiceDueDate_IsExcluded()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", nextInvoiceDueDate: null));
+        _repository.AddAccount(CreateCard("Nubank", nextInvoiceDueDate: null));
 
         var result = _sut.GetPaymentsDue();
 
@@ -183,7 +181,7 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_DueDateEqualsToday_DaysRemainingIsZero()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday));
 
         var result = _sut.GetPaymentsDue();
 
@@ -193,7 +191,7 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_DueDateFiveDaysOut_IsIncludedWithDaysRemainingFive()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday.AddDays(5)));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(5)));
 
         var result = _sut.GetPaymentsDue();
 
@@ -203,7 +201,7 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_DueDateSixDaysOut_IsExcluded()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday.AddDays(6)));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(6)));
 
         var result = _sut.GetPaymentsDue();
 
@@ -213,7 +211,7 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_DueDateInPast_IsExcluded()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday.AddDays(-1)));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(-1)));
 
         var result = _sut.GetPaymentsDue();
 
@@ -223,9 +221,9 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_MultipleQualifyingPayments_SortedByDueDateAscending()
     {
-        _repository.AddCreditCard(CreateCard("Third", PinnedToday.AddDays(4)));
-        _repository.AddCreditCard(CreateCard("First", PinnedToday));
-        _repository.AddCreditCard(CreateCard("Second", PinnedToday.AddDays(2)));
+        _repository.AddAccount(CreateCard("Third", PinnedToday.AddDays(4)));
+        _repository.AddAccount(CreateCard("First", PinnedToday));
+        _repository.AddAccount(CreateCard("Second", PinnedToday.AddDays(2)));
 
         var result = _sut.GetPaymentsDue();
 
@@ -236,7 +234,7 @@ public class PaymentsDueServiceTests
     public void GetPaymentsDue_SameDueDate_MensaisSortsBeforeCreditCard()
     {
         var sharedDueDay = PinnedToday.AddDays(2).Day;
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday.AddDays(2)));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(2)));
         _repository.AddRecurringBill(CreateBill(sharedDueDay, "Internet"));
 
         var result = _sut.GetPaymentsDue();
@@ -247,8 +245,8 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_SameDueDateAndType_SortedByNameAscending()
     {
-        _repository.AddCreditCard(CreateCard("Beta", PinnedToday.AddDays(1)));
-        _repository.AddCreditCard(CreateCard("Alpha", PinnedToday.AddDays(1)));
+        _repository.AddAccount(CreateCard("Beta", PinnedToday.AddDays(1)));
+        _repository.AddAccount(CreateCard("Alpha", PinnedToday.AddDays(1)));
 
         var result = _sut.GetPaymentsDue();
 
@@ -269,7 +267,7 @@ public class PaymentsDueServiceTests
     [Fact]
     public void GetPaymentsDue_RecurringBillRepositoryThrows_ReturnsCreditCardsOnlyAndLogsError()
     {
-        _repository.AddCreditCard(CreateCard("Nubank", PinnedToday));
+        _repository.AddAccount(CreateCard("Nubank", PinnedToday));
         _repository.ThrowOnNextGetRecurringBills = true;
 
         var result = _sut.GetPaymentsDue();
@@ -281,7 +279,7 @@ public class PaymentsDueServiceTests
     public void GetPaymentsDue_CreditCardRepositoryThrows_ReturnsMensaisOnlyAndLogsError()
     {
         _repository.AddRecurringBill(CreateBill(PinnedToday.Day, "Internet"));
-        _repository.ThrowOnNextGetCreditCards = true;
+        _repository.ThrowOnNextRead = new InvalidOperationException("Simulated read failure.");
 
         var result = _sut.GetPaymentsDue();
 

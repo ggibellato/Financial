@@ -6,7 +6,7 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Text.Json;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
@@ -25,7 +25,7 @@ public class CashFlowSerializerAdapterTests
     {
         var original = CashFlowData.Create();
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
-        var creditCard = CreditCard.Create("Barclays Platinum Visa 8003", isActive: true);
+        var creditCard = TestAccounts.CreditCard("Barclays Platinum Visa 8003", isActive: true, nextInvoiceDueDate: new DateOnly(2026, 8, 18));
         var category = Category.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
         var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
@@ -52,7 +52,7 @@ public class CashFlowSerializerAdapterTests
         var titheCarryForward = TitheCarryForward.Create(2026, 8, false);
 
         original.AddReserveBucket(reserveBucket);
-        original.AddCreditCard(creditCard);
+        original.AddAccount(creditCard);
         original.AddCategory(category);
         original.AddExpense(expense);
         original.AddReserveMovement(reserveMovement);
@@ -108,7 +108,7 @@ public class CashFlowSerializerAdapterTests
             resultInvestmentAccount.IsActive.Should().Be(investmentAccount.IsActive);
             resultInvestmentAccount.IsLiability.Should().Be(investmentAccount.IsLiability);
             resultInvestmentAccount.Source.Should().Be(InvestmentAccountSource.CreditCard);
-            var resultBanks = result.Accounts.Should().HaveCount(2).And.Subject;
+            var resultBanks = result.Accounts.Should().HaveCount(3).And.Subject;
             var resultBank = resultBanks.Should().ContainSingle(b => b.Id == bank.Id).Subject;
             resultBank.Name.Should().Be(bank.Name);
             resultBank.RoundUp!.Enabled.Should().Be(bank.RoundUp!.Enabled);
@@ -138,10 +138,12 @@ public class CashFlowSerializerAdapterTests
             resultBalanceAdjustment.TargetBalance.Should().Be(balanceAdjustment.TargetBalance);
             resultBalanceAdjustment.Delta.Should().Be(balanceAdjustment.Delta);
             resultBalanceAdjustment.Note.Should().Be(balanceAdjustment.Note);
-            var resultCreditCard = result.CreditCards.Should().ContainSingle().Which;
+            var resultCreditCard = result.Accounts.Should().ContainSingle(a => a.Template == AccountTemplate.CreditCard).Which;
             resultCreditCard.Id.Should().Be(creditCard.Id);
             resultCreditCard.Name.Should().Be(creditCard.Name);
             resultCreditCard.IsActive.Should().Be(creditCard.IsActive);
+            resultCreditCard.Currency.Should().Be(Currency.GBP);
+            resultCreditCard.NextInvoiceDueDate.Should().Be(new DateOnly(2026, 8, 18));
             var resultCategory = result.Categories.Should().ContainSingle().Which;
             resultCategory.Id.Should().Be(category.Id);
             resultCategory.Name.Should().Be(category.Name);
@@ -406,7 +408,7 @@ public class CashFlowSerializerAdapterTests
         result.Accounts.Should().BeEmpty();
         result.IncomeSources.Should().BeEmpty();
         result.ReserveBuckets.Should().BeEmpty();
-        result.CreditCards.Should().BeEmpty();
+        result.Accounts.Should().BeEmpty();
         result.Categories.Should().BeEmpty();
         result.Incomes.Should().BeEmpty();
         result.Transfers.Should().BeEmpty();

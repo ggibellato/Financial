@@ -137,7 +137,7 @@ function Export-ParitySide([string]$Side, [string]$Folder, [string]$AppFolder, [
         $hashBeforeRead = Get-ParitySha256 $dataFile
         $baseUrl = $api.BaseUrl
         $fetch = { param($path) ConvertFrom-ParityJson $client.GetStringAsync("$baseUrl/$path").GetAwaiter().GetResult() }.GetNewClosure()
-        $report = Get-ParityReport -Fetch $fetch -First $RunInfo.range.first -Last $RunInfo.range.last -Side $sideKey -IncludeSummary:($sideKey -eq 'after') -IncludeAccounts:($sideKey -eq 'after')
+        $report = Get-ParityReport -Fetch $fetch -First $RunInfo.range.first -Last $RunInfo.range.last -Side $sideKey -CurrentMonth $RunInfo.range.currentMonth -IncludeSummary:($sideKey -eq 'after') -IncludeAccounts:($sideKey -eq 'after')
     }
     finally { $client.Dispose() }
     Set-Content -LiteralPath (Join-Path $Folder "$sideKey-report.json") -Value (ConvertTo-ParityReportJson $report) -NoNewline -Encoding utf8

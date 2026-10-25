@@ -9,5 +9,7 @@ public enum Capability
     CanReceiveTransfers,
     CanReconcile,
     CanPayBills,
-    SupportsRoundUp
+    SupportsRoundUp,
+    HasStatements,
+    ReceivesPayments
 }

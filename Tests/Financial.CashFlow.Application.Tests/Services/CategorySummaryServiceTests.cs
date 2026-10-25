@@ -9,7 +9,6 @@ using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -24,8 +23,8 @@ public class CategorySummaryServiceTests
     private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
     private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
     private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
-    private static readonly CreditCard BarclaysPlatinumVisa8003 = CreditCard.Create("BarclaysPlatinumVisa8003");
-    private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
+    private static readonly Account BarclaysPlatinumVisa8003 = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
+    private static readonly Account BaAmex = TestAccounts.CreditCard("BaAmex");
 
     private static IncomeSource Source(string name) => IncomeSource.Create(name, IncomeGroup.NonReportable);
 
@@ -170,7 +169,7 @@ public class CategorySummaryServiceTests
     public async Task GetCategoryTotalsAnnualForYear_StatementPaidInTheFollowingMonth_KeepsItsChargesInTheStatementMonth()
     {
         var repository = CreateRepository(seedDefaultBanks: true, seedDefaultCreditCards: true);
-        var card = repository.CreditCards.First(c => c.Name == "BarclaysPlatinumVisa8003");
+        var card = repository.CardAccounts.First(c => c.Name == "BarclaysPlatinumVisa8003");
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Groceries", 30m, CategoryByName(repository, "Mercado"), null, card));
         repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 20), "Groceries", 20m, CategoryByName(repository, "Mercado"), null, card));
         var cardStatements = new CardStatementService(
