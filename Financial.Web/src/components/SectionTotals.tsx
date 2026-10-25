@@ -1,9 +1,5 @@
-import { Fragment, type ReactNode } from 'react'
-
-export interface SectionTotalItem {
-  label: string
-  value: ReactNode
-}
+import { Fragment } from 'react'
+import type { SectionTotalItem } from '../utils/currencyFooterItems'
 
 export default function SectionTotals({ items }: { items: SectionTotalItem[] }) {
   return (

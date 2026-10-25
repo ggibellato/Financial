@@ -3,7 +3,8 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/re
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import SectionTotals, { type SectionTotalItem } from './SectionTotals'
+import SectionTotals from './SectionTotals'
+import type { SectionTotalItem } from '../utils/currencyFooterItems'
 
 interface TotalsGridColumn<T> {
   key: string

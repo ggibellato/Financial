@@ -1,6 +1,11 @@
 import type { CurrencyTotalDto } from '../api/types'
-import type { SectionTotalItem } from '../components/SectionTotals'
+import type { ReactNode } from 'react'
 import { formatN2 } from './formatters'
+
+export interface SectionTotalItem {
+  label: string
+  value: ReactNode
+}
 
 export interface CurrencyFigure {
   label: string

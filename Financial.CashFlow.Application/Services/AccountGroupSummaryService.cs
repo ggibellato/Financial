@@ -84,7 +84,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
 
     private static AccountGroupStatementDTO? StatementFor(
         Account account, int year, int month, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>
-        account.BalanceIsOwed
+        account.Has(Capability.HasStatements)
             ? new AccountGroupStatementDTO
             {
                 OutstandingTotal = CardChargeFilter.OutstandingTotal(expenses, account, year, month),
