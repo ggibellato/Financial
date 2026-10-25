@@ -179,10 +179,10 @@ public sealed class CreditCardService : ICreditCardService
 
     private void SetDueDate(Account card, DateOnly? dueDate)
     {
-        var statements = _repository.GetCardStatements().Where(statement => statement.CreditCard.Id == card.Id).ToList();
-        var cleared = dueDate is { } date
-            ? statements.Where(statement => (statement.Year, statement.Month).CompareTo((date.Year, date.Month)) > 0)
-            : statements;
+        var cleared = _repository.GetCardStatements()
+            .Where(statement => statement.CreditCard.Id == card.Id
+                && (dueDate is null || (statement.Year, statement.Month).CompareTo((dueDate.Value.Year, dueDate.Value.Month)) > 0))
+            .ToList();
 
         foreach (var statement in cleared)
         {

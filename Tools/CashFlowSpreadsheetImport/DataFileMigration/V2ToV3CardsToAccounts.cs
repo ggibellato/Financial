@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using static Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration.DataFileMigrationJson;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 
@@ -21,9 +22,10 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
 
         var cards = Objects(root, "CreditCards");
         var cardIds = cards.Select(card => IdText(card["Id"], "CreditCard")).ToList();
+        var knownCardIds = cardIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var reference in CardReferences)
         {
-            EnsureCardReferencesExist(root, reference, cardIds.ToHashSet(StringComparer.OrdinalIgnoreCase));
+            EnsureCardReferencesExist(root, reference, knownCardIds);
         }
 
         var accounts = root["Accounts"] as JsonArray ?? [];
@@ -41,6 +43,8 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
             statement["DueDate"] = null;
         }
 
+        var statementCountBefore = statements.Count;
+
         var charges = Objects(root, "Expenses")
             .Where(expense => expense["CreditCardId"] is not null && expense["InvoiceDate"] is not null)
             .Select(expense => new Charge(
@@ -49,7 +53,6 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
                 expense["PaymentSourceAccountId"] is not null))
             .ToList();
 
-        var added = 0;
         foreach (var cardId in cardIds)
         {
             var months = charges
@@ -60,39 +63,22 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
 
             foreach (var (year, month) in months)
             {
-                if (StatementFor(statements, cardId, year, month) is null)
-                {
-                    statements.Add(NewStatement(cardId, year, month, charges));
-                    added++;
-                }
+                EnsureStatement(statements, cardId, year, month, charges);
             }
         }
 
-        var moved = 0;
-        foreach (var card in cards)
+        var dueDates = cards.Zip(cardIds, (card, cardId) => (DueDate: card["NextInvoiceDueDate"], CardId: cardId))
+            .Where(card => card.DueDate is not null)
+            .ToList();
+        foreach (var (dueDateNode, cardId) in dueDates)
         {
-            if (card["NextInvoiceDueDate"] is not { } dueDateNode)
-            {
-                continue;
-            }
-
-            var cardId = IdText(card["Id"], "CreditCard");
-            var dueDate = DateOnly.Parse(dueDateNode.GetValue<string>());
-            var statement = StatementFor(statements, cardId, dueDate.Year, dueDate.Month);
-            if (statement is null)
-            {
-                statement = NewStatement(cardId, dueDate.Year, dueDate.Month, charges);
-                statements.Add(statement);
-                added++;
-            }
-
-            statement["DueDate"] = dueDateNode.DeepClone();
-            moved++;
+            var dueDate = DateOnly.Parse(dueDateNode!.GetValue<string>());
+            EnsureStatement(statements, cardId, dueDate.Year, dueDate.Month, charges)["DueDate"] = dueDateNode.DeepClone();
         }
 
         root.Remove("CreditCards");
 
-        return $"{cards.Count} cards became accounts; {added} statements added; {moved} due dates moved to statements";
+        return $"{cards.Count} cards became accounts; {statements.Count - statementCountBefore} statements added; {dueDates.Count} due dates moved to statements";
     }
 
     private static JsonObject ToAccount(JsonObject card) => new()
@@ -105,6 +91,18 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
         ["OpeningBalance"] = null,
         ["RoundUp"] = null
     };
+
+    private static JsonObject EnsureStatement(JsonArray statements, string cardId, int year, int month, IReadOnlyList<Charge> charges)
+    {
+        if (StatementFor(statements, cardId, year, month) is { } existing)
+        {
+            return existing;
+        }
+
+        var statement = NewStatement(cardId, year, month, charges);
+        statements.Add(statement);
+        return statement;
+    }
 
     private static JsonObject NewStatement(string cardId, int year, int month, IReadOnlyList<Charge> charges) => new()
     {
@@ -143,17 +141,7 @@ public sealed class V2ToV3CardsToAccounts : IDataFileMigrationStep
         }
     }
 
-    private static List<JsonObject> Objects(JsonObject root, string collection) =>
-        (root[collection] as JsonArray ?? [])
-            .Select(item => item as JsonObject ?? throw new InvalidDataException($"{collection} contains a value that is not an object: {item?.ToJsonString() ?? "null"}"))
-            .ToList();
-
     private static bool SameId(string left, string right) => string.Equals(left, right, StringComparison.OrdinalIgnoreCase);
-
-    private static string IdText(JsonNode? id, string owner) =>
-        id is JsonValue value && value.TryGetValue<string>(out var text)
-            ? text
-            : throw new InvalidDataException($"{owner} has an Id that is not a string: {id?.ToJsonString() ?? "null"}");
 
     private sealed record Charge(string CardId, DateOnly InvoiceDate, bool IsSettled);
 }

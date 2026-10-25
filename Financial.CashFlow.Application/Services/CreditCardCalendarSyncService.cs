@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Models;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -317,8 +318,11 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
         }
     }
 
-    private List<Guid> QualifyingCreditCardIds() =>
-        _repository.GetCreditCardAccounts().Where(c => c.IsActive && _repository.GetCardDueDate(c) is not null).Select(c => c.Id).ToList();
+    private List<Guid> QualifyingCreditCardIds()
+    {
+        var statements = _repository.GetCardStatements().ToList();
+        return _repository.GetCreditCardAccounts().Where(c => c.IsActive && CardDueDate.For(c, statements) is not null).Select(c => c.Id).ToList();
+    }
 
     private void SetEventMapping(Guid creditCardId, string eventId, CalendarConnection connection)
     {

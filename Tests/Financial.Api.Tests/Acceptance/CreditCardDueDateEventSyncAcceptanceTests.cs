@@ -120,7 +120,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         Connect();
         var clearedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
         var deactivatedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003"); // ChaseMaster4023
-        var datedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000005"); // PaypalCredit
+        var datedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000005");
 
         foreach (var (id, name) in new[] { (clearedCardId, "BaAmex"), (deactivatedCardId, "ChaseMaster4023"), (datedCardId, "PaypalCredit") })
         {

@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using static Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration.DataFileMigrationJson;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 
@@ -23,9 +24,7 @@ public sealed class V1ToV2BanksToAccounts : IDataFileMigrationStep
     {
         ArgumentNullException.ThrowIfNull(root);
 
-        var banks = (root["Banks"] as JsonArray ?? [])
-            .Select(bank => bank as JsonObject ?? throw new InvalidDataException($"Banks contains a value that is not an object: {bank?.ToJsonString() ?? "null"}"))
-            .ToList();
+        var banks = Objects(root, "Banks");
         var bankIds = banks.Select(bank => IdText(bank["Id"], "Bank")).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var accounts = new JsonArray([.. banks.Select(bank => (JsonNode?)ToAccount(bank))]);
@@ -92,9 +91,4 @@ public sealed class V1ToV2BanksToAccounts : IDataFileMigrationStep
 
         return renamed;
     }
-
-    private static string IdText(JsonNode? id, string owner) =>
-        id is JsonValue value && value.TryGetValue<string>(out var text)
-            ? text
-            : throw new InvalidDataException($"{owner} has an Id that is not a string: {id?.ToJsonString() ?? "null"}");
 }

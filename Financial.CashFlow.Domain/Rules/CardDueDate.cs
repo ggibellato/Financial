@@ -10,8 +10,6 @@ public static class CardDueDate
     public static DateOnly? For(Account card, IEnumerable<CardStatement> statements) =>
         statements
             .Where(statement => statement.CreditCard.Id == card.Id && statement.DueDate is not null)
-            .OrderByDescending(statement => statement.Year)
-            .ThenByDescending(statement => statement.Month)
-            .Select(statement => statement.DueDate)
-            .FirstOrDefault();
+            .MaxBy(statement => (statement.Year, statement.Month))
+            ?.DueDate;
 }

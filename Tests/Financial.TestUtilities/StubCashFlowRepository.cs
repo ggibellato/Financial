@@ -149,7 +149,8 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public void SetCardDueDate(Account card, DateOnly? dueDate)
     {
-        foreach (var dated in CardStatements.Where(statement => statement.CreditCard.Id == card.Id))
+        foreach (var dated in CardStatements.Where(statement => statement.CreditCard.Id == card.Id
+            && (dueDate is null || (statement.Year, statement.Month).CompareTo((dueDate.Value.Year, dueDate.Value.Month)) > 0)))
         {
             dated.SetDueDate(null);
         }
