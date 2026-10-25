@@ -96,6 +96,25 @@ describe('AccountsPage', () => {
     expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
   })
 
+  it('[AC P60-F07-credit-card-template-and-card-migration-08] shows a card\'s balance as owed and names its template "Credit card"', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+        { accountId: 'visa', name: 'Visa', templateName: 'CreditCard', currency: 'GBP', balance: 0, roundUpTotal: null, statement: { outstandingTotal: 0, isPaid: false }, balanceIsOwed: true },
+      ],
+    })
+    renderPage()
+
+    const amexRow = (await screen.findByRole('link', { name: 'BA Amex' })).closest('tr')!
+    expect(within(amexRow).getByText('Credit card')).toBeInTheDocument()
+    expect(within(amexRow).getByText('Owed 812.33')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: 'Visa' }).closest('tr')!).getByText('Owed 0.00')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('Bank')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('2,800.25')).toBeInTheDocument()
+  })
+
   it('shows the month the balances belong to', async () => {
     renderPage()
 

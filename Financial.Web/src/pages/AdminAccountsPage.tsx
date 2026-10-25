@@ -10,6 +10,7 @@ import TruncatedText from '../components/TruncatedText'
 import { useAdminAccounts } from '../hooks/useAdminAccounts'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import type { AccountDto, AccountUpdateDto } from '../api/types'
+import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { getSaveErrorMessage } from '../utils/formatters'
 
 type FormTarget = { mode: 'create' } | { mode: 'edit'; account: AccountDto }
@@ -140,7 +141,7 @@ export default function AdminAccountsPage() {
           {accounts.map((account) => (
             <TableRow key={account.id}>
               <DataTableCell label="Name"><TruncatedText text={account.name} /></DataTableCell>
-              <DataTableCell label="Template">{account.templateName}</DataTableCell>
+              <DataTableCell label="Template">{accountTemplateLabel(account.templateName)}</DataTableCell>
               <DataTableCell label="Currency">{account.currency}</DataTableCell>
               <DataTableCell label="Active">{account.isActive ? 'Active' : 'Inactive'}</DataTableCell>
               <RowActionsCell

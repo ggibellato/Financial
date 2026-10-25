@@ -10,7 +10,21 @@ const ACCOUNTS: AccountDto[] = [
   account({ id: 'chase', name: 'Chase' }),
   account({ id: 'old', name: 'Old Savings', isActive: false }),
   account({ id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL' }),
+  account({ id: 'amex', name: 'BA Amex', templateName: 'CreditCard' }),
 ]
+
+const AMEX: AccountDetailDto = {
+  id: 'amex',
+  name: 'BA Amex',
+  templateName: 'CreditCard',
+  currency: 'GBP',
+  isActive: true,
+  year: 2026,
+  month: 10,
+  balance: -812.33,
+  balanceIsOwed: true,
+  allowedActions: [],
+}
 
 const BARCLAYS: AccountDetailDto = {
   id: 'barclays',
@@ -54,6 +68,21 @@ describe('AccountHeader', () => {
     expect(screen.getByText('1,234.56 GBP')).toBeInTheDocument()
   })
 
+  it('[AC P60-F07-credit-card-template-and-card-migration-08] shows a card\'s month-end balance as owed, under its template\'s display name', () => {
+    renderHeader(AMEX)
+
+    expect(screen.getByText('Credit card · GBP')).toBeInTheDocument()
+    expect(screen.getByText('Owed at end of October 2026')).toBeInTheDocument()
+    expect(screen.getByText('812.33 GBP')).toBeInTheDocument()
+    expect(screen.queryByText(/^Balance at end of/)).not.toBeInTheDocument()
+  })
+
+  it('shows a card that owes nothing as 0.00, not -0.00', () => {
+    renderHeader({ ...AMEX, balance: 0 })
+
+    expect(screen.getByText('0.00 GBP')).toBeInTheDocument()
+  })
+
   it('shows no Inactive badge for an active account', () => {
     renderHeader()
 
@@ -76,6 +105,7 @@ describe('AccountHeader', () => {
     const bankGroup = screen.getByRole('group', { name: 'Bank' })
     expect(within(bankGroup).getAllByRole('option').map((option) => option.textContent)).toEqual(['Barclays', 'Chase'])
     expect(within(screen.getByRole('group', { name: 'Cash' })).getByRole('option', { name: 'Wallet' })).toBeInTheDocument()
+    expect(within(screen.getByRole('group', { name: 'Credit card' })).getByRole('option', { name: 'BA Amex' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Old Savings' })).not.toBeInTheDocument()
   })
 

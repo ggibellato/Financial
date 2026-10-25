@@ -4,7 +4,9 @@ import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import TotalsGrid from '../components/TotalsGrid'
 import { DEFAULT_GROUP_LOAD_ERROR, useDefaultGroupAccounts } from '../hooks/useDefaultGroupAccounts'
+import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatN2 } from '../utils/formatters'
+import { OWED_LABEL, shownBalance } from '../utils/owedBalance'
 import './AccountsPage.css'
 
 export default function AccountsPage() {
@@ -43,8 +45,8 @@ export default function AccountsPage() {
             {
               key: 'template',
               header: 'Template',
-              render: (row) => row.templateName,
-              sortAccessor: (row) => row.templateName,
+              render: (row) => accountTemplateLabel(row.templateName),
+              sortAccessor: (row) => accountTemplateLabel(row.templateName),
             },
             {
               key: 'currency',
@@ -56,7 +58,8 @@ export default function AccountsPage() {
               key: 'balance',
               header: 'Balance',
               numeric: true,
-              render: (row) => formatN2(row.balance),
+              render: (row) =>
+                row.balanceIsOwed ? `${OWED_LABEL} ${formatN2(shownBalance(row.balance, true))}` : formatN2(row.balance),
               sortAccessor: (row) => row.balance,
             },
           ]}

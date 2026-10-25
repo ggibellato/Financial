@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto } from '../api/types'
+import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
+import { OWED_LABEL, shownBalance } from '../utils/owedBalance'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
@@ -16,9 +18,10 @@ interface AccountHeaderProps {
 function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][] {
   const groups = new Map<string, AccountDto[]>()
   for (const account of accounts.filter((candidate) => candidate.isActive)) {
-    const members = groups.get(account.templateName)
+    const label = accountTemplateLabel(account.templateName)
+    const members = groups.get(label)
     if (members) members.push(account)
-    else groups.set(account.templateName, [account])
+    else groups.set(label, [account])
   }
   return [...groups.entries()]
 }
@@ -51,14 +54,16 @@ export default function AccountHeader({
             )}
           </div>
           <Text>
-            {account.templateName} · {account.currency}
+            {accountTemplateLabel(account.templateName)} · {account.currency}
           </Text>
         </div>
 
         <div className="account-screen__balance">
-          <Text size={200}>Balance at end of {formatLongMonthYear(account.year, account.month)}</Text>
+          <Text size={200}>
+            {account.balanceIsOwed ? OWED_LABEL : 'Balance'} at end of {formatLongMonthYear(account.year, account.month)}
+          </Text>
           <Text size={500} weight="semibold">
-            {formatN2(account.balance)} {account.currency}
+            {formatN2(shownBalance(account.balance, account.balanceIsOwed))} {account.currency}
           </Text>
         </div>
       </div>
@@ -72,8 +77,8 @@ export default function AccountHeader({
               if (data.optionValue && data.optionValue !== selectedAccountId) onAccountSelect(data.optionValue)
             }}
           >
-            {pickerGroups.map(([templateName, members]) => (
-              <OptionGroup key={templateName} label={templateName}>
+            {pickerGroups.map(([templateLabel, members]) => (
+              <OptionGroup key={templateLabel} label={templateLabel}>
                 {members.map((member) => (
                   <Option key={member.id} value={member.id} text={member.name}>
                     {member.name}

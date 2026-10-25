@@ -34,6 +34,7 @@ const TEMPLATES: AccountTemplateDto[] = [
 const BARCLAYS = account({ id: 'a1', name: 'Barclays', hasRecords: true })
 const CHASE = account({ id: 'a2', name: 'Chase', hasRecords: true, isActive: false })
 const MONZO = account({ id: 'a3', name: 'Monzo' })
+const AMEX = account({ id: 'a4', name: 'BA Amex', templateName: 'CreditCard', openingBalance: null, balanceStartDate: null, roundUpEnabled: null })
 
 function renderPage() {
   render(
@@ -51,6 +52,15 @@ describe('AdminAccountsPage', () => {
     vi.resetAllMocks()
     getAccountsMock.mockResolvedValue([BARCLAYS, CHASE, MONZO])
     getAccountTemplatesMock.mockResolvedValue(TEMPLATES)
+  })
+
+  it('names a card account\'s template "Credit card"', async () => {
+    getAccountsMock.mockResolvedValue([BARCLAYS, AMEX])
+    renderPage()
+
+    expect(await screen.findByRole('table', { name: 'Accounts' })).toBeInTheDocument()
+    expect(within(rowOf('BA Amex')).getByText('Credit card')).toBeInTheDocument()
+    expect(within(rowOf('Barclays')).getByText('Bank')).toBeInTheDocument()
   })
 
   it('lists each account with its template, currency and status in words', async () => {

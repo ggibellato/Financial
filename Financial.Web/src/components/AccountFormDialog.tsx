@@ -7,6 +7,7 @@ import { useFormPanelStyles } from './formPanelStyles'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
+import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { todayIsoDate } from '../utils/formatters'
 
 const UNSET_START_DATE = '0001-01-01'
@@ -178,7 +179,8 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
     if (!isSaving) discardPrompt.confirmDiscard(onCancel)
   }
 
-  const currencyHint = isLocked ? LOCKED_HINT : isCurrencyFixed ? `${values.templateName} accounts use ${values.currency}.` : undefined
+  const templateLabel = accountTemplateLabel(values.templateName)
+  const currencyHint = isLocked ? LOCKED_HINT : isCurrencyFixed ? `${templateLabel} accounts use ${values.currency}.` : undefined
 
   return (
     <EntityFormDialog
@@ -199,12 +201,12 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
           validationMessage={fieldMessage('template')}
         >
           {isLocked ? (
-            <Input ref={templateRef} value={values.templateName} readOnly />
+            <Input ref={templateRef} value={templateLabel} readOnly />
           ) : (
             <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
               {templates.map((candidate) => (
                 <option key={candidate.name} value={candidate.name}>
-                  {candidate.name}
+                  {accountTemplateLabel(candidate.name)}
                 </option>
               ))}
             </Select>

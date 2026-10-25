@@ -11,6 +11,7 @@ const BANK: AccountTemplateDto = {
   capabilities: ['HasOpeningBalance', 'ReceivesIncome', 'SupportsRoundUp'],
 }
 const PLAIN: AccountTemplateDto = { name: 'Plain', currencies: ['GBP', 'BRL'], capabilities: [] }
+const CREDIT_CARD: AccountTemplateDto = { name: 'CreditCard', currencies: ['GBP'], capabilities: ['HasStatements', 'HasCategories', 'ReceivesPayments'] }
 
 function renderDialog(props: Partial<Parameters<typeof AccountFormDialog>[0]> = {}) {
   const onSubmit = vi.fn<(values: unknown) => Promise<unknown>>().mockResolvedValue(undefined)
@@ -169,6 +170,28 @@ describe('AccountFormDialog', () => {
     await waitFor(() => expect(screen.getByLabelText(/Name/)).toBeDisabled())
     expect(screen.getByRole('button', { name: 'Add account' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  })
+
+  it('names each template by its display name while keeping its name as the value', () => {
+    renderDialog({ templates: [BANK, CREDIT_CARD] })
+
+    const template = screen.getByLabelText(/Template/)
+    expect(within(template).getAllByRole('option').map((option) => [option.textContent, option.getAttribute('value')])).toEqual([
+      ['Bank', 'Bank'],
+      ['Credit card', 'CreditCard'],
+    ])
+    fireEvent.change(template, { target: { value: 'CreditCard' } })
+    expect(template).toHaveValue('CreditCard')
+    expect(screen.getByText('Credit card accounts use GBP.')).toBeInTheDocument()
+  })
+
+  it('shows a card account\'s read-only template by its display name', () => {
+    renderDialog({
+      account: account({ id: 'a4', name: 'BA Amex', templateName: 'CreditCard', hasRecords: true, openingBalance: null, balanceStartDate: null, roundUpEnabled: null }),
+      templates: [BANK, CREDIT_CARD],
+    })
+
+    expect(screen.getByLabelText(/Template/)).toHaveValue('Credit card')
   })
 
   it('[AC P60-F06-admin-accounts-page-03] shows template and currency as read-only for an account with records', () => {
