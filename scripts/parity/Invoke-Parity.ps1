@@ -4,7 +4,7 @@ param(
     [string]$WorkFolder,
     [int]$BeforePort = 5291,
     [int]$AfterPort = 5292,
-    [string]$BaselineTag = 'p60-deployed-f05',
+    [string]$BaselineTag = 'p60-deployed-f06',
     [switch]$KeepRunning,
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 )
