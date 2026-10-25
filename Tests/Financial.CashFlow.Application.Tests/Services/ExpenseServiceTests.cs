@@ -1051,4 +1051,69 @@ public class ExpenseServiceTests
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ExpenseService.GetCategoryTotalsByMonth");
     }
+
+    private IEnumerable<(int Year, int Month)> StatementMonthsOf(string cardName) =>
+        _repository.CardStatements.Where(s => s.CreditCard.Name == cardName).Select(s => (s.Year, s.Month));
+
+    [Fact]
+    public async Task AddExpenseAsync_CardChargesInAMonthWithoutAStatement_CreateItOnce()
+    {
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Value = 5m }));
+
+        using (new AssertionScope())
+        {
+            StatementMonthsOf("BaAmex").Should().Equal((2026, 9));
+            _repository.CardStatements.Single().IsPaid.Should().BeFalse();
+            _repository.CardStatements.Single().DueDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_CardChargeInAMonthWithAStatement_KeepsItsPaidFlagAndDueDate()
+    {
+        var card = _repository.CardAccounts.Single(c => c.Name == "BaAmex");
+        var statement = CardStatement.Create(card, 2026, 9);
+        statement.MarkPaid();
+        statement.SetDueDate(new DateOnly(2026, 9, 18));
+        _repository.CardStatements.Add(statement);
+
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        using (new AssertionScope())
+        {
+            _repository.CardStatements.Should().Equal(statement);
+            statement.IsPaid.Should().BeTrue();
+            statement.DueDate.Should().Be(new DateOnly(2026, 9, 18));
+        }
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_BankExpense_CreatesNoStatement()
+    {
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
+
+        _repository.CardStatements.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_BankExpenseMovedOntoACard_CreatesTheStatement()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
+
+        await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 10, 1))));
+
+        StatementMonthsOf("BaAmex").Should().Equal((2026, 10));
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_InvoiceMonthChanged_CreatesTheStatementOfTheNewMonth()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 10, 1))));
+        await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 10, 1)) with { Value = 7m }));
+
+        StatementMonthsOf("BaAmex").Should().Equal((2026, 9), (2026, 10));
+    }
 }

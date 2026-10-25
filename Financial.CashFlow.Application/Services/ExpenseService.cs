@@ -41,6 +41,7 @@ public sealed class ExpenseService : IExpenseService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddExpense(expense);
+                CardStatementCreation.EnsureFor(_repository, expense);
                 return true;
             }).ConfigureAwait(false);
 
@@ -83,6 +84,7 @@ public sealed class ExpenseService : IExpenseService
                     expense.SetInvoiceDate(request.InvoiceDate.Value);
                 }
 
+                CardStatementCreation.EnsureFor(_repository, expense);
                 return true;
             }).ConfigureAwait(false);
 

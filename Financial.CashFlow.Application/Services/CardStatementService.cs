@@ -45,21 +45,13 @@ public sealed class CardStatementService : ICardStatementService
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                var created = false;
-                foreach (var card in activeCards)
+                var missingCards = activeCards.Where(card => !existingStatements.Any(s => s.IsFor(card.Id, year, month))).ToList();
+                foreach (var card in missingCards)
                 {
-                    if (existingStatements.Any(s => s.IsFor(card.Id, year, month)))
-                    {
-                        continue;
-                    }
-
-                    var statement = CardStatement.Create(card, year, month);
-                    _repository.AddCardStatement(statement);
-                    existingStatements.Add(statement);
-                    created = true;
+                    existingStatements.Add(CardStatementCreation.EnsureFor(_repository, card, year, month));
                 }
 
-                return created;
+                return missingCards.Count > 0;
             }).ConfigureAwait(false);
 
             var expenses = _repository.GetExpenses().ToList();

@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Interfaces;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
 
@@ -205,6 +207,45 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
                     ("Linked", 2026, 10, false, 0m, 0m)
                 });
             statements.Single(s => s.CreditCardName == "BA Amex").Id.Should().Be(Guid.Parse(AmexOctoberStatementId));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-03")]
+    public async Task AddOrEditCardCharge_CreatesTheMissingStatementOnce()
+    {
+        ExpenseCreateDTO DecemberCharge(decimal value) => new()
+        {
+            Date = new DateOnly(2026, 12, 2),
+            Description = "December shop",
+            Value = value,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(VisaId),
+            InvoiceDate = new DateOnly(2026, 12, 1)
+        };
+
+        var first = await Client.PostAsJsonAsync($"{Api}/expenses", DecemberCharge(12m));
+        var second = await Client.PostAsJsonAsync($"{Api}/expenses", DecemberCharge(8m));
+        var moved = await Client.PutAsJsonAsync($"{Api}/expenses/8f3b1c1a-2e3a-4b1a-9a7f-600000000004", new ExpenseUpdateDTO
+        {
+            Date = new DateOnly(2026, 10, 7),
+            Description = "Shop",
+            Value = 40m,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(VisaId),
+            InvoiceDate = new DateOnly(2027, 1, 1)
+        });
+
+        var visaStatements = Services.GetRequiredService<ICashFlowRepository>().GetCardStatements()
+            .Where(s => s.CreditCard.Id == Guid.Parse(VisaId))
+            .Select(s => (s.Year, s.Month, s.IsPaid))
+            .ToList();
+        using (new AssertionScope())
+        {
+            first.StatusCode.Should().Be(HttpStatusCode.OK);
+            second.StatusCode.Should().Be(HttpStatusCode.OK);
+            moved.StatusCode.Should().Be(HttpStatusCode.OK);
+            visaStatements.Should().Equal((2026, 12, false), (2027, 1, false));
         }
     }
 }
