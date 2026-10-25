@@ -63,7 +63,7 @@ export default function AccountsPage() {
           rows={data.members}
           rowKey={(row) => row.accountId}
           emptyMessage="No accounts in the default group for this month"
-          footerItems={data.totals.map((total) => ({ label: `Default group total ${total.currency}`, value: formatN2(total.balance) }))}
+          footerItems={data.totals.map((total) => ({ label: `Bank total ${total.currency}`, value: formatN2(total.balance) }))}
         />
       )}
     </div>

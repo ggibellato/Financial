@@ -175,6 +175,7 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 | `hooks/useMonthly.ts` | Modified | 3 | Bank rows from members without `statement`; card totals from `summary.totals` |
 | `components/CardsGrid.tsx`, `pages/MonthlyPage.tsx` | Modified | 3 | `CardsGrid` takes the per-currency card totals instead of one browser-summed number |
 | `utils/currencyFooterItems.ts`, `components/SectionTotals.tsx`, `components/BanksGrid.tsx`, `components/TotalsGrid.tsx` | New, Modified | 3 | The per-currency footer rule and the footer line, shared by `BanksGrid` and `CardsGrid` |
+| `pages/AccountsPage.tsx` | Modified | 3 | The footer reads "Bank total <currency>" (was "Default group total"): the totals' `balance` leaves out card members, which are now rows (user, 2026-10-25) |
 | `pages/AccountsPage.tsx`, `components/AccountHeader.tsx` | Modified | 4 | Owed display; template labels |
 | `components/AccountFormDialog.tsx`, `pages/AdminAccountsPage.tsx` | Modified | 4 | Template labels |
 | `utils/accountTemplateLabel.ts` | New | 4 | Display names |

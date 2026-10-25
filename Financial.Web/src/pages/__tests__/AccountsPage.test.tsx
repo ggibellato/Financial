@@ -75,7 +75,25 @@ describe('AccountsPage', () => {
       'href',
       '/cashflow/accounts/barclays?month=2026-10',
     )
-    expect(screen.getByText('Default group total BRL:', { exact: false })).toHaveTextContent('Default group total BRL: 1,000.00 · Default group total GBP: 3,310.25')
+    expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
+  })
+
+  it('labels the footer as the bank total, which leaves out card members', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+      ],
+      totals: [
+        { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
+        { currency: 'GBP', balance: 3310.25, roundUpTotal: 1.2, cardOutstandingTotal: 64.1 },
+      ],
+    })
+    renderPage()
+
+    expect(await screen.findByRole('link', { name: 'BA Amex' })).toBeInTheDocument()
+    expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
   })
 
   it('shows the month the balances belong to', async () => {
