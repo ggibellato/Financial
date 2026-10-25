@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { AccountTemplateDto } from '../../api/types'
-import { account } from '../../test/account'
+import { account, cardAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AccountFormDialog from '../AccountFormDialog'
 
@@ -187,7 +187,7 @@ describe('AccountFormDialog', () => {
 
   it('shows a card account\'s read-only template by its display name', () => {
     renderDialog({
-      account: account({ id: 'a4', name: 'BA Amex', templateName: 'CreditCard', hasRecords: true, openingBalance: null, balanceStartDate: null, roundUpEnabled: null }),
+      account: cardAccount({ id: 'a4', name: 'BA Amex', hasRecords: true }),
       templates: [BANK, CREDIT_CARD],
     })
 

@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto } from '../api/types'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
-import { formatLongMonthYear, formatN2 } from '../utils/formatters'
-import { OWED_LABEL, shownBalance } from '../utils/owedBalance'
+import { formatLongMonthYear } from '../utils/formatters'
+import { balanceLabel, formatShownBalance } from '../utils/owedBalance'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
@@ -60,10 +60,10 @@ export default function AccountHeader({
 
         <div className="account-screen__balance">
           <Text size={200}>
-            {account.balanceIsOwed ? OWED_LABEL : 'Balance'} at end of {formatLongMonthYear(account.year, account.month)}
+            {balanceLabel(account.balanceIsOwed)} at end of {formatLongMonthYear(account.year, account.month)}
           </Text>
           <Text size={500} weight="semibold">
-            {formatN2(shownBalance(account.balance, account.balanceIsOwed))} {account.currency}
+            {formatShownBalance(account.balance, account.balanceIsOwed)} {account.currency}
           </Text>
         </div>
       </div>

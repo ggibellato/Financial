@@ -1,7 +1,7 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDto, AccountGroupSummaryDto } from '../../api/types'
+import type { AccountDto, AccountGroupMemberDto, AccountGroupSummaryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
@@ -35,6 +35,10 @@ const SUMMARY: AccountGroupSummaryDto = {
   categoryTotalsSum: 0,
   incomeTotals: [],
   totalIncoming: 0,
+}
+
+function cardMember(accountId: string, name: string, balance: number, outstandingTotal: number): AccountGroupMemberDto {
+  return { accountId, name, templateName: 'CreditCard', currency: 'GBP', balance, roundUpTotal: null, statement: { outstandingTotal, isPaid: false }, balanceIsOwed: true }
 }
 
 const ACCOUNTS: AccountDto[] = [
@@ -83,7 +87,7 @@ describe('AccountsPage', () => {
       ...SUMMARY,
       members: [
         ...SUMMARY.members,
-        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+        cardMember('amex', 'BA Amex', -812.33, 64.1),
       ],
       totals: [
         { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
@@ -101,8 +105,8 @@ describe('AccountsPage', () => {
       ...SUMMARY,
       members: [
         ...SUMMARY.members,
-        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
-        { accountId: 'visa', name: 'Visa', templateName: 'CreditCard', currency: 'GBP', balance: 0, roundUpTotal: null, statement: { outstandingTotal: 0, isPaid: false }, balanceIsOwed: true },
+        cardMember('amex', 'BA Amex', -812.33, 64.1),
+        cardMember('visa', 'Visa', 0, 0),
       ],
     })
     renderPage()
@@ -120,8 +124,8 @@ describe('AccountsPage', () => {
       ...SUMMARY,
       members: [
         ...SUMMARY.members,
-        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
-        { accountId: 'visa', name: 'Visa', templateName: 'CreditCard', currency: 'GBP', balance: -15, roundUpTotal: null, statement: { outstandingTotal: 15, isPaid: false }, balanceIsOwed: true },
+        cardMember('amex', 'BA Amex', -812.33, 64.1),
+        cardMember('visa', 'Visa', -15, 15),
       ],
     })
     renderPage()

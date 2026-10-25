@@ -14,3 +14,7 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
     ...fields,
   }
 }
+
+export function cardAccount(fields: RequiredAccountFields & Partial<AccountDto>): AccountDto {
+  return account({ templateName: 'CreditCard', openingBalance: null, balanceStartDate: null, roundUpEnabled: null, ...fields })
+}

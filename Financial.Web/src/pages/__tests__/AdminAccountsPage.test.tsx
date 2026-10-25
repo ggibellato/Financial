@@ -4,7 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTemplateDto } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
-import { account } from '../../test/account'
+import { account, cardAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AdminAccountsPage from '../AdminAccountsPage'
 
@@ -34,7 +34,7 @@ const TEMPLATES: AccountTemplateDto[] = [
 const BARCLAYS = account({ id: 'a1', name: 'Barclays', hasRecords: true })
 const CHASE = account({ id: 'a2', name: 'Chase', hasRecords: true, isActive: false })
 const MONZO = account({ id: 'a3', name: 'Monzo' })
-const AMEX = account({ id: 'a4', name: 'BA Amex', templateName: 'CreditCard', openingBalance: null, balanceStartDate: null, roundUpEnabled: null })
+const AMEX = cardAccount({ id: 'a4', name: 'BA Amex' })
 
 function renderPage() {
   render(

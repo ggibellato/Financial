@@ -6,7 +6,7 @@ import TotalsGrid from '../components/TotalsGrid'
 import { DEFAULT_GROUP_LOAD_ERROR, useDefaultGroupAccounts } from '../hooks/useDefaultGroupAccounts'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatN2 } from '../utils/formatters'
-import { OWED_LABEL, shownBalance } from '../utils/owedBalance'
+import { formatLabelledBalance } from '../utils/owedBalance'
 import './AccountsPage.css'
 
 export default function AccountsPage() {
@@ -58,8 +58,7 @@ export default function AccountsPage() {
               key: 'balance',
               header: 'Balance',
               numeric: true,
-              render: (row) =>
-                row.balanceIsOwed ? `${OWED_LABEL} ${formatN2(shownBalance(row.balance, true))}` : formatN2(row.balance),
+              render: (row) => formatLabelledBalance(row.balance, row.balanceIsOwed),
               sortAccessor: (row) => row.balance,
             },
           ]}
