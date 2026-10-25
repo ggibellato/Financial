@@ -1,7 +1,7 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDto, AccountGroupSummaryDto } from '../../api/types'
+import type { AccountDto, AccountGroupMemberDto, AccountGroupSummaryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
@@ -35,6 +35,10 @@ const SUMMARY: AccountGroupSummaryDto = {
   categoryTotalsSum: 0,
   incomeTotals: [],
   totalIncoming: 0,
+}
+
+function cardMember(accountId: string, name: string, balance: number, outstandingTotal: number): AccountGroupMemberDto {
+  return { accountId, name, templateName: 'CreditCard', currency: 'GBP', balance, roundUpTotal: null, statement: { outstandingTotal, isPaid: false }, balanceIsOwed: true }
 }
 
 const ACCOUNTS: AccountDto[] = [
@@ -83,7 +87,7 @@ describe('AccountsPage', () => {
       ...SUMMARY,
       members: [
         ...SUMMARY.members,
-        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+        cardMember('amex', 'BA Amex', -812.33, 64.1),
       ],
       totals: [
         { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
@@ -94,6 +98,43 @@ describe('AccountsPage', () => {
 
     expect(await screen.findByRole('link', { name: 'BA Amex' })).toBeInTheDocument()
     expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
+  })
+
+  it('[AC P60-F07-credit-card-template-and-card-migration-08] shows a card\'s balance as owed and names its template "Credit card"', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        cardMember('amex', 'BA Amex', -812.33, 64.1),
+        cardMember('visa', 'Visa', 0, 0),
+      ],
+    })
+    renderPage()
+
+    const amexRow = (await screen.findByRole('link', { name: 'BA Amex' })).closest('tr')!
+    expect(within(amexRow).getByText('Credit card')).toBeInTheDocument()
+    expect(within(amexRow).getByText('Owed 812.33')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: 'Visa' }).closest('tr')!).getByText('Owed 0.00')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('Bank')).toBeInTheDocument()
+    expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('2,800.25')).toBeInTheDocument()
+  })
+
+  it('sorts the Balance column by net position, so the most owed card comes first', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        cardMember('amex', 'BA Amex', -812.33, 64.1),
+        cardMember('visa', 'Visa', -15, 15),
+      ],
+    })
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Balance' }))
+
+    const [, ...rows] = within(screen.getByRole('table', { name: 'Accounts' })).getAllByRole('row')
+    expect(rows.map((row) => within(row).getByRole('link').textContent)).toEqual(['BA Amex', 'Visa', 'Old Savings', 'Chase', 'Itau', 'Barclays'])
+    expect(within(rows[0]).getByText('Owed 812.33')).toBeInTheDocument()
   })
 
   it('shows the month the balances belong to', async () => {
