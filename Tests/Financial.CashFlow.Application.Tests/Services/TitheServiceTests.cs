@@ -19,6 +19,7 @@ public class TitheServiceTests
     private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
     private static readonly Category Dizimo = Category.Create("Dizimo", isTithe: true);
     private static readonly Category Mercado = Category.Create("Mercado");
+    private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
 
     private static IncomeSource Source(string name) => IncomeSource.Create(name, IncomeGroup.NonReportable);
 
@@ -96,6 +97,22 @@ public class TitheServiceTests
 
         result.CalculatedTithe.Should().Be(100m);
         result.TitheBalance.Should().Be(50m);
+    }
+
+    [Fact]
+    public async Task GetTitheSummaryAsync_CardChargePaidInTheFollowingMonth_CountsTowardTheStatementMonth()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
+        var charge = Expense.Create(new DateOnly(2026, 7, 20), "Tithe by card", 200m, Dizimo, null, BaAmex);
+        charge.Settle(Barclays, new DateOnly(2026, 8, 3));
+        _repository.Expenses.Add(charge);
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
+
+        var july = await _sut.GetTitheSummaryAsync(2026, 7);
+        var august = await _sut.GetTitheSummaryAsync(2026, 8);
+
+        july.TitheBalance.Should().Be(100m);
+        august.TitheBalance.Should().Be(0m);
     }
 
     [Fact]

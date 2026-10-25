@@ -160,7 +160,7 @@ public sealed class TitheService : ITitheService
         calculatedTithe = TitheRule.CalculateTithe(titheBase);
 
         var dizimoTotal = _repository.GetExpenses()
-            .Where(e => e.Date.Year == year && e.Date.Month == month && e.Category.IsTithe && e.CountsAsTithe)
+            .Where(e => e.ReportingDate.Year == year && e.ReportingDate.Month == month && e.Category.IsTithe && e.CountsAsTithe)
             .Sum(e => e.Value);
 
         return calculatedTithe - dizimoTotal;
