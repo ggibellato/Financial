@@ -21,7 +21,6 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
-    public DateOnly? NextInvoiceDueDate { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
     public string TemplateName => Template.ToString();
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -99,12 +98,6 @@ public class Account
         }
     }
 
-    public void SetNextInvoiceDueDate(DateOnly? dueDate)
-    {
-        CardAccountRule.EnsureIsCard(this);
-        NextInvoiceDueDate = dueDate;
-    }
-
     private static Account Build(string name, AccountTemplate template, Currency currency, IReadOnlySet<Capability>? capabilitiesOverride)
     {
         var account = new Account
@@ -125,7 +118,6 @@ public class Account
     {
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
-        NextInvoiceDueDate = Has(Capability.HasStatements) ? NextInvoiceDueDate : null;
     }
 
     private static string ValidName(string name)

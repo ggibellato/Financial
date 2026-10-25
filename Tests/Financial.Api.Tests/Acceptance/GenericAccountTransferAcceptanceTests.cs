@@ -27,7 +27,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
           "Transfers": [
             { "Id": "{{ExistingTransferId}}", "Date": "2026-10-03", "SourceAccountId": "{{BarclaysId}}", "DestinationAccountId": "{{ChaseId}}", "Amount": 75.25, "Note": "Top-up" }
           ],
-          "Version": 2
+          "Version": 3
         }
         """;
 

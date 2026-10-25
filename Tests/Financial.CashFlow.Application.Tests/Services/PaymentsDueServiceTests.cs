@@ -42,18 +42,26 @@ public class PaymentsDueServiceTests
     private static RecurringBill CreateBill(int dueDay, string description = "Internet") =>
         RecurringBill.Create(dueDay, description, 50m, Area.UK, string.Empty, null, null);
 
-    private static Account CreateCard(string name, DateOnly? nextInvoiceDueDate) =>
-        TestAccounts.CreditCard(name, nextInvoiceDueDate: nextInvoiceDueDate);
+    private Account CreateCard(string name, DateOnly? nextInvoiceDueDate)
+    {
+        var card = TestAccounts.CreditCard(name);
+        _repository.SetCardDueDate(card, nextInvoiceDueDate);
+        return card;
+    }
 
     private void AddStatement(Account card, DateOnly period, bool paid = false)
     {
-        var statement = CardStatement.Create(card, period.Year, period.Month);
+        var statement = _repository.CardStatements.FirstOrDefault(existing => existing.IsFor(card.Id, period.Year, period.Month));
+        if (statement is null)
+        {
+            statement = CardStatement.Create(card, period.Year, period.Month);
+            _repository.AddCardStatement(statement);
+        }
+
         if (paid)
         {
             statement.MarkPaid();
         }
-
-        _repository.AddCardStatement(statement);
     }
 
     [Fact]

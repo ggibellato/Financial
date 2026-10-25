@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -42,9 +43,11 @@ public sealed class CreditCardService : ICreditCardService
                 .GroupBy(e => e.CreditCard!.Id)
                 .ToDictionary(g => g.Key, g => g.Max(e => e.InvoiceDate));
             var referencedIds = AccountReferenceReader.ReferencedAccountIds(_repository);
+            var statements = _repository.GetCardStatements().ToList();
 
             var result = _repository.GetCreditCardAccounts()
-                .Select(card => ToDto(card, latestInvoiceDateByCard.GetValueOrDefault(card.Id), referencedIds.Contains(card.Id)))
+                .Select(card => ToDto(
+                    card, CardDueDate.For(card, statements), latestInvoiceDateByCard.GetValueOrDefault(card.Id), referencedIds.Contains(card.Id)))
                 .ToList();
 
             span.MarkSuccess();
@@ -117,7 +120,7 @@ public sealed class CreditCardService : ICreditCardService
             {
                 creditCard.Update(request.Name);
                 creditCard.SetActive(request.IsActive);
-                creditCard.SetNextInvoiceDueDate(request.NextInvoiceDueDate);
+                SetDueDate(creditCard, request.NextInvoiceDueDate);
                 return true;
             }).ConfigureAwait(false);
 
@@ -174,6 +177,24 @@ public sealed class CreditCardService : ICreditCardService
 
     private bool IsReferenced(Guid creditCardId) => AccountReferenceReader.IsReferenced(_repository, creditCardId);
 
+    private void SetDueDate(Account card, DateOnly? dueDate)
+    {
+        var statements = _repository.GetCardStatements().Where(statement => statement.CreditCard.Id == card.Id).ToList();
+        var cleared = dueDate is { } date
+            ? statements.Where(statement => (statement.Year, statement.Month).CompareTo((date.Year, date.Month)) > 0)
+            : statements;
+
+        foreach (var statement in cleared)
+        {
+            statement.SetDueDate(null);
+        }
+
+        if (dueDate is { } due)
+        {
+            CardStatementCreation.EnsureFor(_repository, card, due.Year, due.Month).SetDueDate(due);
+        }
+    }
+
     private Account FindCreditCardOrThrow(Guid id) =>
         _repository.GetCreditCardAccounts().FirstOrThrow(c => c.Id == id, "Credit card", id);
 
@@ -190,14 +211,14 @@ public sealed class CreditCardService : ICreditCardService
     }
 
     private CreditCardDTO ToDto(Account creditCard) =>
-        ToDto(creditCard, GetLatestInvoiceDate(creditCard.Id), IsReferenced(creditCard.Id));
+        ToDto(creditCard, _repository.GetCardDueDate(creditCard), GetLatestInvoiceDate(creditCard.Id), IsReferenced(creditCard.Id));
 
-    private static CreditCardDTO ToDto(Account creditCard, DateOnly? latestInvoiceDate, bool hasReferences) => new()
+    private static CreditCardDTO ToDto(Account creditCard, DateOnly? dueDate, DateOnly? latestInvoiceDate, bool hasReferences) => new()
     {
         Id = creditCard.Id,
         Name = creditCard.Name,
         IsActive = creditCard.IsActive,
-        NextInvoiceDueDate = creditCard.NextInvoiceDueDate,
+        NextInvoiceDueDate = dueDate,
         LatestInvoiceDate = latestInvoiceDate,
         HasReferences = hasReferences
     };

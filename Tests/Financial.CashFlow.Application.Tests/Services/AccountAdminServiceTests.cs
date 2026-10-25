@@ -396,7 +396,7 @@ public class AccountAdminServiceTests
     [Fact]
     public async Task UpdateAsync_UnusedCardChangedToBank_TriggersCalendarSyncSoItsEventIsRemoved()
     {
-        var card = TestAccounts.CreditCard("Nubank", nextInvoiceDueDate: new DateOnly(2026, 11, 18));
+        var card = TestAccounts.CreditCard("Nubank");
         _repository.Accounts.Add(card);
 
         await _sut.UpdateAsync(card.Id, Edit(card));

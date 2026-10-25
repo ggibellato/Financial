@@ -17,11 +17,11 @@ public class CreditCardMigratorTests
 
         summary.CardsSeededCount.Should().Be(5);
         summary.CardsAlreadyPresentCount.Should().Be(0);
-        data.Accounts.Should().ContainSingle(c => c.Name == "Platinum Visa 8003" && c.IsActive && c.NextInvoiceDueDate == null);
-        data.Accounts.Should().ContainSingle(c => c.Name == "Platinum Visa 6007" && c.IsActive && c.NextInvoiceDueDate == null);
-        data.Accounts.Should().ContainSingle(c => c.Name == "Chase Master 4023" && c.IsActive && c.NextInvoiceDueDate == null);
-        data.Accounts.Should().ContainSingle(c => c.Name == "BA Amex" && c.IsActive && c.NextInvoiceDueDate == null);
-        data.Accounts.Should().ContainSingle(c => c.Name == "Paypal Credit" && c.IsActive && c.NextInvoiceDueDate == null);
+        data.Accounts.Should().ContainSingle(c => c.Name == "Platinum Visa 8003" && c.IsActive);
+        data.Accounts.Should().ContainSingle(c => c.Name == "Platinum Visa 6007" && c.IsActive);
+        data.Accounts.Should().ContainSingle(c => c.Name == "Chase Master 4023" && c.IsActive);
+        data.Accounts.Should().ContainSingle(c => c.Name == "BA Amex" && c.IsActive);
+        data.Accounts.Should().ContainSingle(c => c.Name == "Paypal Credit" && c.IsActive);
     }
 
     [Fact]

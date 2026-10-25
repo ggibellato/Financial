@@ -147,6 +147,28 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void SetOpeningBalance(string bankName, decimal openingBalance, DateOnly openingBalanceDate) =>
         Accounts.First(b => b.Name == bankName).SetOpeningBalance(openingBalance, openingBalanceDate);
 
+    public void SetCardDueDate(Account card, DateOnly? dueDate)
+    {
+        foreach (var dated in CardStatements.Where(statement => statement.CreditCard.Id == card.Id))
+        {
+            dated.SetDueDate(null);
+        }
+
+        if (dueDate is not { } date)
+        {
+            return;
+        }
+
+        var statement = CardStatements.FirstOrDefault(existing => existing.IsFor(card.Id, date.Year, date.Month));
+        if (statement is null)
+        {
+            statement = CardStatement.Create(card, date.Year, date.Month);
+            CardStatements.Add(statement);
+        }
+
+        statement.SetDueDate(date);
+    }
+
     public IEnumerable<Expense> GetExpenses() => CheckThrow(Expenses);
     public void AddExpense(Expense expense) => Expenses.Add(expense);
     public void DeleteExpense(Guid id) => Expenses.RemoveAll(e => e.Id == id);

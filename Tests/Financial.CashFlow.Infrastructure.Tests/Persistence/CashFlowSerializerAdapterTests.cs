@@ -25,7 +25,7 @@ public class CashFlowSerializerAdapterTests
     {
         var original = CashFlowData.Create();
         var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
-        var creditCard = TestAccounts.CreditCard("Barclays Platinum Visa 8003", isActive: true, nextInvoiceDueDate: new DateOnly(2026, 8, 18));
+        var creditCard = TestAccounts.CreditCard("Barclays Platinum Visa 8003", isActive: true);
         var category = Category.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
         var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
@@ -44,6 +44,7 @@ public class CashFlowSerializerAdapterTests
         var income = Income.Create(new DateOnly(2026, 7, 25), incomeSource, 3200.00m, 2450.00m, bank, splitToReserve: true);
         var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split", income);
         var cardStatement = CardStatement.Create(creditCard, 2026, 7);
+        cardStatement.SetDueDate(new DateOnly(2026, 8, 18));
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
@@ -98,6 +99,7 @@ public class CashFlowSerializerAdapterTests
             resultMovement.Description.Should().Be(reserveMovement.Description);
             var resultCardStatement = result.CardStatements.Should().ContainSingle().Which;
             resultCardStatement.Id.Should().Be(cardStatement.Id);
+            resultCardStatement.DueDate.Should().Be(new DateOnly(2026, 8, 18));
             result.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(recurringBill.Id);
             result.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(maeLedgerEntry.Id);
             var resultSnapshot = result.InvestmentSnapshots.Should().ContainSingle().Which;
@@ -143,7 +145,6 @@ public class CashFlowSerializerAdapterTests
             resultCreditCard.Name.Should().Be(creditCard.Name);
             resultCreditCard.IsActive.Should().Be(creditCard.IsActive);
             resultCreditCard.Currency.Should().Be(Currency.GBP);
-            resultCreditCard.NextInvoiceDueDate.Should().Be(new DateOnly(2026, 8, 18));
             var resultCategory = result.Categories.Should().ContainSingle().Which;
             resultCategory.Id.Should().Be(category.Id);
             resultCategory.Name.Should().Be(category.Name);
@@ -212,7 +213,7 @@ public class CashFlowSerializerAdapterTests
         // depend on encountering the owning collection first.
         var json = $$"""
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [{ "Id": "{{Guid.NewGuid()}}", "Date": "2026-07-01", "IncomeSourceId": "{{IncomeSourceIdForFixture}}", "GrossValue": 100, "NetValue": 90, "AccountId": "{{bank.Id}}" }],
@@ -236,7 +237,7 @@ public class CashFlowSerializerAdapterTests
         var incomeId = Guid.NewGuid();
         var json = $$"""
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{IncomeSourceIdForFixture}}", "GrossValue": 100, "NetValue": 90, "AccountId": "{{missingBankId}}" }],
@@ -255,11 +256,11 @@ public class CashFlowSerializerAdapterTests
     {
         var json = """
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
-              "Accounts": [], "CreditCards": [], "Categories": [], "ReserveBuckets": [], "ReserveMovements": [],
+              "Accounts": [], "Categories": [], "ReserveBuckets": [], "ReserveMovements": [],
               "TitheCarryForwards": [{ "Year": 2026, "Month": 10, "Amount": 219.078, "Included": false }]
             }
             """;
@@ -277,11 +278,11 @@ public class CashFlowSerializerAdapterTests
         var bucketId = Guid.NewGuid();
         var json = $$"""
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
-              "Accounts": [], "CreditCards": [], "Categories": [],
+              "Accounts": [], "Categories": [],
               "ReserveBuckets": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }],
               "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "Legacy manual movement" }]
             }
@@ -300,12 +301,12 @@ public class CashFlowSerializerAdapterTests
         var accountId = Guid.NewGuid();
         var json = $$"""
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [],
               "InvestmentAccounts": [{ "Id": "{{accountId}}", "Name": "ChaseSave", "IsActive": true, "IsLiability": false }],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
-              "Accounts": [], "CreditCards": [], "Categories": [], "ReserveBuckets": []
+              "Accounts": [], "Categories": [], "ReserveBuckets": []
             }
             """;
 
@@ -328,10 +329,10 @@ public class CashFlowSerializerAdapterTests
         // JSON text order.
         var json = $$"""
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
-              "Transfers": [], "BalanceAdjustments": [], "Accounts": [], "CreditCards": [], "Categories": [],
+              "Transfers": [], "BalanceAdjustments": [], "Accounts": [], "Categories": [],
               "ReserveBuckets": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }],
               "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "August salary", "IncomeId": "{{incomeId}}" }],
               "IncomeSources": [{ "Id": "{{incomeSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true }],
@@ -349,7 +350,7 @@ public class CashFlowSerializerAdapterTests
     {
         var json = """
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [{ "Id": "11111111-1111-1111-1111-111111111111", "Date": "2026-07-01", "IncomeSource": "Gleison", "GrossValue": 100, "NetValue": 90, "Bank": "Barclays" }],
@@ -367,7 +368,7 @@ public class CashFlowSerializerAdapterTests
     {
         var json = """
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "ReserveMovements": [{ "Id": "22222222-2222-2222-2222-222222222222", "Bucket": "Investimento", "Amount": 10, "Date": "2026-07-01", "Description": "Legacy" }],
@@ -422,11 +423,11 @@ public class CashFlowSerializerAdapterTests
     {
         var json = """
             {
-              "Version": 2,
+              "Version": 3,
               "Expenses": [], "ReserveMovements": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [], "Accounts": [],
-              "ReserveBuckets": [], "CreditCards": [], "Categories": []
+              "ReserveBuckets": [], "Categories": []
             }
             """;
 
@@ -437,12 +438,12 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Serialize_WritesVersion2()
+    public void Serialize_WritesVersion3()
     {
         var json = _sut.Serialize(CashFlowData.Create());
 
         using var document = JsonDocument.Parse(json);
-        document.RootElement.GetProperty("Version").GetInt32().Should().Be(2);
+        document.RootElement.GetProperty("Version").GetInt32().Should().Be(3);
     }
 
     [Fact]
@@ -452,7 +453,7 @@ public class CashFlowSerializerAdapterTests
         var act = () => _sut.Deserialize("""{ "Version": 1, "Banks": [] }""");
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.");
+            .WithMessage("data-cashflow.json is version 1; this build needs version 3. Run the migrate command first.");
     }
 
     [Fact]
@@ -461,16 +462,16 @@ public class CashFlowSerializerAdapterTests
         var act = () => _sut.Deserialize("""{ "Banks": [] }""");
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("data-cashflow.json is version 1; this build needs version 2. Run the migrate command first.");
+            .WithMessage("data-cashflow.json is version 1; this build needs version 3. Run the migrate command first.");
     }
 
     [Fact]
-    public void Deserialize_Version3_Refused()
+    public void Deserialize_Version4_Refused()
     {
-        var act = () => _sut.Deserialize("""{ "Version": 3, "Accounts": [] }""");
+        var act = () => _sut.Deserialize("""{ "Version": 4, "Accounts": [] }""");
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("data-cashflow.json is version 3; this build needs version 2.");
+            .WithMessage("data-cashflow.json is version 4; this build needs version 3.");
     }
 
     [Fact]

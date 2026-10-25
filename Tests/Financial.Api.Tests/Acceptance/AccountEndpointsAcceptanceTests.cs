@@ -22,13 +22,11 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
           "Accounts": [
             { "Id": "{{ChaseId}}", "Name": "Chase", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 200, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
             { "Id": "{{ClosedId}}", "Name": "Closed", "Template": "Bank", "Currency": "GBP", "IsActive": false, "OpeningBalance": { "Amount": 0, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
-            { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": true } }
+            { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": true } },
+            { "Id": "{{AmexId}}", "Name": "Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null }
           ],
           "Categories": [
             { "Id": "{{GroceriesId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
-          ],
-          "CreditCards": [
-            { "Id": "{{AmexId}}", "Name": "Amex", "IsActive": true }
           ],
           "IncomeSources": [
             { "Id": "{{SalaryId}}", "Name": "Salary", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false }
@@ -48,7 +46,7 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
           "BalanceAdjustments": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-800000000001", "Date": "2026-10-14", "AccountId": "{{BarclaysId}}", "TargetBalance": 2800.25, "Delta": 3.50, "Note": "Statement" }
           ],
-          "Version": 2
+          "Version": 3
         }
         """;
 
