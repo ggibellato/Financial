@@ -142,4 +142,51 @@ public class AccountBalanceRuleTests
 
         AccountBalanceRule.Balance(account, new DateOnly(2026, 9, 30), records).Should().Be(42m);
     }
+
+    [Fact]
+    public void Balance_CardAccount_UnpaidChargeContributesMinusItsValue()
+    {
+        var card = TestAccounts.CreditCard("BA Amex");
+        var records = new IAccountTransaction[]
+        {
+            Expense.Create(new DateOnly(2026, 9, 10), "Taxi", 30m, _groceries, null, card),
+            Expense.Create(new DateOnly(2026, 9, 12), "Refund", -5m, _groceries, null, card)
+        };
+
+        AccountBalanceRule.Balance(card, new DateOnly(2026, 9, 30), records).Should().Be(-25m);
+    }
+
+    [Fact]
+    public void Balance_SettledCharge_CountsOnItsBankOnlyAndNotOnTheCard()
+    {
+        var card = TestAccounts.CreditCard("BA Amex");
+        var charge = Expense.Create(new DateOnly(2026, 9, 10), "Taxi", 30m, _groceries, null, card);
+        charge.Settle(_barclays, new DateOnly(2026, 9, 25));
+        var records = new IAccountTransaction[] { charge };
+
+        AccountBalanceRule.Balance(card, new DateOnly(2026, 9, 30), records).Should().Be(0m);
+        AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(970m);
+    }
+
+    [Fact]
+    public void Balance_UnpaidCharge_DoesNotMoveTheBankBalance()
+    {
+        var card = TestAccounts.CreditCard("BA Amex");
+        var records = new IAccountTransaction[] { Expense.Create(new DateOnly(2026, 9, 10), "Taxi", 30m, _groceries, null, card) };
+
+        AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(1000m);
+    }
+
+    [Fact]
+    public void Balance_CardAccount_ChargeDatedAfterAsOfIsLeftOut()
+    {
+        var card = TestAccounts.CreditCard("BA Amex");
+        var records = new IAccountTransaction[]
+        {
+            Expense.Create(new DateOnly(2026, 9, 30), "Last day", 10m, _groceries, null, card),
+            Expense.Create(new DateOnly(2026, 10, 1), "Next month", 99m, _groceries, null, card)
+        };
+
+        AccountBalanceRule.Balance(card, new DateOnly(2026, 9, 30), records).Should().Be(-10m);
+    }
 }

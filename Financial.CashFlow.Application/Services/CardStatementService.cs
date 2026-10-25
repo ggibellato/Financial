@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
@@ -61,25 +62,13 @@ public sealed class CardStatementService : ICardStatementService
                 return created;
             }).ConfigureAwait(false);
 
-            var charges = _repository.GetExpenses()
-                .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
-                .ToList();
-            var outstandingByCardPeriod = charges
-                .Where(e => e.InvoiceDate is not null)
-                .GroupBy(e => (e.CreditCard!.Id, e.InvoiceDate!.Value.Year, e.InvoiceDate!.Value.Month))
-                .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
-            var accumulatedByCard = charges
-                .GroupBy(e => e.CreditCard!.Id)
-                .ToDictionary(g => g.Key, g => g.Sum(e => e.Value));
+            var expenses = _repository.GetExpenses().ToList();
+            var records = AccountTransactionReader.Read(_repository);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements
-                .Select(s => ToDto(
-                    s,
-                    outstandingByCardPeriod.GetValueOrDefault((s.CreditCard.Id, s.Year, s.Month)),
-                    accumulatedByCard.GetValueOrDefault(s.CreditCard.Id),
-                    warning: null))
+                .Select(s => ToDto(s, OutstandingTotal(expenses, s), AccumulatedOutstandingTotal(s.CreditCard, records), warning: null))
                 .ToList();
         }
         catch (Exception ex)
@@ -111,8 +100,10 @@ public sealed class CardStatementService : ICardStatementService
                 throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
             }
 
+            Expense.EnsureCanBePaymentSource(bank!);
+
             var settledAt = _timeProvider.GetLocalToday();
-            var charges = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge);
+            var charges = UnpaidCharges(_repository.GetExpenses(), statement);
             // The warning text embeds the statement's invoice period, so it stays in the DTO/logs
             // only, never as a span attribute (logging-audit.md's note on this string).
             var warning = charges.Count == 0
@@ -156,7 +147,9 @@ public sealed class CardStatementService : ICardStatementService
                 return ToDto(statement, "This statement was not marked paid; nothing changed.");
             }
 
-            var settledExpenses = GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardSettled);
+            var settledExpenses = CardChargeFilter.ChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month, includePaid: true)
+                .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+                .ToList();
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -182,14 +175,13 @@ public sealed class CardStatementService : ICardStatementService
 
     public (decimal Total, bool HasChargesPosted) GetOutstandingTotalForPeriod(Guid creditCardId, int year, int month)
     {
-        var charges = _repository.GetExpenses()
-            .Where(e => e.CreditCard?.Id == creditCardId
-                && e.InvoiceDate is not null
-                && e.InvoiceDate.Value.Year == year
-                && e.InvoiceDate.Value.Month == month
-                && e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
-            .ToList();
+        var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
+        if (card is null)
+        {
+            return (0m, false);
+        }
 
+        var charges = CardChargeFilter.ChargesFor(_repository.GetExpenses(), card, year, month, includePaid: false).ToList();
         return (charges.Sum(e => e.Value), charges.Count > 0);
     }
 
@@ -202,25 +194,20 @@ public sealed class CardStatementService : ICardStatementService
     private CardStatement FindStatementOrThrow(Guid id) =>
         _repository.GetCardStatements().FirstOrThrow(s => s.Id == id, "Card statement", id);
 
-    private List<Expense> GetStatementExpenses(CardStatement statement, ExpensePaymentStatus status) =>
-        _repository.GetExpenses()
-            .Where(e => e.CreditCard?.Id == statement.CreditCard.Id
-                && e.InvoiceDate is not null
-                && e.InvoiceDate.Value.Year == statement.Year
-                && e.InvoiceDate.Value.Month == statement.Month
-                && e.PaymentStatus == status)
-            .ToList();
+    private static List<Expense> UnpaidCharges(IEnumerable<Expense> expenses, CardStatement statement) =>
+        CardChargeFilter.ChargesFor(expenses, statement.CreditCard, statement.Year, statement.Month, includePaid: false).ToList();
 
-    private decimal GetAccumulatedOutstandingTotal(Guid creditCardId) =>
-        _repository.GetExpenses()
-            .Where(e => e.CreditCard?.Id == creditCardId && e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
-            .Sum(e => e.Value);
+    private static decimal OutstandingTotal(IEnumerable<Expense> expenses, CardStatement statement) =>
+        UnpaidCharges(expenses, statement).Sum(e => e.Value);
+
+    private static decimal AccumulatedOutstandingTotal(Account card, IEnumerable<IAccountTransaction> records) =>
+        -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
     private CardStatementDTO ToDto(CardStatement statement, string? warning = null) =>
         ToDto(
             statement,
-            GetStatementExpenses(statement, ExpensePaymentStatus.CreditCardCharge).Sum(e => e.Value),
-            GetAccumulatedOutstandingTotal(statement.CreditCard.Id),
+            OutstandingTotal(_repository.GetExpenses(), statement),
+            AccumulatedOutstandingTotal(statement.CreditCard, AccountTransactionReader.Read(_repository)),
             warning);
 
     private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal, string? warning) => new()

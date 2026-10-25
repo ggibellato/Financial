@@ -511,4 +511,41 @@ public class CardStatementServiceTests
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.GetStatementsForMonth");
     }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_CardAccountAsPaymentSource_ThrowsAndSavesNothing()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        var statement = CardStatement.Create(card, 2026, 7);
+        _repository.CardStatements.Add(statement);
+
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "BaAmex"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("BaAmex is a card account and can't pay.");
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task GetStatementsForMonthAsync_AccumulatedOutstanding_CountsEveryUnpaidChargeOfTheCardWhateverItsMonth()
+    {
+        var card = Card(_repository, "BaAmex");
+        AddCharge(_repository, new DateOnly(2026, 6, 10), 15m, card);
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 25m, card);
+        AddCharge(_repository, new DateOnly(2026, 9, 10), 40m, card);
+        var paid = AddCharge(_repository, new DateOnly(2026, 7, 12), 100m, card);
+        paid.Settle(_repository.Accounts.First(a => a.Name == "Barclays"), new DateOnly(2026, 7, 31));
+
+        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+
+        var amex = result.Single(s => s.CreditCardName == "BaAmex");
+        using (new AssertionScope())
+        {
+            amex.OutstandingTotal.Should().Be(25m);
+            amex.AccumulatedOutstandingTotal.Should().Be(80m);
+        }
+    }
 }

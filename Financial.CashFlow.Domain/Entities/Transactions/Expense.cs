@@ -238,7 +238,9 @@ public class Expense : IAccountTransaction
     }
 
     public decimal ContributionTo(Account account) =>
-        PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0)) : 0m;
+        PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0))
+        : PaymentStatus == ExpensePaymentStatus.CreditCardCharge && CreditCard!.Id == account.Id ? -Value
+        : 0m;
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
@@ -285,8 +287,13 @@ public class Expense : IAccountTransaction
         }
     }
 
-    private static void EnsureCanBePaymentSource(Account account)
+    public static void EnsureCanBePaymentSource(Account account)
     {
+        if (account.Has(Capability.HasStatements))
+        {
+            throw new ArgumentException($"{account.Name} is a card account and can't pay.");
+        }
+
         if (!account.Has(Capability.HasCategories))
         {
             throw new ArgumentException($"Account '{account.Name}' cannot be a payment source.");

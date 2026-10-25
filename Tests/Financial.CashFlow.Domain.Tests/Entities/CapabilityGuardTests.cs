@@ -23,7 +23,7 @@ public class CapabilityGuardTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     private static Account MinimalWithout(Capability capability) =>
-        Minimal(Enum.GetValues<Capability>().Where(c => c != capability).ToArray());
+        Minimal(Enum.GetValues<Capability>().Where(c => c != capability && c != Capability.HasStatements).ToArray());
 
     [Fact]
     public void SetOpeningBalance_AccountWithOnlyHasOpeningBalance_Succeeds()

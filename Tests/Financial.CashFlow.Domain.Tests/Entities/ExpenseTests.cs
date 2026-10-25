@@ -877,4 +877,52 @@ public class ExpenseTests
             expense.CreditCard.Should().BeSameAs(ChaseMaster4023);
         }
     }
+
+    [Fact]
+    public void Create_WithACardAccountAsThePaymentSource_Throws()
+    {
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Shop", 10m, Casa, BaAmex, null);
+
+        act.Should().Throw<ArgumentException>().WithMessage("BaAmex is a card account and can't pay.");
+    }
+
+    [Fact]
+    public void UpdateDetails_MovingThePaymentSourceOntoACardAccount_ThrowsAndKeepsTheBank()
+    {
+        var expense = CreateImmediateExpense();
+
+        var act = () => expense.UpdateDetails(new DateOnly(2026, 7, 1), "Immediate", 10m, Casa, BaAmex, null);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("BaAmex is a card account and can't pay.");
+            expense.PaymentSourceAccount.Should().BeSameAs(Chase);
+        }
+    }
+
+    [Fact]
+    public void Settle_WithACardAccount_ThrowsAndLeavesTheChargeUnpaid()
+    {
+        var charge = CreateCardCharge();
+
+        var act = () => charge.Settle(BaAmex, new DateOnly(2026, 7, 31));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("BaAmex is a card account and can't pay.");
+            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+        }
+    }
+
+    [Fact]
+    public void ContributionTo_UnpaidCharge_IsMinusValueOnItsCardAndZeroOnAnotherCard()
+    {
+        var charge = CreateCardCharge();
+
+        using (new AssertionScope())
+        {
+            charge.ContributionTo(ChaseMaster4023).Should().Be(-10m);
+            charge.ContributionTo(BaAmex).Should().Be(0m);
+        }
+    }
 }
