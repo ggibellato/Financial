@@ -24,7 +24,7 @@ public class AccountGroupSummaryServiceTests
     private readonly Account _itau = TestAccounts.Bank("Itaú", roundUpEnabled: true, currency: Currency.BRL);
     private readonly Category _groceries = Category.Create("Mercado");
     private readonly Category _home = Category.Create("Casa");
-    private readonly CreditCard _amex = CreditCard.Create("Amex");
+    private readonly Account _amex = TestAccounts.CreditCard("Amex");
     private readonly IncomeSource _salary = IncomeSource.Create("Salary", IncomeGroup.Salary);
     private readonly IncomeSource _dividends = IncomeSource.Create("Dividends", IncomeGroup.NonReportable);
 

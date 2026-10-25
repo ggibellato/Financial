@@ -5,7 +5,6 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migratio
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ExpenseChargeDate;
 
@@ -15,7 +14,7 @@ public class ExpenseChargeDateMigratorTests
     // Legacy records carry both CardTag and PaymentSource with ChargeDate/InvoiceDate absent -
     // a shape that can no longer be produced through Expense.Create, so build it the way
     // deserialization of pre-F01 data would (only public API + reflection to null the new fields).
-    private static Expense LegacyUnpaidCharge(CashFlowData data, DateOnly date, CreditCardEntity card, decimal value = 30m)
+    private static Expense LegacyUnpaidCharge(CashFlowData data, DateOnly date, Account card, decimal value = 30m)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         NullOutMigratedFields(expense);
@@ -23,7 +22,7 @@ public class ExpenseChargeDateMigratorTests
         return expense;
     }
 
-    private static Expense LegacySettledCharge(CashFlowData data, DateOnly date, CreditCardEntity card, Account paymentSource, decimal value = 30m)
+    private static Expense LegacySettledCharge(CashFlowData data, DateOnly date, Account card, Account paymentSource, decimal value = 30m)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         typeof(Expense).GetProperty(nameof(Expense.PaymentSourceAccount))!.SetMethod!.Invoke(expense, new object?[] { paymentSource });
@@ -48,7 +47,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_UnpaidCardCharge_SetsChargeDateEqualToDateAndDefaultsInvoiceDate()
     {
         var data = CashFlowData.Create();
-        var card = CreditCardEntity.Create("BarclaysPlatinumVisa8003");
+        var card = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var expense = LegacyUnpaidCharge(data, new DateOnly(2026, 7, 10), card);
 
         var summary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson: null);
@@ -66,7 +65,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SettledChargeWithMatchingStatementAndRecoverableSettledAt_MigratesAllThreeFields()
     {
         var data = CashFlowData.Create();
-        var card = CreditCardEntity.Create("BarclaysPlatinumVisa8003");
+        var card = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var statement = CardStatement.Create(card, 2026, 7);
         statement.MarkPaid();
         data.AddCardStatement(statement);
@@ -88,7 +87,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SettledChargeWithNoMatchingStatement_FlagsForReviewAndLeavesUntouched()
     {
         var data = CashFlowData.Create();
-        var card = CreditCardEntity.Create("BarclaysPlatinumVisa8003");
+        var card = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10), card, TestAccounts.Bank("Barclays", roundUpEnabled: false));
         var legacyRawJson = BuildLegacyRawJson((expense.Id, new DateOnly(2026, 8, 3)));
 
@@ -105,7 +104,7 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SettledChargeWithNoRecoverableSettledAt_FlagsForReviewAndLeavesUntouched()
     {
         var data = CashFlowData.Create();
-        var card = CreditCardEntity.Create("BarclaysPlatinumVisa8003");
+        var card = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var statement = CardStatement.Create(card, 2026, 7);
         statement.MarkPaid();
         data.AddCardStatement(statement);
@@ -142,8 +141,8 @@ public class ExpenseChargeDateMigratorTests
     public void Migrate_SecondRunOnAlreadyMigratedData_ChangesNothing()
     {
         var data = CashFlowData.Create();
-        var barclaysCard = CreditCardEntity.Create("BarclaysPlatinumVisa8003");
-        var baAmexCard = CreditCardEntity.Create("BaAmex");
+        var barclaysCard = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
+        var baAmexCard = TestAccounts.CreditCard("BaAmex");
         var statement = CardStatement.Create(barclaysCard, 2026, 7);
         statement.MarkPaid();
         data.AddCardStatement(statement);

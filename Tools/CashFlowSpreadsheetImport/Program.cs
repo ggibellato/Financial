@@ -3,6 +3,7 @@ using ClosedXML.Excel;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.CommandLine;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
@@ -207,11 +208,6 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
         data.AddIncomeSource(incomeSource);
     }
 
-    foreach (var creditCard in existingData.CreditCards)
-    {
-        data.AddCreditCard(creditCard);
-    }
-
     foreach (var reserveBucket in existingData.ReserveBuckets)
     {
         data.AddReserveBucket(reserveBucket);
@@ -242,7 +238,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Accounts, data.CreditCards, data.Categories);
+        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Accounts, data.Accounts.Where(account => account.Has(Capability.HasStatements)).ToList(), data.Categories);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);

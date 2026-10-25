@@ -9,7 +9,6 @@ using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -31,14 +30,14 @@ public class CardStatementServiceTests
     private CardStatementService CreateService(StubCashFlowRepository? repository = null) =>
         new(repository ?? _repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
 
-    private static CreditCard Card(StubCashFlowRepository repository, string name) =>
-        repository.CreditCards.First(c => c.Name == name);
+    private static Account Card(StubCashFlowRepository repository, string name) =>
+        repository.CardAccounts.First(c => c.Name == name);
 
     private static MarkCardStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
         new() { PaymentSourceBankId = repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id };
 
     private static Expense AddCharge(
-        StubCashFlowRepository repository, DateOnly date, decimal value, CreditCard card)
+        StubCashFlowRepository repository, DateOnly date, decimal value, Account card)
     {
         var expense = Expense.Create(date, "Charge", value, Category.Create("Mercado"), null, card);
         repository.Expenses.Add(expense);
@@ -46,7 +45,7 @@ public class CardStatementServiceTests
     }
 
     private static Expense AddChargeWithInvoiceDate(
-        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, CreditCard card)
+        StubCashFlowRepository repository, DateOnly date, DateOnly invoiceDate, decimal value, Account card)
     {
         var expense = Expense.Create(date, "Charge near cutoff", value, Category.Create("Mercado"), null, card, invoiceDate);
         repository.Expenses.Add(expense);
@@ -69,7 +68,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task GetStatementsForMonthAsync_InactiveCard_IsExcludedFromGeneration()
     {
-        _repository.CreditCards.Add(CreditCard.Create("RetiredCard", isActive: false));
+        _repository.Accounts.Add(TestAccounts.CreditCard("RetiredCard", isActive: false));
 
         var result = await _sut.GetStatementsForMonthAsync(2026, 7);
 

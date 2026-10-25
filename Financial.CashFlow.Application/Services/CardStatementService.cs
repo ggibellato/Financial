@@ -36,7 +36,7 @@ public sealed class CardStatementService : ICardStatementService
                 .Where(s => s.Year == year && s.Month == month)
                 .ToList();
 
-            var activeCards = _repository.GetCreditCards().Where(c => c.IsActive).ToList();
+            var activeCards = _repository.GetCreditCardAccounts().Where(c => c.IsActive).ToList();
             if (activeCards.Count == 0)
             {
                 _logger.LogWarning("No active credit cards found while generating statements for {Year}-{Month}.", year, month);

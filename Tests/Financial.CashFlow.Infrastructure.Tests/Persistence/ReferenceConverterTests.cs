@@ -4,6 +4,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
@@ -70,13 +71,6 @@ public class AccountReferenceConverterTests : ReferenceConverterTests<Account>
     protected override Account CreateEntity() => TestAccounts.Bank("Barclays", roundUpEnabled: false);
     protected override Guid IdOf(Account entity) => entity.Id;
     protected override JsonConverter CreateConverter(Dictionary<Guid, Account>? lookup) => new AccountReferenceConverter(lookup);
-}
-
-public class CreditCardReferenceConverterTests : ReferenceConverterTests<CreditCard>
-{
-    protected override CreditCard CreateEntity() => CreditCard.Create("BarclaysPlatinumVisa8003");
-    protected override Guid IdOf(CreditCard entity) => entity.Id;
-    protected override JsonConverter CreateConverter(Dictionary<Guid, CreditCard>? lookup) => new CreditCardReferenceConverter(lookup);
 }
 
 public class IncomeSourceReferenceConverterTests : ReferenceConverterTests<IncomeSource>

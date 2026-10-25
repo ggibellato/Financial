@@ -48,7 +48,7 @@ public class FailedSaveRollbackTests
 
         foreach (var card in StubCashFlowRepository.DefaultCreditCards())
         {
-            data.AddCreditCard(card);
+            data.AddAccount(card);
         }
 
         foreach (var category in StubCashFlowRepository.DefaultCategories())
@@ -205,7 +205,7 @@ public class FailedSaveRollbackTests
 
     private async Task<Guid> AddChargeAndGetStatementIdAsync(CardStatementService service)
     {
-        var card = _repository.GetCreditCards().Single(c => c.Name == "BarclaysPlatinumVisa8003");
+        var card = _repository.GetAccounts().Single(c => c.Name == "BarclaysPlatinumVisa8003");
         var mercado = _repository.GetCategories().Single(c => c.Name == "Mercado");
         await _repository.ApplyAndSaveAsync(() =>
         {

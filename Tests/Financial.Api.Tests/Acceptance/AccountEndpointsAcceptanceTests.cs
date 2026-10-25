@@ -64,6 +64,7 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
         var accounts = await Client.GetFromJsonAsync<List<AccountDTO>>("/api/v1/financial/accounts");
 
         accounts!.Select(account => (account.Name, account.TemplateName, account.Currency, account.IsActive)).Should().Equal(
+            ("Amex", "CreditCard", "GBP", true),
             ("Barclays", "Bank", "GBP", true),
             ("Chase", "Bank", "GBP", true),
             ("Closed", "Bank", "GBP", false));

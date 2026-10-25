@@ -5,7 +5,7 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
@@ -90,10 +90,10 @@ public class CashFlowTypeInfoResolverTests
     {
         // PaymentStatus is never in the JSON's Set path (it's excluded implicitly by having no
         // setter) - it must be recomputed correctly on deserialize from CreditCard/PaymentSource alone.
-        var creditCard = CreditCard.Create("Chase Mastercard 4023");
+        var creditCard = TestAccounts.CreditCard("Chase Mastercard 4023");
         var category = Category.Create("Extras");
         var context = new ReferenceResolutionContext();
-        context.CreditCards[creditCard.Id] = creditCard;
+        context.Accounts[creditCard.Id] = creditCard;
         context.Categories[category.Id] = category;
         var options = CreateOptions(context);
         var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, category, null, creditCard);

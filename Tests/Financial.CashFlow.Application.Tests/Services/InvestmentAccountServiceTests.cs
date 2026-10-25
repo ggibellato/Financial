@@ -316,8 +316,8 @@ public class InvestmentAccountServiceTests
     [Fact]
     public async Task CreateInvestmentAccountAsync_SourceCreditCardWithInactiveCard_Throws()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: false);
-        _repository.CreditCards.Add(creditCard);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: false);
+        _repository.Accounts.Add(creditCard);
         var request = new InvestmentAccountCreateDTO
         {
             Name = "PlatinumVisa8003",
@@ -339,8 +339,8 @@ public class InvestmentAccountServiceTests
     [Fact]
     public async Task CreateInvestmentAccountAsync_SourceCreditCardWithActiveCard_Succeeds()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
-        _repository.CreditCards.Add(creditCard);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
+        _repository.Accounts.Add(creditCard);
         var request = new InvestmentAccountCreateDTO
         {
             Name = "PlatinumVisa8003",
@@ -382,8 +382,8 @@ public class InvestmentAccountServiceTests
     [Fact]
     public async Task GetInvestmentAccounts_MapsSourceAndCreditCardId()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
-        _repository.CreditCards.Add(creditCard);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
+        _repository.Accounts.Add(creditCard);
         _repository.InvestmentAccounts.Add(InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard));
 
@@ -400,8 +400,8 @@ public class InvestmentAccountServiceTests
     [Fact]
     public async Task UpdateInvestmentAccountAsync_SwitchingAwayFromCreditCard_ClearsCreditCardIdRegardlessOfRequestValue()
     {
-        var creditCard = CreditCard.Create("Platinum Visa 8003", isActive: true);
-        _repository.CreditCards.Add(creditCard);
+        var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
+        _repository.Accounts.Add(creditCard);
         var account = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
         _repository.InvestmentAccounts.Add(account);

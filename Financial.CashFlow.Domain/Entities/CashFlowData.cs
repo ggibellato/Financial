@@ -46,9 +46,6 @@ public class CashFlowData
     private readonly IdCollection<BalanceAdjustment> _balanceAdjustments = new(i => i.Id);
     public IReadOnlyCollection<BalanceAdjustment> BalanceAdjustments => _balanceAdjustments;
 
-    private readonly IdCollection<CreditCard> _creditCards = new(i => i.Id);
-    public IReadOnlyCollection<CreditCard> CreditCards => _creditCards;
-
     private readonly IdCollection<Category> _categories = new(i => i.Id);
     public IReadOnlyCollection<Category> Categories => _categories;
 
@@ -94,10 +91,6 @@ public class CashFlowData
     public void RemoveInvestmentAccount(Guid id) => _investmentAccounts.RemoveById(id);
 
     public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
-
-    public void AddCreditCard(CreditCard card) => _creditCards.Add(card);
-
-    public void RemoveCreditCard(Guid id) => _creditCards.RemoveById(id);
 
     public void AddCategory(Category category) => _categories.Add(category);
 

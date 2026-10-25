@@ -19,7 +19,7 @@ public class TitheServiceTests
     private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
     private static readonly Category Dizimo = Category.Create("Dizimo", isTithe: true);
     private static readonly Category Mercado = Category.Create("Mercado");
-    private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
+    private static readonly Account BaAmex = TestAccounts.CreditCard("BaAmex");
 
     private static IncomeSource Source(string name) => IncomeSource.Create(name, IncomeGroup.NonReportable);
 

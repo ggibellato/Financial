@@ -42,9 +42,11 @@ public sealed class FreshImportVersionTests : IDisposable
         {
             exitCode.Should().Be(0);
             JsonNode.Parse(json)!["Version"]!.GetValue<int>().Should().Be(2);
-            data.Accounts.Select(a => (a.Name, a.RoundsUp)).Should().Equal(("Barclays", false), ("Trading212", true), ("Chase", true));
-            data.Accounts.Should().OnlyContain(a => a.Template == AccountTemplate.Bank && a.Currency == Currency.GBP && a.IsActive);
-            data.Accounts.Should().OnlyContain(a => a.OpeningBalance!.Amount == 0m);
+            var banks = data.Accounts.Where(a => a.Template == AccountTemplate.Bank).ToList();
+            banks.Select(a => (a.Name, a.RoundsUp)).Should().Equal(("Barclays", false), ("Trading212", true), ("Chase", true));
+            banks.Should().OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance!.Amount == 0m);
+            data.Accounts.Where(a => a.Template == AccountTemplate.CreditCard).Should().HaveCount(5)
+                .And.OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.NextInvoiceDueDate == null);
         }
     }
 

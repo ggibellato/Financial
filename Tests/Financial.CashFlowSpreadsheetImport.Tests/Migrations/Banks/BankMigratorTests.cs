@@ -4,7 +4,6 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.TestUtilities;
 using FluentAssertions;
-using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.Banks;
 
@@ -70,7 +69,7 @@ public class BankMigratorTests
     public void Migrate_ExpenseWithCardTagAndNoBank_CountsAsNotApplicable()
     {
         var data = CashFlowData.Create();
-        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 20m, Category.Create("Extras"), null, CreditCardEntity.Create("ChaseMaster4023"));
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Charge", 20m, Category.Create("Extras"), null, TestAccounts.CreditCard("ChaseMaster4023"));
         data.AddExpense(expense);
 
         var summary = BankMigrator.Migrate(data);
@@ -86,7 +85,7 @@ public class BankMigratorTests
         var data = CashFlowData.Create();
         var bank = TestAccounts.Bank("Chase", roundUpEnabled: true);
         var resolved = Expense.Create(new DateOnly(2026, 7, 1), "Groceries", 20m, Category.Create("Mercado"), bank, null);
-        var charge = Expense.Create(new DateOnly(2026, 7, 2), "Charge", 5m, Category.Create("Extras"), null, CreditCardEntity.Create("ChaseMaster4023"));
+        var charge = Expense.Create(new DateOnly(2026, 7, 2), "Charge", 5m, Category.Create("Extras"), null, TestAccounts.CreditCard("ChaseMaster4023"));
         data.AddExpense(resolved);
         data.AddExpense(charge);
 

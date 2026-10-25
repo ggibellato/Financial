@@ -1,4 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.CreditCards;
 
@@ -26,13 +28,13 @@ public static class CreditCardMigrator
 
         foreach (var name in SeededCardNames)
         {
-            if (data.CreditCards.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+            if (data.Accounts.Any(c => c.Has(Capability.HasStatements) && string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
                 summary.CountCardAlreadyPresent();
                 continue;
             }
 
-            data.AddCreditCard(CreditCard.Create(name));
+            data.AddAccount(Account.Create(name, AccountTemplate.CreditCard, Currency.GBP));
             summary.CountCardSeeded();
         }
 

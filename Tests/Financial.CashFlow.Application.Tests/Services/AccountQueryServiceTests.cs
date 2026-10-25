@@ -28,7 +28,7 @@ public class AccountQueryServiceTests
     private readonly Account _closed = Account.CreateWithCapabilities(
         "Closed", Currency.GBP, AccountTemplates.CapabilitiesOf(AccountTemplate.Bank), isActive: false);
     private readonly Category _groceries = Category.Create("Mercado");
-    private readonly CreditCard _amex = CreditCard.Create("Amex");
+    private readonly Account _amex = TestAccounts.CreditCard("Amex");
     private readonly IncomeSource _salary = IncomeSource.Create("Salary", IncomeGroup.Salary);
 
     public AccountQueryServiceTests()

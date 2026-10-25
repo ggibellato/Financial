@@ -15,7 +15,7 @@ public class Expense : IAccountTransaction
     public decimal Value { get; private set; }
     public Category Category { get; private set; } = null!;
     public Account? PaymentSourceAccount { get; private set; }
-    public CreditCard? CreditCard { get; private set; }
+    public Account? CreditCard { get; private set; }
     public DateOnly? ChargeDate { get; private set; }
     public DateOnly? InvoiceDate { get; private set; }
     public decimal? RoundUpAmount { get; private set; }
@@ -61,7 +61,7 @@ public class Expense : IAccountTransaction
         decimal value,
         Category category,
         Account? paymentSourceAccount,
-        CreditCard? creditCard,
+        Account? creditCard,
         DateOnly? invoiceDate = null,
         bool countsAsTithe = true)
     {
@@ -90,7 +90,7 @@ public class Expense : IAccountTransaction
         decimal value,
         Category category,
         Account? paymentSourceAccount,
-        CreditCard? creditCard,
+        Account? creditCard,
         bool countsAsTithe = true)
     {
         ValidateFields(description, value);
@@ -255,7 +255,7 @@ public class Expense : IAccountTransaction
         }
     }
 
-    private static void ValidatePaymentShape(Account? paymentSourceAccount, CreditCard? creditCard)
+    private static void ValidatePaymentShape(Account? paymentSourceAccount, Account? creditCard)
     {
         if (paymentSourceAccount is null && creditCard is null)
         {
@@ -266,6 +266,11 @@ public class Expense : IAccountTransaction
         {
             throw new ArgumentException(
                 "An expense cannot have both a payment source and a card tag; a settled expense is only produced by marking its card statement paid.");
+        }
+
+        if (creditCard is not null)
+        {
+            CardAccountRule.EnsureIsCard(creditCard);
         }
 
         if (creditCard is not null && !creditCard.IsActive)

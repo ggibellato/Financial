@@ -6,7 +6,6 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using System.Globalization;
 using System.Text.Json;
-using CreditCard = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlow.Domain.Tests;
 
@@ -16,9 +15,9 @@ public class ExpenseTests
     private static readonly Account Chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
     private static readonly Account Barclays = TestAccounts.Bank("Barclays", roundUpEnabled: false);
     private static readonly Account Trading212 = TestAccounts.Bank("Trading212", roundUpEnabled: true);
-    private static readonly CreditCard ChaseMaster4023 = CreditCard.Create("ChaseMaster4023");
-    private static readonly CreditCard BarclaysPlatinumVisa8003 = CreditCard.Create("BarclaysPlatinumVisa8003");
-    private static readonly CreditCard BaAmex = CreditCard.Create("BaAmex");
+    private static readonly Account ChaseMaster4023 = TestAccounts.CreditCard("ChaseMaster4023");
+    private static readonly Account BarclaysPlatinumVisa8003 = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
+    private static readonly Account BaAmex = TestAccounts.CreditCard("BaAmex");
     private static readonly Category Casa = Category.Create("Casa");
     private static readonly Category Extras = Category.Create("Extras");
     private static readonly Category Mercado = Category.Create("Mercado");
@@ -855,5 +854,27 @@ public class ExpenseTests
         charge.Unsettle();
 
         charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
+    }
+
+    [Fact]
+    public void Create_WithABankAsTheCard_Throws()
+    {
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Extras, null, Chase);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
+    }
+
+    [Fact]
+    public void UpdateDetails_MovingOntoABankAsTheCard_ThrowsAndKeepsTheCard()
+    {
+        var expense = CreateCardCharge();
+
+        var act = () => expense.UpdateDetails(new DateOnly(2026, 7, 1), "Charge", 10m, Extras, null, Barclays);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Barclays is not a card account.");
+            expense.CreditCard.Should().BeSameAs(ChaseMaster4023);
+        }
     }
 }

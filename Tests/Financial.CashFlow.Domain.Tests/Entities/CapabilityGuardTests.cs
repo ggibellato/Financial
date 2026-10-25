@@ -96,7 +96,7 @@ public class CapabilityGuardTests
     [Fact]
     public void Expense_Settle_PaymentSourceWithoutHasCategories_ThrowsAndStaysUnsettled()
     {
-        var card = CreditCard.Create("Amex");
+        var card = TestAccounts.CreditCard("Amex");
         var expense = Expense.Create(Date, "Groceries", 20m, _groceries, paymentSourceAccount: null, card);
 
         var act = () => expense.Settle(MinimalWithout(Capability.HasCategories), Date.AddDays(20));

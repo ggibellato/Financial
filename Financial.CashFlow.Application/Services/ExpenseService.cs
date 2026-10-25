@@ -5,7 +5,6 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Observability;
-using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -224,7 +223,7 @@ public sealed class ExpenseService : IExpenseService
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
 
-    private (Category Category, Account? PaymentSourceAccount, CreditCardEntity? CreditCard) ValidateFields(
+    private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(
         string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)
     {
         DescriptionValidator.EnsureWithinLimit(description);
@@ -235,10 +234,10 @@ public sealed class ExpenseService : IExpenseService
             ? CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), bankId)
             : null;
 
-        CreditCardEntity? parsedCreditCard = null;
+        Account? parsedCreditCard = null;
         if (creditCardId is not null)
         {
-            if (!EntityIdResolver.TryResolve(creditCardId, _repository.GetCreditCards(), c => c.Id, out var creditCard))
+            if (!EntityIdResolver.TryResolve(creditCardId, _repository.GetCreditCardAccounts(), c => c.Id, out var creditCard))
             {
                 throw new ArgumentException($"Credit card '{creditCardId}' is not recognized.");
             }

@@ -23,7 +23,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<Account> Accounts { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
     public List<ReserveBucket> ReserveBuckets { get; } = new();
-    public List<CreditCard> CreditCards { get; } = new();
+    public IReadOnlyList<Account> CardAccounts => Accounts.Where(account => account.Has(Capability.HasStatements)).ToList();
     public List<Category> Categories { get; } = new();
     public List<Income> Incomes { get; } = new();
     public List<Transfer> Transfers { get; } = new();
@@ -40,10 +40,6 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     /// <summary>When true, the next <see cref="GetRecurringBills"/> call throws once and resets to
     /// false, simulating a repository read failure.</summary>
     public bool ThrowOnNextGetRecurringBills { get; set; }
-
-    /// <summary>When true, the next <see cref="GetCreditCards"/> call throws once and resets to
-    /// false, simulating a repository read failure.</summary>
-    public bool ThrowOnNextGetCreditCards { get; set; }
 
     /// <summary>When set, the next call to any read method wrapped with <see cref="CheckThrow{T}"/>
     /// throws this and resets to null - simulates an unexpected repository read failure so a
@@ -85,7 +81,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
         if (seedDefaultCreditCards)
         {
-            CreditCards.AddRange(DefaultCreditCards());
+            Accounts.AddRange(DefaultCreditCards());
         }
 
         if (seedDefaultCategories)
@@ -120,14 +116,13 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
         ReserveBucket.Create("Gleison", 16.67m)
     ];
 
-    /// <summary>The 5 credit cards seeded in a real deployment by the CashFlowSpreadsheetImport migration tool, all active.</summary>
-    public static IEnumerable<CreditCard> DefaultCreditCards() =>
+    public static IEnumerable<Account> DefaultCreditCards() =>
     [
-        CreditCard.Create("BarclaysPlatinumVisa8003"),
-        CreditCard.Create("BarclaysPlatinumVisa6007"),
-        CreditCard.Create("ChaseMaster4023"),
-        CreditCard.Create("BaAmex"),
-        CreditCard.Create("PaypalCredit")
+        TestAccounts.CreditCard("BarclaysPlatinumVisa8003"),
+        TestAccounts.CreditCard("BarclaysPlatinumVisa6007"),
+        TestAccounts.CreditCard("ChaseMaster4023"),
+        TestAccounts.CreditCard("BaAmex"),
+        TestAccounts.CreditCard("PaypalCredit")
     ];
 
     /// <summary>The 14 categories seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
@@ -198,20 +193,6 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public IEnumerable<ReserveBucket> GetReserveBuckets() => CheckThrow(ReserveBuckets);
     public void AddReserveBucket(ReserveBucket bucket) => ReserveBuckets.Add(bucket);
-
-    public IEnumerable<CreditCard> GetCreditCards()
-    {
-        if (ThrowOnNextGetCreditCards)
-        {
-            ThrowOnNextGetCreditCards = false;
-            throw new InvalidOperationException("Simulated read failure.");
-        }
-
-        return CreditCards;
-    }
-
-    public void AddCreditCard(CreditCard card) => CreditCards.Add(card);
-    public void DeleteCreditCard(Guid id) => CreditCards.RemoveAll(c => c.Id == id);
 
     public IEnumerable<Category> GetCategories() => CheckThrow(Categories);
     public void AddCategory(Category category) => Categories.Add(category);

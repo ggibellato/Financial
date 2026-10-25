@@ -87,11 +87,7 @@ public class Account
 
     public void SetNextInvoiceDueDate(DateOnly? dueDate)
     {
-        if (!Has(Capability.HasStatements))
-        {
-            throw new ArgumentException($"{Name} is not a card account.");
-        }
-
+        CardAccountRule.EnsureIsCard(this);
         NextInvoiceDueDate = dueDate;
     }
 

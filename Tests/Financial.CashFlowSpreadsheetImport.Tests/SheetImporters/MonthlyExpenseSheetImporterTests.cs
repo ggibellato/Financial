@@ -5,7 +5,6 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reportin
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 using Financial.TestUtilities;
 using FluentAssertions;
-using CreditCardEntity = Financial.CashFlow.Domain.Entities.CreditCard;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.SheetImporters;
 
@@ -34,12 +33,12 @@ public class MonthlyExpenseSheetImporterTests : IDisposable
         TestAccounts.Bank("Chase", roundUpEnabled: true)
     ];
 
-    private static readonly IReadOnlyCollection<CreditCardEntity> CreditCards =
+    private static readonly IReadOnlyCollection<Account> CreditCards =
     [
-        CreditCardEntity.Create("Platinum Visa 8003"),
-        CreditCardEntity.Create("Platinum Visa 6007"),
-        CreditCardEntity.Create("Chase Master 4023"),
-        CreditCardEntity.Create("BA Amex")
+        TestAccounts.CreditCard("Platinum Visa 8003"),
+        TestAccounts.CreditCard("Platinum Visa 6007"),
+        TestAccounts.CreditCard("Chase Master 4023"),
+        TestAccounts.CreditCard("BA Amex")
     ];
 
     private static readonly IReadOnlyCollection<Category> Categories =
