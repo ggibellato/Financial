@@ -12,6 +12,7 @@ Complexity: **complex**. It touches every backend layer, the import tool, the da
 - One Domain charge filter replaces the four copies of "charges of a card for a statement month".
 - The data file goes from version 2 to version 3: cards move into `Accounts`, and any month with charges but no statement gets one.
 - From F07 on, adding or editing a card charge creates its statement if it is missing.
+- A card's payment due date moves from the card to the statement it belongs to. The card's current due date is worked out from its latest statement that has one, so the calendar sync and the payments-due banner behave as today.
 - Card accounts can't pay anything and have no actions until F08.
 - Cards join the default group: the group summary gains each card's statement-month outstanding and paid status and the card total per currency, and Monthly reads its card total from the summary.
 
@@ -21,10 +22,10 @@ Complexity: **complex**. It touches every backend layer, the import tool, the da
 
 | Stage | Content | Data file | Web |
 |---|---|---|---|
-| **1 — card model** | Template, capabilities, `CardTerms`; cards as accounts in every layer; card balance; charge filter; payer refusal; no card actions; in-use check; calendar sync from Admin → Accounts; `/credit-cards` from accounts; account DTOs gain the due date; import builds card accounts; parity card balance | Unchanged: V2, cards read and written in the V2 `CreditCards` shape | Generated types only |
-| **2 — V3 format** | V3 file shape; version guard 3; the V2→V3 step with the statement backfill; seed, test and example data to V3; a charge creates its statement | V3 | None |
+| **1 — card model** | Template and capabilities; cards as accounts in every layer (the due date kept on the card account for now); card balance; charge filter; payer refusal; no card actions; in-use check; calendar sync from Admin → Accounts; `/credit-cards` from accounts; import builds card accounts; parity card balance | Unchanged: V2, cards read and written in the V2 `CreditCards` shape | Generated types only |
+| **2 — V3 format** | V3 file shape; version guard 3; the due date moves to the statement; the V2→V3 step with the statement backfill and due dates; seed, test and example data to V3; a charge creates its statement | V3 | None |
 | **3 — summary and Monthly** | Cards join the default group; summary card fields and per-currency card total; Monthly's Banks grid and card total switch to the summary; parity summary mappings | V3 | Monthly |
-| **4 — screens and ticks** | Accounts page and account header show a card's balance as owed; Admin → Accounts card fields; template display names; PRD ticks | V3 | Accounts page, account screen header, Admin → Accounts |
+| **4 — screens and ticks** | Accounts page and account header show a card's balance as owed; template display names; PRD ticks | V3 | Accounts page, account screen header, Admin → Accounts |
 
 **Scope.**
 
@@ -35,8 +36,8 @@ Complexity: **complex**. It touches every backend layer, the import tool, the da
   - F04: the derived default group (`DefaultAccountGroup`, `AccountGroupSummaryService`);
   - F06: the account create and edit flow (`AccountAdminService`, `AccountFormDialog`).
 - *Output contracts (Provides, used by F08 and F09):*
-  - credit card accounts with `CardTerms`, the `CreditCard` reference on charges, statements and investment accounts, and the single charge filter;
-  - a statement for every card and month with charges, created when a charge lands in its month;
+  - credit card accounts, the `CreditCard` reference on charges, statements and investment accounts, and the single charge filter;
+  - a statement for every card and month with charges, created when a charge lands in its month, carrying its own optional due date;
   - the V2→V3 step, which F09's V3→V4 step follows.
 
 *Excluded:*
@@ -48,22 +49,22 @@ Complexity: **complex**. It touches every backend layer, the import tool, the da
 ## 2. Architecture Impact
 
 **Layers and direction** (design.md's four questions):
-1. **Where it belongs:** the CashFlow bounded context. The template, `CardTerms`, the card balance, the charge filter and the payer rule are Domain; the compatibility services, the summary and the statement creation are Application; the file shape and version guard are Infrastructure; the V2→V3 step is Tools.
+1. **Where it belongs:** the CashFlow bounded context. The template, the statement due date and the card's current due date, the card balance, the charge filter and the payer rule are Domain; the compatibility services, the summary and the statement creation are Application; the file shape and version guard are Infrastructure; the V2→V3 step is Tools.
 2. **Which layers, in which direction:** Domain ← Application ← Infrastructure ← Api, with Tools depending on Infrastructure, plus the web app over the API. No new dependency.
 3. **What keeps Domain free of Infrastructure:** `ICashFlowRepository` and `ICashFlowSerializer`, as in F02.
 4. **Which SOLID principles it leans on:**
-   - **OCP:** the Credit card template is one new row in `AccountTemplates` plus its value object. Code asks `Has(Capability.HasStatements)`, never the template name.
+   - **OCP:** the Credit card template is one new row in `AccountTemplates`. Code asks `Has(Capability.HasStatements)`, never the template name.
    - **SRP:** `Expense` declares its own contribution to the card; `CardChargeFilter` owns the one charge predicate; `AccountBalanceRule` still only sums.
    - **DIP:** `AccountAdminService` triggers the calendar through the existing `ICreditCardCalendarSyncService`.
 
 ```mermaid
 graph TD
     A["Api: CreditCardsController, CardStatementsController, AccountsController, AccountGroupsController (routes unchanged)"] --> B["Application: CreditCardService, CardStatementService, AccountAdminService, AccountGroupSummaryService, ExpenseService"]
-    B --> C["Domain: Account + AccountTemplates (Bank, CreditCard) + CardTerms"]
-    B --> D["Domain Rules: AccountBalanceRule, CardChargeFilter, AccountActions"]
+    B --> C["Domain: Account + AccountTemplates (Bank, CreditCard); CardStatement.DueDate"]
+    B --> D["Domain Rules: AccountBalanceRule, CardChargeFilter, CardDueDate, AccountActions"]
     D --> E["Domain: Expense.ContributionTo (unpaid charge on its card)"]
     B --> F["ICashFlowRepository"]
-    F --> G["Infrastructure: CashFlowDataConverter, AccountJsonConverter (V3 CardTerms)"]
+    F --> G["Infrastructure: CashFlowDataConverter, AccountJsonConverter (V3 accounts and statement due dates)"]
     H["Tools: migrate → V2ToV3CardsToAccounts"] --> G
     I["scripts/parity: cardAccount and summary card figures"] --> A
     J["Web: Monthly (stage 3), Accounts page, account header, Admin → Accounts (stage 4)"] --> A
@@ -76,7 +77,9 @@ graph TD
 | **Reference name** (user, 2026-10-25) | Keep `CreditCard`. `Expense.CreditCard`, `CardStatement.CreditCard` and `InvestmentAccount.CreditCard` become type `Account`; the JSON key stays `CreditCardId`; DTOs unchanged. The V2→V3 step renames no keys. | `CardAccount` / `CardAccountId`, like F02's bank → account renames | Least churn, and the name stays accurate: only credit card accounts have statements. |
 | **Picking cards** (user) | `account.Has(Capability.HasStatements)` everywhere a card list is needed: `CreditCardService`, `CardStatementService`, `CreditCardCalendarSyncService`, `PaymentsDueService`, `ExpenseService`'s card lookup, `InvestmentAccountService`, the import, and the stage 1 file writer. | Read `Template == CreditCard` and grow the allow-list | No allow-list growth. Having statements is exactly what makes an account a card, and F08's card screen asks the same thing. |
 | **Template** | `AccountTemplate.CreditCard` = {`HasStatements`, `HasCategories`, `ReceivesPayments`}, currencies [GBP]. `HasStatements` and `ReceivesPayments` are new `Capability` values. `ReceivesPayments` has no reader until F08's pair rule; it is template data, not code. | Leave `ReceivesPayments` to F08 | The PRD defines the template's set now, so `AccountTemplatesTests` pins it once. |
-| **`CardTerms`** | Value object with `DateOnly? NextInvoiceDueDate`, value equality. `Account.CardTerms` is non-null exactly when the template has `HasStatements` (set by `ApplyCapabilityDefaults`, like `OpeningBalance` and `RoundUp`). `Account.SetCardTerms(DateOnly?)` throws `ArgumentException` "<name> has no card terms." without the capability. | A due-date property on `Account` | Same shape as the other capability-bound value objects. |
+| **Statement due date** (user, 2026-10-25) | The payment due date belongs to the statement: `CardStatement.DueDate` (`DateOnly?`) with `SetDueDate(DateOnly?)`. The card's current due date is `Domain/Rules/CardDueDate.For(card, statements)`: the due date of the card's latest statement (by year, then month) that has one, or null. The calendar sync, `PaymentsDueService`, `TriggerSyncIfInvoiceSynced` and `/credit-cards`' `nextInvoiceDueDate` all read it. The calendar keeps one event per card. | Keep one date on the card (`CardTerms` value object in the PRD) | Every reader already maps the card's date to the statement of that month: the event title shows that statement's outstanding total, and the banner hides once that statement is paid. Storing it there keeps each statement's date instead of losing it when the next is entered. The derived date is the one the card holds today, so behaviour is unchanged. |
+| **Editing the due date** | Until F08, the date is still edited where it is today. `PUT /credit-cards/{id}` with `nextInvoiceDueDate` D sets D on the statement for (card, D's year and month), creating that statement (unpaid) when it is missing. A null clears the date on the statement that currently gives the card's due date. `CreditCardService` keeps its calendar trigger. Admin → Accounts gets no due-date field. | A due-date field on the account dialog | The date is no longer an account field. F08's Statements tab is the place to show and edit it per statement. |
+| **Due date in stage 1** | Stage 1 keeps the date on the card account as a plain `Account.NextInvoiceDueDate` (`DateOnly?`), settable only with `HasStatements` ("<name> is not a card account."), read and written in the V2 card shape. Stage 2 moves it to `CardStatement.DueDate` together with the V3 format and deletes the account property. | Map it onto statements while reading the V2 file | Keeps the stage 1 file mapping byte-for-byte simple. The temporary property is one line, removed one stage later. |
 | **Default group timing** (user) | `JoinsDefaultGroup` is false for Credit card in stages 1–2 and turns true in stage 3, together with the summary card fields and Monthly's switch. | Join in stage 1 | If cards joined early, Monthly's Banks grid would list them and the bank total would subtract what they owe. |
 | **Card balance** | `Expense.ContributionTo(account)`: −(Value + RoundUp) on its payment-source account, as today; −Value on its `CreditCard` account while it is an unpaid charge (`PaymentStatus == CreditCardCharge`); 0 otherwise. A charge settled the old way counts on its bank only. The template has no `HasOpeningBalance`, so every record dated on or before as-of counts. | A card-specific balance | One calculation for every account (cross-feature criterion). Bank balances don't move: unpaid charges contributed 0 to banks before and still do. |
 | **Accumulated outstanding** | `CardStatementService`'s per-card accumulated outstanding = −`AccountBalanceRule.Balance(card, DateOnly.MaxValue, records)`. | Keep its own sum | Identical values (all unpaid charges, whatever their date). This is the PRD's "outstanding logic replaced by the shared calculation". |
@@ -87,10 +90,10 @@ graph TD
 | **In use** | `AccountReferenceReader` also counts charges whose `CreditCard` is the account, statements of the account, and investment accounts linked to it. `CreditCardService.DeleteAsync` uses it, so a card linked to an investment account can't be deleted any more (409, existing message). | Separate guards | One definition of "in use" for Admin → Accounts and `/credit-cards`. |
 | **Calendar from Admin → Accounts** | `AccountAdminService` takes `ICreditCardCalendarSyncService` and calls `TriggerSync(id)` after create, update and delete of an account with `HasStatements`, as `CreditCardService` does. | Leave Admin → Accounts silent | PRD F07 In use. |
 | **Card names** | Card names are unique across all accounts, case-insensitive. `/credit-cards` create and rename use the same check as `AccountAdminService` (`DuplicateNameException` → 409, `An account named "<name>" already exists.`). The 60-character limit is `Account`'s. | Keep `/credit-cards` without a uniqueness check | Two accounts can't share a name any more. No live name clashes. |
-| **Admin interim** (user) | Stage 1 lists Credit card in `GET accounts/templates`, and `AccountDTO`, `AccountCreateDTO` and `AccountUpdateDTO` gain `NextInvoiceDueDate` (optional; null when the template lacks `HasStatements`; ignored then). The dialog builds its fields from capabilities, so a card shows Name and Currency only until stage 4 adds the due-date field and the template display names. | Hide the template until stage 4 | No hiding flag (scaffolding). Until stage 4, the due date is edited on Admin Credit cards or Monthly's Card tab. |
-| **Stage 1 persistence** | Cards load from the V2 `CreditCards` collection into the one accounts collection (template Credit card, GBP, `IsActive`, `CardTerms` from `NextInvoiceDueDate`). On write, accounts with `HasStatements` go back to `CreditCards` in the V2 card shape (`Id`, `Name`, `IsActive`, `NextInvoiceDueDate`) and the rest to `Accounts`, keeping today's bytes. | Ship stage 1 with the format change | Same pattern as F02 PR A: the model change is proved by parity before the file changes. |
-| **V3 shape** | Cards follow the banks in `Accounts`, in their V2 order. A card account: `Template "CreditCard"`, `Currency "GBP"`, `IsActive`, `OpeningBalance null`, `RoundUp null`, `CardTerms { "NextInvoiceDueDate": "yyyy-MM-dd" | null }`. A bank has `CardTerms null`. `CreditCards` is removed. | Keep `CreditCards` | The file matches the model; F09 and F11 append their accounts the same way. |
-| **Statement backfill** | `V2ToV3CardsToAccounts` adds a statement for every (card, invoice month) that has charges and no statement: `IsPaid` true when every charge of that month is settled, false otherwise. Statements get new Ids. | Create on first read only | Every month with charges has a statement from the F07 deploy on. On the 2026-10-24 live copy this adds none. |
+| **Admin interim** (user) | Stage 1 lists Credit card in `GET accounts/templates`. The dialog builds its fields from capabilities, so a card shows Name and Currency, which is all a card account has. Until stage 4 adds the template display names, the template shows as "CreditCard". | Hide the template until stage 4 | No hiding flag (scaffolding). |
+| **Stage 1 persistence** | Cards load from the V2 `CreditCards` collection into the one accounts collection (template Credit card, GBP, `IsActive`, `NextInvoiceDueDate`). On write, accounts with `HasStatements` go back to `CreditCards` in the V2 card shape (`Id`, `Name`, `IsActive`, `NextInvoiceDueDate`) and the rest to `Accounts`, keeping today's bytes. | Ship stage 1 with the format change | Same pattern as F02 PR A: the model change is proved by parity before the file changes. |
+| **V3 shape** | Cards follow the banks in `Accounts`, in their V2 order. A card account: `Template "CreditCard"`, `Currency "GBP"`, `IsActive`, `OpeningBalance null`, `RoundUp null`; no due date. `CreditCards` is removed. A statement gains `DueDate` (`"yyyy-MM-dd"` or null). | Keep `CreditCards` | The file matches the model; F09 and F11 append their accounts the same way. |
+| **Statement backfill and due dates** | `V2ToV3CardsToAccounts` adds a statement for every (card, invoice month) that has charges and no statement: `IsPaid` true when every charge of that month is settled, false otherwise. Then each card's `NextInvoiceDueDate` D is written as `DueDate` on the statement for (card, D's year and month), which is created (with the same paid rule) when missing. Statements get new Ids. | Create on first read only | Every month with charges has a statement from the F07 deploy on, and each card's current due date survives on its statement. On the 2026-10-24 live copy the backfill adds none. |
 | **A charge creates its statement** (stage 2) | `Application/Services/CardStatementCreation.EnsureFor(repository, expense)`: when the expense has a `CreditCard` and an `InvoiceDate` and no statement exists for that card and month, it adds one (unpaid). `ExpenseService` calls it inside the add, update and invoice-date save lambdas. `CardStatementService`'s GET keeps creating statements for active cards until F08 removes that. | A `CashFlowData` method | Keeps the repository contract unchanged (`GetCardStatements` and `AddCardStatement` already exist). |
 | **Summary card fields** (stage 3) | `AccountGroupMemberDTO` gains `Statement` (`AccountGroupStatementDTO { OutstandingTotal, IsPaid }`, null unless `HasStatements`) and `BalanceIsOwed` (true for `HasStatements`). `OutstandingTotal` = sum of `CardChargeFilter.ChargesFor(…, includePaid: false)`; `IsPaid` = that month's statement `IsPaid`, false when none exists. `CurrencyTotalDTO.Balance` sums members without `HasStatements`; new `CardOutstandingTotal` sums the members' `Statement.OutstandingTotal`. Member `Balance` stays signed (owed is negative). `AccountDetailDTO` gains `BalanceIsOwed` in stage 3 too. | Net totals (banks minus owed) | `Balance` keeps meaning today's bank total, so its parity mapping is unchanged. The UI decides how to show owed from one flag instead of a template name. |
 | **Monthly** (stage 3) | `useMonthly` builds bank rows from members whose `statement` is null. The card total shown by `CardsGrid` comes from the summary totals' `cardOutstandingTotal`: one line when there is one currency, one line per currency labelled with its code otherwise (F04's Banks footer rule). The per-statement rows on the Card tab still come from `card-statements`. | Sum statements in the browser | PRD: the browser no longer sums card statements. |
@@ -110,10 +113,10 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 | `Enums/AccountTemplate.cs` | Modified | 1 | Adds `CreditCard` |
 | `Enums/Capability.cs` | Modified | 1 | Adds `HasStatements`, `ReceivesPayments` |
 | `Rules/AccountTemplates.cs` | Modified | 1, 3 | **1:** Credit card definition ({`HasStatements`, `HasCategories`, `ReceivesPayments`}, [GBP], `JoinsDefaultGroup` false). **3:** `JoinsDefaultGroup` true. |
-| `ValueObjects/CardTerms.cs` | New | 1 | `NextInvoiceDueDate` (nullable); value equality |
-| `Entities/Account.cs` | Modified | 1 | `CardTerms` property; `SetCardTerms(DateOnly?)` guarded by `HasStatements`; `ApplyCapabilityDefaults` sets `CardTerms` |
+| `Entities/Account.cs` | Modified | 1, 2 | **1:** `NextInvoiceDueDate` (`DateOnly?`) settable only with `HasStatements`. **2:** that property is deleted. |
 | `Entities/CreditCard.cs` | Deleted | 1 | Replaced by card accounts |
-| `Entities/CardStatement.cs` | Modified | 1 | `CreditCard` is an `Account`; `Create` requires `HasStatements` |
+| `Entities/CardStatement.cs` | Modified | 1, 2 | **1:** `CreditCard` is an `Account`; `Create` requires `HasStatements`. **2:** `DueDate` (`DateOnly?`) and `SetDueDate`. |
+| `Rules/CardDueDate.cs` | New | 2 | `For(card, statements)`: the due date of the card's latest statement that has one |
 | `Entities/InvestmentAccount.cs` | Modified | 1 | `CreditCard` is an `Account?`; the source check requires `HasStatements` and active, with today's messages |
 | `Entities/Transactions/Expense.cs` | Modified | 1 | `CreditCard` is an `Account?` and must have `HasStatements` ("<name> is not a card account."); today's inactive-card message stays; `EnsureCanBePaymentSource` refuses `HasStatements`; `ContributionTo` adds the unpaid-charge contribution |
 | `Entities/CashFlowData.cs` | Modified | 1 | Removes the credit card collection and its add/remove methods |
@@ -125,17 +128,16 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
 | `Interfaces/ICashFlowRepository.cs` | Modified | 1 | Removes `GetCreditCards`, `AddCreditCard`, `DeleteCreditCard` (cards are accounts) |
-| `Services/CreditCardService.cs` | Modified | 1 | Lists accounts with `HasStatements`; create builds a Credit card account in GBP; update sets name, active and `CardTerms`; name uniqueness across accounts; delete uses `AccountReferenceReader`; calendar triggers unchanged; DTOs and messages unchanged |
+| `Services/CreditCardService.cs` | Modified | 1, 2 | **1:** lists accounts with `HasStatements`; create builds a Credit card account in GBP; update sets name, active and the account's due date; name uniqueness across accounts; delete uses `AccountReferenceReader`; calendar triggers unchanged; DTOs and messages unchanged. **2:** `nextInvoiceDueDate` is read from `CardDueDate` and written to the statement (§3 "Editing the due date"). |
 | `Services/CardStatementService.cs` | Modified | 1, 2 | **1:** card accounts; `CardChargeFilter`; accumulated outstanding from `AccountBalanceRule`; payer resolved over all accounts (the entity refuses a card). **2:** the GET's creation goes through `CardStatementCreation`. |
 | `Services/CardStatementCreation.cs` | New | 2 | `EnsureFor(repository, expense)` |
 | `Services/ExpenseService.cs` | Modified | 1, 2 | **1:** resolves `CreditCardId` among accounts with `HasStatements` (unknown Id: today's message). **2:** calls `CardStatementCreation.EnsureFor` in add, update and invoice-date saves. |
 | `Services/MensaisService.cs` | Modified | 1 | Payer lookup over accounts with `CanPayBills` or `HasStatements` |
 | `Services/AccountReferenceReader.cs` | Modified | 1 | Counts charges, statements and investment-account links |
-| `Services/AccountAdminService.cs` | Modified | 1 | `NextInvoiceDueDate` on create and update (applied through `SetCardTerms` when `HasStatements`); calendar trigger for card accounts on create, update and delete |
+| `Services/AccountAdminService.cs` | Modified | 1 | Calendar trigger for card accounts on create, update and delete |
 | `Services/AccountQueryService.cs` | Modified | 1, 3 | **1:** card grid rows (§3). **3:** `BalanceIsOwed` on the detail. |
 | `Services/AccountGroupSummaryService.cs` | Modified | 3 | Member `Statement` and `BalanceIsOwed`; totals `Balance` without card members; `CardOutstandingTotal` |
-| `Services/CreditCardCalendarSyncService.cs`, `PaymentsDueService.cs`, `InvestmentAccountService.cs`, `InvestmentSnapshotService.cs` | Modified | 1 | Repeated change: card accounts via `HasStatements`; due date from `CardTerms`; snapshot suggestions through `CardChargeFilter(includePaid: true)` |
-| `DTOs/AccountDTO.cs`, `AccountCreateDTO.cs`, `AccountUpdateDTO.cs` | Modified | 1 | `NextInvoiceDueDate` (`DateOnly?`) |
+| `Services/CreditCardCalendarSyncService.cs`, `PaymentsDueService.cs`, `InvestmentAccountService.cs`, `InvestmentSnapshotService.cs` | Modified | 1, 2 | **1:** repeated change: card accounts via `HasStatements`; due date from the account; snapshot suggestions through `CardChargeFilter(includePaid: true)`. **2:** the calendar sync and `PaymentsDueService` read the due date from `CardDueDate`. |
 | `DTOs/AccountGroupMemberDTO.cs`, `CurrencyTotalDTO.cs`, `AccountDetailDTO.cs` | Modified | 3 | `Statement`, `BalanceIsOwed`; `CardOutstandingTotal`; `BalanceIsOwed` |
 | `DTOs/AccountGroupStatementDTO.cs` | New | 3 | `OutstandingTotal`, `IsPaid` |
 
@@ -145,7 +147,8 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 |---|---|---|---|
 | `Persistence/CashFlowDataConverter.cs` | Modified | 1, 2 | **1:** reads `CreditCards` as card accounts; writes card accounts to `CreditCards` and the rest to `Accounts`, same order and bytes. **2:** one `Accounts` collection; `CreditCards` gone. |
 | `Persistence/CreditCardV2JsonConverter.cs` | New, then deleted | 1 → 2 | The V2 card shape ↔ card account (stage 1 only) |
-| `Persistence/AccountJsonConverter.cs` | Modified | 2 | Writes and reads `CardTerms` after `RoundUp` |
+| `Persistence/AccountJsonConverter.cs` | Modified | 2 | Reads and writes card accounts in `Accounts` (no due date) |
+| `Persistence/CashFlowTypeInfoResolver.cs` (statement) | Modified | 2 | `CardStatement.DueDate` written after `IsPaid` |
 | `Persistence/CashFlowTypeInfoResolver.cs` | Modified | 1 | The three `CreditCard` properties resolve through the account reference converter; wire names stay `CreditCardId` |
 | `Persistence/CreditCardReferenceConverter.cs` | Deleted | 1 | Replaced by the account reference converter |
 | `Persistence/ReferenceResolutionContext.cs` | Modified | 1 | Drops the card lookup |
@@ -165,11 +168,11 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
-| `api/generated/openapi.ts` | Regenerated | 1, 3 | From the snapshot |
+| `api/generated/openapi.ts` | Regenerated | 3 | From the snapshot |
 | `hooks/useMonthly.ts` | Modified | 3 | Bank rows from members without `statement`; card totals from `summary.totals` |
 | `components/CardsGrid.tsx`, `pages/MonthlyPage.tsx` | Modified | 3 | `CardsGrid` takes the per-currency card totals instead of one browser-summed number |
 | `pages/AccountsPage.tsx`, `components/AccountHeader.tsx` | Modified | 4 | Owed display; template labels |
-| `components/AccountFormDialog.tsx`, `pages/AdminAccountsPage.tsx` | Modified | 4 | Next invoice due date field (optional date) when the template has `HasStatements`; template labels |
+| `components/AccountFormDialog.tsx`, `pages/AdminAccountsPage.tsx` | Modified | 4 | Template labels |
 | `utils/accountTemplateLabel.ts` | New | 4 | Display names |
 
 **Scripts, data and docs**
@@ -190,7 +193,7 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 - A card account as payer (`POST`/`PUT /expenses` with a card's Id as `paymentSourceBankId`, `POST mensais/{id}/paid`, `POST card-statements/{id}/paid`) returns 400 "Platinum Visa 8003 is a card account and can't pay."; nothing is saved.
 - `DELETE /accounts/{id}` on a card with charges, statements or investment links returns 409 "<name> has transactions and cannot be deleted. Deactivate it instead.".
 
-**Stage 1 (additive):** `AccountDTO`, `AccountCreateDTO`, `AccountUpdateDTO` gain `nextInvoiceDueDate` (date or null). `GET accounts/templates` lists:
+**Stage 1:** no shape change; `GET accounts/templates` now lists:
 
 ```json
 [
@@ -213,7 +216,7 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 }
 ```
 
-`AccountDetailDTO` gains `balanceIsOwed`. The OpenAPI snapshot changes are additions only, in stages 1 and 3.
+`AccountDetailDTO` gains `balanceIsOwed`. The OpenAPI snapshot changes are additions only, in stage 3; stages 1, 2 and 4 leave it unchanged.
 
 ## 6. Data Model
 
@@ -222,27 +225,39 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 | Field | JSON type | Nullable | Rule |
 |---|---|---|---|
 | `Id`, `Name`, `Template`, `Currency`, `IsActive`, `OpeningBalance`, `RoundUp` | as V2 | as V2 | A card: `"CreditCard"`, `"GBP"`, `OpeningBalance null`, `RoundUp null` |
-| `CardTerms` | object or null | Yes | `{ "NextInvoiceDueDate": "yyyy-MM-dd" or null }`. Present exactly when the template has `HasStatements`. |
 
 ```json
 { "Id": "…501", "Name": "BarclaysPlatinumVisa8003", "Template": "CreditCard", "Currency": "GBP", "IsActive": true,
-  "OpeningBalance": null, "RoundUp": null, "CardTerms": { "NextInvoiceDueDate": "2026-11-05" } }
+  "OpeningBalance": null, "RoundUp": null }
+```
+
+**V3 statement (in `CardStatements`):**
+
+| Field | JSON type | Nullable | Rule |
+|---|---|---|---|
+| `Id`, `CreditCardId`, `Year`, `Month`, `IsPaid` | as V2 | as V2 | Unchanged |
+| `DueDate` | string (`yyyy-MM-dd`) | Yes | The payment due date of this statement |
+
+```json
+{ "Id": "…", "CreditCardId": "…501", "Year": 2026, "Month": 11, "IsPaid": false, "DueDate": "2026-11-18" }
 ```
 
 **V2 → V3 step (`V2ToV3CardsToAccounts`, `FromVersion` 2) rules:**
-1. Each `CreditCards[i]` is appended to `Accounts` as above: `IsActive` copied; `NextInvoiceDueDate` copied into `CardTerms`.
-2. Every bank account gets `"CardTerms": null`.
+1. Each `CreditCards[i]` is appended to `Accounts` as above, with `IsActive` copied.
+2. Every existing statement gets `"DueDate": null`.
 3. A non-null `CreditCardId` on an expense, statement or investment account that isn't a card Id stops the step with `<Record> <id> references unknown card <id>` (`InvalidDataException`); nothing is written.
-4. For each (card, invoice year-month) of the expenses with that card and no matching statement: append `{ "Id": <new Guid>, "CreditCardId", "Year", "Month", "IsPaid": <every such charge has a PaymentSourceAccountId> }`.
-5. `CreditCards` is removed. `Version` = 3 (stamped by `DataFileMigrator`).
-6. Summary: `"{n} cards became accounts; {m} statements added"`.
-7. The result is validated by deserializing it with the V3 serializer (existing `DataFileMigrator` behaviour).
+4. For each (card, invoice year-month) of the expenses with that card and no matching statement: append `{ "Id": <new Guid>, "CreditCardId", "Year", "Month", "IsPaid": <every such charge has a PaymentSourceAccountId>, "DueDate": null }`.
+5. For each card with a non-null `NextInvoiceDueDate` D: set `DueDate` = D on the statement for (card, D's year, D's month), appending that statement first (same paid rule; unpaid when it has no charges) when it is missing.
+6. `CreditCards` is removed. `Version` = 3 (stamped by `DataFileMigrator`).
+7. Summary: `"{n} cards became accounts; {m} statements added; {d} due dates moved to statements"`.
+8. The result is validated by deserializing it with the V3 serializer (existing `DataFileMigrator` behaviour).
 
 **Business rules:**
 - **Card balance:** see §3. On the live copy, every card's balance in the current month equals −accumulated outstanding.
 - **Statement outstanding (unchanged):** the sum of the card's unpaid charges with that invoice month. **Paid:** the statement's flag.
 - **Snapshot suggestion (unchanged):** paid + unpaid charges of the card with that invoice month.
-- **Statement on write (stage 2):** a charge on card C with invoice month M ensures a statement (C, M) exists. It never changes `IsPaid`.
+- **Statement on write (stage 2):** a charge on card C with invoice month M ensures a statement (C, M) exists. It never changes `IsPaid` or `DueDate`.
+- **Card's current due date (stage 2):** the `DueDate` of the card's latest statement, by year then month, that has one; null when none has. Example: BA's November statement has 18/11 and no later statement has a date, so BA's due date is 2026-11-18, the calendar event sits on that day with the November outstanding total, and the banner drops it once November is paid.
 - **Card can't pay:** "<name> is a card account and can't pay." (§3).
 - **Inactive cards:** unchanged. No new charges ("Credit card '<name>' is inactive and cannot be used for new entries."), no investment-account link; existing records stay readable.
 
@@ -256,16 +271,17 @@ Following the `testing-guide-Financial` skill:
 
 | Test file | Type | Stage | Coverage goal |
 |---|---|---|---|
-| `Domain.Tests/ValueObjects/CardTermsTests.cs` | Unit | 1 | Null and set due date; equality |
-| `Domain.Tests/Entities/AccountTests.cs` | Unit | 1 | Credit card factory, `CardTerms` default, `SetCardTerms` guard |
+| `Domain.Tests/Entities/AccountTests.cs` | Unit | 1 | Credit card factory; due date settable only on a card account |
+| `Domain.Tests/Entities/CardStatementTests.cs`, `Rules/CardDueDateTests.cs` | Unit | 2 | `SetDueDate`; latest statement with a date wins; a later statement without a date is skipped; none → null |
 | `Domain.Tests/Rules/AccountTemplatesTests.cs` | Unit | 1, 3 | The Credit card set and currencies are exact; `JoinsDefaultGroup` (false, then true) |
 | `Domain.Tests/Entities/ExpenseTests.cs`, `CapabilityGuardTests.cs` | Unit | 1 | Card payer refused with the message; non-card account as `CreditCard` refused; inactive card unchanged |
 | `Domain.Tests/Rules/AccountBalanceRuleTests.cs` | Unit | 1 | Unpaid charge −value on the card; settled charge only on the bank; date boundary |
 | `Domain.Tests/Rules/CardChargeFilterTests.cs` | Unit | 1 | Unpaid only vs paid + unpaid; other card; other month |
 | `Domain.Tests/Rules/AccountActionsTests.cs` | Unit | 1 | A card account has no actions; a bank unchanged |
 | `Application.Tests/Services/CardStatementServiceTests.cs`, `InvestmentSnapshotServiceTests.cs`, `CreditCardServiceTests.cs`, `CreditCardCalendarSyncServiceTests.cs`, `PaymentsDueServiceTests.cs` | Unit | 1 | Existing expected values unchanged; investment link blocks delete; duplicate name 409 |
-| `Application.Tests/Services/AccountAdminServiceTests.cs`, `AccountReferenceReaderTests.cs`, `AccountQueryServiceTests.cs`, `MensaisServiceTests.cs` | Unit | 1 | Card create with due date; calendar triggered for cards only; in-use counts; card grid rows; card refused as bill payer |
+| `Application.Tests/Services/AccountAdminServiceTests.cs`, `AccountReferenceReaderTests.cs`, `AccountQueryServiceTests.cs`, `MensaisServiceTests.cs` | Unit | 1 | Card create; calendar triggered for cards only; in-use counts; card grid rows; card refused as bill payer |
 | `Application.Tests/Services/CardStatementCreationTests.cs`, `ExpenseServiceTests.cs` | Unit | 2 | Statement created once on add, on edit onto a card, on invoice-month change; never duplicated |
+| `Application.Tests/Services/CreditCardServiceTests.cs`, `CreditCardCalendarSyncServiceTests.cs`, `PaymentsDueServiceTests.cs` | Unit | 2 | Setting a due date writes the statement of its month (created when missing); clearing it clears that statement; `nextInvoiceDueDate`, the calendar event date and title total, and the banner entry are the same as with today's card date |
 | `Application.Tests/Services/AccountGroupSummaryServiceTests.cs` | Unit | 3 | Card member fields; `Balance` excludes cards; `CardOutstandingTotal` |
 | `Infrastructure.Tests/Persistence/CashFlowDataConverterTests.cs`, `AccountJsonConverterTests.cs`, `CashFlowSerializerAdapterTests.cs`, `ExampleDataFileTests.cs` | Integration | 1, 2 | **1:** a V2 file with cards round-trips byte-identically. **2:** V3 round-trip; V2 refused with the migrate message; example file loads. |
 | `CashFlowSpreadsheetImport.Tests/DataFileMigration/V2ToV3CardsToAccountsTests.cs`, `DataFileMigratorTests.cs`, `FreshImportVersionTests.cs` | Integration | 2 | Every step rule in §6; chain V1→V3; fresh import writes V3 with card accounts |
@@ -278,7 +294,7 @@ Following the `testing-guide-Financial` skill:
 
 | AC | Criterion (short) | Test | Stage |
 |---|---|---|---|
-| 01 | `migrate` V2→V3: 5 card accounts, same Ids, active flags, due dates; references; cards in the default group | `V2ToV3CardsToAccountsTests.Apply_FiveCards_BecomeCreditCardAccountsWithSameIdsFlagsAndDueDates`; default-group half: `CreditCardTemplateAcceptanceTests.Summary_AfterMigration_IncludesTheCards` | 2, 3 |
+| 01 | `migrate` V2→V3: 5 card accounts, same Ids, active flags; each card's due date on its statement; references; cards in the default group | `V2ToV3CardsToAccountsTests.Apply_FiveCards_BecomeCreditCardAccountsWithSameIdsAndFlags`, `Apply_CardDueDate_MovesToTheStatementOfItsMonth`; default-group half: `CreditCardTemplateAcceptanceTests.Summary_AfterMigration_IncludesTheCards` | 2, 3 |
 | 02 | Missing statements created, paid only when all charges settled | `V2ToV3CardsToAccountsTests.Apply_MonthWithChargesAndNoStatement_AddsStatementPaidOnlyWhenAllSettled` | 2 |
 | 03 | A charge creates its statement when missing | `CreditCardTemplateAcceptanceTests.AddOrEditCardCharge_CreatesTheMissingStatementOnce` | 2 |
 | 04 | Card account: no actions; refused with 400 as payer | `CreditCardTemplateAcceptanceTests.CardAccount_HasNoActions_AndIsRefusedAsPayerWith400` | 1 |
@@ -287,7 +303,7 @@ Following the `testing-guide-Financial` skill:
 | 07 | Snapshot suggestions identical | `InvestmentSnapshotServiceTests` (existing values, paid + unpaid) | 1 |
 | 08 | Summary: card statement outstanding and status, card total per currency, balance as owed | `CreditCardTemplateAcceptanceTests.Summary_CardMembers_CarryStatementFieldsAndCardTotal`; owed display in `AccountsPage.test.tsx` | 3, 4 |
 | 09 | Monthly's card total from the summary | `useMonthly.test.ts` "reads the card total from the summary and makes no statement sum" | 3 |
-| 10 | Calendar sync and payments-due banner work against card accounts | `CreditCardCalendarSyncServiceTests`, `PaymentsDueServiceTests` on card accounts | 1 |
+| 10 | Calendar sync and payments-due banner work against card accounts | `CreditCardCalendarSyncServiceTests`, `PaymentsDueServiceTests` on card accounts (stage 1), then with the due date read from statements (stage 2); `CreditCardServiceTests.Update_DueDate_WritesItOnTheStatementOfThatMonth` | 1, 2 |
 | 11 | Creating a card in Admin → Accounts needs no code and joins the default group | `CreditCardTemplateAcceptanceTests.CreateCardThroughAccounts_ListedOnCreditCards_AndInTheSummary` | 1, 3 |
 | 12 | `/credit-cards` and `/card-statements` same shapes and values | OpenAPI snapshot (no removals) + `CreditCardTemplateAcceptanceTests.CreditCardsAndCardStatements_ReturnTheSameValues` | 1 |
 | 13 | Fresh spreadsheet import writes Credit card accounts and the API starts | `FreshImportVersionTests.Import_FreshWorkbook_WritesVersion3WithCardAccounts` | 2 |
