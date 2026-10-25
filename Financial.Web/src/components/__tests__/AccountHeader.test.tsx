@@ -21,6 +21,7 @@ const BARCLAYS: AccountDetailDto = {
   year: 2026,
   month: 10,
   balance: 1234.56,
+  balanceIsOwed: false,
   allowedActions: [],
 }
 

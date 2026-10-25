@@ -9,7 +9,7 @@ const BANK_TOTALS: BankTotal[] = [
   { bankId: 'bank-trading212', bank: 'Trading212', currency: 'GBP', balance: 8.8, roundUpTotal: 0.6 },
 ]
 
-const GBP_TOTALS: CurrencyTotalDto[] = [{ currency: 'GBP', balance: 51.3, roundUpTotal: 0.6 }]
+const GBP_TOTALS: CurrencyTotalDto[] = [{ currency: 'GBP', balance: 51.3, roundUpTotal: 0.6, cardOutstandingTotal: 0 }]
 
 function footer() {
   return document.querySelector('.monthly-page__section-total')!.textContent
@@ -92,7 +92,7 @@ describe('BanksGrid', () => {
     render(
       <BanksGrid
         bankTotals={BANK_TOTALS}
-        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
+        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
       />,
     )
 
@@ -131,7 +131,7 @@ describe('BanksGrid', () => {
     render(
       <BanksGrid
         bankTotals={[...BANK_TOTALS, { bankId: 'bank-itau', bank: 'Itaú', currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
-        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
+        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
       />,
     )
 

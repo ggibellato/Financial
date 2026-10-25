@@ -9,6 +9,10 @@
     { "after": "{month}/summary/incomes/*/gross", "before": "{month}/incomes/*/gross", "negate": false, "reason": "F04 group summary" },
     { "after": "{month}/summary/totalIncoming", "before": "{month}/incomes/totalIncoming", "negate": false, "reason": "F04 group summary" },
     { "after": "{month}/account/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F05 account balance" },
-    { "after": "{month}/cardAccount/*/balance", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": true, "reason": "F07 card balance, current month only" }
+    { "after": "{month}/cardAccount/*/balance", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": true, "reason": "F07 card balance, current month only" },
+    { "after": "{month}/summary/cardMembers/*/outstandingTotal", "before": "{month}/cards/*/outstandingTotal", "negate": false, "reason": "F07 summary card member" },
+    { "after": "{month}/summary/cardMembers/*/isPaid", "before": "{month}/cards/*/isPaid", "negate": false, "reason": "F07 summary card member" },
+    { "after": "{month}/summary/cardMembers/*/balance", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": true, "reason": "F07 summary card member, current month only" },
+    { "after": "{month}/summary/totals/GBP/cardOutstandingTotal", "before": "{month}/monthly/cardOutstandingTotal", "negate": false, "reason": "F07 summary card total" }
   ]
 }

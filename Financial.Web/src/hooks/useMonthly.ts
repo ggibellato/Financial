@@ -128,9 +128,8 @@ export interface MonthlyData {
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   categories: CategoryDto[]
-  adjustmentTotal: number
   bankTotals: BankTotal[]
-  bankCurrencyTotals: CurrencyTotalDto[]
+  currencyTotals: CurrencyTotalDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -297,15 +296,15 @@ export function useMonthly(): MonthlyData {
     [refreshSilently],
   )
 
-  const adjustmentTotal = state.cardStatements.reduce((sum, statement) => sum + statement.outstandingTotal, 0)
-
-  const bankTotals: BankTotal[] = (state.summary?.members ?? []).map((member) => ({
-    bankId: member.accountId,
-    bank: member.name,
-    currency: member.currency,
-    balance: member.balance,
-    roundUpTotal: member.roundUpTotal ?? 0,
-  }))
+  const bankTotals: BankTotal[] = (state.summary?.members ?? [])
+    .filter((member) => !member.statement)
+    .map((member) => ({
+      bankId: member.accountId,
+      bank: member.name,
+      currency: member.currency,
+      balance: member.balance,
+      roundUpTotal: member.roundUpTotal ?? 0,
+    }))
 
   return {
     year,
@@ -320,9 +319,8 @@ export function useMonthly(): MonthlyData {
     banks: state.banks,
     incomeSources: state.incomeSources,
     categories: state.categories,
-    adjustmentTotal,
     bankTotals,
-    bankCurrencyTotals: state.summary?.totals ?? [],
+    currencyTotals: state.summary?.totals ?? [],
     isLoading: state.isLoading,
     error: state.error,
     retry,

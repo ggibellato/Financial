@@ -23,14 +23,14 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 10,
   members: [
-    { accountId: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 2800.25, roundUpTotal: 1.2 },
-    { accountId: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: 500, roundUpTotal: null },
-    { accountId: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null },
-    { accountId: 'itau', name: 'Itau', templateName: 'Bank', currency: 'BRL', balance: 1000, roundUpTotal: null },
+    { accountId: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 2800.25, roundUpTotal: 1.2, statement: null, balanceIsOwed: false },
+    { accountId: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: 500, roundUpTotal: null, statement: null, balanceIsOwed: false },
+    { accountId: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false },
+    { accountId: 'itau', name: 'Itau', templateName: 'Bank', currency: 'BRL', balance: 1000, roundUpTotal: null, statement: null, balanceIsOwed: false },
   ],
   totals: [
-    { currency: 'BRL', balance: 1000, roundUpTotal: 0 },
-    { currency: 'GBP', balance: 3310.25, roundUpTotal: 1.2 },
+    { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
+    { currency: 'GBP', balance: 3310.25, roundUpTotal: 1.2, cardOutstandingTotal: 0 },
   ],
   categoryTotalsSum: 0,
   incomeTotals: [],
@@ -75,7 +75,25 @@ describe('AccountsPage', () => {
       'href',
       '/cashflow/accounts/barclays?month=2026-10',
     )
-    expect(screen.getByText('Default group total BRL:', { exact: false })).toHaveTextContent('Default group total BRL: 1,000.00 · Default group total GBP: 3,310.25')
+    expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
+  })
+
+  it('labels the footer as the bank total, which leaves out card members', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+      ],
+      totals: [
+        { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
+        { currency: 'GBP', balance: 3310.25, roundUpTotal: 1.2, cardOutstandingTotal: 64.1 },
+      ],
+    })
+    renderPage()
+
+    expect(await screen.findByRole('link', { name: 'BA Amex' })).toBeInTheDocument()
+    expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
   })
 
   it('shows the month the balances belong to', async () => {

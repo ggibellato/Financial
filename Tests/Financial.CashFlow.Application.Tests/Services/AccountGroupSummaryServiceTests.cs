@@ -57,6 +57,8 @@ public class AccountGroupSummaryServiceTests
             summary.Members[0].TemplateName.Should().Be("Bank");
             summary.Members[0].Currency.Should().Be("GBP");
             summary.Members[0].Balance.Should().Be(950m);
+            summary.Members[0].Statement.Should().BeNull();
+            summary.Members[0].BalanceIsOwed.Should().BeFalse();
             summary.Members[2].Currency.Should().Be("BRL");
         }
     }
@@ -196,5 +198,80 @@ public class AccountGroupSummaryServiceTests
         var expense = Expense.Create(date, "Coffee", value, _groceries, account, creditCard: null);
         expense.SetRoundUpAmount(roundUp);
         _repository.Expenses.Add(expense);
+    }
+
+    [Fact]
+    public void GetDefaultGroupSummary_CardMember_CarriesItsUnpaidStatementOutstandingAndOwedBalance()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 8, 28), 12m, new DateOnly(2026, 9, 1));
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        AddCharge(new DateOnly(2026, 9, 20), 45m, new DateOnly(2026, 10, 1));
+        AddCharge(new DateOnly(2026, 9, 5), 100m, new DateOnly(2026, 9, 1)).Settle(_barclays, new DateOnly(2026, 9, 25));
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 9));
+
+        var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
+
+        using (new AssertionScope())
+        {
+            amex.TemplateName.Should().Be("CreditCard");
+            amex.Balance.Should().Be(-87m);
+            amex.BalanceIsOwed.Should().BeTrue();
+            amex.RoundUpTotal.Should().BeNull();
+            amex.Statement!.OutstandingTotal.Should().Be(42m);
+            amex.Statement.IsPaid.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void GetDefaultGroupSummary_CardMemberWithPaidStatement_IsPaid()
+    {
+        _repository.Accounts.Add(_amex);
+        var statement = CardStatement.Create(_amex, 2026, 9);
+        statement.MarkPaid();
+        _repository.CardStatements.Add(statement);
+
+        var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
+
+        amex.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = true });
+    }
+
+    [Fact]
+    public void GetDefaultGroupSummary_CardMemberWithoutStatementThisMonth_IsUnpaidWithNothingOutstanding()
+    {
+        _repository.Accounts.Add(_amex);
+        var augustStatement = CardStatement.Create(_amex, 2026, 8);
+        augustStatement.MarkPaid();
+        _repository.CardStatements.Add(augustStatement);
+
+        var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
+
+        amex.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
+    }
+
+    [Fact]
+    public void GetDefaultGroupSummary_CardMembers_StayOutOfTheBankTotalAndSumIntoTheCardTotal()
+    {
+        var visa = TestAccounts.CreditCard("Visa");
+        _repository.Accounts.AddRange([_amex, visa]);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        _repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 9, 4), "Shop", 15.50m, _groceries, null, visa, invoiceDate: new DateOnly(2026, 9, 1)));
+
+        var summary = _sut.GetDefaultGroupSummary(2026, 9);
+
+        using (new AssertionScope())
+        {
+            summary.Totals.Select(total => (total.Currency, total.Balance, total.CardOutstandingTotal)).Should().Equal(
+                ("GBP", 1200m, 45.50m),
+                ("BRL", 500m, 0m));
+        }
+    }
+
+    private Expense AddCharge(DateOnly date, decimal value, DateOnly invoiceDate)
+    {
+        var charge = Expense.Create(date, "Charge", value, _groceries, null, _amex, invoiceDate: invoiceDate);
+        _repository.Expenses.Add(charge);
+        return charge;
     }
 }

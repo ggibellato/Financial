@@ -1,8 +1,10 @@
-import { Fragment, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import SectionTotals from './SectionTotals'
+import type { SectionTotalItem } from '../utils/currencyFooterItems'
 
 interface TotalsGridColumn<T> {
   key: string
@@ -13,17 +15,12 @@ interface TotalsGridColumn<T> {
   filterSlot?: ReactNode
 }
 
-interface TotalsGridFooterItem {
-  label: string
-  value: ReactNode
-}
-
 interface TotalsGridProps<T> {
   label: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
-  footerItems: TotalsGridFooterItem[]
+  footerItems: SectionTotalItem[]
   /** True when `rows` has already been narrowed by an active column filter (used only to pick the empty-state message). */
   isFiltered?: boolean
   emptyMessage: string
@@ -78,14 +75,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
           </TableBody>
         </Table>
       </div>
-      <p className="monthly-page__section-total">
-        {footerItems.map((item, index) => (
-          <Fragment key={item.label}>
-            {index > 0 && ' · '}
-            {item.label}: <strong>{item.value}</strong>
-          </Fragment>
-        ))}
-      </p>
+      <SectionTotals items={footerItems} />
     </section>
   )
 }

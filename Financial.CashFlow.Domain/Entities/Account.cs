@@ -25,6 +25,7 @@ public class Account
     public string TemplateName => Template.ToString();
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
     public bool CanPay => Has(Capability.HasCategories) && !Has(Capability.HasStatements);
+    public bool BalanceIsOwed => Has(Capability.HasStatements);
 
     private Account() { }
 

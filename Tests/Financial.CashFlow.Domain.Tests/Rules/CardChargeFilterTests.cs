@@ -60,4 +60,16 @@ public class CardChargeFilterTests
         CardChargeFilter.ChargesFor([charge], _amex, 2026, 10, includePaid: false).Should().Equal(charge);
         CardChargeFilter.ChargesFor([charge], _amex, 2026, 9, includePaid: false).Should().BeEmpty();
     }
+
+    [Fact]
+    public void OutstandingTotal_SumsTheCardsUnpaidChargesOfThatInvoiceMonth()
+    {
+        var unpaid = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        var secondUnpaid = Charge(_amex, new DateOnly(2026, 10, 9), 12.50m);
+        var paid = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
+        paid.Settle(_barclays, new DateOnly(2026, 10, 20));
+        var otherCard = Charge(_visa, new DateOnly(2026, 10, 3), 40m);
+
+        CardChargeFilter.OutstandingTotal([unpaid, secondUnpaid, paid, otherCard], _amex, 2026, 10).Should().Be(42.50m);
+    }
 }

@@ -1,6 +1,7 @@
 import type { CurrencyTotalDto } from '../api/types'
 import type { BankTotal } from '../hooks/useMonthly'
 import { formatN2 } from '../utils/formatters'
+import { currencyFooterItems } from '../utils/currencyFooterItems'
 import TotalsGrid from './TotalsGrid'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useColumnFilters } from '../hooks/useColumnFilters'
@@ -21,19 +22,10 @@ const CURRENCY_COLUMN = {
   sortAccessor: (b: BankTotal) => b.currency,
 }
 
-function footerItemsFor(currencyTotals: CurrencyTotalDto[], isMultiCurrency: boolean) {
-  if (!isMultiCurrency) {
-    const [total] = currencyTotals
-    return [
-      { label: 'Bank Balance', value: formatN2(total?.balance ?? 0) },
-      { label: 'Round-Up', value: formatN2(total?.roundUpTotal ?? 0) },
-    ]
-  }
-  return currencyTotals.flatMap((total) => [
-    { label: `Bank Balance ${total.currency}`, value: formatN2(total.balance) },
-    { label: `Round-Up ${total.currency}`, value: formatN2(total.roundUpTotal) },
-  ])
-}
+const FOOTER_FIGURES = [
+  { label: 'Bank Balance', pick: (total: CurrencyTotalDto) => total.balance },
+  { label: 'Round-Up', pick: (total: CurrencyTotalDto) => total.roundUpTotal },
+]
 
 export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
@@ -81,7 +73,7 @@ export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps
       isFiltered={isColumnFiltered('bank')}
       rowKey={(b) => b.bankId}
       emptyMessage="No accounts in the default group for this month"
-      footerItems={footerItemsFor(currencyTotals, isMultiCurrency)}
+      footerItems={currencyFooterItems(currencyTotals, FOOTER_FIGURES)}
     />
   )
 }

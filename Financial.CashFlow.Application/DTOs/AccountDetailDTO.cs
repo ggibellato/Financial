@@ -10,5 +10,6 @@ public sealed class AccountDetailDTO
     public required int Year { get; init; }
     public required int Month { get; init; }
     public required decimal Balance { get; init; }
+    public required bool BalanceIsOwed { get; init; }
     public required IReadOnlyList<string> AllowedActions { get; init; }
 }

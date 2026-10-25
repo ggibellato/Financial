@@ -39,7 +39,7 @@ public static class AccountTemplates
                 Capability.ReceivesPayments
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.GBP]),
-            JoinsDefaultGroup: false)
+            JoinsDefaultGroup: true)
     ];
 
     private static readonly FrozenDictionary<AccountTemplate, Definition> ByTemplate =

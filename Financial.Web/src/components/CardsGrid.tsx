@@ -1,18 +1,20 @@
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto } from '../api/types'
+import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto, CurrencyTotalDto } from '../api/types'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { selectableBanks } from '../utils/selectableBanks'
-import { formatN2, formatN2OrDash } from '../utils/formatters'
+import { formatN2OrDash } from '../utils/formatters'
+import { currencyFooterItems } from '../utils/currencyFooterItems'
+import SectionTotals from './SectionTotals'
 import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {
   cardStatements: CardStatementDto[]
   banks: BankDto[]
-  adjustmentTotal: number
+  currencyTotals: CurrencyTotalDto[]
   markPaidSources: Record<string, string>
   setMarkPaidSource: (id: string, bank: string) => void
   markStatementPaid: (id: string, paymentSource: string) => void
@@ -40,6 +42,8 @@ interface CardRow {
   statement: CardStatementDto | null
 }
 
+const FOOTER_FIGURES = [{ label: 'Combined adjustment figure', pick: (total: CurrencyTotalDto) => total.cardOutstandingTotal }]
+
 function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[] | undefined): CardRow[] {
   if (!creditCards) {
     return cardStatements.map((s) => ({
@@ -65,7 +69,7 @@ function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDt
 export default function CardsGrid({
   cardStatements,
   banks,
-  adjustmentTotal,
+  currencyTotals,
   markPaidSources,
   setMarkPaidSource,
   markStatementPaid,
@@ -260,9 +264,7 @@ export default function CardsGrid({
           </TableBody>
         </Table>
       </div>
-      <p className="monthly-page__section-total">
-        Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
-      </p>
+      <SectionTotals items={currencyFooterItems(currencyTotals, FOOTER_FIGURES)} />
       {updateError && (
         <p className="monthly-page__error" role="alert">
           {updateError}

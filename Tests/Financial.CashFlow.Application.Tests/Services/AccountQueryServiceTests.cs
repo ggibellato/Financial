@@ -88,6 +88,7 @@ public class AccountQueryServiceTests
             detail.Year.Should().Be(2026);
             detail.Month.Should().Be(9);
             detail.Balance.Should().Be(950m);
+            detail.BalanceIsOwed.Should().BeFalse();
             detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "Reconcile");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccount")
                 .Which.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_barclays.Id.ToString());
@@ -356,7 +357,7 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetAccount_CardAccount_HasNoActionsAndItsBalanceIsMinusItsUnpaidCharges()
+    public void GetAccount_CardAccount_HasNoActionsAndOwesItsUnpaidCharges()
     {
         _repository.Accounts.Add(_amex);
         _repository.Expenses.AddRange([
@@ -370,6 +371,7 @@ public class AccountQueryServiceTests
         {
             detail.AllowedActions.Should().BeEmpty();
             detail.Balance.Should().Be(-39m);
+            detail.BalanceIsOwed.Should().BeTrue();
             detail.TemplateName.Should().Be("CreditCard");
         }
     }

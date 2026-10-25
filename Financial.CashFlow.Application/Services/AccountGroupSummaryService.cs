@@ -34,8 +34,10 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             var expenses = records.OfType<Expense>().ToList();
             var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
 
+            var statements = _repository.GetCardStatements().ToList();
             var members = DefaultAccountGroup.MembersFor(_repository.GetAccounts(), year, month, records)
-                .Select(account => ToMemberDto(account, endOfMonth, records, listedExpenses))
+                .Select(account => ToMemberDto(
+                    account, endOfMonth, records, listedExpenses, StatementFor(account, year, month, expenses, statements)))
                 .ToList();
             var incomeTotals = BuildIncomeTotals(year, month);
 
@@ -62,7 +64,11 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
     }
 
     private static AccountGroupMemberDTO ToMemberDto(
-        Account account, DateOnly endOfMonth, IReadOnlyCollection<IAccountTransaction> records, IReadOnlyCollection<Expense> listedExpenses) => new()
+        Account account,
+        DateOnly endOfMonth,
+        IReadOnlyCollection<IAccountTransaction> records,
+        IReadOnlyCollection<Expense> listedExpenses,
+        AccountGroupStatementDTO? statement) => new()
         {
             AccountId = account.Id,
             Name = account.Name,
@@ -71,8 +77,20 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
             RoundUpTotal = account.Has(Capability.SupportsRoundUp)
                 ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
-                : null
+                : null,
+            Statement = statement,
+            BalanceIsOwed = account.BalanceIsOwed
         };
+
+    private static AccountGroupStatementDTO? StatementFor(
+        Account account, int year, int month, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>
+        account.Has(Capability.HasStatements)
+            ? new AccountGroupStatementDTO
+            {
+                OutstandingTotal = CardChargeFilter.OutstandingTotal(expenses, account, year, month),
+                IsPaid = statements.Any(statement => statement.IsFor(account.Id, year, month) && statement.IsPaid)
+            }
+            : null;
 
     private static List<CurrencyTotalDTO> BuildCurrencyTotals(IEnumerable<AccountGroupMemberDTO> members) =>
         members
@@ -80,8 +98,9 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             .Select(group => new CurrencyTotalDTO
             {
                 Currency = group.Key,
-                Balance = group.Sum(member => member.Balance),
-                RoundUpTotal = group.Sum(member => member.RoundUpTotal ?? 0m)
+                Balance = group.Where(member => member.Statement is null).Sum(member => member.Balance),
+                RoundUpTotal = group.Sum(member => member.RoundUpTotal ?? 0m),
+                CardOutstandingTotal = group.Sum(member => member.Statement?.OutstandingTotal ?? 0m)
             })
             .ToList();
 

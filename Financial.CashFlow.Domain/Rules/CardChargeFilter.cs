@@ -14,4 +14,7 @@ public static class CardChargeFilter
             && invoiceDate.Year == year
             && invoiceDate.Month == month
             && (includePaid || expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge));
+
+    public static decimal OutstandingTotal(IEnumerable<Expense> expenses, Account card, int year, int month) =>
+        ChargesFor(expenses, card, year, month, includePaid: false).Sum(expense => expense.Value);
 }

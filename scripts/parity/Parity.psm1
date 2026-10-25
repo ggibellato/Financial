@@ -167,15 +167,23 @@ function Add-ParityPotFigures($Report, [string]$Month, $PotBalances) {
     Add-ParityFigure $Report "$Month/pots/total" (Get-ParitySum $PotBalances.Values { param($b) $b })
 }
 
-function Add-ParitySummaryFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
+function Add-ParitySummaryFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, [bool]$IsCurrentMonth) {
     $summary = & $Fetch "accounts/groups/default/summary/$Route"
     foreach ($member in $summary.members) {
+        if ($null -ne $member['statement']) {
+            $prefix = "$Month/summary/cardMembers/$($member.name)"
+            Add-ParityFigure $Report "$prefix/outstandingTotal" $member.statement.outstandingTotal
+            Add-ParityFigure $Report "$prefix/isPaid" $member.statement.isPaid
+            if ($IsCurrentMonth) { Add-ParityFigure $Report "$prefix/balance" $member.balance }
+            continue
+        }
         Add-ParityFigure $Report "$Month/summary/members/$($member.name)/balance" $member.balance
         Add-ParityFigure $Report "$Month/summary/members/$($member.name)/roundUpTotal" $member.roundUpTotal
     }
     foreach ($total in $summary.totals) {
         Add-ParityFigure $Report "$Month/summary/totals/$($total.currency)/balance" $total.balance
         Add-ParityFigure $Report "$Month/summary/totals/$($total.currency)/roundUpTotal" $total.roundUpTotal
+        Add-ParityFigure $Report "$Month/summary/totals/$($total.currency)/cardOutstandingTotal" $total.cardOutstandingTotal
     }
     Add-ParityFigure $Report "$Month/summary/categoryTotalsSum" $summary.categoryTotalsSum
     foreach ($income in $summary.incomeTotals) {
@@ -208,7 +216,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     Add-ParityFigure $Report "$Month/monthly/cardOutstandingTotal" $cardOutstandingTotal
     Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" $categoryTotalsSum
     Add-ParityPotFigures $Report $Month $PotBalances
-    if ($IncludeSummary) { Add-ParitySummaryFigures $Report $Month $route $Fetch }
+    if ($IncludeSummary) { Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth) }
     if ($null -ne $Accounts) { Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth) }
 }
 

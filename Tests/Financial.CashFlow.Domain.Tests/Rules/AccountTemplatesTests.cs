@@ -37,9 +37,9 @@ public class AccountTemplatesTests
     }
 
     [Fact]
-    public void JoinsDefaultGroup_CreditCard_IsFalse()
+    public void JoinsDefaultGroup_CreditCard_IsTrue()
     {
-        AccountTemplates.JoinsDefaultGroup(AccountTemplate.CreditCard).Should().BeFalse();
+        AccountTemplates.JoinsDefaultGroup(AccountTemplate.CreditCard).Should().BeTrue();
     }
 
     [Fact]

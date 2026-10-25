@@ -105,7 +105,7 @@ const ACCOUNTS: AccountDto[] = [
 
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
-  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, allowedActions: [] }
+  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: false, allowedActions: [] }
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [

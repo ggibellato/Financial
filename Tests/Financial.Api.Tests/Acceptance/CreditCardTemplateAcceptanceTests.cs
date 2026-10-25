@@ -58,6 +58,9 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
         ReplaceCashFlowDataBeforeStart(SeededData);
     }
 
+    private async Task<AccountGroupSummaryDTO> OctoberSummaryAsync() =>
+        (await Client.GetFromJsonAsync<AccountGroupSummaryDTO>($"{Api}/accounts/groups/default/summary/2026/10"))!;
+
     private async Task<List<ExpenseDTO>> OctoberExpensesAsync() =>
         (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10"))!;
 
@@ -160,7 +163,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-11")]
-    public async Task CreateCardThroughAccounts_ListedOnCreditCards()
+    public async Task CreateCardThroughAccounts_ListedOnCreditCards_AndInTheSummary()
     {
         var response = await Client.PostAsJsonAsync($"{Api}/accounts", new AccountCreateDTO
         {
@@ -171,6 +174,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
         var created = await response.Content.ReadFromJsonAsync<AccountDTO>();
 
         var cards = await Client.GetFromJsonAsync<List<CreditCardDTO>>($"{Api}/credit-cards");
+        var summary = await OctoberSummaryAsync();
 
         using (new AssertionScope())
         {
@@ -180,6 +184,10 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
             nubank.Id.Should().Be(created.Id);
             nubank.IsActive.Should().BeTrue();
             nubank.HasReferences.Should().BeFalse();
+            var member = summary.Members.Should().ContainSingle(member => member.Name == "Nubank").Which;
+            member.AccountId.Should().Be(created.Id);
+            member.BalanceIsOwed.Should().BeTrue();
+            member.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
         }
     }
 
@@ -246,6 +254,45 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
             second.StatusCode.Should().Be(HttpStatusCode.OK);
             moved.StatusCode.Should().Be(HttpStatusCode.OK);
             visaStatements.Should().Equal((2026, 12, false), (2027, 1, false));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-01")]
+    public async Task Summary_AfterMigration_IncludesTheCards()
+    {
+        var summary = await OctoberSummaryAsync();
+
+        summary.Members.Where(member => member.TemplateName == "CreditCard").Select(member => (member.AccountId.ToString(), member.Name))
+            .Should().Equal(
+                (AmexId, "BA Amex"),
+                (LinkedId, "Linked"),
+                (VisaId, "Platinum Visa 8003"),
+                (UnusedId, "Unused"));
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-08")]
+    public async Task Summary_CardMembers_CarryStatementFieldsAndCardTotal()
+    {
+        var before = await OctoberSummaryAsync();
+        var paid = await Client.PostAsJsonAsync(
+            $"{Api}/card-statements/{AmexOctoberStatementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = Guid.Parse(BarclaysId) });
+        var after = await OctoberSummaryAsync();
+
+        using (new AssertionScope())
+        {
+            before.Members.Select(member => (member.Name, member.Balance, member.BalanceIsOwed, member.Statement?.OutstandingTotal, member.Statement?.IsPaid))
+                .Should().Equal(
+                    ("BA Amex", -40m, true, 30m, false),
+                    ("Barclays", 900m, false, (decimal?)null, (bool?)null),
+                    ("Linked", 0m, true, 0m, false),
+                    ("Platinum Visa 8003", -40m, true, 40m, false),
+                    ("Unused", 0m, true, 0m, false));
+            before.Totals.Select(total => (total.Currency, total.Balance, total.CardOutstandingTotal)).Should().Equal(("GBP", 900m, 70m));
+            paid.StatusCode.Should().Be(HttpStatusCode.OK);
+            after.Members.Single(member => member.Name == "BA Amex").Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = true });
+            after.Totals.Select(total => (total.Currency, total.Balance, total.CardOutstandingTotal)).Should().Equal(("GBP", 870m, 40m));
         }
     }
 }

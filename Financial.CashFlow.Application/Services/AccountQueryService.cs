@@ -77,6 +77,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 Year = year,
                 Month = month,
                 Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
+                BalanceIsOwed = account.BalanceIsOwed,
                 AllowedActions = AccountActions.AllowedFor(account).Select(action => action.ToString()).ToList()
             };
 

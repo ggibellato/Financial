@@ -142,11 +142,11 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: CURRENT_YEAR,
   month: CURRENT_MONTH,
   members: [
-    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0 },
-    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1 },
-    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6 },
+    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0, statement: null, balanceIsOwed: false },
+    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1, statement: null, balanceIsOwed: false },
+    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6, statement: null, balanceIsOwed: false },
   ],
-  totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7 }],
+  totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7, cardOutstandingTotal: 0 }],
   categoryTotalsSum: 1234.56,
   incomeTotals: [
     { incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 },
@@ -216,11 +216,30 @@ describe('useMonthly', () => {
     expect(result.current.incomeSources).toEqual([])
   })
 
-  it('computes the combined adjustment figure as the sum of outstanding totals', async () => {
+  it('[AC P60-F07-credit-card-template-and-card-migration-09] reads the card total from the summary and makes no statement sum', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7, cardOutstandingTotal: 64.1 }],
+    })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.adjustmentTotal).toBe(100)
+    expect(result.current.currencyTotals).toEqual([{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7, cardOutstandingTotal: 64.1 }])
+    expect(result.current).not.toHaveProperty('adjustmentTotal')
+  })
+
+  it('leaves card members out of the bank rows', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+      ],
+    })
+    const { result } = renderHook(() => useMonthly())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.bankTotals.map((row) => row.bank)).toEqual(['Barclays', 'Chase', 'Trading212'])
   })
 
   it('[AC P60-F04-default-account-group-and-summary-query-06] reads the summary figures from one summary request without summing in the browser', async () => {
@@ -235,7 +254,7 @@ describe('useMonthly', () => {
       { bankId: 'bank-chase', bank: 'Chase', currency: 'GBP', balance: -50, roundUpTotal: 0.1 },
       { bankId: 'bank-trading212', bank: 'Trading212', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6 },
     ])
-    expect(result.current.bankCurrencyTotals).toEqual(SUMMARY.totals)
+    expect(result.current.currencyTotals).toEqual(SUMMARY.totals)
     expect(result.current.incomeTotals).toEqual([
       { incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 },
       { incomeSourceId: '3', name: 'Lottery', netValue: 50, grossValue: null },
@@ -246,7 +265,7 @@ describe('useMonthly', () => {
   it('keys bank rows by the member account Id, not by matching a bank name', async () => {
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
-      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0 }],
+      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0, statement: null, balanceIsOwed: false }],
     })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -257,7 +276,7 @@ describe('useMonthly', () => {
   it('shows a member without a round-up total as 0', async () => {
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
-      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null }],
+      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false }],
     })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -270,7 +289,7 @@ describe('useMonthly', () => {
     const { result } = renderHook(() => useMonthly())
 
     expect(result.current.bankTotals).toEqual([])
-    expect(result.current.bankCurrencyTotals).toEqual([])
+    expect(result.current.currencyTotals).toEqual([])
     expect(result.current.incomeTotals).toEqual([])
     expect(result.current.categoryTotalsSum).toBe(0)
     expect(result.current.totalIncoming).toBe(0)

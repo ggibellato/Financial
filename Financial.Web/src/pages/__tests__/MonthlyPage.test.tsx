@@ -204,14 +204,14 @@ const INCOMES: IncomeDto[] = [
 ]
 
 function member(accountId: string, name: string, balance: number, roundUpTotal = 0): AccountGroupMemberDto {
-  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal }
+  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal, statement: null, balanceIsOwed: false }
 }
 
 const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 7,
   members: [member('bank-barclays', 'Barclays', 42.5), member('bank-chase', 'Chase', 0), member('bank-trading212', 'Trading212', 0)],
-  totals: [{ currency: 'GBP', balance: 42.5, roundUpTotal: 0 }],
+  totals: [{ currency: 'GBP', balance: 42.5, roundUpTotal: 0, cardOutstandingTotal: 0 }],
   categoryTotalsSum: 42.5,
   incomeTotals: [{ incomeSourceId: '1', name: 'Gleison', netValue: 2450, grossValue: 3200 }],
   totalIncoming: 2450,
@@ -372,6 +372,21 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Network down')).toBeInTheDocument()
   })
 
+  it('shows the card total from the summary, not a sum of the statement rows', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -64.1, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+      ],
+      totals: [{ ...SUMMARY.totals[0], cardOutstandingTotal: 64.1 }],
+    })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 64.10'))
+    expect(within(screen.getByRole('table', { name: 'Bank balances' })).queryByText('BaAmex')).not.toBeInTheDocument()
+  })
+
   it('defaults to the Summary tab on load, showing only the total grids', async () => {
     render(<MonthlyPage />)
 
@@ -417,7 +432,7 @@ describe('MonthlyPage', () => {
       ...SUMMARY,
       month: 8,
       members: [member('bank-barclays', 'Barclays', 300)],
-      totals: [{ currency: 'GBP', balance: 300, roundUpTotal: 0 }],
+      totals: [{ currency: 'GBP', balance: 300, roundUpTotal: 0, cardOutstandingTotal: 0 }],
       categoryTotalsSum: 300,
       incomeTotals: [{ incomeSourceId: '3', name: 'Lottery', netValue: 50, grossValue: null }],
       totalIncoming: 50,
