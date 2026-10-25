@@ -420,7 +420,7 @@ Rules that apply to every feature:
 - **Linked transactions:** records written by one operation carry the same operation id; editing or deleting the operation edits or deletes all of them in one save. The statement payment is the first operation to use it; F10's deposits and withdrawals reuse it. *Why here and not in F02:* no F02 operation writes more than one record (a transfer is one record that contributes to two accounts), so the contract arrives with its first user.
 - **Paying a statement** = one transfer bank → card (new pair rule `CanPayBills`-holding bank → `ReceivesPayments` account, allowed only through this action) for the statement's total, with no category, linked to the statement; the statement becomes paid. Paid in full in one payment; no partial payments (as today).
 - Payment date defaults to today, editable, not in the future. Charges keep their own date, category and statement month.
-- **Category reporting unchanged:** an unpaid charge counts in its statement month; once paid it counts on the payment's date, read from the linked payment instead of rewriting the charge (`Expense.ReportingDate`). Category totals and tithe land in the same months as today.
+- **Category reporting by statement month:** a charge counts in its statement month for category totals and tithe, paid or not (`Expense.ReportingDate`); paying a statement never moves it. *Why:* the spreadsheet kept charges in the invoice month when the payment fell in the next month (user decision 2026-10-25).
 - **Pay from both sides:** from the card (Statements tab → Pay on an unpaid statement → choose bank) and from the bank ("Pay card statement" → choose card → choose unpaid statement). *Why:* user decision, actions spanning accounts start from both.
 - **Unmark paid, two paths:** a statement paid through a transfer → the linked transfer is deleted and the statement is unpaid; a statement paid before V3 (charges re-pointed, no transfer) → today's reversal (bank cleared, date back to charge date). *Why:* keeps the undo for both new and the 60 legacy statements, as the forward-only rule promises.
 - **Statements created on write:** a statement record is created when a charge lands in its month, a charge is moved to it, or it is paid; reads never write and treat a missing statement as unpaid with no charges. *Why:* removes a write inside a GET (design doc weak spot) and makes parity reads side-effect free. Snapshot and tithe GET writes are unchanged.
@@ -765,7 +765,7 @@ graph TD
 ### F08. Statement Payment and Card Screen
 - [ ] Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
 - [ ] After payment the card's owed balance drops by the total and the bank shows one "Card payment" row that opens the statement
-- [ ] Category totals and tithe count paid charges on the payment date, in the same months as today's re-dating
+- [ ] Category totals and tithe count every charge in its statement month, paid or not
 - [ ] Paying from the bank ("Pay card statement") produces the same records as paying from the card
 - [ ] Paying an already paid or empty statement is rejected and nothing is saved
 - [ ] Unmark on a transfer-paid statement deletes the transfer and sets it unpaid; on a legacy paid statement it restores today's reversal
