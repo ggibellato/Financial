@@ -756,20 +756,20 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F07. Credit Card Template and Card Migration
-- [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids and active flags; each card's due date on the statement of its month; charges, statements and investment accounts reference them; cards appear in the default group
-- [ ] Missing statements for months with charges are created, paid only when all their charges are settled
-- [ ] Adding a card charge, or editing a charge onto a card or into another month, creates that statement when it is missing
-- [ ] A card account shows no actions and is refused with 400 as the payer of an expense, a recurring bill or a card statement
-- [ ] A card used by charges, statements or an investment account cannot be deleted (Admin → Accounts and `/credit-cards`); card changes in Admin → Accounts update the calendar event
-- [ ] Statement totals, outstanding and paid status are identical to today for every card and month
-- [ ] Snapshot suggestions for card sources are identical (paid + unpaid charges of the month)
-- [ ] The default group summary includes each card's statement-month outstanding and status, and the card outstanding total per currency; card balance shown as owed
-- [ ] Monthly's card outstanding total comes from the summary; the browser no longer sums card statements
-- [ ] Calendar due-date sync and the payments-due banner work against card accounts
-- [ ] Creating a card in Admin → Accounts needs no code and adds it to the default group
-- [ ] `/credit-cards` and `/card-statements` return the same shapes and values
-- [ ] A fresh spreadsheet import writes the cards as Credit card accounts and the API starts on it
-- [ ] Parity: 0 differences (each card's statement outstanding and status mapped to today's per-statement figures; the card balance, negated, equals accumulated outstanding in the current month); `/simplify` run; architecture-reviewer passed
+- [x] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids and active flags; each card's due date on the statement of its month; charges, statements and investment accounts reference them; cards appear in the default group
+- [x] Missing statements for months with charges are created, paid only when all their charges are settled
+- [x] Adding a card charge, or editing a charge onto a card or into another month, creates that statement when it is missing
+- [x] A card account shows no actions and is refused with 400 as the payer of an expense, a recurring bill or a card statement
+- [x] A card used by charges, statements or an investment account cannot be deleted (Admin → Accounts and `/credit-cards`); card changes in Admin → Accounts update the calendar event
+- [x] Statement totals, outstanding and paid status are identical to today for every card and month
+- [x] Snapshot suggestions for card sources are identical (paid + unpaid charges of the month)
+- [x] The default group summary includes each card's statement-month outstanding and status, and the card outstanding total per currency; card balance shown as owed
+- [x] Monthly's card outstanding total comes from the summary; the browser no longer sums card statements
+- [x] Calendar due-date sync and the payments-due banner work against card accounts
+- [x] Creating a card in Admin → Accounts needs no code and adds it to the default group
+- [x] `/credit-cards` and `/card-statements` return the same shapes and values
+- [x] A fresh spreadsheet import writes the cards as Credit card accounts and the API starts on it
+- [x] Parity: 0 differences (each card's statement outstanding and status mapped to today's per-statement figures; the card balance, negated, equals accumulated outstanding in the current month); `/simplify` run; architecture-reviewer passed
 
 ### F08. Statement Payment and Card Screen
 - [ ] Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
@@ -838,13 +838,13 @@ graph TD
 
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
-- [ ] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
+- [x] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
 - [x] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
 - [x] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
 - [ ] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
 - [ ] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
 - [ ] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
-- [ ] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
+- [x] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
 - [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
 - [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header with no change to the shell's allowed-actions rendering
 - [ ] F07's card accounts and charge filter give the statement totals F08 pays
