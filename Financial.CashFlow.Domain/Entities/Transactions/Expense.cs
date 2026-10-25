@@ -46,15 +46,8 @@ public class Expense : IAccountTransaction
 
     public bool IsInvestment => Category.IsInvestment;
 
-    /// <summary>
-    /// The month/year this expense's value counts toward in reporting: an unpaid credit card
-    /// charge counts toward its assigned invoice period, while a settled charge or a bank
-    /// expense counts toward its (post-settlement, for a charge) <see cref="Date"/>. Falls back to
-    /// <see cref="Date"/> for a legacy pre-migration record that hasn't had its invoice date
-    /// backfilled yet (see <see cref="MigrateLegacyDates"/>).
-    /// </summary>
     public DateOnly ReportingDate =>
-        PaymentStatus == ExpensePaymentStatus.CreditCardCharge && InvoiceDate is not null
+        CreditCard is not null && InvoiceDate is not null
             ? InvoiceDate.Value
             : Date;
 

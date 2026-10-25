@@ -662,7 +662,7 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsByMonth_SettledCardCharge_CountsTowardPostSettlementDateMonth()
+    public void GetCategoryTotalsByMonth_SettledCardCharge_CountsTowardStatementMonth()
     {
         var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, MercadoFixture, null, BarclaysPlatinumVisa8003Fixture);
         charge.Settle(ChaseFixture, new DateOnly(2026, 8, 3));
@@ -673,8 +673,8 @@ public class ExpenseServiceTests
 
         using (new AssertionScope())
         {
-            julyResult.Should().BeEmpty();
-            augustResult.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 40m);
+            julyResult.Should().ContainSingle(t => t.Category == "Mercado" && t.TotalValue == 40m);
+            augustResult.Should().BeEmpty();
         }
     }
 

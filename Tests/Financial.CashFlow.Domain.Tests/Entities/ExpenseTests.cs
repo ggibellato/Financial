@@ -772,13 +772,13 @@ public class ExpenseTests
     }
 
     [Fact]
-    public void ReportingDate_SettledCardCharge_IsPostSettlementDate()
+    public void ReportingDate_SettledCardCharge_IsInvoiceDate()
     {
         var expense = Expense.Create(new DateOnly(2026, 7, 28), "Charge near cutoff", 10m, Extras, null, ChaseMaster4023);
         expense.Settle(Barclays, new DateOnly(2026, 8, 5));
 
-        expense.ReportingDate.Should().Be(expense.Date);
-        expense.ReportingDate.Should().NotBe(expense.InvoiceDate);
+        expense.ReportingDate.Should().Be(expense.InvoiceDate);
+        expense.ReportingDate.Should().NotBe(expense.Date);
     }
 
     [Fact]

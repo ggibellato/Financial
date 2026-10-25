@@ -150,7 +150,7 @@ public class CategorySummaryServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsAnnualForYear_CategoryTotals_SettledCardCharge_CountsTowardPostSettlementDateMonth()
+    public void GetCategoryTotalsAnnualForYear_CategoryTotals_SettledCardCharge_CountsTowardStatementMonth()
     {
         var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, CategoryByName(_repository, "Mercado"), null, BarclaysPlatinumVisa8003);
         settled.Settle(Trading212, new DateOnly(2026, 8, 3));
@@ -161,8 +161,36 @@ public class CategorySummaryServiceTests
         var mercado = result.Single(c => c.Category == "Mercado");
         using (new AssertionScope())
         {
-            mercado.MonthlyTotals[6].Should().Be(0m);
-            mercado.MonthlyTotals[7].Should().Be(40m);
+            mercado.MonthlyTotals[6].Should().Be(40m);
+            mercado.MonthlyTotals[7].Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public async Task GetCategoryTotalsAnnualForYear_StatementPaidInTheFollowingMonth_KeepsItsChargesInTheStatementMonth()
+    {
+        var repository = CreateRepository(seedDefaultBanks: true, seedDefaultCreditCards: true);
+        var card = repository.CreditCards.First(c => c.Name == "BarclaysPlatinumVisa8003");
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Groceries", 30m, CategoryByName(repository, "Mercado"), null, card));
+        repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 20), "Groceries", 20m, CategoryByName(repository, "Mercado"), null, card));
+        var cardStatements = new CardStatementService(
+            repository, TestClock.At(new DateTimeOffset(2026, 8, 3, 12, 0, 0, TimeSpan.FromHours(1))),
+            NullLogger<CardStatementService>.Instance, new RecordingTelemetryTracer());
+        await cardStatements.GetStatementsForMonthAsync(2026, 7);
+        var statement = repository.CardStatements.Single(s => s.CreditCard.Name == card.Name && s.Month == 7);
+        await cardStatements.MarkStatementPaidAsync(
+            statement.Id, new() { PaymentSourceBankId = repository.Accounts.First(a => a.Name == "Trading212").Id });
+
+        var result = CreateService(repository).GetCategoryTotalsAnnualForYear(2026);
+
+        var mercado = result.CategoryTotals.Single(c => c.Category == "Mercado");
+        using (new AssertionScope())
+        {
+            repository.Expenses.Should().OnlyContain(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled && e.Date == new DateOnly(2026, 8, 3));
+            mercado.MonthlyTotals[6].Should().Be(50m);
+            mercado.MonthlyTotals[7].Should().Be(0m);
+            result.TotalDespesasMonthly[6].Should().Be(50m);
+            result.TotalDespesasMonthly[7].Should().Be(0m);
         }
     }
 
@@ -382,9 +410,11 @@ public class CategorySummaryServiceTests
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CategorySummaryService.GetCategoryTotalsAnnualForYear");
     }
 
-    private static StubCashFlowRepository CreateRepository()
+    private static StubCashFlowRepository CreateRepository(bool seedDefaultBanks = false, bool seedDefaultCreditCards = false)
     {
-        var repository = new StubCashFlowRepository(seedDefaultIncomeSources: true, seedDefaultCategories: true);
+        var repository = new StubCashFlowRepository(
+            seedDefaultBanks: seedDefaultBanks, seedDefaultIncomeSources: true,
+            seedDefaultCreditCards: seedDefaultCreditCards, seedDefaultCategories: true);
         SeededInvestmentAccounts.SeedInto(repository);
         return repository;
     }

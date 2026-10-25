@@ -99,6 +99,21 @@ public class TitheServiceTests
     }
 
     [Fact]
+    public async Task GetTitheSummaryAsync_CardChargePaidInTheFollowingMonth_CountsTowardTheStatementMonth()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
+        var charge = Expense.Create(new DateOnly(2026, 7, 20), "Tithe by card", 200m, Dizimo, null, CreditCard.Create("BaAmex"));
+        charge.Settle(Barclays, new DateOnly(2026, 8, 3));
+        _repository.Expenses.Add(charge);
+
+        var july = await _sut.GetTitheSummaryAsync(2026, 7);
+        var august = await _sut.GetTitheSummaryAsync(2026, 8);
+
+        july.TitheBalance.Should().Be(100m);
+        august.TitheBalance.Should().Be(0m);
+    }
+
+    [Fact]
     public async Task GetTitheSummaryAsync_DizimoExpenseWithCountsAsTitheFalse_ExcludedFromDizimoTotal()
     {
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
