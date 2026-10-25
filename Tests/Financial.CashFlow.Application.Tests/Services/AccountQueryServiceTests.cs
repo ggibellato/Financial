@@ -331,4 +331,46 @@ public class AccountQueryServiceTests
             wallet.RoundUpEnabled.Should().BeNull();
         }
     }
+
+    [Fact]
+    public void GetTransactions_CardAccount_ListsItsUnpaidChargesOfTheMonthReadOnly()
+    {
+        _repository.Accounts.Add(_amex);
+        var taxi = Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex);
+        var paid = Expense.Create(new DateOnly(2026, 10, 14), "Paid", 20m, _groceries, null, _amex);
+        paid.Settle(_barclays, new DateOnly(2026, 10, 25));
+        _repository.Expenses.AddRange([taxi, paid, Expense.Create(new DateOnly(2026, 9, 12), "September", 9m, _groceries, null, _amex)]);
+
+        var rows = _sut.GetTransactions(_amex.Id, 2026, 10);
+
+        var row = rows.Should().ContainSingle().Which;
+        using (new AssertionScope())
+        {
+            row.Id.Should().Be(taxi.Id);
+            row.Kind.Should().Be("CardCharge");
+            row.Counterpart.Should().BeNull();
+            row.CategoryName.Should().Be("Mercado");
+            row.Amount.Should().Be(-30m);
+            row.CanEdit.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void GetAccount_CardAccount_HasNoActionsAndItsBalanceIsMinusItsUnpaidCharges()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 9, 12), "September", 9m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 11, 1), "November", 50m, _groceries, null, _amex)]);
+
+        var detail = _sut.GetAccount(_amex.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            detail.AllowedActions.Should().BeEmpty();
+            detail.Balance.Should().Be(-39m);
+            detail.TemplateName.Should().Be("CreditCard");
+        }
+    }
 }

@@ -195,6 +195,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-07")]
     public async Task GetSuggestionsForMonth_CreditCardWithMatchingExpense_SuggestsSum()
     {
         var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();
@@ -208,6 +209,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-07")]
     public async Task GetSuggestionsForMonth_CreditCardWithSettledExpense_StillIncludesIt()
     {
         var (repository, service, card, creditCardAccount, _, _) = CreateSuggestionsFixture();

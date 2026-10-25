@@ -41,13 +41,10 @@ public sealed class CreditCardService : ICreditCardService
                 .Where(e => e.CreditCard is not null)
                 .GroupBy(e => e.CreditCard!.Id)
                 .ToDictionary(g => g.Key, g => g.Max(e => e.InvoiceDate));
-            var cardIdsWithStatements = _repository.GetCardStatements().Select(s => s.CreditCard.Id).ToHashSet();
+            var referencedIds = AccountReferenceReader.ReferencedAccountIds(_repository);
 
             var result = _repository.GetCreditCardAccounts()
-                .Select(card => ToDto(
-                    card,
-                    latestInvoiceDateByCard.GetValueOrDefault(card.Id),
-                    latestInvoiceDateByCard.ContainsKey(card.Id) || cardIdsWithStatements.Contains(card.Id)))
+                .Select(card => ToDto(card, latestInvoiceDateByCard.GetValueOrDefault(card.Id), referencedIds.Contains(card.Id)))
                 .ToList();
 
             span.MarkSuccess();

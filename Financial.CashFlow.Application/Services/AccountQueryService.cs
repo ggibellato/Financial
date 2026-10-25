@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
@@ -121,6 +122,7 @@ public sealed class AccountQueryService : IAccountQueryService
         record switch
         {
             Expense expense when expense.PaymentSourceAccount?.Id == account.Id => [ToRow(expense, account)],
+            Expense expense when expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && expense.CreditCard!.Id == account.Id => [ToCardChargeRow(expense)],
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
@@ -144,6 +146,18 @@ public sealed class AccountQueryService : IAccountQueryService
             Expense = ExpenseService.ToDto(expense)
         };
     }
+
+    private static AccountTransactionDTO ToCardChargeRow(Expense charge) => new()
+    {
+        Id = charge.Id,
+        Kind = TransactionKind.CardCharge.ToString(),
+        Date = charge.Date,
+        Description = charge.Description,
+        CategoryName = charge.Category.Name,
+        Amount = -charge.Value,
+        CanEdit = false,
+        Expense = ExpenseService.ToDto(charge)
+    };
 
     private static AccountTransactionDTO ToRow(Income income, Account account) => new()
     {

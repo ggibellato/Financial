@@ -20,6 +20,7 @@ public class AccountAdminServiceTests
 
     private readonly StubCashFlowRepository _repository = new();
     private readonly RecordingTelemetryTracer _tracer = new();
+    private readonly FakeCreditCardCalendarSyncService _calendarSyncTrigger = new();
     private readonly AccountAdminService _sut;
     private readonly Account _barclays = TestAccounts.Bank("Barclays");
     private readonly Account _chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
@@ -28,7 +29,7 @@ public class AccountAdminServiceTests
     {
         _repository.Accounts.AddRange([_barclays, _chase]);
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 9, 3), _barclays, 0m, 0m, null));
-        _sut = new AccountAdminService(_repository, TestClock.At(), _tracer, NullLogger<AccountAdminService>.Instance);
+        _sut = new AccountAdminService(_repository, _calendarSyncTrigger, TestClock.At(), _tracer, NullLogger<AccountAdminService>.Instance);
     }
 
     private static AccountCreateDTO NewBank(
@@ -354,5 +355,88 @@ public class AccountAdminServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountAdminService.CreateAccount");
+    }
+
+    [Fact]
+    public async Task CreateAsync_CreditCard_AddsAGbpCardAccountWithoutBankFields()
+    {
+        var result = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "CreditCard", Name = "Nubank", Currency = "GBP" });
+
+        var card = _repository.Accounts.Single(account => account.Id == result.Id);
+        using (new AssertionScope())
+        {
+            card.Template.Should().Be(AccountTemplate.CreditCard);
+            card.OpeningBalance.Should().BeNull();
+            card.RoundUp.Should().BeNull();
+            result.TemplateName.Should().Be("CreditCard");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-05")]
+    public async Task CardChanges_TriggerCalendarSync()
+    {
+        var created = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "CreditCard", Name = "Nubank", Currency = "GBP" });
+        await _sut.UpdateAsync(created.Id, new AccountUpdateDTO { TemplateName = "CreditCard", Name = "Nubank Gold", Currency = "GBP", IsActive = false });
+        await _sut.DeleteAsync(created.Id);
+
+        _calendarSyncTrigger.TriggeredCreditCardIds.Should().Equal(created.Id, created.Id, created.Id);
+    }
+
+    [Fact]
+    public async Task BankChanges_DoNotTriggerCalendarSync()
+    {
+        var created = await _sut.CreateAsync(NewBank());
+        await _sut.UpdateAsync(_chase.Id, Edit(_chase, name: "Chase UK"));
+        await _sut.DeleteAsync(created.Id);
+
+        _calendarSyncTrigger.TriggeredCreditCardIds.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task UpdateAsync_UnusedCardChangedToBank_TriggersCalendarSyncSoItsEventIsRemoved()
+    {
+        var card = TestAccounts.CreditCard("Nubank", nextInvoiceDueDate: new DateOnly(2026, 11, 18));
+        _repository.Accounts.Add(card);
+
+        await _sut.UpdateAsync(card.Id, Edit(card));
+
+        using (new AssertionScope())
+        {
+            card.Template.Should().Be(AccountTemplate.Bank);
+            _calendarSyncTrigger.TriggeredCreditCardIds.Should().Equal(card.Id);
+        }
+    }
+
+    public static TheoryData<string> CardUses => new() { "charge", "statement", "investment account" };
+
+    [Theory]
+    [MemberData(nameof(CardUses))]
+    public async Task DeleteAsync_CardInUse_ThrowsTheDeactivateMessageAndKeepsIt(string use)
+    {
+        var card = TestAccounts.CreditCard("BA Amex");
+        _repository.Accounts.Add(card);
+        switch (use)
+        {
+            case "charge":
+                _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 9, 3), "Taxi", 30m, Category.Create("Mercado"), null, card));
+                break;
+            case "statement":
+                _repository.CardStatements.Add(CardStatement.Create(card, 2026, 9));
+                break;
+            default:
+                _repository.InvestmentAccounts.Add(InvestmentAccount.Create("Amex balance", true, true, InvestmentAccountSource.CreditCard, card));
+                break;
+        }
+
+        var act = async () => await _sut.DeleteAsync(card.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<EntityInUseException>()
+                .WithMessage("BA Amex has transactions and cannot be deleted. Deactivate it instead.");
+            _repository.Accounts.Should().Contain(card);
+            _calendarSyncTrigger.TriggeredCreditCardIds.Should().BeEmpty();
+        }
     }
 }

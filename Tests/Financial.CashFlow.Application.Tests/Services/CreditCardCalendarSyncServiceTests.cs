@@ -82,6 +82,7 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public async Task ResyncAsync_FirstSync_CreatesTheEvent_AndSyncStatusIsSynced()
     {
         Connect();
@@ -161,6 +162,7 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public async Task ResyncAsync_WhenDueDateIsCleared_RemovesTheExistingEvent()
     {
         Connect();

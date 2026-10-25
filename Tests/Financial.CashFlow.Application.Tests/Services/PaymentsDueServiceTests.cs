@@ -116,6 +116,7 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public void GetPaymentsDue_CreditCardWithNextInvoiceDueDateInWindow_IsIncluded()
     {
         _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(3)));
@@ -132,6 +133,7 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public void GetPaymentsDue_CreditCardWithPaidStatementForInvoicePeriod_IsExcluded()
     {
         var dueDate = PinnedToday.AddDays(3);

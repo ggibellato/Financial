@@ -109,6 +109,7 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public async Task GetStatementsForMonthAsync_OutstandingTotalSumsThatMonthsChargesForTheCard()
     {
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
@@ -122,6 +123,7 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public async Task GetStatementsForMonthAsync_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
     {
         var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
@@ -530,6 +532,7 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public async Task GetStatementsForMonthAsync_AccumulatedOutstanding_CountsEveryUnpaidChargeOfTheCardWhateverItsMonth()
     {
         var card = Card(_repository, "BaAmex");

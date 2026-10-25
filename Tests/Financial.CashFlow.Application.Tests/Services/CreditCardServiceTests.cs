@@ -5,6 +5,8 @@ using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -335,5 +337,73 @@ public class CreditCardServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CreditCardService.GetCreditCards");
+    }
+
+    [Fact]
+    public async Task CreateCreditCardAsync_BuildsAnInactiveGbpCreditCardAccountWhenAsked()
+    {
+        await _sut.CreateCreditCardAsync(new CreditCardCreateDTO { Name = "Nubank", IsActive = false });
+
+        var card = _repository.Accounts.Should().ContainSingle().Which;
+        using (new AssertionScope())
+        {
+            card.Template.Should().Be(AccountTemplate.CreditCard);
+            card.Currency.Should().Be(Currency.GBP);
+            card.IsActive.Should().BeFalse();
+            card.OpeningBalance.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task CreateCreditCardAsync_NameOfABankInAnotherCase_ThrowsTheAccountMessageAndWritesNothing()
+    {
+        _repository.Accounts.Add(TestAccounts.Bank("Barclays"));
+
+        var act = async () => await _sut.CreateCreditCardAsync(new CreditCardCreateDTO { Name = "barclays", IsActive = true });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<DuplicateNameException>().WithMessage("An account named \"barclays\" already exists.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateCreditCardAsync_BankId_ThrowsKeyNotFoundException()
+    {
+        var bank = TestAccounts.Bank("Barclays");
+        _repository.Accounts.Add(bank);
+
+        var act = async () => await _sut.UpdateCreditCardAsync(bank.Id, new CreditCardUpdateDTO { Name = "Barclays", IsActive = true });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task DeleteCreditCardAsync_LinkedToAnInvestmentAccount_ThrowsAndWritesNothing()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("Amex balance", true, true, InvestmentAccountSource.CreditCard, card));
+
+        var act = async () => await _sut.DeleteCreditCardAsync(card.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<EntityInUseException>()
+                .WithMessage("Cannot delete a credit card that is still referenced by a statement or expense.");
+            _repository.CardAccounts.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public void GetCreditCards_CardLinkedOnlyToAnInvestmentAccount_HasReferencesIsTrue()
+    {
+        var card = TestAccounts.CreditCard("BaAmex");
+        _repository.Accounts.Add(card);
+        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("Amex balance", true, true, InvestmentAccountSource.CreditCard, card));
+
+        _sut.GetCreditCards().Should().ContainSingle().Which.HasReferences.Should().BeTrue();
     }
 }
