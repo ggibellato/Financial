@@ -79,15 +79,15 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
                 ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
                 : null,
             Statement = statement,
-            BalanceIsOwed = account.Has(Capability.HasStatements)
+            BalanceIsOwed = account.BalanceIsOwed
         };
 
     private static AccountGroupStatementDTO? StatementFor(
         Account account, int year, int month, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>
-        account.Has(Capability.HasStatements)
+        account.BalanceIsOwed
             ? new AccountGroupStatementDTO
             {
-                OutstandingTotal = CardChargeFilter.ChargesFor(expenses, account, year, month, includePaid: false).Sum(e => e.Value),
+                OutstandingTotal = CardChargeFilter.OutstandingTotal(expenses, account, year, month),
                 IsPaid = statements.Any(statement => statement.IsFor(account.Id, year, month) && statement.IsPaid)
             }
             : null;

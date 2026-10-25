@@ -23,18 +23,18 @@ const CREDIT_CARDS: CreditCardDto[] = [
 ]
 
 describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () => {
+  const statementProps = {
+    cardStatements: CARD_STATEMENTS,
+    banks: BANKS,
+    currencyTotals: GBP_TOTALS,
+    markPaidSources: {},
+    setMarkPaidSource: vi.fn(),
+    markStatementPaid: vi.fn(),
+    unmarkStatementPaid: vi.fn(),
+  }
+
   it('renders a row per card with status and the footer adjustment total', () => {
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-      />,
-    )
+    render(<CardsGrid {...statementProps} />)
 
     expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.getByText('Unpaid')).toBeInTheDocument()
@@ -45,50 +45,24 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
   it('labels the adjustment figure of each currency with its code when the totals hold several currencies', () => {
     render(
       <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
+        {...statementProps}
         currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 0, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
       />,
     )
 
-    expect(screen.getAllByText(/Combined adjustment figure/).map((line) => line.textContent)).toEqual([
-      'Combined adjustment figure GBP: 100.00',
-      'Combined adjustment figure BRL: 0.00',
-    ])
+    expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent(
+      'Combined adjustment figure GBP: 100.00 · Combined adjustment figure BRL: 0.00',
+    )
   })
 
   it('shows a zero adjustment figure before any totals exist', () => {
-    render(
-      <CardsGrid
-        cardStatements={[]}
-        banks={BANKS}
-        currencyTotals={[]}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-      />,
-    )
+    render(<CardsGrid {...statementProps} cardStatements={[]} currencyTotals={[]} />)
 
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 0.00')
   })
 
   it('labels the period and accumulated outstanding columns distinctly and renders both values', () => {
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-      />,
-    )
+    render(<CardsGrid {...statementProps} />)
 
     expect(screen.getByRole('button', { name: 'Outstanding (period)' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Accumulated outstanding' })).toBeInTheDocument()
@@ -101,13 +75,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
   it('renders a statement action warning as a status, not an alert', () => {
     render(
       <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
+        {...statementProps}
         statementActionWarning="This statement was already marked paid; nothing changed."
       />,
     )
@@ -117,51 +85,20 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
   })
 
   it('renders a statement action error as an alert', () => {
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-        statementActionError="Failed to mark statement paid"
-      />,
-    )
+    render(<CardsGrid {...statementProps} statementActionError="Failed to mark statement paid" />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Failed to mark statement paid')
   })
 
   it('renders neither banner when there is nothing to report', () => {
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-      />,
-    )
+    render(<CardsGrid {...statementProps} />)
 
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('does not render the Next Invoice Due Date/Active columns', () => {
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-      />,
-    )
+    render(<CardsGrid {...statementProps} />)
 
     expect(screen.queryByText('Next Invoice Due Date')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Active for BaAmex')).not.toBeInTheDocument()
@@ -172,13 +109,9 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
     const markStatementPaid = vi.fn()
     render(
       <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
+        {...statementProps}
         setMarkPaidSource={setMarkPaidSource}
         markStatementPaid={markStatementPaid}
-        unmarkStatementPaid={vi.fn()}
       />,
     )
 
@@ -191,17 +124,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
 
   it('calls unmarkStatementPaid for a paid card', () => {
     const unmarkStatementPaid = vi.fn()
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={BANKS}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={{}}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={unmarkStatementPaid}
-      />,
-    )
+    render(<CardsGrid {...statementProps} unmarkStatementPaid={unmarkStatementPaid} />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
     expect(unmarkStatementPaid).toHaveBeenCalledWith('c2')

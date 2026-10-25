@@ -297,7 +297,7 @@ export function useMonthly(): MonthlyData {
   )
 
   const bankTotals: BankTotal[] = (state.summary?.members ?? [])
-    .filter((member) => member.statement === null)
+    .filter((member) => !member.statement)
     .map((member) => ({
       bankId: member.accountId,
       bank: member.name,

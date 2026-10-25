@@ -6,7 +6,9 @@ import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { selectableBanks } from '../utils/selectableBanks'
-import { formatN2, formatN2OrDash } from '../utils/formatters'
+import { formatN2OrDash } from '../utils/formatters'
+import { currencyFooterItems } from '../utils/currencyFooterItems'
+import SectionTotals from './SectionTotals'
 import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {
@@ -40,15 +42,7 @@ interface CardRow {
   statement: CardStatementDto | null
 }
 
-function adjustmentFigures(currencyTotals: CurrencyTotalDto[]) {
-  if (currencyTotals.length <= 1) {
-    return [{ label: 'Combined adjustment figure', value: currencyTotals[0]?.cardOutstandingTotal ?? 0 }]
-  }
-  return currencyTotals.map((total) => ({
-    label: `Combined adjustment figure ${total.currency}`,
-    value: total.cardOutstandingTotal,
-  }))
-}
+const FOOTER_FIGURES = [{ label: 'Combined adjustment figure', pick: (total: CurrencyTotalDto) => total.cardOutstandingTotal }]
 
 function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[] | undefined): CardRow[] {
   if (!creditCards) {
@@ -270,11 +264,7 @@ export default function CardsGrid({
           </TableBody>
         </Table>
       </div>
-      {adjustmentFigures(currencyTotals).map(({ label, value }) => (
-        <p key={label} className="monthly-page__section-total">
-          {label}: <strong>{formatN2(value)}</strong>
-        </p>
-      ))}
+      <SectionTotals items={currencyFooterItems(currencyTotals, FOOTER_FIGURES)} />
       {updateError && (
         <p className="monthly-page__error" role="alert">
           {updateError}

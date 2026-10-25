@@ -194,7 +194,7 @@ public sealed class CardStatementService : ICardStatementService
         CardChargeFilter.ChargesFor(expenses, statement.CreditCard, statement.Year, statement.Month, includePaid: false).ToList();
 
     private static decimal OutstandingTotal(IEnumerable<Expense> expenses, CardStatement statement) =>
-        UnpaidCharges(expenses, statement).Sum(e => e.Value);
+        CardChargeFilter.OutstandingTotal(expenses, statement.CreditCard, statement.Year, statement.Month);
 
     private static decimal AccumulatedOutstandingTotal(Account card, IEnumerable<IAccountTransaction> records) =>
         -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);

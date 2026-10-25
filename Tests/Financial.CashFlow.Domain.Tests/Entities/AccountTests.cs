@@ -72,6 +72,7 @@ public class AccountTests
         {
             account.TemplateName.Should().Be("Bank");
             account.JoinsDefaultGroup.Should().BeTrue();
+            account.BalanceIsOwed.Should().BeFalse();
         }
     }
 
@@ -376,6 +377,7 @@ public class AccountTests
             account.OpeningBalance.Should().BeNull();
             account.RoundUp.Should().BeNull();
             account.JoinsDefaultGroup.Should().BeTrue();
+            account.BalanceIsOwed.Should().BeTrue();
         }
     }
 
