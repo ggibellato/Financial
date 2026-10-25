@@ -1,5 +1,5 @@
 import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto } from '../api/types'
+import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto, CurrencyTotalDto } from '../api/types'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
@@ -12,7 +12,7 @@ import TruncatedText from './TruncatedText'
 interface CardsGridProps {
   cardStatements: CardStatementDto[]
   banks: BankDto[]
-  adjustmentTotal: number
+  currencyTotals: CurrencyTotalDto[]
   markPaidSources: Record<string, string>
   setMarkPaidSource: (id: string, bank: string) => void
   markStatementPaid: (id: string, paymentSource: string) => void
@@ -40,6 +40,16 @@ interface CardRow {
   statement: CardStatementDto | null
 }
 
+function adjustmentFigures(currencyTotals: CurrencyTotalDto[]) {
+  if (currencyTotals.length <= 1) {
+    return [{ label: 'Combined adjustment figure', value: currencyTotals[0]?.cardOutstandingTotal ?? 0 }]
+  }
+  return currencyTotals.map((total) => ({
+    label: `Combined adjustment figure ${total.currency}`,
+    value: total.cardOutstandingTotal,
+  }))
+}
+
 function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[] | undefined): CardRow[] {
   if (!creditCards) {
     return cardStatements.map((s) => ({
@@ -65,7 +75,7 @@ function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDt
 export default function CardsGrid({
   cardStatements,
   banks,
-  adjustmentTotal,
+  currencyTotals,
   markPaidSources,
   setMarkPaidSource,
   markStatementPaid,
@@ -260,9 +270,11 @@ export default function CardsGrid({
           </TableBody>
         </Table>
       </div>
-      <p className="monthly-page__section-total">
-        Combined adjustment figure: <strong>{formatN2(adjustmentTotal)}</strong>
-      </p>
+      {adjustmentFigures(currencyTotals).map(({ label, value }) => (
+        <p key={label} className="monthly-page__section-total">
+          {label}: <strong>{formatN2(value)}</strong>
+        </p>
+      ))}
       {updateError && (
         <p className="monthly-page__error" role="alert">
           {updateError}

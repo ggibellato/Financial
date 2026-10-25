@@ -48,9 +48,8 @@ export default function MonthlyPage() {
     banks,
     incomeSources,
     categories,
-    adjustmentTotal,
     bankTotals,
-    bankCurrencyTotals,
+    currencyTotals,
     isLoading,
     error,
     retry,
@@ -231,7 +230,7 @@ export default function MonthlyPage() {
               <CardsGrid
                 cardStatements={cardStatements}
                 banks={banks}
-                adjustmentTotal={adjustmentTotal}
+                currencyTotals={currencyTotals}
                 statementActionError={listActionError}
                 statementActionWarning={listActionWarning}
                 markPaidSources={markPaidSources}
@@ -241,7 +240,7 @@ export default function MonthlyPage() {
               />
             </div>
             <div className="monthly-page__grids-row">
-              <BanksGrid bankTotals={bankTotals} currencyTotals={bankCurrencyTotals} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} />
               <IncomingGrid
                 incomeTotals={incomeTotals}
                 totalIncoming={totalIncoming}
@@ -257,7 +256,7 @@ export default function MonthlyPage() {
 
           {activeTab === 'expense' && (
             <>
-              <BanksGrid bankTotals={bankTotals} currencyTotals={bankCurrencyTotals} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} />
 
               {expenseFormElement}
 
@@ -275,7 +274,7 @@ export default function MonthlyPage() {
               <CardsGrid
                 cardStatements={cardStatements}
                 banks={banks}
-                adjustmentTotal={adjustmentTotal}
+                currencyTotals={currencyTotals}
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
@@ -348,7 +347,7 @@ export default function MonthlyPage() {
 
           {activeTab === 'bank' && !bankOperations.isLoading && !bankOperations.error && (
             <>
-              <BanksGrid bankTotals={bankTotals} currencyTotals={bankCurrencyTotals} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} />
 
               {transferForm.isOpen && (
                 <TransferForm

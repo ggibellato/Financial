@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import CardsGrid from '../CardsGrid'
-import type { BankDto, CardStatementDto, CreditCardDto } from '../../api/types'
+import type { BankDto, CardStatementDto, CreditCardDto, CurrencyTotalDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
 
 const BANKS: BankDto[] = [
@@ -13,6 +13,8 @@ const CARD_STATEMENTS: CardStatementDto[] = [
   { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 325.5, warning: null },
   { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0, warning: null },
 ]
+
+const GBP_TOTALS: CurrencyTotalDto[] = [{ currency: 'GBP', balance: 500, roundUpTotal: 0, cardOutstandingTotal: 100 }]
 
 const CREDIT_CARDS: CreditCardDto[] = [
   { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: null, hasReferences: false },
@@ -26,7 +28,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -37,7 +39,42 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
     expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.getByText('Unpaid')).toBeInTheDocument()
     expect(screen.getByText('Paid')).toBeInTheDocument()
-    expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
+    expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 100.00')
+  })
+
+  it('labels the adjustment figure of each currency with its code when the totals hold several currencies', () => {
+    render(
+      <CardsGrid
+        cardStatements={CARD_STATEMENTS}
+        banks={BANKS}
+        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 0, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
+        markPaidSources={{}}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+      />,
+    )
+
+    expect(screen.getAllByText(/Combined adjustment figure/).map((line) => line.textContent)).toEqual([
+      'Combined adjustment figure GBP: 100.00',
+      'Combined adjustment figure BRL: 0.00',
+    ])
+  })
+
+  it('shows a zero adjustment figure before any totals exist', () => {
+    render(
+      <CardsGrid
+        cardStatements={[]}
+        banks={BANKS}
+        currencyTotals={[]}
+        markPaidSources={{}}
+        setMarkPaidSource={vi.fn()}
+        markStatementPaid={vi.fn()}
+        unmarkStatementPaid={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 0.00')
   })
 
   it('labels the period and accumulated outstanding columns distinctly and renders both values', () => {
@@ -45,7 +82,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -66,7 +103,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -84,7 +121,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -101,7 +138,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -118,7 +155,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -137,7 +174,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={setMarkPaidSource}
         markStatementPaid={markStatementPaid}
@@ -158,7 +195,7 @@ describe('CardsGrid (statement-only, no creditCards prop — Summary tab)', () =
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={BANKS}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={{}}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
@@ -175,7 +212,7 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
   const baseProps = {
     cardStatements: CARD_STATEMENTS,
     banks: BANKS,
-    adjustmentTotal: 100,
+    currencyTotals: GBP_TOTALS,
     markPaidSources: {},
     setMarkPaidSource: vi.fn(),
     markStatementPaid: vi.fn(),
@@ -353,7 +390,7 @@ describe('CardsGrid paying bank', () => {
       <CardsGrid
         cardStatements={CARD_STATEMENTS}
         banks={[...BANKS, INACTIVE_BANK]}
-        adjustmentTotal={100}
+        currencyTotals={GBP_TOTALS}
         markPaidSources={markPaidSources}
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}

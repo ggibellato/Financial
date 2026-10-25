@@ -372,6 +372,21 @@ describe('MonthlyPage', () => {
     expect(screen.getByText('Network down')).toBeInTheDocument()
   })
 
+  it('shows the card total from the summary, not a sum of the statement rows', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -64.1, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+      ],
+      totals: [{ ...SUMMARY.totals[0], cardOutstandingTotal: 64.1 }],
+    })
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 64.10'))
+    expect(within(screen.getByRole('table', { name: 'Bank balances' })).queryByText('BaAmex')).not.toBeInTheDocument()
+  })
+
   it('defaults to the Summary tab on load, showing only the total grids', async () => {
     render(<MonthlyPage />)
 
