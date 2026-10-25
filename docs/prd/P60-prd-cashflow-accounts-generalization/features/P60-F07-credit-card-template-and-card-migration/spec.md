@@ -179,7 +179,7 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 | `pages/AccountsPage.tsx`, `components/AccountHeader.tsx` | Modified | 4 | Owed display; template labels |
 | `components/AccountFormDialog.tsx`, `pages/AdminAccountsPage.tsx` | Modified | 4 | Template labels |
 | `utils/accountTemplateLabel.ts` | New | 4 | Display names |
-| `utils/owedBalance.ts` | New | 4 | `OWED_LABEL` and `shownBalance` for the owed display |
+| `utils/owedBalance.ts` | New | 4 | `balanceLabel`, `formatShownBalance` and `formatLabelledBalance`: the owed display used by both screens |
 
 **Scripts, data and docs**
 
