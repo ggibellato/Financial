@@ -198,7 +198,7 @@ Rules that apply to every feature:
   - each pot's balance and the pots total at month end, from `reserve/movements` (the API has no as-of balance endpoint);
   - current pot balances (`reserve/balances`), Mãe BRL and GBP totals (`controle-mae/entries/totals`);
   - per year: annual category totals, historic summary averages and investment annual result (`annual-summary/{y}/...`).
-- **Mapping:** when a feature changes where a figure comes from (e.g. F04's summary, F07's card balance), it adds a mapping entry in `scripts/parity/figure-map.json` (after-path → before-path, optional sign flip) and extends the report; the compare uses the mapping. A mapping never allows a value to differ.
+- **Mapping:** when a feature changes where a figure comes from (e.g. F04's summary, F07's card statement figures), it adds a mapping entry in `scripts/parity/figure-map.json` (after-path → before-path, optional sign flip) and extends the report; the compare uses the mapping. A mapping never allows a value to differ.
 - **Writes during GET:** today the first tithe read saves the tithe start month and card statement GETs create statements. Both reports are taken from fresh copies of the same input, so these writes happen identically; the report records whether each copy changed during the read as information.
 - **Screen checklist:** `scripts/parity/screen-checklist.md` lists page, month and value to compare (Monthly, card statements, Reserva, Controle Mãe, Annual summary, Investment snapshots); `-Step All -KeepRunning` also builds each version's web app into its API and leaves both running on 5291 and 5292 for the check; runs without it build the API only. Each UI feature adds its account-screen rows.
 - `scripts/parity/README.md` documents the commands, the figure catalogue (figure → endpoint) and how to extend it.
@@ -384,33 +384,39 @@ Rules that apply to every feature:
 
 **Provides:**
 - Credit card accounts with card terms, card charge references and the single charge filter (used by F08)
+- A statement for every card and month with charges, created when a charge lands in its month (used by F08)
 - Migration step V2 → V3, which the V3 → V4 step follows in the chain (used by F09)
 
 **Capabilities:**
 - **Credit card template** = `HasStatements`, `HasCategories`, `ReceivesPayments`. *Deviation from the design doc:* the doc also listed `CanPayBills` for cards; recurring bills are paid only from a bank today (`POST mensais/{id}/paid` takes a bank) and the card action list has no "pay bill", so the capability is left out.
 - **Value object** `CardTerms` (next invoice due date) behind `HasStatements`.
 - **Migration step V2 → V3:** `CreditCards` → accounts with template Credit card, same Ids, currency GBP, `IsActive` and due date copied; `Expense.CreditCard`, `CardStatement.CreditCard` and `InvestmentAccount.CreditCard` reference the card account; any (card, month) that has charges but no statement record gets one, paid when all its charges are already settled to a bank, unpaid otherwise; `Version` 3.
-- **Card balance** through the shared calculation: unpaid charges contribute −value to the card; charges settled the old way (re-pointed to a bank) contribute to the bank as today; F08 payments contribute +amount. Shown as "owed" (positive) in the UI. Parity maps the card balance (negated) to today's accumulated outstanding.
+- **Card balance** through the shared calculation: unpaid charges contribute −value to the card; charges settled the old way (re-pointed to a bank) contribute to the bank as today; F08 payments contribute +amount. Shown as "owed" (positive) in the UI. *Parity:* each card's statement-month outstanding and paid status map to today's per-statement figures in every month, and the card outstanding total per currency maps to Monthly's card total. Today's accumulated outstanding counts every unpaid charge of the card whatever month is viewed, so it matches the month-end card balance only in the current month: parity checks the balance (negated) against it there only (user decision 2026-10-25).
 - **One charge filter** (Domain rule): charges of a card for a statement month, with a parameter for whether paid charges count. Statements use unpaid only; snapshot suggestions keep paid + unpaid. *Why (deviation):* the doc called the copies duplicates, but they differ; merging them must keep both behaviours or the snapshot suggestions change.
 - `CardStatementService` outstanding logic is replaced by the shared calculation and the filter (second of the 4 calculations removed).
-- Cards join the default group through the Credit card template (F04's derived group); the group summary gains each card's outstanding and statement status and the card outstanding total per currency, and Monthly reads its card outstanding total from the summary instead of summing statements in the browser.
+- Cards join the default group through the Credit card template (F04's derived group); the group summary gains each card's statement-month outstanding (its unpaid charges for that statement month, today's per-statement outstanding) and statement status, and the card outstanding total per currency (the sum Monthly shows today), and Monthly reads its card outstanding total from the summary instead of summing statements in the browser.
+- **A charge creates its statement:** adding a card charge, or editing a charge onto a card or into another statement month, creates that card and month's statement when it has none. With the V2 → V3 backfill, every month with charges has a statement from F07's deploy on. *Why here and not in F08:* today statements are created only when a month's statements are read, and only for active cards, so a month nobody opens between the F07 and F08 deploys would have charges and no statement (user decision 2026-10-25). F08 adds creation on move and pay, and removes the write inside the GET.
+- **Card accounts have no actions until F08:** Add expense applies only to accounts without `HasStatements` (F08 adds Add charge), and an account with `HasStatements` cannot pay an expense, a recurring bill or a card statement (user decision 2026-10-25).
+- **In use:** an account also counts as used when charges, statements or investment accounts reference it. This guards Admin → Accounts and `/credit-cards` deletes; the latter ignores investment-account links today. Creating, editing or deleting a card through Admin → Accounts triggers the calendar due-date sync, as the Admin Credit cards page does.
 - Calendar due-date sync, the payments-due banner and the Admin Credit cards page keep working against card accounts (same Ids); `/credit-cards` endpoints keep their shapes until F13.
 - Admin → Accounts gains the Credit card template (fields: next invoice due date, active).
 - Test and example data migrated to V3.
 - The spreadsheet import creates the cards as Credit card accounts directly and its output loads under the version guard (the F02 import rule).
 
 **Experience:**
-- No visible change on existing screens; the Accounts page lists cards with their owed balance; card accounts open on the account screen with Transactions only until F08.
+- No visible change on existing screens; the Accounts page lists cards with their owed balance; card accounts open on the account screen with Transactions only and no actions until F08.
 
 **Error Handling:**
 - A charge referencing an unknown card during migration: migration stops naming the record; nothing written.
 - Calendar sync failure after migration: same error states as today (sync status Error) — no new behaviour.
+- A card account chosen to pay an expense, a recurring bill or a card statement: 400 "Platinum Visa 8003 is a card account and can't pay."; nothing saved.
+- Deleting a card that charges, statements or investment accounts use: 409, as for any account with records.
 
 ### F08. Statement Payment and Card Screen
 
 **Consumes:**
 - F05: account screen shell
-- F07: card accounts, card charge references, charge filter
+- F07: card accounts, card charge references, charge filter, statements created with their charges
 
 **Provides:**
 - Statement payments as linked transfers, card payment transactions on banks, and the card screen (Statements tab, pay, move charge, unmark) (used by F13)
@@ -423,7 +429,7 @@ Rules that apply to every feature:
 - **Category reporting unchanged:** an unpaid charge counts in its statement month; once paid it counts on the payment's date, read from the linked payment instead of rewriting the charge (`Expense.ReportingDate`). Category totals and tithe land in the same months as today.
 - **Pay from both sides:** from the card (Statements tab → Pay on an unpaid statement → choose bank) and from the bank ("Pay card statement" → choose card → choose unpaid statement). *Why:* user decision, actions spanning accounts start from both.
 - **Unmark paid, two paths:** a statement paid through a transfer → the linked transfer is deleted and the statement is unpaid; a statement paid before V3 (charges re-pointed, no transfer) → today's reversal (bank cleared, date back to charge date). *Why:* keeps the undo for both new and the 60 legacy statements, as the forward-only rule promises.
-- **Statements created on write:** a statement record is created when a charge lands in its month, a charge is moved to it, or it is paid; reads never write and treat a missing statement as unpaid with no charges. *Why:* removes a write inside a GET (design doc weak spot) and makes parity reads side-effect free. Snapshot and tithe GET writes are unchanged.
+- **Statements created on write:** a statement record is created when a charge is moved to it or it is paid (a charge landing in its month creates it from F07); reads never write and treat a missing statement as unpaid with no charges. *Why:* removes a write inside a GET (design doc weak spot) and makes parity reads side-effect free. Snapshot and tithe GET writes are unchanged.
 - **Card screen:** adds the account screen's tab bar (Fluent `TabList`: Transactions as the default tab, then Statements), which F05 ships without; Statements tab (one row per month with charges: month, total, status, Pay / Unmark actions); actions Add charge (ExpenseForm with the card pre-selected), Move to a later statement (row action on an unpaid charge; target month later than the current one and unpaid), Pay statement.
 - **Bank screen:** one "Card payment" row per payment (Counterpart = card, Amount −total); selecting it opens the card's Statements tab on that month.
 - `card-statements/{id}/mark-paid` and `unmark-paid` keep their routes until F13, now writing/deleting the transfer.
@@ -752,15 +758,18 @@ graph TD
 ### F07. Credit Card Template and Card Migration
 - [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids, active flags and due dates; charges, statements and investment accounts reference them; cards appear in the default group
 - [ ] Missing statements for months with charges are created, paid only when all their charges are settled
+- [ ] Adding a card charge, or editing a charge onto a card or into another month, creates that statement when it is missing
+- [ ] A card account shows no actions and is refused with 400 as the payer of an expense, a recurring bill or a card statement
+- [ ] A card used by charges, statements or an investment account cannot be deleted (Admin → Accounts and `/credit-cards`); card changes in Admin → Accounts update the calendar event
 - [ ] Statement totals, outstanding and paid status are identical to today for every card and month
 - [ ] Snapshot suggestions for card sources are identical (paid + unpaid charges of the month)
-- [ ] The default group summary includes each card's outstanding and status; card balance shown as owed
+- [ ] The default group summary includes each card's statement-month outstanding and status, and the card outstanding total per currency; card balance shown as owed
 - [ ] Monthly's card outstanding total comes from the summary; the browser no longer sums card statements
 - [ ] Calendar due-date sync and the payments-due banner work against card accounts
 - [ ] Creating a card in Admin → Accounts needs no code and adds it to the default group
 - [ ] `/credit-cards` and `/card-statements` return the same shapes and values
 - [ ] A fresh spreadsheet import writes the cards as Credit card accounts and the API starts on it
-- [ ] Parity: 0 differences (card balance mapped, negated, to accumulated outstanding); `/simplify` run; architecture-reviewer passed
+- [ ] Parity: 0 differences (each card's statement outstanding and status mapped to today's per-statement figures; the card balance, negated, equals accumulated outstanding in the current month); `/simplify` run; architecture-reviewer passed
 
 ### F08. Statement Payment and Card Screen
 - [ ] Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
