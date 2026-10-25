@@ -65,18 +65,21 @@ public class AccountAdminServiceTests
     };
 
     [Fact]
-    public void GetTemplates_ListsBankWithItsCurrencyAndCapabilitiesInOrder()
+    public void GetTemplates_ListsBankAndCreditCardWithTheirCurrenciesAndCapabilitiesInOrder()
     {
         var templates = _sut.GetTemplates();
 
         using (new AssertionScope())
         {
-            var bank = templates.Should().ContainSingle().Which;
-            bank.Name.Should().Be("Bank");
+            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard");
+            var bank = templates[0];
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
                 "HasOpeningBalance", "ReceivesIncome", "HasCategories", "CanSendTransfers",
                 "CanReceiveTransfers", "CanReconcile", "CanPayBills", "SupportsRoundUp");
+            var card = templates[1];
+            card.Currencies.Should().Equal("GBP");
+            card.Capabilities.Should().Equal("HasCategories", "HasStatements", "ReceivesPayments");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }

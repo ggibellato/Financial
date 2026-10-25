@@ -29,7 +29,17 @@ public static class AccountTemplates
                 Capability.SupportsRoundUp
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.GBP]),
-            JoinsDefaultGroup: true)
+            JoinsDefaultGroup: true),
+        new(
+            AccountTemplate.CreditCard,
+            new[]
+            {
+                Capability.HasStatements,
+                Capability.HasCategories,
+                Capability.ReceivesPayments
+            }.ToFrozenSet(),
+            Array.AsReadOnly([Currency.GBP]),
+            JoinsDefaultGroup: false)
     ];
 
     private static readonly FrozenDictionary<AccountTemplate, Definition> ByTemplate =

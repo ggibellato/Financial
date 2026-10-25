@@ -22,7 +22,8 @@ public class AccountTests
 
         using (new AssertionScope())
         {
-            Enum.GetValues<Capability>().Should().OnlyContain(capability => account.Has(capability));
+            Enum.GetValues<Capability>().Count(account.Has).Should().Be(8);
+            account.Has(Capability.HasStatements).Should().BeFalse();
             account.IsActive.Should().BeTrue();
             account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, new DateOnly(1, 1, 1)));
             account.RoundUp.Should().Be(new RoundUpSetting(false));
@@ -309,7 +310,7 @@ public class AccountTests
         using (new AssertionScope())
         {
             account.Template.Should().Be(AccountTemplate.Bank);
-            Enum.GetValues<Capability>().Should().OnlyContain(capability => account.Has(capability));
+            Enum.GetValues<Capability>().Count(account.Has).Should().Be(8);
             account.OpeningBalance.Should().Be(OpeningBalance.Create(0m, default));
             account.RoundUp.Should().Be(new RoundUpSetting(false));
         }
@@ -359,5 +360,72 @@ public class AccountTests
             act.Should().Throw<ArgumentException>().WithMessage("Bank accounts must be GBP.");
             account.Currency.Should().Be(Currency.GBP);
         }
+    }
+
+    [Fact]
+    public void Create_WithCreditCardTemplate_HasTheCardCapabilitiesAndNoOpeningBalanceOrRoundUp()
+    {
+        var account = Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.GBP);
+
+        using (new AssertionScope())
+        {
+            account.Has(Capability.HasStatements).Should().BeTrue();
+            account.Has(Capability.HasCategories).Should().BeTrue();
+            account.Has(Capability.ReceivesPayments).Should().BeTrue();
+            account.Has(Capability.CanPayBills).Should().BeFalse();
+            account.OpeningBalance.Should().BeNull();
+            account.RoundUp.Should().BeNull();
+            account.NextInvoiceDueDate.Should().BeNull();
+            account.JoinsDefaultGroup.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void Create_CreditCardInAnotherCurrency_Throws()
+    {
+        var act = () => Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.BRL);
+
+        act.Should().Throw<ArgumentException>().WithMessage("CreditCard accounts must be GBP.");
+    }
+
+    [Fact]
+    public void SetNextInvoiceDueDate_OnACardAccount_SetsAndClearsIt()
+    {
+        var account = Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.GBP);
+
+        account.SetNextInvoiceDueDate(new DateOnly(2026, 11, 18));
+        var set = account.NextInvoiceDueDate;
+        account.SetNextInvoiceDueDate(null);
+
+        using (new AssertionScope())
+        {
+            set.Should().Be(new DateOnly(2026, 11, 18));
+            account.NextInvoiceDueDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void SetNextInvoiceDueDate_OnABank_ThrowsAndLeavesItNull()
+    {
+        var account = CreateBank();
+
+        var act = () => account.SetNextInvoiceDueDate(new DateOnly(2026, 11, 18));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
+            account.NextInvoiceDueDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_FromCreditCardToBank_ClearsTheDueDate()
+    {
+        var account = Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.GBP);
+        account.SetNextInvoiceDueDate(new DateOnly(2026, 11, 18));
+
+        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+
+        account.NextInvoiceDueDate.Should().BeNull();
     }
 }
