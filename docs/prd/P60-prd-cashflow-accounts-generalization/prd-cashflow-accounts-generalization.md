@@ -383,14 +383,14 @@ Rules that apply to every feature:
 - F06: account create/edit flow
 
 **Provides:**
-- Credit card accounts with card terms, card charge references and the single charge filter (used by F08)
-- A statement for every card and month with charges, created when a charge lands in its month (used by F08)
+- Credit card accounts, card charge references and the single charge filter (used by F08)
+- A statement for every card and month with charges, created when a charge lands in its month, each with its own optional due date (used by F08)
 - Migration step V2 → V3, which the V3 → V4 step follows in the chain (used by F09)
 
 **Capabilities:**
 - **Credit card template** = `HasStatements`, `HasCategories`, `ReceivesPayments`. *Deviation from the design doc:* the doc also listed `CanPayBills` for cards; recurring bills are paid only from a bank today (`POST mensais/{id}/paid` takes a bank) and the card action list has no "pay bill", so the capability is left out.
-- **Value object** `CardTerms` (next invoice due date) behind `HasStatements`.
-- **Migration step V2 → V3:** `CreditCards` → accounts with template Credit card, same Ids, currency GBP, `IsActive` and due date copied; `Expense.CreditCard`, `CardStatement.CreditCard` and `InvestmentAccount.CreditCard` reference the card account; any (card, month) that has charges but no statement record gets one, paid when all its charges are already settled to a bank, unpaid otherwise; `Version` 3.
+- **Statement due date:** the payment due date belongs to the statement (`CardStatement.DueDate`, optional), not the card. A card's current due date is the due date of its latest statement that has one; the calendar sync, the payments-due banner and `/credit-cards` read it, so they behave as today. Until F08, setting the date on Admin Credit cards or Monthly's Card tab writes it on the statement of that month, creating the statement if missing. *Why (deviation from the design doc's card terms):* every reader already maps the card's single date to that month's statement (calendar total, banner paid check), and keeping it on the statement keeps each month's date instead of overwriting it (user decision 2026-10-25).
+- **Migration step V2 → V3:** `CreditCards` → accounts with template Credit card, same Ids, currency GBP, `IsActive` copied; each card's due date written on the statement of its month (created when missing); `Expense.CreditCard`, `CardStatement.CreditCard` and `InvestmentAccount.CreditCard` reference the card account; any (card, month) that has charges but no statement record gets one, paid when all its charges are already settled to a bank, unpaid otherwise; `Version` 3.
 - **Card balance** through the shared calculation: unpaid charges contribute −value to the card; charges settled the old way (re-pointed to a bank) contribute to the bank as today; F08 payments contribute +amount. Shown as "owed" (positive) in the UI. *Parity:* each card's statement-month outstanding and paid status map to today's per-statement figures in every month, and the card outstanding total per currency maps to Monthly's card total. Today's accumulated outstanding counts every unpaid charge of the card whatever month is viewed, so it matches the month-end card balance only in the current month: parity checks the balance (negated) against it there only (user decision 2026-10-25).
 - **One charge filter** (Domain rule): charges of a card for a statement month, with a parameter for whether paid charges count. Statements use unpaid only; snapshot suggestions keep paid + unpaid. *Why (deviation):* the doc called the copies duplicates, but they differ; merging them must keep both behaviours or the snapshot suggestions change.
 - `CardStatementService` outstanding logic is replaced by the shared calculation and the filter (second of the 4 calculations removed).
@@ -399,7 +399,7 @@ Rules that apply to every feature:
 - **Card accounts have no actions until F08:** Add expense applies only to accounts without `HasStatements` (F08 adds Add charge), and an account with `HasStatements` cannot pay an expense, a recurring bill or a card statement (user decision 2026-10-25).
 - **In use:** an account also counts as used when charges, statements or investment accounts reference it. This guards Admin → Accounts and `/credit-cards` deletes; the latter ignores investment-account links today. Creating, editing or deleting a card through Admin → Accounts triggers the calendar due-date sync, as the Admin Credit cards page does.
 - Calendar due-date sync, the payments-due banner and the Admin Credit cards page keep working against card accounts (same Ids); `/credit-cards` endpoints keep their shapes until F13.
-- Admin → Accounts gains the Credit card template (fields: next invoice due date, active).
+- Admin → Accounts gains the Credit card template (fields: active; the due date lives on statements).
 - Test and example data migrated to V3.
 - The spreadsheet import creates the cards as Credit card accounts directly and its output loads under the version guard (the F02 import rule).
 
@@ -756,7 +756,7 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F07. Credit Card Template and Card Migration
-- [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids, active flags and due dates; charges, statements and investment accounts reference them; cards appear in the default group
+- [ ] `migrate` upgrades V2 to V3: 5 card accounts with the same Ids and active flags; each card's due date on the statement of its month; charges, statements and investment accounts reference them; cards appear in the default group
 - [ ] Missing statements for months with charges are created, paid only when all their charges are settled
 - [ ] Adding a card charge, or editing a charge onto a card or into another month, creates that statement when it is missing
 - [ ] A card account shows no actions and is refused with 400 as the payer of an expense, a recurring bill or a card statement
