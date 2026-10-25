@@ -118,7 +118,7 @@ All paths are relative to the repo root. The **Stage** column is 1–4. Existing
 | `Entities/CardStatement.cs` | Modified | 1, 2 | **1:** `CreditCard` is an `Account`; `Create` requires `HasStatements`. **2:** `DueDate` (`DateOnly?`) and `SetDueDate`. |
 | `Rules/CardDueDate.cs` | New | 2 | `For(card, statements)`: the due date of the card's latest statement that has one |
 | `Entities/InvestmentAccount.cs` | Modified | 1 | `CreditCard` is an `Account?`; the source check requires `HasStatements` and active, with today's messages |
-| `Entities/Transactions/Expense.cs` | Modified | 1 | `CreditCard` is an `Account?` and must have `HasStatements` ("<name> is not a card account."); today's inactive-card message stays; `EnsureCanBePaymentSource` refuses `HasStatements`; `ContributionTo` adds the unpaid-charge contribution |
+| `Entities/Transactions/Expense.cs` | Modified | 1 | `CreditCard` is an `Account?` and must have `HasStatements` ("<name> is not a card account."); today's inactive-card message stays; the payment source is checked with `Account.EnsureCanPay()`, which refuses `HasStatements` (§3 "Card can't pay"); `ContributionTo` adds the unpaid-charge contribution |
 | `Entities/CashFlowData.cs` | Modified | 1 | Removes the credit card collection and its add/remove methods |
 | `Rules/AccountActions.cs` | Modified | 1 | AddExpense requires `Account.CanPay` |
 | `Rules/CardChargeFilter.cs` | New | 1 | `ChargesFor(expenses, card, year, month, includePaid)` |
