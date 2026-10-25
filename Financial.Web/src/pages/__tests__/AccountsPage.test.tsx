@@ -115,6 +115,24 @@ describe('AccountsPage', () => {
     expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('2,800.25')).toBeInTheDocument()
   })
 
+  it('sorts the Balance column by net position, so the most owed card comes first', async () => {
+    getDefaultGroupSummaryMock.mockResolvedValue({
+      ...SUMMARY,
+      members: [
+        ...SUMMARY.members,
+        { accountId: 'amex', name: 'BA Amex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+        { accountId: 'visa', name: 'Visa', templateName: 'CreditCard', currency: 'GBP', balance: -15, roundUpTotal: null, statement: { outstandingTotal: 15, isPaid: false }, balanceIsOwed: true },
+      ],
+    })
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Balance' }))
+
+    const [, ...rows] = within(screen.getByRole('table', { name: 'Accounts' })).getAllByRole('row')
+    expect(rows.map((row) => within(row).getByRole('link').textContent)).toEqual(['BA Amex', 'Visa', 'Old Savings', 'Chase', 'Itau', 'Barclays'])
+    expect(within(rows[0]).getByText('Owed 812.33')).toBeInTheDocument()
+  })
+
   it('shows the month the balances belong to', async () => {
     renderPage()
 
