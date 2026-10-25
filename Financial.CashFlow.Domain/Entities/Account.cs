@@ -25,6 +25,7 @@ public class Account
     public bool RoundsUp => RoundUp?.Enabled == true;
     public string TemplateName => Template.ToString();
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
+    public bool CanPay => Has(Capability.HasCategories) && !Has(Capability.HasStatements);
 
     private Account() { }
 
@@ -83,6 +84,19 @@ public class Account
         }
 
         RoundUp = new RoundUpSetting(enabled);
+    }
+
+    public void EnsureCanPay()
+    {
+        if (Has(Capability.HasStatements))
+        {
+            throw new ArgumentException($"{Name} is a card account and can't pay.");
+        }
+
+        if (!Has(Capability.HasCategories))
+        {
+            throw new ArgumentException($"Account '{Name}' cannot be a payment source.");
+        }
     }
 
     public void SetNextInvoiceDueDate(DateOnly? dueDate)

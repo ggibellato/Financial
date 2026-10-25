@@ -42,12 +42,8 @@ public class PaymentsDueServiceTests
     private static RecurringBill CreateBill(int dueDay, string description = "Internet") =>
         RecurringBill.Create(dueDay, description, 50m, Area.UK, string.Empty, null, null);
 
-    private static Account CreateCard(string name, DateOnly? nextInvoiceDueDate)
-    {
-        var card = TestAccounts.CreditCard(name);
-        card.UpdateCard(name, isActive: true, nextInvoiceDueDate);
-        return card;
-    }
+    private static Account CreateCard(string name, DateOnly? nextInvoiceDueDate) =>
+        TestAccounts.CreditCard(name, nextInvoiceDueDate: nextInvoiceDueDate);
 
     private void AddStatement(Account card, DateOnly period, bool paid = false)
     {

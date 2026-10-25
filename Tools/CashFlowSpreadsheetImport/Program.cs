@@ -238,7 +238,11 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
 
     foreach (var (sheet, _, year, month) in monthlySheets)
     {
-        var expenses = MonthlyExpenseSheetImporter.Import(sheet, year, month, today, report, data.Accounts, data.Accounts.Where(account => account.Has(Capability.HasStatements)).ToList(), data.Categories);
+        var expenses = MonthlyExpenseSheetImporter.Import(
+            sheet, year, month, today, report,
+            data.Accounts.Where(account => !account.Has(Capability.HasStatements)).ToList(),
+            data.Accounts.Where(account => account.Has(Capability.HasStatements)).ToList(),
+            data.Categories);
         foreach (var expense in expenses)
         {
             data.AddExpense(expense);

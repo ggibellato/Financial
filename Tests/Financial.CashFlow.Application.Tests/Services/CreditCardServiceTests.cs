@@ -365,6 +365,7 @@ public class CreditCardServiceTests
         {
             await act.Should().ThrowAsync<DuplicateNameException>().WithMessage("An account named \"barclays\" already exists.");
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<DuplicateNameException>("CashFlow.CreditCardService.CreateCreditCard");
         }
     }
 
@@ -377,6 +378,7 @@ public class CreditCardServiceTests
         var act = async () => await _sut.UpdateCreditCardAsync(bank.Id, new CreditCardUpdateDTO { Name = "Barclays", IsActive = true });
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.CreditCardService.UpdateCreditCard");
     }
 
     [Fact]
@@ -394,6 +396,7 @@ public class CreditCardServiceTests
                 .WithMessage("Cannot delete a credit card that is still referenced by a statement or expense.");
             _repository.CardAccounts.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<EntityInUseException>("CashFlow.CreditCardService.DeleteCreditCard");
         }
     }
 

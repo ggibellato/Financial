@@ -8,14 +8,14 @@ namespace Financial.CashFlow.Domain.Rules;
 
 public static class AccountActions
 {
-    private static readonly IReadOnlyList<(AccountAction Action, Capability Capability, Capability? Excluding)> ActionCapabilities =
+    private static readonly IReadOnlyList<(AccountAction Action, Func<Account, bool> IsAllowed)> ActionRules =
     [
-        (AccountAction.AddExpense, Capability.HasCategories, Capability.HasStatements),
-        (AccountAction.AddIncome, Capability.ReceivesIncome, null),
-        (AccountAction.TransferTo, Capability.CanSendTransfers, null),
-        (AccountAction.TransferFrom, Capability.CanReceiveTransfers, null),
-        (AccountAction.PayRecurringBill, Capability.CanPayBills, null),
-        (AccountAction.Reconcile, Capability.CanReconcile, null)
+        (AccountAction.AddExpense, account => account.CanPay),
+        (AccountAction.AddIncome, account => account.Has(Capability.ReceivesIncome)),
+        (AccountAction.TransferTo, account => account.Has(Capability.CanSendTransfers)),
+        (AccountAction.TransferFrom, account => account.Has(Capability.CanReceiveTransfers)),
+        (AccountAction.PayRecurringBill, account => account.Has(Capability.CanPayBills)),
+        (AccountAction.Reconcile, account => account.Has(Capability.CanReconcile))
     ];
 
     public static IReadOnlyList<AccountAction> AllowedFor(Account account)
@@ -25,8 +25,8 @@ public static class AccountActions
         if (!account.IsActive)
             return [];
 
-        return ActionCapabilities
-            .Where(entry => account.Has(entry.Capability) && !(entry.Excluding is { } excluding && account.Has(excluding)))
+        return ActionRules
+            .Where(entry => entry.IsAllowed(account))
             .Select(entry => entry.Action)
             .ToList();
     }

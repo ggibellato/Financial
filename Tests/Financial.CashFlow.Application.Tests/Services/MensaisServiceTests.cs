@@ -530,6 +530,7 @@ public class MensaisServiceTests
         {
             bill.Status.Should().Be(BillStatus.Unset);
             repository.Expenses.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.MensaisService.MarkBillPaid");
         }
     }
 }

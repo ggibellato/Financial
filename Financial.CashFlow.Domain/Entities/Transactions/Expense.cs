@@ -145,7 +145,7 @@ public class Expense : IAccountTransaction
             throw new ArgumentException("Only an unsettled credit card charge can be settled.");
         }
 
-        EnsureCanBePaymentSource(paymentSourceAccount);
+        paymentSourceAccount.EnsureCanPay();
         ActiveAccountRule.EnsureUsable(null, paymentSourceAccount);
         PaymentSourceAccount = paymentSourceAccount;
         Date = paymentDate;
@@ -237,9 +237,12 @@ public class Expense : IAccountTransaction
         RoundUpAmount = amount;
     }
 
+    public bool IsUnpaidChargeOn(Account card) =>
+        PaymentStatus == ExpensePaymentStatus.CreditCardCharge && CreditCard!.Id == card.Id;
+
     public decimal ContributionTo(Account account) =>
         PaymentSourceAccount?.Id == account.Id ? -(Value + (RoundUpAmount ?? 0))
-        : PaymentStatus == ExpensePaymentStatus.CreditCardCharge && CreditCard!.Id == account.Id ? -Value
+        : IsUnpaidChargeOn(account) ? -Value
         : 0m;
 
     private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
@@ -273,30 +276,14 @@ public class Expense : IAccountTransaction
         if (creditCard is not null)
         {
             CardAccountRule.EnsureIsCard(creditCard);
+
+            if (!creditCard.IsActive)
+            {
+                throw new ArgumentException(
+                    $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
+            }
         }
 
-        if (creditCard is not null && !creditCard.IsActive)
-        {
-            throw new ArgumentException(
-                $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
-        }
-
-        if (paymentSourceAccount is not null)
-        {
-            EnsureCanBePaymentSource(paymentSourceAccount);
-        }
-    }
-
-    public static void EnsureCanBePaymentSource(Account account)
-    {
-        if (account.Has(Capability.HasStatements))
-        {
-            throw new ArgumentException($"{account.Name} is a card account and can't pay.");
-        }
-
-        if (!account.Has(Capability.HasCategories))
-        {
-            throw new ArgumentException($"Account '{account.Name}' cannot be a payment source.");
-        }
+        paymentSourceAccount?.EnsureCanPay();
     }
 }

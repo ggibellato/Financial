@@ -437,6 +437,7 @@ public class AccountAdminServiceTests
                 .WithMessage("BA Amex has transactions and cannot be deleted. Deactivate it instead.");
             _repository.Accounts.Should().Contain(card);
             _calendarSyncTrigger.TriggeredCreditCardIds.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<EntityInUseException>("CashFlow.AccountAdminService.DeleteAccount");
         }
     }
 }

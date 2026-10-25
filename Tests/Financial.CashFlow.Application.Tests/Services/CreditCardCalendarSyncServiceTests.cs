@@ -74,7 +74,7 @@ public class CreditCardCalendarSyncServiceTests
     public async Task ResyncAsync_WhenNotConnected_DoesNothing()
     {
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         await _sut.ResyncAsync(card.Id);
 
@@ -87,7 +87,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 10), 123.45m, card);
 
         var result = await _sut.ResyncAsync(card.Id);
@@ -106,7 +106,7 @@ public class CreditCardCalendarSyncServiceTests
         // lost (a fresh connection always starts empty), but the real event is still there.
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         _provider.ExistingEventIdForTitlePrefix = "pre-existing-event-1";
 
         var result = await _sut.ResyncAsync(card.Id);
@@ -123,7 +123,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id); // first sync: no local mapping yet, so this itself reconciles once.
         _provider.ExistingEventIdForTitlePrefix = "some-other-event";
 
@@ -138,10 +138,10 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         await _sut.ResyncAsync(card.Id);
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 15));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 15));
         await _sut.ResyncAsync(card.Id);
 
         _provider.CreatedEvents.Should().HaveCount(1);
@@ -153,7 +153,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         await _sut.ResyncAsync(card.Id);
 
@@ -167,10 +167,10 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
 
-        card.UpdateCard(card.Name, isActive: true, nextInvoiceDueDate: null);
+        card.SetNextInvoiceDueDate(null);
         var result = await _sut.ResyncAsync(card.Id);
 
         result.State.Should().Be("Synced");
@@ -183,10 +183,11 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
 
-        card.UpdateCard(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+        card.SetActive(false);
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
 
         _provider.DeletedEvents.Should().ContainSingle(e => e.EventId == _provider.CreatedEventId);
@@ -197,7 +198,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
         var cardId = card.Id;
         _repository.Accounts.RemoveAll(c => c.Id == cardId);
@@ -213,12 +214,12 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
         var originalEventId = _connectionStore.Load()!.CardEventIds[card.Id];
 
         _provider.UpdateEventThrows = true;
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 20));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 20));
         var result = await _sut.ResyncAsync(card.Id);
 
         result.State.Should().Be("Error");
@@ -231,7 +232,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         _sut.TriggerSync(card.Id);
         var immediateState = _statusStore.GetStatus(card.Id)?.State;
@@ -246,7 +247,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 9, 1));
         var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
@@ -259,7 +260,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 10, 1));
 
@@ -281,7 +282,7 @@ public class CreditCardCalendarSyncServiceTests
     public void TriggerSync_WhenNotConnected_DoesNothing()
     {
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         _sut.TriggerSync(card.Id);
 
@@ -298,7 +299,7 @@ public class CreditCardCalendarSyncServiceTests
             RevokedReason = "token_revoked"
         });
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         _sut.TriggerSync(card.Id);
 
@@ -312,8 +313,8 @@ public class CreditCardCalendarSyncServiceTests
         Connect("old-cal");
         var card1 = Card("BarclaysPlatinumVisa8003");
         var card2 = Card("BarclaysPlatinumVisa6007");
-        card1.UpdateCard(card1.Name, isActive: true, new DateOnly(2026, 9, 10));
-        card2.UpdateCard(card2.Name, isActive: true, new DateOnly(2026, 9, 12));
+        card1.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
+        card2.SetNextInvoiceDueDate(new DateOnly(2026, 9, 12));
         await _sut.ResyncAsync(card1.Id);
         await _sut.ResyncAsync(card2.Id);
 
@@ -334,9 +335,9 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var due = Card("BarclaysPlatinumVisa8003");
-        due.UpdateCard(due.Name, isActive: true, new DateOnly(2026, 9, 10));
+        due.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         var noDueDate = Card("BarclaysPlatinumVisa6007");
-        noDueDate.UpdateCard(noDueDate.Name, isActive: true, nextInvoiceDueDate: null);
+        noDueDate.SetNextInvoiceDueDate(null);
 
         var results = await _sut.ResyncAllAsync();
 
@@ -401,7 +402,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         _calendarIntegrationService.Throws = true;
 
         _sut.TriggerSync(card.Id);
@@ -416,7 +417,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         _calendarIntegrationService.AccessToken = null;
 
         await _sut.ResyncAsync(card.Id);
@@ -429,7 +430,7 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         _calendarIntegrationService.OnGetValidAccessToken = () =>
             _connectionStore.Save(_connectionStore.Load()! with { RevokedReason = "token_revoked" });
 
@@ -443,7 +444,8 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+        card.SetActive(false);
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
 
         var result = await _sut.ResyncAsync(card.Id);
 
@@ -457,10 +459,11 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect("old-cal");
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
 
-        card.UpdateCard(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+        card.SetActive(false);
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         _provider.NotFoundCalendarId = "old-cal";
         _provider.CreatedCalendarId = "new-cal";
 
@@ -474,10 +477,11 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
 
-        card.UpdateCard(card.Name, isActive: false, new DateOnly(2026, 9, 10));
+        card.SetActive(false);
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         _provider.DeleteEventThrows = true;
         var result = await _sut.ResyncAsync(card.Id);
 
@@ -490,10 +494,10 @@ public class CreditCardCalendarSyncServiceTests
     {
         Connect("old-cal");
         var card = Card("BarclaysPlatinumVisa8003");
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 10));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 10));
         await _sut.ResyncAsync(card.Id);
 
-        card.UpdateCard(card.Name, isActive: true, new DateOnly(2026, 9, 15));
+        card.SetNextInvoiceDueDate(new DateOnly(2026, 9, 15));
         _provider.NotFoundCalendarId = "old-cal";
         _provider.CreateCalendarThrows = true;
 

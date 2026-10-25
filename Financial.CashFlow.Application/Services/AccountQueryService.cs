@@ -121,8 +121,7 @@ public sealed class AccountQueryService : IAccountQueryService
     private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account) =>
         record switch
         {
-            Expense expense when expense.PaymentSourceAccount?.Id == account.Id => [ToRow(expense, account)],
-            Expense expense when expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && expense.CreditCard!.Id == account.Id => [ToCardChargeRow(expense)],
+            Expense expense when expense.PaymentSourceAccount?.Id == account.Id || expense.IsUnpaidChargeOn(account) => [ToRow(expense, account)],
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
@@ -139,25 +138,13 @@ public sealed class AccountQueryService : IAccountQueryService
             Date = expense.Date,
             Description = expense.Description,
             CategoryName = expense.Category.Name,
-            Counterpart = expense.CreditCard?.Name,
+            Counterpart = expense.CreditCard?.Id == account.Id ? null : expense.CreditCard?.Name,
             Amount = -expense.Value,
             RoundUp = expense.RoundUpAmount is { } roundUp ? -roundUp : null,
             CanEdit = account.IsActive && kind == TransactionKind.Expense,
             Expense = ExpenseService.ToDto(expense)
         };
     }
-
-    private static AccountTransactionDTO ToCardChargeRow(Expense charge) => new()
-    {
-        Id = charge.Id,
-        Kind = TransactionKind.CardCharge.ToString(),
-        Date = charge.Date,
-        Description = charge.Description,
-        CategoryName = charge.Category.Name,
-        Amount = -charge.Value,
-        CanEdit = false,
-        Expense = ExpenseService.ToDto(charge)
-    };
 
     private static AccountTransactionDTO ToRow(Income income, Account account) => new()
     {

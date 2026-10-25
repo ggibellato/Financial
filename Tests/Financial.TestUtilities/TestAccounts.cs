@@ -24,11 +24,4 @@ public static class TestAccounts
         account.SetNextInvoiceDueDate(nextInvoiceDueDate);
         return account;
     }
-
-    public static void UpdateCard(this Account card, string name, bool isActive, DateOnly? nextInvoiceDueDate)
-    {
-        card.Update(name);
-        card.SetActive(isActive);
-        card.SetNextInvoiceDueDate(nextInvoiceDueDate);
-    }
 }

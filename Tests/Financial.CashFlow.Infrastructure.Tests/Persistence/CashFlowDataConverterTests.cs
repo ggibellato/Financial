@@ -23,7 +23,7 @@ public class CashFlowDataConverterTests
         + "\"InvestmentAccounts\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000601\",\"Name\":\"Amex balance\",\"IsActive\":true,\"IsLiability\":true,\"Source\":\"CreditCard\",\"CreditCardId\":\"" + AmexId + "\"}],"
         + "\"Accounts\":[{\"Id\":\"" + BarclaysId + "\",\"Name\":\"Barclays\",\"Template\":\"Bank\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":{\"Amount\":100,\"StartDate\":\"2026-09-01\"},\"RoundUp\":{\"Enabled\":false}}],"
         + "\"IncomeSources\":[],\"Incomes\":[],"
-        + "\"CreditCards\":[{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"IsActive\":true,\"NextInvoiceDueDate\":\"2026-11-18\"},{\"Id\":\"" + RetiredId + "\",\"Name\":\"Retired\",\"IsActive\":false,\"NextInvoiceDueDate\":null}],"
+        + "\"CreditCards\":[{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"IsActive\":true,\"NextInvoiceDueDate\":\"2026-11-18\"},{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"IsActive\":false,\"NextInvoiceDueDate\":null}],"
         + "\"Categories\":[{\"Id\":\"" + CategoryId + "\",\"Name\":\"Mercado\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false}],"
         + "\"Transfers\":[],\"BalanceAdjustments\":[],\"TitheCarryForwards\":[],\"TitheCarryForwardEffectiveFrom\":null,\"Version\":2}";
 
@@ -53,7 +53,9 @@ public class CashFlowDataConverterTests
             amex.NextInvoiceDueDate.Should().Be(new DateOnly(2026, 11, 18));
             amex.OpeningBalance.Should().BeNull();
             amex.RoundUp.Should().BeNull();
-            data.Accounts.Single(account => account.Id == Guid.Parse(RetiredId)).IsActive.Should().BeFalse();
+            var retired = data.Accounts.Single(account => account.Id == Guid.Parse(RetiredId));
+            retired.Name.Should().Be("Itaú Retired");
+            retired.IsActive.Should().BeFalse();
         }
     }
 

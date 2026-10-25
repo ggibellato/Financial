@@ -63,7 +63,6 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public IEnumerable<ReserveBucket> GetReserveBuckets() => _data.ReserveBuckets;
     public void AddReserveBucket(ReserveBucket bucket) => _data.AddReserveBucket(bucket);
 
-
     public IEnumerable<Category> GetCategories() => _data.Categories;
     public void AddCategory(Category category) => _data.AddCategory(category);
     public void DeleteCategory(Guid id) => _data.RemoveCategory(id);

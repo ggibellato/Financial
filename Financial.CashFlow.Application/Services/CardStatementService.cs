@@ -64,11 +64,15 @@ public sealed class CardStatementService : ICardStatementService
 
             var expenses = _repository.GetExpenses().ToList();
             var records = AccountTransactionReader.Read(_repository);
+            var accumulatedByCard = existingStatements
+                .Select(s => s.CreditCard)
+                .Distinct()
+                .ToDictionary(card => card.Id, card => AccumulatedOutstandingTotal(card, records));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements
-                .Select(s => ToDto(s, OutstandingTotal(expenses, s), AccumulatedOutstandingTotal(s.CreditCard, records), warning: null))
+                .Select(s => ToDto(s, OutstandingTotal(expenses, s), accumulatedByCard[s.CreditCard.Id], warning: null))
                 .ToList();
         }
         catch (Exception ex)
@@ -100,7 +104,7 @@ public sealed class CardStatementService : ICardStatementService
                 throw new ArgumentException($"Payment source '{request.PaymentSourceBankId}' is not recognized.");
             }
 
-            Expense.EnsureCanBePaymentSource(bank!);
+            bank!.EnsureCanPay();
 
             var settledAt = _timeProvider.GetLocalToday();
             var charges = UnpaidCharges(_repository.GetExpenses(), statement);
