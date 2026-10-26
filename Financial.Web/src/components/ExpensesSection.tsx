@@ -19,6 +19,7 @@ import TruncatedText from './TruncatedText'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { formatN2, formatShortDate } from '../utils/formatters'
+import { isLockedByPaidStatement } from '../utils/expensePaymentStatus'
 import './ExpensesSection.css'
 
 const useStyles = makeStyles({
@@ -36,10 +37,8 @@ interface ExpenseRowProps {
   onDelete: (id: string) => void
 }
 
-const STATEMENT_LOCKED_STATUSES = ['CreditCardSettled', 'CreditCardStatementPaid']
-
 function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
-  const isOnPaidStatement = STATEMENT_LOCKED_STATUSES.includes(expense.paymentStatus)
+  const isOnPaidStatement = isLockedByPaidStatement(expense.paymentStatus)
   const deleteButton = (
     <Button
       appearance="subtle"

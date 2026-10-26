@@ -82,8 +82,7 @@ public sealed class CardStatementService : ICardStatementService
 
             bank!.EnsureCanPay();
 
-            var total = CardChargeFilter.OutstandingTotal(
-                _repository.GetExpenses(), _repository.GetCardStatements(), statement.CreditCard, statement.Year, statement.Month);
+            var total = OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement);
             if (total <= 0)
             {
                 throw new ArgumentException("There is nothing to pay on this statement.");

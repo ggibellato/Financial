@@ -63,10 +63,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     private Task<List<CardStatementDTO>?> StatementsAsync(int year, int month) =>
         Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/{year}/{month}");
 
-    private Task<HttpResponseMessage> MarkPaidAsync(string statementId) =>
-        Client.PostAsJsonAsync($"{Api}/card-statements/{statementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = Guid.Parse(BarclaysId) });
-
-    private Task<HttpResponseMessage> MarkPaidAsync(string statementId, DateOnly date) =>
+    private Task<HttpResponseMessage> MarkPaidAsync(string statementId, DateOnly? date = null) =>
         Client.PostAsJsonAsync(
             $"{Api}/card-statements/{statementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = Guid.Parse(BarclaysId), Date = date });
 

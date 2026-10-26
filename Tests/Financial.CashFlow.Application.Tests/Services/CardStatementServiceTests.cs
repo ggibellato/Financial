@@ -48,6 +48,13 @@ public class CardStatementServiceTests
         }
     }
 
+    private CardStatement SeedJulyVisaStatementWithCharge()
+    {
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        SeedStatements(2026, 7);
+        return _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
+    }
+
     private Account Bank(string name) => _repository.Accounts.Single(account => account.Name == name);
 
     private static Expense AddCharge(
@@ -234,9 +241,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task MarkStatementPaidAsync_WithADate_DatesTheTransferThatDay()
     {
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        SeedStatements(2026, 7);
-        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
+        var statement = SeedJulyVisaStatementWithCharge();
 
         await _sut.MarkStatementPaidAsync(
             statement.Id, new MarkCardStatementPaidDTO { PaymentSourceBankId = Bank("Chase").Id, Date = new DateOnly(2026, 8, 3) });
@@ -247,9 +252,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task MarkStatementPaidAsync_FutureDate_ThrowsAndSavesNothing()
     {
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        SeedStatements(2026, 7);
-        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
+        var statement = SeedJulyVisaStatementWithCharge();
 
         var act = async () => await _sut.MarkStatementPaidAsync(
             statement.Id, new MarkCardStatementPaidDTO { PaymentSourceBankId = Bank("Chase").Id, Date = new DateOnly(2026, 10, 6) });
@@ -477,9 +480,7 @@ public class CardStatementServiceTests
     [Fact]
     public async Task UnmarkStatementPaidAsync_TransferMissing_ThrowsConflictAndChangesNothing()
     {
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        SeedStatements(2026, 7);
-        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
+        var statement = SeedJulyVisaStatementWithCharge();
         await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
         var paymentId = statement.PaymentTransferId;
         _repository.Transfers.Clear();

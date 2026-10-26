@@ -8,12 +8,9 @@ import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
+import { isCardChargeStatus, isLockedByPaidStatement } from '../utils/expensePaymentStatus'
 
 export type PaymentMode = 'bank' | 'card'
-
-const SETTLED_STATUS = 'CreditCardSettled'
-const CHARGE_STATUS = 'CreditCardCharge'
-const STATEMENT_PAID_STATUS = 'CreditCardStatementPaid'
 
 const MIN_ROUND_UP_AMOUNT = 0
 const MAX_ROUND_UP_AMOUNT = 0.99
@@ -169,8 +166,8 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         // re-editing Value/PaymentSource here doesn't silently change what was saved.
         roundUpAmountAuto: action.payload.roundUpAmount == null,
         countsAsTithe: String(action.payload.countsAsTithe),
-        paymentMode: [CHARGE_STATUS, STATEMENT_PAID_STATUS].includes(action.payload.paymentStatus) ? 'card' : 'bank',
-        isSettled: [SETTLED_STATUS, STATEMENT_PAID_STATUS].includes(action.payload.paymentStatus),
+        paymentMode: isCardChargeStatus(action.payload.paymentStatus) ? 'card' : 'bank',
+        isSettled: isLockedByPaidStatement(action.payload.paymentStatus),
         saveError: null,
         saveErrorFields: {},
       })

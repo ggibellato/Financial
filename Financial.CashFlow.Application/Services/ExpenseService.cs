@@ -286,7 +286,7 @@ public sealed class ExpenseService : IExpenseService
     }
 
     private static bool IsUnpaidCharge(Expense expense, IEnumerable<CardStatement> statements) =>
-        expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && !CardChargeFilter.IsPaidThroughStatement(expense, statements);
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && !CardChargeFilter.IsOnPaidStatement(expense, statements);
 
     private static string PaymentStatusOf(Expense expense, IEnumerable<CardStatement> statements) =>
         CardChargeFilter.IsPaidThroughStatement(expense, statements) ? StatementPaidStatus : expense.PaymentStatus.ToString();

@@ -431,12 +431,6 @@ public class TransferServiceTests
         }
     }
 
-    private Transfer SeedStatementPayment(DateOnly date)
-    {
-        var card = TestAccounts.CreditCard("Amex");
-        _repository.Accounts.Add(card);
-        var payment = Transfer.CreateStatementPayment(date, _repository.Accounts.First(a => a.Name == "Barclays"), card, 40m, TestClock.Today);
-        _repository.Transfers.Add(payment);
-        return payment;
-    }
+    private Transfer SeedStatementPayment(DateOnly date) =>
+        TestTransfers.SeedStatementPayment(_repository, _repository.Accounts.First(a => a.Name == "Barclays"), date);
 }
