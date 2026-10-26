@@ -164,6 +164,31 @@ describe('ExpenseForm', () => {
     expect(invoiceField).toHaveValue('2026-07')
   })
 
+  it('locks date and value on a settled charge while description and category stay editable', () => {
+    render(
+      <ExpenseForm
+        {...baseProps}
+        isEditing
+        isSettled
+        paymentSource="bank-trading212"
+        creditCardId="card-baamex"
+        creditCardName="BaAmex"
+      />,
+    )
+
+    expect(screen.getByLabelText(/^Date/)).toBeDisabled()
+    expect(screen.getByLabelText(/^Value/)).toBeDisabled()
+    expect(screen.getByLabelText(/^Description/)).toBeEnabled()
+    expect(screen.getByLabelText(/^Category/)).toBeEnabled()
+  })
+
+  it('keeps date and value editable on an unsettled charge', () => {
+    render(<ExpenseForm {...baseProps} isEditing paymentMode="card" creditCardId="card-baamex" />)
+
+    expect(screen.getByLabelText(/^Date/)).toBeEnabled()
+    expect(screen.getByLabelText(/^Value/)).toBeEnabled()
+  })
+
   it("defaults the invoice month to the selected card's latest invoice month when it's ahead of the date", () => {
     const cardsWithFutureInvoice: CreditCardDto[] = [
       { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-09-01', hasReferences: false },

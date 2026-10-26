@@ -42,7 +42,6 @@ interface MonthlyState {
   retryCount: number
   markPaidSources: Record<string, string>
   listActionError: string | null
-  listActionWarning: string | null
 }
 
 type MonthlyAction =
@@ -65,8 +64,7 @@ type MonthlyAction =
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
-  | { type: 'LIST_ACTION_ERROR'; payload: string }
-  | { type: 'LIST_ACTION_WARNING'; payload: string | null }
+  | { type: 'LIST_ACTION_ERROR'; payload: string | null }
   | { type: 'CARRY_FORWARD_UPDATE_START' }
   | { type: 'CARRY_FORWARD_UPDATE_END' }
 
@@ -87,7 +85,6 @@ const INITIAL_STATE: MonthlyState = {
   retryCount: 0,
   markPaidSources: {},
   listActionError: null,
-  listActionWarning: null,
 }
 
 function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
@@ -103,9 +100,7 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
     case 'LIST_ACTION_ERROR':
-      return { ...state, listActionError: action.payload, listActionWarning: null }
-    case 'LIST_ACTION_WARNING':
-      return { ...state, listActionWarning: action.payload, listActionError: null }
+      return { ...state, listActionError: action.payload }
     case 'CARRY_FORWARD_UPDATE_START':
       return { ...state, carryForwardUpdating: true }
     case 'CARRY_FORWARD_UPDATE_END':
@@ -147,7 +142,6 @@ export interface MonthlyData {
   updateCarryForwardInclusion: (included: boolean) => void
   deleteIncome: (id: string) => void
   listActionError: string | null
-  listActionWarning: string | null
 }
 
 export function useMonthly(): MonthlyData {
@@ -240,8 +234,8 @@ export function useMonthly(): MonthlyData {
     (id: string, paymentSourceBankId: string) => {
       void apiClient
         .markCardStatementPaid(id, { paymentSourceBankId })
-        .then((statement) => {
-          dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
+        .then(() => {
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: null })
           void refreshSilently()
         })
         .catch((err: unknown) => {
@@ -255,8 +249,8 @@ export function useMonthly(): MonthlyData {
     (id: string) => {
       void apiClient
         .unmarkCardStatementPaid(id)
-        .then((statement) => {
-          dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
+        .then(() => {
+          dispatch({ type: 'LIST_ACTION_ERROR', payload: null })
           void refreshSilently()
         })
         .catch((err: unknown) => {
@@ -338,6 +332,5 @@ export function useMonthly(): MonthlyData {
     updateCarryForwardInclusion,
     deleteIncome,
     listActionError: state.listActionError,
-    listActionWarning: state.listActionWarning,
   }
 }

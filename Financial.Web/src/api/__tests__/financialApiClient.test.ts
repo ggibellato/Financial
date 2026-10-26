@@ -2547,7 +2547,6 @@ describe('financialApiClient', () => {
       isPaid: true,
       outstandingTotal: 0,
       accumulatedOutstandingTotal: 0,
-      warning: null,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -2571,7 +2570,6 @@ describe('financialApiClient', () => {
       isPaid: false,
       outstandingTotal: 100,
       accumulatedOutstandingTotal: 100,
-      warning: null,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

@@ -13,7 +13,6 @@ interface IncomingGridProps {
    * other grids' actions, so it can also reflect an unrelated action - an accepted trade-off of
    * reusing that shared state rather than introducing a dedicated field. */
   carryForwardActionError?: string | null
-  carryForwardActionWarning?: string | null
 }
 
 export default function IncomingGrid({
@@ -23,7 +22,6 @@ export default function IncomingGrid({
   carryForwardUpdating,
   onToggleCarryForward,
   carryForwardActionError,
-  carryForwardActionWarning,
 }: IncomingGridProps) {
   const carryForward = titheSummary?.carryForward ?? null
 
@@ -32,11 +30,6 @@ export default function IncomingGrid({
       {carryForwardActionError && (
         <p className="monthly-page__action-error" role="alert">
           {carryForwardActionError}
-        </p>
-      )}
-      {carryForwardActionWarning && (
-        <p className="monthly-page__action-warning" role="status">
-          {carryForwardActionWarning}
         </p>
       )}
       <TotalsGrid

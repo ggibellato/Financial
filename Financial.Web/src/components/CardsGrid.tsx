@@ -6,7 +6,7 @@ import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { selectableBanks } from '../utils/selectableBanks'
-import { formatN2OrDash } from '../utils/formatters'
+import { formatN2, formatN2OrDash } from '../utils/formatters'
 import { currencyFooterItems } from '../utils/currencyFooterItems'
 import SectionTotals from './SectionTotals'
 import TruncatedText from './TruncatedText'
@@ -19,15 +19,8 @@ interface CardsGridProps {
   setMarkPaidSource: (id: string, bank: string) => void
   markStatementPaid: (id: string, paymentSource: string) => void
   unmarkStatementPaid: (id: string) => void
-  /** Outcome of the last mark/unmark action. An error is a failure the action did not complete; a
-   * warning is a completed call that changed nothing - "already paid", say. Both were being
-   * discarded, so a failed mark-paid and a no-op mark-paid looked exactly like a successful one. */
   statementActionError?: string | null
-  statementActionWarning?: string | null
-  /** When provided (Credit Card tab), adds Next Invoice Due Date/Active columns, one row per
-   * credit card (not just cards with a statement this month, so a deactivated card - which stops
-   * getting new monthly statements - stays manageable here). Omitted on the read-only Summary tab. */
-  creditCards?: CreditCardDto[]
+  creditCards: CreditCardDto[]
   updatingCardId?: string | null
   updateError?: string | null
   onUpdateCreditCard?: (id: string, request: CreditCardUpdateDto) => Promise<unknown>
@@ -44,19 +37,8 @@ interface CardRow {
 
 const FOOTER_FIGURES = [{ label: 'Combined adjustment figure', pick: (total: CurrencyTotalDto) => total.cardOutstandingTotal }]
 
-function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[] | undefined): CardRow[] {
-  if (!creditCards) {
-    return cardStatements.map((s) => ({
-      key: s.id,
-      creditCardId: s.creditCardId,
-      creditCardName: s.creditCardName,
-      nextInvoiceDueDate: null,
-      isActive: false,
-      statement: s,
-    }))
-  }
-
-  return creditCards.map((c) => ({
+function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[]): CardRow[] {
+  const cardRows = creditCards.map((c) => ({
     key: c.id,
     creditCardId: c.id,
     creditCardName: c.name,
@@ -64,6 +46,17 @@ function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDt
     isActive: c.isActive,
     statement: cardStatements.find((s) => s.creditCardId === c.id) ?? null,
   }))
+  const statementOnlyRows = cardStatements
+    .filter((s) => !creditCards.some((c) => c.id === s.creditCardId))
+    .map((s) => ({
+      key: s.id,
+      creditCardId: s.creditCardId,
+      creditCardName: s.creditCardName,
+      nextInvoiceDueDate: null,
+      isActive: false,
+      statement: s,
+    }))
+  return [...cardRows, ...statementOnlyRows]
 }
 
 export default function CardsGrid({
@@ -75,13 +68,12 @@ export default function CardsGrid({
   markStatementPaid,
   unmarkStatementPaid,
   statementActionError,
-  statementActionWarning,
   creditCards,
   updatingCardId,
   updateError,
   onUpdateCreditCard,
 }: CardsGridProps) {
-  const showCardManagementColumns = creditCards !== undefined
+  const showCardManagementColumns = onUpdateCreditCard !== undefined
   const rows = buildRows(cardStatements, creditCards)
 
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
@@ -89,9 +81,9 @@ export default function CardsGrid({
 
   const accessors: Record<string, SortAccessor<CardRow>> = {
     card: (row) => row.creditCardName,
-    outstanding: (row) => row.statement?.outstandingTotal,
+    outstanding: (row) => row.statement?.outstandingTotal ?? 0,
     accumulatedOutstanding: (row) => row.statement?.accumulatedOutstandingTotal,
-    status: (row) => (row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : undefined),
+    status: (row) => (row.statement?.isPaid ? 'Paid' : 'Unpaid'),
     nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
     active: (row) => (row.isActive ? 1 : 0),
   }
@@ -105,11 +97,6 @@ export default function CardsGrid({
       {statementActionError && (
         <p className="monthly-page__action-error" role="alert">
           {statementActionError}
-        </p>
-      )}
-      {statementActionWarning && (
-        <p className="monthly-page__action-warning" role="status">
-          {statementActionWarning}
         </p>
       )}
       <div className="monthly-page__table-scroll">
@@ -183,13 +170,13 @@ export default function CardsGrid({
               <TableRow key={row.key}>
                 <DataTableCell label="Card"><TruncatedText text={row.creditCardName} /></DataTableCell>
                 <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
-                  {formatN2OrDash(row.statement?.outstandingTotal)}
+                  {formatN2(row.statement?.outstandingTotal ?? 0)}
                 </DataTableCell>
                 <DataTableCell label="Accumulated outstanding" className="data-table__col--numeric">
                   {formatN2OrDash(row.statement?.accumulatedOutstandingTotal)}
                 </DataTableCell>
                 <DataTableCell label="Status">
-                  {row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}
+                  {row.statement?.isPaid ? 'Paid' : 'Unpaid'}
                 </DataTableCell>
                 {showCardManagementColumns && (
                   <>

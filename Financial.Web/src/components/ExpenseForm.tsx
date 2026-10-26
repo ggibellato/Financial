@@ -105,7 +105,7 @@ export default function ExpenseForm({
             validationState={fieldError('date') ? 'error' : 'none'}
             validationMessage={fieldError('date')}
           >
-            <Input type="date" value={date} onChange={(e) => onFieldChange('date', e.target.value)} />
+            <Input type="date" value={date} disabled={isSettled} onChange={(e) => onFieldChange('date', e.target.value)} />
           </Field>
 
           <Field
@@ -172,6 +172,7 @@ export default function ExpenseForm({
               type="number"
               step="0.01"
               value={value}
+              disabled={isSettled}
               onChange={(e) => onFieldChange('value', e.target.value)}
             />
           </Field>

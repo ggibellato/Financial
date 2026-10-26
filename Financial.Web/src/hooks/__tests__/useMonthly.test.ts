@@ -119,8 +119,8 @@ const EXPENSES: ExpenseDto[] = [
 const CATEGORY_TOTALS: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 42.5 }]
 
 const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 100, warning: null },
-  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0, warning: null },
+  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 100 },
+  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: CURRENT_YEAR, month: CURRENT_MONTH, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0 },
 ]
 
 const INCOMES: IncomeDto[] = [
@@ -328,58 +328,37 @@ describe('useMonthly', () => {
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
   })
 
-  it('surfaces a warning the server returned for a mark-paid that changed nothing', async () => {
-    markCardStatementPaidMock.mockResolvedValue({
-      ...CARD_STATEMENTS[0],
-      isPaid: true,
-      warning: 'This statement was already marked paid; nothing changed.',
-    })
+  it('shows the server message when a mark-paid is refused', async () => {
+    markCardStatementPaidMock.mockRejectedValue(new Error('This statement is already paid.'))
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
 
-    await waitFor(() =>
-      expect(result.current.listActionWarning).toBe('This statement was already marked paid; nothing changed.'),
-    )
+    await waitFor(() => expect(result.current.listActionError).toBe('This statement is already paid.'))
   })
 
-  it('reports no warning for a mark-paid that did change something', async () => {
-    markCardStatementPaidMock.mockResolvedValue({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
-    const { result } = renderHook(() => useMonthly())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
-
-    await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
-    expect(result.current.listActionWarning).toBeNull()
-  })
-
-  it('surfaces a warning the server returned for an unmark that changed nothing', async () => {
-    unmarkCardStatementPaidMock.mockResolvedValue({
-      ...CARD_STATEMENTS[1],
-      isPaid: false,
-      warning: 'This statement was not marked paid; nothing changed.',
-    })
+  it('shows the server message when an unmark is refused', async () => {
+    unmarkCardStatementPaidMock.mockRejectedValue(new Error('This statement is not paid.'))
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.unmarkStatementPaid('c2'))
 
-    await waitFor(() =>
-      expect(result.current.listActionWarning).toBe('This statement was not marked paid; nothing changed.'),
-    )
+    await waitFor(() => expect(result.current.listActionError).toBe('This statement is not paid.'))
   })
 
-  it('exposes a failed mark-paid as an action error', async () => {
-    markCardStatementPaidMock.mockRejectedValue(new Error('boom'))
+  it('clears the previous action error once a mark-paid succeeds', async () => {
+    markCardStatementPaidMock.mockRejectedValueOnce(new Error('There is nothing to pay on this statement.'))
+    markCardStatementPaidMock.mockResolvedValueOnce({ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
-
     await waitFor(() => expect(result.current.listActionError).not.toBeNull())
-    expect(result.current.listActionWarning).toBeNull()
+    act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
+
+    await waitFor(() => expect(result.current.listActionError).toBeNull())
   })
 
   it('tracks the selected paying bank per statement', async () => {

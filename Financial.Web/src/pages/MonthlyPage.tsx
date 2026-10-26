@@ -67,7 +67,6 @@ export default function MonthlyPage() {
     updateCarryForwardInclusion,
     deleteIncome,
     listActionError,
-    listActionWarning,
   } = useMonthly()
 
   const confirmAndDeleteExpense = (id: string) => confirmThenRun('Delete this expense?', () => deleteExpense(id))
@@ -232,11 +231,11 @@ export default function MonthlyPage() {
                 banks={banks}
                 currencyTotals={currencyTotals}
                 statementActionError={listActionError}
-                statementActionWarning={listActionWarning}
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
                 unmarkStatementPaid={confirmAndUnmarkStatementPaid}
+                creditCards={activeCreditCards}
               />
             </div>
             <div className="monthly-page__grids-row">
@@ -248,7 +247,6 @@ export default function MonthlyPage() {
                 carryForwardUpdating={carryForwardUpdating}
                 onToggleCarryForward={updateCarryForwardInclusion}
                 carryForwardActionError={listActionError}
-                carryForwardActionWarning={listActionWarning}
               />
             </div>
           </div>
@@ -275,6 +273,7 @@ export default function MonthlyPage() {
                 cardStatements={cardStatements}
                 banks={banks}
                 currencyTotals={currencyTotals}
+                statementActionError={listActionError}
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
@@ -305,7 +304,6 @@ export default function MonthlyPage() {
                 carryForwardUpdating={carryForwardUpdating}
                 onToggleCarryForward={updateCarryForwardInclusion}
                 carryForwardActionError={listActionError}
-                carryForwardActionWarning={listActionWarning}
               />
 
               {isIncomeFormOpen && (
