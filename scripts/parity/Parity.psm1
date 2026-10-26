@@ -107,7 +107,7 @@ function Add-ParityStatementFigures($Report, [string]$Prefix, $Statement) {
     Add-ParityFigure $Report "$Prefix/outstandingTotal" $Statement.outstandingTotal
     Add-ParityFigure $Report "$Prefix/accumulatedOutstandingTotal" $Statement.accumulatedOutstandingTotal
     Add-ParityFigure $Report "$Prefix/isPaid" $Statement.isPaid
-    Add-ParityFigure $Report "$Prefix/warning" $Statement.warning
+    Add-ParityFigure $Report "$Prefix/warning" ($Statement.PSObject.Properties['warning'])?.Value
 }
 
 function Add-ParityCardFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
@@ -130,7 +130,7 @@ function Add-ParityMissingCardStatementFigures($Report, [string[]]$Months, $Acco
         foreach ($month in $Months) {
             $prefix = "$month/cards/$($card.name)"
             if ($Report.ContainsKey("$prefix/outstandingTotal")) { continue }
-            Add-ParityStatementFigures $Report $prefix @{ outstandingTotal = [decimal]0; accumulatedOutstandingTotal = $accumulated; isPaid = $false; warning = $null }
+            Add-ParityStatementFigures $Report $prefix ([pscustomobject]@{ outstandingTotal = [decimal]0; accumulatedOutstandingTotal = $accumulated; isPaid = $false })
         }
     }
 }
