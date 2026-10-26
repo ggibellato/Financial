@@ -58,7 +58,7 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 
 | Path | Content |
 |------|---------|
-| `run.json` | Input path and hashes, month range, baseline tag and commit, after commit and dirty flag, figure and difference counts. `copyChangedDuringRead` is a hint only: today's card-statement and tithe GETs write to the copy (both copies receive the same calls), but the API may not have flushed those writes when the hash is taken. |
+| `run.json` | Input path and hashes, month range, baseline tag and commit, after commit and dirty flag, figure and difference counts. `copyChangedDuringRead` is a hint only: the baseline's card-statement GET and both sides' tithe GETs write to the copy, but the API may not have flushed those writes when the hash is taken. |
 | `before\`, `after\` | The data copies, the published `app\`, `build.log`, `api.log` and `api.err.log` |
 | `before-report.json`, `after-report.json` | Figures reports: one sorted JSON object, `key: value` |
 | `differences.txt` | Only when Compare fails |
@@ -74,7 +74,7 @@ key segments; none do in the live data.
 | Family | Endpoint (under `/api/v1/financial/`) | Keys |
 |--------|----------------------------------------|------|
 | `banks` | `banks/month/{y}/{m}/balances`; `banks` + `expenses/month/{y}/{m}` | `<yyyy-MM>/banks/<bank>/balance`, `/roundUpTotal` (sum of `roundUpAmount` of expenses paid from that bank, as Monthly does) |
-| `cards` | `card-statements/{y}/{m}`; `expenses/month/{y}/{m}/unpaid-card-charges` | `<yyyy-MM>/cards/<card>/outstandingTotal`, `/accumulatedOutstandingTotal`, `/isPaid`, `/warning`; `<yyyy-MM>/cards/unpaidChargesTotal` |
+| `cards` | `card-statements/{y}/{m}`; `expenses/month/{y}/{m}/unpaid-card-charges`. The baseline's GET creates a statement for every active card, the after side's returns stored statements only, so after all months are read the after side (`Get-ParityReport -IncludeAccounts`) adds, for every month and every active card account without a row, outstanding 0, unpaid, no warning and that card's accumulated outstanding from any stored row (0 when it has none) | `<yyyy-MM>/cards/<card>/outstandingTotal`, `/accumulatedOutstandingTotal`, `/isPaid`, `/warning`; `<yyyy-MM>/cards/unpaidChargesTotal` |
 | `categories` | `expenses/month/{y}/{m}/category-totals` | `<yyyy-MM>/categories/<category>/total` |
 | `incomes` | `incomes/month/{y}/{m}` | `<yyyy-MM>/incomes/<source>/net`, `/gross` (null when no income of the source has a gross value); `<yyyy-MM>/incomes/totalIncoming` |
 | `tithe` | `tithe/month/{y}/{m}` | `<yyyy-MM>/tithe/calculatedTithe`, `/titheBalance`, `/carryForward` (null) or `/carryForward/<field>` |
