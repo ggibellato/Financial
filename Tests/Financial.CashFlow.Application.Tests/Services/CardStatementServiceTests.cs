@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities.Transactions;
@@ -15,7 +16,6 @@ namespace Financial.CashFlow.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class CardStatementServiceTests
 {
-
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
     private readonly CardStatementService _sut;
@@ -24,17 +24,29 @@ public class CardStatementServiceTests
     {
         _repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCreditCards: true);
         _tracer = new RecordingTelemetryTracer();
-        _sut = CreateService();
+        _sut = new CardStatementService(_repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
     }
-
-    private CardStatementService CreateService(StubCashFlowRepository? repository = null) =>
-        new(repository ?? _repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
 
     private static Account Card(StubCashFlowRepository repository, string name) =>
         repository.CardAccounts.First(c => c.Name == name);
 
     private static MarkCardStatementPaidDTO PaidBy(StubCashFlowRepository repository, string? bankName) =>
         new() { PaymentSourceBankId = repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id };
+
+    private CardStatement SeedStatement(Account card, int year, int month)
+    {
+        var statement = CardStatement.Create(card, year, month);
+        _repository.CardStatements.Add(statement);
+        return statement;
+    }
+
+    private void SeedStatements(int year, int month)
+    {
+        foreach (var card in _repository.CardAccounts.Where(card => card.IsActive))
+        {
+            SeedStatement(card, year, month);
+        }
+    }
 
     private static Expense AddCharge(
         StubCashFlowRepository repository, DateOnly date, decimal value, Account card)
@@ -53,78 +65,80 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_FirstCall_GeneratesExactlyFiveUnpaidStatements()
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-08")]
+    public void GetStatementsForMonth_ReturnsStoredStatementsOfThatMonthOnly_AndWritesNothing()
     {
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        var july = SeedStatement(visa, 2026, 7);
+        SeedStatement(visa, 2026, 8);
+        SeedStatement(Card(_repository, "BaAmex"), 2026, 6);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         using (new AssertionScope())
         {
-            result.Should().HaveCount(5);
-            result.Should().OnlyContain(s => !s.IsPaid);
-            _repository.CardStatements.Should().HaveCount(5);
+            result.Select(s => s.Id).Should().Equal(july.Id);
+            _repository.CardStatements.Should().HaveCount(3);
+            _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_InactiveCard_IsExcludedFromGeneration()
+    public void GetStatementsForMonth_ActiveCardWithNoStoredStatement_IsNotCreated()
     {
-        _repository.Accounts.Add(TestAccounts.CreditCard("RetiredCard", isActive: false));
-
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
-
-        using (new AssertionScope())
-        {
-            result.Should().HaveCount(5);
-            result.Should().NotContain(s => s.CreditCardName == "RetiredCard");
-        }
-    }
-
-    [Fact]
-    public async Task GetStatementsForMonthAsync_NoActiveCards_CreatesNoStatements()
-    {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = CreateService(repository);
-
-        var result = await service.GetStatementsForMonthAsync(2026, 7);
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         using (new AssertionScope())
         {
             result.Should().BeEmpty();
-            repository.CardStatements.Should().BeEmpty();
+            _repository.CardStatements.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_SecondCallSameMonth_DoesNotCreateDuplicates()
+    public void GetStatementsForMonth_InactiveCardsStoredStatement_IsReturned()
     {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        var retired = TestAccounts.CreditCard("RetiredCard", isActive: false);
+        _repository.Accounts.Add(retired);
+        SeedStatement(retired, 2026, 7);
 
-        using (new AssertionScope())
-        {
-            result.Should().HaveCount(5);
-            _repository.CardStatements.Should().HaveCount(5);
-            _repository.SaveChangesCallCount.Should().Be(1);
-        }
+        var result = _sut.GetStatementsForMonth(2026, 7);
+
+        result.Should().ContainSingle(s => s.CreditCardName == "RetiredCard");
+    }
+
+    [Fact]
+    public void GetStatementsForMonth_PaidStatement_HasNoOutstandingTotal()
+    {
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, visa);
+        SeedStatement(visa, 2026, 7).MarkPaid();
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
+
+        result.Should().ContainSingle(s => s.IsPaid && s.OutstandingTotal == 0m);
     }
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
-    public async Task GetStatementsForMonthAsync_OutstandingTotalSumsThatMonthsChargesForTheCard()
+    public void GetStatementsForMonth_OutstandingTotalSumsThatMonthsChargesForTheCard()
     {
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 7, 15), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
 
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.OutstandingTotal == 50m);
     }
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
-    public async Task GetStatementsForMonthAsync_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
+    public void GetStatementsForMonth_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
     {
         var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
         var settled = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
@@ -132,20 +146,24 @@ public class CardStatementServiceTests
         AddCharge(_repository, new DateOnly(2026, 7, 11), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Create("Casa"), barclays, null));
 
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.OutstandingTotal == 20m);
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_AccumulatedOutstandingTotalSumsUnpaidChargesAcrossAllPeriodsForTheCard()
+    public void GetStatementsForMonth_AccumulatedOutstandingTotalSumsUnpaidChargesAcrossAllPeriodsForTheCard()
     {
         AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
 
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         using (new AssertionScope())
         {
@@ -156,7 +174,7 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_AccumulatedOutstandingTotalExcludesSettledChargesAndOtherCards()
+    public void GetStatementsForMonth_AccumulatedOutstandingTotalExcludesSettledChargesAndOtherCards()
     {
         var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
         var settled = AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
@@ -164,7 +182,9 @@ public class CardStatementServiceTests
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
 
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.AccumulatedOutstandingTotal == 30m);
     }
@@ -176,7 +196,7 @@ public class CardStatementServiceTests
         var second = AddCharge(_repository, new DateOnly(2026, 7, 15), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
         var otherMonth = AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, Card(_repository, "BarclaysPlatinumVisa8003"));
         var otherCard = AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003" && s.Month == 7);
 
         var result = await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
@@ -207,57 +227,55 @@ public class CardStatementServiceTests
             invoiceDate: new DateOnly(2026, 8, 1),
             value: 40m,
             card: Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
-        await _sut.GetStatementsForMonthAsync(2026, 8);
+        SeedStatements(2026, 7);
+        SeedStatements(2026, 8);
         var julyStatement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003" && s.Month == 7);
         var augustStatement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003" && s.Month == 8);
 
-        var julyResult = await _sut.MarkStatementPaidAsync(julyStatement.Id, PaidBy(_repository, "Trading212"));
+        var payJuly = async () => await _sut.MarkStatementPaidAsync(julyStatement.Id, PaidBy(_repository, "Trading212"));
 
-        using (new AssertionScope())
-        {
-            julyResult.OutstandingTotal.Should().Be(0m);
-            julyResult.Warning.Should().NotBeNull();
-            cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-        }
+        await payJuly.Should().ThrowAsync<ArgumentException>().WithMessage("There is nothing to pay on this statement.");
+        cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
 
         var augustResult = await _sut.MarkStatementPaidAsync(augustStatement.Id, PaidBy(_repository, "Trading212"));
 
         using (new AssertionScope())
         {
             augustResult.OutstandingTotal.Should().Be(0m);
-            augustResult.Warning.Should().BeNull();
             cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
         }
     }
 
     [Fact]
-    public async Task MarkStatementPaidAsync_WithNoMatchingCharges_ReturnsWarningAndZeroOutstanding()
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-05")]
+    public async Task MarkStatementPaidAsync_WithNothingToPay_ThrowsAndSavesNothing()
     {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
 
-        var result = await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
 
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("There is nothing to pay on this statement.");
         using (new AssertionScope())
         {
-            result.IsPaid.Should().BeTrue();
-            result.OutstandingTotal.Should().Be(0m);
-            result.Warning.Should().NotBeNull();
-            result.Warning.Should().Contain("2026-07");
+            statement.IsPaid.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
         }
     }
 
     [Fact]
-    public async Task MarkStatementPaidAsync_WithMatchingCharges_WarningIsNull()
+    public async Task MarkStatementPaidAsync_ChargesNettingToZero_ThrowsNothingToPay()
     {
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, visa);
+        AddCharge(_repository, new DateOnly(2026, 7, 11), -30m, visa);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
 
-        var result = await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
 
-        result.Warning.Should().BeNull();
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("There is nothing to pay on this statement.");
     }
 
     [Fact]
@@ -269,7 +287,7 @@ public class CardStatementServiceTests
             invoiceDate: new DateOnly(2026, 8, 1),
             value: 40m,
             card: Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 8);
+        SeedStatements(2026, 8);
         var augustStatement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003" && s.Month == 8);
         await _sut.MarkStatementPaidAsync(augustStatement.Id, PaidBy(_repository, "Trading212"));
 
@@ -291,7 +309,7 @@ public class CardStatementServiceTests
     public async Task MarkStatementPaidAsync_WithMissingOrUnknownPaymentSource_ThrowsWithoutChangingState(string? paymentSource)
     {
         var charge = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
         var savesBefore = _repository.SaveChangesCallCount;
 
@@ -307,61 +325,43 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task MarkStatementPaidAsync_CalledAgainOnAlreadyPaidStatement_IsANoOpThatStillSucceeds()
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-05")]
+    public async Task MarkStatementPaidAsync_AlreadyPaidStatement_ThrowsConflictAndSavesNothing()
     {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
-        var statement = _repository.CardStatements.First();
-        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
-        var savesBefore = _repository.SaveChangesCallCount;
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        SeedStatements(2026, 7);
+        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
+        statement.MarkPaid();
 
-        var result = await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Chase"));
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Chase"));
 
-        using (new AssertionScope())
-        {
-            result.IsPaid.Should().BeTrue();
-            _repository.SaveChangesCallCount.Should().Be(savesBefore);
-            // Without this the caller cannot tell a no-op from a change: the same DTO came back for
-            // both, so a click that did nothing reported the same success as one that did.
-            result.Warning.Should().NotBeNull();
-            result.Warning.Should().Contain("already marked paid");
-        }
+        await act.Should().ThrowAsync<StatementPaymentConflictException>().WithMessage("This statement is already paid.");
+        _repository.SaveChangesCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.CardStatementService.MarkStatementPaid");
     }
 
     [Fact]
-    public async Task UnmarkStatementPaidAsync_CalledOnAStatementThatWasNotPaid_WarnsThatNothingChanged()
+    public async Task UnmarkStatementPaidAsync_UnpaidStatement_ThrowsConflictAndSavesNothing()
     {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.First();
-        var savesBefore = _repository.SaveChangesCallCount;
 
-        var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
+        var act = async () => await _sut.UnmarkStatementPaidAsync(statement.Id);
 
+        await act.Should().ThrowAsync<StatementPaymentConflictException>().WithMessage("This statement is not paid.");
         using (new AssertionScope())
         {
-            result.IsPaid.Should().BeFalse();
-            _repository.SaveChangesCallCount.Should().Be(savesBefore);
-            result.Warning.Should().NotBeNull();
-            result.Warning.Should().Contain("not marked paid");
+            statement.IsPaid.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.CardStatementService.UnmarkStatementPaid");
         }
-    }
-
-    [Fact]
-    public async Task UnmarkStatementPaidAsync_OnAPaidStatement_ReportsNoWarning()
-    {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
-        var statement = _repository.CardStatements.First();
-        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
-
-        var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
-
-        result.Warning.Should().BeNull("the call did what was asked, so there is nothing to report");
     }
 
     [Fact]
     public async Task MarkStatementPaidAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
         _repository.ThrowOnNextSave = true;
 
@@ -384,7 +384,7 @@ public class CardStatementServiceTests
     {
         var first = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         var second = AddCharge(_repository, new DateOnly(2026, 7, 15), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
         await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
 
@@ -404,24 +404,11 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task UnmarkStatementPaidAsync_OnAlreadyUnpaidStatement_IsANoOpThatStillSucceeds()
+    public async Task UnmarkStatementPaidAsync_PaidStatementWithNoSettledExpenses_StillFlipsStatementToUnpaid()
     {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.First();
-        var savesBefore = _repository.SaveChangesCallCount;
-
-        var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
-
-        result.IsPaid.Should().BeFalse();
-        _repository.SaveChangesCallCount.Should().Be(savesBefore);
-    }
-
-    [Fact]
-    public async Task UnmarkStatementPaidAsync_WithNoSettledExpenses_StillFlipsStatementToUnpaid()
-    {
-        await _sut.GetStatementsForMonthAsync(2026, 7);
-        var statement = _repository.CardStatements.First();
-        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
+        statement.MarkPaid();
 
         var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
 
@@ -433,7 +420,7 @@ public class CardStatementServiceTests
     public async Task UnmarkStatementPaidAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
         await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
         _repository.ThrowOnNextSave = true;
@@ -490,6 +477,19 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    public void GetOutstandingTotalForPeriod_PaidStatement_ReturnsZeroAndNoChargesPosted()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 20m, card);
+        SeedStatement(card, 2026, 9).MarkPaid();
+
+        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
+
+        total.Should().Be(0m);
+        hasChargesPosted.Should().BeFalse();
+    }
+
+    [Fact]
     public void GetOutstandingTotalForPeriod_IgnoresChargesFromOtherPeriodsOrOtherCards()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
@@ -504,13 +504,13 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task GetStatementsForMonthAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
+    public void GetStatementsForMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
 
-        var act = async () => await _sut.GetStatementsForMonthAsync(2026, 9);
+        var act = () => _sut.GetStatementsForMonth(2026, 9);
 
-        await act.Should().ThrowAsync<InvalidOperationException>();
+        act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.GetStatementsForMonth");
     }
 
@@ -534,7 +534,7 @@ public class CardStatementServiceTests
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
-    public async Task GetStatementsForMonthAsync_AccumulatedOutstanding_CountsEveryUnpaidChargeOfTheCardWhateverItsMonth()
+    public void GetStatementsForMonth_AccumulatedOutstanding_CountsEveryUnpaidChargeOfTheCardWhateverItsMonth()
     {
         var card = Card(_repository, "BaAmex");
         AddCharge(_repository, new DateOnly(2026, 6, 10), 15m, card);
@@ -543,7 +543,9 @@ public class CardStatementServiceTests
         var paid = AddCharge(_repository, new DateOnly(2026, 7, 12), 100m, card);
         paid.Settle(_repository.Accounts.First(a => a.Name == "Barclays"), new DateOnly(2026, 7, 31));
 
-        var result = await _sut.GetStatementsForMonthAsync(2026, 7);
+        SeedStatements(2026, 7);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
 
         var amex = result.Single(s => s.CreditCardName == "BaAmex");
         using (new AssertionScope())

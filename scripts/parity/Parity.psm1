@@ -103,18 +103,36 @@ function Add-ParityBankFigures($Report, [string]$Month, [string]$Route, [scriptb
     $totals
 }
 
+function Add-ParityStatementFigures($Report, [string]$Prefix, $Statement) {
+    Add-ParityFigure $Report "$Prefix/outstandingTotal" $Statement.outstandingTotal
+    Add-ParityFigure $Report "$Prefix/accumulatedOutstandingTotal" $Statement.accumulatedOutstandingTotal
+    Add-ParityFigure $Report "$Prefix/isPaid" $Statement.isPaid
+    Add-ParityFigure $Report "$Prefix/warning" ($Statement.PSObject.Properties['warning'])?.Value
+}
+
 function Add-ParityCardFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
     $statements = & $Fetch "card-statements/$Route"
     foreach ($statement in $statements) {
-        $prefix = "$Month/cards/$($statement.creditCardName)"
-        Add-ParityFigure $Report "$prefix/outstandingTotal" $statement.outstandingTotal
-        Add-ParityFigure $Report "$prefix/accumulatedOutstandingTotal" $statement.accumulatedOutstandingTotal
-        Add-ParityFigure $Report "$prefix/isPaid" $statement.isPaid
-        Add-ParityFigure $Report "$prefix/warning" $statement.warning
+        Add-ParityStatementFigures $Report "$Month/cards/$($statement.creditCardName)" $statement
     }
     $unpaid = & $Fetch "expenses/month/$Route/unpaid-card-charges"
     Add-ParityFigure $Report "$Month/cards/unpaidChargesTotal" (Get-ParitySum $unpaid { param($e) $e.value })
     Get-ParitySum $statements { param($s) $s.outstandingTotal }
+}
+
+function Add-ParityMissingCardStatementFigures($Report, [string[]]$Months, $Accounts) {
+    foreach ($card in @($Accounts | Where-Object { $_['templateName'] -eq 'CreditCard' -and $_['isActive'] -eq $true })) {
+        $accumulated = [decimal]0
+        foreach ($month in $Months) {
+            $key = "$month/cards/$($card.name)/accumulatedOutstandingTotal"
+            if ($Report.ContainsKey($key)) { $accumulated = $Report[$key]; break }
+        }
+        foreach ($month in $Months) {
+            $prefix = "$month/cards/$($card.name)"
+            if ($Report.ContainsKey("$prefix/outstandingTotal")) { continue }
+            Add-ParityStatementFigures $Report $prefix ([pscustomobject]@{ outstandingTotal = [decimal]0; accumulatedOutstandingTotal = $accumulated; isPaid = $false })
+        }
+    }
 }
 
 function Add-ParityCategoryFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
@@ -291,6 +309,7 @@ function Get-ParityReport {
         foreach ($month in $months) {
             Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $accounts $CurrentMonth
         }
+        if ($null -ne $accounts) { Add-ParityMissingCardStatementFigures $report $months $accounts }
 
         foreach ($balance in (& $Fetch 'reserve/balances')) {
             Add-ParityFigure $report "current/pots/$($balance.bucketName)/balance" $balance.balance

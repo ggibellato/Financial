@@ -108,25 +108,8 @@ public class Expense : IAccountTransaction
             ValidatePaymentShape(paymentSourceAccount, creditCard);
             ActiveAccountRule.EnsureUsable(PaymentSourceAccount, paymentSourceAccount);
 
-            var wasCardCharge = PaymentStatus == ExpensePaymentStatus.CreditCardCharge;
-
-            if (creditCard is not null)
-            {
-                // Only Settle() is meant to make Date diverge from ChargeDate; keep them in sync
-                // while still unsettled so a corrected Date doesn't leave ChargeDate stale.
-                if (!wasCardCharge || InvoiceDate == FirstOfMonth(Date))
-                {
-                    InvoiceDate = FirstOfMonth(date);
-                }
-
-                ChargeDate = date;
-            }
-            else if (wasCardCharge)
-            {
-                ChargeDate = null;
-                InvoiceDate = null;
-            }
-
+            InvoiceDate = InvoiceDateAfterUpdate(date, creditCard);
+            ChargeDate = creditCard is not null ? date : null;
             PaymentSourceAccount = paymentSourceAccount;
             CreditCard = creditCard;
         }
@@ -137,6 +120,36 @@ public class Expense : IAccountTransaction
         Category = category;
         CountsAsTithe = countsAsTithe;
     }
+
+    public DateOnly? InvoiceDateAfterUpdate(DateOnly date, Account? creditCard, DateOnly? requestedInvoiceDate = null)
+    {
+        if (creditCard is not null && requestedInvoiceDate is { } requested)
+        {
+            return FirstOfMonth(requested);
+        }
+
+        if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+        {
+            return InvoiceDate;
+        }
+
+        if (creditCard is null)
+        {
+            return null;
+        }
+
+        var invoiceMonthFollowsDate = PaymentStatus != ExpensePaymentStatus.CreditCardCharge || InvoiceDate == FirstOfMonth(Date);
+        return invoiceMonthFollowsDate ? FirstOfMonth(date) : InvoiceDate;
+    }
+
+    public bool ChangesLockedFields(
+        DateOnly date, decimal value, Account? paymentSourceAccount, Account? creditCard, DateOnly? requestedInvoiceDate, decimal? roundUpAmount) =>
+        date != Date
+        || value != Value
+        || paymentSourceAccount?.Id != PaymentSourceAccount?.Id
+        || creditCard?.Id != CreditCard?.Id
+        || InvoiceDateAfterUpdate(date, creditCard, requestedInvoiceDate) != InvoiceDate
+        || roundUpAmount != RoundUpAmount;
 
     public void Settle(Account paymentSourceAccount, DateOnly paymentDate)
     {

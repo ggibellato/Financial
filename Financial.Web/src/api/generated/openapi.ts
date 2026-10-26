@@ -1995,6 +1995,15 @@ export interface paths {
                         "application/json": components["schemas"]["ProblemDetails"];
                     };
                 };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -2036,6 +2045,15 @@ export interface paths {
                 };
                 /** @description Not Found */
                 404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -7740,7 +7758,6 @@ export interface components {
             month: number;
             /** Format: double */
             outstandingTotal: number;
-            warning?: null | string;
             /** Format: int32 */
             year: number;
         };

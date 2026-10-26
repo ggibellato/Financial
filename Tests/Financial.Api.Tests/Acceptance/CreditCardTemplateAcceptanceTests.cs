@@ -207,13 +207,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
                     (UnusedId, "Unused", true, (DateOnly?)null, (DateOnly?)null, false),
                     (LinkedId, "Linked", true, (DateOnly?)null, (DateOnly?)null, true));
             statements!.Select(s => (s.CreditCardName, s.Year, s.Month, s.IsPaid, s.OutstandingTotal, s.AccumulatedOutstandingTotal))
-                .Should().BeEquivalentTo(new[]
-                {
-                    ("BA Amex", 2026, 10, false, 30m, 40m),
-                    ("Platinum Visa 8003", 2026, 10, false, 40m, 40m),
-                    ("Unused", 2026, 10, false, 0m, 0m),
-                    ("Linked", 2026, 10, false, 0m, 0m)
-                });
+                .Should().Equal(("BA Amex", 2026, 10, false, 30m, 40m));
             statements.Single(s => s.CreditCardName == "BA Amex").Id.Should().Be(Guid.Parse(AmexOctoberStatementId));
         }
     }

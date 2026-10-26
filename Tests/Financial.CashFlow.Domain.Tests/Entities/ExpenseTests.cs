@@ -925,4 +925,34 @@ public class ExpenseTests
             charge.ContributionTo(BaAmex).Should().Be(0m);
         }
     }
+
+    [Fact]
+    public void ChangesLockedFields_OnlyDescriptionCategoryOrTitheDiffer_IsFalse()
+    {
+        var charge = CreateCardCharge();
+
+        charge.ChangesLockedFields(charge.Date, charge.Value, null, ChaseMaster4023, null, null).Should().BeFalse();
+        charge.ChangesLockedFields(charge.Date, charge.Value, null, ChaseMaster4023, new DateOnly(2026, 7, 15), null).Should().BeFalse();
+    }
+
+    public static TheoryData<string> LockedFieldChanges => new() { "date", "value", "bank", "card", "invoice month", "round-up" };
+
+    [Theory]
+    [MemberData(nameof(LockedFieldChanges))]
+    public void ChangesLockedFields_AnyLockedFieldDiffers_IsTrue(string change)
+    {
+        var charge = CreateCardCharge();
+
+        var changes = change switch
+        {
+            "date" => charge.ChangesLockedFields(charge.Date.AddDays(1), charge.Value, null, ChaseMaster4023, null, null),
+            "value" => charge.ChangesLockedFields(charge.Date, charge.Value + 1m, null, ChaseMaster4023, null, null),
+            "bank" => charge.ChangesLockedFields(charge.Date, charge.Value, Barclays, null, null, null),
+            "card" => charge.ChangesLockedFields(charge.Date, charge.Value, null, BaAmex, null, null),
+            "invoice month" => charge.ChangesLockedFields(charge.Date, charge.Value, null, ChaseMaster4023, new DateOnly(2026, 8, 1), null),
+            _ => charge.ChangesLockedFields(charge.Date, charge.Value, null, ChaseMaster4023, null, 0.5m)
+        };
+
+        changes.Should().BeTrue();
+    }
 }

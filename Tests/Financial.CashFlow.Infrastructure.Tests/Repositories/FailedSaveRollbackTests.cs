@@ -210,10 +210,10 @@ public class FailedSaveRollbackTests
         await _repository.ApplyAndSaveAsync(() =>
         {
             _repository.AddExpense(Expense.Create(new DateOnly(2026, 7, 10), "Charge", 30m, mercado, null, card));
+            _repository.AddCardStatement(CardStatement.Create(card, 2026, 7));
             return true;
         });
 
-        await service.GetStatementsForMonthAsync(2026, 7);
         return _repository.GetCardStatements().Single(s => s.CreditCard.Id == card.Id).Id;
     }
 

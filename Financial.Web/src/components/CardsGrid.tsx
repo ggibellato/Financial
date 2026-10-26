@@ -6,7 +6,7 @@ import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { selectableBanks } from '../utils/selectableBanks'
-import { formatN2OrDash } from '../utils/formatters'
+import { formatN2, formatN2OrDash } from '../utils/formatters'
 import { currencyFooterItems } from '../utils/currencyFooterItems'
 import SectionTotals from './SectionTotals'
 import TruncatedText from './TruncatedText'
@@ -19,17 +19,11 @@ interface CardsGridProps {
   setMarkPaidSource: (id: string, bank: string) => void
   markStatementPaid: (id: string, paymentSource: string) => void
   unmarkStatementPaid: (id: string) => void
-  /** Outcome of the last mark/unmark action. An error is a failure the action did not complete; a
-   * warning is a completed call that changed nothing - "already paid", say. Both were being
-   * discarded, so a failed mark-paid and a no-op mark-paid looked exactly like a successful one. */
   statementActionError?: string | null
-  statementActionWarning?: string | null
-  /** When provided (Credit Card tab), adds Next Invoice Due Date/Active columns, one row per
-   * credit card (not just cards with a statement this month, so a deactivated card - which stops
-   * getting new monthly statements - stays manageable here). Omitted on the read-only Summary tab. */
-  creditCards?: CreditCardDto[]
+  pendingStatementId?: string | null
+  creditCards: CreditCardDto[]
   updatingCardId?: string | null
-  updateError?: string | null
+  cardsError?: string | null
   onUpdateCreditCard?: (id: string, request: CreditCardUpdateDto) => Promise<unknown>
 }
 
@@ -44,27 +38,21 @@ interface CardRow {
 
 const FOOTER_FIGURES = [{ label: 'Combined adjustment figure', pick: (total: CurrencyTotalDto) => total.cardOutstandingTotal }]
 
-function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[] | undefined): CardRow[] {
-  if (!creditCards) {
-    return cardStatements.map((s) => ({
-      key: s.id,
-      creditCardId: s.creditCardId,
-      creditCardName: s.creditCardName,
-      nextInvoiceDueDate: null,
-      isActive: false,
-      statement: s,
+function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[], includeInactive: boolean): CardRow[] {
+  return creditCards
+    .map((c) => ({
+      key: c.id,
+      creditCardId: c.id,
+      creditCardName: c.name,
+      nextInvoiceDueDate: c.nextInvoiceDueDate,
+      isActive: c.isActive,
+      statement: cardStatements.find((s) => s.creditCardId === c.id) ?? null,
     }))
-  }
-
-  return creditCards.map((c) => ({
-    key: c.id,
-    creditCardId: c.id,
-    creditCardName: c.name,
-    nextInvoiceDueDate: c.nextInvoiceDueDate,
-    isActive: c.isActive,
-    statement: cardStatements.find((s) => s.creditCardId === c.id) ?? null,
-  }))
+    .filter((row) => includeInactive || row.isActive || row.statement !== null)
 }
+
+const outstandingOf = (row: CardRow) => row.statement?.outstandingTotal ?? 0
+const statusOf = (row: CardRow) => (row.statement?.isPaid ? 'Paid' : 'Unpaid')
 
 export default function CardsGrid({
   cardStatements,
@@ -75,41 +63,37 @@ export default function CardsGrid({
   markStatementPaid,
   unmarkStatementPaid,
   statementActionError,
-  statementActionWarning,
+  pendingStatementId,
   creditCards,
   updatingCardId,
-  updateError,
+  cardsError,
   onUpdateCreditCard,
 }: CardsGridProps) {
-  const showCardManagementColumns = creditCards !== undefined
-  const rows = buildRows(cardStatements, creditCards)
+  const showCardManagementColumns = onUpdateCreditCard !== undefined
+  const rows = buildRows(cardStatements, creditCards, showCardManagementColumns)
 
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(rows, { card: (row: CardRow) => row.creditCardName })
 
   const accessors: Record<string, SortAccessor<CardRow>> = {
     card: (row) => row.creditCardName,
-    outstanding: (row) => row.statement?.outstandingTotal,
+    outstanding: outstandingOf,
     accumulatedOutstanding: (row) => row.statement?.accumulatedOutstandingTotal,
-    status: (row) => (row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : undefined),
+    status: statusOf,
     nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
     active: (row) => (row.isActive ? 1 : 0),
   }
-  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, accessors, {
-    columnKey: 'nextInvoiceDueDate',
-    direction: 'descending',
-  })
+  const { sortedRows, sortState, requestSort } = useSortableRows(
+    filteredRows,
+    accessors,
+    showCardManagementColumns ? { columnKey: 'nextInvoiceDueDate', direction: 'descending' } : { columnKey: 'card', direction: 'ascending' },
+  )
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
       {statementActionError && (
         <p className="monthly-page__action-error" role="alert">
           {statementActionError}
-        </p>
-      )}
-      {statementActionWarning && (
-        <p className="monthly-page__action-warning" role="status">
-          {statementActionWarning}
         </p>
       )}
       <div className="monthly-page__table-scroll">
@@ -179,95 +163,103 @@ export default function CardsGrid({
                 </TableCell>
               </TableRow>
             )}
-            {sortedRows.map((row) => (
-              <TableRow key={row.key}>
-                <DataTableCell label="Card"><TruncatedText text={row.creditCardName} /></DataTableCell>
-                <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
-                  {formatN2OrDash(row.statement?.outstandingTotal)}
-                </DataTableCell>
-                <DataTableCell label="Accumulated outstanding" className="data-table__col--numeric">
-                  {formatN2OrDash(row.statement?.accumulatedOutstandingTotal)}
-                </DataTableCell>
-                <DataTableCell label="Status">
-                  {row.statement ? (row.statement.isPaid ? 'Paid' : 'Unpaid') : '—'}
-                </DataTableCell>
-                {showCardManagementColumns && (
-                  <>
-                    <DataTableCell label="Next Invoice Due Date">
-                      <input
-                        aria-label={`Next invoice due date for ${row.creditCardName}`}
-                        type="date"
-                        value={row.nextInvoiceDueDate ?? ''}
-                        disabled={updatingCardId === row.creditCardId}
-                        onChange={(e) =>
-                          onUpdateCreditCard
-                            ?.(row.creditCardId, {
-                              name: row.creditCardName,
-                              nextInvoiceDueDate: e.target.value === '' ? null : e.target.value,
-                              isActive: row.isActive,
-                            })
-                            .catch(() => {})
-                        }
-                      />
-                    </DataTableCell>
-                    <DataTableCell label="Active">
-                      <input
-                        aria-label={`Active for ${row.creditCardName}`}
-                        type="checkbox"
-                        checked={row.isActive}
-                        disabled={updatingCardId === row.creditCardId}
-                        onChange={(e) =>
-                          onUpdateCreditCard
-                            ?.(row.creditCardId, {
-                              name: row.creditCardName,
-                              nextInvoiceDueDate: row.nextInvoiceDueDate,
-                              isActive: e.target.checked,
-                            })
-                            .catch(() => {})
-                        }
-                      />
-                    </DataTableCell>
-                  </>
-                )}
-                <DataTableCell label="Actions" className="data-table__col--action-wide">
-                  {row.statement &&
-                    (row.statement.isPaid ? (
-                      <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
-                        Unmark Paid
-                      </button>
-                    ) : (
-                      <>
-                        <select
-                          aria-label={`Paying bank for ${row.creditCardName}`}
-                          value={markPaidSources[row.statement.id] ?? ''}
-                          onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
-                        >
-                          <option value="">Bank…</option>
-                          {selectableBanks(banks, markPaidSources[row.statement.id]).map((b) => (
-                            <option key={b.id} value={b.id}>
-                              {b.name}
-                            </option>
-                          ))}
-                        </select>{' '}
+            {sortedRows.map((row) => {
+              const isPending = row.statement !== null && pendingStatementId === row.statement.id
+              return (
+                <TableRow key={row.key}>
+                  <DataTableCell label="Card"><TruncatedText text={row.creditCardName} /></DataTableCell>
+                  <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
+                    {formatN2(outstandingOf(row))}
+                  </DataTableCell>
+                  <DataTableCell label="Accumulated outstanding" className="data-table__col--numeric">
+                    {formatN2OrDash(row.statement?.accumulatedOutstandingTotal)}
+                  </DataTableCell>
+                  <DataTableCell label="Status">
+                    {statusOf(row)}
+                  </DataTableCell>
+                  {showCardManagementColumns && (
+                    <>
+                      <DataTableCell label="Next Invoice Due Date">
+                        <input
+                          aria-label={`Next invoice due date for ${row.creditCardName}`}
+                          type="date"
+                          value={row.nextInvoiceDueDate ?? ''}
+                          disabled={updatingCardId === row.creditCardId}
+                          onChange={(e) =>
+                            onUpdateCreditCard
+                              ?.(row.creditCardId, {
+                                name: row.creditCardName,
+                                nextInvoiceDueDate: e.target.value === '' ? null : e.target.value,
+                                isActive: row.isActive,
+                              })
+                              .catch(() => {})
+                          }
+                        />
+                      </DataTableCell>
+                      <DataTableCell label="Active">
+                        <input
+                          aria-label={`Active for ${row.creditCardName}`}
+                          type="checkbox"
+                          checked={row.isActive}
+                          disabled={updatingCardId === row.creditCardId}
+                          onChange={(e) =>
+                            onUpdateCreditCard
+                              ?.(row.creditCardId, {
+                                name: row.creditCardName,
+                                nextInvoiceDueDate: row.nextInvoiceDueDate,
+                                isActive: e.target.checked,
+                              })
+                              .catch(() => {})
+                          }
+                        />
+                      </DataTableCell>
+                    </>
+                  )}
+                  <DataTableCell label="Actions" className="data-table__col--action-wide">
+                    {row.statement &&
+                      (row.statement.isPaid ? (
                         <button
                           type="button"
-                          disabled={!markPaidSources[row.statement.id]}
-                          onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
+                          disabled={isPending}
+                          onClick={() => unmarkStatementPaid(row.statement!.id)}
                         >
-                          Mark Paid
+                          {isPending ? 'Unmarking…' : 'Unmark Paid'}
                         </button>
-                      </>
-                    ))}
-                </DataTableCell>
-              </TableRow>
-            ))}
+                      ) : (
+                        <>
+                          <select
+                            aria-label={`Paying bank for ${row.creditCardName}`}
+                            value={markPaidSources[row.statement.id] ?? ''}
+                            disabled={isPending}
+                            onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
+                          >
+                            <option value="">Bank…</option>
+                            {selectableBanks(banks, markPaidSources[row.statement.id]).map((b) => (
+                              <option key={b.id} value={b.id}>
+                                {b.name}
+                              </option>
+                            ))}
+                          </select>{' '}
+                          <button
+                            type="button"
+                            disabled={!markPaidSources[row.statement.id] || isPending}
+                            onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
+                          >
+                            {isPending ? 'Marking…' : 'Mark Paid'}
+                          </button>
+                        </>
+                      ))}
+                  </DataTableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>
       <SectionTotals items={currencyFooterItems(currencyTotals, FOOTER_FIGURES)} />
-      {updateError && (
+      {cardsError && (
         <p className="monthly-page__error" role="alert">
-          {updateError}
+          {cardsError}
         </p>
       )}
     </section>

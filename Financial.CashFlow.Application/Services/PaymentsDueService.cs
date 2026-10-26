@@ -95,7 +95,7 @@ public sealed class PaymentsDueService : IPaymentsDueService
                 .Select(card => (Card: card, DueDate: CardDueDate.For(card, statements)))
                 .Where(x => x.DueDate is not null)
                 .Select(x => (x.Card, DueDate: x.DueDate!.Value))
-                .Where(x => !statements.Any(s => s.IsFor(x.Card.Id, x.DueDate.Year, x.DueDate.Month) && s.IsPaid))
+                .Where(x => !CardChargeFilter.IsStatementPaid(statements, x.Card, x.DueDate.Year, x.DueDate.Month))
                 .Select(x => TryBuildPayment(CreditCardType, x.Card.Name, x.DueDate, today))
                 .Where(payment => payment is not null)
                 .Select(payment => payment!)

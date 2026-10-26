@@ -42,7 +42,9 @@ interface MonthlyState {
   retryCount: number
   markPaidSources: Record<string, string>
   listActionError: string | null
-  listActionWarning: string | null
+  expenseActionError: string | null
+  statementActionError: string | null
+  pendingStatementId: string | null
 }
 
 type MonthlyAction =
@@ -66,7 +68,10 @@ type MonthlyAction =
   | { type: 'RETRY' }
   | { type: 'SET_MARK_PAID_SOURCE'; payload: { id: string; value: string } }
   | { type: 'LIST_ACTION_ERROR'; payload: string }
-  | { type: 'LIST_ACTION_WARNING'; payload: string | null }
+  | { type: 'EXPENSE_ACTION_ERROR'; payload: string }
+  | { type: 'STATEMENT_ACTION_START'; payload: string }
+  | { type: 'STATEMENT_ACTION_SUCCESS' }
+  | { type: 'STATEMENT_ACTION_ERROR'; payload: string }
   | { type: 'CARRY_FORWARD_UPDATE_START' }
   | { type: 'CARRY_FORWARD_UPDATE_END' }
 
@@ -87,13 +92,15 @@ const INITIAL_STATE: MonthlyState = {
   retryCount: 0,
   markPaidSources: {},
   listActionError: null,
-  listActionWarning: null,
+  expenseActionError: null,
+  statementActionError: null,
+  pendingStatementId: null,
 }
 
 function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
   switch (action.type) {
     case 'FETCH_START':
-      return { ...state, isLoading: true, error: null }
+      return { ...state, isLoading: true, error: null, listActionError: null, expenseActionError: null, statementActionError: null }
     case 'FETCH_SUCCESS':
       return { ...state, isLoading: false, ...action.payload }
     case 'FETCH_ERROR':
@@ -103,9 +110,15 @@ function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
     case 'SET_MARK_PAID_SOURCE':
       return { ...state, markPaidSources: { ...state.markPaidSources, [action.payload.id]: action.payload.value } }
     case 'LIST_ACTION_ERROR':
-      return { ...state, listActionError: action.payload, listActionWarning: null }
-    case 'LIST_ACTION_WARNING':
-      return { ...state, listActionWarning: action.payload, listActionError: null }
+      return { ...state, listActionError: action.payload }
+    case 'EXPENSE_ACTION_ERROR':
+      return { ...state, expenseActionError: action.payload }
+    case 'STATEMENT_ACTION_START':
+      return { ...state, pendingStatementId: action.payload, statementActionError: null }
+    case 'STATEMENT_ACTION_SUCCESS':
+      return { ...state, pendingStatementId: null }
+    case 'STATEMENT_ACTION_ERROR':
+      return { ...state, pendingStatementId: null, statementActionError: action.payload }
     case 'CARRY_FORWARD_UPDATE_START':
       return { ...state, carryForwardUpdating: true }
     case 'CARRY_FORWARD_UPDATE_END':
@@ -147,7 +160,9 @@ export interface MonthlyData {
   updateCarryForwardInclusion: (included: boolean) => void
   deleteIncome: (id: string) => void
   listActionError: string | null
-  listActionWarning: string | null
+  expenseActionError: string | null
+  statementActionError: string | null
+  pendingStatementId: string | null
 }
 
 export function useMonthly(): MonthlyData {
@@ -225,7 +240,7 @@ export function useMonthly(): MonthlyData {
         .deleteExpense(id)
         .then(() => refreshSilently())
         .catch((err: unknown) => {
-          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete expense') })
+          dispatch({ type: 'EXPENSE_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to delete expense') })
         })
     },
     [refreshSilently],
@@ -238,14 +253,15 @@ export function useMonthly(): MonthlyData {
 
   const markStatementPaid = useCallback(
     (id: string, paymentSourceBankId: string) => {
+      dispatch({ type: 'STATEMENT_ACTION_START', payload: id })
       void apiClient
         .markCardStatementPaid(id, { paymentSourceBankId })
-        .then((statement) => {
-          dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
+        .then(() => {
+          dispatch({ type: 'STATEMENT_ACTION_SUCCESS' })
           void refreshSilently()
         })
         .catch((err: unknown) => {
-          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to mark statement paid') })
+          dispatch({ type: 'STATEMENT_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to mark statement paid') })
         })
     },
     [refreshSilently],
@@ -253,14 +269,15 @@ export function useMonthly(): MonthlyData {
 
   const unmarkStatementPaid = useCallback(
     (id: string) => {
+      dispatch({ type: 'STATEMENT_ACTION_START', payload: id })
       void apiClient
         .unmarkCardStatementPaid(id)
-        .then((statement) => {
-          dispatch({ type: 'LIST_ACTION_WARNING', payload: statement.warning ?? null })
+        .then(() => {
+          dispatch({ type: 'STATEMENT_ACTION_SUCCESS' })
           void refreshSilently()
         })
         .catch((err: unknown) => {
-          dispatch({ type: 'LIST_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to unmark statement paid') })
+          dispatch({ type: 'STATEMENT_ACTION_ERROR', payload: getErrorMessage(err, 'Failed to unmark statement paid') })
         })
     },
     [refreshSilently],
@@ -338,6 +355,8 @@ export function useMonthly(): MonthlyData {
     updateCarryForwardInclusion,
     deleteIncome,
     listActionError: state.listActionError,
-    listActionWarning: state.listActionWarning,
+    expenseActionError: state.expenseActionError,
+    statementActionError: state.statementActionError,
+    pendingStatementId: state.pendingStatementId,
   }
 }

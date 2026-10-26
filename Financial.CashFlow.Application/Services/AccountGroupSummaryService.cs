@@ -87,8 +87,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         account.Has(Capability.HasStatements)
             ? new AccountGroupStatementDTO
             {
-                OutstandingTotal = CardChargeFilter.OutstandingTotal(expenses, account, year, month),
-                IsPaid = statements.Any(statement => statement.IsFor(account.Id, year, month) && statement.IsPaid)
+                OutstandingTotal = CardChargeFilter.OutstandingTotal(expenses, statements, account, year, month),
+                IsPaid = CardChargeFilter.IsStatementPaid(statements, account, year, month)
             }
             : null;
 

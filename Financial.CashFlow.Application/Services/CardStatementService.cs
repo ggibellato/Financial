@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
@@ -28,29 +29,13 @@ public sealed class CardStatementService : ICardStatementService
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
-    public async Task<IReadOnlyList<CardStatementDTO>> GetStatementsForMonthAsync(int year, int month)
+    public IReadOnlyList<CardStatementDTO> GetStatementsForMonth(int year, int month)
     {
         using var span = StartSpan("GetStatementsForMonth");
         try
         {
-            var activeCards = _repository.GetCreditCardAccounts().Where(c => c.IsActive).ToList();
-            if (activeCards.Count == 0)
-            {
-                _logger.LogWarning("No active credit cards found while generating statements for {Year}-{Month}.", year, month);
-            }
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                var countBefore = _repository.GetCardStatements().Count();
-                foreach (var card in activeCards)
-                {
-                    CardStatementCreation.EnsureFor(_repository, card, year, month);
-                }
-
-                return _repository.GetCardStatements().Count() > countBefore;
-            }).ConfigureAwait(false);
-
-            var existingStatements = _repository.GetCardStatements()
+            var statements = _repository.GetCardStatements().ToList();
+            var existingStatements = statements
                 .Where(s => s.Year == year && s.Month == month)
                 .ToList();
 
@@ -64,7 +49,7 @@ public sealed class CardStatementService : ICardStatementService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements
-                .Select(s => ToDto(s, OutstandingTotal(expenses, s), accumulatedByCard[s.CreditCard.Id], warning: null))
+                .Select(s => ToDto(s, OutstandingTotal(expenses, statements, s), accumulatedByCard[s.CreditCard.Id]))
                 .ToList();
         }
         catch (Exception ex)
@@ -86,9 +71,7 @@ public sealed class CardStatementService : ICardStatementService
 
             if (statement.IsPaid)
             {
-                span.MarkSuccess();
-                _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
-                return ToDto(statement, "This statement was already marked paid; nothing changed.");
+                throw new StatementPaymentConflictException("This statement is already paid.");
             }
 
             if (!EntityIdResolver.TryResolve(request.PaymentSourceBankId, _repository.GetAccounts(), b => b.Id, out var bank))
@@ -98,13 +81,13 @@ public sealed class CardStatementService : ICardStatementService
 
             bank!.EnsureCanPay();
 
+            var charges = UnpaidCharges(statement);
+            if (charges.Sum(charge => charge.Value) <= 0)
+            {
+                throw new ArgumentException("There is nothing to pay on this statement.");
+            }
+
             var settledAt = _timeProvider.GetLocalToday();
-            var charges = UnpaidCharges(_repository.GetExpenses(), statement);
-            // The warning text embeds the statement's invoice period, so it stays in the DTO/logs
-            // only, never as a span attribute (logging-audit.md's note on this string).
-            var warning = charges.Count == 0
-                ? $"No credit card charges matched this statement's invoice period ({statement.Year:D4}-{statement.Month:D2}); marked paid with 0 linked charges."
-                : null;
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -119,7 +102,7 @@ public sealed class CardStatementService : ICardStatementService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "MarkStatementPaid");
-            return ToDto(statement, warning);
+            return ToDto(statement);
         }
         catch (Exception ex)
         {
@@ -138,12 +121,10 @@ public sealed class CardStatementService : ICardStatementService
 
             if (!statement.IsPaid)
             {
-                span.MarkSuccess();
-                _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
-                return ToDto(statement, "This statement was not marked paid; nothing changed.");
+                throw new StatementPaymentConflictException("This statement is not paid.");
             }
 
-            var settledExpenses = CardChargeFilter.ChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month, includePaid: true)
+            var settledExpenses = CardChargeFilter.ChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month)
                 .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
                 .ToList();
 
@@ -177,7 +158,7 @@ public sealed class CardStatementService : ICardStatementService
             return (0m, false);
         }
 
-        var charges = CardChargeFilter.ChargesFor(_repository.GetExpenses(), card, year, month, includePaid: false).ToList();
+        var charges = CardChargeFilter.UnpaidChargesFor(_repository.GetExpenses(), _repository.GetCardStatements(), card, year, month).ToList();
         return (charges.Sum(e => e.Value), charges.Count > 0);
     }
 
@@ -190,23 +171,22 @@ public sealed class CardStatementService : ICardStatementService
     private CardStatement FindStatementOrThrow(Guid id) =>
         _repository.GetCardStatements().FirstOrThrow(s => s.Id == id, "Card statement", id);
 
-    private static List<Expense> UnpaidCharges(IEnumerable<Expense> expenses, CardStatement statement) =>
-        CardChargeFilter.ChargesFor(expenses, statement.CreditCard, statement.Year, statement.Month, includePaid: false).ToList();
+    private List<Expense> UnpaidCharges(CardStatement statement) =>
+        CardChargeFilter.UnpaidChargesFor(_repository.GetExpenses(), _repository.GetCardStatements(), statement.CreditCard, statement.Year, statement.Month).ToList();
 
-    private static decimal OutstandingTotal(IEnumerable<Expense> expenses, CardStatement statement) =>
-        CardChargeFilter.OutstandingTotal(expenses, statement.CreditCard, statement.Year, statement.Month);
+    private static decimal OutstandingTotal(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, CardStatement statement) =>
+        CardChargeFilter.OutstandingTotal(expenses, statements, statement.CreditCard, statement.Year, statement.Month);
 
     private static decimal AccumulatedOutstandingTotal(Account card, IEnumerable<IAccountTransaction> records) =>
         -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
-    private CardStatementDTO ToDto(CardStatement statement, string? warning = null) =>
+    private CardStatementDTO ToDto(CardStatement statement) =>
         ToDto(
             statement,
-            OutstandingTotal(_repository.GetExpenses(), statement),
-            AccumulatedOutstandingTotal(statement.CreditCard, AccountTransactionReader.Read(_repository)),
-            warning);
+            OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement),
+            AccumulatedOutstandingTotal(statement.CreditCard, AccountTransactionReader.Read(_repository)));
 
-    private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal, string? warning) => new()
+    private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal) => new()
     {
         Id = statement.Id,
         CreditCardId = statement.CreditCard.Id,
@@ -215,7 +195,6 @@ public sealed class CardStatementService : ICardStatementService
         Month = statement.Month,
         IsPaid = statement.IsPaid,
         OutstandingTotal = outstandingTotal,
-        AccumulatedOutstandingTotal = accumulatedOutstandingTotal,
-        Warning = warning
+        AccumulatedOutstandingTotal = accumulatedOutstandingTotal
     };
 }

@@ -67,7 +67,9 @@ export default function MonthlyPage() {
     updateCarryForwardInclusion,
     deleteIncome,
     listActionError,
-    listActionWarning,
+    expenseActionError,
+    statementActionError,
+    pendingStatementId,
   } = useMonthly()
 
   const confirmAndDeleteExpense = (id: string) => confirmThenRun('Delete this expense?', () => deleteExpense(id))
@@ -138,6 +140,11 @@ export default function MonthlyPage() {
 
   const bankOperations = useBankOperations(year, month, banks, refreshSilently)
   const activeCreditCards = creditCardsData.creditCards.filter((c) => c.isActive)
+  const expenseActionErrorElement = expenseActionError && (
+    <p className="monthly-page__action-error" role="alert">
+      {expenseActionError}
+    </p>
+  )
   const activeCategories = categories.filter((c) => c.active)
   const transferForm = useTransferForm(banks, () => {
     refreshSilently()
@@ -217,7 +224,7 @@ export default function MonthlyPage() {
         ))}
       </TabList>
 
-      {isLoading ? (
+      {isLoading || creditCardsData.isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
@@ -231,12 +238,14 @@ export default function MonthlyPage() {
                 cardStatements={cardStatements}
                 banks={banks}
                 currencyTotals={currencyTotals}
-                statementActionError={listActionError}
-                statementActionWarning={listActionWarning}
+                statementActionError={statementActionError}
+                pendingStatementId={pendingStatementId}
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
                 unmarkStatementPaid={confirmAndUnmarkStatementPaid}
+                creditCards={creditCardsData.creditCards}
+                cardsError={creditCardsData.error}
               />
             </div>
             <div className="monthly-page__grids-row">
@@ -248,7 +257,6 @@ export default function MonthlyPage() {
                 carryForwardUpdating={carryForwardUpdating}
                 onToggleCarryForward={updateCarryForwardInclusion}
                 carryForwardActionError={listActionError}
-                carryForwardActionWarning={listActionWarning}
               />
             </div>
           </div>
@@ -260,6 +268,7 @@ export default function MonthlyPage() {
 
               {expenseFormElement}
 
+              {expenseActionErrorElement}
               <ExpensesSection
                 expenses={expenses}
                 onEdit={showEditForm}
@@ -275,18 +284,21 @@ export default function MonthlyPage() {
                 cardStatements={cardStatements}
                 banks={banks}
                 currencyTotals={currencyTotals}
+                statementActionError={statementActionError}
+                pendingStatementId={pendingStatementId}
                 markPaidSources={markPaidSources}
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
                 unmarkStatementPaid={confirmAndUnmarkStatementPaid}
                 creditCards={creditCardsData.creditCards}
                 updatingCardId={creditCardsData.updatingCardId}
-                updateError={creditCardsData.error ?? creditCardsData.updateError}
+                cardsError={creditCardsData.error ?? creditCardsData.updateError}
                 onUpdateCreditCard={creditCardsData.updateCreditCard}
               />
 
               {expenseFormElement}
 
+              {expenseActionErrorElement}
               <ExpensesSection
                 expenses={unpaidCardCharges}
                 onEdit={showEditForm}
@@ -305,7 +317,6 @@ export default function MonthlyPage() {
                 carryForwardUpdating={carryForwardUpdating}
                 onToggleCarryForward={updateCarryForwardInclusion}
                 carryForwardActionError={listActionError}
-                carryForwardActionWarning={listActionWarning}
               />
 
               {isIncomeFormOpen && (

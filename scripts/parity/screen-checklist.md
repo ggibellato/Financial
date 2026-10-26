@@ -20,7 +20,7 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly | M1, M2, M3 | Category totals and category totals sum | | | |
 | Monthly | M1, M2, M3 | Income totals per source (net and gross) and total incoming | | | |
 | Monthly | M1, M2, M3 | Tithe: calculated, balance, carry-forward | | | |
-| Card statements | M1, M2 | Each card's outstanding, accumulated outstanding, paid status, warning | | | |
+| Card statements | M1, M2 | Each card's outstanding, accumulated outstanding and paid status. In a month with no statement for a card, the after side shows 0.00, "—" for accumulated and Unpaid, with no Mark Paid | | | |
 | Reserva | — | Each pot's balance and the pots total | | | |
 | Reserva | M1, M2 | Movements listed for the month (count and total) | | | |
 | Controle Mãe | — | BRL and GBP totals | | | |

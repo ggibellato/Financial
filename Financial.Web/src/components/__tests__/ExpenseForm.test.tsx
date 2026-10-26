@@ -71,7 +71,7 @@ describe('ExpenseForm', () => {
       />,
     )
 
-    expect(screen.getByText(/Settled via its card statement/)).toBeInTheDocument()
+    expect(screen.getByText(/locked while its card statement is paid/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
@@ -162,6 +162,32 @@ describe('ExpenseForm', () => {
     expect(invoiceField).toBeInTheDocument()
     expect(invoiceField).toBeDisabled()
     expect(invoiceField).toHaveValue('2026-07')
+  })
+
+  it('locks date and value on a settled charge while description and category stay editable', () => {
+    render(
+      <ExpenseForm
+        {...baseProps}
+        isEditing
+        isSettled
+        paymentSource="bank-trading212"
+        creditCardId="card-baamex"
+        creditCardName="BaAmex"
+      />,
+    )
+
+    expect(screen.getByLabelText(/^Date/)).toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/^Value/)).toHaveAttribute('readonly')
+    expect(screen.getAllByText('Locked: its card statement is paid')).toHaveLength(2)
+    expect(screen.getByLabelText(/^Description/)).toBeEnabled()
+    expect(screen.getByLabelText(/^Category/)).toBeEnabled()
+  })
+
+  it('keeps date and value editable on an unsettled charge', () => {
+    render(<ExpenseForm {...baseProps} isEditing paymentMode="card" creditCardId="card-baamex" />)
+
+    expect(screen.getByLabelText(/^Date/)).not.toHaveAttribute('readonly')
+    expect(screen.getByLabelText(/^Value/)).not.toHaveAttribute('readonly')
   })
 
   it("defaults the invoice month to the selected card's latest invoice month when it's ahead of the date", () => {

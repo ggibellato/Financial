@@ -224,6 +224,20 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
+    public void GetDefaultGroupSummary_CardMemberWithPaidStatement_HasNothingOutstandingEvenWithUnsettledCharges()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        var statement = CardStatement.Create(_amex, 2026, 9);
+        statement.MarkPaid();
+        _repository.CardStatements.Add(statement);
+
+        var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
+
+        amex.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = true });
+    }
+
+    [Fact]
     public void GetDefaultGroupSummary_CardMemberWithPaidStatement_IsPaid()
     {
         _repository.Accounts.Add(_amex);

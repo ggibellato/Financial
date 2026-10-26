@@ -1655,12 +1655,6 @@
             "format": "double",
             "type": "number"
           },
-          "warning": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
           "year": {
             "format": "int32",
             "type": "integer"
@@ -8858,6 +8852,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "summary": "Marks a card statement as paid.",
@@ -8900,6 +8904,16 @@
               }
             },
             "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
           }
         },
         "summary": "Reverts a card statement back to unpaid.",
