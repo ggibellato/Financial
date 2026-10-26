@@ -17,26 +17,25 @@ public class CardChargeFilterTests
     private Expense Charge(Account card, DateOnly date, decimal value) =>
         Expense.Create(date, "Charge", value, _groceries, null, card);
 
-    [Fact]
-    public void ChargesFor_UnpaidOnly_ReturnsTheCardsUnpaidChargesOfThatInvoiceMonth()
+    private static CardStatement Statement(Account card, int year, int month, bool isPaid)
     {
-        var unpaid = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
-        var paid = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
-        paid.Settle(_barclays, new DateOnly(2026, 10, 20));
-        var expenses = new[] { unpaid, paid };
+        var statement = CardStatement.Create(card, year, month);
+        if (isPaid)
+        {
+            statement.MarkPaid();
+        }
 
-        CardChargeFilter.ChargesFor(expenses, _amex, 2026, 10, includePaid: false).Should().Equal(unpaid);
+        return statement;
     }
 
     [Fact]
-    public void ChargesFor_IncludingPaid_ReturnsPaidAndUnpaidCharges()
+    public void ChargesFor_ReturnsPaidAndUnpaidChargesOfThatInvoiceMonth()
     {
         var unpaid = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
         var paid = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
         paid.Settle(_barclays, new DateOnly(2026, 10, 20));
-        var expenses = new[] { unpaid, paid };
 
-        CardChargeFilter.ChargesFor(expenses, _amex, 2026, 10, includePaid: true).Should().Equal(unpaid, paid);
+        CardChargeFilter.ChargesFor([unpaid, paid], _amex, 2026, 10).Should().Equal(unpaid, paid);
     }
 
     [Fact]
@@ -46,19 +45,45 @@ public class CardChargeFilterTests
         var otherCard = Charge(_visa, new DateOnly(2026, 10, 3), 40m);
         var otherMonth = Charge(_amex, new DateOnly(2026, 11, 3), 50m);
         var bankExpense = Expense.Create(new DateOnly(2026, 10, 3), "Shop", 60m, _groceries, _barclays, null);
-        var expenses = new[] { match, otherCard, otherMonth, bankExpense };
 
-        CardChargeFilter.ChargesFor(expenses, _amex, 2026, 10, includePaid: true).Should().Equal(match);
+        CardChargeFilter.ChargesFor([match, otherCard, otherMonth, bankExpense], _amex, 2026, 10).Should().Equal(match);
     }
 
     [Fact]
-    public void ChargesFor_UsesTheInvoiceMonthNotTheChargeDate()
+    public void UnpaidChargesFor_UsesTheInvoiceMonthNotTheChargeDate()
     {
         var charge = Charge(_amex, new DateOnly(2026, 9, 28), 30m);
         charge.SetInvoiceDate(new DateOnly(2026, 10, 1));
 
-        CardChargeFilter.ChargesFor([charge], _amex, 2026, 10, includePaid: false).Should().Equal(charge);
-        CardChargeFilter.ChargesFor([charge], _amex, 2026, 9, includePaid: false).Should().BeEmpty();
+        CardChargeFilter.UnpaidChargesFor([charge], [], _amex, 2026, 10).Should().Equal(charge);
+        CardChargeFilter.UnpaidChargesFor([charge], [], _amex, 2026, 9).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UnpaidChargesFor_LeavesOutChargesSettledToABank()
+    {
+        var unpaid = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        var settled = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
+        settled.Settle(_barclays, new DateOnly(2026, 10, 20));
+
+        CardChargeFilter.UnpaidChargesFor([unpaid, settled], [Statement(_amex, 2026, 10, isPaid: false)], _amex, 2026, 10)
+            .Should().Equal(unpaid);
+    }
+
+    [Fact]
+    public void UnpaidChargesFor_PaidStatement_ReturnsNothing()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.UnpaidChargesFor([charge], [Statement(_amex, 2026, 10, isPaid: true)], _amex, 2026, 10).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UnpaidChargesFor_AnotherCardsPaidStatement_DoesNotHideTheCharges()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.UnpaidChargesFor([charge], [Statement(_visa, 2026, 10, isPaid: true)], _amex, 2026, 10).Should().Equal(charge);
     }
 
     [Fact]
@@ -70,6 +95,55 @@ public class CardChargeFilterTests
         paid.Settle(_barclays, new DateOnly(2026, 10, 20));
         var otherCard = Charge(_visa, new DateOnly(2026, 10, 3), 40m);
 
-        CardChargeFilter.OutstandingTotal([unpaid, secondUnpaid, paid, otherCard], _amex, 2026, 10).Should().Be(42.50m);
+        CardChargeFilter.OutstandingTotal([unpaid, secondUnpaid, paid, otherCard], [], _amex, 2026, 10).Should().Be(42.50m);
+    }
+
+    [Fact]
+    public void OutstandingTotal_PaidStatement_IsZero()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.OutstandingTotal([charge], [Statement(_amex, 2026, 10, isPaid: true)], _amex, 2026, 10).Should().Be(0m);
+    }
+
+    [Fact]
+    public void IsPaid_ChargeSettledToABank_IsTrue()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        charge.Settle(_barclays, new DateOnly(2026, 10, 20));
+
+        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: false)]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsPaid_ChargeOnAPaidStatement_IsTrue()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsPaid_ChargeOnAnUnpaidStatement_IsFalse()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: false), Statement(_amex, 2026, 9, isPaid: true)]).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsPaid_ChargeWithNoStatement_IsFalse()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaid(charge, []).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsOnPaidStatement_BankExpense_IsFalse()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 10, 3), "Shop", 60m, _groceries, _barclays, null);
+
+        CardChargeFilter.IsOnPaidStatement(expense, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeFalse();
     }
 }

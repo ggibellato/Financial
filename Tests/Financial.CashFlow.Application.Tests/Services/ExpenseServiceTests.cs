@@ -1070,11 +1070,10 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task AddExpenseAsync_CardChargeInAMonthWithAStatement_KeepsItsPaidFlagAndDueDate()
+    public async Task AddExpenseAsync_CardChargeInAMonthWithAStatement_KeepsItsDueDate()
     {
         var card = _repository.CardAccounts.Single(c => c.Name == "BaAmex");
         var statement = CardStatement.Create(card, 2026, 9);
-        statement.MarkPaid();
         statement.SetDueDate(new DateOnly(2026, 9, 18));
         _repository.CardStatements.Add(statement);
 
@@ -1083,9 +1082,216 @@ public class ExpenseServiceTests
         using (new AssertionScope())
         {
             _repository.CardStatements.Should().Equal(statement);
-            statement.IsPaid.Should().BeTrue();
+            statement.IsPaid.Should().BeFalse();
             statement.DueDate.Should().Be(new DateOnly(2026, 9, 18));
         }
+    }
+
+    private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
+
+    private CardStatement MarkStatementPaid(string cardName, int year, int month)
+    {
+        var card = _repository.CardAccounts.Single(c => c.Name == cardName);
+        var statement = _repository.CardStatements.SingleOrDefault(s => s.IsFor(card.Id, year, month));
+        if (statement is null)
+        {
+            statement = CardStatement.Create(card, year, month);
+            _repository.CardStatements.Add(statement);
+        }
+
+        statement.MarkPaid();
+        return statement;
+    }
+
+    private async Task<ExpenseDTO> AddChargeOnPaidStatementAsync()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        MarkStatementPaid("BaAmex", 2026, 9);
+        return added;
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
+    public async Task AddExpenseAsync_ChargeOnAPaidStatement_ThrowsAndSavesNothing()
+    {
+        MarkStatementPaid("BaAmex", 2026, 9);
+
+        var act = async () => await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_ChargeOnAnotherCardsPaidStatement_IsAdded()
+    {
+        MarkStatementPaid("BarclaysPlatinumVisa8003", 2026, 9);
+
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        _repository.Expenses.Should().ContainSingle();
+    }
+
+    public static TheoryData<string> LockedChargeChanges => new() { "date", "value", "invoice month", "card", "bank" };
+
+    [Theory]
+    [MemberData(nameof(LockedChargeChanges))]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
+    public async Task UpdateExpenseAsync_ChargeOnAPaidStatement_LockedFieldChange_ThrowsAndChangesNothing(string change)
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+        var request = CardExpenseRequest(new DateOnly(2026, 9, 1));
+        request = change switch
+        {
+            "date" => request with { Date = request.Date.AddDays(1) },
+            "value" => request with { Value = request.Value + 1m },
+            "invoice month" => request with { InvoiceDate = new DateOnly(2026, 10, 1) },
+            "card" => request with { CardTag = "BarclaysPlatinumVisa8003" },
+            _ => request with { CardTag = null, InvoiceDate = null, PaymentSource = "Barclays" }
+        };
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        var act = async () => await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+        var expense = _repository.Expenses.Single();
+        using (new AssertionScope())
+        {
+            expense.Date.Should().Be(added.Date);
+            expense.Value.Should().Be(added.Value);
+            expense.CreditCard!.Name.Should().Be("BaAmex");
+            expense.InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+            _repository.SaveChangesCallCount.Should().Be(savesBefore);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
+    public async Task UpdateExpenseAsync_ChargeOnAPaidStatement_DescriptionCategoryAndTitheChange_IsSaved()
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+        var request = CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Description = "Renamed", Category = "Casa", CountsAsTithe = false };
+
+        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request));
+
+        using (new AssertionScope())
+        {
+            result.Description.Should().Be("Renamed");
+            result.CategoryName.Should().Be("Casa");
+            result.CountsAsTithe.Should().BeFalse();
+            result.InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+        }
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_ChargeOnAPaidStatement_WithoutInvoiceMonth_KeepsItsStatementAndIsSaved()
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+        var request = CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Description = "Renamed", InvoiceDate = null };
+
+        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request));
+
+        result.Description.Should().Be("Renamed");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
+    public async Task UpdateExpenseAsync_MovingAnUnpaidChargeIntoAPaidStatement_Throws()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 10, 1))));
+        MarkStatementPaid("BaAmex", 2026, 9);
+
+        var act = async () => await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+        _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_BankExpenseBecomingAChargeOnAPaidStatement_Throws()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
+        MarkStatementPaid("BaAmex", 2026, 9);
+
+        var act = async () => await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+    }
+
+    [Theory]
+    [InlineData(8)]
+    [InlineData(11)]
+    public async Task UpdateExpenseAsync_UnpaidCharge_MovesToAnEarlierOrLaterUnpaidStatement(int month)
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        MarkStatementPaid("BaAmex", 2026, 10);
+
+        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, month, 1))));
+
+        result.InvoiceDate.Should().Be(new DateOnly(2026, month, 1));
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_LegacySettledChargeOnAPaidStatement_DateChange_Throws()
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+        var expense = _repository.Expenses.Single();
+        expense.Settle(_repository.Accounts.Single(a => a.Name == "Barclays"), new DateOnly(2026, 10, 3));
+        var request = CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Date = new DateOnly(2026, 10, 4), PaymentSource = "Barclays" };
+
+        var act = async () => await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+        expense.Date.Should().Be(new DateOnly(2026, 10, 3));
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_LegacySettledChargeOnAPaidStatement_DescriptionChange_IsSaved()
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+        var expense = _repository.Expenses.Single();
+        expense.Settle(_repository.Accounts.Single(a => a.Name == "Barclays"), new DateOnly(2026, 10, 3));
+        var request = CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Date = new DateOnly(2026, 10, 3), PaymentSource = "Barclays", Description = "Renamed" };
+
+        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request));
+
+        using (new AssertionScope())
+        {
+            result.Description.Should().Be("Renamed");
+            result.PaymentStatus.Should().Be(nameof(ExpensePaymentStatus.CreditCardSettled));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
+    public async Task DeleteExpenseAsync_ChargeOnAPaidStatement_ThrowsAndKeepsTheCharge()
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        var act = async () => await _sut.DeleteExpenseAsync(added.Id);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(savesBefore);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteExpenseAsync_ChargeOnAnUnpaidStatement_IsDeleted()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        MarkStatementPaid("BaAmex", 2026, 10);
+
+        await _sut.DeleteExpenseAsync(added.Id);
+
+        _repository.Expenses.Should().BeEmpty();
     }
 
     [Fact]

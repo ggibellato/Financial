@@ -24,20 +24,17 @@ public sealed class CardStatementsController : ControllerBase
     /// <returns>200 OK with the matching statements.</returns>
     [HttpGet("{year:int}/{month:int}")]
     [ProducesResponseType(typeof(IReadOnlyList<CardStatementDTO>), StatusCodes.Status200OK)]
-    public async Task<ActionResult<IReadOnlyList<CardStatementDTO>>> GetStatementsForMonth(int year, int month)
-    {
-        var result = await _cardStatementService.GetStatementsForMonthAsync(year, month);
-        return Ok(result);
-    }
+    public ActionResult<IReadOnlyList<CardStatementDTO>> GetStatementsForMonth(int year, int month) =>
+        Ok(_cardStatementService.GetStatementsForMonth(year, month));
 
     /// <summary>Marks a card statement as paid.</summary>
     /// <param name="id">The statement's identifier.</param>
     /// <param name="request">Details of the payment.</param>
-    /// <returns>200 OK with the updated statement, 400 Bad Request if the request is invalid, or 404 Not Found if the statement doesn't exist.</returns>
     [HttpPost("{id:guid}/mark-paid")]
     [ProducesResponseType(typeof(CardStatementDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CardStatementDTO>> MarkStatementPaid(Guid id, [FromBody] MarkCardStatementPaidDTO request)
     {
         var result = await _cardStatementService.MarkStatementPaidAsync(id, request);
@@ -46,10 +43,10 @@ public sealed class CardStatementsController : ControllerBase
 
     /// <summary>Reverts a card statement back to unpaid.</summary>
     /// <param name="id">The statement's identifier.</param>
-    /// <returns>200 OK with the updated statement, or 404 Not Found if the statement doesn't exist.</returns>
     [HttpPost("{id:guid}/unmark-paid")]
     [ProducesResponseType(typeof(CardStatementDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CardStatementDTO>> UnmarkStatementPaid(Guid id)
     {
         var result = await _cardStatementService.UnmarkStatementPaidAsync(id);

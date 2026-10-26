@@ -4,6 +4,7 @@ using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -12,6 +13,7 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class ExpenseService : IExpenseService
 {
     private const string EntityType = "Expense";
+    private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -38,6 +40,7 @@ public sealed class ExpenseService : IExpenseService
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
             expense.SetRoundUpAmount(request.RoundUpAmount);
+            EnsureStatementNotPaid(expense.CreditCard, expense.InvoiceDate);
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddExpense(expense);
@@ -71,6 +74,7 @@ public sealed class ExpenseService : IExpenseService
 
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
+            EnsurePaidStatementLocksHold(expense, request, paymentSource, creditCard);
             var previousCardId = expense.CreditCard?.Id;
             var previousInvoiceDate = expense.InvoiceDate;
 
@@ -112,6 +116,11 @@ public sealed class ExpenseService : IExpenseService
         try
         {
             var expense = FindExpenseOrThrow(id);
+            if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements()))
+            {
+                throw new ArgumentException(PaidStatementMessage);
+            }
+
             var cardId = expense.CreditCard?.Id;
             var invoiceDate = expense.InvoiceDate;
 
@@ -224,6 +233,41 @@ public sealed class ExpenseService : IExpenseService
 
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
+
+    private void EnsurePaidStatementLocksHold(Expense expense, ExpenseUpdateDTO request, Account? paymentSource, Account? creditCard)
+    {
+        var targetInvoiceDate = creditCard is not null && request.InvoiceDate is { } requested
+            ? FirstOfMonth(requested)
+            : expense.InvoiceDateAfterUpdate(request.Date, creditCard);
+        var movesStatement = creditCard?.Id != expense.CreditCard?.Id || targetInvoiceDate != expense.InvoiceDate;
+
+        if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements())
+            && (movesStatement
+                || request.Date != expense.Date
+                || request.Value != expense.Value
+                || paymentSource?.Id != expense.PaymentSourceAccount?.Id
+                || request.RoundUpAmount != expense.RoundUpAmount))
+        {
+            throw new ArgumentException(PaidStatementMessage);
+        }
+
+        if (movesStatement)
+        {
+            EnsureStatementNotPaid(creditCard, targetInvoiceDate);
+        }
+    }
+
+    private void EnsureStatementNotPaid(Account? creditCard, DateOnly? invoiceDate)
+    {
+        if (creditCard is not null
+            && invoiceDate is { } date
+            && CardChargeFilter.IsStatementPaid(_repository.GetCardStatements(), creditCard, date.Year, date.Month))
+        {
+            throw new ArgumentException(PaidStatementMessage);
+        }
+    }
+
+    private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
     private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(
         string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)

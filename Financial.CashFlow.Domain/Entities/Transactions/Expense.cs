@@ -108,25 +108,8 @@ public class Expense : IAccountTransaction
             ValidatePaymentShape(paymentSourceAccount, creditCard);
             ActiveAccountRule.EnsureUsable(PaymentSourceAccount, paymentSourceAccount);
 
-            var wasCardCharge = PaymentStatus == ExpensePaymentStatus.CreditCardCharge;
-
-            if (creditCard is not null)
-            {
-                // Only Settle() is meant to make Date diverge from ChargeDate; keep them in sync
-                // while still unsettled so a corrected Date doesn't leave ChargeDate stale.
-                if (!wasCardCharge || InvoiceDate == FirstOfMonth(Date))
-                {
-                    InvoiceDate = FirstOfMonth(date);
-                }
-
-                ChargeDate = date;
-            }
-            else if (wasCardCharge)
-            {
-                ChargeDate = null;
-                InvoiceDate = null;
-            }
-
+            InvoiceDate = InvoiceDateAfterUpdate(date, creditCard);
+            ChargeDate = creditCard is not null ? date : null;
             PaymentSourceAccount = paymentSourceAccount;
             CreditCard = creditCard;
         }
@@ -137,6 +120,12 @@ public class Expense : IAccountTransaction
         Category = category;
         CountsAsTithe = countsAsTithe;
     }
+
+    public DateOnly? InvoiceDateAfterUpdate(DateOnly date, Account? creditCard) =>
+        PaymentStatus == ExpensePaymentStatus.CreditCardSettled ? InvoiceDate
+        : creditCard is null ? null
+        : PaymentStatus != ExpensePaymentStatus.CreditCardCharge || InvoiceDate == FirstOfMonth(Date) ? FirstOfMonth(date)
+        : InvoiceDate;
 
     public void Settle(Account paymentSourceAccount, DateOnly paymentDate)
     {

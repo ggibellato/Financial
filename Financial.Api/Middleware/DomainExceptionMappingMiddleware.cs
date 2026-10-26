@@ -45,6 +45,7 @@ internal sealed class DomainExceptionMappingMiddleware
         // would relabel those as client conflicts and hide real defects behind a 409.
         catch (Exception ex) when (ex is OverdraftConfirmationRequiredException
             or ReserveMovementLinkedToIncomeException
+            or StatementPaymentConflictException
             or EntityInUseException
             or DuplicateNameException
             or InvestmentRuleViolationException)

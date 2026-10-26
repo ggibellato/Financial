@@ -175,8 +175,8 @@ public class CategorySummaryServiceTests
         var cardStatements = new CardStatementService(
             repository, TestClock.At(new DateTimeOffset(2026, 8, 3, 12, 0, 0, TimeSpan.FromHours(1))),
             NullLogger<CardStatementService>.Instance, new RecordingTelemetryTracer());
-        await cardStatements.GetStatementsForMonthAsync(2026, 7);
-        var statement = repository.CardStatements.Single(s => s.CreditCard.Name == card.Name && s.Month == 7);
+        var statement = CardStatement.Create(card, 2026, 7);
+        repository.CardStatements.Add(statement);
         await cardStatements.MarkStatementPaidAsync(
             statement.Id, new() { PaymentSourceBankId = repository.Accounts.First(a => a.Name == "Trading212").Id });
 

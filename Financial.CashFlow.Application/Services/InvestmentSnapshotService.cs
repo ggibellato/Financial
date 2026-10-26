@@ -129,7 +129,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                 switch (account.Source)
                 {
                     case InvestmentAccountSource.CreditCard:
-                        var matchingExpenses = CardChargeFilter.ChargesFor(_repository.GetExpenses(), account.CreditCard!, year, month, includePaid: true)
+                        var matchingExpenses = CardChargeFilter.ChargesFor(_repository.GetExpenses(), account.CreditCard!, year, month)
                             .ToList();
 
                         if (matchingExpenses.Count == 0)
