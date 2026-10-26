@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { findInAncestors } from '../../test-utils/findInAncestors'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -620,7 +620,7 @@ describe('useExpenseForm', () => {
 })
 
 describe('computeRoundUpSuggestion', () => {
-  const casesPath = resolve(__dirname, '../../../../Tests/Financial.CashFlow.Domain.Tests/TestData/round-up-suggestion-cases.json')
+  const casesPath = findInAncestors('Tests/Financial.CashFlow.Domain.Tests/TestData/round-up-suggestion-cases.json', __dirname)
   const cases: { value: string; suggestion: string }[] = JSON.parse(readFileSync(casesPath, 'utf8'))
 
   it.each(cases.filter((c) => Number(c.value) > 0).map((c) => [c.value, c.suggestion]))(
