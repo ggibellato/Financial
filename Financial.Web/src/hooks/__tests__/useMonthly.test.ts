@@ -335,7 +335,9 @@ describe('useMonthly', () => {
 
     act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
 
-    await waitFor(() => expect(result.current.listActionError).toBe('This statement is already paid.'))
+    await waitFor(() => expect(result.current.statementActionError).toBe('This statement is already paid.'))
+    expect(result.current.listActionError).toBeNull()
+    expect(result.current.pendingStatementId).toBeNull()
   })
 
   it('shows the server message when an unmark is refused', async () => {
@@ -345,7 +347,7 @@ describe('useMonthly', () => {
 
     act(() => result.current.unmarkStatementPaid('c2'))
 
-    await waitFor(() => expect(result.current.listActionError).toBe('This statement is not paid.'))
+    await waitFor(() => expect(result.current.statementActionError).toBe('This statement is not paid.'))
   })
 
   it('clears the previous action error once a mark-paid succeeds', async () => {
@@ -355,10 +357,12 @@ describe('useMonthly', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
-    await waitFor(() => expect(result.current.listActionError).not.toBeNull())
+    await waitFor(() => expect(result.current.statementActionError).not.toBeNull())
     act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
 
-    await waitFor(() => expect(result.current.listActionError).toBeNull())
+    expect(result.current.statementActionError).toBeNull()
+    expect(result.current.pendingStatementId).toBe('c1')
+    await waitFor(() => expect(result.current.pendingStatementId).toBeNull())
   })
 
   it('tracks the selected paying bank per statement', async () => {

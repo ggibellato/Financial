@@ -20,6 +20,7 @@ interface CardsGridProps {
   markStatementPaid: (id: string, paymentSource: string) => void
   unmarkStatementPaid: (id: string) => void
   statementActionError?: string | null
+  pendingStatementId?: string | null
   creditCards: CreditCardDto[]
   updatingCardId?: string | null
   updateError?: string | null
@@ -49,7 +50,7 @@ function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDt
   const statementOnlyRows = cardStatements
     .filter((s) => !creditCards.some((c) => c.id === s.creditCardId))
     .map((s) => ({
-      key: s.id,
+      key: s.creditCardId,
       creditCardId: s.creditCardId,
       creditCardName: s.creditCardName,
       nextInvoiceDueDate: null,
@@ -68,6 +69,7 @@ export default function CardsGrid({
   markStatementPaid,
   unmarkStatementPaid,
   statementActionError,
+  pendingStatementId,
   creditCards,
   updatingCardId,
   updateError,
@@ -87,10 +89,11 @@ export default function CardsGrid({
     nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
     active: (row) => (row.isActive ? 1 : 0),
   }
-  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, accessors, {
-    columnKey: 'nextInvoiceDueDate',
-    direction: 'descending',
-  })
+  const { sortedRows, sortState, requestSort } = useSortableRows(
+    filteredRows,
+    accessors,
+    showCardManagementColumns ? { columnKey: 'nextInvoiceDueDate', direction: 'descending' } : { columnKey: 'card', direction: 'ascending' },
+  )
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
@@ -219,14 +222,19 @@ export default function CardsGrid({
                 <DataTableCell label="Actions" className="data-table__col--action-wide">
                   {row.statement &&
                     (row.statement.isPaid ? (
-                      <button type="button" onClick={() => unmarkStatementPaid(row.statement!.id)}>
-                        Unmark Paid
+                      <button
+                        type="button"
+                        disabled={pendingStatementId === row.statement.id}
+                        onClick={() => unmarkStatementPaid(row.statement!.id)}
+                      >
+                        {pendingStatementId === row.statement.id ? 'Unmarking…' : 'Unmark Paid'}
                       </button>
                     ) : (
                       <>
                         <select
                           aria-label={`Paying bank for ${row.creditCardName}`}
                           value={markPaidSources[row.statement.id] ?? ''}
+                          disabled={pendingStatementId === row.statement.id}
                           onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
                         >
                           <option value="">Bank…</option>
@@ -238,10 +246,10 @@ export default function CardsGrid({
                         </select>{' '}
                         <button
                           type="button"
-                          disabled={!markPaidSources[row.statement.id]}
+                          disabled={!markPaidSources[row.statement.id] || pendingStatementId === row.statement.id}
                           onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
                         >
-                          Mark Paid
+                          {pendingStatementId === row.statement.id ? 'Marking…' : 'Mark Paid'}
                         </button>
                       </>
                     ))}

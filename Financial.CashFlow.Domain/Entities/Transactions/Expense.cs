@@ -121,11 +121,26 @@ public class Expense : IAccountTransaction
         CountsAsTithe = countsAsTithe;
     }
 
-    public DateOnly? InvoiceDateAfterUpdate(DateOnly date, Account? creditCard) =>
-        PaymentStatus == ExpensePaymentStatus.CreditCardSettled ? InvoiceDate
-        : creditCard is null ? null
-        : PaymentStatus != ExpensePaymentStatus.CreditCardCharge || InvoiceDate == FirstOfMonth(Date) ? FirstOfMonth(date)
-        : InvoiceDate;
+    public DateOnly? InvoiceDateAfterUpdate(DateOnly date, Account? creditCard, DateOnly? requestedInvoiceDate = null)
+    {
+        if (creditCard is not null && requestedInvoiceDate is { } requested)
+        {
+            return FirstOfMonth(requested);
+        }
+
+        if (PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+        {
+            return InvoiceDate;
+        }
+
+        if (creditCard is null)
+        {
+            return null;
+        }
+
+        var invoiceMonthFollowsDate = PaymentStatus != ExpensePaymentStatus.CreditCardCharge || InvoiceDate == FirstOfMonth(Date);
+        return invoiceMonthFollowsDate ? FirstOfMonth(date) : InvoiceDate;
+    }
 
     public void Settle(Account paymentSourceAccount, DateOnly paymentDate)
     {

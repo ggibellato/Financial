@@ -128,6 +128,26 @@ describe('CardsGrid (Summary tab, no card management columns)', () => {
     expect(setMarkPaidSource).toHaveBeenCalledWith('c1', 'bank-trading212')
   })
 
+  it('disables the pending row while its mark-paid or unmark is in flight', () => {
+    render(<CardsGrid {...statementProps} markPaidSources={{ c1: 'bank-barclays' }} pendingStatementId="c1" />)
+
+    expect(screen.getByRole('button', { name: 'Marking…' })).toBeDisabled()
+    expect(screen.getByLabelText('Paying bank for BaAmex')).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Unmark Paid' })).toBeEnabled()
+  })
+
+  it('shows Unmarking… on a paid row being unmarked', () => {
+    render(<CardsGrid {...statementProps} pendingStatementId="c2" />)
+
+    expect(screen.getByRole('button', { name: 'Unmarking…' })).toBeDisabled()
+  })
+
+  it('orders rows by card name, with the Card header showing the sort', () => {
+    render(<CardsGrid {...statementProps} creditCards={CREDIT_CARDS} />)
+
+    expect(screen.getByRole('button', { name: 'Card' }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
+  })
+
   it('calls unmarkStatementPaid for a paid card', () => {
     const unmarkStatementPaid = vi.fn()
     render(<CardsGrid {...statementProps} unmarkStatementPaid={unmarkStatementPaid} />)

@@ -236,9 +236,7 @@ public sealed class ExpenseService : IExpenseService
 
     private void EnsurePaidStatementLocksHold(Expense expense, ExpenseUpdateDTO request, Account? paymentSource, Account? creditCard)
     {
-        var targetInvoiceDate = creditCard is not null && request.InvoiceDate is { } requested
-            ? FirstOfMonth(requested)
-            : expense.InvoiceDateAfterUpdate(request.Date, creditCard);
+        var targetInvoiceDate = expense.InvoiceDateAfterUpdate(request.Date, creditCard, request.InvoiceDate);
         var movesStatement = creditCard?.Id != expense.CreditCard?.Id || targetInvoiceDate != expense.InvoiceDate;
 
         if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements())
@@ -266,8 +264,6 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException(PaidStatementMessage);
         }
     }
-
-    private static DateOnly FirstOfMonth(DateOnly date) => new(date.Year, date.Month, 1);
 
     private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(
         string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)

@@ -260,6 +260,7 @@ public class CardStatementServiceTests
         {
             statement.IsPaid.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
         }
     }
 
@@ -330,13 +331,13 @@ public class CardStatementServiceTests
         AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
         SeedStatements(2026, 7);
         var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
-        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Barclays"));
-        var savesBefore = _repository.SaveChangesCallCount;
+        statement.MarkPaid();
 
         var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Chase"));
 
         await act.Should().ThrowAsync<StatementPaymentConflictException>().WithMessage("This statement is already paid.");
-        _repository.SaveChangesCallCount.Should().Be(savesBefore);
+        _repository.SaveChangesCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.CardStatementService.MarkStatementPaid");
     }
 
     [Fact]
@@ -352,6 +353,7 @@ public class CardStatementServiceTests
         {
             statement.IsPaid.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.CardStatementService.UnmarkStatementPaid");
         }
     }
 

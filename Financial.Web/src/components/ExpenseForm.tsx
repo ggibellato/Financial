@@ -8,6 +8,8 @@ import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
+const SETTLED_FIELD_HINT = 'Locked: its card statement is paid'
+
 export type ExpenseFormField =
   | 'date'
   | 'description'
@@ -101,11 +103,12 @@ export default function ExpenseForm({
         <div className={styles.grid}>
           <Field
             label="Date"
-            required
+            required={!isSettled}
+            hint={isSettled ? SETTLED_FIELD_HINT : undefined}
             validationState={fieldError('date') ? 'error' : 'none'}
             validationMessage={fieldError('date')}
           >
-            <Input type="date" value={date} disabled={isSettled} onChange={(e) => onFieldChange('date', e.target.value)} />
+            <Input type="date" value={date} readOnly={isSettled} onChange={(e) => onFieldChange('date', e.target.value)} />
           </Field>
 
           <Field
@@ -121,8 +124,8 @@ export default function ExpenseForm({
           {isSettled ? (
             <div className={styles.spanTwo}>
               <Text as="p" size={200}>
-                Paid by {selectedBank?.name ?? paymentSource} via card {creditCardName || creditCardId}. Settled via its
-                card statement — unmark the statement paid to change these fields.
+                Paid by {selectedBank?.name ?? paymentSource} via card {creditCardName || creditCardId}. Date, value, payment
+                source and invoice month are locked while its card statement is paid — unmark the statement to change them.
               </Text>
             </div>
           ) : lockedBank ? (
@@ -164,7 +167,8 @@ export default function ExpenseForm({
 
           <Field
             label="Value"
-            required
+            required={!isSettled}
+            hint={isSettled ? SETTLED_FIELD_HINT : undefined}
             validationState={fieldError('value') ? 'error' : 'none'}
             validationMessage={fieldError('value')}
           >
@@ -172,7 +176,7 @@ export default function ExpenseForm({
               type="number"
               step="0.01"
               value={value}
-              disabled={isSettled}
+              readOnly={isSettled}
               onChange={(e) => onFieldChange('value', e.target.value)}
             />
           </Field>

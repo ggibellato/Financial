@@ -576,6 +576,30 @@ describe('MonthlyPage', () => {
     )
   })
 
+  it("shows a refused delete above the Credit Card tab's expense list, not above the cards", async () => {
+    deleteExpenseMock.mockRejectedValue(new Error("This charge's statement is paid; unmark it first."))
+    render(<MonthlyPage />)
+    fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
+
+    await waitFor(() => expect(screen.getByText('Uber')).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Delete expense' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent("This charge's statement is paid; unmark it first.")
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+  })
+
+  it('shows a refused mark-paid on the Summary tab once, above the cards', async () => {
+    markCardStatementPaidMock.mockRejectedValue(new Error('There is nothing to pay on this statement.'))
+    render(<MonthlyPage />)
+
+    await waitFor(() => expect(screen.getByLabelText('Paying bank for BaAmex')).toBeInTheDocument())
+    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('There is nothing to pay on this statement.')
+    expect(screen.getAllByRole('alert')).toHaveLength(1)
+  })
+
   it('switching away from the Credit Card tab cancels an open edit form', async () => {
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Credit Card expenses' }))
@@ -1041,7 +1065,7 @@ describe('MonthlyPage', () => {
     await waitFor(() => expect(screen.getByText('Lidl UK')).toBeInTheDocument())
     fireEvent.click(screen.getAllByRole('button', { name: 'Edit expense' })[0])
 
-    expect(screen.getByText(/Settled via its card statement/)).toBeInTheDocument()
+    expect(screen.getByText(/locked while its card statement is paid/)).toBeInTheDocument()
     expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Card/)).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()

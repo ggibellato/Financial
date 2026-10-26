@@ -1123,6 +1123,7 @@ public class ExpenseServiceTests
         {
             _repository.Expenses.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.AddExpense");
         }
     }
 
@@ -1166,6 +1167,7 @@ public class ExpenseServiceTests
             expense.CreditCard!.Name.Should().Be("BaAmex");
             expense.InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
             _repository.SaveChangesCallCount.Should().Be(savesBefore);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.UpdateExpense");
         }
     }
 
@@ -1209,6 +1211,7 @@ public class ExpenseServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
         _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.UpdateExpense");
     }
 
     [Fact]
@@ -1280,6 +1283,7 @@ public class ExpenseServiceTests
         {
             _repository.Expenses.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(savesBefore);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.DeleteExpense");
         }
     }
 
