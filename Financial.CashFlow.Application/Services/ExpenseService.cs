@@ -40,7 +40,10 @@ public sealed class ExpenseService : IExpenseService
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
             expense.SetRoundUpAmount(request.RoundUpAmount);
-            EnsureStatementNotPaid(expense.CreditCard, expense.InvoiceDate);
+            if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements()))
+            {
+                throw new ArgumentException(PaidStatementMessage);
+            }
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddExpense(expense);
@@ -236,30 +239,19 @@ public sealed class ExpenseService : IExpenseService
 
     private void EnsurePaidStatementLocksHold(Expense expense, ExpenseUpdateDTO request, Account? paymentSource, Account? creditCard)
     {
-        var targetInvoiceDate = expense.InvoiceDateAfterUpdate(request.Date, creditCard, request.InvoiceDate);
-        var movesStatement = creditCard?.Id != expense.CreditCard?.Id || targetInvoiceDate != expense.InvoiceDate;
-
-        if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements())
-            && (movesStatement
-                || request.Date != expense.Date
-                || request.Value != expense.Value
-                || paymentSource?.Id != expense.PaymentSourceAccount?.Id
-                || request.RoundUpAmount != expense.RoundUpAmount))
+        var statements = _repository.GetCardStatements().ToList();
+        if (CardChargeFilter.IsOnPaidStatement(expense, statements)
+            && expense.ChangesLockedFields(request.Date, request.Value, paymentSource, creditCard, request.InvoiceDate, request.RoundUpAmount))
         {
             throw new ArgumentException(PaidStatementMessage);
         }
 
-        if (movesStatement)
-        {
-            EnsureStatementNotPaid(creditCard, targetInvoiceDate);
-        }
-    }
-
-    private void EnsureStatementNotPaid(Account? creditCard, DateOnly? invoiceDate)
-    {
-        if (creditCard is not null
-            && invoiceDate is { } date
-            && CardChargeFilter.IsStatementPaid(_repository.GetCardStatements(), creditCard, date.Year, date.Month))
+        var targetInvoiceDate = expense.InvoiceDateAfterUpdate(request.Date, creditCard, request.InvoiceDate);
+        var movesStatement = creditCard?.Id != expense.CreditCard?.Id || targetInvoiceDate != expense.InvoiceDate;
+        if (movesStatement
+            && creditCard is not null
+            && targetInvoiceDate is { } target
+            && CardChargeFilter.IsStatementPaid(statements, creditCard, target.Year, target.Month))
         {
             throw new ArgumentException(PaidStatementMessage);
         }

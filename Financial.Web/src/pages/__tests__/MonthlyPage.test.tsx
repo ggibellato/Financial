@@ -426,7 +426,7 @@ describe('MonthlyPage', () => {
 
     getCategoryTotalsByMonthMock.mockResolvedValue([{ category: 'Viagem', totalValue: 300 }])
     getCardStatementsByMonthMock.mockResolvedValue([
-      { id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit', year: 2026, month: 8, isPaid: false, outstandingTotal: 55, accumulatedOutstandingTotal: 55 },
+      { id: 'c3', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 8, isPaid: false, outstandingTotal: 55, accumulatedOutstandingTotal: 55 },
     ])
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
@@ -456,7 +456,7 @@ describe('MonthlyPage', () => {
 
     await waitFor(() => expect(screen.getByText('Viagem')).toBeInTheDocument())
     expect(screen.queryByText('Mercado')).not.toBeInTheDocument()
-    expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
+    expect(screen.getByText('BaAmex').closest('tr')).toHaveTextContent('55.00')
     expect(screen.getByText('Lottery')).toBeInTheDocument()
   })
 

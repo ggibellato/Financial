@@ -142,6 +142,15 @@ public class Expense : IAccountTransaction
         return invoiceMonthFollowsDate ? FirstOfMonth(date) : InvoiceDate;
     }
 
+    public bool ChangesLockedFields(
+        DateOnly date, decimal value, Account? paymentSourceAccount, Account? creditCard, DateOnly? requestedInvoiceDate, decimal? roundUpAmount) =>
+        date != Date
+        || value != Value
+        || paymentSourceAccount?.Id != PaymentSourceAccount?.Id
+        || creditCard?.Id != CreditCard?.Id
+        || InvoiceDateAfterUpdate(date, creditCard, requestedInvoiceDate) != InvoiceDate
+        || roundUpAmount != RoundUpAmount;
+
     public void Settle(Account paymentSourceAccount, DateOnly paymentDate)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)

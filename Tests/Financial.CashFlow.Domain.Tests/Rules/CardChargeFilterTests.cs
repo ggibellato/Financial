@@ -107,36 +107,27 @@ public class CardChargeFilterTests
     }
 
     [Fact]
-    public void IsPaid_ChargeSettledToABank_IsTrue()
+    public void IsOnPaidStatement_ChargeOnAPaidStatement_IsTrue()
     {
         var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
-        charge.Settle(_barclays, new DateOnly(2026, 10, 20));
 
-        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: false)]).Should().BeTrue();
+        CardChargeFilter.IsOnPaidStatement(charge, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeTrue();
     }
 
     [Fact]
-    public void IsPaid_ChargeOnAPaidStatement_IsTrue()
+    public void IsOnPaidStatement_ChargeOnAnUnpaidStatement_IsFalse()
     {
         var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
 
-        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeTrue();
+        CardChargeFilter.IsOnPaidStatement(charge, [Statement(_amex, 2026, 10, isPaid: false), Statement(_amex, 2026, 9, isPaid: true)]).Should().BeFalse();
     }
 
     [Fact]
-    public void IsPaid_ChargeOnAnUnpaidStatement_IsFalse()
+    public void IsOnPaidStatement_ChargeWithNoStatement_IsFalse()
     {
         var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
 
-        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: false), Statement(_amex, 2026, 9, isPaid: true)]).Should().BeFalse();
-    }
-
-    [Fact]
-    public void IsPaid_ChargeWithNoStatement_IsFalse()
-    {
-        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
-
-        CardChargeFilter.IsPaid(charge, []).Should().BeFalse();
+        CardChargeFilter.IsOnPaidStatement(charge, []).Should().BeFalse();
     }
 
     [Fact]

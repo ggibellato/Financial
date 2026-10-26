@@ -103,14 +103,17 @@ function Add-ParityBankFigures($Report, [string]$Month, [string]$Route, [scriptb
     $totals
 }
 
+function Add-ParityStatementFigures($Report, [string]$Prefix, $Statement) {
+    Add-ParityFigure $Report "$Prefix/outstandingTotal" $Statement.outstandingTotal
+    Add-ParityFigure $Report "$Prefix/accumulatedOutstandingTotal" $Statement.accumulatedOutstandingTotal
+    Add-ParityFigure $Report "$Prefix/isPaid" $Statement.isPaid
+    Add-ParityFigure $Report "$Prefix/warning" $Statement.warning
+}
+
 function Add-ParityCardFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
     $statements = & $Fetch "card-statements/$Route"
     foreach ($statement in $statements) {
-        $prefix = "$Month/cards/$($statement.creditCardName)"
-        Add-ParityFigure $Report "$prefix/outstandingTotal" $statement.outstandingTotal
-        Add-ParityFigure $Report "$prefix/accumulatedOutstandingTotal" $statement.accumulatedOutstandingTotal
-        Add-ParityFigure $Report "$prefix/isPaid" $statement.isPaid
-        Add-ParityFigure $Report "$prefix/warning" $statement.warning
+        Add-ParityStatementFigures $Report "$Month/cards/$($statement.creditCardName)" $statement
     }
     $unpaid = & $Fetch "expenses/month/$Route/unpaid-card-charges"
     Add-ParityFigure $Report "$Month/cards/unpaidChargesTotal" (Get-ParitySum $unpaid { param($e) $e.value })
@@ -127,10 +130,7 @@ function Add-ParityMissingCardStatementFigures($Report, [string[]]$Months, $Acco
         foreach ($month in $Months) {
             $prefix = "$month/cards/$($card.name)"
             if ($Report.ContainsKey("$prefix/outstandingTotal")) { continue }
-            Add-ParityFigure $Report "$prefix/outstandingTotal" ([decimal]0)
-            Add-ParityFigure $Report "$prefix/accumulatedOutstandingTotal" $accumulated
-            Add-ParityFigure $Report "$prefix/isPaid" $false
-            Add-ParityFigure $Report "$prefix/warning" $null
+            Add-ParityStatementFigures $Report $prefix @{ outstandingTotal = [decimal]0; accumulatedOutstandingTotal = $accumulated; isPaid = $false; warning = $null }
         }
     }
 }

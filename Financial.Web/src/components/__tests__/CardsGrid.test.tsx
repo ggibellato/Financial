@@ -31,7 +31,7 @@ describe('CardsGrid (Summary tab, no card management columns)', () => {
     setMarkPaidSource: vi.fn(),
     markStatementPaid: vi.fn(),
     unmarkStatementPaid: vi.fn(),
-    creditCards: [],
+    creditCards: CREDIT_CARDS,
   }
 
   it('renders a row per card with status and the footer adjustment total', () => {
@@ -84,11 +84,17 @@ describe('CardsGrid (Summary tab, no card management columns)', () => {
     expect(screen.queryByRole('button', { name: 'Mark Paid' })).not.toBeInTheDocument()
   })
 
-  it('keeps a row for a card that has a statement but is not in the card list', () => {
-    render(<CardsGrid {...statementProps} creditCards={[CREDIT_CARDS[0]]} />)
+  it('leaves out an inactive card that has no statement this month', () => {
+    render(<CardsGrid {...statementProps} />)
 
-    expect(screen.getByText('BaAmex')).toBeInTheDocument()
-    expect(screen.getByText('ChaseMaster4023')).toBeInTheDocument()
+    expect(screen.queryByText('PaypalCredit')).not.toBeInTheDocument()
+  })
+
+  it('keeps an inactive card that has a statement this month', () => {
+    const paypalStatement = { ...CARD_STATEMENTS[0], id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit' }
+    render(<CardsGrid {...statementProps} cardStatements={[...CARD_STATEMENTS, paypalStatement]} />)
+
+    expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
   })
 
   it('renders a statement action error as an alert', () => {
@@ -168,7 +174,7 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     unmarkStatementPaid: vi.fn(),
     creditCards: CREDIT_CARDS,
     updatingCardId: null,
-    updateError: null,
+    cardsError: null,
     onUpdateCreditCard: vi.fn(),
   }
 
@@ -247,7 +253,7 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
   })
 
   it('shows an update error as an accessible alert when present', () => {
-    render(<CardsGrid {...baseProps} updateError="Credit card was not found." />)
+    render(<CardsGrid {...baseProps} cardsError="Credit card was not found." />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Credit card was not found.')
   })
@@ -345,7 +351,7 @@ describe('CardsGrid paying bank', () => {
         setMarkPaidSource={vi.fn()}
         markStatementPaid={vi.fn()}
         unmarkStatementPaid={vi.fn()}
-        creditCards={[]}
+        creditCards={CREDIT_CARDS}
       />,
     )
   const payingBankOptions = () => optionNames(screen.getByLabelText('Paying bank for BaAmex'))

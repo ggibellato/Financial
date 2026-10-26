@@ -244,8 +244,8 @@ export default function MonthlyPage() {
                 setMarkPaidSource={setMarkPaidSource}
                 markStatementPaid={markStatementPaid}
                 unmarkStatementPaid={confirmAndUnmarkStatementPaid}
-                creditCards={activeCreditCards}
-                updateError={creditCardsData.error}
+                creditCards={creditCardsData.creditCards}
+                cardsError={creditCardsData.error}
               />
             </div>
             <div className="monthly-page__grids-row">
@@ -292,7 +292,7 @@ export default function MonthlyPage() {
                 unmarkStatementPaid={confirmAndUnmarkStatementPaid}
                 creditCards={creditCardsData.creditCards}
                 updatingCardId={creditCardsData.updatingCardId}
-                updateError={creditCardsData.error ?? creditCardsData.updateError}
+                cardsError={creditCardsData.error ?? creditCardsData.updateError}
                 onUpdateCreditCard={creditCardsData.updateCreditCard}
               />
 
