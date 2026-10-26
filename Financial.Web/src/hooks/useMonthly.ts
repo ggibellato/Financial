@@ -255,7 +255,7 @@ export function useMonthly(): MonthlyData {
     (id: string, paymentSourceBankId: string) => {
       dispatch({ type: 'STATEMENT_ACTION_START', payload: id })
       void apiClient
-        .markCardStatementPaid(id, { paymentSourceBankId })
+        .markCardStatementPaid(id, { paymentSourceBankId, date: null })
         .then(() => {
           dispatch({ type: 'STATEMENT_ACTION_SUCCESS' })
           void refreshSilently()

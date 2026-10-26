@@ -16,14 +16,17 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     private const string BarclaysId = "8f3b1c1a-2e3a-4b1a-9a7f-100000000001";
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string CasaId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000002";
+    private const string DizimoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000003";
     private const string AmexId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000001";
     private const string VisaId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000002";
     private const string SeptemberChargeId = "8f3b1c1a-2e3a-4b1a-9a7f-600000000001";
     private const string OctoberChargeId = "8f3b1c1a-2e3a-4b1a-9a7f-600000000002";
+    private const string SettledSeptemberChargeId = "8f3b1c1a-2e3a-4b1a-9a7f-600000000003";
     private const string SeptemberStatementId = "8f3b1c1a-2e3a-4b1a-9a7f-700000000001";
     private const string OctoberStatementId = "8f3b1c1a-2e3a-4b1a-9a7f-700000000002";
     private const string NovemberStatementId = "8f3b1c1a-2e3a-4b1a-9a7f-700000000003";
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
+    private const string PaymentTransferMessage = "This transfer pays a card statement; unmark the statement instead.";
 
     private const string SeededData = $$"""
         {
@@ -34,11 +37,13 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
           ],
           "Categories": [
             { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
-            { "Id": "{{CasaId}}", "Name": "Casa", "Active": true, "IsInvestment": false, "IsTithe": false }
+            { "Id": "{{CasaId}}", "Name": "Casa", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "{{DizimoId}}", "Name": "Dízimo", "Active": true, "IsInvestment": false, "IsTithe": true }
           ],
           "Expenses": [
             { "Id": "{{SeptemberChargeId}}", "Date": "2026-09-10", "Description": "September taxi", "Value": 10, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-09-10", "InvoiceDate": "2026-09-01", "RoundUpAmount": null, "CountsAsTithe": true },
-            { "Id": "{{OctoberChargeId}}", "Date": "2026-10-03", "Description": "Taxi", "Value": 30, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-10-03", "InvoiceDate": "2026-10-01", "RoundUpAmount": null, "CountsAsTithe": true }
+            { "Id": "{{OctoberChargeId}}", "Date": "2026-10-03", "Description": "Taxi", "Value": 30, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-10-03", "InvoiceDate": "2026-10-01", "RoundUpAmount": null, "CountsAsTithe": true },
+            { "Id": "{{SettledSeptemberChargeId}}", "Date": "2026-10-02", "Description": "Settled lunch", "Value": 7, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": "{{BarclaysId}}", "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-09-15", "InvoiceDate": "2026-09-01", "RoundUpAmount": null, "CountsAsTithe": true }
           ],
           "CardStatements": [
             { "Id": "{{SeptemberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 9, "IsPaid": true, "DueDate": "2026-10-03" },
@@ -60,6 +65,13 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
     private Task<HttpResponseMessage> MarkPaidAsync(string statementId) =>
         Client.PostAsJsonAsync($"{Api}/card-statements/{statementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = Guid.Parse(BarclaysId) });
+
+    private Task<HttpResponseMessage> MarkPaidAsync(string statementId, DateOnly date) =>
+        Client.PostAsJsonAsync(
+            $"{Api}/card-statements/{statementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = Guid.Parse(BarclaysId), Date = date });
+
+    private async Task<AccountDetailDTO> AccountAsync(string accountId) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/10"))!;
 
     private async Task<List<ExpenseDTO>> UnpaidChargesAsync(int month) =>
         (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/{month}/unpaid-card-charges"))!;
@@ -101,8 +113,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         {
             (await StatementsAsync(2026, 9))!.Should().ContainSingle().Which.IsPaid.Should().BeTrue();
             (await StatementsAsync(2026, 11))!.Should().ContainSingle().Which.IsPaid.Should().BeFalse();
-            var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/9");
-            expenses.Should().NotContain(expense => expense.PaymentStatus == "CreditCardSettled");
+            Services.GetRequiredService<ICashFlowRepository>().GetTransfers().Should().BeEmpty();
         }
     }
 
@@ -185,5 +196,173 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-01")]
+    public async Task MarkPaid_WritesOneTransferForTheTotal_AndLeavesChargesUntouched()
+    {
+        var repository = Services.GetRequiredService<ICashFlowRepository>();
+
+        var response = await MarkPaidAsync(OctoberStatementId, new DateOnly(2026, 10, 12));
+
+        var statement = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
+        var charge = (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10"))!
+            .Single(expense => expense.Id == Guid.Parse(OctoberChargeId));
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            statement!.IsPaid.Should().BeTrue();
+            statement.OutstandingTotal.Should().Be(0m);
+            var payment = repository.GetTransfers().Should().ContainSingle().Subject;
+            payment.SourceAccount.Id.Should().Be(Guid.Parse(BarclaysId));
+            payment.DestinationAccount.Id.Should().Be(Guid.Parse(AmexId));
+            payment.Amount.Should().Be(30m);
+            payment.Date.Should().Be(new DateOnly(2026, 10, 12));
+            payment.Note.Should().BeNull();
+            repository.GetCardStatements().Single(s => s.Id == Guid.Parse(OctoberStatementId)).PaymentTransferId.Should().Be(payment.Id);
+            charge.Date.Should().Be(new DateOnly(2026, 10, 3));
+            charge.CategoryName.Should().Be("Mercado");
+            charge.InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+            charge.PaymentSourceBankId.Should().BeNull();
+            charge.PaymentStatus.Should().Be("CreditCardStatementPaid");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-02")]
+    public async Task MarkPaid_CardOwedDropsByTheTotal_AndTheBankPaysIt()
+    {
+        var cardBefore = await AccountAsync(AmexId);
+        var bankBefore = await AccountAsync(BarclaysId);
+
+        await MarkPaidAsync(OctoberStatementId);
+
+        using (new AssertionScope())
+        {
+            cardBefore.Balance.Should().Be(-40m);
+            bankBefore.Balance.Should().Be(993m);
+            (await AccountAsync(AmexId)).Balance.Should().Be(-10m);
+            (await AccountAsync(BarclaysId)).Balance.Should().Be(963m);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-03")]
+    public async Task CategoryTotalsAndTithe_CountChargesInStatementMonth_PaidOrNot()
+    {
+        await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 9, 28),
+            Description = "Offering",
+            Value = 50m,
+            CategoryId = Guid.Parse(DizimoId),
+            CreditCardId = Guid.Parse(AmexId),
+            InvoiceDate = new DateOnly(2026, 10, 1)
+        });
+        var unpaid = await StatementMonthFiguresAsync();
+
+        await MarkPaidAsync(OctoberStatementId);
+        var paid = await StatementMonthFiguresAsync();
+
+        using (new AssertionScope())
+        {
+            foreach (var (october, september, tithe) in new[] { unpaid, paid })
+            {
+                october.Should().BeEquivalentTo(new Dictionary<string, decimal> { ["Mercado"] = 30m, ["Dízimo"] = 50m });
+                september.Should().NotContainKey("Dízimo");
+                tithe.Should().Be(-50m);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-06")]
+    public async Task Unmark_TransferPaid_DeletesTransfer()
+    {
+        var repository = Services.GetRequiredService<ICashFlowRepository>();
+        await MarkPaidAsync(OctoberStatementId);
+
+        var response = await Client.PostAsync($"{Api}/card-statements/{OctoberStatementId}/unmark-paid", null);
+
+        var statement = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            statement!.IsPaid.Should().BeFalse();
+            statement.OutstandingTotal.Should().Be(30m);
+            repository.GetTransfers().Should().BeEmpty();
+            repository.GetCardStatements().Single(s => s.Id == Guid.Parse(OctoberStatementId)).PaymentTransferId.Should().BeNull();
+            (await AccountAsync(BarclaysId)).Balance.Should().Be(993m);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-06")]
+    public async Task Unmark_LegacyPaid_RestoresTodaysReversal()
+    {
+        var response = await Client.PostAsync($"{Api}/card-statements/{SeptemberStatementId}/unmark-paid", null);
+
+        var statement = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
+        var unpaid = await UnpaidChargesAsync(9);
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            statement!.IsPaid.Should().BeFalse();
+            statement.OutstandingTotal.Should().Be(17m);
+            unpaid.Select(charge => (charge.Id.ToString(), charge.Date, charge.PaymentSourceBankId)).Should().BeEquivalentTo(new[]
+            {
+                (SeptemberChargeId, new DateOnly(2026, 9, 10), (Guid?)null),
+                (SettledSeptemberChargeId, new DateOnly(2026, 9, 15), (Guid?)null)
+            });
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
+    public async Task PaymentTransfer_HiddenFromTransfers_AndEditOrDeleteReturns409()
+    {
+        var repository = Services.GetRequiredService<ICashFlowRepository>();
+        await MarkPaidAsync(OctoberStatementId);
+        var paymentId = repository.GetTransfers().Single().Id;
+
+        var monthList = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/month/2026/10");
+        var bankList = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/bank/{BarclaysId}");
+        var refusals = new[]
+        {
+            await Client.PutAsJsonAsync($"{Api}/transfers/{paymentId}", new TransferUpdateDTO
+            {
+                Date = new DateOnly(2026, 10, 15), SourceBankId = Guid.Parse(BarclaysId), DestinationBankId = Guid.Parse(AmexId), Amount = 1m
+            }),
+            await Client.DeleteAsync($"{Api}/transfers/{paymentId}"),
+            await Client.PutAsJsonAsync($"{Api}/accounts/transfers/{paymentId}", new AccountTransferUpdateDTO
+            {
+                Date = new DateOnly(2026, 10, 15), SourceAccountId = Guid.Parse(BarclaysId), DestinationAccountId = Guid.Parse(AmexId), Amount = 1m
+            }),
+            await Client.DeleteAsync($"{Api}/accounts/transfers/{paymentId}")
+        };
+
+        foreach (var refused in refusals)
+        {
+            await ShouldBeRefused(refused, HttpStatusCode.Conflict, PaymentTransferMessage);
+        }
+
+        using (new AssertionScope())
+        {
+            monthList.Should().BeEmpty();
+            bankList.Should().BeEmpty();
+            repository.GetTransfers().Should().ContainSingle().Which.Amount.Should().Be(30m);
+        }
+    }
+
+    private async Task<(Dictionary<string, decimal> October, Dictionary<string, decimal> September, decimal OctoberTithe)> StatementMonthFiguresAsync()
+    {
+        var october = await Client.GetFromJsonAsync<List<CategoryTotalDTO>>($"{Api}/expenses/month/2026/10/category-totals");
+        var september = await Client.GetFromJsonAsync<List<CategoryTotalDTO>>($"{Api}/expenses/month/2026/9/category-totals");
+        var tithe = await Client.GetFromJsonAsync<TitheSummaryDTO>($"{Api}/tithe/month/2026/10");
+        return (
+            october!.ToDictionary(total => total.Category, total => total.TotalValue),
+            september!.ToDictionary(total => total.Category, total => total.TotalValue),
+            tithe!.TitheBalance);
     }
 }

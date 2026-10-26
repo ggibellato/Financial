@@ -11,6 +11,8 @@ public class CardStatement
     public int Month { get; private set; }
     public bool IsPaid { get; private set; }
     public DateOnly? DueDate { get; private set; }
+    public Guid? PaymentTransferId { get; private set; }
+    public bool IsPaidByTransfer => PaymentTransferId is not null;
 
     private CardStatement() { }
 
@@ -32,14 +34,16 @@ public class CardStatement
 
     public bool IsAfter(int year, int month) => (Year, Month).CompareTo((year, month)) > 0;
 
-    public void MarkPaid()
+    public void MarkPaidBy(Guid paymentTransferId)
     {
         IsPaid = true;
+        PaymentTransferId = paymentTransferId;
     }
 
     public void MarkUnpaid()
     {
         IsPaid = false;
+        PaymentTransferId = null;
     }
 
     public void SetDueDate(DateOnly? dueDate)

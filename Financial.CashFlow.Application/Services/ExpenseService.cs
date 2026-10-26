@@ -14,6 +14,7 @@ public sealed class ExpenseService : IExpenseService
 {
     private const string EntityType = "Expense";
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
+    private const string StatementPaidStatus = "CreditCardStatementPaid";
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -56,7 +57,7 @@ public sealed class ExpenseService : IExpenseService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, expense.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddExpense");
-            return ToDto(expense);
+            return ToDto(expense, _repository.GetCardStatements());
         }
         catch (Exception ex)
         {
@@ -103,7 +104,7 @@ public sealed class ExpenseService : IExpenseService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateExpense");
-            return ToDto(expense);
+            return ToDto(expense, _repository.GetCardStatements());
         }
         catch (Exception ex)
         {
@@ -150,11 +151,12 @@ public sealed class ExpenseService : IExpenseService
         using var span = StartSpan("GetExpensesByMonth");
         try
         {
+            var statements = _repository.GetCardStatements().ToList();
             var result = _repository.GetExpenses()
                 .Where(e => e.ListingDate.Year == year && e.ListingDate.Month == month)
-                .Where(e => e.PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
+                .Where(e => !IsUnpaidCharge(e, statements))
                 .OrderByDescending(e => e.ListingDate)
-                .Select(ToDto)
+                .Select(e => ToDto(e, statements))
                 .ToList();
 
             span.MarkSuccess();
@@ -173,14 +175,15 @@ public sealed class ExpenseService : IExpenseService
         using var span = StartSpan("GetUnpaidCardChargesByMonth");
         try
         {
+            var statements = _repository.GetCardStatements().ToList();
             var result = _repository.GetExpenses()
                 .Where(e => e.ListingDate.Year == year && e.ListingDate.Month == month)
-                .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge)
+                .Where(e => IsUnpaidCharge(e, statements))
                 // Every unpaid charge in a given month shares the same InvoiceDate (the 1st of that
                 // month), so ordering by ListingDate here is a no-op tie that leaves rows in
                 // repository storage order. Order by the actual charge date instead.
                 .OrderByDescending(e => e.ChargeDate ?? e.Date)
-                .Select(ToDto)
+                .Select(e => ToDto(e, statements))
                 .ToList();
 
             span.MarkSuccess();
@@ -282,7 +285,13 @@ public sealed class ExpenseService : IExpenseService
         return (category, parsedPaymentSourceBank, parsedCreditCard);
     }
 
-    internal static ExpenseDTO ToDto(Expense expense) => new()
+    private static bool IsUnpaidCharge(Expense expense, IEnumerable<CardStatement> statements) =>
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && !CardChargeFilter.IsPaidThroughStatement(expense, statements);
+
+    private static string PaymentStatusOf(Expense expense, IEnumerable<CardStatement> statements) =>
+        CardChargeFilter.IsPaidThroughStatement(expense, statements) ? StatementPaidStatus : expense.PaymentStatus.ToString();
+
+    internal static ExpenseDTO ToDto(Expense expense, IEnumerable<CardStatement> statements) => new()
     {
         Id = expense.Id,
         Date = expense.Date,
@@ -296,7 +305,7 @@ public sealed class ExpenseService : IExpenseService
         CreditCardName = expense.CreditCard?.Name,
         ChargeDate = expense.ChargeDate,
         InvoiceDate = expense.InvoiceDate,
-        PaymentStatus = expense.PaymentStatus.ToString(),
+        PaymentStatus = PaymentStatusOf(expense, statements),
         RoundUpAmount = expense.RoundUpAmount,
         SuggestedRoundUpAmount = expense.SuggestedRoundUpAmount,
         CountsAsTithe = expense.CountsAsTithe

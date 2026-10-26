@@ -54,7 +54,14 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
 
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesOmittedWhenNull =
     [
-        (typeof(Transfer), nameof(Transfer.DestinationAmount))
+        (typeof(Transfer), nameof(Transfer.DestinationAmount)),
+        (typeof(CardStatement), nameof(CardStatement.PaymentTransferId))
+    ];
+
+    private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesNeverWritten =
+    [
+        (typeof(CardStatement), nameof(CardStatement.IsPaidByTransfer)),
+        (typeof(Transfer), nameof(Transfer.IsStatementPayment))
     ];
 
     private readonly ReferenceResolutionContext? _context;
@@ -83,6 +90,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         {
             ReflectionJsonTypeInfoHelpers.WirePropertySetter(type, jsonProp);
             OmitWhenNull(type, jsonProp);
+            NeverWrite(type, jsonProp);
             ConfigureReferenceProperty(type, jsonProp);
         }
     }
@@ -91,6 +99,12 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     {
         if (PropertiesOmittedWhenNull.Contains((type, jsonProp.Name)))
             jsonProp.ShouldSerialize = static (_, value) => value is not null;
+    }
+
+    private static void NeverWrite(Type type, JsonPropertyInfo jsonProp)
+    {
+        if (PropertiesNeverWritten.Contains((type, jsonProp.Name)))
+            jsonProp.ShouldSerialize = static (_, _) => false;
     }
 
     private void ConfigureReferenceProperty(Type type, JsonPropertyInfo jsonProp)

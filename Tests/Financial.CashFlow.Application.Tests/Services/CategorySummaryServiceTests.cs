@@ -185,7 +185,8 @@ public class CategorySummaryServiceTests
         var mercado = result.CategoryTotals.Single(c => c.Category == "Mercado");
         using (new AssertionScope())
         {
-            repository.Expenses.Should().OnlyContain(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled && e.Date == new DateOnly(2026, 8, 3));
+            repository.Transfers.Should().ContainSingle().Which.Date.Should().Be(new DateOnly(2026, 8, 3));
+            repository.Expenses.Should().OnlyContain(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);
             mercado.MonthlyTotals[6].Should().Be(50m);
             mercado.MonthlyTotals[7].Should().Be(0m);
             result.TotalDespesasMonthly[6].Should().Be(50m);

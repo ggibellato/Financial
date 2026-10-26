@@ -390,6 +390,40 @@ describe('useExpenseForm', () => {
     )
   })
 
+  it('treats a charge paid through its statement as a settled card charge and saves it unchanged', async () => {
+    const statementPaid: ExpenseDto = {
+      ...EXPENSE,
+      id: 'e5',
+      paymentSourceBankId: null,
+      paymentSourceBankName: null,
+      creditCardId: 'card-baamex',
+      creditCardName: 'BaAmex',
+      chargeDate: EXPENSE.date,
+      invoiceDate: `${EXPENSE.date.slice(0, 7)}-01`,
+      paymentStatus: 'CreditCardStatementPaid',
+    }
+    updateExpenseMock.mockResolvedValue(statementPaid)
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+
+    act(() => result.current.showEditForm(statementPaid))
+    expect(result.current.isSettled).toBe(true)
+    expect(result.current.paymentMode).toBe('card')
+
+    act(() => result.current.setField('description', 'Renamed'))
+    await act(() => result.current.submit())
+
+    expect(updateExpenseMock).toHaveBeenCalledWith(
+      'e5',
+      expect.objectContaining({
+        description: 'Renamed',
+        date: EXPENSE.date,
+        paymentSourceBankId: null,
+        creditCardId: 'card-baamex',
+        invoiceDate: `${EXPENSE.date.slice(0, 7)}-01`,
+      }),
+    )
+  })
+
   it('picking a round-up-enabled bank auto-suggests when the field is blank', () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
 

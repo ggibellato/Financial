@@ -333,4 +333,95 @@ public class TransferTests
             transfer.ContributionTo(_itau).Should().Be(640.50m);
         }
     }
+
+    [Fact]
+    public void CreateStatementPayment_BankToCard_AssignsFieldsWithNoNoteOrDestinationAmount()
+    {
+        var card = TestAccounts.CreditCard("Amex");
+
+        var payment = Transfer.CreateStatementPayment(Date, _barclays, card, 512.30m, Today);
+
+        using (new AssertionScope())
+        {
+            payment.Id.Should().NotBeEmpty();
+            payment.Date.Should().Be(Date);
+            payment.SourceAccount.Should().Be(_barclays);
+            payment.DestinationAccount.Should().Be(card);
+            payment.Amount.Should().Be(512.30m);
+            payment.Note.Should().BeNull();
+            payment.DestinationAmount.Should().BeNull();
+            payment.IsStatementPayment.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void CreateStatementPayment_InactiveCard_Succeeds()
+    {
+        var closedCard = TestAccounts.CreditCard("Closed card", isActive: false);
+
+        var payment = Transfer.CreateStatementPayment(Date, _barclays, closedCard, 40m, Today);
+
+        payment.DestinationAccount.Should().Be(closedCard);
+    }
+
+    [Fact]
+    public void CreateStatementPayment_InactiveBank_Throws()
+    {
+        var act = () => Transfer.CreateStatementPayment(Date, _closed, TestAccounts.CreditCard("Amex"), 40m, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+    }
+
+    [Fact]
+    public void CreateStatementPayment_BankToBank_Throws()
+    {
+        var act = () => Transfer.CreateStatementPayment(Date, _barclays, _chase, 40m, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Transfers from Barclays to Chase are not allowed.");
+    }
+
+    [Fact]
+    public void CreateStatementPayment_CardAsPayer_Throws()
+    {
+        var amex = TestAccounts.CreditCard("Amex");
+        var visa = TestAccounts.CreditCard("Visa");
+
+        var act = () => Transfer.CreateStatementPayment(Date, amex, visa, 40m, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Transfers from Amex to Visa are not allowed.");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CreateStatementPayment_NonPositiveAmount_Throws(decimal amount)
+    {
+        var act = () => Transfer.CreateStatementPayment(Date, _barclays, TestAccounts.CreditCard("Amex"), amount, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Transfer amount must be greater than zero.");
+    }
+
+    [Fact]
+    public void CreateStatementPayment_DatedTomorrow_Throws()
+    {
+        var act = () => Transfer.CreateStatementPayment(Today.AddDays(1), _barclays, TestAccounts.CreditCard("Amex"), 40m, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+    }
+
+    [Fact]
+    public void IsStatementPayment_BankToBankTransfer_IsFalse()
+    {
+        CreateValidTransfer().IsStatementPayment.Should().BeFalse();
+    }
+
+    [Fact]
+    public void CreateStatementPayment_BankInAnotherCurrency_ThrowsWithTheCardsCurrency()
+    {
+        var itauPayer = Account.CreateWithCapabilities("Itaú payer", Currency.BRL, AccountTemplates.CapabilitiesOf(AccountTemplate.Bank));
+
+        var act = () => Transfer.CreateStatementPayment(Date, itauPayer, TestAccounts.CreditCard("Amex"), 40m, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("The paying account must be in the card's currency (GBP).");
+    }
 }

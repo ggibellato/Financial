@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
@@ -66,7 +67,7 @@ public sealed class AccountTransferService : IAccountTransferService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var transfer = FindTransferOrThrow(id);
+            var transfer = FindEditableTransferOrThrow(id);
             var (source, destination) = ResolveAccounts(request.SourceAccountId, request.DestinationAccountId);
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -94,7 +95,7 @@ public sealed class AccountTransferService : IAccountTransferService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            FindTransferOrThrow(id);
+            FindEditableTransferOrThrow(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -146,8 +147,12 @@ public sealed class AccountTransferService : IAccountTransferService
         return _tracer.StartServiceSpan("CashFlow", nameof(AccountTransferService), operationName, EntityType);
     }
 
-    private Transfer FindTransferOrThrow(Guid id) =>
-        _repository.GetTransfers().FirstOrThrow(t => t.Id == id, EntityType, id);
+    private Transfer FindEditableTransferOrThrow(Guid id)
+    {
+        var transfer = _repository.GetTransfers().FirstOrThrow(t => t.Id == id, EntityType, id);
+        StatementPaymentConflictException.ThrowIfStatementPayment(transfer);
+        return transfer;
+    }
 
     private (Account Source, Account Destination) ResolveAccounts(Guid sourceAccountId, Guid destinationAccountId)
     {

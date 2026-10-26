@@ -72,7 +72,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task MarkStatementPaid_WithPaymentSource_SettlesChargesAndZeroesOutstandingTotal()
+    public async Task MarkStatementPaid_WithPaymentSource_ZeroesOutstandingTotalAndListsTheChargeAsStatementPaid()
     {
         await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -95,11 +95,10 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
         updated.OutstandingTotal.Should().Be(0m);
 
         var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
-        var settled = expenses!.Single(e => e.Description == "Card charge");
-        settled.PaymentStatus.Should().Be("CreditCardSettled");
-        settled.PaymentSourceBankId.Should().Be(Trading212Id);
-        settled.PaymentSourceBankName.Should().Be("Trading212");
-        settled.Date.Should().Be(TestClock.Today);
+        var paid = expenses!.Single(e => e.Description == "Card charge");
+        paid.PaymentStatus.Should().Be("CreditCardStatementPaid");
+        paid.PaymentSourceBankId.Should().BeNull();
+        paid.Date.Should().Be(new DateOnly(2026, 7, 10));
     }
 
     [Fact]

@@ -6,6 +6,7 @@ import {
   TableHeader,
   TableHeaderCell,
   TableRow,
+  Tooltip,
   makeStyles,
   tokens,
 } from '@fluentui/react-components'
@@ -35,7 +36,20 @@ interface ExpenseRowProps {
   onDelete: (id: string) => void
 }
 
+const STATEMENT_LOCKED_STATUSES = ['CreditCardSettled', 'CreditCardStatementPaid']
+
 function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
+  const isOnPaidStatement = STATEMENT_LOCKED_STATUSES.includes(expense.paymentStatus)
+  const deleteButton = (
+    <Button
+      appearance="subtle"
+      size="small"
+      icon={<DeleteRegular />}
+      aria-label="Delete expense"
+      disabledFocusable={isOnPaidStatement}
+      onClick={() => onDelete(expense.id)}
+    />
+  )
   return (
     <TableRow>
       <DataTableCell label="Date">{formatShortDate(expense.date)}</DataTableCell>
@@ -46,7 +60,7 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
       <DataTableCell label="Value" className="data-table__col--numeric">
         {formatN2(expense.value)}
       </DataTableCell>
-      <DataTableCell label="Bank"><TruncatedText text={expense.paymentSourceBankName} /></DataTableCell>
+      <DataTableCell label="Paid from"><TruncatedText text={paidFromOf(expense)} /></DataTableCell>
       <DataTableCell label="Card"><TruncatedText text={expense.creditCardName ?? '—'} /></DataTableCell>
       <TableCell className="data-table__col--action">
         <div className="data-table__actions-cell">
@@ -57,13 +71,13 @@ function ExpenseRow({ expense, onEdit, onDelete }: ExpenseRowProps) {
             aria-label="Edit expense"
             onClick={() => onEdit(expense)}
           />
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<DeleteRegular />}
-            aria-label="Delete expense"
-            onClick={() => onDelete(expense.id)}
-          />
+          {isOnPaidStatement ? (
+            <Tooltip content="Unmark the statement to delete this charge" relationship="description">
+              {deleteButton}
+            </Tooltip>
+          ) : (
+            deleteButton
+          )}
         </div>
       </TableCell>
     </TableRow>
@@ -77,18 +91,22 @@ interface ExpensesSectionProps {
   onNewExpense: () => void
 }
 
+function paidFromOf(expense: ExpenseDto) {
+  return expense.paymentSourceBankName ?? expense.creditCardName
+}
+
 const SORT_ACCESSORS: Record<string, SortAccessor<ExpenseDto>> = {
   date: (expense) => new Date(expense.date),
   description: (expense) => expense.description,
   category: (expense) => expense.categoryName,
   value: (expense) => expense.value,
-  bank: (expense) => expense.paymentSourceBankName,
+  bank: paidFromOf,
   card: (expense) => expense.creditCardName,
 }
 
 const FILTER_ACCESSORS = {
   category: (expense: ExpenseDto) => expense.categoryName,
-  bank: (expense: ExpenseDto) => expense.paymentSourceBankName,
+  bank: paidFromOf,
   card: (expense: ExpenseDto) => expense.creditCardName,
 }
 
@@ -146,14 +164,14 @@ export default function ExpensesSection({ expenses, onEdit, onDelete, onNewExpen
                 onSort={requestSort}
               />
               <SortableColumnHeader
-                label="Bank"
+                label="Paid from"
                 columnKey="bank"
                 sortDirection={sortState?.columnKey === 'bank' ? sortState.direction : undefined}
                 onSort={requestSort}
               >
                 <ColumnFilterMenu
                   columnKey="bank"
-                  label="Bank"
+                  label="Paid from"
                   availableValues={availableValues.bank}
                   selectedValues={selectedValues.bank}
                   onToggleValue={toggleValue}

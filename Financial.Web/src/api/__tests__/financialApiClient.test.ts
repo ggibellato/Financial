@@ -2537,7 +2537,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts a mark-card-statement-paid request', async () => {
-    const requestBody: MarkCardStatementPaidDto = { paymentSourceBankId: 'bank-barclays' }
+    const requestBody: MarkCardStatementPaidDto = { paymentSourceBankId: 'bank-barclays', date: null }
     const responseBody: CardStatementDto = {
       id: 'cs1',
       creditCardId: 'card-baamex',

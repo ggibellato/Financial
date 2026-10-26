@@ -13,6 +13,7 @@ public class CashFlowDataConverterTests
     private const string AmexId = "5db5c88d-0000-0000-0000-000000000501";
     private const string RetiredId = "5db5c88d-0000-0000-0000-000000000502";
     private const string CategoryId = "5db5c88d-0000-0000-0000-000000000201";
+    private const string PaymentId = "5db5c88d-0000-0000-0000-000000000701";
 
     private const string V3File =
         "{\"ReserveBuckets\":[],"
@@ -29,6 +30,15 @@ public class CashFlowDataConverterTests
         + "\"Categories\":[{\"Id\":\"" + CategoryId + "\",\"Name\":\"Mercado\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false}],"
         + "\"Transfers\":[],\"BalanceAdjustments\":[],\"TitheCarryForwards\":[],\"TitheCarryForwardEffectiveFrom\":null,\"Version\":3}";
 
+    private const string UnpaidOctoberStatement = "\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null}";
+    private const string PaidOctoberStatement = "\"Year\":2026,\"Month\":10,\"IsPaid\":true,\"DueDate\":null,\"PaymentTransferId\":\"" + PaymentId + "\"}";
+
+    private static readonly string V3FileWithPayment = V3File
+        .Replace(UnpaidOctoberStatement, PaidOctoberStatement)
+        .Replace(
+            "\"Transfers\":[]",
+            "\"Transfers\":[{\"Id\":\"" + PaymentId + "\",\"Date\":\"2026-11-12\",\"SourceAccountId\":\"" + BarclaysId + "\",\"DestinationAccountId\":\"" + AmexId + "\",\"Amount\":30.5,\"Note\":null}]");
+
     private readonly CashFlowSerializerAdapter _serializer = new();
 
     [Fact]
@@ -37,6 +47,35 @@ public class CashFlowDataConverterTests
         var saved = _serializer.Serialize(_serializer.Deserialize(V3File));
 
         saved.Should().Be(V3File);
+    }
+
+    [Fact]
+    public void LoadAndSave_StatementPaidByTransfer_IsByteIdentical()
+    {
+        var saved = _serializer.Serialize(_serializer.Deserialize(V3FileWithPayment));
+
+        using (new AssertionScope())
+        {
+            V3FileWithPayment.Should().Contain("\"PaymentTransferId\"");
+            saved.Should().Be(V3FileWithPayment);
+        }
+    }
+
+    [Fact]
+    public void Load_StatementPaidByTransfer_LinksTheStatementToItsPayment()
+    {
+        var data = _serializer.Deserialize(V3FileWithPayment);
+
+        using (new AssertionScope())
+        {
+            var statement = data.CardStatements.Single(s => s.Month == 10);
+            statement.IsPaid.Should().BeTrue();
+            statement.PaymentTransferId.Should().Be(Guid.Parse(PaymentId));
+            var payment = data.Transfers.Single();
+            payment.IsStatementPayment.Should().BeTrue();
+            payment.Amount.Should().Be(30.5m);
+            data.CardStatements.Single(s => s.Month == 11).PaymentTransferId.Should().BeNull();
+        }
     }
 
     [Fact]

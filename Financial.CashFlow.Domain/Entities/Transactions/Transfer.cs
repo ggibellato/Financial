@@ -1,4 +1,5 @@
 using System;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 
@@ -15,6 +16,7 @@ public class Transfer : IAccountTransaction
     public decimal Amount { get; private set; }
     public string? Note { get; private set; }
     public decimal? DestinationAmount { get; private set; }
+    public bool IsStatementPayment => DestinationAccount.Has(Capability.ReceivesPayments);
 
     private Transfer() { }
 
@@ -32,6 +34,28 @@ public class Transfer : IAccountTransaction
         return transfer;
     }
 
+    public static Transfer CreateStatementPayment(DateOnly date, Account bank, Account card, decimal amount, DateOnly today)
+    {
+        EnsurePairIsValid(bank, card, TransferPairRules.StatementPayment);
+        ActiveAccountRule.EnsureUsable(null, bank);
+        if (bank.Currency != card.Currency)
+        {
+            throw new ArgumentException($"The paying account must be in the card's currency ({card.Currency}).");
+        }
+
+        EnsureAmountsAreValid(amount, null, bank.Currency, card.Currency);
+        EnsureDateAndNoteAreValid(date, null, today);
+
+        return new Transfer
+        {
+            Id = Guid.NewGuid(),
+            Date = date,
+            SourceAccount = bank,
+            DestinationAccount = card,
+            Amount = amount
+        };
+    }
+
     public void UpdateDetails(
         DateOnly date,
         Account sourceAccount,
@@ -41,7 +65,7 @@ public class Transfer : IAccountTransaction
         string? note,
         DateOnly today)
     {
-        EnsurePairIsValid(sourceAccount, destinationAccount);
+        EnsurePairIsValid(sourceAccount, destinationAccount, TransferPairRules.Default);
         ActiveAccountRule.EnsureUsable(SourceAccount, sourceAccount);
         ActiveAccountRule.EnsureUsable(DestinationAccount, destinationAccount);
         EnsureAmountsAreValid(amount, destinationAmount, sourceAccount.Currency, destinationAccount.Currency);
@@ -60,7 +84,7 @@ public class Transfer : IAccountTransaction
     public decimal ContributionTo(Account account) =>
         (DestinationAccount.Id == account.Id ? AmountReceived() : 0m) - (SourceAccount.Id == account.Id ? Amount : 0m);
 
-    private static void EnsurePairIsValid(Account sourceAccount, Account destinationAccount)
+    private static void EnsurePairIsValid(Account sourceAccount, Account destinationAccount, TransferPairRules pairRules)
     {
         if (sourceAccount is null)
         {
@@ -77,7 +101,7 @@ public class Transfer : IAccountTransaction
             throw new ArgumentException("Source and destination must be different accounts.");
         }
 
-        if (!TransferPairRules.Default.Allows(sourceAccount, destinationAccount))
+        if (!pairRules.Allows(sourceAccount, destinationAccount))
         {
             throw new ArgumentException($"Transfers from {sourceAccount.Name} to {destinationAccount.Name} are not allowed.");
         }

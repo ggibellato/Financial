@@ -15,6 +15,7 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class CardStatementService : ICardStatementService
 {
     private const string EntityType = "CardStatement";
+    private const string PaymentChangedElsewhereMessage = "The payment for this statement was changed elsewhere. Reload and try again.";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -81,22 +82,20 @@ public sealed class CardStatementService : ICardStatementService
 
             bank!.EnsureCanPay();
 
-            var charges = UnpaidCharges(statement);
-            if (charges.Sum(charge => charge.Value) <= 0)
+            var total = CardChargeFilter.OutstandingTotal(
+                _repository.GetExpenses(), _repository.GetCardStatements(), statement.CreditCard, statement.Year, statement.Month);
+            if (total <= 0)
             {
                 throw new ArgumentException("There is nothing to pay on this statement.");
             }
 
-            var settledAt = _timeProvider.GetLocalToday();
+            var today = _timeProvider.GetLocalToday();
+            var payment = Transfer.CreateStatementPayment(request.Date ?? today, bank!, statement.CreditCard, total, today);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                statement.MarkPaid();
-                foreach (var charge in charges)
-                {
-                    charge.Settle(bank!, settledAt);
-                }
-
+                _repository.AddTransfer(payment);
+                statement.MarkPaidBy(payment.Id);
                 return true;
             }).ConfigureAwait(false);
 
@@ -124,20 +123,8 @@ public sealed class CardStatementService : ICardStatementService
                 throw new StatementPaymentConflictException("This statement is not paid.");
             }
 
-            var settledExpenses = CardChargeFilter.ChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month)
-                .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
-                .ToList();
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                statement.MarkUnpaid();
-                foreach (var expense in settledExpenses)
-                {
-                    expense.Unsettle();
-                }
-
-                return true;
-            }).ConfigureAwait(false);
+            await _repository.ApplyAndSaveAsync(statement.IsPaidByTransfer ? TransferPaymentReversal(statement) : LegacyPaymentReversal(statement))
+                .ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UnmarkStatementPaid");
@@ -171,8 +158,39 @@ public sealed class CardStatementService : ICardStatementService
     private CardStatement FindStatementOrThrow(Guid id) =>
         _repository.GetCardStatements().FirstOrThrow(s => s.Id == id, "Card statement", id);
 
-    private List<Expense> UnpaidCharges(CardStatement statement) =>
-        CardChargeFilter.UnpaidChargesFor(_repository.GetExpenses(), _repository.GetCardStatements(), statement.CreditCard, statement.Year, statement.Month).ToList();
+    private Func<bool> TransferPaymentReversal(CardStatement statement)
+    {
+        var paymentId = statement.PaymentTransferId!.Value;
+        if (!_repository.GetTransfers().Any(transfer => transfer.Id == paymentId))
+        {
+            throw new StatementPaymentConflictException(PaymentChangedElsewhereMessage);
+        }
+
+        return () =>
+        {
+            _repository.DeleteTransfer(paymentId);
+            statement.MarkUnpaid();
+            return true;
+        };
+    }
+
+    private Func<bool> LegacyPaymentReversal(CardStatement statement)
+    {
+        var settledCharges = CardChargeFilter.ChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month)
+            .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+            .ToList();
+
+        return () =>
+        {
+            statement.MarkUnpaid();
+            foreach (var charge in settledCharges)
+            {
+                charge.Unsettle();
+            }
+
+            return true;
+        };
+    }
 
     private static decimal OutstandingTotal(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, CardStatement statement) =>
         CardChargeFilter.OutstandingTotal(expenses, statements, statement.CreditCard, statement.Year, statement.Month);

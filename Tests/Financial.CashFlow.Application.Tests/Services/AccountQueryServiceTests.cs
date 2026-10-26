@@ -375,4 +375,38 @@ public class AccountQueryServiceTests
             detail.TemplateName.Should().Be("CreditCard");
         }
     }
+
+    [Fact]
+    public void GetTransactions_StatementPayment_IsListedOnTheBankButCannotBeEdited()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Transfers.Add(Transfer.CreateStatementPayment(new DateOnly(2026, 10, 20), _barclays, _amex, 30m, Today));
+
+        var row = _sut.GetTransactions(_barclays.Id, 2026, 10).Should().ContainSingle().Subject;
+
+        using (new AssertionScope())
+        {
+            row.Kind.Should().Be("TransferOut");
+            row.Counterpart.Should().Be("Amex");
+            row.Amount.Should().Be(-30m);
+            row.CanEdit.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-02")]
+    public void GetAccount_CardAfterAStatementPayment_OwesItsChargesLessThePayment()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 9, 12), "September", 9m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex)]);
+        _repository.Transfers.Add(Transfer.CreateStatementPayment(new DateOnly(2026, 10, 20), _barclays, _amex, 30m, Today));
+
+        using (new AssertionScope())
+        {
+            _sut.GetAccount(_amex.Id, 2026, 10).Balance.Should().Be(-9m);
+            _sut.GetAccount(_barclays.Id, 2026, 10).Balance.Should().Be(970m);
+        }
+    }
 }

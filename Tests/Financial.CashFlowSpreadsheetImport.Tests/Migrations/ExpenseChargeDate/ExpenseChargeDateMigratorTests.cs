@@ -67,7 +67,7 @@ public class ExpenseChargeDateMigratorTests
         var data = CashFlowData.Create();
         var card = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var statement = CardStatement.Create(card, 2026, 7);
-        statement.MarkPaid();
+        statement.MarkLegacyPaid();
         data.AddCardStatement(statement);
         var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10), card, TestAccounts.Bank("Barclays", roundUpEnabled: false));
         var legacyRawJson = BuildLegacyRawJson((expense.Id, new DateOnly(2026, 8, 3)));
@@ -106,7 +106,7 @@ public class ExpenseChargeDateMigratorTests
         var data = CashFlowData.Create();
         var card = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var statement = CardStatement.Create(card, 2026, 7);
-        statement.MarkPaid();
+        statement.MarkLegacyPaid();
         data.AddCardStatement(statement);
         var expense = LegacySettledCharge(data, new DateOnly(2026, 7, 10), card, TestAccounts.Bank("Barclays", roundUpEnabled: false));
 
@@ -144,7 +144,7 @@ public class ExpenseChargeDateMigratorTests
         var barclaysCard = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
         var baAmexCard = TestAccounts.CreditCard("BaAmex");
         var statement = CardStatement.Create(barclaysCard, 2026, 7);
-        statement.MarkPaid();
+        statement.MarkLegacyPaid();
         data.AddCardStatement(statement);
         var unpaid = LegacyUnpaidCharge(data, new DateOnly(2026, 7, 10), baAmexCard);
         var settled = LegacySettledCharge(data, new DateOnly(2026, 7, 12), barclaysCard, TestAccounts.Bank("Barclays", roundUpEnabled: false));

@@ -60,7 +60,7 @@ public class PaymentsDueServiceTests
 
         if (paid)
         {
-            statement.MarkPaid();
+            statement.MarkLegacyPaid();
         }
     }
 

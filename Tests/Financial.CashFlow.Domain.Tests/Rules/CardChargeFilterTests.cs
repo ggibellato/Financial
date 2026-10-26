@@ -22,7 +22,7 @@ public class CardChargeFilterTests
         var statement = CardStatement.Create(card, year, month);
         if (isPaid)
         {
-            statement.MarkPaid();
+            statement.MarkLegacyPaid();
         }
 
         return statement;
@@ -136,5 +136,30 @@ public class CardChargeFilterTests
         var expense = Expense.Create(new DateOnly(2026, 10, 3), "Shop", 60m, _groceries, _barclays, null);
 
         CardChargeFilter.IsOnPaidStatement(expense, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsPaidThroughStatement_UnsettledChargeOnAPaidStatement_IsTrue()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaidThroughStatement(charge, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsPaidThroughStatement_ChargeSettledToABank_IsFalse()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        charge.Settle(_barclays, new DateOnly(2026, 10, 20));
+
+        CardChargeFilter.IsPaidThroughStatement(charge, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsPaidThroughStatement_ChargeOnAnUnpaidStatement_IsFalse()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaidThroughStatement(charge, [Statement(_amex, 2026, 10, isPaid: false)]).Should().BeFalse();
     }
 }

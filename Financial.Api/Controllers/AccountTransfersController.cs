@@ -32,6 +32,7 @@ public sealed class AccountTransfersController : ControllerBase
     [ProducesResponseType(typeof(AccountTransferDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<AccountTransferDTO>> UpdateTransfer(Guid id, [FromBody] AccountTransferUpdateDTO? request)
     {
         if (request is null)
@@ -45,6 +46,7 @@ public sealed class AccountTransfersController : ControllerBase
     [HttpDelete("transfers/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public async Task<IActionResult> DeleteTransfer(Guid id)
     {
         await _accountTransferService.DeleteAsync(id);

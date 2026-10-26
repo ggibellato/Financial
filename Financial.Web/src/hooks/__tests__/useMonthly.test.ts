@@ -323,7 +323,7 @@ describe('useMonthly', () => {
     act(() => result.current.markStatementPaid('c1', 'bank-trading212'))
 
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212', date: null }),
     )
     await waitFor(() => expect(getCardStatementsByMonthMock).toHaveBeenCalledTimes(2))
   })

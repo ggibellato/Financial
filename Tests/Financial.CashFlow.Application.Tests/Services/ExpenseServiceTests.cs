@@ -1099,7 +1099,7 @@ public class ExpenseServiceTests
             _repository.CardStatements.Add(statement);
         }
 
-        statement.MarkPaid();
+        statement.MarkLegacyPaid();
         return statement;
     }
 
@@ -1325,5 +1325,82 @@ public class ExpenseServiceTests
         await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, CardExpenseRequest(new DateOnly(2026, 10, 1)) with { Value = 7m }));
 
         StatementMonthsOf("BaAmex").Should().Equal((2026, 9), (2026, 10));
+    }
+
+    [Fact]
+    public async Task GetExpensesByMonth_ChargeOnAPaidStatement_IsListedAsStatementPaidWithNoBank()
+    {
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        MarkStatementPaid("ChaseMaster4023", 2026, 7);
+
+        var result = _sut.GetExpensesByMonth(2026, 7);
+
+        using (new AssertionScope())
+        {
+            var charge = result.Should().ContainSingle().Subject;
+            charge.PaymentStatus.Should().Be("CreditCardStatementPaid");
+            charge.PaymentSourceBankName.Should().BeNull();
+            charge.CreditCardName.Should().Be("ChaseMaster4023");
+            charge.Date.Should().Be(new DateOnly(2026, 7, 15));
+        }
+    }
+
+    [Fact]
+    public async Task GetUnpaidCardChargesByMonth_ChargeOnAPaidStatement_IsExcluded()
+    {
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "BaAmex" }));
+        MarkStatementPaid("ChaseMaster4023", 2026, 7);
+
+        var result = _sut.GetUnpaidCardChargesByMonth(2026, 7);
+
+        result.Should().ContainSingle().Which.CreditCardName.Should().Be("BaAmex");
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_DescriptionOfAChargeOnAPaidStatement_ReturnsStatementPaidStatus()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        MarkStatementPaid("ChaseMaster4023", 2026, 7);
+
+        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, ValidCreateRequest() with
+        {
+            Description = "Renamed",
+            PaymentSource = null,
+            CardTag = "ChaseMaster4023",
+            InvoiceDate = new DateOnly(2026, 7, 1)
+        }));
+
+        using (new AssertionScope())
+        {
+            result.Description.Should().Be("Renamed");
+            result.PaymentStatus.Should().Be("CreditCardStatementPaid");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_LegacySettledChargeEditedFromMonthly_KeepsItsChargeDate()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
+        var charge = _repository.Expenses.Single(e => e.Id == added.Id);
+        charge.Settle(_repository.Accounts.Single(a => a.Name == "Barclays"), new DateOnly(2026, 8, 4));
+        MarkStatementPaid("ChaseMaster4023", 2026, 7);
+
+        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, ValidCreateRequest() with
+        {
+            Date = new DateOnly(2026, 8, 4),
+            Description = "Renamed",
+            PaymentSource = "Barclays",
+            CardTag = "ChaseMaster4023"
+        }));
+
+        using (new AssertionScope())
+        {
+            result.Description.Should().Be("Renamed");
+            result.PaymentStatus.Should().Be("CreditCardSettled");
+            charge.ChargeDate.Should().Be(new DateOnly(2026, 7, 15));
+            charge.Date.Should().Be(new DateOnly(2026, 8, 4));
+            charge.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
+        }
     }
 }

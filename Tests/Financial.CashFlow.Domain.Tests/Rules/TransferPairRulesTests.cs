@@ -102,4 +102,27 @@ public class TransferPairRulesTests
 
         TransferPairRules.Default.DestinationsFor(receiver, [_barclays, _chase]).Should().BeEmpty();
     }
+
+    [Fact]
+    public void Allows_DefaultTable_RefusesBankToCard()
+    {
+        TransferPairRules.Default.Allows(_barclays, TestAccounts.CreditCard("Amex")).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Allows_StatementPaymentTable_OnlyBillPayerToPaymentReceiver()
+    {
+        var amex = TestAccounts.CreditCard("Amex");
+        var payer = Minimal("Payer", Capability.CanPayBills);
+        var receiver = Minimal("Receiver", Capability.ReceivesPayments);
+
+        using (new AssertionScope())
+        {
+            TransferPairRules.StatementPayment.Allows(_barclays, amex).Should().BeTrue();
+            TransferPairRules.StatementPayment.Allows(payer, receiver).Should().BeTrue();
+            TransferPairRules.StatementPayment.Allows(_barclays, _chase).Should().BeFalse();
+            TransferPairRules.StatementPayment.Allows(amex, _barclays).Should().BeFalse();
+            TransferPairRules.StatementPayment.Allows(receiver, payer).Should().BeFalse();
+        }
+    }
 }
