@@ -8,6 +8,7 @@ import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
 import { useIncomeForm } from './useIncomeForm'
 import { useMoveChargeForm } from './useMoveChargeForm'
+import { usePayCardStatementForm } from './usePayCardStatementForm'
 import { usePayRecurringBill } from './usePayRecurringBill'
 import type { YearMonth } from './useMonthSelection'
 
@@ -87,6 +88,7 @@ export function useAccountActionForms(
   )
 
   const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
+  const payStatementForm = usePayCardStatementForm(lockedBank, () => saved('Statement paid'))
   const moveForm = useMoveChargeForm(onSaved)
 
   const openers: Record<AccountFormAction, () => void> = {
@@ -96,6 +98,7 @@ export function useAccountActionForms(
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
     PayRecurringBill: () => payBillForm.open(),
+    PayCardStatement: () => payStatementForm.open(),
     Reconcile: () => adjustmentForm.openCreateForm(),
   }
 
@@ -105,6 +108,7 @@ export function useAccountActionForms(
     if (transferForm.isOpen && !transferForm.isEditing) return transferForm.direction === 'to' ? 'TransferTo' : 'TransferFrom'
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'
+    if (payStatementForm.isOpen) return 'PayCardStatement'
     return null
   }
   const activeAction = createAction()
@@ -120,6 +124,7 @@ export function useAccountActionForms(
     transferForm.isDirty ||
     adjustmentForm.isDirty ||
     payBillForm.isDirty ||
+    payStatementForm.isDirty ||
     moveForm.isDirty ||
     screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
@@ -132,6 +137,7 @@ export function useAccountActionForms(
     if (transferForm.isOpen) transferForm.cancel()
     if (adjustmentForm.isOpen) adjustmentForm.cancel()
     if (payBillForm.isOpen) payBillForm.cancel()
+    if (payStatementForm.isOpen) payStatementForm.cancel()
     if (moveForm.isOpen) moveForm.cancel()
     screenForm.close()
   }
@@ -210,6 +216,7 @@ export function useAccountActionForms(
     adjustmentForm,
     transferForm,
     payBillForm,
+    payStatementForm,
     moveForm,
     lockedBank,
     lockedCard,

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { Skeleton, SkeletonItem, Tab, TabList, Text } from '@fluentui/react-components'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
 import { canTransfer, formActionsOf, isTransferAction, recordNoun, recordTitle } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
@@ -13,6 +13,7 @@ import ErrorState from '../components/ErrorState'
 import ExpenseForm from '../components/ExpenseForm'
 import IncomeForm from '../components/IncomeForm'
 import MoveChargeForm from '../components/MoveChargeForm'
+import PayCardStatementForm from '../components/PayCardStatementForm'
 import PayRecurringBillForm from '../components/PayRecurringBillForm'
 import TransferForm from '../components/TransferForm'
 import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
@@ -28,6 +29,7 @@ const FORM_AREA_ID = 'account-screen-form'
 
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
+  const navigate = useNavigate()
   const { account } = screen
   const allowedActions = account?.allowedActions ?? []
   const hasFormActions = formActionsOf(allowedActions).length > 0
@@ -56,6 +58,7 @@ export default function AccountScreenPage() {
     adjustmentForm,
     transferForm,
     payBillForm,
+    payStatementForm,
     moveForm,
     discardPrompt,
     lockedBank,
@@ -227,6 +230,9 @@ export default function AccountScreenPage() {
             onCancel={closeActiveForm}
           />
         )}
+        {payStatementForm.isOpen && lockedBank && (
+          <PayCardStatementForm payForm={payStatementForm} lockedBank={lockedBank} onCancel={closeActiveForm} />
+        )}
         {adjustmentForm.isOpen && (
           <BalanceAdjustmentForm
             isEditing={adjustmentForm.isEditing}
@@ -300,6 +306,10 @@ export default function AccountScreenPage() {
                 onDelete={rowDelete.requestDelete}
                 onMove={isCard ? openRowMove : undefined}
                 isMoveDisabled={!isAccountCurrent}
+                onOpenStatement={(path, event) => {
+                  event.preventDefault()
+                  guardChange(() => navigate(path))
+                }}
               />
             )}
           </>

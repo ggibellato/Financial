@@ -13,6 +13,7 @@ export function accountTransactionRow(fields: RequiredRowFields & Partial<Accoun
     income: null,
     transfer: null,
     adjustment: null,
+    statement: null,
     ...fields,
   }
 }

@@ -16,6 +16,7 @@ import type {
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
+  PayableStatementDto,
   RecurringBillDto,
 } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
@@ -51,6 +52,7 @@ const {
   markCardStatementPaidMock,
   unmarkCardStatementPaidMock,
   moveChargeToStatementMock,
+  getPayableStatementsMock,
 } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
@@ -76,6 +78,7 @@ const {
   markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
   unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
   moveChargeToStatementMock: vi.fn<FinancialApiClient['moveChargeToStatement']>(),
+  getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -104,6 +107,7 @@ vi.mock('../../api/financialApiClient', () => ({
     markCardStatementPaid: markCardStatementPaidMock,
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
     moveChargeToStatement: moveChargeToStatementMock,
+    getPayableStatements: getPayableStatementsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -149,7 +153,26 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: 'source-salary', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: true },
 ]
 
-const BANK_ACTIONS = ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile']
+const BANK_ACTIONS = ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'PayCardStatement', 'Reconcile']
+
+const VISA_ID = '8f3b1c1a-2e3a-4b1a-9a7f-500000000002'
+
+const PAYABLE_STATEMENTS: PayableStatementDto[] = [
+  { id: 's-oct', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 10, total: 210.45, currency: 'GBP' },
+  { id: 's-nov', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 11, total: 12, currency: 'GBP' },
+  { id: 'v-oct', creditCardId: VISA_ID, creditCardName: 'Platinum Visa 6007', year: 2026, month: 10, total: 80, currency: 'GBP' },
+]
+
+const CARD_PAYMENT_ROW = accountTransactionRow({
+  id: 'p1',
+  kind: 'CardPayment',
+  date: '2026-10-12',
+  description: 'BA Amex payment – Sep 2026 statement',
+  counterpart: 'BA Amex',
+  amount: -512.3,
+  canEdit: false,
+  statement: { accountId: AMEX_ID, year: 2026, month: 9 },
+})
 
 const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
 
@@ -244,6 +267,7 @@ beforeEach(() => {
   markCardStatementPaidMock.mockReset()
   unmarkCardStatementPaidMock.mockReset()
   moveChargeToStatementMock.mockReset()
+  getPayableStatementsMock.mockReset().mockResolvedValue(PAYABLE_STATEMENTS)
   sessionStorage.clear()
 })
 
@@ -410,14 +434,22 @@ describe('AccountScreenPage actions', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
   }
 
-  it('[AC P60-F05-bank-account-screen-05] renders exactly the allowed actions: six for a bank, a reduced list as sent, none when inactive', async () => {
+  it('[AC P60-F05-bank-account-screen-05] renders exactly the allowed actions: seven for a bank, a reduced list as sent, none when inactive', async () => {
     await openScreen()
 
     const actionNames = () =>
       within(screen.getByRole('group', { name: 'Account actions' }))
         .getAllByRole('button')
         .map((button) => button.textContent)
-    expect(actionNames()).toEqual(['Add expense', 'Add income', 'Transfer to', 'Transfer from', 'Pay recurring bill', 'Adjust balance'])
+    expect(actionNames()).toEqual([
+      'Add expense',
+      'Add income',
+      'Transfer to',
+      'Transfer from',
+      'Pay recurring bill',
+      'Pay card statement',
+      'Adjust balance',
+    ])
   })
 
   it('renders only the actions a reduced list allows, in its order', async () => {
@@ -1313,5 +1345,147 @@ describe('AccountScreenPage card screen', () => {
 
     expect(await screen.findByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
+  })
+})
+
+describe('AccountScreenPage bank side card payments', () => {
+  beforeEach(() => {
+    withActions(BANK_ACTIONS)
+  })
+
+  async function openBank() {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await screen.findByRole('heading', { level: 1, name: 'Barclays' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeEnabled())
+  }
+
+  function payForm() {
+    return screen.getByRole('heading', { name: 'Pay card statement' }).closest('form') as HTMLElement
+  }
+
+  it('[AC P60-F08-statement-payment-and-card-screen-04] Pay card statement chooses a card and statement and pays it with this bank', async () => {
+    const user = userEvent.setup()
+    markCardStatementPaidMock.mockResolvedValue({
+      id: 's-oct',
+      creditCardId: AMEX_ID,
+      creditCardName: 'BA Amex',
+      year: 2026,
+      month: 10,
+      isPaid: true,
+      outstandingTotal: 0,
+      accumulatedOutstandingTotal: 12,
+    })
+    await openBank()
+    getAccountMock.mockClear()
+    const action = screen.getByRole('button', { name: 'Pay card statement' })
+
+    await user.click(action)
+    const card = await screen.findByRole('combobox', { name: /^Card/ })
+    await waitFor(() => expect(card).toHaveFocus())
+    await waitFor(() => expect(within(card).getAllByRole('option').map((option) => option.textContent)).toEqual(['Select a card', 'BA Amex', 'Platinum Visa 6007']))
+    expect(within(payForm()).getByText('Barclays')).toBeInTheDocument()
+    await user.selectOptions(card, AMEX_ID)
+    const statement = screen.getByRole('combobox', { name: /^Statement/ })
+    expect(within(statement).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Select a statement',
+      'October 2026 · £210.45',
+      'November 2026 · £12.00',
+    ])
+    await user.selectOptions(statement, 's-oct')
+    expect(screen.getByLabelText(/^Amount/)).toHaveValue('£210.45')
+    expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-15')
+    await user.click(within(payForm()).getByRole('button', { name: 'Pay statement' }))
+
+    await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('s-oct', { paymentSourceBankId: BARCLAYS_ID, date: '2026-10-15' }))
+    expect(await screen.findByText('Statement paid')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Pay card statement' })).not.toBeInTheDocument()
+    await waitFor(() => expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 10))
+    await waitFor(() => expect(action).toHaveFocus())
+  })
+
+  it('selects the only statement of a card, and an empty submit focuses the first missing field', async () => {
+    const user = userEvent.setup()
+    await openBank()
+
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    const card = await screen.findByRole('combobox', { name: /^Card/ })
+    await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
+    await user.click(within(payForm()).getByRole('button', { name: 'Pay statement' }))
+
+    expect(await screen.findByText('Select a card.')).toBeInTheDocument()
+    expect(screen.getByText('Select a statement.')).toBeInTheDocument()
+    expect(card).toHaveFocus()
+    await user.selectOptions(card, VISA_ID)
+    expect(screen.getByRole('combobox', { name: /^Statement/ })).toHaveValue('v-oct')
+    expect(screen.getByLabelText(/^Amount/)).toHaveValue('£80.00')
+    expect(markCardStatementPaidMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps the form with the server message and reloads the statements when the payment is refused', async () => {
+    const user = userEvent.setup()
+    markCardStatementPaidMock.mockRejectedValue(new ApiError('This statement is already paid.', 409))
+    await openBank()
+
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    const card = await screen.findByRole('combobox', { name: /^Card/ })
+    await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
+    await user.selectOptions(card, VISA_ID)
+    getPayableStatementsMock.mockClear()
+    await user.click(within(payForm()).getByRole('button', { name: 'Pay statement' }))
+
+    expect(await within(payForm()).findByText('This statement is already paid.')).toBeInTheDocument()
+    await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(1))
+  })
+
+  it('says when no statement is waiting and offers Try again when the list fails to load', async () => {
+    const user = userEvent.setup()
+    getPayableStatementsMock.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
+    await openBank()
+
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    await user.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByText('No card statement is waiting to be paid.')).toBeInTheDocument()
+    expect(within(payForm()).getByRole('button', { name: 'Pay statement' })).toBeDisabled()
+  })
+
+  it('asks before leaving a pay form with a chosen card', async () => {
+    const user = userEvent.setup()
+    await openBank()
+
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    const card = await screen.findByRole('combobox', { name: /^Card/ })
+    await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
+    await user.selectOptions(card, VISA_ID)
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+  })
+
+  it('[AC P60-F08-statement-payment-and-card-screen-02] a card payment row on a bank opens the card statement it paid', async () => {
+    const user = userEvent.setup()
+    getAccountTransactionsMock.mockResolvedValue([...TRANSACTIONS, CARD_PAYMENT_ROW])
+    await openBank()
+
+    const link = await screen.findByRole('link', { name: 'BA Amex payment – Sep 2026 statement' })
+    const row = link.closest('tr') as HTMLElement
+    expect(within(row).getByText('Card payment')).toBeInTheDocument()
+    expect(within(row).queryByRole('button', { name: /^(Edit|Delete) / })).not.toBeInTheDocument()
+    await user.click(link)
+
+    expect(await screen.findByText(`/cashflow/accounts/${AMEX_ID}?month=2026-09&tab=statements`)).toBeInTheDocument()
+  })
+
+  it('asks before a card payment link discards unsaved changes, and stays on Keep editing', async () => {
+    const user = userEvent.setup()
+    getAccountTransactionsMock.mockResolvedValue([...TRANSACTIONS, CARD_PAYMENT_ROW])
+    await openBank()
+
+    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.type(await screen.findByLabelText(/^Description/), 'Lidl')
+    await user.click(screen.getByRole('link', { name: 'BA Amex payment – Sep 2026 statement' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
+
+    expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)).toBeInTheDocument()
   })
 })
