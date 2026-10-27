@@ -1137,7 +1137,7 @@ describe('AccountScreenPage card screen', () => {
     const form = screen.getByRole('heading', { name: 'New Charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
     expect(within(form).queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
-    expect(within(form).getByLabelText('Invoice Month')).toHaveValue('2026-10')
+    expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
     await user.type(within(form).getByLabelText(/^Description/), 'Lunch')
     await user.type(within(form).getByLabelText(/^Value/), '12.40')
     await user.click(within(form).getByRole('button', { name: 'Add Charge' }))
@@ -1166,7 +1166,7 @@ describe('AccountScreenPage card screen', () => {
     await user.click(await screen.findByRole('button', { name: 'Edit card charge' }))
     const form = screen.getByRole('heading', { name: 'Edit Charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
-    expect(within(form).getByLabelText('Invoice Month')).toHaveValue('2026-10')
+    expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
     await user.clear(within(form).getByLabelText(/^Value/))
     await user.type(within(form).getByLabelText(/^Value/), '32')
     await user.click(within(form).getByRole('button', { name: 'Save' }))
@@ -1187,7 +1187,7 @@ describe('AccountScreenPage card screen', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Move card charge to a later statement' }))
     const form = screen.getByRole('heading', { name: 'Move charge to a later statement' }).closest('form') as HTMLElement
-    expect(within(form).getByText('Taxi is on the October 2026 statement.')).toBeInTheDocument()
+    expect(within(form).getByText('Taxi (28/09/2026, 30.00) is on the October 2026 statement.')).toBeInTheDocument()
     const statement = within(form).getByLabelText(/^Statement/)
     await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
     expect(within(statement).getByRole('option', { name: 'November 2026' })).toBeInTheDocument()
@@ -1206,6 +1206,19 @@ describe('AccountScreenPage card screen', () => {
     await waitFor(() => expect(screen.queryByText('Taxi')).not.toBeInTheDocument())
     expect(screen.queryByRole('heading', { name: 'Move charge to a later statement' })).not.toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
+  })
+
+  it('deletes an unpaid charge after confirmation', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('button', { name: 'Delete card charge' }))
+    getAccountTransactionsMock.mockResolvedValue(CARD_ROWS.slice(1))
+    await user.click(await dialogButton('Delete card charge', 'Delete'))
+
+    expect(deleteExpenseMock).toHaveBeenCalledWith('c1')
+    expect(await screen.findByText('Card charge deleted')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Taxi')).not.toBeInTheDocument())
   })
 
   it('keeps the move form open with the server message when the move is refused', async () => {

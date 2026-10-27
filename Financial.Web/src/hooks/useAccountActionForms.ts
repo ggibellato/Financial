@@ -52,6 +52,7 @@ export function useAccountActionForms(
   )
   const balances = currentAccount ? [{ bankId: currentAccount.id, bank: currentAccount.name, balance: currentAccount.balance }] : []
   const isNextEntryFocusPending = useRef(false)
+  const [rowChangeCount, setRowChangeCount] = useState(0)
   const settings = { lockedBank, keepOpenAfterSave: true, viewedMonth }
   const expenseNoun = isCard ? 'Charge' : 'Expense'
 
@@ -64,7 +65,10 @@ export function useAccountActionForms(
     options.banks,
     options.categories,
     NO_CREDIT_CARDS,
-    (isEdit) => saved(isEdit ? `${expenseNoun} updated` : `${expenseNoun} added`),
+    (isEdit) => {
+      if (isEdit) setRowChangeCount((count) => count + 1)
+      saved(isEdit ? `${expenseNoun} updated` : `${expenseNoun} added`)
+    },
     { ...settings, lockedCard },
   )
   const incomeForm = useIncomeForm(
@@ -87,7 +91,10 @@ export function useAccountActionForms(
   )
 
   const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
-  const moveForm = useMoveChargeForm(onSaved)
+  const moveForm = useMoveChargeForm((message) => {
+    setRowChangeCount((count) => count + 1)
+    onSaved(message)
+  })
 
   const openers: Record<AccountFormAction, () => void> = {
     AddExpense: () => expenseForm.showCreateForm('bank'),
@@ -220,6 +227,7 @@ export function useAccountActionForms(
     openAction,
     openRowEdit,
     openRowMove,
+    rowChangeCount,
     closeActiveForm,
     closeFormsOf,
     guardChange,

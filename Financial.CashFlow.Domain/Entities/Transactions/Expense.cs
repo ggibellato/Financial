@@ -8,6 +8,8 @@ public class Expense : IAccountTransaction
 {
     public const decimal MinRoundUpAmount = 0.00m;
     public const decimal MaxRoundUpAmount = 0.99m;
+    public const string OnlyUnpaidChargeMovesMessage = "Only an unpaid card charge can move to another statement.";
+    public const string LaterUnpaidStatementMessage = "Charges can only move to a later, unpaid statement.";
 
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
@@ -175,6 +177,21 @@ public class Expense : IAccountTransaction
         Date = ChargeDate!.Value;
     }
 
+    public void EnsureCanMoveToStatement(DateOnly invoiceDate)
+    {
+        if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
+        {
+            throw new ArgumentException(OnlyUnpaidChargeMovesMessage);
+        }
+
+        if (FirstOfMonth(invoiceDate) <= InvoiceDate)
+        {
+            throw new ArgumentException(LaterUnpaidStatementMessage);
+        }
+
+        EnsureCardIsActive(CreditCard!);
+    }
+
     public void SetInvoiceDate(DateOnly invoiceDate)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
@@ -289,14 +306,18 @@ public class Expense : IAccountTransaction
         if (creditCard is not null)
         {
             CardAccountRule.EnsureIsCard(creditCard);
-
-            if (!creditCard.IsActive)
-            {
-                throw new ArgumentException(
-                    $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
-            }
+            EnsureCardIsActive(creditCard);
         }
 
         paymentSourceAccount?.EnsureCanPay();
+    }
+
+    private static void EnsureCardIsActive(Account creditCard)
+    {
+        if (!creditCard.IsActive)
+        {
+            throw new ArgumentException(
+                $"Credit card '{creditCard.Name}' is inactive and cannot be used for new entries.");
+        }
     }
 }

@@ -75,6 +75,11 @@
   width: 200px;
 }
 
+.data-table .data-table__col--action-triple,
+.data-table__col--action-triple {
+  width: 100px;
+}
+
 .data-table__actions-cell {
   display: flex;
   align-items: center;
@@ -174,7 +179,9 @@
   .data-table .data-table__col--action,
   .data-table__col--action,
   .data-table .data-table__col--action-wide,
-  .data-table__col--action-wide {
+  .data-table__col--action-wide,
+  .data-table .data-table__col--action-triple,
+  .data-table__col--action-triple {
     width: auto;
   }
 }

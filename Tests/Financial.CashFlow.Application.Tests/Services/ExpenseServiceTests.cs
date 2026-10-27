@@ -1436,7 +1436,7 @@ public class ExpenseServiceTests
     [InlineData(2026, 8)]
     [InlineData(2026, 13)]
     [InlineData(0, 10)]
-    public async Task MoveToStatementAsync_TargetNotLater_ThrowsAndChangesNothing(int year, int month)
+    public async Task MoveToStatementAsync_TargetNotLaterOrInvalid_ThrowsAndChangesNothing(int year, int month)
     {
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
         var savesBefore = _repository.SaveChangesCallCount;
@@ -1462,6 +1462,7 @@ public class ExpenseServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage(LaterUnpaidStatementMessage);
         _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.MoveToStatement");
     }
 
     [Fact]
@@ -1506,6 +1507,7 @@ public class ExpenseServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Credit card 'BaAmex' is inactive and cannot be used for new entries.");
         _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.MoveToStatement");
     }
 
     [Fact]

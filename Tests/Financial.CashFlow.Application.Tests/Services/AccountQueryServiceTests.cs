@@ -469,7 +469,7 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetAccount_CardAccount_HasNoActionsAndOwesItsUnpaidCharges()
+    public void GetAccount_CardAccount_OffersAddChargeAndOwesItsUnpaidCharges()
     {
         _repository.Accounts.Add(_amex);
         _repository.Expenses.AddRange([
@@ -481,7 +481,7 @@ public class AccountQueryServiceTests
 
         using (new AssertionScope())
         {
-            detail.AllowedActions.Should().BeEmpty();
+            detail.AllowedActions.Should().Equal("AddCharge");
             detail.Balance.Should().Be(-39m);
             detail.BalanceIsOwed.Should().BeTrue();
             detail.HasStatements.Should().BeTrue();

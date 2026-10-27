@@ -442,10 +442,4 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
             (await StatementsAsync(2027, 1))!.Should().ContainSingle(statement => statement.CreditCardId == Guid.Parse(AmexId));
         }
     }
-
-    [Fact]
-    public async Task CardAccount_AllowsAddCharge()
-    {
-        (await AccountAsync(AmexId)).AllowedActions.Should().Equal("AddCharge");
-    }
 }

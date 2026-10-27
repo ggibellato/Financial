@@ -4,7 +4,7 @@ import type { MoveChargeFormState } from '../../hooks/useMoveChargeForm'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import MoveChargeForm from '../MoveChargeForm'
 
-const CHARGE = { id: 'c1', description: 'Taxi', invoiceDate: '2026-11-01', creditCardId: 'card-amex' } as ExpenseDto
+const CHARGE = { id: 'c1', description: 'Taxi', date: '2026-11-03', chargeDate: '2026-11-03', value: 30, invoiceDate: '2026-11-01', creditCardId: 'card-amex' } as ExpenseDto
 
 function moveFormState(overrides: Partial<MoveChargeFormState> = {}): MoveChargeFormState {
   return {
@@ -15,10 +15,11 @@ function moveFormState(overrides: Partial<MoveChargeFormState> = {}): MoveCharge
       { value: '2027-01', label: 'January 2027 (new)' },
     ],
     isLoadingTargets: false,
+    hasNoTargets: false,
     targetsError: null,
     retryTargets: vi.fn(),
     isDirty: false,
-    savedCount: 0,
+    failedSubmitCount: 0,
     open: vi.fn(),
     cancel: vi.fn(),
     setTarget: vi.fn(),
@@ -32,7 +33,7 @@ describe('MoveChargeForm', () => {
     render(<MoveChargeForm moveForm={moveFormState()} onCancel={vi.fn()} />)
 
     expect(screen.getByRole('heading', { name: 'Move charge to a later statement' })).toBeInTheDocument()
-    expect(screen.getByText('Taxi is on the November 2026 statement.')).toBeInTheDocument()
+    expect(screen.getByText('Taxi (03/11/2026, 30.00) is on the November 2026 statement.')).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'January 2027 (new)' })).toBeInTheDocument()
   })
 
@@ -50,10 +51,11 @@ describe('MoveChargeForm', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('disables the statement list while it loads', () => {
+  it('keeps the statement list focusable and busy while it loads', () => {
     render(<MoveChargeForm moveForm={moveFormState({ isLoadingTargets: true, targets: [] })} onCancel={vi.fn()} />)
 
-    expect(screen.getByLabelText(/^Statement/)).toBeDisabled()
+    expect(screen.getByLabelText(/^Statement/)).toBeEnabled()
+    expect(screen.getByLabelText(/^Statement/)).toHaveAttribute('aria-busy', 'true')
     expect(screen.getByRole('option', { name: 'Loading statements…' })).toBeInTheDocument()
   })
 
@@ -69,6 +71,21 @@ describe('MoveChargeForm', () => {
     expect(screen.getByText('Charges can only move to a later, unpaid statement.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(state.retryTargets).toHaveBeenCalled()
+  })
+
+  it('focuses the statement list after a failed submit', () => {
+    const { rerender } = render(<MoveChargeForm moveForm={moveFormState()} onCancel={vi.fn()} />)
+
+    rerender(<MoveChargeForm moveForm={moveFormState({ failedSubmitCount: 1 })} onCancel={vi.fn()} />)
+
+    expect(screen.getByLabelText(/^Statement/)).toHaveFocus()
+  })
+
+  it('says when no later month can take the charge and disables Move', () => {
+    render(<MoveChargeForm moveForm={moveFormState({ hasNoTargets: true, targets: [] })} onCancel={vi.fn()} />)
+
+    expect(screen.getByText('No unpaid statement in the next 12 months.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Move charge' })).toBeDisabled()
   })
 
   it('shows the saving state', () => {

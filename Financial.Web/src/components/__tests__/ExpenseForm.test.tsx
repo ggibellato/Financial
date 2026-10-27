@@ -435,14 +435,14 @@ describe('ExpenseForm with a locked card', () => {
     expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: /^Card/ })).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-10')
+    expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
     expect(screen.getByRole('button', { name: 'Add Charge' })).toBeInTheDocument()
   })
 
-  it('titles an edit Edit Charge and keeps the invoice month editable', () => {
+  it('titles an edit Edit Charge and keeps the statement month editable', () => {
     render(<ExpenseForm {...cardProps} isEditing invoiceDate="2026-11" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
 
     expect(screen.getByRole('heading', { name: 'Edit Charge' })).toBeInTheDocument()
-    expect(screen.getByLabelText('Invoice Month')).toBeEnabled()
+    expect(screen.getByLabelText('Statement month')).toBeEnabled()
   })
 })

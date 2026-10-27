@@ -15,8 +15,6 @@ public sealed class ExpenseService : IExpenseService
     private const string EntityType = "Expense";
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
-    private const string OnlyUnpaidChargeMovesMessage = "Only an unpaid card charge can move to another statement.";
-    private const string LaterUnpaidStatementMessage = "Charges can only move to a later, unpaid statement.";
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -297,10 +295,8 @@ public sealed class ExpenseService : IExpenseService
 
     private DateOnly EnsureCanMoveToStatement(Expense expense, int year, int month)
     {
-        if (expense.PaymentStatus != ExpensePaymentStatus.CreditCardCharge || expense is not { CreditCard: { } card, InvoiceDate: { } current })
-        {
-            throw new ArgumentException(OnlyUnpaidChargeMovesMessage);
-        }
+        var target = StatementMonth(year, month);
+        expense.EnsureCanMoveToStatement(target);
 
         var statements = _repository.GetCardStatements().ToList();
         if (CardChargeFilter.IsOnPaidStatement(expense, statements))
@@ -308,20 +304,24 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException(PaidStatementMessage);
         }
 
-        if (year is < 1 or > 9999
-            || month is < 1 or > 12
-            || new DateOnly(year, month, 1) <= current
-            || CardChargeFilter.IsStatementPaid(statements, card, year, month))
+        if (CardChargeFilter.IsStatementPaid(statements, expense.CreditCard!, year, month))
         {
-            throw new ArgumentException(LaterUnpaidStatementMessage);
+            throw new ArgumentException(Expense.LaterUnpaidStatementMessage);
         }
 
-        if (!card.IsActive)
-        {
-            throw new ArgumentException($"Credit card '{card.Name}' is inactive and cannot be used for new entries.");
-        }
+        return target;
+    }
 
-        return new DateOnly(year, month, 1);
+    private static DateOnly StatementMonth(int year, int month)
+    {
+        try
+        {
+            return new DateOnly(year, month, 1);
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            throw new ArgumentException(Expense.LaterUnpaidStatementMessage);
+        }
     }
 
     private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(

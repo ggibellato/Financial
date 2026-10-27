@@ -1,24 +1,29 @@
+import { useEffect, useRef } from 'react'
 import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
-import type { MoveChargeFormState } from '../hooks/useMoveChargeForm'
-import { formatLongMonthYear } from '../utils/formatters'
+import { currentStatementLabel, type MoveChargeFormState } from '../hooks/useMoveChargeForm'
+import { formatN2, formatShortDateUtc } from '../utils/formatters'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
+
+const STATEMENT_HINT = 'Months with no statement yet are marked (new); paid statements are not listed.'
+const NO_TARGETS_MESSAGE = 'No unpaid statement in the next 12 months.'
 
 interface MoveChargeFormProps {
   moveForm: MoveChargeFormState
   onCancel: () => void
 }
 
-function currentStatementOf(invoiceDate: string | null | undefined): string {
-  if (!invoiceDate) return ''
-  const [year, month] = invoiceDate.split('-').map(Number)
-  return formatLongMonthYear(year, month)
-}
-
 export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormProps) {
   const styles = useFormPanelStyles()
-  const { form, targets, isLoadingTargets, targetsError, retryTargets, setTarget, submit } = moveForm
+  const statementRef = useRef<HTMLSelectElement | null>(null)
+  const { form, targets, isLoadingTargets, hasNoTargets, targetsError, retryTargets, failedSubmitCount, setTarget, submit } = moveForm
+
+  useEffect(() => {
+    if (failedSubmitCount > 0) statementRef.current?.focus()
+  }, [failedSubmitCount])
+
   if (!form) return null
+  const { charge } = form
 
   return (
     <form
@@ -35,7 +40,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
           Move charge to a later statement
         </Text>
         <Text as="p">
-          {form.charge.description} is on the {currentStatementOf(form.charge.invoiceDate)} statement.
+          {`${charge.description} (${formatShortDateUtc(charge.chargeDate ?? charge.date)}, ${formatN2(charge.value)}) is on the ${currentStatementLabel(charge.invoiceDate)} statement.`}
         </Text>
         {form.error && (
           <MessageBar intent="error">
@@ -47,11 +52,17 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
           <Field
             label="Statement"
             required
-            hint="Months with no statement yet are marked (new); paid statements are not listed."
+            className={styles.spanTwo}
+            hint={hasNoTargets ? NO_TARGETS_MESSAGE : STATEMENT_HINT}
             validationState={form.targetError ? 'error' : 'none'}
             validationMessage={form.targetError}
           >
-            <Select value={form.target} disabled={isLoadingTargets} onChange={(event) => setTarget(event.target.value)}>
+            <Select
+              ref={statementRef}
+              value={form.target}
+              aria-busy={isLoadingTargets}
+              onChange={(event) => setTarget(event.target.value)}
+            >
               <option value="">{isLoadingTargets ? 'Loading statements…' : 'Select a statement'}</option>
               {targets.map((target) => (
                 <option key={target.value} value={target.value}>
@@ -62,7 +73,12 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
           </Field>
         </div>
         <div className={styles.actions}>
-          <Button type="submit" appearance="primary" disabled={form.isSaving} icon={form.isSaving ? <Spinner size="tiny" /> : undefined}>
+          <Button
+            type="submit"
+            appearance="primary"
+            disabled={form.isSaving || hasNoTargets}
+            icon={form.isSaving ? <Spinner size="tiny" /> : undefined}
+          >
             {form.isSaving ? 'Saving...' : 'Move charge'}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>

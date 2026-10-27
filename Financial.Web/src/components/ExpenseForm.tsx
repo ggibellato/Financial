@@ -216,7 +216,7 @@ export default function ExpenseForm({
           )}
 
           {(isSettled || paymentMode === 'card') && (
-            <Field label="Invoice Month">
+            <Field label={lockedCard ? 'Statement month' : 'Invoice Month'}>
               <Input
                 type="month"
                 value={invoiceDateDisplay}

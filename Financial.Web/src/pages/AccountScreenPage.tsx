@@ -64,6 +64,7 @@ export default function AccountScreenPage() {
     openAction,
     openRowEdit,
     openRowMove,
+    rowChangeCount,
     closeActiveForm,
     closeFormsOf,
     guardChange,
@@ -78,8 +79,8 @@ export default function AccountScreenPage() {
   const deleteKind = rowDelete.row?.kind ?? ''
 
   useEffect(() => {
-    if (moveForm.savedCount > 0) isFocusAfterRowLeavesPending.current = true
-  }, [moveForm.savedCount])
+    if (rowChangeCount > 0) isFocusAfterRowLeavesPending.current = true
+  }, [rowChangeCount])
 
   useEffect(() => {
     if (!isFocusAfterRowLeavesPending.current) return
@@ -303,6 +304,7 @@ export default function AccountScreenPage() {
                 onEdit={openRowEdit}
                 onDelete={rowDelete.requestDelete}
                 onMove={isCard ? openRowMove : undefined}
+                isMoveDisabled={!isAccountCurrent}
               />
             )}
           </>

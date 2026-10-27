@@ -98,6 +98,7 @@ describe('useMoveChargeForm', () => {
     act(() => result.current.submit())
 
     expect(result.current.form?.targetError).toBe('Select a statement.')
+    expect(result.current.failedSubmitCount).toBe(1)
     expect(moveChargeToStatementMock).not.toHaveBeenCalled()
   })
 
@@ -114,7 +115,6 @@ describe('useMoveChargeForm', () => {
     await waitFor(() => expect(result.current.isOpen).toBe(false))
     expect(moveChargeToStatementMock).toHaveBeenCalledWith('c1', { year: 2027, month: 1 })
     expect(onMoved).toHaveBeenCalledWith('Charge moved')
-    expect(result.current.savedCount).toBe(1)
   })
 
   it('keeps the form open with the server message when the move fails', async () => {
@@ -128,6 +128,29 @@ describe('useMoveChargeForm', () => {
     await waitFor(() => expect(result.current.form?.error).toBe('Charges can only move to a later, unpaid statement.'))
     expect(result.current.form?.isSaving).toBe(false)
     expect(onMoved).not.toHaveBeenCalled()
+  })
+
+  it('reports no targets when every later month is paid', async () => {
+    getAccountStatementsMock.mockResolvedValue(
+      Array.from({ length: 12 }, (_, index) => statement(2026 + Math.floor((11 + index) / 12), ((11 + index) % 12) + 1, true)),
+    )
+    const { result } = renderHook(() => useMoveChargeForm(onMoved))
+
+    act(() => result.current.open(CHARGE))
+
+    await waitFor(() => expect(result.current.hasNoTargets).toBe(true))
+  })
+
+  it('reloads the statements after a refused move', async () => {
+    moveChargeToStatementMock.mockRejectedValue(new ApiError('Charges can only move to a later, unpaid statement.', 400))
+    const { result } = renderHook(() => useMoveChargeForm(onMoved))
+    act(() => result.current.open(CHARGE))
+    await waitFor(() => expect(result.current.isLoadingTargets).toBe(false))
+    act(() => result.current.setTarget('2026-12'))
+
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
   })
 
   it('closes on cancel', () => {
