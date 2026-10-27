@@ -3,8 +3,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto, ExpenseDto } from '../api/types'
 import { formatLongMonthYear, formatMonthInputValue, getSaveErrorMessage, parseMonthInputValue } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
-
-export const MOVE_TARGETS_LOAD_ERROR = 'Unable to load the statements'
+import { STATEMENTS_LOAD_ERROR } from './useCardStatements'
 
 const LATER_MONTHS_OFFERED = 12
 
@@ -48,9 +47,8 @@ export function currentStatementLabel(invoiceDate: string | null | undefined): s
 
 export function useMoveChargeForm(onMoved: (message: string) => void) {
   const [form, setForm] = useState<MoveForm | null>(null)
-  const [failedSubmitCount, setFailedSubmitCount] = useState(0)
   const cardId = form?.charge.creditCardId ?? null
-  const statements = useAsyncResource(() => (cardId ? apiClient.getAccountStatements(cardId) : null), [cardId], MOVE_TARGETS_LOAD_ERROR, {
+  const statements = useAsyncResource(() => (cardId ? apiClient.getAccountStatements(cardId) : null), [cardId], STATEMENTS_LOAD_ERROR, {
     keepDataWhileLoading: true,
   })
 
@@ -60,13 +58,12 @@ export function useMoveChargeForm(onMoved: (message: string) => void) {
 
   const setTarget = (target: string) => setForm((current) => current && { ...current, target, targetError: null })
 
-  const submit = () => {
-    if (!form || form.isSaving) return
+  const submit = (): boolean => {
+    if (!form || form.isSaving) return true
     const target = parseMonthInputValue(form.target)
     if (!target) {
       setForm({ ...form, targetError: 'Select a statement.', error: null })
-      setFailedSubmitCount((count) => count + 1)
-      return
+      return false
     }
 
     setForm({ ...form, isSaving: true, error: null })
@@ -80,21 +77,20 @@ export function useMoveChargeForm(onMoved: (message: string) => void) {
         setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to move the charge') })
         void statements.refresh()
       })
+    return true
   }
 
-  const isLoadingTargets = statements.isLoading
   const targets = form?.charge.invoiceDate ? moveTargetsFor(form.charge.invoiceDate, statements.data ?? []) : []
 
   return {
     isOpen: form !== null,
     form,
     targets,
-    isLoadingTargets,
-    hasNoTargets: form !== null && !isLoadingTargets && statements.error === null && statements.data !== null && targets.length === 0,
+    isLoadingTargets: statements.isLoading,
+    hasNoTargets: form !== null && !statements.isLoading && statements.error === null && statements.data !== null && targets.length === 0,
     targetsError: statements.error,
     retryTargets: statements.retry,
     isDirty: form !== null && form.target !== '',
-    failedSubmitCount,
     open,
     cancel,
     setTarget,

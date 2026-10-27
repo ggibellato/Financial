@@ -1,3 +1,4 @@
+using System.Globalization;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
@@ -15,6 +16,7 @@ public sealed class ExpenseService : IExpenseService
     private const string EntityType = "Expense";
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
+    private const string InvalidStatementMonthMessage = "The statement month is not a valid month.";
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -155,12 +157,13 @@ public sealed class ExpenseService : IExpenseService
             ArgumentNullException.ThrowIfNull(request);
 
             var expense = FindExpenseOrThrow(id);
-            var target = EnsureCanMoveToStatement(expense, request.Year, request.Month);
+            var target = StatementMonth(request.Year, request.Month);
+            EnsureStatementsOpenForMove(expense, target);
             var previousInvoiceDate = expense.InvoiceDate;
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                expense.SetInvoiceDate(target);
+                expense.MoveToStatement(target);
                 CardStatementCreation.EnsureFor(_repository, expense);
                 return true;
             }).ConfigureAwait(false);
@@ -293,10 +296,12 @@ public sealed class ExpenseService : IExpenseService
         }
     }
 
-    private DateOnly EnsureCanMoveToStatement(Expense expense, int year, int month)
+    private void EnsureStatementsOpenForMove(Expense expense, DateOnly target)
     {
-        var target = StatementMonth(year, month);
-        expense.EnsureCanMoveToStatement(target);
+        if (expense.CreditCard is not { } card)
+        {
+            return;
+        }
 
         var statements = _repository.GetCardStatements().ToList();
         if (CardChargeFilter.IsOnPaidStatement(expense, statements))
@@ -304,25 +309,16 @@ public sealed class ExpenseService : IExpenseService
             throw new ArgumentException(PaidStatementMessage);
         }
 
-        if (CardChargeFilter.IsStatementPaid(statements, expense.CreditCard!, year, month))
-        {
-            throw new ArgumentException(Expense.LaterUnpaidStatementMessage);
-        }
-
-        return target;
-    }
-
-    private static DateOnly StatementMonth(int year, int month)
-    {
-        try
-        {
-            return new DateOnly(year, month, 1);
-        }
-        catch (ArgumentOutOfRangeException)
+        if (CardChargeFilter.IsStatementPaid(statements, card, target.Year, target.Month))
         {
             throw new ArgumentException(Expense.LaterUnpaidStatementMessage);
         }
     }
+
+    private static DateOnly StatementMonth(int year, int month) =>
+        DateOnly.TryParseExact($"{year:D4}-{month:D2}-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date)
+            ? date
+            : throw new ArgumentException(InvalidStatementMonthMessage);
 
     private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(
         string description, Guid categoryId, Guid? paymentSourceBankId, Guid? creditCardId)

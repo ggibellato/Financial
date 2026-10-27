@@ -177,7 +177,7 @@ public class Expense : IAccountTransaction
         Date = ChargeDate!.Value;
     }
 
-    public void EnsureCanMoveToStatement(DateOnly invoiceDate)
+    public void MoveToStatement(DateOnly invoiceDate)
     {
         if (PaymentStatus != ExpensePaymentStatus.CreditCardCharge)
         {
@@ -190,6 +190,7 @@ public class Expense : IAccountTransaction
         }
 
         EnsureCardIsActive(CreditCard!);
+        InvoiceDate = FirstOfMonth(invoiceDate);
     }
 
     public void SetInvoiceDate(DateOnly invoiceDate)

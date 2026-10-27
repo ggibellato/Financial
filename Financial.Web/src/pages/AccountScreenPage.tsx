@@ -33,7 +33,9 @@ export default function AccountScreenPage() {
   const hasFormActions = formActionsOf(allowedActions).length > 0
   const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
+  const isFocusAfterRowLeavesPending = useRef(false)
   const notifySaved = (message: string) => {
+    isFocusAfterRowLeavesPending.current = true
     void screen.refreshSilently()
     showSuccess(message)
   }
@@ -64,23 +66,16 @@ export default function AccountScreenPage() {
     openAction,
     openRowEdit,
     openRowMove,
-    rowChangeCount,
     closeActiveForm,
     closeFormsOf,
     guardChange,
   } = forms
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
-  const isFocusAfterRowLeavesPending = useRef(false)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
-    isFocusAfterRowLeavesPending.current = true
     notifySaved(`${recordTitle(row.kind)} deleted`)
   })
   const deleteKind = rowDelete.row?.kind ?? ''
-
-  useEffect(() => {
-    if (rowChangeCount > 0) isFocusAfterRowLeavesPending.current = true
-  }, [rowChangeCount])
 
   useEffect(() => {
     if (!isFocusAfterRowLeavesPending.current) return

@@ -1405,6 +1405,7 @@ public class ExpenseServiceTests
     }
 
     private const string LaterUnpaidStatementMessage = "Charges can only move to a later, unpaid statement.";
+    private const string InvalidStatementMonthMessage = "The statement month is not a valid month.";
 
     private Task<ExpenseDTO> MoveAsync(Guid id, int year, int month) =>
         _sut.MoveToStatementAsync(id, new MoveChargeToStatementDTO { Year = year, Month = month });
@@ -1432,18 +1433,18 @@ public class ExpenseServiceTests
     }
 
     [Theory]
-    [InlineData(2026, 9)]
-    [InlineData(2026, 8)]
-    [InlineData(2026, 13)]
-    [InlineData(0, 10)]
-    public async Task MoveToStatementAsync_TargetNotLaterOrInvalid_ThrowsAndChangesNothing(int year, int month)
+    [InlineData(2026, 9, LaterUnpaidStatementMessage)]
+    [InlineData(2026, 8, LaterUnpaidStatementMessage)]
+    [InlineData(2026, 13, InvalidStatementMonthMessage)]
+    [InlineData(0, 10, InvalidStatementMonthMessage)]
+    public async Task MoveToStatementAsync_TargetNotLaterOrInvalid_ThrowsAndChangesNothing(int year, int month, string message)
     {
         var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
         var savesBefore = _repository.SaveChangesCallCount;
 
         var act = async () => await MoveAsync(added.Id, year, month);
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage(LaterUnpaidStatementMessage);
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(message);
         using (new AssertionScope())
         {
             _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));

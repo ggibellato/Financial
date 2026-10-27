@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import { currentStatementLabel, type MoveChargeFormState } from '../hooks/useMoveChargeForm'
 import { formatN2, formatShortDateUtc } from '../utils/formatters'
@@ -16,11 +16,7 @@ interface MoveChargeFormProps {
 export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormProps) {
   const styles = useFormPanelStyles()
   const statementRef = useRef<HTMLSelectElement | null>(null)
-  const { form, targets, isLoadingTargets, hasNoTargets, targetsError, retryTargets, failedSubmitCount, setTarget, submit } = moveForm
-
-  useEffect(() => {
-    if (failedSubmitCount > 0) statementRef.current?.focus()
-  }, [failedSubmitCount])
+  const { form, targets, isLoadingTargets, hasNoTargets, targetsError, retryTargets, setTarget, submit } = moveForm
 
   if (!form) return null
   const { charge } = form
@@ -32,7 +28,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
       aria-labelledby="move-charge-title"
       onSubmit={(event) => {
         event.preventDefault()
-        submit()
+        if (!submit()) statementRef.current?.focus()
       }}
     >
       <fieldset disabled={form.isSaving} className={styles.savingFieldset}>

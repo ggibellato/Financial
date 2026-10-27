@@ -73,7 +73,7 @@ export function hasRowActions(row: AccountTransactionDto): boolean {
 }
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {
-  return row.canEdit && row.kind === 'CardCharge'
+  return row.kind === 'CardCharge'
 }
 
 export function rowKey(row: AccountTransactionDto): string {

@@ -19,11 +19,10 @@ function moveFormState(overrides: Partial<MoveChargeFormState> = {}): MoveCharge
     targetsError: null,
     retryTargets: vi.fn(),
     isDirty: false,
-    failedSubmitCount: 0,
     open: vi.fn(),
     cancel: vi.fn(),
     setTarget: vi.fn(),
-    submit: vi.fn(),
+    submit: vi.fn(() => true),
     ...overrides,
   }
 }
@@ -74,9 +73,9 @@ describe('MoveChargeForm', () => {
   })
 
   it('focuses the statement list after a failed submit', () => {
-    const { rerender } = render(<MoveChargeForm moveForm={moveFormState()} onCancel={vi.fn()} />)
+    render(<MoveChargeForm moveForm={moveFormState({ submit: vi.fn(() => false) })} onCancel={vi.fn()} />)
 
-    rerender(<MoveChargeForm moveForm={moveFormState({ failedSubmitCount: 1 })} onCancel={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Move charge' }))
 
     expect(screen.getByLabelText(/^Statement/)).toHaveFocus()
   })

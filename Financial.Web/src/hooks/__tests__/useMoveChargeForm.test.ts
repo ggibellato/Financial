@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto, ExpenseDto } from '../../api/types'
-import { MOVE_TARGETS_LOAD_ERROR, moveTargetsFor, useMoveChargeForm } from '../useMoveChargeForm'
+import { STATEMENTS_LOAD_ERROR } from '../useCardStatements'
+import { moveTargetsFor, useMoveChargeForm } from '../useMoveChargeForm'
 
 const { getAccountStatementsMock, moveChargeToStatementMock } = vi.hoisted(() => ({
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
@@ -85,7 +86,7 @@ describe('useMoveChargeForm', () => {
 
     act(() => result.current.open(CHARGE))
 
-    await waitFor(() => expect(result.current.targetsError).toBe(MOVE_TARGETS_LOAD_ERROR))
+    await waitFor(() => expect(result.current.targetsError).toBe(STATEMENTS_LOAD_ERROR))
     act(() => result.current.retryTargets())
     await waitFor(() => expect(result.current.targetsError).toBeNull())
     expect(getAccountStatementsMock).toHaveBeenCalledTimes(2)
@@ -95,10 +96,13 @@ describe('useMoveChargeForm', () => {
     const { result } = renderHook(() => useMoveChargeForm(onMoved))
     act(() => result.current.open(CHARGE))
 
-    act(() => result.current.submit())
+    let submitted = true
+    act(() => {
+      submitted = result.current.submit()
+    })
 
+    expect(submitted).toBe(false)
     expect(result.current.form?.targetError).toBe('Select a statement.')
-    expect(result.current.failedSubmitCount).toBe(1)
     expect(moveChargeToStatementMock).not.toHaveBeenCalled()
   })
 
