@@ -1394,7 +1394,7 @@ describe('AccountScreenPage bank side card payments', () => {
     await user.selectOptions(statement, 's-oct')
     expect(screen.getByLabelText(/^Amount/)).toHaveValue('£210.45')
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-15')
-    await user.click(within(payForm()).getByRole('button', { name: 'Pay statement' }))
+    await user.click(within(payForm()).getByRole('button', { name: 'Pay card statement' }))
 
     await waitFor(() => expect(markCardStatementPaidMock).toHaveBeenCalledWith('s-oct', { paymentSourceBankId: BARCLAYS_ID, date: '2026-10-15' }))
     expect(await screen.findByText('Statement paid')).toBeInTheDocument()
@@ -1410,7 +1410,7 @@ describe('AccountScreenPage bank side card payments', () => {
     await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
     const card = await screen.findByRole('combobox', { name: /^Card/ })
     await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
-    await user.click(within(payForm()).getByRole('button', { name: 'Pay statement' }))
+    await user.click(within(payForm()).getByRole('button', { name: 'Pay card statement' }))
 
     expect(await screen.findByText('Select a card.')).toBeInTheDocument()
     expect(screen.getByText('Select a statement.')).toBeInTheDocument()
@@ -1431,7 +1431,7 @@ describe('AccountScreenPage bank side card payments', () => {
     await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
     await user.selectOptions(card, VISA_ID)
     getPayableStatementsMock.mockClear()
-    await user.click(within(payForm()).getByRole('button', { name: 'Pay statement' }))
+    await user.click(within(payForm()).getByRole('button', { name: 'Pay card statement' }))
 
     expect(await within(payForm()).findByText('This statement is already paid.')).toBeInTheDocument()
     await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(1))
@@ -1446,7 +1446,7 @@ describe('AccountScreenPage bank side card payments', () => {
     await user.click(await screen.findByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByText('No card statement is waiting to be paid.')).toBeInTheDocument()
-    expect(within(payForm()).getByRole('button', { name: 'Pay statement' })).toBeDisabled()
+    expect(within(payForm()).getByRole('button', { name: 'Pay card statement' })).toBeDisabled()
   })
 
   it('asks before leaving a pay form with a chosen card', async () => {
@@ -1474,6 +1474,25 @@ describe('AccountScreenPage bank side card payments', () => {
     await user.click(link)
 
     expect(await screen.findByText(`/cashflow/accounts/${AMEX_ID}?month=2026-09&tab=statements`)).toBeInTheDocument()
+  })
+
+  it('leaves a modified click on a card payment link to the browser', async () => {
+    getAccountTransactionsMock.mockResolvedValue([...TRANSACTIONS, CARD_PAYMENT_ROW])
+    await openBank()
+
+    fireEvent.click(screen.getByRole('link', { name: 'BA Amex payment \u2013 Sep 2026 statement' }), { ctrlKey: true })
+
+    expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)).toBeInTheDocument()
+  })
+
+  it('keeps Pay card statement available when the expense form options fail to load', async () => {
+    getCategoriesMock.mockRejectedValue(new ApiError('Server error', 500))
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    await screen.findByRole('heading', { level: 1, name: 'Barclays' })
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeEnabled())
+    expect(screen.getByRole('button', { name: 'Add expense' })).toBeDisabled()
   })
 
   it('asks before a card payment link discards unsaved changes, and stays on Keep editing', async () => {

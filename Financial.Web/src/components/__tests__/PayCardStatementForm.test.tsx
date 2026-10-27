@@ -42,7 +42,15 @@ describe('PayCardStatementForm', () => {
     const card = screen.getByRole('combobox', { name: /^Card/ })
     expect(card).toBeEnabled()
     expect(card).toHaveAttribute('aria-busy', 'true')
-    expect(screen.getByRole('option', { name: 'Loading statements\u2026' })).toBeInTheDocument()
+    expect(screen.getAllByRole('option', { name: 'Loading statements\u2026' })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeDisabled()
+  })
+
+  it('disables the submit when the statements failed to load', () => {
+    render(<PayCardStatementForm payForm={formState({ loadError: 'Unable to load the card statements' })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeDisabled()
   })
 
   it('disables the form and shows Saving... while the payment saves', () => {
@@ -55,7 +63,7 @@ describe('PayCardStatementForm', () => {
   it('focuses the first invalid field the submit reports', () => {
     render(<PayCardStatementForm payForm={formState({ submit: vi.fn(() => 'statementId' as const) })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pay statement' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Pay card statement' }))
 
     expect(screen.getByRole('combobox', { name: /^Statement/ })).toHaveFocus()
   })

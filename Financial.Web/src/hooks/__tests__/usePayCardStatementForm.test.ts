@@ -35,7 +35,7 @@ const PAID: CardStatementDto = {
   accumulatedOutstandingTotal: 12,
 }
 
-const BARCLAYS = { id: 'barclays', name: 'Barclays' }
+const BARCLAYS = { id: 'barclays', name: 'Barclays', currency: 'GBP' }
 
 function renderForm(onPaid = vi.fn()) {
   return renderHook(() => usePayCardStatementForm(BARCLAYS, onPaid))
@@ -89,6 +89,29 @@ describe('usePayCardStatementForm', () => {
     await waitFor(() => expect(onPaid).toHaveBeenCalledTimes(1))
     expect(markCardStatementPaidMock).toHaveBeenCalledWith('amex-oct', { paymentSourceBankId: 'barclays', date: '2026-10-15' })
     expect(result.current.isOpen).toBe(false)
+  })
+
+  it('offers only cards in the bank currency, since a payment cannot cross currencies', async () => {
+    getPayableStatementsMock.mockResolvedValue([
+      ...STATEMENTS,
+      { id: 'nubank-oct', creditCardId: 'nubank', creditCardName: 'Nubank', year: 2026, month: 10, total: 300, currency: 'BRL' },
+    ])
+    const { result } = renderForm()
+
+    await openLoaded(result)
+
+    expect(result.current.cards.map((card) => card.id)).toEqual(['amex', 'visa'])
+  })
+
+  it('has nothing to pay when every payable statement is in another currency', async () => {
+    getPayableStatementsMock.mockResolvedValue([
+      { id: 'nubank-oct', creditCardId: 'nubank', creditCardName: 'Nubank', year: 2026, month: 10, total: 300, currency: 'BRL' },
+    ])
+    const { result } = renderForm()
+
+    act(() => result.current.open())
+
+    await waitFor(() => expect(result.current.hasNothingToPay).toBe(true))
   })
 
   it('selects the statement of a card that has only one, and clears it when the card changes', async () => {

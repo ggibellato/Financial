@@ -8,6 +8,11 @@ import { useFormPanelStyles } from './formPanelStyles'
 
 const NOTHING_TO_PAY_MESSAGE = 'No card statement is waiting to be paid.'
 
+function statementPlaceholder(isLoading: boolean, cardId: string): string {
+  if (isLoading) return 'Loading statements…'
+  return cardId ? 'Select a statement' : 'Select a card first'
+}
+
 interface PayCardStatementFormProps {
   payForm: PayCardStatementFormState
   lockedBank: LockedBank
@@ -62,14 +67,14 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
               ))}
             </Select>
           </Field>
-          <Field label="Statement" required {...validation('statementId')}>
+          <Field label="Statement" required className={styles.spanTwo} {...validation('statementId')}>
             <Select
               ref={statementRef}
               value={values.statementId}
               aria-busy={isLoading}
               onChange={(event) => setField('statementId', event.target.value)}
             >
-              <option value="">{values.cardId ? 'Select a statement' : 'Select a card first'}</option>
+              <option value="">{statementPlaceholder(isLoading, values.cardId)}</option>
               {statements.map((candidate) => (
                 <option key={candidate.id} value={candidate.id}>
                   {`${formatLongMonthYear(candidate.year, candidate.month)} · ${formatCurrency(candidate.total, candidate.currency)}`}
@@ -94,10 +99,10 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
           <Button
             type="submit"
             appearance="primary"
-            disabled={isSaving || hasNothingToPay}
+            disabled={isSaving || isLoading || loadError !== null || hasNothingToPay}
             icon={isSaving ? <Spinner size="tiny" /> : undefined}
           >
-            {isSaving ? 'Saving...' : 'Pay statement'}
+            {isSaving ? 'Saving...' : 'Pay card statement'}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>
             Cancel

@@ -160,7 +160,7 @@ public sealed class AccountQueryService : IAccountQueryService
 
             var result = _repository.GetCardStatements()
                 .Where(statement => !statement.IsPaid)
-                .Select(statement => ToPayableDto(statement, CardChargeFilter.OutstandingTotal(expenses, [statement], statement.CreditCard, statement.Year, statement.Month)))
+                .Select(statement => ToPayableDto(statement, CardChargeFilter.OutstandingTotal(expenses, [statement], statement)))
                 .Where(statement => statement.Total > 0)
                 .OrderBy(statement => statement.CreditCardName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(statement => statement.Year)
@@ -198,7 +198,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Year = statement.Year,
             Month = statement.Month,
             Total = charges.Sum(charge => charge.Value),
-            OutstandingTotal = CardChargeFilter.OutstandingTotal(charges, [statement], statement.CreditCard, statement.Year, statement.Month),
+            OutstandingTotal = CardChargeFilter.OutstandingTotal(charges, [statement], statement),
             IsPaid = statement.IsPaid,
             DueDate = statement.DueDate,
             PaidOn = payment?.Date,

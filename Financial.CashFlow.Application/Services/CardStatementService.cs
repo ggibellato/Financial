@@ -50,7 +50,7 @@ public sealed class CardStatementService : ICardStatementService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements
-                .Select(s => ToDto(s, OutstandingTotal(expenses, statements, s), accumulatedByCard[s.CreditCard.Id]))
+                .Select(s => ToDto(s, CardChargeFilter.OutstandingTotal(expenses, statements, s), accumulatedByCard[s.CreditCard.Id]))
                 .ToList();
         }
         catch (Exception ex)
@@ -82,7 +82,7 @@ public sealed class CardStatementService : ICardStatementService
 
             bank!.EnsureCanPay();
 
-            var total = OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement);
+            var total = CardChargeFilter.OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement);
             if (total <= 0)
             {
                 throw new ArgumentException("There is nothing to pay on this statement.");
@@ -190,16 +190,13 @@ public sealed class CardStatementService : ICardStatementService
         };
     }
 
-    private static decimal OutstandingTotal(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, CardStatement statement) =>
-        CardChargeFilter.OutstandingTotal(expenses, statements, statement.CreditCard, statement.Year, statement.Month);
-
     private static decimal AccumulatedOutstandingTotal(Account card, IEnumerable<IAccountTransaction> records) =>
         -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
     private CardStatementDTO ToDto(CardStatement statement) =>
         ToDto(
             statement,
-            OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement),
+            CardChargeFilter.OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement),
             AccumulatedOutstandingTotal(statement.CreditCard, AccountTransactionReader.Read(_repository)));
 
     private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal) => new()

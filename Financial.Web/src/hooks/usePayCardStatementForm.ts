@@ -43,14 +43,18 @@ function validate(values: PayCardStatementValues): Partial<Record<PayCardStateme
   return errors
 }
 
-export function usePayCardStatementForm(lockedBank: LockedBank | undefined, onPaid: () => void) {
+export function usePayCardStatementForm(lockedBank: (LockedBank & { currency: string }) | undefined, onPaid: () => void) {
   const [isOpen, setIsOpen] = useState(false)
   const [values, setValues] = useState<PayCardStatementValues>(initialValues)
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<PayCardStatementField, string>>>({})
   const payable = useAsyncResource(() => (isOpen ? apiClient.getPayableStatements() : null), [isOpen], PAYABLE_STATEMENTS_LOAD_ERROR)
-  const statements = payable.data ?? NO_STATEMENTS
+  const bankCurrency = lockedBank?.currency
+  const statements = useMemo(
+    () => (payable.data ?? NO_STATEMENTS).filter((statement) => statement.currency === bankCurrency),
+    [payable.data, bankCurrency],
+  )
   const cards = useMemo(() => payableCardsOf(statements), [statements])
   const cardId = cards.some((card) => card.id === values.cardId) ? values.cardId : ''
   const cardStatements = statements.filter((statement) => statement.creditCardId === cardId)

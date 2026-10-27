@@ -50,6 +50,10 @@ export function formActionsOf(allowedActions: readonly string[]): AccountFormAct
   return allowedActions.filter(isFormAction)
 }
 
+export function needsFormOptions(action: AccountFormAction): boolean {
+  return action !== 'PayCardStatement'
+}
+
 export function isTransferAction(action: AccountFormAction): boolean {
   return TRANSFER_ACTIONS.includes(action)
 }

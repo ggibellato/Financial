@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Skeleton, SkeletonItem, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, formActionsOf, isTransferAction, recordNoun, recordTitle } from '../components/accountActions'
+import { canTransfer, formActionsOf, isTransferAction, needsFormOptions, recordNoun, recordTitle } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardStatementsTab from '../components/CardStatementsTab'
@@ -128,7 +128,9 @@ export default function AccountScreenPage() {
           activeAction={activeAction}
           formAreaId={FORM_AREA_ID}
           isActionDisabled={(action) =>
-            !formOptions.isReady || !isAccountCurrent || (isTransferAction(action) && !formOptions.areCounterpartsReady)
+            !isAccountCurrent ||
+            (needsFormOptions(action) && !formOptions.isReady) ||
+            (isTransferAction(action) && !formOptions.areCounterpartsReady)
           }
           onAction={openAction}
         />
@@ -307,6 +309,7 @@ export default function AccountScreenPage() {
                 onMove={isCard ? openRowMove : undefined}
                 isMoveDisabled={!isAccountCurrent}
                 onOpenStatement={(path, event) => {
+                  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                   event.preventDefault()
                   guardChange(() => navigate(path))
                 }}
