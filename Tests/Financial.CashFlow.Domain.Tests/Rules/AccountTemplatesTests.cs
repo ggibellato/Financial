@@ -37,6 +37,29 @@ public class AccountTemplatesTests
     }
 
     [Fact]
+    public void CapabilitiesOf_Pots_IsExactlyPotsIncomeSplitAndWithdraw()
+    {
+        AccountTemplates.CapabilitiesOf(AccountTemplate.Pots).Should().BeEquivalentTo(new[]
+        {
+            Capability.HasPots,
+            Capability.ReceivesIncomeSplit,
+            Capability.CanWithdraw
+        });
+    }
+
+    [Fact]
+    public void JoinsDefaultGroup_Pots_IsFalse()
+    {
+        AccountTemplates.JoinsDefaultGroup(AccountTemplate.Pots).Should().BeFalse();
+    }
+
+    [Fact]
+    public void AllowedCurrencies_Pots_IsGbpOnly()
+    {
+        AccountTemplates.AllowedCurrencies(AccountTemplate.Pots).Should().Equal(Currency.GBP);
+    }
+
+    [Fact]
     public void JoinsDefaultGroup_CreditCard_IsTrue()
     {
         AccountTemplates.JoinsDefaultGroup(AccountTemplate.CreditCard).Should().BeTrue();
@@ -83,9 +106,9 @@ public class AccountTemplatesTests
     }
 
     [Fact]
-    public void Available_ListsBankAndCreditCard()
+    public void Available_ListsBankCreditCardAndPots()
     {
-        AccountTemplates.Available.Should().Equal(AccountTemplate.Bank, AccountTemplate.CreditCard);
+        AccountTemplates.Available.Should().Equal(AccountTemplate.Bank, AccountTemplate.CreditCard, AccountTemplate.Pots);
     }
 
     public static TheoryData<AccountTemplate> AvailableTemplates => new(AccountTemplates.Available);

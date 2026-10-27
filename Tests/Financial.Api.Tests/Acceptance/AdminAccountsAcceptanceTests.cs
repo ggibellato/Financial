@@ -105,17 +105,39 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetTemplates_ListsBankAndCreditCardWithGbpAndTheirCapabilities()
+    public async Task GetTemplates_ListsBankCreditCardAndPotsWithGbpAndTheirCapabilities()
     {
         var templates = await Client.GetFromJsonAsync<List<AccountTemplateDTO>>($"{AccountsUrl}/templates");
 
         using (new AssertionScope())
         {
-            templates!.Select(template => template.Name).Should().Equal("Bank", "CreditCard");
+            templates!.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots");
             templates![0].Currencies.Should().Equal("GBP");
             templates![0].Capabilities.Should().Contain(["HasOpeningBalance", "SupportsRoundUp"]);
             templates![1].Currencies.Should().Equal("GBP");
             templates![1].Capabilities.Should().Equal("HasCategories", "HasStatements", "ReceivesPayments");
+            templates![2].Currencies.Should().Equal("GBP");
+            templates![2].Capabilities.Should().Equal("HasPots", "ReceivesIncomeSplit", "CanWithdraw");
+        }
+    }
+
+    [Fact]
+    public async Task PostAccount_EmptyPots_IsListedWithNoActionsAndStaysOutOfTheDefaultGroup()
+    {
+        var response = await Client.PostAsJsonAsync(AccountsUrl, new AccountCreateDTO { TemplateName = "Pots", Name = "Holiday pots", Currency = "GBP" });
+        var created = await response.Content.ReadFromJsonAsync<AccountDTO>();
+        var accounts = await Client.GetFromJsonAsync<List<AccountDTO>>(AccountsUrl);
+        var detail = await Client.GetFromJsonAsync<AccountDetailDTO>($"{AccountsUrl}/{created!.Id}/2026/10");
+        var summary = await Client.GetFromJsonAsync<AccountGroupSummaryDTO>($"{AccountsUrl}/groups/default/summary/2026/10");
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            accounts.Should().ContainSingle(account => account.Id == created.Id)
+                .Which.Should().BeEquivalentTo(new { TemplateName = "Pots", Currency = "GBP", IsActive = true, HasRecords = false, OpeningBalance = (decimal?)null, RoundUpEnabled = (bool?)null });
+            detail!.Balance.Should().Be(0m);
+            detail.AllowedActions.Should().BeEmpty();
+            summary!.Members.Should().NotContain(member => member.AccountId == created.Id);
         }
     }
 
