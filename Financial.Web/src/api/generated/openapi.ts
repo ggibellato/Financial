@@ -8807,6 +8807,7 @@ export interface components {
             /** Format: uuid */
             creditCardId: string;
             creditCardName: string;
+            currency: string;
             /** Format: uuid */
             id: string;
             /** Format: int32 */

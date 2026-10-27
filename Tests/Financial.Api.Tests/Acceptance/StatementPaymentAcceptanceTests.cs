@@ -287,7 +287,8 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
                 CreditCardName = "BA Amex",
                 Year = 2026,
                 Month = 10,
-                Total = 30m
+                Total = 30m,
+                Currency = "GBP"
             });
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             transfer.Should().BeEquivalentTo(

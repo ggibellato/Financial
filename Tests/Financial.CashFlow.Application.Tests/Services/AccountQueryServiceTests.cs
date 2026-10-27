@@ -596,6 +596,7 @@ public class AccountQueryServiceTests
                 (closedOctober.Id, "Closed card", 2026, 10, 3m),
                 (visaOctober.Id, "visa", 2026, 10, 20m));
             rows[0].CreditCardId.Should().Be(_amex.Id);
+            rows[0].Currency.Should().Be("GBP");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetPayableStatements");
         }
     }

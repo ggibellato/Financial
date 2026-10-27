@@ -185,7 +185,8 @@ public sealed class AccountQueryService : IAccountQueryService
         CreditCardName = statement.CreditCard.Name,
         Year = statement.Year,
         Month = statement.Month,
-        Total = total
+        Total = total,
+        Currency = statement.CreditCard.Currency.ToString()
     };
 
     private static AccountStatementDTO ToStatementDto(CardStatement statement, IReadOnlyList<Expense> charges, IReadOnlyList<Transfer> transfers)

@@ -4538,6 +4538,9 @@
           "creditCardName": {
             "type": "string"
           },
+          "currency": {
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -4561,7 +4564,8 @@
           "creditCardName",
           "year",
           "month",
-          "total"
+          "total",
+          "currency"
         ],
         "type": "object"
       },
