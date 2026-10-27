@@ -5,7 +5,7 @@ Checks that a change keeps every CashFlow figure the same on real data. It runs 
 through the API and compares them exactly. Every P60 feature (accounts generalization) must end
 with **0 differences** on the latest copy of the live data.
 
-- **Before:** the git tag of the last P60 deploy, `p60-deployed-f07` (the version in use), on port 5291. Runs before that deploy used `p60-baseline`, the app before P60. After each later deploy, the default moves to that deploy's tag (`p60-deployed-<feature>`).
+- **Before:** the git tag of the last P60 deploy, `p60-deployed-f08` (the version in use), on port 5291. Runs before that deploy used `p60-baseline`, the app before P60. After each later deploy, the default moves to that deploy's tag (`p60-deployed-<feature>`).
 - **After:** the current working tree, including uncommitted changes, on port 5292. Its copy goes
   through the migration chain first.
 
@@ -36,7 +36,7 @@ with **0 differences** on the latest copy of the live data.
 | `-LiveCopy` | `data/data-cashflow.json` | The input file, read only. The run prints its version, SHA-256 and save time, and works on a copy, `source.json`, in the work folder |
 | `-WorkFolder` | `All` and `Baseline` create `%TEMP%\financial-parity\<yyyyMMdd-HHmmss>`; the other steps use the newest folder there | Lets you rerun one step, e.g. `-Step After` then `-Step Compare` while fixing a difference. Several figures depend on the API's current date, so `-Step After` refuses a work folder whose Baseline ran on another day; rerun `-Step All` then. |
 | `-BeforePort`, `-AfterPort` | 5291, 5292 | 8080, a busy port and two equal ports are refused |
-| `-BaselineTag` | `p60-deployed-f07` | Must exist locally |
+| `-BaselineTag` | `p60-deployed-f08` | Must exist locally |
 | `-KeepRunning` | off | Also builds each version's web app into its API and leaves the API(s) running. Use it for the [screen checklist](screen-checklist.md); the script prints the URLs and the `Stop-Process` line. The baseline worktree always runs `npm ci` (about 5 minutes). The working tree reuses its existing `node_modules` and runs `npm ci` only when the folder is missing. Run it straight from a terminal: piping its output (e.g. `\| Select-Object`) keeps the pipe open until the APIs are stopped. |
 
 `Parity OK: 0 differences in <n> figures across <m> months` means exit 0. `Parity FAILED: <n>

@@ -222,7 +222,7 @@ try {
     git init --quiet $repoRoot
     $copyPath = Join-Path $repoRoot 'data/copy.json'
     $output = & pwsh -NoProfile -File $entry -Step Baseline -LiveCopy $copyPath -RepoRoot $repoRoot -BeforePort $freePort 2>&1 | Out-String
-    Check 'entry script refuses a missing baseline tag before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Tag p60-deployed-f07 not found. Create it on main before the first run.') -and $output -notmatch 'Work folder') $output
+    Check 'entry script refuses a missing baseline tag before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Tag p60-deployed-f08 not found. Create it on main before the first run.') -and $output -notmatch 'Work folder') $output
 
     $output = & pwsh -NoProfile -File $entry -Step All -LiveCopy $copyPath -RepoRoot $repoRoot -BeforePort 8080 2>&1 | Out-String
     Check 'entry script refuses port 8080 before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Port 8080 is in use (or is the live port 8080)') -and $output -notmatch 'Work folder') $output
