@@ -4,6 +4,7 @@ import type { PayableStatementDto } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
 import type { LockedBank } from './formSettings'
 import { useAsyncResource } from './useAsyncResource'
+import { paymentDateError } from './useCardStatements'
 
 const PAYABLE_STATEMENTS_LOAD_ERROR = 'Unable to load the card statements'
 
@@ -38,8 +39,8 @@ function validate(values: PayCardStatementValues): Partial<Record<PayCardStateme
   const errors: Partial<Record<PayCardStatementField, string>> = {}
   if (!values.cardId) errors.cardId = 'Select a card.'
   if (!values.statementId) errors.statementId = 'Select a statement.'
-  if (!values.date) errors.date = 'Enter a date.'
-  else if (values.date > todayIsoDate()) errors.date = 'Date must not be in the future.'
+  const dateError = paymentDateError(values.date)
+  if (dateError) errors.date = dateError
   return errors
 }
 
@@ -57,7 +58,8 @@ export function usePayCardStatementForm(lockedBank: (LockedBank & { currency: st
   )
   const cards = useMemo(() => payableCardsOf(statements), [statements])
   const cardId = cards.some((card) => card.id === values.cardId) ? values.cardId : ''
-  const cardStatements = statements.filter((statement) => statement.creditCardId === cardId)
+  const statementsOf = (id: string) => statements.filter((candidate) => candidate.creditCardId === id)
+  const cardStatements = statementsOf(cardId)
   const statement = cardStatements.find((candidate) => candidate.id === values.statementId) ?? null
   const current = { ...values, cardId, statementId: statement?.id ?? '' }
 
@@ -80,7 +82,7 @@ export function usePayCardStatementForm(lockedBank: (LockedBank & { currency: st
   const setField = (field: PayCardStatementField, value: string) => {
     setValues((previous) => {
       if (field !== 'cardId') return { ...previous, [field]: value }
-      const onlyStatement = statements.filter((candidate) => candidate.creditCardId === value)
+      const onlyStatement = statementsOf(value)
       return { ...previous, cardId: value, statementId: onlyStatement.length === 1 ? onlyStatement[0].id : '' }
     })
     setSaveError(null)

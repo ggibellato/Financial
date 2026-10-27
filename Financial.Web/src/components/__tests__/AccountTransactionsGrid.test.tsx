@@ -152,7 +152,7 @@ describe('AccountTransactionsGrid', () => {
     expect(link).toHaveAttribute('href', '/cashflow/accounts/visa-id?month=2026-10&tab=statements')
     expect(screen.getAllByRole('link')).toHaveLength(1)
     fireEvent.click(link)
-    expect(onOpenStatement).toHaveBeenCalledWith('/cashflow/accounts/visa-id?month=2026-10&tab=statements', expect.anything())
+    expect(onOpenStatement).toHaveBeenCalledWith('/cashflow/accounts/visa-id?month=2026-10&tab=statements')
   })
 
   it('offers Move beside Edit and Delete on an editable card charge only', () => {

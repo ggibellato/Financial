@@ -308,11 +308,7 @@ export default function AccountScreenPage() {
                 onDelete={rowDelete.requestDelete}
                 onMove={isCard ? openRowMove : undefined}
                 isMoveDisabled={!isAccountCurrent}
-                onOpenStatement={(path, event) => {
-                  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                  event.preventDefault()
-                  guardChange(() => navigate(path))
-                }}
+                onOpenStatement={(path) => guardChange(() => navigate(path))}
               />
             )}
           </>

@@ -157,10 +157,11 @@ public sealed class AccountQueryService : IAccountQueryService
         try
         {
             var expenses = _repository.GetExpenses().ToList();
+            var statements = _repository.GetCardStatements().ToList();
 
-            var result = _repository.GetCardStatements()
+            var result = statements
                 .Where(statement => !statement.IsPaid)
-                .Select(statement => ToPayableDto(statement, CardChargeFilter.OutstandingTotal(expenses, [statement], statement)))
+                .Select(statement => ToPayableDto(statement, CardChargeFilter.OutstandingTotal(expenses, statements, statement)))
                 .Where(statement => statement.Total > 0)
                 .OrderBy(statement => statement.CreditCardName, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(statement => statement.Year)
@@ -302,21 +303,14 @@ public sealed class AccountQueryService : IAccountQueryService
 
     private static IEnumerable<AccountTransactionDTO> ToRows(Transfer transfer, Account account, IReadOnlyList<CardStatement> statements)
     {
-        var paidStatement = transfer.IsStatementPayment
-            ? statements.FirstOrDefault(statement => statement.PaymentTransferId == transfer.Id)
-            : null;
+        var paidStatement = statements.FirstOrDefault(statement => statement.PaymentTransferId == transfer.Id);
+        var isPayment = transfer.IsStatementPayment;
 
         if (transfer.SourceAccount.Id == account.Id)
-        {
-            var kind = transfer.IsStatementPayment ? TransactionKind.CardPayment : TransactionKind.TransferOut;
-            yield return ToRow(transfer, account, kind, transfer.DestinationAccount, -transfer.Amount, paidStatement);
-        }
+            yield return ToRow(transfer, account, isPayment ? TransactionKind.CardPayment : TransactionKind.TransferOut, transfer.DestinationAccount, -transfer.Amount, paidStatement);
 
         if (transfer.DestinationAccount.Id == account.Id)
-        {
-            var kind = transfer.IsStatementPayment ? TransactionKind.CardPayment : TransactionKind.TransferIn;
-            yield return ToRow(transfer, account, kind, transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
-        }
+            yield return ToRow(transfer, account, isPayment ? TransactionKind.CardPayment : TransactionKind.TransferIn, transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
     }
 
     private static AccountTransactionDTO ToRow(

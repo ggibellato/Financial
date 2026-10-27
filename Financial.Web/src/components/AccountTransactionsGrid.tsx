@@ -12,7 +12,6 @@ import {
   Tooltip,
 } from '@fluentui/react-components'
 import { CalendarArrowRightRegular } from '@fluentui/react-icons'
-import { Link } from 'react-router-dom'
 import type { AccountTransactionDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
@@ -71,7 +70,7 @@ interface AccountTransactionsGridProps {
   onDelete: (row: AccountTransactionDto) => void
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
-  onOpenStatement?: (path: string, event: MouseEvent<HTMLAnchorElement>) => void
+  onOpenStatement?: (path: string) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -92,14 +91,12 @@ export default function AccountTransactionsGrid({
   const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
     if (column.key !== 'description' || !row.statement) return column.render(row)
     const path = statementPath(row.statement)
-    const text = row.description ?? kindLabel(row.kind)
-    return (
-      <Tooltip content={text} relationship="inaccessible" withArrow>
-        <Link to={path} className="truncated-text" onClick={(event) => onOpenStatement?.(path, event)}>
-          {text}
-        </Link>
-      </Tooltip>
-    )
+    return <TruncatedText text={row.description} to={path} onClick={(event) => openStatement(path, event)} />
+  }
+  const openStatement = (path: string, event: MouseEvent<HTMLAnchorElement>) => {
+    if (!onOpenStatement || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    onOpenStatement(path)
   }
 
   return (
