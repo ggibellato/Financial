@@ -97,13 +97,15 @@ try {
     $unfilled['card-statements/2026/9'] = '[{"creditCardName":"Amex","outstandingTotal":40.10,"accumulatedOutstandingTotal":40.10,"isPaid":false}]'
     $unfilled["accounts/$chaseId/2026/9"] = '{"balance":0}'
     $unfilledFetch = { param($path) if (-not $unfilled.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $unfilled[$path] }
-    $filled = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeAccounts
+    $filled = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeAccounts -FillMissingStatements
+    $filledBefore = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -FillMissingStatements
     $notFilled = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09'
     Check 'after side fills a missing statement with the card''s accumulated outstanding' ($filled['2026-08/cards/Amex/outstandingTotal'] -eq 0 -and $filled['2026-08/cards/Amex/accumulatedOutstandingTotal'] -eq [decimal]'40.10' -and $filled['2026-08/cards/Amex/isPaid'] -eq $false -and $filled.ContainsKey('2026-08/cards/Amex/warning') -and $null -eq $filled['2026-08/cards/Amex/warning']) ''
     Check 'after side fills a card with no stored statement with zeros' ($filled['2026-08/cards/Visa/accumulatedOutstandingTotal'] -eq 0 -and $filled['2026-09/cards/Visa/outstandingTotal'] -eq 0 -and $filled['2026-09/cards/Visa/isPaid'] -eq $false) ''
     Check 'fill leaves stored statements and inactive cards alone' ($filled['2026-09/cards/Amex/outstandingTotal'] -eq [decimal]'40.10' -and -not $filled.ContainsKey('2026-08/cards/Closed/outstandingTotal')) ''
     Check 'a statement without a warning field reads as a null warning' ($filled.ContainsKey('2026-09/cards/Amex/warning') -and $null -eq $filled['2026-09/cards/Amex/warning']) ''
-    Check 'before side adds no missing statements' (-not $notFilled.ContainsKey('2026-08/cards/Amex/outstandingTotal') -and -not $notFilled.ContainsKey('2026-09/cards/Visa/outstandingTotal')) ''
+    Check 'without FillMissingStatements no missing statements are added' (-not $notFilled.ContainsKey('2026-08/cards/Amex/outstandingTotal') -and -not $notFilled.ContainsKey('2026-09/cards/Visa/outstandingTotal')) ''
+    Check 'before side fills missing statements without adding account figures' ($filledBefore['2026-08/cards/Amex/accumulatedOutstandingTotal'] -eq [decimal]'40.10' -and $filledBefore['2026-09/cards/Visa/outstandingTotal'] -eq 0 -and -not ($filledBefore.Keys | Where-Object { $_.Split('/')[1] -eq 'account' })) ''
 
     $duplicate = $responses.Clone()
     $duplicate['banks/month/2026/8/balances'] = '[{"bank":"Barclays","balance":1},{"bank":"Barclays","balance":2}]'
@@ -159,18 +161,28 @@ try {
 
     $repoRoot = Join-Path $work 'repo'
     New-Item -ItemType Directory -Path (Join-Path $repoRoot 'data') | Out-Null
-    Set-Content -LiteralPath (Join-Path $repoRoot 'data/data-cashflow.json') -Value '{}'
+    $emptyRoot = Join-Path $work 'empty-repo'
+    New-Item -ItemType Directory -Path $emptyRoot | Out-Null
+    $missingSourceMessage = Get-Error { Resolve-ParityLiveCopy '' @($emptyRoot) }
+    $expectedMissingSource = 'data/data-cashflow.json not found. Download it from Google Drive into data/, or pass -LiveCopy.'
+    Set-Content -LiteralPath (Join-Path $repoRoot 'data/data-cashflow.json') -Value '{ "Version": 3 }'
     Set-Content -LiteralPath (Join-Path $repoRoot 'data/copy.json') -Value '{}'
+    $liveFile = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'data/data-cashflow.json'))
     Push-Location $repoRoot
     try {
-        $liveMessage = Get-Error { Assert-ParityLiveCopy 'data/../data/data-cashflow.json' $repoRoot }
-        $casingMessage = Get-Error { Assert-ParityLiveCopy (Join-Path $repoRoot 'DATA/Data-CashFlow.json') $repoRoot }
-        $copyMessage = Get-Error { Assert-ParityLiveCopy 'data/copy.json' $repoRoot }
+        $defaultSource = Resolve-ParityLiveCopy '' @($repoRoot)
+        $worktreeSource = Resolve-ParityLiveCopy '' @($emptyRoot, $repoRoot)
+        $explicitSource = Resolve-ParityLiveCopy 'data/copy.json' @($repoRoot)
+        $missingCopyMessage = Get-Error { Resolve-ParityLiveCopy 'data/none.json' @($repoRoot) }
     }
     finally { Pop-Location }
-    $expected = 'Refusing to run on the live data file data/data-cashflow.json. Pass a copy.'
-    $isCaseInsensitiveFileSystem = Test-Path -LiteralPath (Join-Path $repoRoot 'DATA/Data-CashFlow.json')
-    Check 'live data file is refused' ($liveMessage -eq $expected -and $copyMessage -eq '' -and ($casingMessage -eq $expected -or -not $isCaseInsensitiveFileSystem)) "$liveMessage / $casingMessage / $copyMessage"
+    Check 'source defaults to data/data-cashflow.json, also from a worktree, and a missing source is named' ($defaultSource -eq $liveFile -and $worktreeSource -eq $liveFile -and $explicitSource -like '*copy.json' -and $missingSourceMessage -eq $expectedMissingSource -and $missingCopyMessage -match '^Live copy not found') "$defaultSource / $worktreeSource / $explicitSource / $missingSourceMessage / $missingCopyMessage"
+
+    $sourceHash = Get-ParitySha256 $liveFile
+    $sourceCopy = Copy-ParitySource $liveFile $work
+    Add-Content -LiteralPath $sourceCopy -Value ' '
+    $sourceLine = Format-ParitySource $liveFile
+    Check 'the run works on a copy and leaves the source unchanged' ((Get-ParitySha256 $liveFile) -eq $sourceHash -and $sourceCopy -eq (Join-Path $work 'source.json') -and $sourceLine -match "version 3, SHA-256 $($sourceHash.Substring(0, 8))") $sourceLine
 
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
     $listener.Start()
@@ -204,13 +216,13 @@ try {
     $output = & pwsh -NoProfile -File $entry -Step Compare -WorkFolder $runFolder 2>&1 | Out-String
     Check 'compare step fails and lists the changed figure' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('2026-09 / banks / Barclays / balance | 130.83 | 131.83') -and $output -match 'Parity FAILED: 1 difference\b' -and (Test-Path (Join-Path $runFolder 'differences.txt'))) $output
 
-    $output = & pwsh -NoProfile -File $entry -Step All -LiveCopy (Join-Path $repoRoot 'data/data-cashflow.json') -RepoRoot $repoRoot 2>&1 | Out-String
-    Check 'entry script refuses the live data file before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape($expected) -and $output -notmatch '\[1/4\]') $output
+    $output = & pwsh -NoProfile -File $entry -Step All -RepoRoot $emptyRoot 2>&1 | Out-String
+    Check 'entry script stops before anything runs when there is no source' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape($expectedMissingSource) -and $output -notmatch 'Work folder') $output
 
     git init --quiet $repoRoot
     $copyPath = Join-Path $repoRoot 'data/copy.json'
     $output = & pwsh -NoProfile -File $entry -Step Baseline -LiveCopy $copyPath -RepoRoot $repoRoot -BeforePort $freePort 2>&1 | Out-String
-    Check 'entry script refuses a missing baseline tag before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Tag p60-deployed-f07 not found. Create it on main before the first run.') -and $output -notmatch 'Work folder') $output
+    Check 'entry script refuses a missing baseline tag before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Tag p60-deployed-f08 not found. Create it on main before the first run.') -and $output -notmatch 'Work folder') $output
 
     $output = & pwsh -NoProfile -File $entry -Step All -LiveCopy $copyPath -RepoRoot $repoRoot -BeforePort 8080 2>&1 | Out-String
     Check 'entry script refuses port 8080 before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('Port 8080 is in use (or is the live port 8080)') -and $output -notmatch 'Work folder') $output

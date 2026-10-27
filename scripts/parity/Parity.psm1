@@ -298,18 +298,20 @@ function Get-ParityReport {
         [string]$Side = 'report',
         [string]$CurrentMonth = '',
         [switch]$IncludeSummary,
-        [switch]$IncludeAccounts
+        [switch]$IncludeAccounts,
+        [switch]$FillMissingStatements
     )
     try {
         $report = New-ParityReport
         $months = @(Get-ParityMonthKeys $First $Last)
         $banks = & $Fetch 'banks'
         $potBalancesByMonth = Get-ParityPotBalancesByMonth (& $Fetch 'reserve/movements') $months
-        $accounts = if ($IncludeAccounts) { @(& $Fetch 'accounts') } else { $null }
+        $accounts = if ($IncludeAccounts -or $FillMissingStatements) { @(& $Fetch 'accounts') } else { $null }
+        $figureAccounts = if ($IncludeAccounts) { $accounts } else { $null }
         foreach ($month in $months) {
-            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $accounts $CurrentMonth
+            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $figureAccounts $CurrentMonth
         }
-        if ($null -ne $accounts) { Add-ParityMissingCardStatementFigures $report $months $accounts }
+        if ($FillMissingStatements) { Add-ParityMissingCardStatementFigures $report $months $accounts }
 
         foreach ($balance in (& $Fetch 'reserve/balances')) {
             Add-ParityFigure $report "current/pots/$($balance.bucketName)/balance" $balance.balance
@@ -490,16 +492,34 @@ function Get-ParityMonthRange([string]$DataFile, [datetime]$Now) {
     }
 }
 
-function Assert-ParityLiveCopy([string]$Path, [string[]]$RepoRoots) {
-    $resolved = [System.IO.Path]::GetFullPath($Path, (Get-Location).ProviderPath)
-    foreach ($repoRoot in $RepoRoots) {
-        $liveFile = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'data/data-cashflow.json'))
-        if ([string]::Equals($resolved, $liveFile, [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw 'Refusing to run on the live data file data/data-cashflow.json. Pass a copy.'
+function Resolve-ParityLiveCopy([string]$Path, [string[]]$RepoRoots) {
+    if (-not $Path) {
+        foreach ($repoRoot in $RepoRoots) {
+            $liveFile = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'data/data-cashflow.json'))
+            if (Test-Path -LiteralPath $liveFile -PathType Leaf) { return $liveFile }
         }
+        throw 'data/data-cashflow.json not found. Download it from Google Drive into data/, or pass -LiveCopy.'
     }
+    $resolved = [System.IO.Path]::GetFullPath($Path, (Get-Location).ProviderPath)
     if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) { throw "Live copy not found: $resolved" }
     $resolved
+}
+
+function Copy-ParitySource([string]$Source, [string]$Folder) {
+    $copy = Join-Path $Folder 'source.json'
+    Copy-Item -LiteralPath $Source -Destination $copy -Force
+    $copy
+}
+
+function Format-ParitySource([string]$Source) {
+    $document = [System.Text.Json.JsonDocument]::Parse([System.IO.File]::ReadAllText($Source))
+    try {
+        $versionProperty = $document.RootElement.EnumerateObject() | Where-Object Name -eq 'Version' | Select-Object -First 1
+        $version = if ($versionProperty) { $versionProperty.Value.ToString() } else { 'none' }
+    }
+    finally { $document.Dispose() }
+    $savedAt = (Get-Item -LiteralPath $Source).LastWriteTime.ToString('yyyy-MM-dd HH:mm')
+    "Source: $Source (version $version, SHA-256 $((Get-ParitySha256 $Source).Substring(0, 8)), saved $savedAt)"
 }
 
 function Assert-ParityPorts([int[]]$Ports) {

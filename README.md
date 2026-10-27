@@ -12,7 +12,7 @@ Personal financial management tool for consolidating investment transactions acr
 The Investment and CashFlow domains each load their data from their own JSON file, and a third file permanently caches resolved FX rates so they never need re-fetching from Frankfurter after the first lookup. All three example files are tracked under `data/` — copy them locally before first run (the real data files themselves are git-ignored):
 
 - Investment: copy `data/data-investment.example.json` to `data/data-investment.json`.
-- CashFlow: copy `data/data-cashflow.example.json` to `data/data-cashflow.json`.
+- CashFlow: copy `data/data-cashflow.example.json` to `data/data-cashflow.json`. A Development run (`dotnet run --project Financial.Api`) reads and writes `data/dev/data-cashflow.json` instead, so local runs and smoke tests never change `data/data-cashflow.json`, the copy of the live file that parity reads. Create it by copying `data/data-cashflow.json` (or the example) to `data/dev/data-cashflow.json`.
 - FX rates: copy `data/data-fx-rates.example.json` to `data/data-fx-rates.json`. This one is optional — a missing file just starts with an empty rate cache.
 
 Configure the paths via environment variable or `appsettings.json`. Each domain's storage settings live under their own JSON element — `Investment`, `CashFlow`, and `FxRates` — never at the config root:

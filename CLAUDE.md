@@ -109,7 +109,7 @@ Run the API locally (serves API only, expects the SPA dev server separately):
 ```
 dotnet run --project Financial.Api
 ```
-Dev config points `Investment:DataJsonFile` / `CashFlow:DataJsonFile` at `../../../../data/*.json` (repo-root `data/`) and CORS allows `localhost:5173`/`5174`. Do not run against `.env` values or ports that overlap a live Docker deployment (default Docker port is 8080) — check `netstat` before smoke-testing locally.
+Dev config points `Investment:DataJsonFile` at `../../../../data/data-investment.json` and `CashFlow:DataJsonFile` at `../../../../data/dev/data-cashflow.json` (repo-root `data/`; never at `data/data-cashflow.json`, the live copy parity reads) and CORS allows `localhost:5173`/`5174`. Do not run against `.env` values or ports that overlap a live Docker deployment (default Docker port is 8080) — check `netstat` before smoke-testing locally.
 
 ### Financial.Web (React + TypeScript + Vite)
 

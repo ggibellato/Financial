@@ -42,7 +42,7 @@ This session is the **controller**. It reviews, writes documents, opens docs PRs
 4. Present the review to the user:
    - what the feature delivers;
    - numbered findings, each with the evidence (file:line) and a recommendation.
-   - Look for: deviations from the code; scaffolding with no first user (move it to the feature that first uses it); PR size over 8 non-test code files (split into stages, each leaving `main` deployable); deploy or data-file implications; contradictions with earlier decisions.
+   - Look for: deviations from the code; scaffolding with no first user (move it to the feature that first uses it); PR size over the `docs/rules/design.md` limit of 8 non-test code files and about 15 files in total (split into stages or PRs, each leaving `main` deployable); deploy or data-file implications; contradictions with earlier decisions.
 5. Discuss the findings until the user decides each one. Record the decisions in the plan file. Make no edits during the discussion unless the user asks.
 
 ## Step 2 — Update the PRD (only if findings change it)
@@ -66,6 +66,7 @@ This session is the **controller**. It reviews, writes documents, opens docs PRs
 4. Before committing, check the spec:
    - every Section 9 criterion maps to a named test or to the Definition of Done;
    - each stage stays deployable on its own;
+   - each planned PR fits the size limit (8 non-test code files, about 15 in total); split a stage that doesn't;
    - exact package versions are pinned (at least two weeks old).
 
 ## Step 4 — Review the spec with the user
@@ -83,11 +84,11 @@ Give the user the exact commands, one stage per session:
 git switch main && git pull --ff-only && git switch -c feature/P60-F<NN>-<short-name>
 ```
 ```
-/implement-feature docs/prd/P60-prd-cashflow-accounts-generalization/features/P60-F<NN>-<kebab-name> only stage <N> (PR <A/B>). Strict no-comments policy. When the stage is done and verified, push the branch and open the PR: Conventional Commits title, the PRD Section 9 checklist in the body, then run gh pr checks. Do not merge. Parity run on a fresh live copy from Google Drive before pushing.
+/implement-feature docs/prd/P60-prd-cashflow-accounts-generalization/features/P60-F<NN>-<kebab-name> only stage <N> (PR <A/B>). Strict no-comments policy. Keep the PR within 8 non-test code files and about 15 files in total (generated files excluded); review fixes outside the stage's files go to a follow-up PR; if the PR would exceed the limit, stop and propose a split instead of pushing. When the stage is done and verified, push the branch and open the PR: Conventional Commits title, a short review guide (files in reading order, one line each), the PRD Section 9 checklist in the body, then run gh pr checks. Do not merge. Run parity with `scripts/parity/Invoke-Parity.ps1 -Step All` (it reads data/data-cashflow.json, read only) and report the result with the SHA-256 check. Never run the app against data/data-cashflow.json; Development runs use data/dev/data-cashflow.json.
 ```
 
 Remind the user:
-- to download a fresh live copy for the parity run;
+- to download the latest file from Google Drive to `data/data-cashflow.json` before the parity run (overwrite it; no renaming);
 - that the stage limit matters, because without it implement-feature runs every step.
 
 ## Step 6 — Verify the implementation
@@ -104,11 +105,11 @@ When the user brings the report and the PR number back, verify the **open PR** i
    - `cd Financial.Web && npm run build` if the web app was touched.
 3. **Comments:** grep the diff's added lines for new `//`, `///`, `/*` and `#` comments. There must be none.
 4. **Contract:** the OpenAPI snapshot diff contains only intended changes. If it changed, the generated types were regenerated.
-5. **Parity:** check the report's run, or rerun `scripts/parity/Invoke-Parity.ps1 -Step All -LiveCopy <fresh copy>`. It must show 0 differences and an unchanged SHA-256 for the copy.
+5. **Parity:** check the report's run, or rerun `scripts/parity/Invoke-Parity.ps1 -Step All` (it reads `data/data-cashflow.json`). It must show 0 differences and an unchanged SHA-256 for the copy.
 6. **Reviews:** `/simplify` and the architecture-reviewer ran (plus the ui-reviewer for UI stages), with their findings applied or their skips justified.
 7. **PRD ticks:** only in the final stage's PR, in their own commit, and only for criteria actually verified. Cross-feature boxes are ticked only when every feature they name has shipped.
 8. **PRD drift:** for each deviation in the report, check whether it contradicts the PRD or the design doc. If it does, agree the fix with the user and have it committed to the PR branch before the merge (never a separate PRD-only PR after the merge).
-9. **Size:** count the non-test code files. Report any stage over 8, unless the overage is an exempt repeated change.
+9. **Size:** count the non-test code files and the total files (generated files excluded). A PR over 8 code files or about 15 in total goes back to be split, unless the overage is an exempt repeated change; don't accept it.
 10. **PR body:** Conventional Commits title, the Section 9 checklist with each ticked box naming its test, and the footer.
 11. Report to the user: the status, the acceptance checklist (✓, ✗ or —), deviations and any problems, and whether the PR is ready to merge. This session never implements: if something must change, give the user the exact fix request to paste into the implementation session, which pushes the fix to the same PR; then verify the new head commit again.
 
