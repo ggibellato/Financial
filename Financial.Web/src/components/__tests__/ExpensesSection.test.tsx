@@ -49,9 +49,41 @@ describe('ExpensesSection', () => {
 
     expect(screen.getByText('Lidl UK')).toBeInTheDocument()
     expect(screen.getByText('Amazon')).toBeInTheDocument()
-    expect(screen.getByText('BarclaysPlatinumVisa8003')).toBeInTheDocument()
+    expect(screen.getAllByText('BarclaysPlatinumVisa8003')).toHaveLength(2)
     expect(screen.getByText('42.50')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
+  it('shows the card in the Bank cell of a charge paid through its statement', () => {
+    render(<ExpensesSection expenses={[EXPENSES[1]]} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    const row = screen.getByText('Amazon').closest('tr')!
+    const cells = within(row).getAllByRole('cell')
+    expect(cells[4]).toHaveTextContent('BarclaysPlatinumVisa8003')
+    expect(cells[5]).toHaveTextContent('BarclaysPlatinumVisa8003')
+  })
+
+  it('offers the card as a Paid from filter value for a charge paid through its statement', () => {
+    render(<ExpensesSection expenses={EXPENSES} onEdit={vi.fn()} onDelete={vi.fn()} onNewExpense={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Paid from' }))
+
+    expect(screen.getByRole('checkbox', { name: 'Barclays' })).toBeInTheDocument()
+    expect(screen.getByRole('checkbox', { name: 'BarclaysPlatinumVisa8003' })).toBeInTheDocument()
+  })
+
+  it.each(['CreditCardStatementPaid', 'CreditCardSettled'])('keeps Delete from removing a %s charge', (paymentStatus) => {
+    const onDelete = vi.fn()
+    render(
+      <ExpensesSection expenses={[{ ...EXPENSES[1], paymentStatus }]} onEdit={vi.fn()} onDelete={onDelete} onNewExpense={vi.fn()} />,
+    )
+
+    const deleteButton = screen.getByRole('button', { name: 'Delete expense' })
+    fireEvent.click(deleteButton)
+
+    expect(deleteButton).toHaveAttribute('aria-disabled', 'true')
+    expect(onDelete).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: 'Edit expense' })).toBeEnabled()
   })
 
   it('renders the category name, not its id', () => {

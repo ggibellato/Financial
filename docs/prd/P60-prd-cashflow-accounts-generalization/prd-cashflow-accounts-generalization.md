@@ -442,6 +442,7 @@ Rules that apply to every feature:
 **Error Handling:**
 - Paying an already paid statement: 409 "This statement is already paid." list refreshes.
 - Paying a statement with no charges: 400 "There is nothing to pay on this statement."
+- Paying from an account in another currency: 400 "The paying account must be in the card's currency (GBP)." (GBP is the card's currency).
 - Moving a charge to a paid or earlier statement: 400 "Charges can only move to a later, unpaid statement."
 - Adding a charge to a paid statement, deleting one, or changing anything but its description, category and counts-as-tithe while its statement is paid: 400 "This charge's statement is paid; unmark it first."
 - Unmarking a statement that is not paid: 409 "This statement is not paid."

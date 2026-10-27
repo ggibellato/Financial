@@ -101,10 +101,11 @@ public sealed class AccountQueryService : IAccountQueryService
             var endOfMonth = EndOfMonth(year, month);
             var startOfMonth = new DateOnly(year, month, 1);
             var account = FindAccountOrThrow(id);
+            var statements = _repository.GetCardStatements().ToList();
 
             var result = AccountTransactionReader.Read(_repository)
                 .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth)
-                .SelectMany(record => ToRows(record, account))
+                .SelectMany(record => ToRows(record, account, statements))
                 .OrderByDescending(row => row.Date)
                 .ToList();
 
@@ -119,17 +120,17 @@ public sealed class AccountQueryService : IAccountQueryService
         }
     }
 
-    private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account) =>
+    private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account, IReadOnlyList<CardStatement> statements) =>
         record switch
         {
-            Expense expense when expense.PaymentSourceAccount?.Id == account.Id || expense.IsUnpaidChargeOn(account) => [ToRow(expense, account)],
+            Expense expense when expense.PaymentSourceAccount?.Id == account.Id || expense.IsUnpaidChargeOn(account) => [ToRow(expense, account, statements)],
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
             _ => []
         };
 
-    private static AccountTransactionDTO ToRow(Expense expense, Account account)
+    private static AccountTransactionDTO ToRow(Expense expense, Account account, IReadOnlyList<CardStatement> statements)
     {
         var kind = expense.CreditCard is null ? TransactionKind.Expense : TransactionKind.CardCharge;
         return new AccountTransactionDTO
@@ -143,7 +144,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Amount = -expense.Value,
             RoundUp = expense.RoundUpAmount is { } roundUp ? -roundUp : null,
             CanEdit = account.IsActive && kind == TransactionKind.Expense,
-            Expense = ExpenseService.ToDto(expense)
+            Expense = ExpenseService.ToDto(expense, statements)
         };
     }
 
@@ -176,7 +177,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = transfer.Note,
         Counterpart = counterpart.Name,
         Amount = amount,
-        CanEdit = account.IsActive,
+        CanEdit = account.IsActive && !transfer.IsStatementPayment,
         Transfer = AccountTransferService.ToDto(transfer)
     };
 

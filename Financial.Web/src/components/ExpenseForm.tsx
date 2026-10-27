@@ -79,6 +79,7 @@ export default function ExpenseForm({
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
+  const settledCardName = creditCardName || creditCards.find((card) => card.id === creditCardId)?.name || creditCardId
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
 
   return (
@@ -124,8 +125,9 @@ export default function ExpenseForm({
           {isSettled ? (
             <div className={styles.spanTwo}>
               <Text as="p" size={200}>
-                Paid by {selectedBank?.name ?? paymentSource} via card {creditCardName || creditCardId}. Date, value, payment
-                source and invoice month are locked while its card statement is paid — unmark the statement to change them.
+                {paymentSource
+                  ? `Paid by ${selectedBank?.name ?? paymentSource} via card ${settledCardName}. Date, value, payment source and invoice month are locked while its card statement is paid — unmark the statement to change them.`
+                  : `Paid through ${settledCardName}'s statement. Date, value, card and invoice month are locked while the statement is paid — unmark the statement to change them.`}
               </Text>
             </div>
           ) : lockedBank ? (

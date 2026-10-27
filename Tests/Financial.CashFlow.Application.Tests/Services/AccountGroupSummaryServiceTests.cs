@@ -229,7 +229,7 @@ public class AccountGroupSummaryServiceTests
         _repository.Accounts.Add(_amex);
         AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
         var statement = CardStatement.Create(_amex, 2026, 9);
-        statement.MarkPaid();
+        statement.MarkLegacyPaid();
         _repository.CardStatements.Add(statement);
 
         var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
@@ -242,7 +242,7 @@ public class AccountGroupSummaryServiceTests
     {
         _repository.Accounts.Add(_amex);
         var statement = CardStatement.Create(_amex, 2026, 9);
-        statement.MarkPaid();
+        statement.MarkLegacyPaid();
         _repository.CardStatements.Add(statement);
 
         var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
@@ -255,7 +255,7 @@ public class AccountGroupSummaryServiceTests
     {
         _repository.Accounts.Add(_amex);
         var augustStatement = CardStatement.Create(_amex, 2026, 8);
-        augustStatement.MarkPaid();
+        augustStatement.MarkLegacyPaid();
         _repository.CardStatements.Add(augustStatement);
 
         var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");

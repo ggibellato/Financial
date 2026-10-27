@@ -165,6 +165,7 @@ public class FailedSaveRollbackTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-14")]
     public async Task MarkStatementPaidAsync_WhenTheWriteFails_LeavesTheStatementAndItsChargesUnpaid()
     {
         var service = CreateCardStatementService();
@@ -176,7 +177,10 @@ public class FailedSaveRollbackTests
         await act.Should().ThrowAsync<IOException>();
         using (new AssertionScope())
         {
-            _repository.GetCardStatements().Single(s => s.Id == statementId).IsPaid.Should().BeFalse();
+            var statement = _repository.GetCardStatements().Single(s => s.Id == statementId);
+            statement.IsPaid.Should().BeFalse();
+            statement.PaymentTransferId.Should().BeNull();
+            _repository.GetTransfers().Should().BeEmpty();
             var charge = _repository.GetExpenses().Should().ContainSingle().Subject;
             charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
             charge.PaymentSourceAccount.Should().BeNull();
@@ -184,7 +188,8 @@ public class FailedSaveRollbackTests
     }
 
     [Fact]
-    public async Task UnmarkStatementPaidAsync_WhenTheWriteFails_LeavesTheStatementAndItsChargesSettled()
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-14")]
+    public async Task UnmarkStatementPaidAsync_WhenTheWriteFails_LeavesTheStatementPaidByItsTransfer()
     {
         var service = CreateCardStatementService();
         var statementId = await AddChargeAndGetStatementIdAsync(service);
@@ -196,10 +201,12 @@ public class FailedSaveRollbackTests
         await act.Should().ThrowAsync<IOException>();
         using (new AssertionScope())
         {
-            _repository.GetCardStatements().Single(s => s.Id == statementId).IsPaid.Should().BeTrue();
-            var charge = _repository.GetExpenses().Should().ContainSingle().Subject;
-            charge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardSettled);
-            charge.PaymentSourceAccount!.Name.Should().Be("Trading212");
+            var statement = _repository.GetCardStatements().Single(s => s.Id == statementId);
+            statement.IsPaid.Should().BeTrue();
+            var payment = _repository.GetTransfers().Should().ContainSingle().Subject;
+            statement.PaymentTransferId.Should().Be(payment.Id);
+            payment.SourceAccount.Name.Should().Be("Trading212");
+            payment.Amount.Should().Be(30m);
         }
     }
 

@@ -25,6 +25,8 @@ public class CardStatementTests
             statement.Month.Should().Be(7);
             statement.IsPaid.Should().BeFalse();
             statement.DueDate.Should().BeNull();
+            statement.PaymentTransferId.Should().BeNull();
+            statement.IsPaidByTransfer.Should().BeFalse();
         }
     }
 
@@ -45,37 +47,50 @@ public class CardStatementTests
     }
 
     [Fact]
-    public void MarkPaid_SetsIsPaidToTrue()
+    public void MarkPaidBy_SetsIsPaidAndLinksTheTransfer()
     {
         var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
+        var transferId = Guid.Parse("7a1c2d3e-0000-4000-8000-000000000001");
 
-        statement.MarkPaid();
+        statement.MarkPaidBy(transferId);
 
-        statement.IsPaid.Should().BeTrue();
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeTrue();
+            statement.PaymentTransferId.Should().Be(transferId);
+            statement.IsPaidByTransfer.Should().BeTrue();
+        }
     }
 
     [Fact]
-    public void MarkPaid_CalledTwice_LeavesIsPaidTrueWithoutError()
+    public void MarkUnpaid_AfterMarkPaidBy_ClearsIsPaidAndTheLink()
     {
         var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
-
-        statement.MarkPaid();
-        statement.MarkPaid();
-
-        statement.IsPaid.Should().BeTrue();
-    }
-
-    [Fact]
-    public void MarkUnpaid_AfterMarkPaid_SetsIsPaidBackToFalse()
-    {
-        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7);
-        statement.MarkPaid();
+        statement.MarkPaidBy(Guid.Parse("7a1c2d3e-0000-4000-8000-000000000001"));
 
         statement.MarkUnpaid();
 
-        statement.IsPaid.Should().BeFalse();
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeFalse();
+            statement.PaymentTransferId.Should().BeNull();
+            statement.IsPaidByTransfer.Should().BeFalse();
+        }
     }
 
+    [Fact]
+    public void MarkUnpaid_OnALegacyPaidStatement_SetsIsPaidBackToFalse()
+    {
+        var statement = CardStatement.Create(ChaseMaster4023, 2026, 7).MarkLegacyPaid();
+
+        statement.MarkUnpaid();
+
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeFalse();
+            statement.IsPaidByTransfer.Should().BeFalse();
+        }
+    }
 
     [Fact]
     public void IsFor_MatchingCardYearAndMonth_ReturnsTrue()

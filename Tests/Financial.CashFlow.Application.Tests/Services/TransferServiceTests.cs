@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.Shared.Abstractions.Observability;
@@ -370,4 +371,66 @@ public class TransferServiceTests
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.TransferService.GetTransfersByBank");
     }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
+    public async Task GetTransfersByMonth_LeavesOutStatementPayments()
+    {
+        SeedStatementPayment(new DateOnly(2026, 7, 12));
+        await _sut.AddTransferAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 7, 10) }));
+
+        var result = _sut.GetTransfersByMonth(2026, 7);
+
+        result.Should().ContainSingle().Which.DestinationBankName.Should().Be("Trading212");
+    }
+
+    [Fact]
+    public void GetTransfersByBank_LeavesOutStatementPayments()
+    {
+        SeedStatementPayment(new DateOnly(2026, 7, 12));
+
+        var result = _sut.GetTransfersByBank(_repository.Accounts.First(b => b.Name == "Barclays").Id);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
+    public async Task UpdateTransferAsync_StatementPayment_ThrowsConflictAndChangesNothing()
+    {
+        var payment = SeedStatementPayment(new DateOnly(2026, 7, 12));
+
+        var act = async () => await _sut.UpdateTransferAsync(payment.Id, ToUpdateDto(_repository, ValidCreateRequest()));
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer pays a card statement; unmark the statement instead.");
+        using (new AssertionScope())
+        {
+            payment.Amount.Should().Be(40m);
+            payment.Date.Should().Be(new DateOnly(2026, 7, 12));
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.TransferService.UpdateTransfer");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
+    public async Task DeleteTransferAsync_StatementPayment_ThrowsConflictAndKeepsIt()
+    {
+        var payment = SeedStatementPayment(new DateOnly(2026, 7, 12));
+
+        var act = async () => await _sut.DeleteTransferAsync(payment.Id);
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer pays a card statement; unmark the statement instead.");
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle().Which.Should().BeSameAs(payment);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.TransferService.DeleteTransfer");
+        }
+    }
+
+    private Transfer SeedStatementPayment(DateOnly date) =>
+        TestTransfers.SeedStatementPayment(_repository, _repository.Accounts.First(a => a.Name == "Barclays"), date);
 }

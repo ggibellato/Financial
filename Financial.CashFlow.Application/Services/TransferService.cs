@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
@@ -63,7 +64,7 @@ public sealed class TransferService : ITransferService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var transfer = FindTransferOrThrow(id);
+            var transfer = FindEditableTransferOrThrow(id);
             var (sourceBank, destinationBank) = ResolveBanks(request.SourceBankId, request.DestinationBankId);
             var destinationAmount = KeepsBothAccounts(transfer, sourceBank, destinationBank) ? transfer.DestinationAmount : null;
 
@@ -92,7 +93,7 @@ public sealed class TransferService : ITransferService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            FindTransferOrThrow(id);
+            FindEditableTransferOrThrow(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -115,7 +116,7 @@ public sealed class TransferService : ITransferService
         using var span = StartSpan("GetTransfersByMonth");
         try
         {
-            var result = _repository.GetTransfers()
+            var result = ListedTransfers()
                 .Where(t => t.Date.Year == year && t.Date.Month == month)
                 .Select(ToDto)
                 .ToList();
@@ -144,7 +145,7 @@ public sealed class TransferService : ITransferService
                 return Array.Empty<TransferDTO>();
             }
 
-            var result = _repository.GetTransfers()
+            var result = ListedTransfers()
                 .Where(t => t.SourceAccount.Id == bank!.Id || t.DestinationAccount.Id == bank.Id)
                 .Select(ToDto)
                 .ToList();
@@ -166,8 +167,14 @@ public sealed class TransferService : ITransferService
         return _tracer.StartServiceSpan("CashFlow", nameof(TransferService), operationName, EntityType);
     }
 
-    private Transfer FindTransferOrThrow(Guid id) =>
-        _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
+    private Transfer FindEditableTransferOrThrow(Guid id)
+    {
+        var transfer = _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
+        StatementPaymentConflictException.ThrowIfStatementPayment(transfer);
+        return transfer;
+    }
+
+    private IEnumerable<Transfer> ListedTransfers() => _repository.GetTransfers().Where(t => !t.IsStatementPayment);
 
     private static bool KeepsBothAccounts(Transfer transfer, Account sourceAccount, Account destinationAccount) =>
         transfer.SourceAccount.Id == sourceAccount.Id && transfer.DestinationAccount.Id == destinationAccount.Id;

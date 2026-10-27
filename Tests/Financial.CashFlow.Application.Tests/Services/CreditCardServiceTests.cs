@@ -448,7 +448,7 @@ public class CreditCardServiceTests
         var card = TestAccounts.CreditCard("BaAmex");
         _repository.Accounts.Add(card);
         var november = AddStatement(card, 2026, 11, new DateOnly(2026, 11, 10));
-        november.MarkPaid();
+        november.MarkLegacyPaid();
 
         await SetDueDateAsync(card, new DateOnly(2026, 11, 18));
 

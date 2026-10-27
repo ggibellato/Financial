@@ -28,6 +28,9 @@ public static class CardChargeFilter
         expense is { CreditCard: { } card, InvoiceDate: { } invoiceDate }
         && IsStatementPaid(statements, card, invoiceDate.Year, invoiceDate.Month);
 
+    public static bool IsPaidThroughStatement(Expense expense, IEnumerable<CardStatement> statements) =>
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && IsOnPaidStatement(expense, statements);
+
     public static bool IsStatementPaid(IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         statements.Any(statement => statement.IsPaid && statement.IsFor(card.Id, year, month));
 }

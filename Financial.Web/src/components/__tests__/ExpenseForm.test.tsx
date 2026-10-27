@@ -77,6 +77,18 @@ describe('ExpenseForm', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
+  it('says a charge with no bank was paid through its card statement', () => {
+    render(<ExpenseForm {...baseProps} isEditing isSettled paymentMode="card" paymentSource="" creditCardId="card-baamex" creditCardName="BaAmex" />)
+
+    expect(
+      screen.getByText(
+        "Paid through BaAmex's statement. Date, value, card and invoice month are locked while the statement is paid — unmark the statement to change them.",
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Paid by/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
+  })
+
   it('shows the bank picker and no toggle in bank mode', () => {
     render(<ExpenseForm {...baseProps} paymentMode="bank" />)
     expect(screen.getByLabelText(/^Payment Source/)).toBeInTheDocument()

@@ -419,7 +419,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
         var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
 
         var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().ContainSingle(e => e.Id == createdExpense!.Id && e.PaymentStatus == "CreditCardSettled");
+        items.Should().ContainSingle(e => e.Id == createdExpense!.Id && e.PaymentStatus == "CreditCardStatementPaid");
     }
 
     [Fact]

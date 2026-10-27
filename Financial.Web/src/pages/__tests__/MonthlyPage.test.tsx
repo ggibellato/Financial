@@ -512,30 +512,15 @@ describe('MonthlyPage', () => {
     const firstIndexBefore = rowsBefore.findIndex((r) => r.textContent?.includes('Charged First'))
     expect(secondIndexBefore).toBeLessThan(firstIndexBefore)
 
-    // Mark the BaAmex statement paid: both charges settle and move to the general Expense
-    // tab's list. The (now-fixed) server still orders them by InvoiceDate, so Second stays
-    // ahead of First - exactly the relative position they held before settlement.
     getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     getExpensesByMonthMock.mockResolvedValue([
-      {
-        ...chargedSecond,
-        paymentSourceBankId: 'bank-trading212',
-        paymentSourceBankName: 'Trading212',
-        date: '2026-08-03',
-        paymentStatus: 'CreditCardSettled',
-      },
-      {
-        ...chargedFirst,
-        paymentSourceBankId: 'bank-trading212',
-        paymentSourceBankName: 'Trading212',
-        date: '2026-08-03',
-        paymentStatus: 'CreditCardSettled',
-      },
+      { ...chargedSecond, paymentStatus: 'CreditCardStatementPaid' },
+      { ...chargedFirst, paymentStatus: 'CreditCardStatementPaid' },
     ])
     fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212', date: null }),
     )
 
     fireEvent.click(screen.getByRole('tab', { name: 'Bank expenses' }))
@@ -661,7 +646,7 @@ describe('MonthlyPage', () => {
     // click - before any of its pending promises get a chance to resolve.
     getCardStatementsByMonthMock.mockResolvedValue([{ ...CARD_STATEMENTS[0], isPaid: true, outstandingTotal: 0 }, CARD_STATEMENTS[1]])
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212', date: null }),
     )
 
     fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
@@ -692,7 +677,7 @@ describe('MonthlyPage', () => {
     getUnpaidCardChargesByMonthMock.mockResolvedValue([])
     fireEvent.click(screen.getByRole('button', { name: 'Mark Paid' }))
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212', date: null }),
     )
 
     await waitFor(() => expect(screen.queryByText('Uber')).not.toBeInTheDocument())
@@ -878,7 +863,7 @@ describe('MonthlyPage', () => {
     fireEvent.click(markPaidButton)
 
     await waitFor(() =>
-      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212' }),
+      expect(markCardStatementPaidMock).toHaveBeenCalledWith('c1', { paymentSourceBankId: 'bank-trading212', date: null }),
     )
   })
 

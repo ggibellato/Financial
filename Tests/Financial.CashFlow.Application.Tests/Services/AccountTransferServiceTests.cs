@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
@@ -350,4 +351,51 @@ public class AccountTransferServiceTests
         act.Should().Throw<KeyNotFoundException>();
         _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.AccountTransferService.GetTransferSources");
     }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
+    public async Task UpdateAsync_StatementPayment_ThrowsConflictAndChangesNothing()
+    {
+        var payment = SeedStatementPayment();
+
+        var act = () => _sut.UpdateAsync(payment.Id, UpdateRequest("Barclays", "Chase", 50m));
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer pays a card statement; unmark the statement instead.");
+        using (new AssertionScope())
+        {
+            payment.Amount.Should().Be(40m);
+            payment.DestinationAccount.Name.Should().Be("Amex");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.UpdateTransfer");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
+    public async Task DeleteAsync_StatementPayment_ThrowsConflictAndKeepsIt()
+    {
+        var payment = SeedStatementPayment();
+
+        var act = () => _sut.DeleteAsync(payment.Id);
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer pays a card statement; unmark the statement instead.");
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle().Which.Should().BeSameAs(payment);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.DeleteTransfer");
+        }
+    }
+
+    [Fact]
+    public void GetDestinations_FromABank_NeverOffersACard()
+    {
+        _repository.Accounts.Add(TestAccounts.CreditCard("Amex"));
+
+        _sut.GetDestinations(IdOf("Barclays")).Select(option => option.Name).Should().NotContain("Amex");
+    }
+
+    private Transfer SeedStatementPayment() => TestTransfers.SeedStatementPayment(_repository, Named("Barclays"), Date);
 }

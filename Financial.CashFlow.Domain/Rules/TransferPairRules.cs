@@ -19,6 +19,9 @@ public sealed class TransferPairRules
     public static TransferPairRules Default { get; } =
         new([(Capability.CanSendTransfers, Capability.CanReceiveTransfers)]);
 
+    public static TransferPairRules StatementPayment { get; } =
+        new([(Capability.CanPayBills, Capability.ReceivesPayments)]);
+
     public bool Allows(Account source, Account destination) =>
         _pairs.Any(pair => source.Has(pair.Source) && destination.Has(pair.Destination));
 
