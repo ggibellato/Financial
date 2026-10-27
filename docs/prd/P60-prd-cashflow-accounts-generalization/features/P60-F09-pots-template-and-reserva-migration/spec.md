@@ -224,7 +224,7 @@ All paths are relative to the repo root. The **Stage** column is 1–11. Existin
 ```json
 { "id": "…", "name": "Reserva", "templateName": "Pots", "currency": "GBP", "isActive": true, "hasRecords": true,
   "openingBalance": null, "balanceStartDate": null, "roundUpEnabled": null,
-  "categoryId": "f430…", "capabilities": ["HasPots", "ReceivesIncomeSplit", "CanWithdraw"] }
+  "categoryId": "…", "capabilities": ["HasPots", "ReceivesIncomeSplit", "CanWithdraw"] }
 ```
 
 | Error | Status | Message |
@@ -270,8 +270,8 @@ A month outside 1–12 returns 400, as on the default summary. The OpenAPI snaps
 ```json
 { "Id": "…", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true,
   "OpeningBalance": null, "RoundUp": null,
-  "Pots": [ { "Id": "45de…", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 } ],
-  "CategoryId": "f430…" }
+  "Pots": [ { "Id": "…", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 } ],
+  "CategoryId": "…" }
 ```
 
 **V4 references:** `InvestmentAccounts[].PotsAccountId` (stage 6); `IncomeSources[].PotsAccountId` replaces `AutoSplitToReserve` (stage 8); `Incomes[].PotsAccountId` replaces `SplitToReserve` (stage 8). All are optional Guids.
