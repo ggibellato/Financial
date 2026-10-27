@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { ApiError } from '../api/apiError'
+import { isConflict } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
-import type { AccountStatementDto } from '../api/types'
+import type { AccountStatementDto, BankDto } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
 
 export const STATEMENTS_LOAD_ERROR = 'Unable to load the statements'
 export const PAYERS_LOAD_ERROR = 'Unable to load the banks'
 
+const NO_PAYERS: BankDto[] = []
+
 export type PayStatementField = 'bankId' | 'date'
 
-interface PayForm {
+export interface PayForm {
   statement: AccountStatementDto
   bankId: string
   date: string
@@ -31,10 +33,6 @@ function validatePayForm(bankId: string, date: string): Partial<Record<PayStatem
   if (!date) errors.date = 'Enter a date.'
   else if (date > todayIsoDate()) errors.date = 'Date must not be in the future.'
   return errors
-}
-
-function isConflict(err: unknown): boolean {
-  return err instanceof ApiError && err.status === 409
 }
 
 export function useCardStatements(cardId: string | null, onChanged: (message: string) => void) {
@@ -64,6 +62,16 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
 
   const closePayForm = () => setPayForm(null)
 
+  const afterSave = (message: string) => {
+    setSavedCount((count) => count + 1)
+    void statements.refresh()
+    onChanged(message)
+  }
+
+  const refreshOnConflict = (err: unknown) => {
+    if (isConflict(err)) void statements.refresh()
+  }
+
   const setPayField = (field: PayStatementField, value: string) =>
     setPayForm((current) =>
       current && { ...current, [field]: value, fieldErrors: { ...current.fieldErrors, [field]: undefined } },
@@ -83,13 +91,11 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       .markCardStatementPaid(payForm.statement.id, { paymentSourceBankId: payForm.bankId, date: payForm.date })
       .then(() => {
         setPayForm(null)
-        setSavedCount((count) => count + 1)
-        void statements.refresh()
-        onChanged('Statement paid')
+        afterSave('Statement paid')
       })
       .catch((err: unknown) => {
         setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement') })
-        if (isConflict(err)) void statements.refresh()
+        refreshOnConflict(err)
       })
   }
 
@@ -104,13 +110,11 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       .unmarkCardStatementPaid(unmark.statement.id)
       .then(() => {
         setUnmark(null)
-        setSavedCount((count) => count + 1)
-        void statements.refresh()
-        onChanged('Statement unmarked')
+        afterSave('Statement unmarked')
       })
       .catch((err: unknown) => {
         setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement') })
-        if (isConflict(err)) void statements.refresh()
+        refreshOnConflict(err)
       })
   }
 
@@ -119,7 +123,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     isLoading: statements.isLoading && statements.data === null,
     error: statements.error,
     retry: statements.retry,
-    payers: (payers.data ?? []).filter((bank) => bank.isActive),
+    payers: payers.data ?? NO_PAYERS,
     isLoadingPayers: payers.isLoading,
     payersError: payers.error,
     retryPayers: payers.retry,

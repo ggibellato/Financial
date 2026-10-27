@@ -127,9 +127,9 @@ const TRANSACTIONS: AccountTransactionDto[] = [
 ]
 
 const CARD_STATEMENTS: AccountStatementDto[] = [
-  { id: 's-nov', year: 2026, month: 11, total: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
-  { id: 's-oct', year: 2026, month: 10, total: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
-  { id: 's-sep', year: 2026, month: 9, total: 512.3, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
+  { id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
+  { id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
+  { id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
 ]
 
 const BANKS: BankDto[] = [

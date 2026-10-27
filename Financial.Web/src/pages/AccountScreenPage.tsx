@@ -19,7 +19,6 @@ import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAcco
 import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../hooks/useAccountScreen'
 import { useCardStatements } from '../hooks/useCardStatements'
-import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import { formatLongMonthYear } from '../utils/formatters'
 import './AccountScreenPage.css'
@@ -37,12 +36,16 @@ export default function AccountScreenPage() {
     void screen.refreshSilently()
     showSuccess(message)
   }
+  const isCard = account?.hasStatements ?? false
+  const activeTab: AccountScreenTab = isCard ? screen.tab : 'transactions'
+  const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
   const forms = useAccountActionForms(
     screen.accountId,
     account,
     formOptions.options,
     { year: screen.year, month: screen.month },
     notifySaved,
+    { isDirty: cardStatements.isPayFormDirty, close: cardStatements.closePayForm },
   )
   const {
     expenseForm,
@@ -61,17 +64,6 @@ export default function AccountScreenPage() {
     closeFormsOf,
     guardChange,
   } = forms
-  const isCard = account?.hasStatements ?? false
-  const activeTab: AccountScreenTab = isCard ? screen.tab : 'transactions'
-  const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
-  const payDiscardPrompt = useDiscardPrompt(cardStatements.isPayFormDirty)
-  const guardScreenChange = (change: () => void) =>
-    guardChange(() =>
-      payDiscardPrompt.confirmDiscard(() => {
-        cardStatements.closePayForm()
-        change()
-      }),
-    )
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const isFocusAfterDeletePending = useRef(false)
   const rowDelete = useAccountRowDelete((row) => {
@@ -113,8 +105,8 @@ export default function AccountScreenPage() {
           selectedAccountId={screen.accountId}
           monthInputValue={screen.monthInputValue}
           isBusy={screen.isLoading}
-          onMonthChange={(value) => guardScreenChange(() => screen.setMonthInputValue(value))}
-          onAccountSelect={(accountId) => guardScreenChange(() => screen.selectAccount(accountId))}
+          onMonthChange={(value) => guardChange(() => screen.setMonthInputValue(value))}
+          onAccountSelect={(accountId) => guardChange(() => screen.selectAccount(accountId))}
         />
       ) : (
         <Skeleton aria-label="Loading account" className="account-screen__header-skeleton">
@@ -258,7 +250,7 @@ export default function AccountScreenPage() {
           className="account-screen__tabs"
           aria-label="Card views"
           selectedValue={activeTab}
-          onTabSelect={(_, data) => guardScreenChange(() => screen.setTab(data.value as AccountScreenTab))}
+          onTabSelect={(_, data) => guardChange(() => screen.setTab(data.value as AccountScreenTab))}
         >
           <Tab id="account-screen-tab-transactions" value="transactions" aria-controls="account-screen-panel">
             Transactions
@@ -269,47 +261,42 @@ export default function AccountScreenPage() {
         </TabList>
       )}
 
-      {activeTab === 'statements' ? (
-        <section
-          id="account-screen-panel"
-          role="tabpanel"
-          className="account-screen__transactions"
-          aria-labelledby="account-screen-tab-statements"
-        >
+      <section
+        id={isCard ? 'account-screen-panel' : undefined}
+        role={isCard ? 'tabpanel' : undefined}
+        className="account-screen__transactions"
+        aria-labelledby={isCard ? `account-screen-tab-${activeTab}` : 'account-screen-transactions'}
+      >
+        {activeTab === 'statements' ? (
           <CardStatementsTab
             cardStatements={cardStatements}
             viewedYear={screen.year}
             viewedMonth={screen.month}
             currency={account?.currency ?? 'GBP'}
             canAct={account?.isActive ?? false}
-            guardChange={guardScreenChange}
+            guardChange={guardChange}
           />
-        </section>
-      ) : (
-        <section
-          id={isCard ? 'account-screen-panel' : undefined}
-          role={isCard ? 'tabpanel' : undefined}
-          className="account-screen__transactions"
-          aria-labelledby={isCard ? 'account-screen-tab-transactions' : 'account-screen-transactions'}
-        >
-          <Text as="h2" id="account-screen-transactions" ref={transactionsHeadingRef} tabIndex={-1} size={400} weight="semibold">
-            Transactions
-          </Text>
-          {screen.error ? (
-            <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
-          ) : (
-            <AccountTransactionsGrid
-              transactions={screen.transactions}
-              isLoading={screen.isLoading}
-              emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
-              dateHeader={isCard ? 'Purchased' : 'Date'}
-              isEditDisabled={!formOptions.isReady || !isAccountCurrent}
-              onEdit={openRowEdit}
-              onDelete={rowDelete.requestDelete}
-            />
-          )}
-        </section>
-      )}
+        ) : (
+          <>
+            <Text as="h2" id="account-screen-transactions" ref={transactionsHeadingRef} tabIndex={-1} size={400} weight="semibold">
+              Transactions
+            </Text>
+            {screen.error ? (
+              <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
+            ) : (
+              <AccountTransactionsGrid
+                transactions={screen.transactions}
+                isLoading={screen.isLoading}
+                emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
+                dateHeader={isCard ? 'Purchased' : 'Date'}
+                isEditDisabled={!formOptions.isReady || !isAccountCurrent}
+                onEdit={openRowEdit}
+                onDelete={rowDelete.requestDelete}
+              />
+            )}
+          </>
+        )}
+      </section>
 
       <ConfirmDeleteDialog
         open={rowDelete.isOpen}
@@ -325,11 +312,6 @@ export default function AccountScreenPage() {
         open={discardPrompt.isPromptOpen}
         onKeepEditing={discardPrompt.keepEditing}
         onDiscard={discardPrompt.discard}
-      />
-      <DiscardChangesDialog
-        open={payDiscardPrompt.isPromptOpen}
-        onKeepEditing={payDiscardPrompt.keepEditing}
-        onDiscard={payDiscardPrompt.discard}
       />
     </div>
   )

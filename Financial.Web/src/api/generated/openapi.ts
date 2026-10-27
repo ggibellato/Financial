@@ -7450,6 +7450,8 @@ export interface components {
             isPaid: boolean;
             /** Format: int32 */
             month: number;
+            /** Format: double */
+            outstandingTotal: number;
             paidFromAccountName?: null | string;
             /** Format: date */
             paidOn?: null | string;

@@ -6,13 +6,13 @@ import { render, screen, within } from '../../test/renderWithFluent'
 import CardStatementsTab from '../CardStatementsTab'
 
 const NOVEMBER: AccountStatementDto = {
-  id: 's-nov', year: 2026, month: 11, total: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null,
+  id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null,
 }
 const OCTOBER: AccountStatementDto = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
+  id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
 }
 const SEPTEMBER: AccountStatementDto = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
+  id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
 }
 
 function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements {
@@ -21,7 +21,10 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
     isLoading: false,
     error: null,
     retry: vi.fn(),
-    payers: [{ id: 'barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true }],
+    payers: [
+      { id: 'barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+      { id: 'closed', name: 'Closed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false },
+    ],
     isLoadingPayers: false,
     payersError: null,
     retryPayers: vi.fn(),
@@ -92,7 +95,7 @@ describe('CardStatementsTab', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
 
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
+    expect(months()).toEqual([expect.stringContaining('September'), expect.stringContaining('November'), expect.stringContaining('October')])
   })
 
   it('shows a skeleton while loading', () => {
@@ -191,6 +194,23 @@ describe('CardStatementsTab', () => {
     statements.rerenderWith({ payForm, failedSubmit: { firstInvalidField: 'date' } })
 
     expect(screen.getByLabelText(/^Date/)).toHaveFocus()
+  })
+
+  it('offers only active banks in the pay form', () => {
+    renderTab({ payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+
+    expect(screen.getByRole('option', { name: 'Barclays' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Closed' })).not.toBeInTheDocument()
+  })
+
+  it('uses the outstanding amount for Pay and the form, not the gross total', () => {
+    renderTab({
+      statements: [{ ...OCTOBER, outstandingTotal: 0 }],
+      payForm: { statement: { ...OCTOBER, outstandingTotal: 150 }, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+    })
+
+    expect(screen.getByRole('button', { name: 'Pay October 2026 statement' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByLabelText('Amount')).toHaveValue('£150.00')
   })
 
   it('disables the bank picker while the banks load', () => {

@@ -195,4 +195,16 @@ public class CardChargeFilterTests
 
         CardChargeFilter.IsPaid(charge, []).Should().BeFalse();
     }
+
+    [Fact]
+    public void SettledChargesFor_ReturnsOnlyChargesSettledToABankInThatInvoiceMonth()
+    {
+        var settled = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        settled.Settle(_barclays, new DateOnly(2026, 11, 2));
+        var unpaid = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
+        var otherMonth = Charge(_amex, new DateOnly(2026, 9, 5), 10m);
+        otherMonth.Settle(_barclays, new DateOnly(2026, 10, 2));
+
+        CardChargeFilter.SettledChargesFor([settled, unpaid, otherMonth], _amex, 2026, 10).Should().Equal(settled);
+    }
 }

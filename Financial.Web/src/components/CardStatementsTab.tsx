@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import {
   Badge,
   Button,
@@ -20,7 +20,7 @@ import {
   Tooltip,
 } from '@fluentui/react-components'
 import type { AccountStatementDto } from '../api/types'
-import type { CardStatements } from '../hooks/useCardStatements'
+import type { CardStatements, PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
 import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
@@ -29,19 +29,45 @@ import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
+import { selectableBanks } from '../utils/selectableBanks'
 
 interface StatementColumn {
   key: string
   header: string
   numeric?: boolean
   accessor: SortAccessor<AccountStatementDto>
+  render: (statement: AccountStatementDto, isViewed: boolean) => ReactNode
 }
 
 const COLUMNS: StatementColumn[] = [
-  { key: 'month', header: 'Month', accessor: (statement) => statement.year * 100 + statement.month },
-  { key: 'total', header: 'Total', numeric: true, accessor: (statement) => statement.total },
-  { key: 'dueDate', header: 'Due date', accessor: (statement) => statement.dueDate },
-  { key: 'status', header: 'Status', accessor: (statement) => (statement.isPaid ? `1 ${statement.paidOn ?? ''}` : '0') },
+  {
+    key: 'month',
+    header: 'Month',
+    accessor: (statement) => statement.year * 100 + statement.month,
+    render: (statement, isViewed) => (
+      <span className="card-statements__month">
+        {monthOf(statement)}
+        {isViewed && (
+          <Badge appearance="outline" color="brand">
+            Viewed month
+          </Badge>
+        )}
+      </span>
+    ),
+  },
+  { key: 'total', header: 'Total', numeric: true, accessor: (statement) => statement.total, render: (statement) => formatN2(statement.total) },
+  {
+    key: 'dueDate',
+    header: 'Due date',
+    accessor: (statement) => statement.dueDate,
+    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : '—'),
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    accessor: (statement) => (statement.isPaid ? (statement.paidOn ?? '') : null),
+    render: (statement) => <TruncatedText text={statusOf(statement)} />,
+  },
 ]
 
 const ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, column.accessor]))
@@ -70,11 +96,18 @@ function statusOf(statement: AccountStatementDto): string {
   return statement.paidFromAccountName ? `Paid ${paidOn} from ${statement.paidFromAccountName}` : `Paid ${paidOn}`
 }
 
-function PayStatementForm({ cardStatements, currency, onCancel }: { cardStatements: CardStatements; currency: string; onCancel: () => void }) {
+interface PayStatementFormProps {
+  payForm: PayForm
+  cardStatements: CardStatements
+  currency: string
+  onCancel: () => void
+}
+
+function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PayStatementFormProps) {
   const styles = useFormPanelStyles()
   const bankRef = useRef<HTMLSelectElement | null>(null)
   const dateRef = useRef<HTMLInputElement | null>(null)
-  const { payForm, payers, isLoadingPayers, payersError, retryPayers, failedSubmit, setPayField, submitPayForm } = cardStatements
+  const { payers, isLoadingPayers, payersError, retryPayers, failedSubmit, setPayField, submitPayForm } = cardStatements
 
   useEffect(() => {
     bankRef.current?.focus()
@@ -84,8 +117,6 @@ function PayStatementForm({ cardStatements, currency, onCancel }: { cardStatemen
     if (failedSubmit?.firstInvalidField === 'bankId') bankRef.current?.focus()
     else if (failedSubmit?.firstInvalidField === 'date') dateRef.current?.focus()
   }, [failedSubmit])
-
-  if (!payForm) return null
 
   return (
     <form
@@ -121,7 +152,7 @@ function PayStatementForm({ cardStatements, currency, onCancel }: { cardStatemen
               onChange={(event) => setPayField('bankId', event.target.value)}
             >
               <option value="">{isLoadingPayers ? 'Loading banks…' : 'Select a bank'}</option>
-              {payers.map((bank) => (
+              {selectableBanks(payers, payForm.bankId).map((bank) => (
                 <option key={bank.id} value={bank.id}>
                   {bank.name}
                 </option>
@@ -143,7 +174,7 @@ function PayStatementForm({ cardStatements, currency, onCancel }: { cardStatemen
             />
           </Field>
           <Field label="Amount">
-            <Input readOnly value={formatCurrency(payForm.statement.total, currency)} />
+            <Input readOnly value={formatCurrency(payForm.statement.outstandingTotal, currency)} />
           </Field>
         </div>
         <div className={styles.actions}>
@@ -208,7 +239,7 @@ export default function CardStatementsTab({
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <>
-          {payForm && <PayStatementForm cardStatements={cardStatements} currency={currency} onCancel={cancelPayForm} />}
+          {payForm && <PayStatementForm payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelPayForm} />}
           <div className="account-screen__grid-scroll">
             <Table className="data-table" aria-label="Statements">
               <TableHeader>
@@ -254,41 +285,33 @@ export default function CardStatementsTab({
                         aria-current={viewed ? 'true' : undefined}
                         className={viewed ? 'card-statements__row--viewed' : undefined}
                       >
-                        <DataTableCell label="Month">
-                          <span className="card-statements__month">
-                            {month}
-                            {viewed && (
-                              <Badge appearance="outline" color="brand">
-                                Viewed month
-                              </Badge>
-                            )}
-                          </span>
-                        </DataTableCell>
-                        <DataTableCell label="Total" className="data-table__col--numeric">
-                          {formatN2(statement.total)}
-                        </DataTableCell>
-                        <DataTableCell label="Due date">{statement.dueDate ? formatShortDateUtc(statement.dueDate) : '—'}</DataTableCell>
-                        <DataTableCell label="Status">
-                          <TruncatedText text={statusOf(statement)} />
-                        </DataTableCell>
+                        {COLUMNS.map((column) => (
+                          <DataTableCell
+                            key={column.key}
+                            label={column.header}
+                            className={column.numeric ? 'data-table__col--numeric' : undefined}
+                          >
+                            {column.render(statement, viewed)}
+                          </DataTableCell>
+                        ))}
                         <DataTableCell label="Actions" className="data-table__col--action-wide">
-                          {canAct && !statement.isPaid && (
-                            <PayButton
-                              month={month}
-                              nothingToPay={statement.total <= 0}
-                              onPay={(button) =>
-                                guardChange(() => {
-                                  payOpenerRef.current = button
-                                  openPayForm(statement)
-                                })
-                              }
-                            />
-                          )}
-                          {canAct && statement.isPaid && (
-                            <Button aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
-                              Unmark
-                            </Button>
-                          )}
+                          {canAct &&
+                            (statement.isPaid ? (
+                              <Button aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
+                                Unmark
+                              </Button>
+                            ) : (
+                              <PayButton
+                                month={month}
+                                nothingToPay={statement.outstandingTotal <= 0}
+                                onPay={(button) =>
+                                  guardChange(() => {
+                                    payOpenerRef.current = button
+                                    openPayForm(statement)
+                                  })
+                                }
+                              />
+                            ))}
                         </DataTableCell>
                       </TableRow>
                     )

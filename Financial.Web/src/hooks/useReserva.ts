@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
-import { ApiError } from '../api/apiError'
+import { isConflict } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type {
   BankDto,
@@ -544,7 +544,7 @@ export function useReserva(): ReservaData {
         void fetchReservaData({ includeReferenceData: false })
       })
       .catch((err: unknown) => {
-        if (err instanceof ApiError && err.status === 409 && !confirmed) {
+        if (isConflict(err) && !confirmed) {
           if (confirmProceed(err.message)) {
             performWithdrawal(true, confirmProceed)
             return

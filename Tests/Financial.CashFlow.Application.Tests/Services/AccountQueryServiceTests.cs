@@ -439,8 +439,8 @@ public class AccountQueryServiceTests
         using (new AssertionScope())
         {
             rows.Select(row => (row.Year, row.Month)).Should().Equal((2026, 11), (2026, 9), (2026, 8));
-            rows[0].Should().BeEquivalentTo(new { Id = november.Id, Total = 12m, IsPaid = false, DueDate = (DateOnly?)null, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
-            rows[1].Should().BeEquivalentTo(new { Id = september.Id, Total = 75m, IsPaid = true, DueDate = new DateOnly(2026, 10, 3), PaidOn = new DateOnly(2026, 10, 12), PaidFromAccountName = "Barclays" });
+            rows[0].Should().BeEquivalentTo(new { Id = november.Id, Total = 12m, OutstandingTotal = 12m, IsPaid = false, DueDate = (DateOnly?)null, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
+            rows[1].Should().BeEquivalentTo(new { Id = september.Id, Total = 75m, OutstandingTotal = 0m, IsPaid = true, DueDate = new DateOnly(2026, 10, 3), PaidOn = new DateOnly(2026, 10, 12), PaidFromAccountName = "Barclays" });
             rows[2].Should().BeEquivalentTo(new { Total = 0m, IsPaid = true, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccountStatements");
         }
@@ -462,6 +462,7 @@ public class AccountQueryServiceTests
         using (new AssertionScope())
         {
             row.Total.Should().Be(75m);
+            row.OutstandingTotal.Should().Be(0m);
             row.PaidOn.Should().Be(new DateOnly(2026, 11, 4));
             row.PaidFromAccountName.Should().Be("Barclays");
         }
@@ -519,6 +520,24 @@ public class AccountQueryServiceTests
         {
             _sut.GetAccount(_amex.Id, 2026, 10).Balance.Should().Be(-9m);
             _sut.GetAccount(_barclays.Id, 2026, 10).Balance.Should().Be(970m);
+        }
+    }
+
+    [Fact]
+    public void GetStatements_UnpaidStatementWithASettledCharge_OwesOnlyItsUnsettledCharges()
+    {
+        _repository.Accounts.Add(_amex);
+        var settled = Expense.Create(new DateOnly(2026, 10, 2), "Shop", 50m, _groceries, null, _amex);
+        settled.Settle(_barclays, new DateOnly(2026, 11, 1));
+        _repository.Expenses.AddRange([settled, Expense.Create(new DateOnly(2026, 10, 9), "Fuel", 25m, _groceries, null, _amex)]);
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10));
+
+        var row = _sut.GetStatements(_amex.Id).Should().ContainSingle().Which;
+
+        using (new AssertionScope())
+        {
+            row.Total.Should().Be(75m);
+            row.OutstandingTotal.Should().Be(25m);
         }
     }
 }

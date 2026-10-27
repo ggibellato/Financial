@@ -10,8 +10,11 @@ export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
 
 export type AccountScreenTab = 'transactions' | 'statements'
 
-function searchFor(month: string, tab: AccountScreenTab): Record<string, string> {
-  return tab === 'statements' ? { month, tab } : { month }
+function withParam(params: URLSearchParams, key: string, value: string | null): URLSearchParams {
+  const next = new URLSearchParams(params)
+  if (value === null) next.delete(key)
+  else next.set(key, value)
+  return next
 }
 
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -72,8 +75,8 @@ export function useAccountScreen(): AccountScreen {
   const hasValidMonth = parsedMonth !== null
 
   useEffect(() => {
-    if (!hasValidMonth) setSearchParams(searchFor(monthInputValue, tab), { replace: true })
-  }, [hasValidMonth, monthInputValue, tab, setSearchParams])
+    if (!hasValidMonth) setSearchParams((params) => withParam(params, 'month', monthInputValue), { replace: true })
+  }, [hasValidMonth, monthInputValue, setSearchParams])
 
   const resource = useAsyncResource<AccountScreenLoad>(
     () => (isValidId ? loadAccountScreen(accountId, year, month) : null),
@@ -84,14 +87,15 @@ export function useAccountScreen(): AccountScreen {
 
   const setMonthInputValue = useCallback(
     (value: string) => {
-      if (parseMonthInputValue(value)) setSearchParams(searchFor(value, tab), { replace: true })
+      if (parseMonthInputValue(value)) setSearchParams((params) => withParam(params, 'month', value), { replace: true })
     },
-    [setSearchParams, tab],
+    [setSearchParams],
   )
 
   const setTab = useCallback(
-    (nextTab: AccountScreenTab) => setSearchParams(searchFor(monthInputValue, nextTab), { replace: true }),
-    [monthInputValue, setSearchParams],
+    (nextTab: AccountScreenTab) =>
+      setSearchParams((params) => withParam(params, 'tab', nextTab === 'statements' ? nextTab : null), { replace: true }),
+    [setSearchParams],
   )
 
   const selectAccount = useCallback(

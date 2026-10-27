@@ -159,6 +159,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Year = statement.Year,
             Month = statement.Month,
             Total = charges.Sum(charge => charge.Value),
+            OutstandingTotal = CardChargeFilter.OutstandingTotal(charges, [statement], statement.CreditCard, statement.Year, statement.Month),
             IsPaid = statement.IsPaid,
             DueDate = statement.DueDate,
             PaidOn = payment?.Date,
@@ -176,8 +177,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 ? (transfer.Date, transfer.SourceAccount)
                 : null;
 
-        return charges
-            .Where(charge => charge.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+        return CardChargeFilter.SettledChargesFor(charges, statement.CreditCard, statement.Year, statement.Month)
             .MaxBy(charge => charge.Date) is { PaymentSourceAccount: { } bank } latest
             ? (latest.Date, bank)
             : null;
@@ -201,18 +201,14 @@ public sealed class AccountQueryService : IAccountQueryService
 
     private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, int year, int month, IReadOnlyList<CardStatement> statements) =>
         CardChargeFilter.ChargesFor(_repository.GetExpenses(), card, year, month)
-            .Select(charge => new AccountTransactionDTO
-            {
-                Id = charge.Id,
-                Kind = TransactionKind.CardCharge.ToString(),
-                Date = charge.ChargeDate ?? charge.Date,
-                Description = charge.Description,
-                CategoryName = charge.Category.Name,
-                Counterpart = charge.PaymentSourceAccount?.Name,
-                Amount = -charge.Value,
-                CanEdit = card.IsActive && !CardChargeFilter.IsPaid(charge, statements),
-                Expense = ExpenseService.ToDto(charge, statements)
-            });
+            .Select(charge => ToRow(
+                charge,
+                TransactionKind.CardCharge,
+                charge.ChargeDate ?? charge.Date,
+                charge.PaymentSourceAccount?.Name,
+                roundUp: null,
+                canEdit: card.IsActive && !CardChargeFilter.IsPaid(charge, statements),
+                statements));
 
     private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account, IReadOnlyList<CardStatement> statements) =>
         record switch
@@ -227,20 +223,31 @@ public sealed class AccountQueryService : IAccountQueryService
     private static AccountTransactionDTO ToRow(Expense expense, Account account, IReadOnlyList<CardStatement> statements)
     {
         var kind = expense.CreditCard is null ? TransactionKind.Expense : TransactionKind.CardCharge;
-        return new AccountTransactionDTO
+        return ToRow(
+            expense,
+            kind,
+            expense.Date,
+            expense.CreditCard?.Name,
+            expense.RoundUpAmount is { } roundUp ? -roundUp : null,
+            account.IsActive && kind == TransactionKind.Expense,
+            statements);
+    }
+
+    private static AccountTransactionDTO ToRow(
+        Expense expense, TransactionKind kind, DateOnly date, string? counterpart, decimal? roundUp, bool canEdit, IReadOnlyList<CardStatement> statements) =>
+        new()
         {
             Id = expense.Id,
             Kind = kind.ToString(),
-            Date = expense.Date,
+            Date = date,
             Description = expense.Description,
             CategoryName = expense.Category.Name,
-            Counterpart = expense.CreditCard?.Name,
+            Counterpart = counterpart,
             Amount = -expense.Value,
-            RoundUp = expense.RoundUpAmount is { } roundUp ? -roundUp : null,
-            CanEdit = account.IsActive && kind == TransactionKind.Expense,
+            RoundUp = roundUp,
+            CanEdit = canEdit,
             Expense = ExpenseService.ToDto(expense, statements)
         };
-    }
 
     private static AccountTransactionDTO ToRow(Income income, Account account) => new()
     {

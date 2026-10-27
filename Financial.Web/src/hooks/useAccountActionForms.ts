@@ -19,12 +19,20 @@ function incomeSavedMessage(saved: IncomeDto): string {
   return saved.splitToReserve ? 'Income added and split to reserve' : 'Income added'
 }
 
+export interface ScreenForm {
+  isDirty: boolean
+  close: () => void
+}
+
+const NO_SCREEN_FORM: ScreenForm = { isDirty: false, close: () => {} }
+
 export function useAccountActionForms(
   routeAccountId: string,
   account: AccountDetailDto | null,
   options: AccountFormOptions,
   viewedMonth: YearMonth,
   onSaved: (message: string) => void,
+  screenForm: ScreenForm = NO_SCREEN_FORM,
 ) {
   const isAccountCurrent = account !== null && account.id.toLowerCase() === routeAccountId.toLowerCase()
   const currentAccount = isAccountCurrent ? account : null
@@ -96,7 +104,12 @@ export function useAccountActionForms(
   const activeFormKey = activeAction ?? (editingRowKey && `edit:${editingRowKey}`)
 
   const isDirty =
-    expenseForm.isDirty || incomeForm.isIncomeDirty || transferForm.isDirty || adjustmentForm.isDirty || payBillForm.isDirty
+    expenseForm.isDirty ||
+    incomeForm.isIncomeDirty ||
+    transferForm.isDirty ||
+    adjustmentForm.isDirty ||
+    payBillForm.isDirty ||
+    screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLButtonElement | null>(null)
   const formAreaRef = useRef<HTMLDivElement | null>(null)
@@ -107,6 +120,7 @@ export function useAccountActionForms(
     if (transferForm.isOpen) transferForm.cancel()
     if (adjustmentForm.isOpen) adjustmentForm.cancel()
     if (payBillForm.isOpen) payBillForm.cancel()
+    screenForm.close()
   }
 
   const [formsAccountId, setFormsAccountId] = useState(routeAccountId)

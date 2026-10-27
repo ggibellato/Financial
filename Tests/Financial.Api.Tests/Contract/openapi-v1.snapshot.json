@@ -284,6 +284,10 @@
             "format": "int32",
             "type": "integer"
           },
+          "outstandingTotal": {
+            "format": "double",
+            "type": "number"
+          },
           "paidFromAccountName": {
             "type": [
               "null",
@@ -311,6 +315,7 @@
           "year",
           "month",
           "total",
+          "outstandingTotal",
           "isPaid"
         ],
         "type": "object"

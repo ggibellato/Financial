@@ -25,10 +25,10 @@ vi.mock('../../api/financialApiClient', () => ({
 const CARD_ID = 'card-amex'
 
 const OCTOBER: AccountStatementDto = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
+  id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
 }
 const SEPTEMBER: AccountStatementDto = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
+  id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
 }
 
 const BANKS: BankDto[] = [
@@ -67,11 +67,11 @@ describe('useCardStatements', () => {
     expect(getBanksMock).not.toHaveBeenCalled()
   })
 
-  it('loads the statements and offers only active banks as payers', async () => {
+  it('loads the statements and the banks that may pay', async () => {
     const { result } = await renderLoaded()
 
     expect(getAccountStatementsMock).toHaveBeenCalledWith(CARD_ID)
-    await waitFor(() => expect(result.current.payers.map((bank) => bank.id)).toEqual(['barclays']))
+    await waitFor(() => expect(result.current.payers.map((bank) => bank.id)).toEqual(['barclays', 'closed']))
   })
 
   it('reports a failed load and reloads on retry', async () => {
