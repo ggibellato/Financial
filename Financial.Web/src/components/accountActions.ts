@@ -1,9 +1,17 @@
 import type { AccountTransactionDto } from '../api/types'
 
-export type AccountFormAction = 'AddExpense' | 'AddIncome' | 'TransferTo' | 'TransferFrom' | 'PayRecurringBill' | 'Reconcile'
+export type AccountFormAction =
+  | 'AddExpense'
+  | 'AddCharge'
+  | 'AddIncome'
+  | 'TransferTo'
+  | 'TransferFrom'
+  | 'PayRecurringBill'
+  | 'Reconcile'
 
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'Add expense',
+  AddCharge: 'Add charge',
   AddIncome: 'Add income',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
@@ -61,7 +69,11 @@ export function recordTitle(kind: string): string {
 }
 
 export function hasRowActions(row: AccountTransactionDto): boolean {
-  return row.canEdit && row.kind !== 'CardCharge'
+  return row.canEdit
+}
+
+export function canMoveToStatement(row: AccountTransactionDto): boolean {
+  return row.canEdit && row.kind === 'CardCharge'
 }
 
 export function rowKey(row: AccountTransactionDto): string {

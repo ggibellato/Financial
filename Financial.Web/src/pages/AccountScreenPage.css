@@ -94,6 +94,12 @@
   gap: 12px;
 }
 
+@media (min-width: 600px) {
+  .account-screen__grid-scroll--card .data-table .data-table__col--action {
+    width: 100px;
+  }
+}
+
 .account-screen__grid-scroll {
   flex: 1;
   min-height: 0;

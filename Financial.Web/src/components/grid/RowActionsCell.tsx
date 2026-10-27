@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button, TableCell } from '@fluentui/react-components'
 import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 
@@ -7,12 +8,14 @@ interface RowActionsCellProps {
   deleteDisabled?: boolean
   onEdit: (button: HTMLButtonElement) => void
   onDelete: () => void
+  children?: ReactNode
 }
 
-export default function RowActionsCell({ itemName, editDisabled, deleteDisabled, onEdit, onDelete }: RowActionsCellProps) {
+export default function RowActionsCell({ itemName, editDisabled, deleteDisabled, onEdit, onDelete, children }: RowActionsCellProps) {
   return (
     <TableCell className="data-table__col--action">
       <div className="data-table__actions-cell">
+        {children}
         <Button
           appearance="subtle"
           size="small"

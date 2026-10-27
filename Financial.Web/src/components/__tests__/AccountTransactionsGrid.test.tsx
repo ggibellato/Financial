@@ -122,15 +122,44 @@ describe('AccountTransactionsGrid', () => {
     expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('offers no row actions on an editable card charge until card charge editing exists', () => {
+  it('offers Move beside Edit and Delete on an editable card charge only', () => {
+    const onMove = vi.fn()
     render(
       <AccountTransactionsGrid
-        transactions={[accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Taxi', amount: -30, canEdit: true })]}
+        transactions={[
+          accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Taxi', amount: -30, canEdit: true }),
+          accountTransactionRow({ id: 'c2', kind: 'CardCharge', date: '2026-10-09', description: 'Paid lunch', amount: -7, canEdit: false }),
+          accountTransactionRow({ id: 'p1', kind: 'CardPayment', date: '2026-10-08', amount: 40, canEdit: false }),
+        ]}
         emptyMessage={EMPTY_MESSAGE}
         {...NO_ROW_ACTIONS}
+        onMove={onMove}
       />,
     )
 
-    expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+    const [taxi, paidLunch, payment] = bodyRows()
+    expect(within(taxi).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Move card charge to a later statement',
+      'Edit card charge',
+      'Delete card charge',
+    ])
+    expect(within(paidLunch).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(payment).queryByRole('button')).not.toBeInTheDocument()
+
+    fireEvent.click(within(taxi).getByRole('button', { name: 'Move card charge to a later statement' }))
+    expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }), expect.any(HTMLButtonElement))
+  })
+
+  it('offers no Move on a bank expense', () => {
+    render(
+      <AccountTransactionsGrid
+        transactions={[accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Tesco', amount: -30, canEdit: true })]}
+        emptyMessage={EMPTY_MESSAGE}
+        {...NO_ROW_ACTIONS}
+        onMove={vi.fn()}
+      />,
+    )
+
+    expect(within(bodyRows()[0]).queryByRole('button', { name: /^Move/ })).not.toBeInTheDocument()
   })
 })

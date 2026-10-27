@@ -50,6 +50,7 @@ const {
   getAccountStatementsMock,
   markCardStatementPaidMock,
   unmarkCardStatementPaidMock,
+  moveChargeToStatementMock,
 } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
@@ -74,6 +75,7 @@ const {
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
   markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
   unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
+  moveChargeToStatementMock: vi.fn<FinancialApiClient['moveChargeToStatement']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -101,6 +103,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getAccountStatements: getAccountStatementsMock,
     markCardStatementPaid: markCardStatementPaidMock,
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
+    moveChargeToStatement: moveChargeToStatementMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -118,7 +121,7 @@ const ACCOUNTS: AccountDto[] = [
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
   const isCard = id === AMEX_ID
-  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, allowedActions: [] }
+  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, allowedActions: isCard ? ['AddCharge'] : [] }
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [
@@ -240,6 +243,7 @@ beforeEach(() => {
   getAccountStatementsMock.mockReset().mockResolvedValue(CARD_STATEMENTS)
   markCardStatementPaidMock.mockReset()
   unmarkCardStatementPaidMock.mockReset()
+  moveChargeToStatementMock.mockReset()
   sessionStorage.clear()
 })
 
@@ -1071,8 +1075,27 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
 })
 
 describe('AccountScreenPage card screen', () => {
+  const TAXI: ExpenseDto = {
+    id: 'c1',
+    date: '2026-09-28',
+    description: 'Taxi',
+    value: 30,
+    categoryId: 'category-groceries',
+    categoryName: 'Groceries',
+    paymentSourceBankId: null,
+    paymentSourceBankName: null,
+    creditCardId: AMEX_ID,
+    creditCardName: 'BA Amex',
+    chargeDate: '2026-09-28',
+    invoiceDate: '2026-10-01',
+    paymentStatus: 'CreditCardCharge',
+    roundUpAmount: null,
+    suggestedRoundUpAmount: null,
+    countsAsTithe: true,
+  }
+
   const CARD_ROWS: AccountTransactionDto[] = [
-    accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-09-28', description: 'Taxi', amount: -30, canEdit: true }),
+    accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-09-28', description: 'Taxi', amount: -30, canEdit: true, expense: TAXI }),
     accountTransactionRow({ id: 'p1', kind: 'CardPayment', date: '2026-10-12', counterpart: 'Barclays', amount: 480, canEdit: false }),
   ]
 
@@ -1089,15 +1112,130 @@ describe('AccountScreenPage card screen', () => {
     expect(screen.getByRole('columnheader', { name: /^Date/ })).toBeInTheDocument()
   })
 
-  it('[AC P60-F08-statement-payment-and-card-screen-12] a card opens on Transactions with the Purchased column, card payment rows and no charge actions yet', async () => {
+  it('[AC P60-F08-statement-payment-and-card-screen-12] a card opens on Transactions with the Purchased column, card payment rows and charge actions', async () => {
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
     expect(await screen.findByText('Taxi')).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Transactions', selected: true })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /^Purchased/ })).toBeInTheDocument()
     expect(screen.getByText('Card payment')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^Edit/ })).not.toBeInTheDocument()
+    const taxiRow = screen.getByText('Taxi').closest('tr') as HTMLElement
+    expect(within(taxiRow).getByRole('button', { name: 'Edit card charge' })).toBeInTheDocument()
+    expect(within(taxiRow).getByRole('button', { name: 'Delete card charge' })).toBeInTheDocument()
+    expect(within(taxiRow).getByRole('button', { name: 'Move card charge to a later statement' })).toBeInTheDocument()
+    expect(within(screen.getByText('Card payment').closest('tr') as HTMLElement).queryByRole('button')).not.toBeInTheDocument()
     expect(getAccountStatementsMock).not.toHaveBeenCalled()
+  })
+
+  it('adds a charge with the card locked and the invoice month from the date', async () => {
+    const user = userEvent.setup()
+    withActions(['AddCharge'])
+    createExpenseMock.mockResolvedValue({ ...TAXI, id: 'c2', description: 'Lunch' })
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('button', { name: 'Add charge' }))
+    const form = screen.getByRole('heading', { name: 'New Charge' }).closest('form') as HTMLElement
+    expect(within(form).getByText('BA Amex')).toBeInTheDocument()
+    expect(within(form).queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(within(form).getByLabelText('Invoice Month')).toHaveValue('2026-10')
+    await user.type(within(form).getByLabelText(/^Description/), 'Lunch')
+    await user.type(within(form).getByLabelText(/^Value/), '12.40')
+    await user.click(within(form).getByRole('button', { name: 'Add Charge' }))
+
+    await waitFor(() =>
+      expect(createExpenseMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          date: '2026-10-15',
+          description: 'Lunch',
+          value: 12.4,
+          creditCardId: AMEX_ID,
+          paymentSourceBankId: null,
+          invoiceDate: '2026-10-01',
+          roundUpAmount: null,
+        }),
+      ),
+    )
+    expect(await screen.findByText('Charge added')).toBeInTheDocument()
+  })
+
+  it('edits an unpaid charge in card mode with the card locked', async () => {
+    const user = userEvent.setup()
+    updateExpenseMock.mockResolvedValue({ ...TAXI, value: 32 })
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('button', { name: 'Edit card charge' }))
+    const form = screen.getByRole('heading', { name: 'Edit Charge' }).closest('form') as HTMLElement
+    expect(within(form).getByText('BA Amex')).toBeInTheDocument()
+    expect(within(form).getByLabelText('Invoice Month')).toHaveValue('2026-10')
+    await user.clear(within(form).getByLabelText(/^Value/))
+    await user.type(within(form).getByLabelText(/^Value/), '32')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateExpenseMock).toHaveBeenCalledWith(
+        'c1',
+        expect.objectContaining({ value: 32, creditCardId: AMEX_ID, paymentSourceBankId: null, invoiceDate: '2026-10-01' }),
+      ),
+    )
+    expect(await screen.findByText('Charge updated')).toBeInTheDocument()
+  })
+
+  it('[AC P60-F08-statement-payment-and-card-screen-07] moves a charge to a later unpaid statement and focuses the Transactions heading', async () => {
+    const user = userEvent.setup()
+    moveChargeToStatementMock.mockResolvedValue({ ...TAXI, invoiceDate: '2026-12-01' })
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('button', { name: 'Move card charge to a later statement' }))
+    const form = screen.getByRole('heading', { name: 'Move charge to a later statement' }).closest('form') as HTMLElement
+    expect(within(form).getByText('Taxi is on the October 2026 statement.')).toBeInTheDocument()
+    const statement = within(form).getByLabelText(/^Statement/)
+    await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
+    expect(within(statement).getByRole('option', { name: 'November 2026' })).toBeInTheDocument()
+    expect(within(statement).getByRole('option', { name: 'December 2026 (new)' })).toBeInTheDocument()
+
+    await user.click(within(form).getByRole('button', { name: 'Move charge' }))
+    expect(within(form).getByText('Select a statement.')).toBeInTheDocument()
+    expect(moveChargeToStatementMock).not.toHaveBeenCalled()
+
+    getAccountTransactionsMock.mockResolvedValue(CARD_ROWS.slice(1))
+    await user.selectOptions(statement, '2026-12')
+    await user.click(within(form).getByRole('button', { name: 'Move charge' }))
+
+    expect(moveChargeToStatementMock).toHaveBeenCalledWith('c1', { year: 2026, month: 12 })
+    expect(await screen.findByText('Charge moved')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByText('Taxi')).not.toBeInTheDocument())
+    expect(screen.queryByRole('heading', { name: 'Move charge to a later statement' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
+  })
+
+  it('keeps the move form open with the server message when the move is refused', async () => {
+    const user = userEvent.setup()
+    moveChargeToStatementMock.mockRejectedValue(new ApiError('Charges can only move to a later, unpaid statement.', 400))
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('button', { name: 'Move card charge to a later statement' }))
+    const statement = screen.getByLabelText(/^Statement/)
+    await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
+    await user.selectOptions(statement, '2026-11')
+    await user.click(screen.getByRole('button', { name: 'Move charge' }))
+
+    expect(await screen.findByText('Charges can only move to a later, unpaid statement.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Move charge to a later statement' })).toBeInTheDocument()
+  })
+
+  it('asks before leaving a move form with a chosen statement', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('button', { name: 'Move card charge to a later statement' }))
+    const statement = screen.getByLabelText(/^Statement/)
+    await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
+    await user.selectOptions(statement, '2026-11')
+    await user.click(screen.getByRole('tab', { name: 'Statements' }))
+
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+    await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
+    expect(screen.getByLabelText(/^Statement/)).toHaveValue('2026-11')
   })
 
   it('keeps the tab in the URL across tab and month changes', async () => {

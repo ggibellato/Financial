@@ -1,5 +1,17 @@
 import type { ReactNode } from 'react'
-import { Skeleton, SkeletonItem, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import {
+  Button,
+  Skeleton,
+  SkeletonItem,
+  Table,
+  TableBody,
+  TableCell,
+  TableHeader,
+  TableHeaderCell,
+  TableRow,
+  Tooltip,
+} from '@fluentui/react-components'
+import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
@@ -7,7 +19,7 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { hasRowActions, kindLabel, recordNoun, rowKey } from './accountActions'
+import { canMoveToStatement, hasRowActions, kindLabel, recordNoun, rowKey } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -56,6 +68,7 @@ interface AccountTransactionsGridProps {
   isEditDisabled?: boolean
   onEdit: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   onDelete: (row: AccountTransactionDto) => void
+  onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -66,12 +79,13 @@ export default function AccountTransactionsGrid({
   isEditDisabled = false,
   onEdit,
   onDelete,
+  onMove,
 }: AccountTransactionsGridProps) {
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
 
   return (
-    <div className="account-screen__grid-scroll">
+    <div className={onMove ? 'account-screen__grid-scroll account-screen__grid-scroll--card' : 'account-screen__grid-scroll'}>
       <Table className="data-table" aria-label="Transactions">
         <TableHeader>
           <TableRow>
@@ -123,7 +137,20 @@ export default function AccountTransactionsGrid({
                     editDisabled={isEditDisabled}
                     onEdit={(button) => onEdit(row, button)}
                     onDelete={() => onDelete(row)}
-                  />
+                  >
+                    {onMove && canMoveToStatement(row) && (
+                      <Tooltip content="Move to a later statement" relationship="description">
+                        <Button
+                          appearance="subtle"
+                          size="small"
+                          icon={<CalendarArrowRightRegular />}
+                          aria-label={`Move ${recordNoun(row.kind)} to a later statement`}
+                          disabled={isEditDisabled}
+                          onClick={(event) => onMove(row, event.currentTarget)}
+                        />
+                      </Tooltip>
+                    )}
+                  </RowActionsCell>
                 ) : (
                   <TableCell className="data-table__col--action" />
                 )}

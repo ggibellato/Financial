@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
-import type { LockedBank } from '../hooks/formSettings'
+import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -40,6 +40,7 @@ interface ExpenseFormProps {
   isSettled: boolean
   isSaving: boolean
   lockedBank?: LockedBank
+  lockedCard?: LockedCard
   saveError: string | null
   saveErrorFields: Partial<Record<ExpenseFormField, string>>
   onFieldChange: (field: ExpenseFormField, value: string) => void
@@ -66,6 +67,7 @@ export default function ExpenseForm({
   isSettled,
   isSaving,
   lockedBank,
+  lockedCard,
   saveError,
   saveErrorFields,
   onFieldChange,
@@ -81,6 +83,7 @@ export default function ExpenseForm({
   const showCountsAsTitheField = selectedCategory?.isTithe === true
   const settledCardName = creditCardName || creditCards.find((card) => card.id === creditCardId)?.name || creditCardId
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
+  const noun = lockedCard ? 'Charge' : 'Expense'
 
   return (
     <form
@@ -93,7 +96,7 @@ export default function ExpenseForm({
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
         <Text as="h2" weight="semibold" size={400}>
-          {isEditing ? 'Edit Expense' : 'New Expense'}
+          {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
         {Object.keys(saveErrorFields).length === 0 && saveError && (
           <MessageBar intent="error">
@@ -133,6 +136,10 @@ export default function ExpenseForm({
           ) : lockedBank ? (
             <Field label="Payment Source">
               <Text weight="semibold">{lockedBank.name}</Text>
+            </Field>
+          ) : lockedCard ? (
+            <Field label="Card">
+              <Text weight="semibold">{lockedCard.name}</Text>
             </Field>
           ) : paymentMode === 'bank' ? (
             <Field
@@ -232,7 +239,7 @@ export default function ExpenseForm({
 
         <div className={styles.actions}>
           <Button type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Expense'}
+            {isSaving ? 'Saving...' : isEditing ? 'Save' : `Add ${noun}`}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>
             Cancel
