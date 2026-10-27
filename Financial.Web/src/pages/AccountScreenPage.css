@@ -101,6 +101,21 @@
   padding-bottom: 24px;
 }
 
+.account-screen__tabs {
+  flex-shrink: 0;
+}
+
+.card-statements__row--viewed {
+  background-color: var(--colorBrandBackground2);
+}
+
+.card-statements__month {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 @media (max-width: 599px) {
   .account-screen {
     padding: 16px 16px 0;

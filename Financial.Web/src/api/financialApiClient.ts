@@ -6,6 +6,7 @@ import type {
   AccountDto,
   AccountGroupSummaryDto,
   AccountTransactionDto,
+  AccountStatementDto,
   AccountTransferCreateDto,
   AccountTransferDto,
   AccountTransferUpdateDto,
@@ -258,6 +259,7 @@ export interface FinancialApiClient {
   deleteAccount: (id: string) => Promise<void>
   getAccount: (id: string, year: number, month: number) => Promise<AccountDetailDto>
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
+  getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
   getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
   getTransferSources: (accountId: string) => Promise<TransferAccountOptionDto[]>
   createAccountTransfer: (request: AccountTransferCreateDto) => Promise<AccountTransferDto>
@@ -720,6 +722,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<AccountDetailDto>(`/accounts/${encodeURIComponent(id)}/${year}/${month}`),
     getAccountTransactions: (id, year, month) =>
       request<AccountTransactionDto[]>(`/accounts/${encodeURIComponent(id)}/transactions/${year}/${month}`),
+    getAccountStatements: (id) => request<AccountStatementDto[]>(`/accounts/${encodeURIComponent(id)}/statements`),
     getTransferDestinations: (accountId) =>
       request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),
     getTransferSources: (accountId) =>

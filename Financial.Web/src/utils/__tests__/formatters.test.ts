@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   currentYearMonth,
   formatDateTime,
+  formatDayMonthYearUtc,
   formatLongMonthYear,
   formatMonthInputValue,
   formatN2,
@@ -59,6 +60,12 @@ describe('formatSignedN2', () => {
 describe('formatLongMonthYear', () => {
   it('formatLongMonthYear_YearAndMonth_ReturnsFullMonthNameAndYear', () => {
     expect(formatLongMonthYear(2026, 10)).toBe('October 2026')
+  })
+})
+
+describe('formatDayMonthYearUtc', () => {
+  it('formatDayMonthYearUtc_DateOnly_ReturnsDayShortMonthAndYearInUtc', () => {
+    expect(formatDayMonthYearUtc('2026-11-03')).toBe('3 Nov 2026')
   })
 })
 

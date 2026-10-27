@@ -2247,6 +2247,19 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/2026/10`)
   })
 
+  it('gets the statements of one card account', async () => {
+    const responseBody = [
+      { id: 's1', year: 2026, month: 10, total: 30, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAccountStatements('a1')
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/statements`)
+  })
+
   it('gets the transactions of one account for a month', async () => {
     const responseBody: AccountTransactionDto[] = [
       accountTransactionRow({ id: 't1', kind: 'Income', date: '2026-10-01', amount: 100, canEdit: true }),

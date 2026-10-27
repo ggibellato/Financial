@@ -106,4 +106,31 @@ describe('AccountTransactionsGrid', () => {
     expect(within(bodyRows()[0]).getByRole('button', { name: 'Edit expense' })).toBeDisabled()
     expect(within(bodyRows()[0]).getByRole('button', { name: 'Delete expense' })).toBeEnabled()
   })
+
+  it('labels the date column as asked and card payments by their kind', () => {
+    render(
+      <AccountTransactionsGrid
+        transactions={[accountTransactionRow({ id: 'p1', kind: 'CardPayment', date: '2026-10-12', counterpart: 'Barclays', amount: 480, canEdit: false })]}
+        emptyMessage={EMPTY_MESSAGE}
+        dateHeader="Purchased"
+        {...NO_ROW_ACTIONS}
+      />,
+    )
+
+    expect(screen.getByRole('columnheader', { name: /^Purchased/ })).toBeInTheDocument()
+    expect(screen.getByText('Card payment')).toBeInTheDocument()
+    expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('offers no row actions on an editable card charge until card charge editing exists', () => {
+    render(
+      <AccountTransactionsGrid
+        transactions={[accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Taxi', amount: -30, canEdit: true })]}
+        emptyMessage={EMPTY_MESSAGE}
+        {...NO_ROW_ACTIONS}
+      />,
+    )
+
+    expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+  })
 })

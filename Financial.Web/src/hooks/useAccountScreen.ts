@@ -8,6 +8,12 @@ import { useAsyncResource } from './useAsyncResource'
 
 export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
 
+export type AccountScreenTab = 'transactions' | 'statements'
+
+function searchFor(month: string, tab: AccountScreenTab): Record<string, string> {
+  return tab === 'statements' ? { month, tab } : { month }
+}
+
 const GUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 interface AccountScreenData {
@@ -27,6 +33,8 @@ export interface AccountScreen {
   month: number
   monthInputValue: string
   setMonthInputValue: (value: string) => void
+  tab: AccountScreenTab
+  setTab: (tab: AccountScreenTab) => void
   selectAccount: (accountId: string) => void
   accounts: AccountDto[]
   account: AccountDetailDto | null
@@ -59,12 +67,13 @@ export function useAccountScreen(): AccountScreen {
   const parsedMonth = parseMonthInputValue(searchParams.get('month') ?? '')
   const { year, month } = parsedMonth ?? currentYearMonth()
   const monthInputValue = formatMonthInputValue(year, month)
+  const tab: AccountScreenTab = searchParams.get('tab') === 'statements' ? 'statements' : 'transactions'
   const isValidId = GUID_PATTERN.test(accountId)
   const hasValidMonth = parsedMonth !== null
 
   useEffect(() => {
-    if (!hasValidMonth) setSearchParams({ month: monthInputValue }, { replace: true })
-  }, [hasValidMonth, monthInputValue, setSearchParams])
+    if (!hasValidMonth) setSearchParams(searchFor(monthInputValue, tab), { replace: true })
+  }, [hasValidMonth, monthInputValue, tab, setSearchParams])
 
   const resource = useAsyncResource<AccountScreenLoad>(
     () => (isValidId ? loadAccountScreen(accountId, year, month) : null),
@@ -75,9 +84,14 @@ export function useAccountScreen(): AccountScreen {
 
   const setMonthInputValue = useCallback(
     (value: string) => {
-      if (parseMonthInputValue(value)) setSearchParams({ month: value }, { replace: true })
+      if (parseMonthInputValue(value)) setSearchParams(searchFor(value, tab), { replace: true })
     },
-    [setSearchParams],
+    [setSearchParams, tab],
+  )
+
+  const setTab = useCallback(
+    (nextTab: AccountScreenTab) => setSearchParams(searchFor(monthInputValue, nextTab), { replace: true }),
+    [monthInputValue, setSearchParams],
   )
 
   const selectAccount = useCallback(
@@ -93,6 +107,8 @@ export function useAccountScreen(): AccountScreen {
     month,
     monthInputValue,
     setMonthInputValue,
+    tab,
+    setTab,
     selectAccount,
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,

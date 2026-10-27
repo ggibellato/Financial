@@ -15,6 +15,7 @@ const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferF
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',
+  CardPayment: 'Card payment',
   TransferIn: 'Transfer in',
   TransferOut: 'Transfer out',
   Adjustment: 'Balance adjustment',
@@ -23,6 +24,7 @@ const KIND_LABELS: Record<string, string> = {
 const RECORD_NOUNS: Record<string, string> = {
   Expense: 'expense',
   CardCharge: 'card charge',
+  CardPayment: 'card payment',
   Income: 'income',
   TransferIn: 'transfer',
   TransferOut: 'transfer',
@@ -56,6 +58,10 @@ export function recordNoun(kind: string): string {
 export function recordTitle(kind: string): string {
   const noun = recordNoun(kind)
   return noun.charAt(0).toUpperCase() + noun.slice(1)
+}
+
+export function hasRowActions(row: AccountTransactionDto): boolean {
+  return row.canEdit && row.kind !== 'CardCharge'
 }
 
 export function rowKey(row: AccountTransactionDto): string {
