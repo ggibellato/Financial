@@ -469,10 +469,10 @@ Rules that apply to every feature:
 - **Category setting** on each Pots account (Id of a category); deposits and withdrawals write their bank expenses in the category the account has at that moment; a change applies from the next operation; past expenses keep theirs. Replaces `Category.ReservaName` in the server **and** `RESERVA_CATEGORY_NAME` in the web (`withdrawalExpenseCategories.ts`). *Why (deviation):* the doc named only the server lookup; the web has the same name dependency. The withdrawal's default category, the category named like the pot, stays (it is a suggestion the user can change, not a lookup the operation depends on).
 - **Income split target** (user decision 2026-10-27): `IncomeSource.AutoSplitToReserve` is replaced by an optional Pots account on the income source; the flag goes, since the account says it all. A source with a Pots account offers the split on the income form, ticked by default, with a Pots account picker that defaults to the source's account and can be changed; the split can be unticked for one income. A source without one offers no split. The income stores the Pots account it split to, so an edit recalculates into the same account. Admin income sources shows a Pots account picker (empty = no split) in place of the auto-split checkbox.
 - **Migration step V3 → V4:** creates Pots account "Reserva" (new Id, GBP, category = the category named "Reserva", looked up once by name in the migration only); `ReserveBuckets` become its pots with the same Ids, names, split % and active flags; movements keep their pot Id; investment snapshot source "sum of reserve buckets" becomes "Pots account total" naming Reserva; income sources with `AutoSplitToReserve` get Reserva as their Pots account and the flag is removed, and incomes that split name Reserva as their Pots account; `Version` 4.
-- **Snapshot source:** investment accounts with the pots source name a Pots account; Admin investment accounts offers "Pots account total" plus the account. *Why (deviation):* today the source adds every bucket; with a second Pots account it would silently include it.
+- **Snapshot source:** investment accounts with the pots source name a Pots account; Admin investment accounts offers "Pots account total" plus the account; the suggestion text names the account ("Reserva total — as of Oct 2026"). *Why (deviation):* today the source adds every bucket; with a second Pots account it would silently include it.
 - Admin → Accounts gains the Pots template (fields: category). Pots themselves are managed from the Pots screen (F10).
 - **Accounts page:** adds the "Other accounts" section below the default group, listing each account outside the default group (Pots now, Settlement from F11) with its balance. In F09 the rows are not links, because the account screen has nothing to show for a Pots account until F10's Pots tab (user decision 2026-10-27).
-- `reserve` and `reserve-buckets` endpoints keep their shapes (against Reserva) until F13.
+- `reserve` and `reserve-buckets` endpoints keep their shapes until F13, against Reserva: the first Pots account in the file (user decision 2026-10-27), so a second Pots account never appears on the Reserva page and renaming Reserva breaks nothing.
 - Test and example data migrated to V4.
 - The spreadsheet import creates the Reserva Pots account with its pots directly and its output loads under the version guard (the F02 import rule).
 
@@ -483,7 +483,7 @@ Rules that apply to every feature:
 - Migration finds no category named "Reserva": stops with `No category named "Reserva" to assign to the Reserva Pots account.` nothing written.
 - Creating a Pots account without a category: 400 "Choose the category for this account's bank expenses."
 - Deleting the category used by a Pots account: 409 `EntityInUse`, as for other references.
-- An income that splits with no Pots account, or from a source without one: 400 (message fixed in the spec).
+- An income that names a Pots account when its source has none: 400 "Ariana doesn't split income to pots." An account that can't receive an income split: 400 "Barclays can't receive an income split."
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
 
@@ -806,7 +806,7 @@ graph TD
 - [ ] An income from a source with a Pots account starts with the split ticked into that account; unticking it or choosing another Pots account is saved with the income, editing it recalculates into the same account, and a source without one offers no split
 - [ ] Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
 - [ ] A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
-- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
+- [ ] Parity: 0 differences apart from each month's snapshot source text, which now names the Pots account (values identical); `/simplify` run; architecture-reviewer passed
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
 - [ ] Saving a split-to-reserve income writes the income, the pot credits (90% of net, split by percentage) and one bank expense in the Pots account's category, in one save
