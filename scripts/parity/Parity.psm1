@@ -298,18 +298,20 @@ function Get-ParityReport {
         [string]$Side = 'report',
         [string]$CurrentMonth = '',
         [switch]$IncludeSummary,
-        [switch]$IncludeAccounts
+        [switch]$IncludeAccounts,
+        [switch]$FillMissingStatements
     )
     try {
         $report = New-ParityReport
         $months = @(Get-ParityMonthKeys $First $Last)
         $banks = & $Fetch 'banks'
         $potBalancesByMonth = Get-ParityPotBalancesByMonth (& $Fetch 'reserve/movements') $months
-        $accounts = if ($IncludeAccounts) { @(& $Fetch 'accounts') } else { $null }
+        $accounts = if ($IncludeAccounts -or $FillMissingStatements) { @(& $Fetch 'accounts') } else { $null }
+        $figureAccounts = if ($IncludeAccounts) { $accounts } else { $null }
         foreach ($month in $months) {
-            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $accounts $CurrentMonth
+            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $figureAccounts $CurrentMonth
         }
-        if ($null -ne $accounts) { Add-ParityMissingCardStatementFigures $report $months $accounts }
+        if ($FillMissingStatements) { Add-ParityMissingCardStatementFigures $report $months $accounts }
 
         foreach ($balance in (& $Fetch 'reserve/balances')) {
             Add-ParityFigure $report "current/pots/$($balance.bucketName)/balance" $balance.balance

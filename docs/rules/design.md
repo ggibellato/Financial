@@ -26,7 +26,7 @@ This is a hard requirement, not a preference.
 
 ## PR size
 
-Limit each PR to a maximum of **8 non-test code files and about 15 files in total**, tests and docs included. Generated files (`Financial.Web/src/api/generated/openapi.ts`) don't count. A PR of 25+ files can't be reviewed properly (user, 2026-10-27).
+Limit each PR to a maximum of **8 non-test code files and about 15 files in total**, tests and docs included. Generated files (`Financial.Web/src/api/generated/openapi.ts`) don't count. A PR of 15+ files can't be reviewed properly (user, 2026-10-27).
 
 - **Plan for it.** A spec or plan splits a stage that won't fit into several PRs (for example the backend PR, then the web PR), each leaving `main` deployable.
 - **Review fixes stay in scope.** A review finding that needs files outside the PR's planned set goes to a follow-up PR, not into the current one.

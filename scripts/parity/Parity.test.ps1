@@ -97,13 +97,15 @@ try {
     $unfilled['card-statements/2026/9'] = '[{"creditCardName":"Amex","outstandingTotal":40.10,"accumulatedOutstandingTotal":40.10,"isPaid":false}]'
     $unfilled["accounts/$chaseId/2026/9"] = '{"balance":0}'
     $unfilledFetch = { param($path) if (-not $unfilled.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $unfilled[$path] }
-    $filled = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeAccounts
+    $filled = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeAccounts -FillMissingStatements
+    $filledBefore = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -FillMissingStatements
     $notFilled = Get-ParityReport -Fetch $unfilledFetch -First '2026-08' -Last '2026-09'
     Check 'after side fills a missing statement with the card''s accumulated outstanding' ($filled['2026-08/cards/Amex/outstandingTotal'] -eq 0 -and $filled['2026-08/cards/Amex/accumulatedOutstandingTotal'] -eq [decimal]'40.10' -and $filled['2026-08/cards/Amex/isPaid'] -eq $false -and $filled.ContainsKey('2026-08/cards/Amex/warning') -and $null -eq $filled['2026-08/cards/Amex/warning']) ''
     Check 'after side fills a card with no stored statement with zeros' ($filled['2026-08/cards/Visa/accumulatedOutstandingTotal'] -eq 0 -and $filled['2026-09/cards/Visa/outstandingTotal'] -eq 0 -and $filled['2026-09/cards/Visa/isPaid'] -eq $false) ''
     Check 'fill leaves stored statements and inactive cards alone' ($filled['2026-09/cards/Amex/outstandingTotal'] -eq [decimal]'40.10' -and -not $filled.ContainsKey('2026-08/cards/Closed/outstandingTotal')) ''
     Check 'a statement without a warning field reads as a null warning' ($filled.ContainsKey('2026-09/cards/Amex/warning') -and $null -eq $filled['2026-09/cards/Amex/warning']) ''
-    Check 'before side adds no missing statements' (-not $notFilled.ContainsKey('2026-08/cards/Amex/outstandingTotal') -and -not $notFilled.ContainsKey('2026-09/cards/Visa/outstandingTotal')) ''
+    Check 'without FillMissingStatements no missing statements are added' (-not $notFilled.ContainsKey('2026-08/cards/Amex/outstandingTotal') -and -not $notFilled.ContainsKey('2026-09/cards/Visa/outstandingTotal')) ''
+    Check 'before side fills missing statements without adding account figures' ($filledBefore['2026-08/cards/Amex/accumulatedOutstandingTotal'] -eq [decimal]'40.10' -and $filledBefore['2026-09/cards/Visa/outstandingTotal'] -eq 0 -and -not ($filledBefore.Keys | Where-Object { $_.Split('/')[1] -eq 'account' })) ''
 
     $duplicate = $responses.Clone()
     $duplicate['banks/month/2026/8/balances'] = '[{"bank":"Barclays","balance":1},{"bank":"Barclays","balance":2}]'
