@@ -24,6 +24,9 @@ public static class CardChargeFilter
         IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         UnpaidChargesFor(expenses, statements, card, year, month).Sum(expense => expense.Value);
 
+    public static bool IsPaid(Expense expense, IEnumerable<CardStatement> statements) =>
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled || IsOnPaidStatement(expense, statements);
+
     public static bool IsOnPaidStatement(Expense expense, IEnumerable<CardStatement> statements) =>
         expense is { CreditCard: { } card, InvoiceDate: { } invoiceDate }
         && IsStatementPaid(statements, card, invoiceDate.Year, invoiceDate.Month);

@@ -36,6 +36,13 @@ public sealed class AccountsController : ControllerBase
     public ActionResult<IReadOnlyList<AccountTransactionDTO>> GetTransactions(Guid id, int year, int month) =>
         Ok(_accountQueryService.GetTransactions(id, year, month));
 
+    [HttpGet("{id:guid}/statements")]
+    [ProducesResponseType(typeof(IReadOnlyList<AccountStatementDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<IReadOnlyList<AccountStatementDTO>> GetStatements(Guid id) =>
+        Ok(_accountQueryService.GetStatements(id));
+
     [HttpGet("templates")]
     [ProducesResponseType(typeof(IReadOnlyList<AccountTemplateDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<AccountTemplateDTO>> GetTemplates() =>

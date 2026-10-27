@@ -110,6 +110,9 @@
           "currency": {
             "type": "string"
           },
+          "hasStatements": {
+            "type": "boolean"
+          },
           "id": {
             "format": "uuid",
             "type": "string"
@@ -142,6 +145,7 @@
           "month",
           "balance",
           "balanceIsOwed",
+          "hasStatements",
           "allowedActions"
         ],
         "type": "object"
@@ -257,6 +261,57 @@
           "categoryTotalsSum",
           "incomeTotals",
           "totalIncoming"
+        ],
+        "type": "object"
+      },
+      "AccountStatementDTO": {
+        "properties": {
+          "dueDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "isPaid": {
+            "type": "boolean"
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "paidFromAccountName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidOn": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "total": {
+            "format": "double",
+            "type": "number"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "year",
+          "month",
+          "total",
+          "isPaid"
         ],
         "type": "object"
       },
@@ -6853,6 +6908,61 @@
               }
             },
             "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/accounts/{id}/statements": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountStatementDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
           }
         },
         "summary": "",

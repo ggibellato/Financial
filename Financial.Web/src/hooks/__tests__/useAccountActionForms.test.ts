@@ -28,6 +28,7 @@ const BARCLAYS: AccountDetailDto = {
   templateName: 'Bank',
   balance: 1250,
   balanceIsOwed: false,
+  hasStatements: false,
   isActive: true,
   allowedActions: ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile'],
   year: 2026,

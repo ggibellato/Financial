@@ -18,6 +18,7 @@ public sealed class AccountQueryService : IAccountQueryService
     {
         Expense,
         CardCharge,
+        CardPayment,
         Income,
         TransferIn,
         TransferOut,
@@ -78,6 +79,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 Month = month,
                 Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
                 BalanceIsOwed = account.BalanceIsOwed,
+                HasStatements = account.Has(Capability.HasStatements),
                 AllowedActions = AccountActions.AllowedFor(account).Select(action => action.ToString()).ToList()
             };
 
@@ -102,10 +104,12 @@ public sealed class AccountQueryService : IAccountQueryService
             var startOfMonth = new DateOnly(year, month, 1);
             var account = FindAccountOrThrow(id);
             var statements = _repository.GetCardStatements().ToList();
+            var isCard = account.Has(Capability.HasStatements);
 
             var result = AccountTransactionReader.Read(_repository)
-                .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth)
+                .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth && !(isCard && record is Expense))
                 .SelectMany(record => ToRows(record, account, statements))
+                .Concat(isCard ? CardChargeRows(account, year, month, statements) : [])
                 .OrderByDescending(row => row.Date)
                 .ToList();
 
@@ -120,10 +124,89 @@ public sealed class AccountQueryService : IAccountQueryService
         }
     }
 
+    public IReadOnlyList<AccountStatementDTO> GetStatements(Guid id)
+    {
+        using var span = StartSpan("GetAccountStatements");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            var card = FindAccountOrThrow(id);
+            CardAccountRule.EnsureIsCard(card);
+            var expenses = _repository.GetExpenses().ToList();
+            var transfers = _repository.GetTransfers().ToList();
+
+            var result = _repository.GetCardStatements()
+                .Where(statement => statement.CreditCard.Id == card.Id)
+                .Select(statement => (Statement: statement, Charges: CardChargeFilter.ChargesFor(expenses, card, statement.Year, statement.Month).ToList()))
+                .Where(entry => entry.Statement.IsPaid || entry.Charges.Count > 0)
+                .OrderByDescending(entry => entry.Statement.Year)
+                .ThenByDescending(entry => entry.Statement.Month)
+                .Select(entry => ToStatementDto(entry.Statement, entry.Charges, transfers))
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetAccountStatements");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private static AccountStatementDTO ToStatementDto(CardStatement statement, IReadOnlyList<Expense> charges, IReadOnlyList<Transfer> transfers)
+    {
+        var payment = PaymentOf(statement, charges, transfers);
+        return new AccountStatementDTO
+        {
+            Id = statement.Id,
+            Year = statement.Year,
+            Month = statement.Month,
+            Total = charges.Sum(charge => charge.Value),
+            IsPaid = statement.IsPaid,
+            DueDate = statement.DueDate,
+            PaidOn = payment?.Date,
+            PaidFromAccountName = payment?.Account.Name
+        };
+    }
+
+    private static (DateOnly Date, Account Account)? PaymentOf(CardStatement statement, IReadOnlyList<Expense> charges, IReadOnlyList<Transfer> transfers)
+    {
+        if (!statement.IsPaid)
+            return null;
+
+        if (statement.IsPaidByTransfer)
+            return transfers.FirstOrDefault(transfer => transfer.Id == statement.PaymentTransferId) is { } transfer
+                ? (transfer.Date, transfer.SourceAccount)
+                : null;
+
+        return charges
+            .Where(charge => charge.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+            .MaxBy(charge => charge.Date) is { PaymentSourceAccount: { } bank } latest
+            ? (latest.Date, bank)
+            : null;
+    }
+
+    private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, int year, int month, IReadOnlyList<CardStatement> statements) =>
+        CardChargeFilter.ChargesFor(_repository.GetExpenses(), card, year, month)
+            .Select(charge => new AccountTransactionDTO
+            {
+                Id = charge.Id,
+                Kind = TransactionKind.CardCharge.ToString(),
+                Date = charge.ChargeDate ?? charge.Date,
+                Description = charge.Description,
+                CategoryName = charge.Category.Name,
+                Counterpart = charge.PaymentSourceAccount?.Name,
+                Amount = -charge.Value,
+                CanEdit = card.IsActive && !CardChargeFilter.IsPaid(charge, statements),
+                Expense = ExpenseService.ToDto(charge, statements)
+            });
+
     private static IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account, IReadOnlyList<CardStatement> statements) =>
         record switch
         {
-            Expense expense when expense.PaymentSourceAccount?.Id == account.Id || expense.IsUnpaidChargeOn(account) => [ToRow(expense, account, statements)],
+            Expense expense when expense.PaymentSourceAccount?.Id == account.Id => [ToRow(expense, account, statements)],
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
             Transfer transfer => ToRows(transfer, account),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
@@ -140,7 +223,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Date = expense.Date,
             Description = expense.Description,
             CategoryName = expense.Category.Name,
-            Counterpart = expense.CreditCard?.Id == account.Id ? null : expense.CreditCard?.Name,
+            Counterpart = expense.CreditCard?.Name,
             Amount = -expense.Value,
             RoundUp = expense.RoundUpAmount is { } roundUp ? -roundUp : null,
             CanEdit = account.IsActive && kind == TransactionKind.Expense,
@@ -166,7 +249,10 @@ public sealed class AccountQueryService : IAccountQueryService
             yield return ToRow(transfer, account, TransactionKind.TransferOut, transfer.DestinationAccount, -transfer.Amount);
 
         if (transfer.DestinationAccount.Id == account.Id)
-            yield return ToRow(transfer, account, TransactionKind.TransferIn, transfer.SourceAccount, transfer.AmountReceived());
+        {
+            var kind = transfer.IsStatementPayment ? TransactionKind.CardPayment : TransactionKind.TransferIn;
+            yield return ToRow(transfer, account, kind, transfer.SourceAccount, transfer.AmountReceived());
+        }
     }
 
     private static AccountTransactionDTO ToRow(Transfer transfer, Account account, TransactionKind kind, Account counterpart, decimal amount) => new()

@@ -428,6 +428,61 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{id}/statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountStatementDTO"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}/transactions/{year}/{month}": {
         parameters: {
             query?: never;
@@ -7345,6 +7400,7 @@ export interface components {
             balance: number;
             balanceIsOwed: boolean;
             currency: string;
+            hasStatements: boolean;
             /** Format: uuid */
             id: string;
             isActive: boolean;
@@ -7383,6 +7439,22 @@ export interface components {
             /** Format: double */
             totalIncoming: number;
             totals: components["schemas"]["CurrencyTotalDTO"][];
+            /** Format: int32 */
+            year: number;
+        };
+        AccountStatementDTO: {
+            /** Format: date */
+            dueDate?: null | string;
+            /** Format: uuid */
+            id: string;
+            isPaid: boolean;
+            /** Format: int32 */
+            month: number;
+            paidFromAccountName?: null | string;
+            /** Format: date */
+            paidOn?: null | string;
+            /** Format: double */
+            total: number;
             /** Format: int32 */
             year: number;
         };
