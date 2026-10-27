@@ -74,6 +74,14 @@ public class AccountActionsTests
     }
 
     [Fact]
+    public void AllowedFor_PotsAccount_ReturnsNone()
+    {
+        var pots = Account.Create("Holiday pots", AccountTemplate.Pots, Currency.GBP);
+
+        AccountActions.AllowedFor(pots).Should().BeEmpty();
+    }
+
+    [Fact]
     public void AllowedFor_InactiveCreditCardAccount_ReturnsNone()
     {
         var inactive = Account.CreateWithCapabilities(
