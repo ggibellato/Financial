@@ -490,16 +490,34 @@ function Get-ParityMonthRange([string]$DataFile, [datetime]$Now) {
     }
 }
 
-function Assert-ParityLiveCopy([string]$Path, [string[]]$RepoRoots) {
-    $resolved = [System.IO.Path]::GetFullPath($Path, (Get-Location).ProviderPath)
-    foreach ($repoRoot in $RepoRoots) {
-        $liveFile = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'data/data-cashflow.json'))
-        if ([string]::Equals($resolved, $liveFile, [System.StringComparison]::OrdinalIgnoreCase)) {
-            throw 'Refusing to run on the live data file data/data-cashflow.json. Pass a copy.'
+function Resolve-ParityLiveCopy([string]$Path, [string[]]$RepoRoots) {
+    if (-not $Path) {
+        foreach ($repoRoot in $RepoRoots) {
+            $liveFile = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'data/data-cashflow.json'))
+            if (Test-Path -LiteralPath $liveFile -PathType Leaf) { return $liveFile }
         }
+        throw 'data/data-cashflow.json not found. Download it from Google Drive into data/, or pass -LiveCopy.'
     }
+    $resolved = [System.IO.Path]::GetFullPath($Path, (Get-Location).ProviderPath)
     if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) { throw "Live copy not found: $resolved" }
     $resolved
+}
+
+function Copy-ParitySource([string]$Source, [string]$Folder) {
+    $copy = Join-Path $Folder 'source.json'
+    Copy-Item -LiteralPath $Source -Destination $copy -Force
+    $copy
+}
+
+function Format-ParitySource([string]$Source) {
+    $document = [System.Text.Json.JsonDocument]::Parse([System.IO.File]::ReadAllText($Source))
+    try {
+        $versionProperty = $document.RootElement.EnumerateObject() | Where-Object Name -eq 'Version' | Select-Object -First 1
+        $version = if ($versionProperty) { $versionProperty.Value.ToString() } else { 'none' }
+    }
+    finally { $document.Dispose() }
+    $savedAt = (Get-Item -LiteralPath $Source).LastWriteTime.ToString('yyyy-MM-dd HH:mm')
+    "Source: $Source (version $version, SHA-256 $((Get-ParitySha256 $Source).Substring(0, 8)), saved $savedAt)"
 }
 
 function Assert-ParityPorts([int[]]$Ports) {

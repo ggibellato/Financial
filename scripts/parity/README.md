@@ -13,26 +13,27 @@ with **0 differences** on the latest copy of the live data.
 
 - PowerShell 7.4 or later (`pwsh`), .NET 10 SDK and git on PATH.
 - Node 20+ and network access, only for `-KeepRunning`.
-- A copy of the live CashFlow file anywhere except `data/data-cashflow.json`, for example
-  `data/2026-10-18-live-data-cashflow.json` (`data/*` is gitignored).
+- The latest live CashFlow file, downloaded from Google Drive to `data/data-cashflow.json`
+  (`data/*` is gitignored). The script reads it and never writes to it. Run from a worktree, it
+  reads the main repo folder's `data/data-cashflow.json`.
 
 ## Commands
 
 ```powershell
-.\scripts\parity\Invoke-Parity.ps1 -Step All -LiveCopy data\2026-10-18-live-data-cashflow.json
+.\scripts\parity\Invoke-Parity.ps1 -Step All
 ```
 
 | Step | What it does |
 |------|--------------|
 | `Baseline` | Creates a new work folder and a temp worktree at `-BaselineTag`. Publishes the API, removes the worktree, starts the API on `-BeforePort` with `before\data-cashflow.json` and writes `before-report.json`. |
-| `Migrate` | Runs `CashFlowSpreadsheetImport migrate --input <live copy> --output after\data-cashflow.json`, logged to `after\migrate.log`. A failure stops the run with `Migrate failed; see <log>`. |
+| `Migrate` | Runs `CashFlowSpreadsheetImport migrate --input source.json --output after\data-cashflow.json`, logged to `after\migrate.log`. A failure stops the run with `Migrate failed; see <log>`. |
 | `After` | Publishes the working tree, starts it on `-AfterPort` with the migrated copy and writes `after-report.json`. |
 | `Compare` | Compares both reports through `figure-map.json`. Prints `key \| before \| after` for each difference and writes `differences.txt`. Exits 1 if there is any difference. |
 | `All` | The four steps in order. |
 
 | Option | Default | Notes |
 |--------|---------|-------|
-| `-LiveCopy` | — | Required for every step except `Compare` |
+| `-LiveCopy` | `data/data-cashflow.json` | The input file, read only. The run prints its version, SHA-256 and save time, and works on a copy, `source.json`, in the work folder |
 | `-WorkFolder` | `All` and `Baseline` create `%TEMP%\financial-parity\<yyyyMMdd-HHmmss>`; the other steps use the newest folder there | Lets you rerun one step, e.g. `-Step After` then `-Step Compare` while fixing a difference. Several figures depend on the API's current date, so `-Step After` refuses a work folder whose Baseline ran on another day; rerun `-Step All` then. |
 | `-BeforePort`, `-AfterPort` | 5291, 5292 | 8080, a busy port and two equal ports are refused |
 | `-BaselineTag` | `p60-deployed-f07` | Must exist locally |
@@ -46,7 +47,7 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 - The input file is never opened for writing. The script records its SHA-256 at the start and
   checks it at the end of every step (`liveCopySha256Start` / `End` in `run.json`). If the hash
   changed, the run is discarded.
-- `data/data-cashflow.json` is refused, in any spelling of the path.
+- Every step reads the work folder's `source.json`, never the input itself.
 - Both APIs run with `ASPNETCORE_ENVIRONMENT=Parity` and local JSON files for CashFlow,
   Investment (`data-investment.example.json`) and FX rates (`data-fx-rates.example.json`). The
   default Production environment would point at Google Drive. A step fails if `/health` does not
@@ -58,7 +59,7 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 
 | Path | Content |
 |------|---------|
-| `run.json` | Input path and hashes, month range, baseline tag and commit, after commit and dirty flag, figure and difference counts. `copyChangedDuringRead` is a hint only: the baseline's card-statement GET and both sides' tithe GETs write to the copy, but the API may not have flushed those writes when the hash is taken. |
+| `run.json` | Input path, hashes and `sourceCopy`, month range, baseline tag and commit, after commit and dirty flag, figure and difference counts. `copyChangedDuringRead` is a hint only: the baseline's card-statement GET and both sides' tithe GETs write to the copy, but the API may not have flushed those writes when the hash is taken. |
 | `before\`, `after\` | The data copies, the published `app\`, `build.log`, `api.log` and `api.err.log` |
 | `before-report.json`, `after-report.json` | Figures reports: one sorted JSON object, `key: value` |
 | `differences.txt` | Only when Compare fails |

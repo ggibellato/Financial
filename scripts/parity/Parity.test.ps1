@@ -159,18 +159,28 @@ try {
 
     $repoRoot = Join-Path $work 'repo'
     New-Item -ItemType Directory -Path (Join-Path $repoRoot 'data') | Out-Null
-    Set-Content -LiteralPath (Join-Path $repoRoot 'data/data-cashflow.json') -Value '{}'
+    $emptyRoot = Join-Path $work 'empty-repo'
+    New-Item -ItemType Directory -Path $emptyRoot | Out-Null
+    $missingSourceMessage = Get-Error { Resolve-ParityLiveCopy '' @($emptyRoot) }
+    $expectedMissingSource = 'data/data-cashflow.json not found. Download it from Google Drive into data/, or pass -LiveCopy.'
+    Set-Content -LiteralPath (Join-Path $repoRoot 'data/data-cashflow.json') -Value '{ "Version": 3 }'
     Set-Content -LiteralPath (Join-Path $repoRoot 'data/copy.json') -Value '{}'
+    $liveFile = [System.IO.Path]::GetFullPath((Join-Path $repoRoot 'data/data-cashflow.json'))
     Push-Location $repoRoot
     try {
-        $liveMessage = Get-Error { Assert-ParityLiveCopy 'data/../data/data-cashflow.json' $repoRoot }
-        $casingMessage = Get-Error { Assert-ParityLiveCopy (Join-Path $repoRoot 'DATA/Data-CashFlow.json') $repoRoot }
-        $copyMessage = Get-Error { Assert-ParityLiveCopy 'data/copy.json' $repoRoot }
+        $defaultSource = Resolve-ParityLiveCopy '' @($repoRoot)
+        $worktreeSource = Resolve-ParityLiveCopy '' @($emptyRoot, $repoRoot)
+        $explicitSource = Resolve-ParityLiveCopy 'data/copy.json' @($repoRoot)
+        $missingCopyMessage = Get-Error { Resolve-ParityLiveCopy 'data/none.json' @($repoRoot) }
     }
     finally { Pop-Location }
-    $expected = 'Refusing to run on the live data file data/data-cashflow.json. Pass a copy.'
-    $isCaseInsensitiveFileSystem = Test-Path -LiteralPath (Join-Path $repoRoot 'DATA/Data-CashFlow.json')
-    Check 'live data file is refused' ($liveMessage -eq $expected -and $copyMessage -eq '' -and ($casingMessage -eq $expected -or -not $isCaseInsensitiveFileSystem)) "$liveMessage / $casingMessage / $copyMessage"
+    Check 'source defaults to data/data-cashflow.json, also from a worktree, and a missing source is named' ($defaultSource -eq $liveFile -and $worktreeSource -eq $liveFile -and $explicitSource -like '*copy.json' -and $missingSourceMessage -eq $expectedMissingSource -and $missingCopyMessage -match '^Live copy not found') "$defaultSource / $worktreeSource / $explicitSource / $missingSourceMessage / $missingCopyMessage"
+
+    $sourceHash = Get-ParitySha256 $liveFile
+    $sourceCopy = Copy-ParitySource $liveFile $work
+    Add-Content -LiteralPath $sourceCopy -Value ' '
+    $sourceLine = Format-ParitySource $liveFile
+    Check 'the run works on a copy and leaves the source unchanged' ((Get-ParitySha256 $liveFile) -eq $sourceHash -and $sourceCopy -eq (Join-Path $work 'source.json') -and $sourceLine -match "version 3, SHA-256 $($sourceHash.Substring(0, 8))") $sourceLine
 
     $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
     $listener.Start()
@@ -204,8 +214,8 @@ try {
     $output = & pwsh -NoProfile -File $entry -Step Compare -WorkFolder $runFolder 2>&1 | Out-String
     Check 'compare step fails and lists the changed figure' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape('2026-09 / banks / Barclays / balance | 130.83 | 131.83') -and $output -match 'Parity FAILED: 1 difference\b' -and (Test-Path (Join-Path $runFolder 'differences.txt'))) $output
 
-    $output = & pwsh -NoProfile -File $entry -Step All -LiveCopy (Join-Path $repoRoot 'data/data-cashflow.json') -RepoRoot $repoRoot 2>&1 | Out-String
-    Check 'entry script refuses the live data file before anything runs' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape($expected) -and $output -notmatch '\[1/4\]') $output
+    $output = & pwsh -NoProfile -File $entry -Step All -RepoRoot $emptyRoot 2>&1 | Out-String
+    Check 'entry script stops before anything runs when there is no source' ($LASTEXITCODE -eq 1 -and $output -match [regex]::Escape($expectedMissingSource) -and $output -notmatch 'Work folder') $output
 
     git init --quiet $repoRoot
     $copyPath = Join-Path $repoRoot 'data/copy.json'

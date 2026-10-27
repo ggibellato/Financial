@@ -151,7 +151,7 @@ function Export-ParitySide([string]$Side, [string]$Folder, [string]$AppFolder, [
 
 function Invoke-BaselineStep([string]$Folder, $RunInfo) {
     Write-Host "[1/4] Baseline: building $BaselineTag..."
-    $sideFolder = New-ParitySideCopy $Folder 'before' $RunInfo.liveCopy
+    $sideFolder = New-ParitySideCopy $Folder 'before' $RunInfo.sourceCopy
     $log = Join-Path $sideFolder 'build.log'
     $worktree = Join-Path $Folder 'baseline-src'
     try {
@@ -173,7 +173,7 @@ function Invoke-MigrateStep([string]$Folder, $RunInfo) {
     $log = Join-Path $sideFolder 'migrate.log'
     $tool = Join-Path $RepoRoot 'Tools/CashFlowSpreadsheetImport/CashFlowSpreadsheetImport.csproj'
     $output = Join-Path $sideFolder 'data-cashflow.json'
-    Invoke-Logged $log "Migrate failed; see $log" { dotnet run --project $tool -c Release -- migrate --input $RunInfo.liveCopy --output $output }
+    Invoke-Logged $log "Migrate failed; see $log" { dotnet run --project $tool -c Release -- migrate --input $RunInfo.sourceCopy --output $output }
 }
 
 function Invoke-AfterStep([string]$Folder, $RunInfo) {
@@ -206,10 +206,9 @@ function Invoke-CompareStep([string]$Folder, $RunInfo) {
 
 try {
     if ($Step -ne 'Compare') {
-        if (-not $LiveCopy) { throw "-LiveCopy is required for -Step $Step." }
         $gitCommonDir = if (Get-Command git -ErrorAction SilentlyContinue) { git -C $RepoRoot rev-parse --path-format=absolute --git-common-dir 2> $null }
         $repoRoots = @($RepoRoot) + @(if ($gitCommonDir) { Split-Path -Parent $gitCommonDir })
-        $liveCopyPath = Assert-ParityLiveCopy $LiveCopy $repoRoots
+        $liveCopyPath = Resolve-ParityLiveCopy $LiveCopy $repoRoots
         Assert-ParityPorts @(switch ($Step) { 'All' { $BeforePort, $AfterPort } 'Baseline' { $BeforePort } 'After' { $AfterPort } })
         if ($Step -in 'All', 'Baseline') {
             git -C $RepoRoot rev-parse --verify --quiet "$BaselineTag^{commit}" *> $null
@@ -223,10 +222,12 @@ try {
 
     if ($Step -ne 'Compare') {
         if ($Step -in 'All', 'Baseline' -or -not $runInfo.Contains('range')) {
+            Write-Host (Format-ParitySource $liveCopyPath)
             $runInfo.liveCopy = $liveCopyPath
             $runInfo.runDate = $runDate
             $runInfo.liveCopySha256Start = Get-ParitySha256 $liveCopyPath
-            $range = Get-ParityMonthRange $liveCopyPath (Get-Date)
+            $runInfo.sourceCopy = Copy-ParitySource $liveCopyPath $folder
+            $range = Get-ParityMonthRange $runInfo.sourceCopy (Get-Date)
             $runInfo.range = [ordered]@{ first = $range.First; last = $range.Last; currentMonth = $range.CurrentMonth }
             Save-RunInfo $folder $runInfo
         }
