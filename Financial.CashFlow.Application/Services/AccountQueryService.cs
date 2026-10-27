@@ -1,3 +1,4 @@
+using System.Globalization;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
@@ -150,6 +151,43 @@ public sealed class AccountQueryService : IAccountQueryService
         }
     }
 
+    public IReadOnlyList<PayableStatementDTO> GetPayableStatements()
+    {
+        using var span = StartSpan("GetPayableStatements");
+        try
+        {
+            var expenses = _repository.GetExpenses().ToList();
+
+            var result = _repository.GetCardStatements()
+                .Where(statement => !statement.IsPaid)
+                .Select(statement => ToPayableDto(statement, CardChargeFilter.OutstandingTotal(expenses, [statement], statement.CreditCard, statement.Year, statement.Month)))
+                .Where(statement => statement.Total > 0)
+                .OrderBy(statement => statement.CreditCardName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(statement => statement.Year)
+                .ThenBy(statement => statement.Month)
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetPayableStatements");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private static PayableStatementDTO ToPayableDto(CardStatement statement, decimal total) => new()
+    {
+        Id = statement.Id,
+        CreditCardId = statement.CreditCard.Id,
+        CreditCardName = statement.CreditCard.Name,
+        Year = statement.Year,
+        Month = statement.Month,
+        Total = total
+    };
+
     private static AccountStatementDTO ToStatementDto(CardStatement statement, IReadOnlyList<Expense> charges, IReadOnlyList<Transfer> transfers)
     {
         var payment = PaymentOf(statement, charges, transfers);
@@ -215,7 +253,7 @@ public sealed class AccountQueryService : IAccountQueryService
         {
             Expense expense when expense.PaymentSourceAccount?.Id == account.Id => [ToRow(expense, account, statements)],
             Income income when income.Account?.Id == account.Id => [ToRow(income, account)],
-            Transfer transfer => ToRows(transfer, account),
+            Transfer transfer => ToRows(transfer, account, statements),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
             _ => []
         };
@@ -261,28 +299,47 @@ public sealed class AccountQueryService : IAccountQueryService
         Income = IncomeService.ToDto(income)
     };
 
-    private static IEnumerable<AccountTransactionDTO> ToRows(Transfer transfer, Account account)
+    private static IEnumerable<AccountTransactionDTO> ToRows(Transfer transfer, Account account, IReadOnlyList<CardStatement> statements)
     {
+        var paidStatement = transfer.IsStatementPayment
+            ? statements.FirstOrDefault(statement => statement.PaymentTransferId == transfer.Id)
+            : null;
+
         if (transfer.SourceAccount.Id == account.Id)
-            yield return ToRow(transfer, account, TransactionKind.TransferOut, transfer.DestinationAccount, -transfer.Amount);
+        {
+            var kind = transfer.IsStatementPayment ? TransactionKind.CardPayment : TransactionKind.TransferOut;
+            yield return ToRow(transfer, account, kind, transfer.DestinationAccount, -transfer.Amount, paidStatement);
+        }
 
         if (transfer.DestinationAccount.Id == account.Id)
         {
             var kind = transfer.IsStatementPayment ? TransactionKind.CardPayment : TransactionKind.TransferIn;
-            yield return ToRow(transfer, account, kind, transfer.SourceAccount, transfer.AmountReceived());
+            yield return ToRow(transfer, account, kind, transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
         }
     }
 
-    private static AccountTransactionDTO ToRow(Transfer transfer, Account account, TransactionKind kind, Account counterpart, decimal amount) => new()
+    private static AccountTransactionDTO ToRow(
+        Transfer transfer, Account account, TransactionKind kind, Account counterpart, decimal amount, CardStatement? paidStatement) => new()
     {
         Id = transfer.Id,
         Kind = kind.ToString(),
         Date = transfer.Date,
-        Description = transfer.Note,
+        Description = paidStatement is null ? transfer.Note : PaymentDescription(paidStatement),
         Counterpart = counterpart.Name,
         Amount = amount,
         CanEdit = account.IsActive && !transfer.IsStatementPayment,
+        Statement = paidStatement is null ? null : ToStatementLink(paidStatement),
         Transfer = AccountTransferService.ToDto(transfer)
+    };
+
+    private static string PaymentDescription(CardStatement statement) =>
+        $"{statement.CreditCard.Name} payment – {new DateOnly(statement.Year, statement.Month, 1).ToString("MMM yyyy", CultureInfo.InvariantCulture)} statement";
+
+    private static AccountTransactionStatementDTO ToStatementLink(CardStatement statement) => new()
+    {
+        AccountId = statement.CreditCard.Id,
+        Year = statement.Year,
+        Month = statement.Month
     };
 
     private static AccountTransactionDTO ToRow(BalanceAdjustment adjustment, Account account) => new()

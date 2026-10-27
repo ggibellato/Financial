@@ -70,6 +70,12 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     private async Task<AccountDetailDTO> AccountAsync(string accountId) =>
         (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/10"))!;
 
+    private async Task<List<AccountTransactionDTO>> TransactionsAsync(string accountId) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/10"))!;
+
+    private async Task<List<PayableStatementDTO>> PayableStatementsAsync() =>
+        (await Client.GetFromJsonAsync<List<PayableStatementDTO>>($"{Api}/accounts/payable-statements"))!;
+
     private async Task<List<ExpenseDTO>> UnpaidChargesAsync(int month) =>
         (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/{month}/unpaid-card-charges"))!;
 
@@ -228,12 +234,14 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-02")]
-    public async Task MarkPaid_CardOwedDropsByTheTotal_AndTheBankPaysIt()
+    public async Task MarkPaid_CardOwedDrops_AndBankListsOneCardPaymentRowWithItsStatement()
     {
         var cardBefore = await AccountAsync(AmexId);
         var bankBefore = await AccountAsync(BarclaysId);
 
         await MarkPaidAsync(OctoberStatementId);
+        var bankRows = await TransactionsAsync(BarclaysId);
+        var cardPayment = (await TransactionsAsync(AmexId)).Single(row => row.Kind == "CardPayment");
 
         using (new AssertionScope())
         {
@@ -241,6 +249,55 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
             bankBefore.Balance.Should().Be(993m);
             (await AccountAsync(AmexId)).Balance.Should().Be(-10m);
             (await AccountAsync(BarclaysId)).Balance.Should().Be(963m);
+            bankRows.Where(row => row.Kind is "CardPayment" or "TransferOut").Should().ContainSingle()
+                .Which.Should().BeEquivalentTo(new
+                {
+                    Kind = "CardPayment",
+                    Date = new DateOnly(2026, 10, 15),
+                    Description = "BA Amex payment – Oct 2026 statement",
+                    Counterpart = "BA Amex",
+                    Amount = -30m,
+                    CanEdit = false,
+                    Statement = new { AccountId = Guid.Parse(AmexId), Year = 2026, Month = 10 }
+                });
+            cardPayment.Description.Should().Be("BA Amex payment – Oct 2026 statement");
+            cardPayment.Statement.Should().BeEquivalentTo(new { AccountId = Guid.Parse(AmexId), Year = 2026, Month = 10 });
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-04")]
+    public async Task PayFromBank_ProducesTheSameRecordsAsFromTheCard()
+    {
+        var bank = await AccountAsync(BarclaysId);
+        var payable = await PayableStatementsAsync();
+
+        var statement = payable.Should().ContainSingle().Subject;
+        var response = await MarkPaidAsync(statement.Id.ToString(), new DateOnly(2026, 10, 14));
+        var repository = Services.GetRequiredService<ICashFlowRepository>();
+        var transfer = repository.GetTransfers().Should().ContainSingle().Subject;
+
+        using (new AssertionScope())
+        {
+            bank.AllowedActions.Should().Contain("PayCardStatement");
+            statement.Should().BeEquivalentTo(new
+            {
+                Id = Guid.Parse(OctoberStatementId),
+                CreditCardId = Guid.Parse(AmexId),
+                CreditCardName = "BA Amex",
+                Year = 2026,
+                Month = 10,
+                Total = 30m
+            });
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            transfer.Should().BeEquivalentTo(
+                new { Date = new DateOnly(2026, 10, 14), Amount = 30m, Note = (string?)null, DestinationAmount = (decimal?)null },
+                options => options.ExcludingMissingMembers());
+            transfer.SourceAccount.Id.Should().Be(Guid.Parse(BarclaysId));
+            transfer.DestinationAccount.Id.Should().Be(Guid.Parse(AmexId));
+            repository.GetCardStatements().Single(stored => stored.Id == statement.Id).PaymentTransferId.Should().Be(transfer.Id);
+            repository.GetExpenses().Single(charge => charge.Id == Guid.Parse(OctoberChargeId)).Date.Should().Be(new DateOnly(2026, 10, 3));
+            (await PayableStatementsAsync()).Should().BeEmpty();
         }
     }
 
