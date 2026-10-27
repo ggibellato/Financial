@@ -14,11 +14,11 @@
 
 ### Stage 2: V4 — Reserva and its pots
 
-**3. Pots in the account** - Let a Pots account hold its pots, add the Reserva rule, and make bucket creation add to Reserva. Remove the separate bucket collection.
+**3. Pots in the account** - Let a Pots account hold its pots, add the Reserva rule, and make bucket creation add to Reserva. Remove the separate bucket collection. The Reserva rule is removed in F13 together with the `reserve` endpoints.
 
 **4. V4 file** - Write pots inside the account, load bucket references from every Pots account, and raise the version guard to 4.
 
-**5. V3→V4 step (pots)** - Add the step that creates Reserva from the buckets, as spec §6 rule 1 describes, and register it after the V2→V3 step.
+**5. V3→V4 step (pots)** - Add the step that creates Reserva from the buckets, as spec §6 rule 1 describes (including the refusal of a V3 file that already holds a Pots account), and register it after the V2→V3 step.
 
 **6. Import and data** - Seed the Reserva account and its pots in the import, stop carrying buckets over separately, and move the seed, test and example data to V4.
 
