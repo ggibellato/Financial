@@ -137,7 +137,7 @@ The core value is one place per account, a new account from an existing template
 - As the system, I want the Reserva buckets to become pots inside a "Reserva" Pots account, keeping their Ids, so that all movements and balances stay identical
 - As the user, I want each Pots account to have its own category setting, so that renaming the "Reserva" category never breaks deposits or withdrawals
 - As the user, I want the investment snapshot "pots total" source to name a specific Pots account, so that a second Pots account does not change my snapshot suggestions
-- As the user, I want each income source to name the Pots account its split goes to by default, and to choose another Pots account or skip the split on a single income, so that a second Pots account never receives a split by accident
+- As the user, I want an income source to optionally name the Pots account its incomes split to, and to choose another Pots account or skip the split on a single income, so that a second Pots account never receives a split by accident
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
 - As the user, I want an income marked split-to-reserve to write the pot credits and the bank expense in one save, so that I no longer type the "Reserva" expense by hand
@@ -460,15 +460,15 @@ Rules that apply to every feature:
 
 **Provides:**
 - Pots accounts with pots, split percentages and category setting (used by F10)
-- Income split target: each income source's default Pots account and each income's chosen Pots account (used by F10)
+- Income split target: each income source's optional Pots account and each income's chosen Pots account (used by F10)
 - Migration step V3 → V4, which the V4 → V5 step follows in the chain (used by F11)
 
 **Capabilities:**
 - **Pots template** = `HasPots`, `ReceivesIncomeSplit`, `CanWithdraw`. Several Pots accounts allowed.
 - **Pots inside the Pots account aggregate:** a pot is an entity (Id, name, split %, active) owned by its Pots account; pot movements reference the pot. *Deviation from the design doc's wording, not its behaviour:* the doc described pots as child Accounts with a parent; owning them inside the aggregate lets the account guard "active split percentages total 100" and "negative only with confirmation" itself, and pots never appear on their own in pickers or groups. In F09 the 100% rule stays the warning it is today, because the reserve-buckets admin page (kept until F13) edits one bucket at a time; F10's Manage pots saves all pots together and enforces it (user decision 2026-10-27). Pot balance = sum of its movements; Pots account balance = sum of its pots. Both come from the F02 shared balance calculation: pot movements count toward their Pots account, and the same rule gives the per-pot sum (third calculation removed: `ReserveService`, `ReserveBucketAsOfDateResolver` and the snapshot's own sum).
 - **Category setting** on each Pots account (Id of a category); deposits and withdrawals write their bank expenses in the category the account has at that moment; a change applies from the next operation; past expenses keep theirs. Replaces `Category.ReservaName` in the server **and** `RESERVA_CATEGORY_NAME` in the web (`withdrawalExpenseCategories.ts`). *Why (deviation):* the doc named only the server lookup; the web has the same name dependency. The withdrawal's default category, the category named like the pot, stays (it is a suggestion the user can change, not a lookup the operation depends on).
-- **Income split target** (user decision 2026-10-27): `IncomeSource.AutoSplitToReserve` becomes `AutoSplitToPot`, and each income source names a default Pots account (required when `AutoSplitToPot` is on). On the income form the split checkbox starts from the source's `AutoSplitToPot` and can be unticked for one income; when it is ticked, a Pots account picker defaults to the source's account and can be changed. The income stores the Pots account it split to, so an edit recalculates into the same account. Admin income sources shows the default Pots account next to the auto-split setting.
-- **Migration step V3 → V4:** creates Pots account "Reserva" (new Id, GBP, category = the category named "Reserva", looked up once by name in the migration only); `ReserveBuckets` become its pots with the same Ids, names, split % and active flags; movements keep their pot Id; investment snapshot source "sum of reserve buckets" becomes "Pots account total" naming Reserva; income sources with `AutoSplitToReserve` get `AutoSplitToPot` with Reserva as their default Pots account, and incomes that split name Reserva as their Pots account; `Version` 4.
+- **Income split target** (user decision 2026-10-27): `IncomeSource.AutoSplitToReserve` is replaced by an optional Pots account on the income source; the flag goes, since the account says it all. A source with a Pots account offers the split on the income form, ticked by default, with a Pots account picker that defaults to the source's account and can be changed; the split can be unticked for one income. A source without one offers no split. The income stores the Pots account it split to, so an edit recalculates into the same account. Admin income sources shows a Pots account picker (empty = no split) in place of the auto-split checkbox.
+- **Migration step V3 → V4:** creates Pots account "Reserva" (new Id, GBP, category = the category named "Reserva", looked up once by name in the migration only); `ReserveBuckets` become its pots with the same Ids, names, split % and active flags; movements keep their pot Id; investment snapshot source "sum of reserve buckets" becomes "Pots account total" naming Reserva; income sources with `AutoSplitToReserve` get Reserva as their Pots account and the flag is removed, and incomes that split name Reserva as their Pots account; `Version` 4.
 - **Snapshot source:** investment accounts with the pots source name a Pots account; Admin investment accounts offers "Pots account total" plus the account. *Why (deviation):* today the source adds every bucket; with a second Pots account it would silently include it.
 - Admin → Accounts gains the Pots template (fields: category). Pots themselves are managed from the Pots screen (F10).
 - **Accounts page:** adds the "Other accounts" section below the default group, listing each account outside the default group (Pots now, Settlement from F11) with its balance. In F09 the rows are not links, because the account screen has nothing to show for a Pots account until F10's Pots tab (user decision 2026-10-27).
@@ -483,7 +483,7 @@ Rules that apply to every feature:
 - Migration finds no category named "Reserva": stops with `No category named "Reserva" to assign to the Reserva Pots account.` nothing written.
 - Creating a Pots account without a category: 400 "Choose the category for this account's bank expenses."
 - Deleting the category used by a Pots account: 409 `EntityInUse`, as for other references.
-- An income source with `AutoSplitToPot` and no default Pots account, or an income that splits with no Pots account: 400 (message fixed in the spec).
+- An income that splits with no Pots account, or from a source without one: 400 (message fixed in the spec).
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
 
@@ -498,7 +498,7 @@ Rules that apply to every feature:
 **Capabilities:**
 - **Linked transactions:** records written by one operation carry the same operation id; editing or deleting the operation edits or deletes all of them in one save. Deposits and withdrawals are the first operations to use it. *Why here and not in F02 or F08:* no F02 operation writes more than one record (a transfer is one record that contributes to two accounts), and F08's statement payment writes one transfer that its statement links directly, so the contract arrives with its first user (user decision 2026-10-26).
 - **Deposit (linked, new):** one operation writes the funding bank expense(s) in the Pots account's category and the pot credits, split once across the active pots by percentage (rounding residual to the pot with the largest percentage, as today), in one save.
-  - **From an income marked split-to-pot** (only for income sources with `AutoSplitToPot`; into the Pots account the income chose, F09): amount = 90% of net (`round(net − 10%, 2)`, as today) and date = the income's date, neither editable. A bank is required for an income that splits; an income without a split keeps the bank optional.
+  - **From an income marked split-to-pot** (only for income sources that name a Pots account; into the Pots account the income chose, F09): amount = 90% of net (`round(net − 10%, 2)`, as today) and date = the income's date, neither editable. A bank is required for an income that splits; an income without a split keeps the bank optional.
   - **Funding lines:** by default one line from the income's bank for the full amount; the user can split it into up to 5 lines on different banks (e.g. Barclays £85 + Trading 212 cash £5); lines must add up exactly to the deposit amount. Splitting the pots once, not per line, avoids per-pot rounding differences.
   - **Manual deposit** (no income): the user chooses amount (> 0), date (not in the future) and description; funding lines 0 to 5. With **no lines** (money from outside CashFlow, e.g. an investment) only the pots are credited and no bank expense is written, so it does not count in the category total.
   - Editing the income recalculates the deposit, the pot split and a single default line; hand-split lines that no longer add up are rejected and the user adjusts them. Deleting the income deletes the whole deposit.
@@ -803,7 +803,7 @@ graph TD
 - [ ] Each pot balance and the Reserva total are identical to today for every month
 - [ ] The snapshot source names the Reserva Pots account and its suggestions are identical
 - [ ] Renaming the "Reserva" category does not break deposits or withdrawals (no lookup of the "Reserva" category by name remains in server or web)
-- [ ] An income source's default Pots account is offered on the income form; unticking the split or choosing another Pots account is saved with the income, and editing it recalculates into the same account
+- [ ] An income from a source with a Pots account starts with the split ticked into that account; unticking it or choosing another Pots account is saved with the income, editing it recalculates into the same account, and a source without one offers no split
 - [ ] Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
 - [ ] A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
