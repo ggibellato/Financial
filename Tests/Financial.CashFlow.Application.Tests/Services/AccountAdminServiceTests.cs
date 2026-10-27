@@ -66,13 +66,13 @@ public class AccountAdminServiceTests
     };
 
     [Fact]
-    public void GetTemplates_ListsBankAndCreditCardWithTheirCurrenciesAndCapabilitiesInOrder()
+    public void GetTemplates_ListsBankCreditCardAndPotsWithTheirCurrenciesAndCapabilitiesInOrder()
     {
         var templates = _sut.GetTemplates();
 
         using (new AssertionScope())
         {
-            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard");
+            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots");
             var bank = templates[0];
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
@@ -81,6 +81,9 @@ public class AccountAdminServiceTests
             var card = templates[1];
             card.Currencies.Should().Equal("GBP");
             card.Capabilities.Should().Equal("HasCategories", "HasStatements", "ReceivesPayments");
+            var pots = templates[2];
+            pots.Currencies.Should().Equal("GBP");
+            pots.Capabilities.Should().Equal("HasPots", "ReceivesIncomeSplit", "CanWithdraw");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }
@@ -369,6 +372,25 @@ public class AccountAdminServiceTests
             card.OpeningBalance.Should().BeNull();
             card.RoundUp.Should().BeNull();
             result.TemplateName.Should().Be("CreditCard");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_Pots_AddsAnEmptyGbpPotsAccountWithoutBankFields()
+    {
+        var result = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Pots", Name = "Holiday pots", Currency = "GBP" });
+
+        var pots = _repository.Accounts.Single(account => account.Id == result.Id);
+        using (new AssertionScope())
+        {
+            pots.Template.Should().Be(AccountTemplate.Pots);
+            pots.Has(Capability.HasPots).Should().BeTrue();
+            pots.OpeningBalance.Should().BeNull();
+            pots.RoundUp.Should().BeNull();
+            result.TemplateName.Should().Be("Pots");
+            result.HasRecords.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(1);
+            _calendarSyncTrigger.TriggeredCreditCardIds.Should().BeEmpty();
         }
     }
 

@@ -11,5 +11,8 @@ public enum Capability
     CanPayBills,
     SupportsRoundUp,
     HasStatements,
-    ReceivesPayments
+    ReceivesPayments,
+    HasPots,
+    ReceivesIncomeSplit,
+    CanWithdraw
 }
