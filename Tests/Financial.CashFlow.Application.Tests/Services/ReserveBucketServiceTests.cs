@@ -22,8 +22,8 @@ public class ReserveBucketServiceTests
         var repository = new StubCashFlowRepository();
         var investimento = ReserveBucket.Create("Investimento", 33.33m);
         var ariana = ReserveBucket.Create("Ariana", 16.67m, isActive: false);
-        repository.ReserveBuckets.Add(investimento);
-        repository.ReserveBuckets.Add(ariana);
+        repository.AddPot(investimento);
+        repository.AddPot(ariana);
         var service = new ReserveBucketService(repository, _tracer, Logger);
 
         var result = service.GetReserveBuckets();
@@ -56,8 +56,8 @@ public class ReserveBucketServiceTests
     public void GetSplitStatus_ActiveBucketsSumTo100_HasNoWarning()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("A", 60m));
-        repository.ReserveBuckets.Add(ReserveBucket.Create("B", 40m));
+        repository.AddPot(ReserveBucket.Create("A", 60m));
+        repository.AddPot(ReserveBucket.Create("B", 40m));
         var service = new ReserveBucketService(repository, _tracer, Logger);
 
         var result = service.GetSplitStatus();
@@ -73,9 +73,9 @@ public class ReserveBucketServiceTests
     public void GetSplitStatus_ActiveBucketsDoNotSumTo100_NamesTheTotal_AndIgnoresInactiveBuckets()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("A", 60m));
-        repository.ReserveBuckets.Add(ReserveBucket.Create("B", 30m));
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Retired", 10m, isActive: false));
+        repository.AddPot(ReserveBucket.Create("A", 60m));
+        repository.AddPot(ReserveBucket.Create("B", 30m));
+        repository.AddPot(ReserveBucket.Create("Retired", 10m, isActive: false));
         var service = new ReserveBucketService(repository, _tracer, Logger);
 
         var result = service.GetSplitStatus();
@@ -91,7 +91,7 @@ public class ReserveBucketServiceTests
     public async Task CreateReserveBucketAsync_Warning_IsTheSameTextAsTheSplitStatus()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("A", 60m));
+        repository.AddPot(ReserveBucket.Create("A", 60m));
         var service = new ReserveBucketService(repository, _tracer, Logger);
 
         var created = await service.CreateReserveBucketAsync(new ReserveBucketCreateDTO { Name = "B", SplitPercentage = 10m, IsActive = true });
@@ -103,7 +103,7 @@ public class ReserveBucketServiceTests
     public void GetReserveBuckets_DoesNotFilterByIsActive()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Retired", 0m, isActive: false));
+        repository.AddPot(ReserveBucket.Create("Retired", 0m, isActive: false));
         var service = new ReserveBucketService(repository, _tracer, Logger);
 
         var result = service.GetReserveBuckets();
@@ -122,9 +122,11 @@ public class ReserveBucketServiceTests
     }
 
     [Fact]
-    public async Task CreateReserveBucketAsync_WithValidRequest_AddsAndSaves()
+    public async Task CreateReserveBucketAsync_WithValidRequest_AddsItToReservaAndSaves()
     {
         var repository = new StubCashFlowRepository();
+        var reserva = repository.EnsureReserva();
+        repository.Accounts.Add(TestAccounts.Pots("Holiday"));
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = true };
 
@@ -135,9 +137,38 @@ public class ReserveBucketServiceTests
             result.Name.Should().Be("Ferias");
             result.SplitPercentage.Should().Be(100m);
             result.Warning.Should().BeNull();
-            repository.ReserveBuckets.Should().ContainSingle(b => b.Name == "Ferias");
+            reserva.Pots.Should().ContainSingle(b => b.Name == "Ferias" && b.Id == result.Id);
+            repository.Accounts.Single(a => a.Name == "Holiday").Pots.Should().BeEmpty();
             repository.SaveChangesCallCount.Should().Be(1);
         }
+    }
+
+    [Fact]
+    public async Task CreateReserveBucketAsync_WithNoPotsAccount_ThrowsAndWritesNothing()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
+        var service = new ReserveBucketService(repository, _tracer, Logger);
+
+        var act = async () => await service.CreateReserveBucketAsync(new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = true });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
+            repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public void GetReserveBuckets_SecondPotsAccount_ListsOnlyReservasPots()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.AddPot(ReserveBucket.Create("Investimento", 100m));
+        var holiday = TestAccounts.Pots("Holiday");
+        holiday.AddPot(ReserveBucket.Create("Trip", 100m));
+        repository.Accounts.Add(holiday);
+        var service = new ReserveBucketService(repository, _tracer, Logger);
+
+        service.GetReserveBuckets().Select(b => b.Name).Should().Equal("Investimento");
     }
 
     [Theory]
@@ -159,13 +190,15 @@ public class ReserveBucketServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateReserveBucketAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("Investimento")]
+    [InlineData("investimento")]
+    public async Task CreateReserveBucketAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Investimento", 33.33m));
+        repository.AddPot(ReserveBucket.Create("Investimento", 33.33m));
         var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = "Investimento", SplitPercentage = 50m, IsActive = true };
+        var request = new ReserveBucketCreateDTO { Name = name, SplitPercentage = 50m, IsActive = true };
 
         var act = async () => await service.CreateReserveBucketAsync(request);
 
@@ -180,6 +213,7 @@ public class ReserveBucketServiceTests
     public async Task CreateReserveBucketAsync_WithSplitPercentageOutOfRange_ThrowsAndWritesNothing()
     {
         var repository = new StubCashFlowRepository();
+        repository.EnsureReserva();
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100.01m, IsActive = true };
 
@@ -196,7 +230,7 @@ public class ReserveBucketServiceTests
     public async Task CreateReserveBucketAsync_WhenActiveSplitsDoNotSumTo100_ReturnsDtoWithWarning()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Investimento", 50m));
+        repository.AddPot(ReserveBucket.Create("Investimento", 50m));
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 20m, IsActive = true };
 
@@ -209,7 +243,7 @@ public class ReserveBucketServiceTests
     public async Task CreateReserveBucketAsync_WhenActiveSplitsSumTo100_ReturnsDtoWithNullWarning()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Investimento", 60m));
+        repository.AddPot(ReserveBucket.Create("Investimento", 60m));
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 40m, IsActive = true };
 
@@ -222,7 +256,7 @@ public class ReserveBucketServiceTests
     public async Task CreateReserveBucketAsync_IgnoresInactiveBucketsInTheSplitTotal()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Retired", 50m, isActive: false));
+        repository.AddPot(ReserveBucket.Create("Retired", 50m, isActive: false));
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = true };
 
@@ -236,7 +270,7 @@ public class ReserveBucketServiceTests
     {
         var repository = new StubCashFlowRepository();
         var bucket = ReserveBucket.Create("Investimento", 33.33m, isActive: true);
-        repository.ReserveBuckets.Add(bucket);
+        repository.AddPot(bucket);
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketUpdateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = false };
 
@@ -269,8 +303,8 @@ public class ReserveBucketServiceTests
         var repository = new StubCashFlowRepository();
         var investimento = ReserveBucket.Create("Investimento", 33.33m);
         var ferias = ReserveBucket.Create("Ferias", 16.67m);
-        repository.ReserveBuckets.Add(investimento);
-        repository.ReserveBuckets.Add(ferias);
+        repository.AddPot(investimento);
+        repository.AddPot(ferias);
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketUpdateDTO { Name = "Ferias", SplitPercentage = 50m, IsActive = true };
 
@@ -288,8 +322,8 @@ public class ReserveBucketServiceTests
     {
         var repository = new StubCashFlowRepository();
         var toDeactivate = ReserveBucket.Create("Investimento", 50m, isActive: true);
-        repository.ReserveBuckets.Add(toDeactivate);
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Ferias", 50m, isActive: true));
+        repository.AddPot(toDeactivate);
+        repository.AddPot(ReserveBucket.Create("Ferias", 50m, isActive: true));
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketUpdateDTO { Name = "Investimento", SplitPercentage = 50m, IsActive = false };
 
@@ -319,7 +353,7 @@ public class ReserveBucketServiceTests
     {
         var repository = new StubCashFlowRepository();
         var bucket = ReserveBucket.Create("Investimento", 50m, isActive: true);
-        repository.ReserveBuckets.Add(bucket);
+        repository.AddPot(bucket);
         var service = new ReserveBucketService(repository, _tracer, Logger);
         var request = new ReserveBucketUpdateDTO { Name = "   ", SplitPercentage = 50m, IsActive = true };
 

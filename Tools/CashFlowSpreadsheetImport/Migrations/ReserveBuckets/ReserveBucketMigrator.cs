@@ -1,4 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 
@@ -9,6 +12,8 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 public static class ReserveBucketMigrator
 {
+    private const string ReservaName = "Reserva";
+
     private static readonly (string Name, decimal SplitPercentage)[] SeededBuckets =
     [
         ("Investimento", 20m),
@@ -33,24 +38,39 @@ public static class ReserveBucketMigrator
 
     private static void SeedReserveBuckets(CashFlowData data, ReserveBucketMigrationSummary summary)
     {
+        var reserva = ReservaOf(data);
         foreach (var (name, splitPercentage) in SeededBuckets)
         {
-            if (data.ReserveBuckets.Any(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase)))
+            if (reserva.Pots!.Any(b => string.Equals(b.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
                 summary.CountBucketAlreadyPresent();
                 continue;
             }
 
-            data.AddReserveBucket(ReserveBucket.Create(name, splitPercentage));
+            reserva.AddPot(ReserveBucket.Create(name, splitPercentage));
             summary.CountBucketSeeded();
         }
     }
+
+    private static Account ReservaOf(CashFlowData data)
+    {
+        if (ReservaAccount.Find(data.Accounts) is { } reserva)
+        {
+            return reserva;
+        }
+
+        var created = Account.Create(ReservaName, AccountTemplate.Pots, Currency.GBP);
+        data.AddAccount(created);
+        return created;
+    }
+
+    private static IReadOnlyList<ReserveBucket> PotsOf(CashFlowData data) => ReservaAccount.Find(data.Accounts)?.Pots ?? [];
 
     private static void AuditReserveMovements(CashFlowData data, ReserveBucketMigrationSummary summary)
     {
         foreach (var movement in data.ReserveMovements)
         {
-            if (data.ReserveBuckets.Contains(movement.Bucket))
+            if (PotsOf(data).Contains(movement.Bucket))
             {
                 summary.CountMovementResolved();
             }
@@ -63,7 +83,7 @@ public static class ReserveBucketMigrator
 
     private static void EvaluateActiveSplitPercentageSum(CashFlowData data, ReserveBucketMigrationSummary summary)
     {
-        var activeSum = data.ReserveBuckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
+        var activeSum = PotsOf(data).Where(b => b.IsActive).Sum(b => b.SplitPercentage);
 
         summary.SetActiveSplitPercentageSum(activeSum);
     }

@@ -508,7 +508,7 @@ public class CashFlowJsonRepositoryTests
         try
         {
             var data = CashFlowData.Create();
-            data.AddReserveBucket(ReserveBucket.Create("Investimento", 33.33m));
+            TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 33.33m));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
             repository.GetReserveBuckets().Should().ContainSingle().Which.Name.Should().Be("Investimento");

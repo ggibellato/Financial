@@ -1,6 +1,7 @@
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Abstractions.Sync;
@@ -60,8 +61,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddIncomeSource(IncomeSource incomeSource) => _data.AddIncomeSource(incomeSource);
     public void DeleteIncomeSource(Guid id) => _data.RemoveIncomeSource(id);
 
-    public IEnumerable<ReserveBucket> GetReserveBuckets() => _data.ReserveBuckets;
-    public void AddReserveBucket(ReserveBucket bucket) => _data.AddReserveBucket(bucket);
+    public IEnumerable<ReserveBucket> GetReserveBuckets() => ReservaAccount.Find(_data.Accounts)?.Pots ?? [];
 
     public IEnumerable<Category> GetCategories() => _data.Categories;
     public void AddCategory(Category category) => _data.AddCategory(category);

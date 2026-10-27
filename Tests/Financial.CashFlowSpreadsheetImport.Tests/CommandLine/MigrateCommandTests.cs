@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.CommandLine;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 using Financial.CashFlowSpreadsheetImport.Tests.DataFileMigration;
@@ -46,10 +47,10 @@ public sealed class MigrateCommandTests : IDisposable
         using (new AssertionScope())
         {
             exitCode.Should().Be(0);
-            File.ReadAllText(_outputPath).Should().Be(DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, _inputPath).Json);
+            WithoutReservaId(File.ReadAllText(_outputPath)).Should().Be(WithoutReservaId(DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, _inputPath).Json));
             File.ReadAllText(_inputPath).Should().Be(V1DataFile.Json);
             _output.ToString().Trim().Should().Be(
-                $"Migrated {_inputPath} from version 1 to 3: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements. Wrote {_outputPath}.");
+                $"Migrated {_inputPath} from version 1 to 4: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements; Reserva Pots account created with 0 pots. Wrote {_outputPath}.");
         }
     }
 
@@ -70,8 +71,15 @@ public sealed class MigrateCommandTests : IDisposable
         {
             exitCode.Should().Be(0);
             File.ReadAllBytes(_outputPath).Should().Equal(version2Bytes);
-            _output.ToString().Trim().Should().Be($"{version2Path} is already version 3; copied unchanged to {_outputPath}.");
+            _output.ToString().Trim().Should().Be($"{version2Path} is already version 4; copied unchanged to {_outputPath}.");
         }
+    }
+
+    private static string WithoutReservaId(string json)
+    {
+        var root = JsonNode.Parse(json)!.AsObject();
+        root["Accounts"]!.AsArray().Last()!["Id"] = null;
+        return root.ToJsonString();
     }
 
     [Fact]
@@ -152,14 +160,14 @@ public sealed class MigrateCommandTests : IDisposable
     [Fact]
     public void Run_VersionAboveCurrent_RefusedAndWritesNothing()
     {
-        File.WriteAllText(_inputPath, """{ "Version": 4 }""");
+        File.WriteAllText(_inputPath, """{ "Version": 5 }""");
 
         var exitCode = Run("--input", _inputPath, "--output", _outputPath);
 
         using (new AssertionScope())
         {
             exitCode.Should().Be(1);
-            _error.ToString().Trim().Should().Be($"{_inputPath} is version 4; this build needs version 3.");
+            _error.ToString().Trim().Should().Be($"{_inputPath} is version 5; this build needs version 4.");
             File.Exists(_outputPath).Should().BeFalse();
         }
     }

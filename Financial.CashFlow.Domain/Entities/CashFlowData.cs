@@ -34,9 +34,6 @@ public class CashFlowData
     private readonly IdCollection<InvestmentAccount> _investmentAccounts = new(i => i.Id);
     public IReadOnlyCollection<InvestmentAccount> InvestmentAccounts => _investmentAccounts;
 
-    private readonly ItemCollection<ReserveBucket> _reserveBuckets = new();
-    public IReadOnlyCollection<ReserveBucket> ReserveBuckets => _reserveBuckets;
-
     private readonly IdCollection<Income> _incomes = new(i => i.Id);
     public IReadOnlyCollection<Income> Incomes => _incomes;
 
@@ -89,8 +86,6 @@ public class CashFlowData
     public void AddInvestmentAccount(InvestmentAccount account) => _investmentAccounts.Add(account);
 
     public void RemoveInvestmentAccount(Guid id) => _investmentAccounts.RemoveById(id);
-
-    public void AddReserveBucket(ReserveBucket bucket) => _reserveBuckets.Add(bucket);
 
     public void AddCategory(Category category) => _categories.Add(category);
 

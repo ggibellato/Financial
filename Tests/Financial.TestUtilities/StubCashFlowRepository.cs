@@ -23,7 +23,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Account> Accounts { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
-    public List<ReserveBucket> ReserveBuckets { get; } = new();
+    public IReadOnlyList<ReserveBucket> ReserveBuckets => ReservaAccount.Find(Accounts)?.Pots ?? [];
     public IReadOnlyList<Account> CardAccounts => Accounts.Where(account => account.Has(Capability.HasStatements)).ToList();
     public List<Category> Categories { get; } = new();
     public List<Income> Incomes { get; } = new();
@@ -77,7 +77,10 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
         if (seedDefaultReserveBuckets)
         {
-            ReserveBuckets.AddRange(DefaultReserveBuckets());
+            foreach (var bucket in DefaultReserveBuckets())
+            {
+                AddPot(bucket);
+            }
         }
 
         if (seedDefaultCreditCards)
@@ -108,7 +111,6 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
         IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros)
     ];
 
-    /// <summary>The 4 reserve buckets seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
     public static IEnumerable<ReserveBucket> DefaultReserveBuckets() =>
     [
         ReserveBucket.Create("Investimento", 33.33m),
@@ -212,7 +214,20 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void DeleteIncomeSource(Guid id) => IncomeSources.RemoveAll(s => s.Id == id);
 
     public IEnumerable<ReserveBucket> GetReserveBuckets() => CheckThrow(ReserveBuckets);
-    public void AddReserveBucket(ReserveBucket bucket) => ReserveBuckets.Add(bucket);
+
+    public void AddPot(ReserveBucket pot) => EnsureReserva().AddPot(pot);
+
+    public Account EnsureReserva()
+    {
+        if (ReservaAccount.Find(Accounts) is { } reserva)
+        {
+            return reserva;
+        }
+
+        var created = TestAccounts.Pots("Reserva");
+        Accounts.Add(created);
+        return created;
+    }
 
     public IEnumerable<Category> GetCategories() => CheckThrow(Categories);
     public void AddCategory(Category category) => Categories.Add(category);

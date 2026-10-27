@@ -74,7 +74,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         var act = () => Services;
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("data-cashflow.json is version 1; this build needs version 3. Run the migrate command first.");
+            .WithMessage("data-cashflow.json is version 1; this build needs version 4. Run the migrate command first.");
     }
 
     [Fact]
@@ -98,7 +98,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32().Should().Be(3);
+            JsonDocument.Parse(json).RootElement.GetProperty("Version").GetInt32().Should().Be(4);
             act.Should().NotThrow();
         }
     }

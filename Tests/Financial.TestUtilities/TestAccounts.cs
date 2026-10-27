@@ -17,6 +17,25 @@ public static class TestAccounts
         return account;
     }
 
+    public static Account Pots(string name, bool isActive = true)
+    {
+        var account = Account.Create(name, AccountTemplate.Pots, Currency.GBP);
+        account.SetActive(isActive);
+        return account;
+    }
+
+    public static Account ReservaIn(CashFlowData data)
+    {
+        if (ReservaAccount.Find(data.Accounts) is { } reserva)
+        {
+            return reserva;
+        }
+
+        var created = Pots("Reserva");
+        data.AddAccount(created);
+        return created;
+    }
+
     public static Account CreditCard(string name, bool isActive = true)
     {
         var account = Account.Create(name, AccountTemplate.CreditCard, Currency.GBP);

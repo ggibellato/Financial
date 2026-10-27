@@ -33,7 +33,8 @@ public sealed class FreshImportVersionTests : IDisposable
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-04")]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-13")]
-    public void Import_FreshWorkbook_WritesVersion3WithCardAccounts()
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-07")]
+    public void Import_FreshWorkbook_WritesVersion4WithReservaPotsAccount()
     {
         var exitCode = RunImport(_workbookPath, "--output", _outputPath);
 
@@ -43,8 +44,12 @@ public sealed class FreshImportVersionTests : IDisposable
         {
             exitCode.Should().Be(0);
             var root = JsonNode.Parse(json)!.AsObject();
-            root["Version"]!.GetValue<int>().Should().Be(3);
+            root["Version"]!.GetValue<int>().Should().Be(4);
             root.ContainsKey("CreditCards").Should().BeFalse();
+            root.ContainsKey("ReserveBuckets").Should().BeFalse();
+            var reserva = data.Accounts.Should().ContainSingle(a => a.Template == AccountTemplate.Pots).Which;
+            reserva.Should().BeEquivalentTo(new { Name = "Reserva", Currency = Currency.GBP, IsActive = true, OpeningBalance = (object?)null, RoundUp = (object?)null });
+            reserva.Pots!.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Ariana", "Gleison", "Samuel");
             var banks = data.Accounts.Where(a => a.Template == AccountTemplate.Bank).ToList();
             banks.Select(a => (a.Name, a.RoundsUp)).Should().Equal(("Barclays", false), ("Trading212", true), ("Chase", true));
             banks.Should().OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance!.Amount == 0m);
@@ -74,23 +79,23 @@ public sealed class FreshImportVersionTests : IDisposable
         File.WriteAllText(_outputPath, V1DataFile.Json);
 
         ExistingOutputVersionGuard.RefusalFor(_outputPath).Should().Be(
-            $"{_outputPath} is version 1; this build needs version 3. Run the migrate command first.");
+            $"{_outputPath} is version 1; this build needs version 4. Run the migrate command first.");
     }
 
     [Fact]
-    public void RefusalFor_Version4Output_RefusesWithoutTheMigrateHint()
+    public void RefusalFor_Version5Output_RefusesWithoutTheMigrateHint()
     {
-        File.WriteAllText(_outputPath, """{ "Version": 4 }""");
+        File.WriteAllText(_outputPath, """{ "Version": 5 }""");
 
         ExistingOutputVersionGuard.RefusalFor(_outputPath).Should().Be(
-            $"{_outputPath} is version 4; this build needs version 3.");
+            $"{_outputPath} is version 5; this build needs version 4.");
     }
 
     [Fact]
-    public void RefusalFor_Version3OrMissingOutput_AllowsTheImport()
+    public void RefusalFor_Version4OrMissingOutput_AllowsTheImport()
     {
         var missing = ExistingOutputVersionGuard.RefusalFor(_outputPath);
-        File.WriteAllText(_outputPath, """{ "Version": 3 }""");
+        File.WriteAllText(_outputPath, """{ "Version": 4 }""");
 
         using (new AssertionScope())
         {

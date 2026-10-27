@@ -16,17 +16,18 @@ public class DataFileMigratorTests
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-01")]
-    public void Migrate_Version1File_RunsBothStepsToVersion3()
+    public void Migrate_Version1File_RunsAllStepsToVersion4()
     {
         var result = DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, SourceName);
 
         var data = new CashFlowSerializerAdapter().Deserialize(result.Json);
-        var accounts = data.Accounts.ToDictionary(a => a.Id.ToString());
+        var accounts = data.Accounts.Where(a => a.Template == AccountTemplate.Bank).ToDictionary(a => a.Id.ToString());
         using (new AssertionScope())
         {
             result.FromVersion.Should().Be(1);
-            result.ToVersion.Should().Be(3);
-            JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(3);
+            result.ToVersion.Should().Be(4);
+            JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(4);
+            data.Accounts.Last().Should().BeEquivalentTo(new { Name = "Reserva", Template = AccountTemplate.Pots, Pots = Array.Empty<object>() });
             accounts.Keys.Should().BeEquivalentTo(V1DataFile.BarclaysId, V1DataFile.Trading212Id, V1DataFile.ChaseId);
             accounts.Values.Should().OnlyContain(a => a.Template == AccountTemplate.Bank && a.Currency == Currency.GBP && a.IsActive);
             accounts[V1DataFile.BarclaysId].Name.Should().Be("Barclays");
@@ -43,7 +44,8 @@ public class DataFileMigratorTests
             data.BalanceAdjustments.Single().Account.Should().BeSameAs(accounts[V1DataFile.BarclaysId]);
             result.StepSummaries.Should().Equal(
                 "3 banks became accounts; 5 references renamed",
-                "0 cards became accounts; 0 statements added; 0 due dates moved to statements");
+                "0 cards became accounts; 0 statements added; 0 due dates moved to statements",
+                "Reserva Pots account created with 0 pots");
         }
     }
 
@@ -87,10 +89,10 @@ public class DataFileMigratorTests
     [Fact]
     public void Migrate_VersionAboveCurrent_Refused()
     {
-        var act = () => DataFileMigrator.CreateDefault().Migrate("""{ "Version": 4 }""", SourceName);
+        var act = () => DataFileMigrator.CreateDefault().Migrate("""{ "Version": 5 }""", SourceName);
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("copy.json is version 4; this build needs version 3.");
+            .WithMessage("copy.json is version 5; this build needs version 4.");
     }
 
     [Fact]
@@ -104,7 +106,9 @@ public class DataFileMigratorTests
         using (new AssertionScope())
         {
             result.FromVersion.Should().Be(2);
-            result.StepSummaries.Should().Equal("5 cards became accounts; 3 statements added; 2 due dates moved to statements");
+            result.StepSummaries.Should().Equal(
+                "5 cards became accounts; 3 statements added; 2 due dates moved to statements",
+                "Reserva Pots account created with 0 pots");
             cards.Keys.Should().Equal(V2DataFile.Visa8003Id, V2DataFile.Visa6007Id, V2DataFile.ChaseMasterId, V2DataFile.AmexId, V2DataFile.PaypalId);
             cards.Values.Should().OnlyContain(a => a.Template == AccountTemplate.CreditCard && a.Currency == Currency.GBP);
             cards[V2DataFile.ChaseMasterId].IsActive.Should().BeFalse();

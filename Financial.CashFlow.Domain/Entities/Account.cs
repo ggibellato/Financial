@@ -13,6 +13,7 @@ public class Account
     public const int MaxNameLength = 60;
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
+    private IReadOnlyList<ReserveBucket> _pots = [];
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -21,6 +22,7 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
+    public IReadOnlyList<ReserveBucket>? Pots => Has(Capability.HasPots) ? _pots : null;
     public bool RoundsUp => RoundUp?.Enabled == true;
     public string TemplateName => Template.ToString();
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -86,6 +88,25 @@ public class Account
         RoundUp = new RoundUpSetting(enabled);
     }
 
+    public void AddPot(ReserveBucket pot)
+    {
+        ArgumentNullException.ThrowIfNull(pot);
+
+        if (!Has(Capability.HasPots))
+        {
+            throw new ArgumentException($"{Name} has no pots.");
+        }
+
+        if (_pots.Any(existing => string.Equals(existing.Name, pot.Name, StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new ArgumentException($"A reserve bucket named \"{pot.Name}\" already exists.");
+        }
+
+        _pots = [.. _pots, pot];
+    }
+
+    public bool OwnsPot(Guid potId) => _pots.Any(pot => pot.Id == potId);
+
     public void EnsureCanPay()
     {
         if (Has(Capability.HasStatements))
@@ -119,6 +140,10 @@ public class Account
     {
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
+        if (!Has(Capability.HasPots))
+        {
+            _pots = [];
+        }
     }
 
     private static string ValidName(string name)

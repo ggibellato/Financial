@@ -45,6 +45,16 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
             account.SetRoundUp(roundUp.Enabled);
         }
 
+        if (account.Has(Capability.HasPots) != record.Pots is not null)
+        {
+            throw new JsonException($"Account {record.Id} must have Pots exactly when its template has pots.");
+        }
+
+        foreach (var pot in record.Pots ?? [])
+        {
+            account.AddPot(pot.Deserialize<ReserveBucket>(AccountOptions)!);
+        }
+
         return account;
     }
 
@@ -57,7 +67,8 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
             value.Currency,
             value.IsActive,
             value.OpeningBalance is { } openingBalance ? new OpeningBalanceRecord(openingBalance.Amount, openingBalance.StartDate) : null,
-            value.RoundUp is { } roundUp ? new RoundUpRecord(roundUp.Enabled) : null);
+            value.RoundUp is { } roundUp ? new RoundUpRecord(roundUp.Enabled) : null,
+            value.Pots?.Select(pot => JsonSerializer.SerializeToElement(pot, AccountOptions)).ToList());
 
         JsonSerializer.Serialize(writer, record, RecordOptions);
     }
@@ -69,7 +80,8 @@ public sealed class AccountJsonConverter : JsonConverter<Account>
         Currency Currency,
         bool IsActive,
         OpeningBalanceRecord? OpeningBalance,
-        RoundUpRecord? RoundUp);
+        RoundUpRecord? RoundUp,
+        List<JsonElement>? Pots);
 
     private sealed record OpeningBalanceRecord(decimal Amount, DateOnly StartDate);
 

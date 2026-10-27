@@ -1,6 +1,9 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 using FluentAssertions;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Migrations.ReserveBuckets;
 
@@ -16,11 +19,37 @@ public class ReserveBucketMigratorTests
 
         summary.BucketsSeededCount.Should().Be(5);
         summary.BucketsAlreadyPresentCount.Should().Be(0);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Investimento" && b.SplitPercentage == 20m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "HouseTreats" && b.SplitPercentage == 20m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Ariana" && b.SplitPercentage == 20m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Gleison" && b.SplitPercentage == 20m && b.IsActive);
-        data.ReserveBuckets.Should().ContainSingle(b => b.Name == "Samuel" && b.SplitPercentage == 20m && b.IsActive);
+        TestAccounts.ReservaIn(data).Pots!.Should().ContainSingle(b => b.Name == "Investimento" && b.SplitPercentage == 20m && b.IsActive);
+        TestAccounts.ReservaIn(data).Pots!.Should().ContainSingle(b => b.Name == "HouseTreats" && b.SplitPercentage == 20m && b.IsActive);
+        TestAccounts.ReservaIn(data).Pots!.Should().ContainSingle(b => b.Name == "Ariana" && b.SplitPercentage == 20m && b.IsActive);
+        TestAccounts.ReservaIn(data).Pots!.Should().ContainSingle(b => b.Name == "Gleison" && b.SplitPercentage == 20m && b.IsActive);
+        TestAccounts.ReservaIn(data).Pots!.Should().ContainSingle(b => b.Name == "Samuel" && b.SplitPercentage == 20m && b.IsActive);
+    }
+
+    [Fact]
+    public void Migrate_WithNoPotsAccount_CreatesOneGbpReservaAccountHoldingThePots()
+    {
+        var data = CashFlowData.Create();
+        data.AddAccount(TestAccounts.Bank("Barclays"));
+
+        ReserveBucketMigrator.Migrate(data);
+
+        var reserva = data.Accounts.Should().ContainSingle(a => a.Template == AccountTemplate.Pots).Which;
+        reserva.Should().BeEquivalentTo(new { Name = "Reserva", Currency = Currency.GBP, IsActive = true });
+        reserva.Pots.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public void Migrate_WithAPotsAccountUnderAnotherName_SeedsIntoItWithoutCreatingAnother()
+    {
+        var data = CashFlowData.Create();
+        var savings = TestAccounts.Pots("Savings");
+        data.AddAccount(savings);
+
+        ReserveBucketMigrator.Migrate(data);
+
+        data.Accounts.Should().ContainSingle().Which.Should().BeSameAs(savings);
+        savings.Pots.Should().HaveCount(5);
     }
 
     [Fact]
@@ -28,27 +57,27 @@ public class ReserveBucketMigratorTests
     {
         var data = CashFlowData.Create();
         ReserveBucketMigrator.Migrate(data);
-        var idsAfterFirstRun = data.ReserveBuckets.Select(b => b.Id).OrderBy(id => id).ToList();
+        var idsAfterFirstRun = TestAccounts.ReservaIn(data).Pots!.Select(b => b.Id).OrderBy(id => id).ToList();
 
         var secondSummary = ReserveBucketMigrator.Migrate(data);
 
         secondSummary.BucketsSeededCount.Should().Be(0);
         secondSummary.BucketsAlreadyPresentCount.Should().Be(5);
-        data.ReserveBuckets.Should().HaveCount(5);
-        data.ReserveBuckets.Select(b => b.Id).OrderBy(id => id).Should().Equal(idsAfterFirstRun);
+        TestAccounts.ReservaIn(data).Pots!.Should().HaveCount(5);
+        TestAccounts.ReservaIn(data).Pots!.Select(b => b.Id).OrderBy(id => id).Should().Equal(idsAfterFirstRun);
     }
 
     [Fact]
     public void Migrate_WithSomeBucketsAlreadySeeded_OnlySeedsTheMissingOnes()
     {
         var data = CashFlowData.Create();
-        data.AddReserveBucket(ReserveBucket.Create("Investimento", 20m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 20m));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
         summary.BucketsSeededCount.Should().Be(4);
         summary.BucketsAlreadyPresentCount.Should().Be(1);
-        data.ReserveBuckets.Should().HaveCount(5);
+        TestAccounts.ReservaIn(data).Pots!.Should().HaveCount(5);
     }
 
     [Fact]
@@ -56,7 +85,7 @@ public class ReserveBucketMigratorTests
     {
         var data = CashFlowData.Create();
         var bucket = ReserveBucket.Create("Investimento", 33.33m);
-        data.AddReserveBucket(bucket);
+        TestAccounts.ReservaIn(data).AddPot(bucket);
         var movement = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Split");
         data.AddReserveMovement(movement);
 
@@ -95,8 +124,8 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithActivePercentagesNotSummingToOneHundred_FlagsImbalanceWithoutFailing()
     {
         var data = CashFlowData.Create();
-        data.AddReserveBucket(ReserveBucket.Create("Investimento", 50m));
-        data.AddReserveBucket(ReserveBucket.Create("HouseTreats", 30m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 50m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("HouseTreats", 30m));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
@@ -108,12 +137,12 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithInactiveBucketExcludedFromSum_StillReportsBalanced()
     {
         var data = CashFlowData.Create();
-        data.AddReserveBucket(ReserveBucket.Create("Investimento", 20m));
-        data.AddReserveBucket(ReserveBucket.Create("HouseTreats", 20m));
-        data.AddReserveBucket(ReserveBucket.Create("Ariana", 20m));
-        data.AddReserveBucket(ReserveBucket.Create("Gleison", 20m));
-        data.AddReserveBucket(ReserveBucket.Create("Samuel", 20m));
-        data.AddReserveBucket(ReserveBucket.Create("Retired", 50m, isActive: false));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 20m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("HouseTreats", 20m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Ariana", 20m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Gleison", 20m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Samuel", 20m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Retired", 50m, isActive: false));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 

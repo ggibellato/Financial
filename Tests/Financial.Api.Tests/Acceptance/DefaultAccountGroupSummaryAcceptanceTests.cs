@@ -53,7 +53,7 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000003", "Date": "2026-09-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": 2500, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": null, "SplitToReserve": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000004", "Date": "2026-09-15", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 100, "AccountId": "{{ChaseId}}", "Description": null, "SplitToReserve": false }
           ],
-          "Version": 3
+          "Version": 4
         }
         """;
 
