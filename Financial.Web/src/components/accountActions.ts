@@ -1,4 +1,5 @@
-import type { AccountTransactionDto } from '../api/types'
+import type { AccountTransactionDto, AccountTransactionStatementDto } from '../api/types'
+import { formatMonthInputValue } from '../utils/formatters'
 
 export type AccountFormAction =
   | 'AddExpense'
@@ -7,6 +8,7 @@ export type AccountFormAction =
   | 'TransferTo'
   | 'TransferFrom'
   | 'PayRecurringBill'
+  | 'PayCardStatement'
   | 'Reconcile'
 
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
@@ -16,6 +18,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
   PayRecurringBill: 'Pay recurring bill',
+  PayCardStatement: 'Pay card statement',
   Reconcile: 'Adjust balance',
 }
 
@@ -47,6 +50,10 @@ export function formActionsOf(allowedActions: readonly string[]): AccountFormAct
   return allowedActions.filter(isFormAction)
 }
 
+export function needsFormOptions(action: AccountFormAction): boolean {
+  return action !== 'PayCardStatement'
+}
+
 export function isTransferAction(action: AccountFormAction): boolean {
   return TRANSFER_ACTIONS.includes(action)
 }
@@ -74,6 +81,10 @@ export function hasRowActions(row: AccountTransactionDto): boolean {
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {
   return row.kind === 'CardCharge'
+}
+
+export function statementPath(statement: AccountTransactionStatementDto): string {
+  return `/cashflow/accounts/${statement.accountId}?month=${formatMonthInputValue(statement.year, statement.month)}&tab=statements`
 }
 
 export function rowKey(row: AccountTransactionDto): string {

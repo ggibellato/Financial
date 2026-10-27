@@ -43,6 +43,11 @@ public sealed class AccountsController : ControllerBase
     public ActionResult<IReadOnlyList<AccountStatementDTO>> GetStatements(Guid id) =>
         Ok(_accountQueryService.GetStatements(id));
 
+    [HttpGet("payable-statements")]
+    [ProducesResponseType(typeof(IReadOnlyList<PayableStatementDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<PayableStatementDTO>> GetPayableStatements() =>
+        Ok(_accountQueryService.GetPayableStatements());
+
     [HttpGet("templates")]
     [ProducesResponseType(typeof(IReadOnlyList<AccountTemplateDTO>), StatusCodes.Status200OK)]
     public ActionResult<IReadOnlyList<AccountTemplateDTO>> GetTemplates() =>

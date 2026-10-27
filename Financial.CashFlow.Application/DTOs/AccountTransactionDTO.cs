@@ -11,6 +11,7 @@ public sealed class AccountTransactionDTO
     public required decimal Amount { get; init; }
     public decimal? RoundUp { get; init; }
     public required bool CanEdit { get; init; }
+    public AccountTransactionStatementDTO? Statement { get; init; }
     public ExpenseDTO? Expense { get; init; }
     public IncomeDTO? Income { get; init; }
     public AccountTransferDTO? Transfer { get; init; }

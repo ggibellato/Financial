@@ -420,6 +420,16 @@
               "number"
             ]
           },
+          "statement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccountTransactionStatementDTO"
+              }
+            ]
+          },
           "transfer": {
             "oneOf": [
               {
@@ -437,6 +447,28 @@
           "date",
           "amount",
           "canEdit"
+        ],
+        "type": "object"
+      },
+      "AccountTransactionStatementDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accountId",
+          "year",
+          "month"
         ],
         "type": "object"
       },
@@ -4497,6 +4529,46 @@
         },
         "type": "object"
       },
+      "PayableStatementDTO": {
+        "properties": {
+          "creditCardId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "creditCardName": {
+            "type": "string"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "total": {
+            "format": "double",
+            "type": "number"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "creditCardId",
+          "creditCardName",
+          "year",
+          "month",
+          "total",
+          "currency"
+        ],
+        "type": "object"
+      },
       "PaymentDueDTO": {
         "properties": {
           "daysRemaining": {
@@ -6552,6 +6624,29 @@
         "summary": "",
         "tags": [
           "AccountGroups"
+        ]
+      }
+    },
+    "/accounts/payable-statements": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PayableStatementDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Accounts"
         ]
       }
     },

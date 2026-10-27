@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import type { AccountTransactionDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
@@ -120,6 +121,38 @@ describe('AccountTransactionsGrid', () => {
     expect(screen.getByRole('columnheader', { name: /^Purchased/ })).toBeInTheDocument()
     expect(screen.getByText('Card payment')).toBeInTheDocument()
     expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F08-statement-payment-and-card-screen-02] links a card payment row to the statement it paid', () => {
+    const onOpenStatement = vi.fn()
+    render(
+      <MemoryRouter>
+        <AccountTransactionsGrid
+          transactions={[
+            accountTransactionRow({
+              id: 'p1',
+              kind: 'CardPayment',
+              date: '2026-11-12',
+              description: 'Platinum Visa 6007 payment – Oct 2026 statement',
+              counterpart: 'Platinum Visa 6007',
+              amount: -512.3,
+              canEdit: false,
+              statement: { accountId: 'visa-id', year: 2026, month: 10 },
+            }),
+            accountTransactionRow({ id: 'p2', kind: 'CardPayment', date: '2026-11-02', counterpart: 'Amex', amount: -20, canEdit: false }),
+          ]}
+          emptyMessage={EMPTY_MESSAGE}
+          {...NO_ROW_ACTIONS}
+          onOpenStatement={onOpenStatement}
+        />
+      </MemoryRouter>,
+    )
+
+    const link = screen.getByRole('link', { name: 'Platinum Visa 6007 payment – Oct 2026 statement' })
+    expect(link).toHaveAttribute('href', '/cashflow/accounts/visa-id?month=2026-10&tab=statements')
+    expect(screen.getAllByRole('link')).toHaveLength(1)
+    fireEvent.click(link)
+    expect(onOpenStatement).toHaveBeenCalledWith('/cashflow/accounts/visa-id?month=2026-10&tab=statements')
   })
 
   it('offers Move beside Edit and Delete on an editable card charge only', () => {

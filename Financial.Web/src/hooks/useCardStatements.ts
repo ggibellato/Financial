@@ -27,11 +27,17 @@ interface UnmarkRequest {
   error: string | null
 }
 
+export function paymentDateError(date: string): string | undefined {
+  if (!date) return 'Enter a date.'
+  if (date > todayIsoDate()) return 'Date must not be in the future.'
+  return undefined
+}
+
 function validatePayForm(bankId: string, date: string): Partial<Record<PayStatementField, string>> {
   const errors: Partial<Record<PayStatementField, string>> = {}
   if (!bankId) errors.bankId = 'Select a bank.'
-  if (!date) errors.date = 'Enter a date.'
-  else if (date > todayIsoDate()) errors.date = 'Date must not be in the future.'
+  const dateError = paymentDateError(date)
+  if (dateError) errors.date = dateError
   return errors
 }
 

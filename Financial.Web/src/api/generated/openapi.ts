@@ -129,6 +129,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/payable-statements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PayableStatementDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/templates": {
         parameters: {
             query?: never;
@@ -7543,7 +7578,16 @@ export interface components {
             kind: string;
             /** Format: double */
             roundUp?: null | number;
+            statement?: null | components["schemas"]["AccountTransactionStatementDTO"];
             transfer?: null | components["schemas"]["AccountTransferDTO"];
+        };
+        AccountTransactionStatementDTO: {
+            /** Format: uuid */
+            accountId: string;
+            /** Format: int32 */
+            month: number;
+            /** Format: int32 */
+            year: number;
         };
         AccountTransferCreateDTO: {
             /** Format: double */
@@ -8758,6 +8802,20 @@ export interface components {
             sourceTransactionId: string;
             /** Format: double */
             unitCost: number;
+        };
+        PayableStatementDTO: {
+            /** Format: uuid */
+            creditCardId: string;
+            creditCardName: string;
+            currency: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            month: number;
+            /** Format: double */
+            total: number;
+            /** Format: int32 */
+            year: number;
         };
         PaymentDueDTO: {
             /** Format: int32 */

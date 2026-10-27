@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import {
   Button,
   Skeleton,
@@ -19,7 +19,7 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { canMoveToStatement, hasRowActions, kindLabel, recordNoun, rowKey } from './accountActions'
+import { canMoveToStatement, hasRowActions, kindLabel, recordNoun, rowKey, statementPath } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -70,6 +70,7 @@ interface AccountTransactionsGridProps {
   onDelete: (row: AccountTransactionDto) => void
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
+  onOpenStatement?: (path: string) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -82,10 +83,21 @@ export default function AccountTransactionsGrid({
   onDelete,
   onMove,
   isMoveDisabled = false,
+  onOpenStatement,
 }: AccountTransactionsGridProps) {
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = onMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
+  const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
+    if (column.key !== 'description' || !row.statement) return column.render(row)
+    const path = statementPath(row.statement)
+    return <TruncatedText text={row.description} to={path} onClick={(event) => openStatement(path, event)} />
+  }
+  const openStatement = (path: string, event: MouseEvent<HTMLAnchorElement>) => {
+    if (!onOpenStatement || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+    event.preventDefault()
+    onOpenStatement(path)
+  }
 
   return (
     <div className="account-screen__grid-scroll">
@@ -131,7 +143,7 @@ export default function AccountTransactionsGrid({
                     label={headerOf(column)}
                     className={column.numeric ? 'data-table__col--numeric' : undefined}
                   >
-                    {column.render(row)}
+                    {renderCell(column, row)}
                   </DataTableCell>
                 ))}
                 {hasRowActions(row) ? (

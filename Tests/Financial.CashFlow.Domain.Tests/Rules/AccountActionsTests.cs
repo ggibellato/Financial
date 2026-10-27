@@ -14,7 +14,7 @@ public class AccountActionsTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     [Fact]
-    public void AllowedFor_Bank_ReturnsAllSixActionsInOrder()
+    public void AllowedFor_Bank_ReturnsAllSevenActionsInOrder()
     {
         AccountActions.AllowedFor(TestAccounts.Bank("Barclays")).Should().Equal(
             AccountAction.AddExpense,
@@ -22,6 +22,7 @@ public class AccountActionsTests
             AccountAction.TransferTo,
             AccountAction.TransferFrom,
             AccountAction.PayRecurringBill,
+            AccountAction.PayCardStatement,
             AccountAction.Reconcile);
     }
 
@@ -31,11 +32,16 @@ public class AccountActionsTests
     [InlineData(Capability.ReceivesIncome, AccountAction.AddIncome)]
     [InlineData(Capability.CanSendTransfers, AccountAction.TransferTo)]
     [InlineData(Capability.CanReceiveTransfers, AccountAction.TransferFrom)]
-    [InlineData(Capability.CanPayBills, AccountAction.PayRecurringBill)]
     [InlineData(Capability.CanReconcile, AccountAction.Reconcile)]
     public void AllowedFor_SingleCapability_ReturnsOnlyItsAction(Capability capability, AccountAction expected)
     {
         AccountActions.AllowedFor(Minimal(capability)).Should().Equal(expected);
+    }
+
+    [Fact]
+    public void AllowedFor_CanPayBills_ReturnsPayRecurringBillAndPayCardStatement()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.CanPayBills)).Should().Equal(AccountAction.PayRecurringBill, AccountAction.PayCardStatement);
     }
 
     [Fact]

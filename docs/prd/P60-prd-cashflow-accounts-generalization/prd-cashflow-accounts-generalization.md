@@ -431,12 +431,12 @@ Rules that apply to every feature:
 - **Statements created on write:** a statement record is created when a charge is moved to it or it is paid (a charge landing in its month creates it from F07); reads never write: the statements GET returns stored statements only, and a missing statement counts as unpaid with no charges (Monthly's card grid already fills the gap from the card list; parity's after side emits 0 and unpaid for an active card without one). *Why:* removes a write inside a GET (design doc weak spot) and makes parity reads side-effect free. Snapshot and tithe GET writes are unchanged.
 - **Card screen:** adds the account screen's tab bar (Fluent `TabList`: Transactions as the default tab, then Statements), which F05 ships without; Statements tab (one row per month with charges, newest first, the viewed month highlighted: month, total, status with the paid date and bank, due date read-only, Pay / Unmark actions; due dates are still edited on Admin Credit cards and Monthly's Card tab until F13); actions Add charge (ExpenseForm with the card pre-selected), and on a charge of an unpaid statement Edit, Delete and Move to a later statement (target month later than the current one and unpaid), Pay statement. Monthly's expense edit keeps moving an unpaid charge's statement month either way, except into or out of a paid statement.
 - **Card Transactions tab by statement month:** on a card, the month picks charges by statement month, as Monthly and the category totals do, and lists every charge of that statement, paid or not (charges paid before V3 included, read-only), with the purchase date in its own column; payments into the card show on their payment date. The header's owed balance is unchanged. *Why:* since F07 the tab picked unpaid charges by purchase date, so a statement's charges showed under the month before it and its own month looked empty (user decision 2026-10-26).
-- **Bank screen:** one "Card payment" row per payment (Counterpart = card, Amount −total); selecting it opens the card's Statements tab on that month.
+- **Bank screen:** one "Card payment" row per payment (Description "<card name> payment – <Mon yyyy> statement", e.g. "Platinum Visa 6007 payment – Nov 2026 statement"; Counterpart = card; Amount −total); the payment's row on the card reads the same. The description names the statement the payment paid; it is worked out when the row is read, never stored, and falls back to the transfer's note when no statement links the payment. Selecting the description opens the card's Statements tab on that statement's month (user decision 2026-10-27).
 - **Payment transfers stay with their statement:** they are left out of the `/transfers` month list (Monthly looks the same), and `/transfers` and `/accounts/transfers` refuse to edit or delete them; the bank screen shows them only as the read-only "Card payment" row. *Why:* changing one outside its statement would leave the statement paid with the wrong payment (user decision 2026-10-26).
 - `card-statements/{id}/mark-paid` and `unmark-paid` keep their routes until F13, now writing/deleting the transfer. They return the Error Handling codes below: today's 200 with a warning for an already paid or empty statement goes, and Monthly's Card tab shows them as errors (user decision 2026-10-26).
 
 **Experience:**
-- Card screen → Statements → "October 2026 · £512.30 · Unpaid · Pay" → inline form with Bank (required), Date (today), Amount (read-only £512.30) → Save → status "Paid", card balance owed drops by £512.30, the bank gains a "Card payment −£512.30" row.
+- Card screen → Statements → "October 2026 · £512.30 · Unpaid · Pay" → inline form with Bank (required), Date (today), Amount (read-only £512.30) → Save → status "Paid", card balance owed drops by £512.30, the bank gains a "Card payment" row "<card name> payment – Oct 2026 statement −£512.30" that opens this statement.
 - States as in F05, plus: Pay disabled with tooltip "Nothing to pay" on a £0.00 statement.
 
 **Error Handling:**
@@ -777,21 +777,21 @@ graph TD
 - [x] Parity: 0 differences (each card's statement outstanding and status mapped to today's per-statement figures; the card balance, negated, equals accumulated outstanding in the current month); `/simplify` run; architecture-reviewer passed
 
 ### F08. Statement Payment and Card Screen
-- [ ] Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
-- [ ] After payment the card's owed balance drops by the total and the bank shows one "Card payment" row that opens the statement
-- [ ] Category totals and tithe count every charge in its statement month, paid or not
-- [ ] Paying from the bank ("Pay card statement") produces the same records as paying from the card
-- [ ] Paying an already paid or empty statement is rejected and nothing is saved
-- [ ] Unmark on a transfer-paid statement deletes the transfer and sets it unpaid; on a legacy paid statement it restores today's reversal
-- [ ] Moving an unpaid charge to a later unpaid statement works; to a paid or earlier one returns 400
-- [ ] Card statement GETs write nothing to the data file and return stored statements only
-- [ ] Charges on a paid statement count as paid; adding a charge to it, moving one into it, deleting one, or changing a charge's date, value, card or statement month returns 400, while description, category and counts-as-tithe stay editable
-- [ ] Payment transfers are absent from the `/transfers` month list, and editing or deleting one through `/transfers` or `/accounts/transfers` returns 409
-- [ ] The Statements tab shows each statement's due date
-- [ ] A card's Transactions tab lists every charge of the viewed statement month, paid or not, with its purchase date
-- [ ] Card screen states, keyboard use and narrow layout pass the review checklist
-- [ ] Paying a statement stores the transfer's id on the statement with its paid status in one save; unmarking deletes that transfer and sets the statement unpaid in one save
-- [ ] Parity: 0 differences and card screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] Paying a statement writes one bank → card transfer for its total, linked to the statement, with no category; charges keep their date, category and statement month
+- [x] After payment the card's owed balance drops by the total and the bank shows one "Card payment" row that opens the statement
+- [x] Category totals and tithe count every charge in its statement month, paid or not
+- [x] Paying from the bank ("Pay card statement") produces the same records as paying from the card
+- [x] Paying an already paid or empty statement is rejected and nothing is saved
+- [x] Unmark on a transfer-paid statement deletes the transfer and sets it unpaid; on a legacy paid statement it restores today's reversal
+- [x] Moving an unpaid charge to a later unpaid statement works; to a paid or earlier one returns 400
+- [x] Card statement GETs write nothing to the data file and return stored statements only
+- [x] Charges on a paid statement count as paid; adding a charge to it, moving one into it, deleting one, or changing a charge's date, value, card or statement month returns 400, while description, category and counts-as-tithe stay editable
+- [x] Payment transfers are absent from the `/transfers` month list, and editing or deleting one through `/transfers` or `/accounts/transfers` returns 409
+- [x] The Statements tab shows each statement's due date
+- [x] A card's Transactions tab lists every charge of the viewed statement month, paid or not, with its purchase date
+- [x] Card screen states, keyboard use and narrow layout pass the review checklist
+- [x] Paying a statement stores the transfer's id on the statement with its paid status in one save; unmarking deletes that transfer and sets the statement unpaid in one save
+- [x] Parity: 0 differences and card screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F09. Pots Template and Reserva Migration
 - [ ] `migrate` upgrades V3 to V4: Pots account "Reserva" with 5 pots keeping the bucket Ids, names, split % and active flags; category = "Reserva"; movements unchanged
@@ -856,7 +856,7 @@ graph TD
 - [x] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
 - [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
 - [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header with no change to the shell's allowed-actions rendering
-- [ ] F07's card accounts and charge filter give the statement totals F08 pays
+- [x] F07's card accounts and charge filter give the statement totals F08 pays
 - [ ] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
 - [ ] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
 - [ ] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step

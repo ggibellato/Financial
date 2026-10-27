@@ -8,5 +8,6 @@ public enum AccountAction
     TransferTo,
     TransferFrom,
     PayRecurringBill,
+    PayCardStatement,
     Reconcile
 }

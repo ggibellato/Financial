@@ -140,7 +140,7 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
     {
         var detail = await AccountAsync(BarclaysId, 10);
 
-        detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "Reconcile");
+        detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile");
     }
 
     [Fact]

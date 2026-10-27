@@ -16,6 +16,7 @@ public static class AccountActions
         (AccountAction.TransferTo, account => account.Has(Capability.CanSendTransfers)),
         (AccountAction.TransferFrom, account => account.Has(Capability.CanReceiveTransfers)),
         (AccountAction.PayRecurringBill, account => account.Has(Capability.CanPayBills)),
+        (AccountAction.PayCardStatement, account => account.Has(Capability.CanPayBills)),
         (AccountAction.Reconcile, account => account.Has(Capability.CanReconcile))
     ];
 

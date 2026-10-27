@@ -27,6 +27,9 @@ public static class CardChargeFilter
         IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         UnpaidChargesFor(expenses, statements, card, year, month).Sum(expense => expense.Value);
 
+    public static decimal OutstandingTotal(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, CardStatement statement) =>
+        OutstandingTotal(expenses, statements, statement.CreditCard, statement.Year, statement.Month);
+
     public static bool IsPaid(Expense expense, IEnumerable<CardStatement> statements) =>
         expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled || IsOnPaidStatement(expense, statements);
 
