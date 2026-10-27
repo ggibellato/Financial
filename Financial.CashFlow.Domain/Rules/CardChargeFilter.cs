@@ -20,9 +20,15 @@ public static class CardChargeFilter
             ? []
             : ChargesFor(expenses, card, year, month).Where(expense => expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);
 
+    public static IEnumerable<Expense> SettledChargesFor(IEnumerable<Expense> expenses, Account card, int year, int month) =>
+        ChargesFor(expenses, card, year, month).Where(expense => expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled);
+
     public static decimal OutstandingTotal(
         IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         UnpaidChargesFor(expenses, statements, card, year, month).Sum(expense => expense.Value);
+
+    public static bool IsPaid(Expense expense, IEnumerable<CardStatement> statements) =>
+        expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled || IsOnPaidStatement(expense, statements);
 
     public static bool IsOnPaidStatement(Expense expense, IEnumerable<CardStatement> statements) =>
         expense is { CreditCard: { } card, InvoiceDate: { } invoiceDate }

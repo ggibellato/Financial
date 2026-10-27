@@ -162,4 +162,49 @@ public class CardChargeFilterTests
 
         CardChargeFilter.IsPaidThroughStatement(charge, [Statement(_amex, 2026, 10, isPaid: false)]).Should().BeFalse();
     }
+
+    [Fact]
+    public void IsPaid_ChargeSettledToABank_IsTrue()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        charge.Settle(_barclays, new DateOnly(2026, 10, 20));
+
+        CardChargeFilter.IsPaid(charge, []).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsPaid_ChargeOnAPaidStatement_IsTrue()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: true)]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsPaid_ChargeOnAnUnpaidStatement_IsFalse()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaid(charge, [Statement(_amex, 2026, 10, isPaid: false), Statement(_visa, 2026, 10, isPaid: true)]).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsPaid_ChargeWithNoStatement_IsFalse()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.IsPaid(charge, []).Should().BeFalse();
+    }
+
+    [Fact]
+    public void SettledChargesFor_ReturnsOnlyChargesSettledToABankInThatInvoiceMonth()
+    {
+        var settled = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        settled.Settle(_barclays, new DateOnly(2026, 11, 2));
+        var unpaid = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
+        var otherMonth = Charge(_amex, new DateOnly(2026, 9, 5), 10m);
+        otherMonth.Settle(_barclays, new DateOnly(2026, 10, 2));
+
+        CardChargeFilter.SettledChargesFor([settled, unpaid, otherMonth], _amex, 2026, 10).Should().Equal(settled);
+    }
 }

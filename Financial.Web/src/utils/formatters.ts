@@ -111,6 +111,10 @@ export function todayIsoDate(): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
 }
 
+export function formatDayMonthYearUtc(isoString: string): string {
+  return new Date(isoString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+}
+
 export function formatMonthYear(date: Date): string {
   return date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })
 }

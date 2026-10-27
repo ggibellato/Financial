@@ -153,6 +153,7 @@ export type AccountCreateDto = Schema<'AccountCreateDTO'>
 export type AccountUpdateDto = Schema<'AccountUpdateDTO'>
 export type AccountDetailDto = Schema<'AccountDetailDTO'>
 export type AccountTransactionDto = Schema<'AccountTransactionDTO'>
+export type AccountStatementDto = Schema<'AccountStatementDTO'>
 export type AccountTransferDto = Schema<'AccountTransferDTO'>
 export type AccountTransferCreateDto = Schema<'AccountTransferCreateDTO'>
 export type AccountTransferUpdateDto = Schema<'AccountTransferUpdateDTO'>

@@ -38,6 +38,7 @@ const DETAIL: AccountDetailDto = {
   month: 9,
   balance: 1234.56,
   balanceIsOwed: false,
+  hasStatements: false,
   allowedActions: [],
 }
 
@@ -154,6 +155,29 @@ describe('useAccountScreen', () => {
 
     await waitFor(() => expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 8))
     expect(result.current.location.search).toBe('?month=2026-08')
+  })
+
+  it('reads the Statements tab from the URL and keeps it across a month change', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=statements`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+    expect(result.current.screen.tab).toBe('statements')
+
+    act(() => result.current.screen.setMonthInputValue('2026-08'))
+
+    expect(result.current.location.search).toBe('?month=2026-08&tab=statements')
+
+    act(() => result.current.screen.setTab('transactions'))
+
+    expect(result.current.screen.tab).toBe('transactions')
+    expect(result.current.location.search).toBe('?month=2026-08')
+  })
+
+  it('reads an unknown tab as Transactions', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=other`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+    expect(result.current.screen.tab).toBe('transactions')
   })
 
   it('ignores an empty month value', async () => {

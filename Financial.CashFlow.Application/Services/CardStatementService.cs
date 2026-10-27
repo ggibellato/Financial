@@ -175,8 +175,7 @@ public sealed class CardStatementService : ICardStatementService
 
     private Func<bool> LegacyPaymentReversal(CardStatement statement)
     {
-        var settledCharges = CardChargeFilter.ChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month)
-            .Where(e => e.PaymentStatus == ExpensePaymentStatus.CreditCardSettled)
+        var settledCharges = CardChargeFilter.SettledChargesFor(_repository.GetExpenses(), statement.CreditCard, statement.Year, statement.Month)
             .ToList();
 
         return () =>

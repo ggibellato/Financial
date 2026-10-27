@@ -362,4 +362,50 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
             september!.ToDictionary(total => total.Category, total => total.TotalValue),
             tithe!.TitheBalance);
     }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-11")]
+    public async Task AccountStatements_CarryDueDates()
+    {
+        await MarkPaidAsync(OctoberStatementId, new DateOnly(2026, 10, 12));
+
+        var statements = (await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements"))!;
+        var bankResponse = await Client.GetAsync($"{Api}/accounts/{BarclaysId}/statements");
+
+        using (new AssertionScope())
+        {
+            statements.Select(statement => statement.Id).Should().Equal(Guid.Parse(OctoberStatementId), Guid.Parse(SeptemberStatementId));
+            statements[0].Should().BeEquivalentTo(new
+            {
+                Year = 2026, Month = 10, Total = 30m, IsPaid = true, DueDate = (DateOnly?)null,
+                PaidOn = new DateOnly(2026, 10, 12), PaidFromAccountName = "Barclays"
+            });
+            statements[1].Should().BeEquivalentTo(new
+            {
+                Year = 2026, Month = 9, Total = 17m, IsPaid = true, DueDate = new DateOnly(2026, 10, 3),
+                PaidOn = new DateOnly(2026, 10, 2), PaidFromAccountName = "Barclays"
+            });
+            await ShouldBeRefused(bankResponse, HttpStatusCode.BadRequest, "Barclays is not a card account.");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-12")]
+    public async Task CardTransactions_ListEveryChargeOfTheStatementMonth_WithPurchaseDate()
+    {
+        await MarkPaidAsync(OctoberStatementId, new DateOnly(2026, 10, 12));
+
+        var september = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{AmexId}/transactions/2026/9");
+        var october = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{AmexId}/transactions/2026/10");
+
+        using (new AssertionScope())
+        {
+            september!.Select(row => (row.Id, row.Kind, row.Date, row.Counterpart, row.Amount, row.CanEdit)).Should().Equal(
+                (Guid.Parse(SettledSeptemberChargeId), "CardCharge", new DateOnly(2026, 9, 15), "Barclays", -7m, false),
+                (Guid.Parse(SeptemberChargeId), "CardCharge", new DateOnly(2026, 9, 10), (string?)null, -10m, false));
+            october!.Select(row => (row.Kind, row.Date, row.Counterpart, row.Amount, row.CanEdit)).Should().Equal(
+                ("CardPayment", new DateOnly(2026, 10, 12), "Barclays", 30m, false),
+                ("CardCharge", new DateOnly(2026, 10, 3), (string?)null, -30m, false));
+        }
+    }
 }

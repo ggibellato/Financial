@@ -23,6 +23,7 @@ const AMEX: AccountDetailDto = {
   month: 10,
   balance: -812.33,
   balanceIsOwed: true,
+  hasStatements: true,
   allowedActions: [],
 }
 
@@ -36,6 +37,7 @@ const BARCLAYS: AccountDetailDto = {
   month: 10,
   balance: 1234.56,
   balanceIsOwed: false,
+  hasStatements: false,
   allowedActions: [],
 }
 

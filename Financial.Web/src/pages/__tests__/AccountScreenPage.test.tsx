@@ -7,6 +7,7 @@ import { Toaster } from '@fluentui/react-components'
 import type {
   AccountDetailDto,
   AccountDto,
+  AccountStatementDto,
   AccountTransactionDto,
   AccountTransferDto,
   BalanceAdjustmentDto,
@@ -23,7 +24,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
-import { account } from '../../test/account'
+import { account, cardAccount } from '../../test/account'
 
 const {
   getAccountsMock,
@@ -46,6 +47,9 @@ const {
   deleteBalanceAdjustmentMock,
   getMensaisBillsMock,
   markMensaisBillPaidMock,
+  getAccountStatementsMock,
+  markCardStatementPaidMock,
+  unmarkCardStatementPaidMock,
 } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
@@ -67,6 +71,9 @@ const {
   deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
+  getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
+  markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
+  unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -91,26 +98,38 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
     getMensaisBills: getMensaisBillsMock,
     markMensaisBillPaid: markMensaisBillPaidMock,
+    getAccountStatements: getAccountStatementsMock,
+    markCardStatementPaid: markCardStatementPaidMock,
+    unmarkCardStatementPaid: unmarkCardStatementPaidMock,
   } as Partial<FinancialApiClient>,
 }))
 
 const BARCLAYS_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
+const AMEX_ID = '8f3b1c1a-2e3a-4b1a-9a7f-500000000001'
 const CHASE_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
 const WISE_EUR_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000004'
 
 const ACCOUNTS: AccountDto[] = [
   account({ id: BARCLAYS_ID, name: 'Barclays' }),
   account({ id: CHASE_ID, name: 'Chase' }),
+  cardAccount({ id: AMEX_ID, name: 'BA Amex' }),
 ]
 
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
-  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: false, allowedActions: [] }
+  const isCard = id === AMEX_ID
+  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, allowedActions: [] }
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [
   accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-14', description: 'Tesco', categoryName: 'Groceries', amount: -42.1, roundUp: -0.9, canEdit: true }),
   accountTransactionRow({ id: 't1', kind: 'TransferOut', date: '2026-10-05', counterpart: 'Chase', amount: -200, canEdit: true }),
+]
+
+const CARD_STATEMENTS: AccountStatementDto[] = [
+  { id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
+  { id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
+  { id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
 ]
 
 const BANKS: BankDto[] = [
@@ -218,6 +237,9 @@ beforeEach(() => {
   deleteBalanceAdjustmentMock.mockReset().mockResolvedValue(undefined)
   getMensaisBillsMock.mockReset().mockResolvedValue(BILLS)
   markMensaisBillPaidMock.mockReset()
+  getAccountStatementsMock.mockReset().mockResolvedValue(CARD_STATEMENTS)
+  markCardStatementPaidMock.mockReset()
+  unmarkCardStatementPaidMock.mockReset()
   sessionStorage.clear()
 })
 
@@ -1045,5 +1067,100 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
 
     expect(screen.queryByRole('heading', { name: 'Edit balance adjustment' })).not.toBeInTheDocument()
     expect(editAdjustment).toHaveFocus()
+  })
+})
+
+describe('AccountScreenPage card screen', () => {
+  const CARD_ROWS: AccountTransactionDto[] = [
+    accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-09-28', description: 'Taxi', amount: -30, canEdit: true }),
+    accountTransactionRow({ id: 'p1', kind: 'CardPayment', date: '2026-10-12', counterpart: 'Barclays', amount: 480, canEdit: false }),
+  ]
+
+  beforeEach(() => {
+    getAccountTransactionsMock.mockResolvedValue(CARD_ROWS)
+  })
+
+  it('shows no tabs on a bank', async () => {
+    getAccountTransactionsMock.mockResolvedValue(TRANSACTIONS)
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    expect(await screen.findByText('Tesco')).toBeInTheDocument()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /^Date/ })).toBeInTheDocument()
+  })
+
+  it('[AC P60-F08-statement-payment-and-card-screen-12] a card opens on Transactions with the Purchased column, card payment rows and no charge actions yet', async () => {
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    expect(await screen.findByText('Taxi')).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Transactions', selected: true })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /^Purchased/ })).toBeInTheDocument()
+    expect(screen.getByText('Card payment')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Edit/ })).not.toBeInTheDocument()
+    expect(getAccountStatementsMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps the tab in the URL across tab and month changes', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+    await user.click(await screen.findByRole('tab', { name: 'Statements' }))
+
+    expect(screen.getByText(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)).toBeInTheDocument()
+    expect(await screen.findByRole('row', { current: true })).toHaveTextContent('October 2026')
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
+
+    expect(await screen.findByText(`/cashflow/accounts/${AMEX_ID}?month=2026-09&tab=statements`)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('row', { current: true })).toHaveTextContent('September 2026'))
+
+    await user.click(screen.getByRole('tab', { name: 'Transactions' }))
+
+    expect(screen.getByText(`/cashflow/accounts/${AMEX_ID}?month=2026-09`)).toBeInTheDocument()
+  })
+
+  it('[AC P60-F08-statement-payment-and-card-screen-11] pays a statement from the Statements tab and refreshes the screen', async () => {
+    const user = userEvent.setup()
+    markCardStatementPaidMock.mockResolvedValue({
+      id: 's-oct', creditCardId: AMEX_ID, creditCardName: 'BA Amex', year: 2026, month: 10, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0,
+    })
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+
+    await user.click(await screen.findByRole('button', { name: 'Pay October 2026 statement' }))
+    await user.selectOptions(screen.getByLabelText(/^Bank/), BARCLAYS_ID)
+    await user.click(screen.getByRole('button', { name: 'Pay statement' }))
+
+    expect(markCardStatementPaidMock).toHaveBeenCalledWith('s-oct', { paymentSourceBankId: BARCLAYS_ID, date: '2026-10-15' })
+    expect(await screen.findByText('Statement paid')).toBeInTheDocument()
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+    expect(getAccountMock).toHaveBeenCalledTimes(2)
+    expect(screen.queryByRole('button', { name: 'Pay statement' })).not.toBeInTheDocument()
+  })
+
+  it('asks before a tab change discards an unsaved payment', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+
+    await user.click(await screen.findByRole('button', { name: 'Pay October 2026 statement' }))
+    await user.selectOptions(screen.getByLabelText(/^Bank/), BARCLAYS_ID)
+    await user.click(screen.getByRole('tab', { name: 'Transactions' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    expect(screen.getByLabelText(/^Bank/)).toHaveValue(BARCLAYS_ID)
+
+    await user.click(screen.getByRole('tab', { name: 'Transactions' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
+
+    expect(await screen.findByRole('tab', { name: 'Transactions', selected: true })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Pay statement' })).not.toBeInTheDocument()
+  })
+
+  it('shows no Pay or Unmark on an inactive card', async () => {
+    getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), isActive: false }))
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+
+    expect(await screen.findByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
   })
 })

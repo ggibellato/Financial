@@ -89,6 +89,7 @@ public class AccountQueryServiceTests
             detail.Month.Should().Be(9);
             detail.Balance.Should().Be(950m);
             detail.BalanceIsOwed.Should().BeFalse();
+            detail.HasStatements.Should().BeFalse();
             detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "Reconcile");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccount")
                 .Which.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_barclays.Id.ToString());
@@ -334,25 +335,136 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetTransactions_CardAccount_ListsItsUnpaidChargesOfTheMonthReadOnly()
+    public void GetTransactions_CardAccount_ListsEveryChargeOfTheStatementMonthWithItsPurchaseDate()
     {
         _repository.Accounts.Add(_amex);
         var taxi = Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex);
-        var paid = Expense.Create(new DateOnly(2026, 10, 14), "Paid", 20m, _groceries, null, _amex);
-        paid.Settle(_barclays, new DateOnly(2026, 10, 25));
-        _repository.Expenses.AddRange([taxi, paid, Expense.Create(new DateOnly(2026, 9, 12), "September", 9m, _groceries, null, _amex)]);
+        var settled = Expense.Create(new DateOnly(2026, 10, 14), "Settled", 20m, _groceries, null, _amex);
+        settled.Settle(_barclays, new DateOnly(2026, 11, 5));
+        var lateSeptember = Expense.Create(new DateOnly(2026, 9, 28), "Late September", 7m, _groceries, null, _amex, new DateOnly(2026, 10, 1));
+        _repository.Expenses.AddRange([taxi, settled, lateSeptember, Expense.Create(new DateOnly(2026, 9, 12), "September", 9m, _groceries, null, _amex)]);
 
         var rows = _sut.GetTransactions(_amex.Id, 2026, 10);
 
-        var row = rows.Should().ContainSingle().Which;
         using (new AssertionScope())
         {
-            row.Id.Should().Be(taxi.Id);
-            row.Kind.Should().Be("CardCharge");
-            row.Counterpart.Should().BeNull();
-            row.CategoryName.Should().Be("Mercado");
-            row.Amount.Should().Be(-30m);
+            rows.Select(row => row.Id).Should().Equal(settled.Id, taxi.Id, lateSeptember.Id);
+            rows.Select(row => row.Date).Should().Equal(new DateOnly(2026, 10, 14), new DateOnly(2026, 10, 12), new DateOnly(2026, 9, 28));
+            rows.Should().OnlyContain(row => row.Kind == "CardCharge" && row.CategoryName == "Mercado");
+            rows.Select(row => row.Counterpart).Should().Equal("Barclays", null, null);
+            rows.Select(row => row.Amount).Should().Equal(-20m, -30m, -7m);
+            rows.Select(row => row.CanEdit).Should().Equal(false, true, true);
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_CardStatementPaid_ChargesAreReadOnly()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex));
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10).MarkLegacyPaid());
+
+        _sut.GetTransactions(_amex.Id, 2026, 10).Should().ContainSingle().Which.CanEdit.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetTransactions_InactiveCard_ChargesAreReadOnly()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex));
+        _amex.SetActive(false);
+
+        _sut.GetTransactions(_amex.Id, 2026, 10).Should().ContainSingle().Which.CanEdit.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetTransactions_CardWithAPaymentInTheMonth_ListsItAsAReadOnlyCardPayment()
+    {
+        _repository.Accounts.Add(_amex);
+        var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 20), _barclays, _amex, 40m, Today);
+        _repository.Transfers.Add(payment);
+
+        var row = _sut.GetTransactions(_amex.Id, 2026, 10).Should().ContainSingle().Which;
+
+        using (new AssertionScope())
+        {
+            row.Id.Should().Be(payment.Id);
+            row.Kind.Should().Be("CardPayment");
+            row.Counterpart.Should().Be("Barclays");
+            row.Amount.Should().Be(40m);
             row.CanEdit.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void GetStatements_BankAccount_ThrowsNotACard()
+    {
+        var act = () => _sut.GetStatements(_barclays.Id);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays is not a card account.");
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountQueryService.GetAccountStatements");
+    }
+
+    [Fact]
+    public void GetStatements_UnknownId_ThrowsKeyNotFoundAndFailsTheSpan()
+    {
+        var act = () => _sut.GetStatements(Guid.NewGuid());
+
+        act.Should().Throw<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.AccountQueryService.GetAccountStatements");
+    }
+
+    [Fact]
+    public void GetStatements_Card_ListsStatementsWithChargesOrPaidNewestFirst()
+    {
+        _repository.Accounts.Add(_amex);
+        var august = CardStatement.Create(_amex, 2026, 8);
+        var september = CardStatement.Create(_amex, 2026, 9);
+        september.SetDueDate(new DateOnly(2026, 10, 3));
+        var october = CardStatement.Create(_amex, 2026, 10);
+        var november = CardStatement.Create(_amex, 2026, 11);
+        _repository.CardStatements.AddRange([august, september, october, november, CardStatement.Create(TestAccounts.CreditCard("Visa"), 2026, 10)]);
+        var septemberCharge = Expense.Create(new DateOnly(2026, 9, 2), "Shop", 50m, _groceries, null, _amex);
+        _repository.Expenses.AddRange([
+            septemberCharge,
+            Expense.Create(new DateOnly(2026, 9, 9), "Fuel", 25m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 11, 3), "Taxi", 12m, _groceries, null, _amex)]);
+        var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 12), _barclays, _amex, 75m, Today);
+        _repository.Transfers.Add(payment);
+        september.MarkPaidBy(payment.Id);
+        august.MarkLegacyPaid();
+
+        var rows = _sut.GetStatements(_amex.Id);
+
+        using (new AssertionScope())
+        {
+            rows.Select(row => (row.Year, row.Month)).Should().Equal((2026, 11), (2026, 9), (2026, 8));
+            rows[0].Should().BeEquivalentTo(new { Id = november.Id, Total = 12m, OutstandingTotal = 12m, IsPaid = false, DueDate = (DateOnly?)null, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
+            rows[1].Should().BeEquivalentTo(new { Id = september.Id, Total = 75m, OutstandingTotal = 0m, IsPaid = true, DueDate = new DateOnly(2026, 10, 3), PaidOn = new DateOnly(2026, 10, 12), PaidFromAccountName = "Barclays" });
+            rows[2].Should().BeEquivalentTo(new { Total = 0m, IsPaid = true, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccountStatements");
+        }
+    }
+
+    [Fact]
+    public void GetStatements_LegacyPaidStatement_ReportsTheLatestSettlementAndItsBank()
+    {
+        _repository.Accounts.Add(_amex);
+        var early = Expense.Create(new DateOnly(2026, 10, 2), "Shop", 50m, _groceries, null, _amex);
+        var late = Expense.Create(new DateOnly(2026, 10, 9), "Fuel", 25m, _groceries, null, _amex);
+        early.Settle(_chase, new DateOnly(2026, 11, 1));
+        late.Settle(_barclays, new DateOnly(2026, 11, 4));
+        _repository.Expenses.AddRange([early, late]);
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10).MarkLegacyPaid());
+
+        var row = _sut.GetStatements(_amex.Id).Should().ContainSingle().Which;
+
+        using (new AssertionScope())
+        {
+            row.Total.Should().Be(75m);
+            row.OutstandingTotal.Should().Be(0m);
+            row.PaidOn.Should().Be(new DateOnly(2026, 11, 4));
+            row.PaidFromAccountName.Should().Be("Barclays");
         }
     }
 
@@ -372,6 +484,7 @@ public class AccountQueryServiceTests
             detail.AllowedActions.Should().BeEmpty();
             detail.Balance.Should().Be(-39m);
             detail.BalanceIsOwed.Should().BeTrue();
+            detail.HasStatements.Should().BeTrue();
             detail.TemplateName.Should().Be("CreditCard");
         }
     }
@@ -407,6 +520,24 @@ public class AccountQueryServiceTests
         {
             _sut.GetAccount(_amex.Id, 2026, 10).Balance.Should().Be(-9m);
             _sut.GetAccount(_barclays.Id, 2026, 10).Balance.Should().Be(970m);
+        }
+    }
+
+    [Fact]
+    public void GetStatements_UnpaidStatementWithASettledCharge_OwesOnlyItsUnsettledCharges()
+    {
+        _repository.Accounts.Add(_amex);
+        var settled = Expense.Create(new DateOnly(2026, 10, 2), "Shop", 50m, _groceries, null, _amex);
+        settled.Settle(_barclays, new DateOnly(2026, 11, 1));
+        _repository.Expenses.AddRange([settled, Expense.Create(new DateOnly(2026, 10, 9), "Fuel", 25m, _groceries, null, _amex)]);
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10));
+
+        var row = _sut.GetStatements(_amex.Id).Should().ContainSingle().Which;
+
+        using (new AssertionScope())
+        {
+            row.Total.Should().Be(75m);
+            row.OutstandingTotal.Should().Be(25m);
         }
     }
 }

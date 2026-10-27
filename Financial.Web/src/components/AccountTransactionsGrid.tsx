@@ -7,7 +7,7 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { kindLabel, recordNoun, rowKey } from './accountActions'
+import { hasRowActions, kindLabel, recordNoun, rowKey } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -52,6 +52,7 @@ interface AccountTransactionsGridProps {
   transactions: AccountTransactionDto[]
   isLoading?: boolean
   emptyMessage: string
+  dateHeader?: string
   isEditDisabled?: boolean
   onEdit: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   onDelete: (row: AccountTransactionDto) => void
@@ -61,11 +62,13 @@ export default function AccountTransactionsGrid({
   transactions,
   isLoading = false,
   emptyMessage,
+  dateHeader = 'Date',
   isEditDisabled = false,
   onEdit,
   onDelete,
 }: AccountTransactionsGridProps) {
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
+  const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
 
   return (
     <div className="account-screen__grid-scroll">
@@ -75,7 +78,7 @@ export default function AccountTransactionsGrid({
             {COLUMNS.map((column) => (
               <SortableColumnHeader
                 key={column.key}
-                label={column.header}
+                label={headerOf(column)}
                 columnKey={column.key}
                 numeric={column.numeric}
                 sortDirection={sortState?.columnKey === column.key ? sortState.direction : undefined}
@@ -108,13 +111,13 @@ export default function AccountTransactionsGrid({
                 {COLUMNS.map((column) => (
                   <DataTableCell
                     key={column.key}
-                    label={column.header}
+                    label={headerOf(column)}
                     className={column.numeric ? 'data-table__col--numeric' : undefined}
                   >
                     {column.render(row)}
                   </DataTableCell>
                 ))}
-                {row.canEdit ? (
+                {hasRowActions(row) ? (
                   <RowActionsCell
                     itemName={recordNoun(row.kind)}
                     editDisabled={isEditDisabled}
