@@ -27,6 +27,7 @@ public class AccountActionsTests
 
     [Theory]
     [InlineData(Capability.HasCategories, AccountAction.AddExpense)]
+    [InlineData(Capability.HasStatements, AccountAction.AddCharge)]
     [InlineData(Capability.ReceivesIncome, AccountAction.AddIncome)]
     [InlineData(Capability.CanSendTransfers, AccountAction.TransferTo)]
     [InlineData(Capability.CanReceiveTransfers, AccountAction.TransferFrom)]
@@ -61,15 +62,24 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_CreditCardAccount_ReturnsNoActions()
+    public void AllowedFor_CreditCardAccount_ReturnsOnlyAddCharge()
     {
-        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().BeEmpty();
+        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().Equal(AccountAction.AddCharge);
     }
 
     [Fact]
-    public void AllowedFor_AccountWithCategoriesAndStatements_HasNoAddExpense()
+    public void AllowedFor_InactiveCreditCardAccount_ReturnsNone()
+    {
+        var inactive = Account.CreateWithCapabilities(
+            "Closed card", Currency.GBP, AccountTemplates.CapabilitiesOf(AccountTemplate.CreditCard), isActive: false);
+
+        AccountActions.AllowedFor(inactive).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AllowedFor_AccountWithCategoriesAndStatements_HasAddChargeInsteadOfAddExpense()
     {
         AccountActions.AllowedFor(Minimal(Capability.HasCategories, Capability.HasStatements, Capability.ReceivesIncome))
-            .Should().Equal(AccountAction.AddIncome);
+            .Should().Equal(AccountAction.AddCharge, AccountAction.AddIncome);
     }
 }

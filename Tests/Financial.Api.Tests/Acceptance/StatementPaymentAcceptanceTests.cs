@@ -408,4 +408,44 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
                 ("CardCharge", new DateOnly(2026, 10, 3), (string?)null, -30m, false));
         }
     }
+
+    private Task<HttpResponseMessage> MoveToStatementAsync(Guid chargeId, int year, int month) =>
+        Client.PostAsJsonAsync($"{Api}/expenses/{chargeId}/move-to-statement", new MoveChargeToStatementDTO { Year = year, Month = month });
+
+    [Fact]
+    [Trait("AC", "P60-F08-statement-payment-and-card-screen-07")]
+    public async Task MoveToStatement_LaterUnpaid_Works_PaidOrEarlier_Returns400()
+    {
+        const string laterUnpaidMessage = "Charges can only move to a later, unpaid statement.";
+        var added = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 10, 5),
+            Description = "Bakery",
+            Value = 5m,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(AmexId)
+        });
+        var chargeId = (await added.Content.ReadFromJsonAsync<ExpenseDTO>())!.Id;
+        (await MoveToStatementAsync(Guid.Parse(OctoberChargeId), 2026, 11)).StatusCode.Should().Be(HttpStatusCode.OK);
+        (await MarkPaidAsync(NovemberStatementId)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var intoPaid = await MoveToStatementAsync(chargeId, 2026, 11);
+        var intoEarlier = await MoveToStatementAsync(chargeId, 2026, 9);
+        var intoLater = await MoveToStatementAsync(chargeId, 2027, 1);
+
+        await ShouldBeRefused(intoPaid, HttpStatusCode.BadRequest, laterUnpaidMessage);
+        await ShouldBeRefused(intoEarlier, HttpStatusCode.BadRequest, laterUnpaidMessage);
+        using (new AssertionScope())
+        {
+            intoLater.StatusCode.Should().Be(HttpStatusCode.OK);
+            (await intoLater.Content.ReadFromJsonAsync<ExpenseDTO>())!.InvoiceDate.Should().Be(new DateOnly(2027, 1, 1));
+            (await StatementsAsync(2027, 1))!.Should().ContainSingle(statement => statement.CreditCardId == Guid.Parse(AmexId));
+        }
+    }
+
+    [Fact]
+    public async Task CardAccount_AllowsAddCharge()
+    {
+        (await AccountAsync(AmexId)).AllowedActions.Should().Equal("AddCharge");
+    }
 }

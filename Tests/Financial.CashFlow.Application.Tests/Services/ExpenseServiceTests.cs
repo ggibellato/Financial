@@ -1403,4 +1403,116 @@ public class ExpenseServiceTests
             charge.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
         }
     }
+
+    private const string LaterUnpaidStatementMessage = "Charges can only move to a later, unpaid statement.";
+
+    private Task<ExpenseDTO> MoveAsync(Guid id, int year, int month) =>
+        _sut.MoveToStatementAsync(id, new MoveChargeToStatementDTO { Year = year, Month = month });
+
+    [Fact]
+    public async Task MoveToStatementAsync_UnpaidCharge_MovesToTheLaterStatementAndCreatesIt()
+    {
+        var card = _repository.CardAccounts.Single(c => c.Name == "BaAmex");
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        _calendarSyncTrigger.InvoiceChecks.Clear();
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        var result = await MoveAsync(added.Id, 2026, 12);
+
+        using (new AssertionScope())
+        {
+            result.InvoiceDate.Should().Be(new DateOnly(2026, 12, 1));
+            _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 12, 1));
+            _repository.CardStatements.Should().ContainSingle(s => s.IsFor(card.Id, 2026, 12));
+            _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
+            _calendarSyncTrigger.InvoiceChecks.Should().Equal((card.Id, new DateOnly(2026, 9, 1)), (card.Id, new DateOnly(2026, 12, 1)));
+            _tracer.Spans.Should().Contain(s => s.Name == "CashFlow.ExpenseService.MoveToStatement"
+                && (string?)s.Attributes[TelemetryAttributeKeys.OperationResult] == TelemetryOperationResults.Success);
+        }
+    }
+
+    [Theory]
+    [InlineData(2026, 9)]
+    [InlineData(2026, 8)]
+    [InlineData(2026, 13)]
+    [InlineData(0, 10)]
+    public async Task MoveToStatementAsync_TargetNotLater_ThrowsAndChangesNothing(int year, int month)
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        var savesBefore = _repository.SaveChangesCallCount;
+
+        var act = async () => await MoveAsync(added.Id, year, month);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(LaterUnpaidStatementMessage);
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+            _repository.SaveChangesCallCount.Should().Be(savesBefore);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.MoveToStatement");
+        }
+    }
+
+    [Fact]
+    public async Task MoveToStatementAsync_TargetStatementPaid_Throws()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        MarkStatementPaid("BaAmex", 2026, 10);
+
+        var act = async () => await MoveAsync(added.Id, 2026, 10);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(LaterUnpaidStatementMessage);
+        _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+    }
+
+    [Fact]
+    public async Task MoveToStatementAsync_OtherCardsPaidStatementInTheTargetMonth_Moves()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        MarkStatementPaid("BarclaysPlatinumVisa8003", 2026, 10);
+
+        var result = await MoveAsync(added.Id, 2026, 10);
+
+        result.InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
+    [Fact]
+    public async Task MoveToStatementAsync_ChargeOnAPaidStatement_ThrowsTheLockMessage()
+    {
+        var added = await AddChargeOnPaidStatementAsync();
+
+        var act = async () => await MoveAsync(added.Id, 2026, 10);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(PaidStatementMessage);
+        _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+    }
+
+    [Fact]
+    public async Task MoveToStatementAsync_BankExpense_Throws()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
+
+        var act = async () => await MoveAsync(added.Id, 2026, 12);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Only an unpaid card charge can move to another statement.");
+    }
+
+    [Fact]
+    public async Task MoveToStatementAsync_InactiveCard_Throws()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
+        _repository.CardAccounts.Single(c => c.Name == "BaAmex").SetActive(false);
+
+        var act = async () => await MoveAsync(added.Id, 2026, 12);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Credit card 'BaAmex' is inactive and cannot be used for new entries.");
+        _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
+    }
+
+    [Fact]
+    public async Task MoveToStatementAsync_UnknownExpense_ThrowsNotFound()
+    {
+        var act = async () => await MoveAsync(Guid.NewGuid(), 2026, 12);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
 }

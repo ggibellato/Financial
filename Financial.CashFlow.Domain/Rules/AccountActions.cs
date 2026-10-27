@@ -11,6 +11,7 @@ public static class AccountActions
     private static readonly IReadOnlyList<(AccountAction Action, Func<Account, bool> IsAllowed)> ActionRules =
     [
         (AccountAction.AddExpense, account => account.CanPay),
+        (AccountAction.AddCharge, account => account.Has(Capability.HasStatements)),
         (AccountAction.AddIncome, account => account.Has(Capability.ReceivesIncome)),
         (AccountAction.TransferTo, account => account.Has(Capability.CanSendTransfers)),
         (AccountAction.TransferFrom, account => account.Has(Capability.CanReceiveTransfers)),

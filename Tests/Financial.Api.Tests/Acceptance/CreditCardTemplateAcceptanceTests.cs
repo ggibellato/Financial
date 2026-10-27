@@ -88,7 +88,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-04")]
-    public async Task CardAccount_HasNoActions_AndIsRefusedAsPayerWith400()
+    public async Task CardAccount_OffersOnlyAddCharge_AndIsRefusedAsPayerWith400()
     {
         var detail = await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{AmexId}/2026/10");
         var expensesBefore = await OctoberExpensesAsync();
@@ -126,7 +126,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            detail!.AllowedActions.Should().BeEmpty();
+            detail!.AllowedActions.Should().Equal("AddCharge");
             detail.Balance.Should().Be(-40m);
             await ShouldBeRefusedAsCardPayer(expense);
             await ShouldBeRefusedAsCardPayer(billPaid);

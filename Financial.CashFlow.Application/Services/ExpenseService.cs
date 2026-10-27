@@ -15,6 +15,8 @@ public sealed class ExpenseService : IExpenseService
     private const string EntityType = "Expense";
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
+    private const string OnlyUnpaidChargeMovesMessage = "Only an unpaid card charge can move to another statement.";
+    private const string LaterUnpaidStatementMessage = "Charges can only move to a later, unpaid statement.";
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -146,6 +148,39 @@ public sealed class ExpenseService : IExpenseService
         }
     }
 
+    public async Task<ExpenseDTO> MoveToStatementAsync(Guid id, MoveChargeToStatementDTO request)
+    {
+        using var span = StartSpan("MoveToStatement");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var expense = FindExpenseOrThrow(id);
+            var target = EnsureCanMoveToStatement(expense, request.Year, request.Month);
+            var previousInvoiceDate = expense.InvoiceDate;
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                expense.SetInvoiceDate(target);
+                CardStatementCreation.EnsureFor(_repository, expense);
+                return true;
+            }).ConfigureAwait(false);
+
+            NotifyInvoiceChanged(expense.CreditCard!.Id, previousInvoiceDate);
+            NotifyInvoiceChanged(expense.CreditCard.Id, expense.InvoiceDate);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "MoveToStatement");
+            return ToDto(expense, _repository.GetCardStatements());
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     public IReadOnlyList<ExpenseDTO> GetExpensesByMonth(int year, int month)
     {
         using var span = StartSpan("GetExpensesByMonth");
@@ -258,6 +293,35 @@ public sealed class ExpenseService : IExpenseService
         {
             throw new ArgumentException(PaidStatementMessage);
         }
+    }
+
+    private DateOnly EnsureCanMoveToStatement(Expense expense, int year, int month)
+    {
+        if (expense.PaymentStatus != ExpensePaymentStatus.CreditCardCharge || expense is not { CreditCard: { } card, InvoiceDate: { } current })
+        {
+            throw new ArgumentException(OnlyUnpaidChargeMovesMessage);
+        }
+
+        var statements = _repository.GetCardStatements().ToList();
+        if (CardChargeFilter.IsOnPaidStatement(expense, statements))
+        {
+            throw new ArgumentException(PaidStatementMessage);
+        }
+
+        if (year is < 1 or > 9999
+            || month is < 1 or > 12
+            || new DateOnly(year, month, 1) <= current
+            || CardChargeFilter.IsStatementPaid(statements, card, year, month))
+        {
+            throw new ArgumentException(LaterUnpaidStatementMessage);
+        }
+
+        if (!card.IsActive)
+        {
+            throw new ArgumentException($"Credit card '{card.Name}' is inactive and cannot be used for new entries.");
+        }
+
+        return new DateOnly(year, month, 1);
     }
 
     private (Category Category, Account? PaymentSourceAccount, Account? CreditCard) ValidateFields(
