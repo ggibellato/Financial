@@ -31,5 +31,9 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Bank screen (after only) | M1, M2, M3 | **B2:** the Barclays grid has every expense, income, transfer and adjustment Monthly shows for Barclays that month, with the same amounts, and round-ups in their own column | — | | |
 | Bank screen (after only) | A month with no records | **B3:** the grid shows "No transactions in <Month Year>" | — | | |
 | Bank screen (after only) | M1 | **B4:** at 320 px wide there's no horizontal page scroll | — | | |
+| Card screen (after only) | M1, M2 | **C1:** the Statements tab's total and status per month equal Monthly's Card tab for the same card (outstanding when unpaid) | — | | |
+| Card screen (after only) | M1, M2 | **C2:** the Transactions tab for a month lists the same charges as Monthly's card charges for that statement month | — | | |
+| Card screen (after only) | A month with no charges | **C3:** the grid shows "No transactions in <Month Year>" | — | | |
+| Card screen (after only) | M1 | **C4:** at 320 px wide there's no horizontal page scroll on either tab | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.
