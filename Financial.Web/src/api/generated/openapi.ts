@@ -3793,6 +3793,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/expenses/{id}/move-to-statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["MoveChargeToStatementDTO"];
+                    "application/json": null | components["schemas"]["MoveChargeToStatementDTO"];
+                    "text/json": null | components["schemas"]["MoveChargeToStatementDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ExpenseDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -8666,6 +8727,12 @@ export interface components {
             destinationPortfolioName: string;
             scope: string;
             sourcePortfolioName: string;
+        };
+        MoveChargeToStatementDTO: {
+            /** Format: int32 */
+            month: number;
+            /** Format: int32 */
+            year: number;
         };
         NetPositionAnnualDiffDTO: {
             /** Format: double */

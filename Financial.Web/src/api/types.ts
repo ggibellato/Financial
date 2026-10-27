@@ -138,6 +138,7 @@ export type MaeLedgerEntryValuesUpdateDto = Schema<'MaeLedgerEntryValuesUpdateDT
 export type ExpenseDto = Schema<'ExpenseDTO'>
 export type ExpenseCreateDto = Schema<'ExpenseCreateDTO'>
 export type ExpenseUpdateDto = Schema<'ExpenseUpdateDTO'>
+export type MoveChargeToStatementDto = Schema<'MoveChargeToStatementDTO'>
 export type BankDto = Schema<'BankDTO'>
 export type BankCreateDto = Schema<'BankCreateDTO'>
 export type BankUpdateDto = Schema<'BankUpdateDTO'>

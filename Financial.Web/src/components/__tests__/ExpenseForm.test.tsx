@@ -424,3 +424,25 @@ describe('ExpenseForm with a locked bank', () => {
     expect(optionNames(screen.getByLabelText(/^Payment Source/))).toContain('Chase')
   })
 })
+
+describe('ExpenseForm with a locked card', () => {
+  const cardProps = { ...baseProps, paymentMode: 'card' as const, paymentSource: '', creditCardId: 'card-baamex', creditCards: [] }
+
+  it('shows the locked card as read-only text and names the record a charge', () => {
+    render(<ExpenseForm {...cardProps} date="2026-10-14" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
+
+    expect(screen.getByRole('heading', { name: 'New Charge' })).toBeInTheDocument()
+    expect(screen.getByText('BaAmex')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^Card/ })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
+    expect(screen.getByRole('button', { name: 'Add Charge' })).toBeInTheDocument()
+  })
+
+  it('titles an edit Edit Charge and keeps the statement month editable', () => {
+    render(<ExpenseForm {...cardProps} isEditing invoiceDate="2026-11" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
+
+    expect(screen.getByRole('heading', { name: 'Edit Charge' })).toBeInTheDocument()
+    expect(screen.getByLabelText('Statement month')).toBeEnabled()
+  })
+})

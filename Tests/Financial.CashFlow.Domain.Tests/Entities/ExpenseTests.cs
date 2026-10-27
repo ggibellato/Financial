@@ -955,4 +955,48 @@ public class ExpenseTests
 
         changes.Should().BeTrue();
     }
+
+    [Fact]
+    public void MoveToStatement_UnpaidChargeToALaterMonth_MovesItsInvoiceMonth()
+    {
+        var charge = Expense.Create(new DateOnly(2026, 9, 10), "Taxi", 30m, Mercado, null, BaAmex);
+
+        charge.MoveToStatement(new DateOnly(2026, 10, 15));
+
+        charge.InvoiceDate.Should().Be(new DateOnly(2026, 10, 1));
+    }
+
+    [Theory]
+    [InlineData(9)]
+    [InlineData(8)]
+    public void MoveToStatement_SameOrEarlierMonth_Throws(int month)
+    {
+        var charge = Expense.Create(new DateOnly(2026, 9, 10), "Taxi", 30m, Mercado, null, BaAmex);
+
+        var act = () => charge.MoveToStatement(new DateOnly(2026, month, 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage(Expense.LaterUnpaidStatementMessage);
+    }
+
+    [Fact]
+    public void MoveToStatement_BankExpense_Throws()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 9, 10), "Lidl", 30m, Mercado, Barclays, null);
+
+        var act = () => expense.MoveToStatement(new DateOnly(2026, 10, 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage(Expense.OnlyUnpaidChargeMovesMessage);
+    }
+
+    [Fact]
+    public void MoveToStatement_InactiveCard_Throws()
+    {
+        var card = TestAccounts.CreditCard("Closed card");
+        var charge = Expense.Create(new DateOnly(2026, 9, 10), "Taxi", 30m, Mercado, null, card);
+        card.SetActive(false);
+
+        var act = () => charge.MoveToStatement(new DateOnly(2026, 10, 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Credit card 'Closed card' is inactive and cannot be used for new entries.");
+    }
 }

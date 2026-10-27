@@ -230,7 +230,7 @@ export function useExpenseForm(
   categories: CategoryDto[],
   creditCards: CreditCardDto[],
   onSaved: (isEdit: boolean) => void,
-  { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
+  { lockedBank, lockedCard, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseExpenseFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -243,10 +243,10 @@ export function useExpenseForm(
   }
 
   function showCreateForm(requestedMode: PaymentMode) {
-    const mode = lockedBank ? 'bank' : requestedMode
+    const mode = lockedBank ? 'bank' : lockedCard ? 'card' : requestedMode
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
-    const creditCardId = mode === 'card' ? (getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
+    const creditCardId = mode === 'card' ? (lockedCard?.id ?? getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
     const storedCategoryId = getStoredDefault(CATEGORY_KEY)
     const categoryId =
@@ -352,7 +352,7 @@ export function useExpenseForm(
       .then(() => {
         setStoredDefault(DATE_KEY, state.date)
         if (state.paymentMode === 'card') {
-          setStoredDefault(CREDIT_CARD_KEY, state.creditCardId)
+          if (!lockedCard) setStoredDefault(CREDIT_CARD_KEY, state.creditCardId)
         } else if (!lockedBank) {
           setStoredDefault(PAYMENT_SOURCE_KEY, state.paymentSource)
         }

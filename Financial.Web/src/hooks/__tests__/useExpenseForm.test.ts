@@ -814,3 +814,42 @@ describe('useExpenseForm account settings', () => {
     expect(result.current.isOpen).toBe(true)
   })
 })
+
+describe('useExpenseForm with a locked card', () => {
+  const LOCKED_AMEX = { id: 'card-baamex', name: 'BaAmex' }
+  let onSaved: () => void
+
+  beforeEach(() => {
+    createExpenseMock.mockReset()
+    updateExpenseMock.mockReset()
+    onSaved = vi.fn<() => void>()
+    sessionStorage.clear()
+  })
+
+  it('opens in card mode on the locked card whatever mode is asked for', () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX }))
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current.paymentMode).toBe('card')
+    expect(result.current.creditCardId).toBe('card-baamex')
+    expect(result.current.paymentSource).toBe('')
+  })
+
+  it('sends the locked card with the invoice month of the date and does not remember it as the default card', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX }))
+    act(() => result.current.showCreateForm('card'))
+    act(() => result.current.setField('date', '2026-10-14'))
+    act(() => result.current.setField('description', 'Taxi'))
+    act(() => result.current.setField('value', '30'))
+    await act(() => result.current.submit())
+
+    expect(createExpenseMock).toHaveBeenCalledWith(
+      expect.objectContaining({ creditCardId: 'card-baamex', paymentSourceBankId: null, invoiceDate: '2026-10-01', roundUpAmount: null }),
+    )
+    const monthly = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    act(() => monthly.result.current.showCreateForm('card'))
+    expect(monthly.result.current.creditCardId).toBe('')
+  })
+})

@@ -5,8 +5,14 @@ export interface LockedBank {
   name: string
 }
 
+export interface LockedCard {
+  id: string
+  name: string
+}
+
 export interface AccountFormSettings {
   lockedBank?: LockedBank
+  lockedCard?: LockedCard
   keepOpenAfterSave?: boolean
   viewedMonth?: YearMonth
 }

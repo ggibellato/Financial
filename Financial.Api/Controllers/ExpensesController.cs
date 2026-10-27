@@ -66,6 +66,21 @@ public sealed class ExpensesController : ControllerBase
         return Ok();
     }
 
+    [HttpPost("{id:guid}/move-to-statement")]
+    [ProducesResponseType(typeof(ExpenseDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ExpenseDTO>> MoveToStatement(Guid id, [FromBody] MoveChargeToStatementDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        var expense = await _expenseService.MoveToStatementAsync(id, request);
+        return Ok(expense);
+    }
+
     /// <summary>Lists expenses recorded in a given month.</summary>
     /// <param name="year">The year.</param>
     /// <param name="month">The month (1-12).</param>

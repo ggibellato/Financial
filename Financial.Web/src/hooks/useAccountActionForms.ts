@@ -7,6 +7,7 @@ import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
 import { useIncomeForm } from './useIncomeForm'
+import { useMoveChargeForm } from './useMoveChargeForm'
 import { usePayRecurringBill } from './usePayRecurringBill'
 import type { YearMonth } from './useMonthSelection'
 
@@ -39,13 +40,20 @@ export function useAccountActionForms(
   const accountId = currentAccount?.id
   const accountName = currentAccount?.name
   const accountCurrency = currentAccount?.currency
+  const isCard = currentAccount?.hasStatements ?? false
   const lockedBank = useMemo(
-    () => (accountId && accountName && accountCurrency ? { id: accountId, name: accountName, currency: accountCurrency } : undefined),
-    [accountId, accountName, accountCurrency],
+    () =>
+      !isCard && accountId && accountName && accountCurrency ? { id: accountId, name: accountName, currency: accountCurrency } : undefined,
+    [isCard, accountId, accountName, accountCurrency],
+  )
+  const lockedCard = useMemo(
+    () => (isCard && accountId && accountName ? { id: accountId, name: accountName } : undefined),
+    [isCard, accountId, accountName],
   )
   const balances = currentAccount ? [{ bankId: currentAccount.id, bank: currentAccount.name, balance: currentAccount.balance }] : []
   const isNextEntryFocusPending = useRef(false)
   const settings = { lockedBank, keepOpenAfterSave: true, viewedMonth }
+  const expenseNoun = isCard ? 'Charge' : 'Expense'
 
   const saved = (message: string) => {
     onSaved(message)
@@ -56,8 +64,8 @@ export function useAccountActionForms(
     options.banks,
     options.categories,
     NO_CREDIT_CARDS,
-    (isEdit) => saved(isEdit ? 'Expense updated' : 'Expense added'),
-    settings,
+    (isEdit) => saved(isEdit ? `${expenseNoun} updated` : `${expenseNoun} added`),
+    { ...settings, lockedCard },
   )
   const incomeForm = useIncomeForm(
     options.incomeSources,
@@ -79,9 +87,11 @@ export function useAccountActionForms(
   )
 
   const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
+  const moveForm = useMoveChargeForm(onSaved)
 
   const openers: Record<AccountFormAction, () => void> = {
     AddExpense: () => expenseForm.showCreateForm('bank'),
+    AddCharge: () => expenseForm.showCreateForm('card'),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
@@ -90,7 +100,7 @@ export function useAccountActionForms(
   }
 
   const createAction = (): AccountFormAction | null => {
-    if (expenseForm.isOpen && !expenseForm.isEditing) return 'AddExpense'
+    if (expenseForm.isOpen && !expenseForm.isEditing) return isCard ? 'AddCharge' : 'AddExpense'
     if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return 'AddIncome'
     if (transferForm.isOpen && !transferForm.isEditing) return transferForm.direction === 'to' ? 'TransferTo' : 'TransferFrom'
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
@@ -98,10 +108,11 @@ export function useAccountActionForms(
     return null
   }
   const activeAction = createAction()
-  const isAnyFormOpen = expenseForm.isOpen || incomeForm.isIncomeFormOpen || transferForm.isOpen || adjustmentForm.isOpen
+  const isAnyFormOpen =
+    expenseForm.isOpen || incomeForm.isIncomeFormOpen || transferForm.isOpen || adjustmentForm.isOpen || moveForm.isOpen
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
-  const activeFormKey = activeAction ?? (editingRowKey && `edit:${editingRowKey}`)
+  const activeFormKey = activeAction ?? (editingRowKey && `${moveForm.isOpen ? 'move' : 'edit'}:${editingRowKey}`)
 
   const isDirty =
     expenseForm.isDirty ||
@@ -109,6 +120,7 @@ export function useAccountActionForms(
     transferForm.isDirty ||
     adjustmentForm.isDirty ||
     payBillForm.isDirty ||
+    moveForm.isDirty ||
     screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLButtonElement | null>(null)
@@ -120,6 +132,7 @@ export function useAccountActionForms(
     if (transferForm.isOpen) transferForm.cancel()
     if (adjustmentForm.isOpen) adjustmentForm.cancel()
     if (payBillForm.isOpen) payBillForm.cancel()
+    if (moveForm.isOpen) moveForm.cancel()
     screenForm.close()
   }
 
@@ -172,6 +185,15 @@ export function useAccountActionForms(
     })
   }
 
+  const openRowMove = (row: AccountTransactionDto, button: HTMLButtonElement) => {
+    discardPrompt.confirmDiscard(() => {
+      closeForms()
+      openerRef.current = button
+      setEditedRowKey(rowKey(row))
+      if (row.expense) moveForm.open(row.expense)
+    })
+  }
+
   const closeFormsOf = (row: AccountTransactionDto) => {
     if (editingRowKey === rowKey(row)) closeForms()
   }
@@ -188,13 +210,16 @@ export function useAccountActionForms(
     adjustmentForm,
     transferForm,
     payBillForm,
+    moveForm,
     lockedBank,
+    lockedCard,
     isAccountCurrent,
     activeAction,
     discardPrompt,
     formAreaRef,
     openAction,
     openRowEdit,
+    openRowMove,
     closeActiveForm,
     closeFormsOf,
     guardChange,

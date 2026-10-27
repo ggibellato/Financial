@@ -81,6 +81,7 @@ import type {
   OpenLotDto,
   MaeLedgerTotalsDto,
   MarkCardStatementPaidDto,
+  MoveChargeToStatementDto,
   PaymentDueDto,
   PortfolioAssetSummaryItemDto,
   PortfolioBreakdownItemDto,
@@ -268,6 +269,7 @@ export interface FinancialApiClient {
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
+  moveChargeToStatement: (id: string, request: MoveChargeToStatementDto) => Promise<ExpenseDto>
   getIncomesByMonth: (year: number, month: number) => Promise<IncomeDto[]>
   getTitheSummaryByMonth: (year: number, month: number) => Promise<TitheSummaryDto>
   updateTitheCarryForward: (year: number, month: number, request: TitheCarryForwardUpdateDto) => Promise<TitheSummaryDto>
@@ -749,6 +751,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteExpense: (id) => requestVoid(`/expenses/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    moveChargeToStatement: (id, requestBody) =>
+      request<ExpenseDto>(`/expenses/${encodeURIComponent(id)}/move-to-statement`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
     getIncomesByMonth: (year, month) => request<IncomeDto[]>(`/incomes/month/${year}/${month}`),
     getTitheSummaryByMonth: (year, month) => request<TitheSummaryDto>(`/tithe/month/${year}/${month}`),
     updateTitheCarryForward: (year, month, requestBody) =>

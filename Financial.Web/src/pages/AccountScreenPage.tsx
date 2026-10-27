@@ -12,6 +12,7 @@ import DiscardChangesDialog from '../components/DiscardChangesDialog'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm from '../components/ExpenseForm'
 import IncomeForm from '../components/IncomeForm'
+import MoveChargeForm from '../components/MoveChargeForm'
 import PayRecurringBillForm from '../components/PayRecurringBillForm'
 import TransferForm from '../components/TransferForm'
 import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
@@ -32,7 +33,9 @@ export default function AccountScreenPage() {
   const hasFormActions = formActionsOf(allowedActions).length > 0
   const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
+  const isFocusAfterRowLeavesPending = useRef(false)
   const notifySaved = (message: string) => {
+    isFocusAfterRowLeavesPending.current = true
     void screen.refreshSilently()
     showSuccess(message)
   }
@@ -53,29 +56,30 @@ export default function AccountScreenPage() {
     adjustmentForm,
     transferForm,
     payBillForm,
+    moveForm,
     discardPrompt,
     lockedBank,
+    lockedCard,
     isAccountCurrent,
     activeAction,
     formAreaRef,
     openAction,
     openRowEdit,
+    openRowMove,
     closeActiveForm,
     closeFormsOf,
     guardChange,
   } = forms
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
-  const isFocusAfterDeletePending = useRef(false)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
-    isFocusAfterDeletePending.current = true
     notifySaved(`${recordTitle(row.kind)} deleted`)
   })
   const deleteKind = rowDelete.row?.kind ?? ''
 
   useEffect(() => {
-    if (!isFocusAfterDeletePending.current) return
-    isFocusAfterDeletePending.current = false
+    if (!isFocusAfterRowLeavesPending.current) return
+    isFocusAfterRowLeavesPending.current = false
     if (document.activeElement === document.body) transactionsHeadingRef.current?.focus()
   }, [screen.transactions])
 
@@ -152,6 +156,7 @@ export default function AccountScreenPage() {
             isSettled={expenseForm.isSettled}
             isSaving={expenseForm.isSaving}
             lockedBank={lockedBank}
+            lockedCard={lockedCard}
             saveError={expenseForm.saveError}
             saveErrorFields={expenseForm.saveErrorFields}
             onFieldChange={expenseForm.setField}
@@ -159,6 +164,7 @@ export default function AccountScreenPage() {
             onCancel={closeActiveForm}
           />
         )}
+        {moveForm.isOpen && <MoveChargeForm moveForm={moveForm} onCancel={closeActiveForm} />}
         {incomeForm.isIncomeFormOpen && (
           <IncomeForm
             isEditing={incomeForm.isIncomeEditing}
@@ -292,6 +298,8 @@ export default function AccountScreenPage() {
                 isEditDisabled={!formOptions.isReady || !isAccountCurrent}
                 onEdit={openRowEdit}
                 onDelete={rowDelete.requestDelete}
+                onMove={isCard ? openRowMove : undefined}
+                isMoveDisabled={!isAccountCurrent}
               />
             )}
           </>
