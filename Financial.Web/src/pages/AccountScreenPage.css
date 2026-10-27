@@ -105,13 +105,12 @@
   flex-shrink: 0;
 }
 
-.card-statements__row--viewed {
+.data-table tbody tr.card-statements__row--viewed {
   background-color: var(--colorBrandBackground2);
 }
 
 .card-statements__month {
   display: inline-flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
 }

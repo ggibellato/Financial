@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { ApiError } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
@@ -26,10 +27,14 @@ interface UnmarkRequest {
 
 function validatePayForm(bankId: string, date: string): Partial<Record<PayStatementField, string>> {
   const errors: Partial<Record<PayStatementField, string>> = {}
-  if (!bankId) errors.bankId = 'Select a bank'
-  if (!date) errors.date = 'Enter a date'
+  if (!bankId) errors.bankId = 'Select a bank.'
+  if (!date) errors.date = 'Enter a date.'
   else if (date > todayIsoDate()) errors.date = 'Date must not be in the future.'
   return errors
+}
+
+function isConflict(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 409
 }
 
 export function useCardStatements(cardId: string | null, onChanged: (message: string) => void) {
@@ -42,9 +47,20 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
   const payers = useAsyncResource(() => (cardId ? apiClient.getBanks() : null), [cardId], PAYERS_LOAD_ERROR)
   const [payForm, setPayForm] = useState<PayForm | null>(null)
   const [unmark, setUnmark] = useState<UnmarkRequest | null>(null)
+  const [savedCount, setSavedCount] = useState(0)
+  const [failedSubmit, setFailedSubmit] = useState<{ firstInvalidField: PayStatementField } | null>(null)
+  const [formsCardId, setFormsCardId] = useState(cardId)
 
-  const openPayForm = (statement: AccountStatementDto) =>
+  if (formsCardId !== cardId) {
+    setFormsCardId(cardId)
+    setPayForm(null)
+    setUnmark(null)
+  }
+
+  const openPayForm = (statement: AccountStatementDto) => {
+    if (payForm?.isSaving) return
     setPayForm({ statement, bankId: '', date: todayIsoDate(), isSaving: false, error: null, fieldErrors: {} })
+  }
 
   const closePayForm = () => setPayForm(null)
 
@@ -58,6 +74,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     const fieldErrors = validatePayForm(payForm.bankId, payForm.date)
     if (Object.keys(fieldErrors).length > 0) {
       setPayForm({ ...payForm, fieldErrors, error: null })
+      setFailedSubmit({ firstInvalidField: fieldErrors.bankId ? 'bankId' : 'date' })
       return
     }
 
@@ -66,12 +83,14 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       .markCardStatementPaid(payForm.statement.id, { paymentSourceBankId: payForm.bankId, date: payForm.date })
       .then(() => {
         setPayForm(null)
+        setSavedCount((count) => count + 1)
         void statements.refresh()
         onChanged('Statement paid')
       })
-      .catch((err: unknown) =>
-        setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement') }),
-      )
+      .catch((err: unknown) => {
+        setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement') })
+        if (isConflict(err)) void statements.refresh()
+      })
   }
 
   const requestUnmark = (statement: AccountStatementDto) => setUnmark({ statement, isBusy: false, error: null })
@@ -85,12 +104,14 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       .unmarkCardStatementPaid(unmark.statement.id)
       .then(() => {
         setUnmark(null)
+        setSavedCount((count) => count + 1)
         void statements.refresh()
         onChanged('Statement unmarked')
       })
-      .catch((err: unknown) =>
-        setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement') }),
-      )
+      .catch((err: unknown) => {
+        setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement') })
+        if (isConflict(err)) void statements.refresh()
+      })
   }
 
   return {
@@ -99,9 +120,12 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     error: statements.error,
     retry: statements.retry,
     payers: (payers.data ?? []).filter((bank) => bank.isActive),
+    isLoadingPayers: payers.isLoading,
     payersError: payers.error,
     retryPayers: payers.retry,
     payForm,
+    savedCount,
+    failedSubmit,
     isPayFormDirty: payForm !== null && (payForm.bankId !== '' || payForm.date !== todayIsoDate()),
     openPayForm,
     closePayForm,

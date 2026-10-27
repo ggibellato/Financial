@@ -402,6 +402,16 @@ public class AccountQueryServiceTests
         var act = () => _sut.GetStatements(_barclays.Id);
 
         act.Should().Throw<ArgumentException>().WithMessage("Barclays is not a card account.");
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountQueryService.GetAccountStatements");
+    }
+
+    [Fact]
+    public void GetStatements_UnknownId_ThrowsKeyNotFoundAndFailsTheSpan()
+    {
+        var act = () => _sut.GetStatements(Guid.NewGuid());
+
+        act.Should().Throw<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.AccountQueryService.GetAccountStatements");
     }
 
     [Fact]

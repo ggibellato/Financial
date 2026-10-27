@@ -22,9 +22,12 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
     error: null,
     retry: vi.fn(),
     payers: [{ id: 'barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true }],
+    isLoadingPayers: false,
     payersError: null,
     retryPayers: vi.fn(),
     payForm: null,
+    savedCount: 0,
+    failedSubmit: null,
     isPayFormDirty: false,
     openPayForm: vi.fn(),
     closePayForm: vi.fn(),
@@ -38,10 +41,25 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
   }
 }
 
-function renderTab(overrides: Partial<CardStatements> = {}, canAct = true) {
+const runAtOnce = (change: () => void) => change()
+
+function tabElement(statements: CardStatements, canAct: boolean, guardChange: (change: () => void) => void = runAtOnce) {
+  return (
+    <CardStatementsTab
+      cardStatements={statements}
+      viewedYear={2026}
+      viewedMonth={10}
+      currency="GBP"
+      canAct={canAct}
+      guardChange={guardChange}
+    />
+  )
+}
+
+function renderTab(overrides: Partial<CardStatements> = {}, canAct = true, guardChange?: (change: () => void) => void) {
   const statements = cardStatements(overrides)
-  render(<CardStatementsTab cardStatements={statements} viewedYear={2026} viewedMonth={10} canAct={canAct} />)
-  return statements
+  const view = render(tabElement(statements, canAct, guardChange))
+  return { ...statements, rerenderWith: (next: Partial<CardStatements>) => view.rerender(tabElement(cardStatements({ ...overrides, ...next }), canAct, guardChange)) }
 }
 
 function rowOf(month: string) {
@@ -53,7 +71,7 @@ describe('CardStatementsTab', () => {
     renderTab()
 
     expect(within(rowOf('October 2026')).getByText('210.45')).toBeInTheDocument()
-    expect(within(rowOf('October 2026')).getByText('3 Nov 2026')).toBeInTheDocument()
+    expect(within(rowOf('October 2026')).getByText('03/11/2026')).toBeInTheDocument()
     expect(within(rowOf('November 2026')).getByText('—')).toBeInTheDocument()
     expect(within(rowOf('September 2026')).getByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
     expect(within(rowOf('October 2026')).getByText('Unpaid')).toBeInTheDocument()
@@ -64,13 +82,17 @@ describe('CardStatementsTab', () => {
   it('lists the newest month first and sorts by a header', async () => {
     renderTab()
 
-    const months = () => screen.getAllByRole('row').slice(1).map((row) => row.cells[0].textContent)
+    const months = () => screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
     expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
 
     await userEvent.click(screen.getByRole('button', { name: /^Total/ }))
 
     expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
     expect(screen.getByRole('columnheader', { name: /^Total/ })).toHaveAttribute('aria-sort', 'ascending')
+
+    await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
+
+    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
   })
 
   it('shows a skeleton while loading', () => {
@@ -116,10 +138,29 @@ describe('CardStatementsTab', () => {
     expect(statements.openPayForm).not.toHaveBeenCalled()
   })
 
-  it('shows no actions when the card cannot act', () => {
+  it('says why an inactive card offers no Pay or Unmark', () => {
     renderTab({}, false)
 
     expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
+    expect(screen.getByText("This card is inactive, so its statements can't be paid or unmarked here.")).toBeInTheDocument()
+  })
+
+  it('opens Pay only through the discard guard', async () => {
+    const guardChange = vi.fn()
+    const statements = renderTab({}, true, guardChange)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Pay October 2026 statement' }))
+
+    expect(guardChange).toHaveBeenCalledTimes(1)
+    expect(statements.openPayForm).not.toHaveBeenCalled()
+  })
+
+  it('moves focus to the Statements heading after a payment or unmark is saved', () => {
+    const statements = renderTab()
+
+    statements.rerenderWith({ savedCount: 1 })
+
+    expect(screen.getByRole('heading', { name: 'Statements' })).toHaveFocus()
   })
 
   it('shows the pay form with the amount read-only, its errors and its saving state', () => {
@@ -130,16 +171,36 @@ describe('CardStatementsTab', () => {
         date: '2026-10-16',
         isSaving: false,
         error: 'This statement is already paid.',
-        fieldErrors: { bankId: 'Select a bank', date: 'Date must not be in the future.' },
+        fieldErrors: { bankId: 'Select a bank.', date: 'Date must not be in the future.' },
       },
     })
 
     expect(screen.getByRole('heading', { name: 'Pay October 2026 statement' })).toBeInTheDocument()
     expect(screen.getByText('This statement is already paid.')).toBeInTheDocument()
-    expect(screen.getByText('Select a bank', { selector: '[id]' })).toBeInTheDocument()
+    expect(screen.getByText('Select a bank.')).toBeInTheDocument()
     expect(screen.getByText('Date must not be in the future.')).toBeInTheDocument()
-    expect(screen.getAllByText('210.45')).toHaveLength(2)
+    expect(screen.getByLabelText('Amount')).toHaveValue('£210.45')
+    expect(screen.getByLabelText('Amount')).toHaveAttribute('readonly')
     expect(screen.getByLabelText(/^Bank/)).toHaveFocus()
+  })
+
+  it('moves focus to the first invalid field after a failed submit', () => {
+    const payForm = { statement: OCTOBER, bankId: 'barclays', date: '', isSaving: false, error: null, fieldErrors: { date: 'Enter a date.' } }
+    const statements = renderTab({ payForm })
+
+    statements.rerenderWith({ payForm, failedSubmit: { firstInvalidField: 'date' } })
+
+    expect(screen.getByLabelText(/^Date/)).toHaveFocus()
+  })
+
+  it('disables the bank picker while the banks load', () => {
+    renderTab({
+      isLoadingPayers: true,
+      payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+    })
+
+    expect(screen.getByLabelText(/^Bank/)).toBeDisabled()
+    expect(screen.getByRole('option', { name: 'Loading banks…' })).toBeInTheDocument()
   })
 
   it('disables the pay form while saving', () => {

@@ -369,12 +369,12 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     {
         await MarkPaidAsync(OctoberStatementId, new DateOnly(2026, 10, 12));
 
-        var statements = await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements");
+        var statements = (await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements"))!;
         var bankResponse = await Client.GetAsync($"{Api}/accounts/{BarclaysId}/statements");
 
         using (new AssertionScope())
         {
-            statements!.Select(statement => statement.Id).Should().Equal(Guid.Parse(OctoberStatementId), Guid.Parse(SeptemberStatementId));
+            statements.Select(statement => statement.Id).Should().Equal(Guid.Parse(OctoberStatementId), Guid.Parse(SeptemberStatementId));
             statements[0].Should().BeEquivalentTo(new
             {
                 Year = 2026, Month = 10, Total = 30m, IsPaid = true, DueDate = (DateOnly?)null,

@@ -100,18 +100,13 @@ public sealed class AccountQueryService : IAccountQueryService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            var endOfMonth = EndOfMonth(year, month);
-            var startOfMonth = new DateOnly(year, month, 1);
             var account = FindAccountOrThrow(id);
             var statements = _repository.GetCardStatements().ToList();
-            var isCard = account.Has(Capability.HasStatements);
+            var rows = account.Has(Capability.HasStatements)
+                ? CardRows(account, year, month, statements)
+                : AccountRows(account, year, month, statements);
 
-            var result = AccountTransactionReader.Read(_repository)
-                .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth && !(isCard && record is Expense))
-                .SelectMany(record => ToRows(record, account, statements))
-                .Concat(isCard ? CardChargeRows(account, year, month, statements) : [])
-                .OrderByDescending(row => row.Date)
-                .ToList();
+            var result = rows.OrderByDescending(row => row.Date).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAccountTransactions");
@@ -186,6 +181,22 @@ public sealed class AccountQueryService : IAccountQueryService
             .MaxBy(charge => charge.Date) is { PaymentSourceAccount: { } bank } latest
             ? (latest.Date, bank)
             : null;
+    }
+
+    private IEnumerable<AccountTransactionDTO> AccountRows(Account account, int year, int month, IReadOnlyList<CardStatement> statements) =>
+        RecordsDatedIn(year, month).SelectMany(record => ToRows(record, account, statements));
+
+    private IEnumerable<AccountTransactionDTO> CardRows(Account card, int year, int month, IReadOnlyList<CardStatement> statements) =>
+        RecordsDatedIn(year, month)
+            .Where(record => record is not Expense)
+            .SelectMany(record => ToRows(record, card, statements))
+            .Concat(CardChargeRows(card, year, month, statements));
+
+    private IEnumerable<IAccountTransaction> RecordsDatedIn(int year, int month)
+    {
+        var startOfMonth = new DateOnly(year, month, 1);
+        var endOfMonth = EndOfMonth(year, month);
+        return AccountTransactionReader.Read(_repository).Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth);
     }
 
     private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, int year, int month, IReadOnlyList<CardStatement> statements) =>

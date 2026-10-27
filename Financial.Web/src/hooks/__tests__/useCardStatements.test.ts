@@ -104,13 +104,16 @@ describe('useCardStatements', () => {
 
     act(() => result.current.submitPayForm())
 
-    expect(result.current.payForm?.fieldErrors).toEqual({ bankId: 'Select a bank', date: 'Date must not be in the future.' })
+    expect(result.current.payForm?.fieldErrors).toEqual({ bankId: 'Select a bank.', date: 'Date must not be in the future.' })
+    expect(result.current.failedSubmit).toEqual({ firstInvalidField: 'bankId' })
     expect(markCardStatementPaidMock).not.toHaveBeenCalled()
 
+    act(() => result.current.setPayField('bankId', 'barclays'))
     act(() => result.current.setPayField('date', ''))
     act(() => result.current.submitPayForm())
 
-    expect(result.current.payForm?.fieldErrors.date).toBe('Enter a date')
+    expect(result.current.payForm?.fieldErrors.date).toBe('Enter a date.')
+    expect(result.current.failedSubmit).toEqual({ firstInvalidField: 'date' })
   })
 
   it('pays with the chosen bank and date, then closes, reloads and reports it', async () => {
@@ -125,6 +128,7 @@ describe('useCardStatements', () => {
 
     expect(result.current.payForm?.isSaving).toBe(true)
     await waitFor(() => expect(result.current.payForm).toBeNull())
+    expect(result.current.savedCount).toBe(1)
     expect(markCardStatementPaidMock).toHaveBeenCalledWith('s-oct', { paymentSourceBankId: 'barclays', date: '2026-10-12' })
     expect(onChanged).toHaveBeenCalledWith('Statement paid')
     expect(getAccountStatementsMock).toHaveBeenCalledTimes(2)
@@ -141,6 +145,43 @@ describe('useCardStatements', () => {
     await waitFor(() => expect(result.current.payForm?.error).toBe('This statement is already paid.'))
     expect(result.current.payForm?.isSaving).toBe(false)
     expect(result.current.payForm?.bankId).toBe('barclays')
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('keeps the list as it is when a payment fails for another reason', async () => {
+    markCardStatementPaidMock.mockRejectedValue(new ApiError('The paying account must be in the card\'s currency (GBP).', 400))
+    const { result } = await renderLoaded()
+    act(() => result.current.openPayForm(OCTOBER))
+    act(() => result.current.setPayField('bankId', 'barclays'))
+
+    act(() => result.current.submitPayForm())
+
+    await waitFor(() => expect(result.current.payForm?.error).toBe('The paying account must be in the card\'s currency (GBP).'))
+    expect(getAccountStatementsMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('ignores opening another payment while one is saving', async () => {
+    markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
+    const { result } = await renderLoaded()
+    act(() => result.current.openPayForm(OCTOBER))
+    act(() => result.current.setPayField('bankId', 'barclays'))
+    act(() => result.current.submitPayForm())
+
+    act(() => result.current.openPayForm({ ...OCTOBER, id: 's-nov', month: 11 }))
+
+    expect(result.current.payForm?.statement.id).toBe('s-oct')
+  })
+
+  it('drops an open payment and unmark request when the card changes', async () => {
+    const { result, rerender } = renderHook(({ cardId }) => useCardStatements(cardId, vi.fn()), { initialProps: { cardId: CARD_ID as string | null } })
+    await waitFor(() => expect(result.current.statements).toHaveLength(2))
+    act(() => result.current.openPayForm(OCTOBER))
+    act(() => result.current.requestUnmark(SEPTEMBER))
+
+    rerender({ cardId: null })
+
+    expect(result.current.payForm).toBeNull()
+    expect(result.current.unmark).toBeNull()
   })
 
   it('unmarks after confirmation, then reloads and reports it', async () => {
@@ -164,6 +205,7 @@ describe('useCardStatements', () => {
     act(() => result.current.confirmUnmark())
 
     await waitFor(() => expect(result.current.unmark?.error).toBe('The payment for this statement was changed elsewhere. Reload and try again.'))
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
 
     act(() => result.current.cancelUnmark())
 

@@ -276,14 +276,13 @@ export default function AccountScreenPage() {
           className="account-screen__transactions"
           aria-labelledby="account-screen-tab-statements"
         >
-          <Text as="h2" size={400} weight="semibold">
-            Statements
-          </Text>
           <CardStatementsTab
             cardStatements={cardStatements}
             viewedYear={screen.year}
             viewedMonth={screen.month}
+            currency={account?.currency ?? 'GBP'}
             canAct={account?.isActive ?? false}
+            guardChange={guardScreenChange}
           />
         </section>
       ) : (
