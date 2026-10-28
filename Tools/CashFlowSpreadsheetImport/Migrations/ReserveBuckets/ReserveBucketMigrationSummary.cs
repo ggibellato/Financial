@@ -1,6 +1,7 @@
 using System.Text;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
 
