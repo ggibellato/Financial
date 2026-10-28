@@ -41,6 +41,43 @@ public class ReserveBucketMigratorTests
     }
 
     [Fact]
+    public void Migrate_CategoryNamedReservaInAnyCase_BecomesReservasCategory()
+    {
+        var data = CashFlowData.Create();
+        data.AddCategory(Category.Create("Mercado"));
+        var category = Category.Create("RESERVA");
+        data.AddCategory(category);
+
+        ReserveBucketMigrator.Migrate(data);
+
+        TestAccounts.ReservaIn(data).Category.Should().BeSameAs(category);
+    }
+
+    [Fact]
+    public void Migrate_NoCategoryNamedReserva_LeavesReservaWithoutACategory()
+    {
+        var data = CashFlowData.Create();
+        data.AddCategory(Category.Create("Mercado"));
+
+        ReserveBucketMigrator.Migrate(data);
+
+        TestAccounts.ReservaIn(data).Category.Should().BeNull();
+    }
+
+    [Fact]
+    public void Migrate_ReservaAlreadyHasACategory_KeepsIt()
+    {
+        var data = CashFlowData.Create();
+        var savings = Category.Create("Savings");
+        data.AddAccount(TestAccounts.Pots("Reserva", category: savings));
+        data.AddCategory(Category.Create("Reserva"));
+
+        ReserveBucketMigrator.Migrate(data);
+
+        TestAccounts.ReservaIn(data).Category.Should().BeSameAs(savings);
+    }
+
+    [Fact]
     public void Migrate_WithAPotsAccountUnderAnotherName_SeedsIntoItWithoutCreatingAnother()
     {
         var data = CashFlowData.Create();

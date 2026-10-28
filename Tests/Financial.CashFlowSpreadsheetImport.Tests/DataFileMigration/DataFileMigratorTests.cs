@@ -27,7 +27,7 @@ public class DataFileMigratorTests
             result.FromVersion.Should().Be(1);
             result.ToVersion.Should().Be(4);
             JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(4);
-            data.Accounts.Last().Should().BeEquivalentTo(new { Name = "Reserva", Template = AccountTemplate.Pots, Pots = Array.Empty<object>() });
+            data.Accounts.Last().Should().BeEquivalentTo(new { Name = "Reserva", Template = AccountTemplate.Pots, Pots = Array.Empty<object>(), Category = new { Name = "Reserva" } });
             accounts.Keys.Should().BeEquivalentTo(V1DataFile.BarclaysId, V1DataFile.Trading212Id, V1DataFile.ChaseId);
             accounts.Values.Should().OnlyContain(a => a.Template == AccountTemplate.Bank && a.Currency == Currency.GBP && a.IsActive);
             accounts[V1DataFile.BarclaysId].Name.Should().Be("Barclays");
@@ -45,7 +45,7 @@ public class DataFileMigratorTests
             result.StepSummaries.Should().Equal(
                 "3 banks became accounts; 5 references renamed",
                 "0 cards became accounts; 0 statements added; 0 due dates moved to statements",
-                "Reserva Pots account created with 0 pots");
+                "Reserva Pots account created with 0 pots; category Reserva");
         }
     }
 
@@ -108,7 +108,7 @@ public class DataFileMigratorTests
             result.FromVersion.Should().Be(2);
             result.StepSummaries.Should().Equal(
                 "5 cards became accounts; 3 statements added; 2 due dates moved to statements",
-                "Reserva Pots account created with 0 pots");
+                "Reserva Pots account created with 0 pots; category Reserva");
             cards.Keys.Should().Equal(V2DataFile.Visa8003Id, V2DataFile.Visa6007Id, V2DataFile.ChaseMasterId, V2DataFile.AmexId, V2DataFile.PaypalId);
             cards.Values.Should().OnlyContain(a => a.Template == AccountTemplate.CreditCard && a.Currency == Currency.GBP);
             cards[V2DataFile.ChaseMasterId].IsActive.Should().BeFalse();

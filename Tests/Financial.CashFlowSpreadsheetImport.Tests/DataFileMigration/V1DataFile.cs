@@ -12,6 +12,7 @@ internal static class V1DataFile
     public const string AdjustmentId = "e0000000-0000-0000-0000-000000000005";
 
     private const string CategoryId = "c0000000-0000-0000-0000-000000000001";
+    private const string ReservaCategoryId = "c0000000-0000-0000-0000-000000000002";
     private const string IncomeSourceId = "c0000000-0000-0000-0000-000000000002";
 
     public static string WithBankReference(string bankId) => Build(bankId);
@@ -35,7 +36,7 @@ internal static class V1DataFile
           "IncomeSources": [{ "Id": "{{IncomeSourceId}}", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false }],
           "Incomes": [{ "Id": "{{IncomeId}}", "Date": "2026-09-01", "IncomeSourceId": "{{IncomeSourceId}}", "GrossValue": null, "NetValue": 174.27, "BankId": "{{BarclaysId}}", "Description": null, "SplitToReserve": false }],
           "CreditCards": [],
-          "Categories": [{ "Id": "{{CategoryId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }],
+          "Categories": [{ "Id": "{{CategoryId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }, { "Id": "{{ReservaCategoryId}}", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false }],
           "Transfers": [{ "Id": "{{TransferId}}", "Date": "2026-09-04", "SourceBankId": "{{BarclaysId}}", "DestinationBankId": "{{Trading212Id}}", "Amount": 171.89, "Note": null }],
           "BalanceAdjustments": [{ "Id": "{{AdjustmentId}}", "Date": "2026-09-01", "BankId": "{{BarclaysId}}", "TargetBalance": 130.83, "Delta": 289.18, "Note": "Start" }],
           "TitheCarryForwards": [],

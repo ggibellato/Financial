@@ -30,6 +30,7 @@ public static class ReserveBucketMigrator
         var summary = new ReserveBucketMigrationSummary();
 
         SeedReserveBuckets(data, summary);
+        AssignReservaCategory(data);
         AuditReserveMovements(data, summary);
         EvaluateActiveSplitPercentageSum(data, summary);
 
@@ -49,6 +50,21 @@ public static class ReserveBucketMigrator
 
             reserva.AddPot(ReserveBucket.Create(name, splitPercentage));
             summary.CountBucketSeeded();
+        }
+    }
+
+    private static void AssignReservaCategory(CashFlowData data)
+    {
+        var reserva = ReservaOf(data);
+        if (reserva.Category is not null)
+        {
+            return;
+        }
+
+        var category = data.Categories.FirstOrDefault(c => string.Equals(c.Name, ReservaName, StringComparison.OrdinalIgnoreCase));
+        if (category is not null)
+        {
+            reserva.SetCategory(category);
         }
     }
 
