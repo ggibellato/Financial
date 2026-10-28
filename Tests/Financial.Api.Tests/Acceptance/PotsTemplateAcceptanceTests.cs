@@ -56,6 +56,17 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     private async Task<decimal> BalanceAsync(string accountId, int month) =>
         (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/{month}"))!.Balance;
 
+    private Task<HttpResponseMessage> WithdrawThroughBarclaysAsync(string categoryId) =>
+        Client.PostAsJsonAsync($"{Api}/reserve/withdrawals", new WithdrawalRequestDTO
+        {
+            BucketId = Guid.Parse(InvestimentoId),
+            Amount = 10m,
+            Date = new DateOnly(2026, 10, 20),
+            Description = "Dentist",
+            PaymentSourceBankId = Guid.Parse(BarclaysId),
+            ExpenseCategoryId = Guid.Parse(categoryId)
+        });
+
     [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
     public async Task ReservaBalance_IsTheSumOfItsPotBalances_AndCountsOnlyItsOwnPotsUpToMonthEnd()
@@ -92,6 +103,45 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             problem!.Detail.Should().Be("Reserva has transactions and cannot be deleted. Deactivate it instead.");
             accounts!.Should().ContainSingle(account => account.Name == "Reserva").Which.HasRecords.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-04")]
+    public async Task Withdrawal_AfterRenamingReservasCategory_BooksTheBankExpenseInIt()
+    {
+        var rename = await Client.PutAsJsonAsync($"{Api}/categories/{ReservaCategoryId}", new CategoryUpdateDTO
+        {
+            Name = "Savings",
+            Active = true,
+            IsInvestment = false,
+            IsTithe = false
+        });
+
+        var withdrawal = await WithdrawThroughBarclaysAsync(MercadoId);
+        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10");
+
+        using (new AssertionScope())
+        {
+            rename.StatusCode.Should().Be(HttpStatusCode.OK);
+            withdrawal.StatusCode.Should().Be(HttpStatusCode.OK);
+            expenses!.Select(expense => (expense.CategoryId, expense.CategoryName, expense.Value))
+                .Should().BeEquivalentTo([(Guid.Parse(ReservaCategoryId), "Savings", -10m), (Guid.Parse(MercadoId), "Mercado", 10m)]);
+        }
+    }
+
+    [Fact]
+    public async Task Withdrawal_IntoTheCategoryOfAnotherPotsAccount_Returns400AndBooksNothing()
+    {
+        var withdrawal = await WithdrawThroughBarclaysAsync(HolidaysCategoryId);
+        var problem = await withdrawal.Content.ReadFromJsonAsync<ProblemDetails>();
+        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10");
+
+        using (new AssertionScope())
+        {
+            withdrawal.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            problem!.Detail.Should().Be("Category 'Holidays' cannot be used for a withdrawal expense.");
+            expenses.Should().BeEmpty();
         }
     }
 
