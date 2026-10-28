@@ -197,7 +197,8 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
     private (DateOnly AsOfDate, decimal Total, string Label) ComputeReserveBucketsSummary(int year, int month)
     {
         var asOfDate = ReserveBucketAsOfDateResolver.LastDayOfPriorMonth(year, month);
-        var total = ReserveBucketAsOfDateResolver.TotalBalanceAsOf(_repository.GetReserveMovements().ToList(), asOfDate);
+        var reserva = ReservaAccount.Find(_repository.GetAccounts());
+        var total = reserva is null ? 0m : AccountBalanceRule.Balance(reserva, asOfDate, _repository.GetReserveMovements());
         var label = asOfDate.ToString("MMM yyyy", CultureInfo.InvariantCulture);
         return (asOfDate, total, label);
     }

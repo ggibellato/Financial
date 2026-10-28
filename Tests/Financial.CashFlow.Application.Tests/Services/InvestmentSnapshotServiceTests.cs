@@ -252,6 +252,40 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
+    public async Task GetSuggestionsForMonth_ReserveBucketsSum_IsReservasBalanceAndIgnoresASecondPotsAccount()
+    {
+        var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
+        var investimento = repository.ReserveBuckets.First(b => b.Name == "Investimento");
+        investimento.Update(investimento.Name, investimento.SplitPercentage, isActive: false);
+        var holidays = TestAccounts.Pots("Holidays");
+        var flights = ReserveBucket.Create("Flights", 100m);
+        holidays.AddPot(flights);
+        repository.Accounts.Add(holidays);
+        repository.ReserveMovements.Add(ReserveMovement.Create(investimento, 120m, new DateOnly(2026, 7, 10), "Inactive pot still counts"));
+        repository.ReserveMovements.Add(ReserveMovement.Create(flights, 900m, new DateOnly(2026, 7, 10), "Second Pots account"));
+
+        var result = await service.GetSuggestionsForMonthAsync(2026, 8);
+
+        result.Suggestions.Should().ContainSingle(s => s.AccountId == reserveAccount.Id)
+            .Which.SuggestedValue.Should().Be(120m);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonth_ReserveBucketsSumWithNoPotsAccount_SuggestsZero()
+    {
+        var repository = new StubCashFlowRepository();
+        var reserveAccount = InvestmentAccount.Create(
+            "ReservasPessoais", isActive: true, isLiability: true, InvestmentAccountSource.ReserveBucketsSum);
+        repository.InvestmentAccounts.Add(reserveAccount);
+
+        var result = await CreateService(repository).GetSuggestionsForMonthAsync(2026, 8);
+
+        result.Suggestions.Should().ContainSingle(s => s.AccountId == reserveAccount.Id)
+            .Which.SuggestedValue.Should().Be(0m);
+    }
+
+    [Fact]
     public async Task GetSuggestionsForMonth_ReserveBucketsSum_NeverAddedToNotUpdated()
     {
         var (_, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();

@@ -21,4 +21,14 @@ public static class AccountBalanceRule
                 .Where(record => record.Date >= windowStart && record.Date <= asOf)
                 .Sum(record => record.ContributionTo(account));
     }
+
+    public static decimal PotBalance(ReserveBucket pot, DateOnly asOf, IEnumerable<ReserveMovement> movements)
+    {
+        ArgumentNullException.ThrowIfNull(pot);
+        ArgumentNullException.ThrowIfNull(movements);
+
+        return movements
+            .Where(movement => movement.Bucket.Id == pot.Id && movement.Date <= asOf)
+            .Sum(movement => movement.Amount);
+    }
 }

@@ -10,6 +10,7 @@ internal static class AccountTransactionReader
         .. repository.GetIncomes(),
         .. repository.GetExpenses(),
         .. repository.GetTransfers(),
-        .. repository.GetBalanceAdjustments()
+        .. repository.GetBalanceAdjustments(),
+        .. repository.GetReserveMovements()
     ];
 }
