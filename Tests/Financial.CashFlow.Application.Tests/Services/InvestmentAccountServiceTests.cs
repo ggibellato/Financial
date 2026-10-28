@@ -359,6 +359,15 @@ public class InvestmentAccountServiceTests
         }
     }
 
+    private static InvestmentAccountCreateDTO NewPotsSourced(string name, Guid? potsAccountId, string source = "PotsAccountTotal") => new()
+    {
+        Name = name,
+        IsActive = true,
+        IsLiability = false,
+        Source = source,
+        PotsAccountId = potsAccountId
+    };
+
     private static InvestmentAccountUpdateDTO PotsSourced(string name, Guid? potsAccountId) => new()
     {
         Name = name,
@@ -375,14 +384,7 @@ public class InvestmentAccountServiceTests
         var holidays = TestAccounts.Pots("Holidays");
         _repository.Accounts.Add(holidays);
 
-        var result = await _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
-        {
-            Name = "Holiday savings",
-            IsActive = true,
-            IsLiability = false,
-            Source = "PotsAccountTotal",
-            PotsAccountId = holidays.Id
-        });
+        var result = await _sut.CreateInvestmentAccountAsync(NewPotsSourced("Holiday savings", holidays.Id));
 
         using (new AssertionScope())
         {
@@ -400,13 +402,7 @@ public class InvestmentAccountServiceTests
     {
         _repository.EnsureReserva();
 
-        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
-        {
-            Name = "Reservas pessoais",
-            IsActive = true,
-            IsLiability = false,
-            Source = "PotsAccountTotal"
-        });
+        var act = () => _sut.CreateInvestmentAccountAsync(NewPotsSourced("Reservas pessoais", null));
 
         using (new AssertionScope())
         {
@@ -421,14 +417,7 @@ public class InvestmentAccountServiceTests
     {
         var unknownId = Guid.NewGuid();
 
-        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
-        {
-            Name = "Reservas pessoais",
-            IsActive = true,
-            IsLiability = false,
-            Source = "PotsAccountTotal",
-            PotsAccountId = unknownId
-        });
+        var act = () => _sut.CreateInvestmentAccountAsync(NewPotsSourced("Reservas pessoais", unknownId));
 
         using (new AssertionScope())
         {
@@ -439,23 +428,17 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task CreateInvestmentAccountAsync_NamingABankAsThePotsAccount_Throws()
+    public async Task CreateInvestmentAccountAsync_NamingABankAsThePotsAccount_ThrowsAndWritesNothing()
     {
         var barclays = TestAccounts.Bank("Barclays");
         _repository.Accounts.Add(barclays);
 
-        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
-        {
-            Name = "Reservas pessoais",
-            IsActive = true,
-            IsLiability = false,
-            Source = "PotsAccountTotal",
-            PotsAccountId = barclays.Id
-        });
+        var act = () => _sut.CreateInvestmentAccountAsync(NewPotsSourced("Reservas pessoais", barclays.Id));
 
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays is not a Pots account.");
+            _repository.InvestmentAccounts.Should().BeEmpty();
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.InvestmentAccountService.CreateInvestmentAccount");
         }
     }
@@ -465,13 +448,7 @@ public class InvestmentAccountServiceTests
     {
         _repository.EnsureReserva();
 
-        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
-        {
-            Name = "Reservas pessoais",
-            IsActive = true,
-            IsLiability = false,
-            Source = "ReserveBucketsSum"
-        });
+        var act = () => _sut.CreateInvestmentAccountAsync(NewPotsSourced("Reservas pessoais", null, source: "ReserveBucketsSum"));
 
         using (new AssertionScope())
         {
@@ -518,6 +495,31 @@ public class InvestmentAccountServiceTests
             account.PotsAccount.Should().BeSameAs(reserva);
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.InvestmentAccountService.UpdateInvestmentAccount");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_SwitchingAwayFromPotsAccountTotal_ClearsPotsAccountIdRegardlessOfRequestValue()
+    {
+        var reserva = _repository.EnsureReserva();
+        var account = InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: reserva);
+        _repository.InvestmentAccounts.Add(account);
+
+        var result = await _sut.UpdateInvestmentAccountAsync(account.Id, new InvestmentAccountUpdateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "None",
+            PotsAccountId = reserva.Id
+        });
+
+        using (new AssertionScope())
+        {
+            account.PotsAccount.Should().BeNull();
+            result.PotsAccountId.Should().BeNull();
+            result.Source.Should().Be("None");
         }
     }
 

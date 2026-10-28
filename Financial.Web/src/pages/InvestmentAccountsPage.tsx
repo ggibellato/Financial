@@ -14,6 +14,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import InvestmentAccountFormDialog, { type InvestmentAccountSourceOption } from '../components/InvestmentAccountFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { useAccounts } from '../hooks/useAccounts'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import { useCreditCards } from '../hooks/useCreditCards'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
@@ -29,7 +30,8 @@ function sourceDisplay(
   }
   if (account.source === 'PotsAccountTotal') {
     const potsAccount = accounts.find((a) => a.id === account.potsAccountId)
-    return potsAccount ? `${potsAccount.name} total` : '—'
+    if (!potsAccount) return '—'
+    return potsAccount.isActive ? `${potsAccount.name} total` : `${potsAccount.name} total (inactive)`
   }
   return '—'
 }
@@ -37,7 +39,6 @@ function sourceDisplay(
 export default function InvestmentAccountsPage() {
   const {
     investmentAccounts,
-    accounts,
     isLoading,
     error,
     retry,
@@ -48,6 +49,7 @@ export default function InvestmentAccountsPage() {
     deleteInvestmentAccount,
   } = useInvestmentAccounts()
   const { creditCards, error: creditCardsError, retry: retryCreditCards } = useCreditCards()
+  const { accounts, error: accountsError, retry: retryAccounts } = useAccounts()
   const [editingAccount, setEditingAccount] = useState<InvestmentAccountDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [confirmingDelete, setConfirmingDelete] = useState<InvestmentAccountDto | null>(null)
@@ -95,17 +97,30 @@ export default function InvestmentAccountsPage() {
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       belowActionError={
-        creditCardsError && (
-          <MessageBar intent="warning">
-            <MessageBarBody>
-              Couldn&rsquo;t load credit cards, so the Source dropdown&rsquo;s Credit Card option won&rsquo;t list any
-              cards right now.{' '}
-              <Button appearance="transparent" size="small" onClick={retryCreditCards}>
-                Retry
-              </Button>
-            </MessageBarBody>
-          </MessageBar>
-        )
+        <>
+          {creditCardsError && (
+            <MessageBar intent="warning">
+              <MessageBarBody>
+                Couldn&rsquo;t load credit cards, so the Source dropdown&rsquo;s Credit Card option won&rsquo;t list any
+                cards right now.{' '}
+                <Button appearance="transparent" size="small" onClick={retryCreditCards}>
+                  Retry
+                </Button>
+              </MessageBarBody>
+            </MessageBar>
+          )}
+          {accountsError && (
+            <MessageBar intent="warning">
+              <MessageBarBody>
+                Couldn&rsquo;t load accounts, so the Pots account total option won&rsquo;t list any Pots accounts and
+                the list can&rsquo;t name them right now.{' '}
+                <Button appearance="transparent" size="small" aria-label="Retry loading accounts" onClick={retryAccounts}>
+                  Retry
+                </Button>
+              </MessageBarBody>
+            </MessageBar>
+          )}
+        </>
       }
       isLoading={isLoading}
       loadError={error}

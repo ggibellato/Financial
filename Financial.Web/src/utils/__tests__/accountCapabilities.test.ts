@@ -13,7 +13,7 @@ describe('accountsWith', () => {
   })
 
   it('also keeps an inactive account whose id is kept', () => {
-    expect(accountsWith(ACCOUNTS, 'HasPots', null, 'p3')).toEqual([HOLIDAYS, OLD_POTS, RESERVA])
+    expect(accountsWith(ACCOUNTS, 'HasPots', undefined, 'p3')).toEqual([HOLIDAYS, OLD_POTS, RESERVA])
   })
 
   it('never keeps an account without the capability, even when its id is kept', () => {

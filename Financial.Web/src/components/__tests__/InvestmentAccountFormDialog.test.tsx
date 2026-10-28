@@ -105,7 +105,7 @@ describe('InvestmentAccountFormDialog', () => {
       'Holidays',
       'Reserva',
     ])
-    expect(screen.getByText("Suggests this account's total at the end of the previous month.")).toBeInTheDocument()
+    expect(screen.getByText("Investment Snapshots will suggest the Pots account's total at the end of the previous month.")).toBeInTheDocument()
     expect(screen.queryByLabelText(/^Credit Card/)).not.toBeInTheDocument()
   })
 
@@ -140,7 +140,34 @@ describe('InvestmentAccountFormDialog', () => {
 
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled()
     expect(screen.getByRole('option', { name: 'No active Pots accounts' })).toBeInTheDocument()
-    expect(screen.getByText('Create a Pots account in Admin → Accounts first.')).toBeInTheDocument()
+    expect(screen.getByText('Add a Pots account in Admin → Accounts first.')).toBeInTheDocument()
+    expect(screen.queryByText('Select a Pots account')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+  })
+
+  it('treats a linked Pots account that is no longer listed as not chosen', () => {
+    render(
+      <InvestmentAccountFormDialog
+        investmentAccount={{
+          id: 'a2',
+          name: 'Old savings',
+          isActive: true,
+          isLiability: false,
+          hasNonZeroInvestmentSnapshot: false,
+          source: 'PotsAccountTotal',
+          creditCardId: null,
+          potsAccountId: 'gone',
+        }}
+        creditCards={[]}
+        accounts={ACCOUNTS}
+        onCancel={vi.fn()}
+        onSubmit={vi.fn()}
+      />,
+    )
+
+    expect(screen.getByRole('combobox', { name: /^Pots account/ })).toHaveValue('')
+    expect(screen.getByText('Select a Pots account')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
   it('editing an account linked to an inactive Pots account keeps it selected and marked inactive', async () => {

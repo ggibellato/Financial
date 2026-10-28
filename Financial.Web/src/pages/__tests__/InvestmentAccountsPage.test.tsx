@@ -85,6 +85,15 @@ describe('InvestmentAccountsPage', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
   })
 
+  it('shows a warning and keeps the account list usable when accounts fail to load', async () => {
+    getAccountsMock.mockRejectedValue(new Error('Unable to load accounts'))
+    render(<InvestmentAccountsPage />)
+
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
+    expect(screen.getByText(/couldn.t load accounts/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry loading accounts' })).toBeInTheDocument()
+  })
+
   it('[AC P60-F09-pots-template-and-reserva-migration-03] shows the dash, card name, or Pots account total per account source', async () => {
     render(<InvestmentAccountsPage />)
 
@@ -107,7 +116,8 @@ describe('InvestmentAccountsPage', () => {
       isLiability: false,
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
-      creditCardId: null, potsAccountId: null,
+      creditCardId: null,
+      potsAccountId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -122,7 +132,8 @@ describe('InvestmentAccountsPage', () => {
         isActive: true,
         isLiability: false,
         source: 'None',
-        creditCardId: null, potsAccountId: null,
+        creditCardId: null,
+        potsAccountId: null,
       }),
     )
     await waitFor(() =>
@@ -138,7 +149,8 @@ describe('InvestmentAccountsPage', () => {
       isLiability: false,
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
-      creditCardId: null, potsAccountId: null,
+      creditCardId: null,
+      potsAccountId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -154,7 +166,8 @@ describe('InvestmentAccountsPage', () => {
         isActive: true,
         isLiability: false,
         source: 'None',
-        creditCardId: null, potsAccountId: null,
+        creditCardId: null,
+        potsAccountId: null,
       }),
     )
   })

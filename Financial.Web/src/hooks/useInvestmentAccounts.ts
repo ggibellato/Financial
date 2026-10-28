@@ -1,11 +1,10 @@
 import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AccountDto, InvestmentAccountCreateDto, InvestmentAccountDto, InvestmentAccountUpdateDto } from '../api/types'
+import type { InvestmentAccountCreateDto, InvestmentAccountDto, InvestmentAccountUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
 
 export interface InvestmentAccountsData {
   investmentAccounts: InvestmentAccountDto[]
-  accounts: AccountDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -16,22 +15,12 @@ export interface InvestmentAccountsData {
   deleteInvestmentAccount: (id: string) => void
 }
 
-interface InvestmentAccountsWithAccounts {
-  investmentAccounts: InvestmentAccountDto[]
-  accounts: AccountDto[]
-}
-
-const NOTHING_LOADED: InvestmentAccountsWithAccounts = { investmentAccounts: [], accounts: [] }
-
-async function loadInvestmentAccountsWithAccounts(): Promise<InvestmentAccountsWithAccounts> {
-  const [investmentAccounts, accounts] = await Promise.all([apiClient.getInvestmentAccounts(), apiClient.getAccounts()])
-  return { investmentAccounts, accounts }
-}
+const NO_INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = []
 
 export function useInvestmentAccounts(): InvestmentAccountsData {
   const resource = useCrudResource({
-    load: loadInvestmentAccountsWithAccounts,
-    initialData: NOTHING_LOADED,
+    load: () => apiClient.getInvestmentAccounts(),
+    initialData: NO_INVESTMENT_ACCOUNTS,
     loadErrorMessage: 'Unable to load investment accounts',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
@@ -54,8 +43,7 @@ export function useInvestmentAccounts(): InvestmentAccountsData {
   )
 
   return {
-    investmentAccounts: resource.data.investmentAccounts,
-    accounts: resource.data.accounts,
+    investmentAccounts: resource.data,
     isLoading: resource.isLoading,
     error: resource.error,
     retry: resource.retry,

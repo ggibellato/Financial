@@ -43,14 +43,16 @@ export default function InvestmentAccountFormDialog({
   const trimmedName = name.trim()
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
   const creditCardValidationMessage = source === 'CreditCard' && creditCardId === '' ? 'Select a credit card' : ''
-  const potsAccountValidationMessage = source === 'PotsAccountTotal' && potsAccountId === '' ? 'Select a Pots account' : ''
+  const potsAccountOptions = accountsWith(accounts, 'HasPots', investmentAccount?.potsAccountId ?? undefined)
+  const hasPotsAccountChoices = potsAccountOptions.length > 0
+  const shownPotsAccountId = potsAccountOptions.some((account) => account.id === potsAccountId) ? potsAccountId : ''
+  const isPotsAccountMissing = source === 'PotsAccountTotal' && shownPotsAccountId === ''
+  const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account' : ''
   const canSubmit =
     validationMessage.length === 0 &&
     creditCardValidationMessage.length === 0 &&
-    potsAccountValidationMessage.length === 0 &&
+    !isPotsAccountMissing &&
     !isSaving
-
-  const potsAccountOptions = accountsWith(accounts, 'HasPots', investmentAccount?.potsAccountId ?? null)
 
   // The picker always offers every active card, plus the account's currently-linked card even if
   // it has since become inactive - otherwise reopening Edit would silently show no selection for a
@@ -68,7 +70,7 @@ export default function InvestmentAccountFormDialog({
         isLiability,
         source,
         source === 'CreditCard' ? creditCardId : null,
-        source === 'PotsAccountTotal' ? potsAccountId : null,
+        source === 'PotsAccountTotal' ? shownPotsAccountId : null,
       ),
     )
   }
@@ -134,19 +136,19 @@ export default function InvestmentAccountFormDialog({
           label="Pots account"
           required
           hint={
-            potsAccountOptions.length === 0
-              ? 'Create a Pots account in Admin → Accounts first.'
-              : "Suggests this account's total at the end of the previous month."
+            hasPotsAccountChoices
+              ? "Investment Snapshots will suggest the Pots account's total at the end of the previous month."
+              : 'Add a Pots account in Admin → Accounts first.'
           }
           validationState={potsAccountValidationMessage ? 'error' : 'none'}
           validationMessage={potsAccountValidationMessage}
         >
           <Select
-            value={potsAccountId}
+            value={shownPotsAccountId}
             onChange={(e) => setPotsAccountId(e.target.value)}
-            disabled={isSaving || potsAccountOptions.length === 0}
+            disabled={isSaving || !hasPotsAccountChoices}
           >
-            <option value="">{potsAccountOptions.length === 0 ? 'No active Pots accounts' : 'Select Pots account…'}</option>
+            <option value="">{hasPotsAccountChoices ? 'Select Pots account…' : 'No active Pots accounts'}</option>
             {potsAccountOptions.map((account) => (
               <option key={account.id} value={account.id}>
                 {account.isActive ? account.name : `${account.name} (inactive)`}
