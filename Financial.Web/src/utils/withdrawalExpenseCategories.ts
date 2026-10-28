@@ -1,11 +1,15 @@
-import type { CategoryDto } from '../api/types'
-
-export const RESERVA_CATEGORY_NAME = 'Reserva'
+import type { AccountDto, CategoryDto } from '../api/types'
 
 const sameName = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
-export function eligibleWithdrawalCategories(categories: CategoryDto[]): CategoryDto[] {
-  return categories.filter((c) => c.active && !c.isInvestment && !sameName(c.name, RESERVA_CATEGORY_NAME))
+export function potsAccountCategoryIds(accounts: AccountDto[]): string[] {
+  return accounts.flatMap((account) =>
+    account.capabilities.includes('HasPots') && account.categoryId ? [account.categoryId] : [],
+  )
+}
+
+export function eligibleWithdrawalCategories(categories: CategoryDto[], excludedCategoryIds: string[]): CategoryDto[] {
+  return categories.filter((c) => c.active && !c.isInvestment && !excludedCategoryIds.includes(c.id))
 }
 
 export function defaultExpenseCategoryId(eligibleCategories: CategoryDto[], bucketName: string): string {

@@ -11,7 +11,7 @@ import type {
 } from '../api/types'
 import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
-import { defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
+import { defaultExpenseCategoryId, eligibleWithdrawalCategories, potsAccountCategoryIds } from '../utils/withdrawalExpenseCategories'
 const BUCKET_REQUIRED_ERROR = 'Bucket is required'
 const EXPENSE_CATEGORY_REQUIRED_ERROR = 'Category is required when a bank is selected.'
 
@@ -54,6 +54,7 @@ interface ReservaState {
   splitPercentageWarning: string | null
   banks: BankDto[]
   categories: CategoryDto[]
+  potsCategoryIds: string[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -98,6 +99,7 @@ type ReservaAction =
         splitPercentageWarning?: string | null
         banks?: BankDto[]
         categories?: CategoryDto[]
+        potsCategoryIds?: string[]
       }
     }
   | { type: 'FETCH_ERROR'; payload: string }
@@ -146,6 +148,7 @@ const INITIAL_STATE: ReservaState = {
   splitPercentageWarning: null,
   banks: [],
   categories: [],
+  potsCategoryIds: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -189,6 +192,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
           action.payload.splitPercentageWarning === undefined ? state.splitPercentageWarning : action.payload.splitPercentageWarning,
         banks: action.payload.banks ?? state.banks,
         categories: action.payload.categories ?? state.categories,
+        potsCategoryIds: action.payload.potsCategoryIds ?? state.potsCategoryIds,
         withdrawalBucketId: state.withdrawalBucketId || defaultBucketId(buckets),
       }
     }
@@ -415,11 +419,12 @@ export function useReserva(): ReservaData {
       includeReferenceData ? apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getBanks().catch(() => []) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getCategories().catch(() => []) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getAccounts().then(potsAccountCategoryIds).catch(() => []) : Promise.resolve(undefined),
     ])
-      .then(([balances, movements, buckets, splitPercentageWarning, banks, categories]) =>
+      .then(([balances, movements, buckets, splitPercentageWarning, banks, categories, potsCategoryIds]) =>
         dispatch({
           type: 'FETCH_SUCCESS',
-          payload: { balances, movements, buckets, splitPercentageWarning, banks, categories },
+          payload: { balances, movements, buckets, splitPercentageWarning, banks, categories, potsCategoryIds },
         }),
       )
       .catch((err: unknown) => {
@@ -439,7 +444,10 @@ export function useReserva(): ReservaData {
 
   const movementRows = useMemo(() => buildMovementRows(state.movements), [state.movements])
 
-  const withdrawalCategoryOptions = useMemo(() => eligibleWithdrawalCategories(state.categories), [state.categories])
+  const withdrawalCategoryOptions = useMemo(
+    () => eligibleWithdrawalCategories(state.categories, state.potsCategoryIds),
+    [state.categories, state.potsCategoryIds],
+  )
 
   const withdrawalExpenseCategoryId =
     state.withdrawalExpenseCategoryId ||

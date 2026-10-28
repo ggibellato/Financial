@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 import { useReserva } from '../useReserva'
 import { pinDate } from '../../test-utils/pinDate'
+import { potsAccount } from '../../test/account'
 
 const {
   getReserveBalancesMock,
@@ -13,6 +14,7 @@ const {
   getReserveSplitStatusMock,
   getBanksMock,
   getCategoriesMock,
+  getAccountsMock,
   postIncomeSplitMock,
   postWithdrawalMock,
   updateReserveMovementMock,
@@ -24,6 +26,7 @@ const {
   getReserveSplitStatusMock: vi.fn<FinancialApiClient['getReserveSplitStatus']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
   postWithdrawalMock: vi.fn<FinancialApiClient['postWithdrawal']>(),
   updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
@@ -38,6 +41,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getReserveSplitStatus: getReserveSplitStatusMock,
     getBanks: getBanksMock,
     getCategories: getCategoriesMock,
+    getAccounts: getAccountsMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
@@ -79,6 +83,8 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'c5', name: 'Old', active: false, isInvestment: false, isTithe: false, hasReferences: false },
 ]
 
+const ACCOUNTS = [potsAccount({ id: 'p1', name: 'Reserva', categoryId: 'c4' })]
+
 // Only the 409 tests should reach the confirmation policy. Everywhere else, being asked at all
 // is the bug - so the default stub fails the test instead of quietly answering.
 const rejectUnexpectedConfirm = (): boolean => {
@@ -97,6 +103,7 @@ describe('useReserva', () => {
     getReserveSplitStatusMock.mockReset()
     getBanksMock.mockReset()
     getCategoriesMock.mockReset()
+    getAccountsMock.mockReset()
     postIncomeSplitMock.mockReset()
     postWithdrawalMock.mockReset()
     updateReserveMovementMock.mockReset()
@@ -107,6 +114,7 @@ describe('useReserva', () => {
     getReserveSplitStatusMock.mockResolvedValue({ activeTotal: 100, warning: null })
     getBanksMock.mockResolvedValue(BANKS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     sessionStorage.clear()
   })
 
@@ -691,11 +699,22 @@ describe('useReserva', () => {
       expect(result.current.withdrawalCategoryOptions.map((c) => c.name)).toEqual(['Ariana', 'Saude'])
       expect(getBanksMock).toHaveBeenCalledTimes(1)
       expect(getCategoriesMock).toHaveBeenCalledTimes(1)
+      expect(getAccountsMock).toHaveBeenCalledTimes(1)
+    })
+
+    it("[AC P60-F09-pots-template-and-reserva-migration-04] leaves out a Pots account's category by id after it is renamed", async () => {
+      getCategoriesMock.mockResolvedValue(CATEGORIES.map((c) => (c.id === 'c4' ? { ...c, name: 'Savings' } : c)))
+
+      const { result } = renderHook(() => useReserva())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      expect(result.current.withdrawalCategoryOptions.map((c) => c.name)).toEqual(['Ariana', 'Saude'])
     })
 
     it('still loads the reserve data when banks or categories fail to load', async () => {
       getBanksMock.mockRejectedValue(new Error('down'))
       getCategoriesMock.mockRejectedValue(new Error('down'))
+      getAccountsMock.mockRejectedValue(new Error('down'))
 
       const { result } = renderHook(() => useReserva())
       await waitFor(() => expect(result.current.isLoading).toBe(false))

@@ -5,6 +5,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
+import { potsAccount } from '../../test/account'
 
 const {
   getReserveBalancesMock,
@@ -13,6 +14,7 @@ const {
   getReserveSplitStatusMock,
   getBanksMock,
   getCategoriesMock,
+  getAccountsMock,
   postIncomeSplitMock,
   postWithdrawalMock,
   updateReserveMovementMock,
@@ -24,6 +26,7 @@ const {
   getReserveSplitStatusMock: vi.fn<FinancialApiClient['getReserveSplitStatus']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   postIncomeSplitMock: vi.fn<FinancialApiClient['postIncomeSplit']>(),
   postWithdrawalMock: vi.fn<FinancialApiClient['postWithdrawal']>(),
   updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
@@ -38,6 +41,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getReserveSplitStatus: getReserveSplitStatusMock,
     getBanks: getBanksMock,
     getCategories: getCategoriesMock,
+    getAccounts: getAccountsMock,
     postIncomeSplit: postIncomeSplitMock,
     postWithdrawal: postWithdrawalMock,
     updateReserveMovement: updateReserveMovementMock,
@@ -78,6 +82,8 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'c4', name: 'Reserva', active: true, isInvestment: false, isTithe: false, hasReferences: false },
 ]
 
+const ACCOUNTS = [potsAccount({ id: 'p1', name: 'Reserva', categoryId: 'c4' })]
+
 describe('ReservaPage', () => {
   beforeEach(() => {
     getReserveBalancesMock.mockReset()
@@ -86,6 +92,7 @@ describe('ReservaPage', () => {
     getReserveSplitStatusMock.mockReset()
     getBanksMock.mockReset()
     getCategoriesMock.mockReset()
+    getAccountsMock.mockReset()
     postIncomeSplitMock.mockReset()
     postWithdrawalMock.mockReset()
     updateReserveMovementMock.mockReset()
@@ -96,6 +103,7 @@ describe('ReservaPage', () => {
     getReserveSplitStatusMock.mockResolvedValue({ activeTotal: 100, warning: null })
     getBanksMock.mockResolvedValue(BANKS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     sessionStorage.clear()
   })
 
