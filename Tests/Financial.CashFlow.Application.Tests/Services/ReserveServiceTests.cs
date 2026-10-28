@@ -521,7 +521,7 @@ public class ReserveServiceTests
                 && e.CreditCard == null
                 && e.Date == request.Date
                 && e.Description == request.Description);
-            repository.Expenses.Should().ContainSingle(e => e.Category.Name == Category.ReservaName && e.Value == -request.Amount);
+            repository.Expenses.Should().ContainSingle(e => e.Category == repository.EnsureReserva().Category && e.Value == -request.Amount);
             repository.Expenses.Should().ContainSingle(e => e.Category.Id == request.ExpenseCategoryId && e.Value == request.Amount);
             repository.SaveChangesCallCount.Should().Be(1);
         }
@@ -586,8 +586,8 @@ public class ReserveServiceTests
 
     [Theory]
     [InlineData("Investimento")]
-    [InlineData(Category.ReservaName)]
-    public async Task PostWithdrawalAsync_InvestmentOrReservaCategory_Throws(string categoryName)
+    [InlineData("Reserva")]
+    public async Task PostWithdrawalAsync_InvestmentOrReservasCategory_Throws(string categoryName)
     {
         var repository = CreateBankRepository();
         var category = repository.Categories.First(c => c.Name == categoryName);
@@ -599,10 +599,39 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task PostWithdrawalAsync_CategoryOfASecondPotsAccount_Throws()
+    {
+        var repository = CreateBankRepository();
+        var holidays = Category.Create("Holidays");
+        repository.Categories.Add(holidays);
+        repository.Accounts.Add(TestAccounts.Pots("Holiday pots", category: holidays));
+
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository, categoryId: holidays.Id));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Category 'Holidays' cannot be used for a withdrawal expense.");
+        AssertNothingSaved(repository);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-04")]
+    public async Task PostWithdrawalAsync_AfterRenamingReservasCategory_BooksTheBankExpenseInIt()
+    {
+        var repository = CreateBankRepository();
+        var reservaCategory = repository.EnsureReserva().Category!;
+        reservaCategory.Update("Savings", active: true, isInvestment: false, isTithe: false);
+        var request = BankWithdrawal(repository);
+
+        await CreateService(repository).PostWithdrawalAsync(request);
+
+        repository.Expenses.Should().ContainSingle(e => e.Category == reservaCategory && e.Value == -request.Amount);
+    }
+
+    [Fact]
     public async Task PostWithdrawalAsync_ReservaCategoryInactive_StillSucceeds()
     {
         var repository = CreateBankRepository();
-        var reserva = repository.Categories.First(c => c.Name == Category.ReservaName);
+        var reserva = repository.EnsureReserva().Category!;
         reserva.Update(reserva.Name, active: false, isInvestment: false, isTithe: false);
 
         await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository));
@@ -611,16 +640,15 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostWithdrawalAsync_ReservaCategoryMissing_Throws()
+    public async Task PostWithdrawalAsync_ReservaWithoutACategory_Throws()
     {
-        var repository = CreateBankRepository();
-        var request = BankWithdrawal(repository);
-        repository.Categories.RemoveAll(c => c.Name == Category.ReservaName);
+        var repository = CreateBankRepository(withReservaCategory: false);
 
-        var act = async () => await CreateService(repository).PostWithdrawalAsync(request);
+        var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not configured*");
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the category for this account's bank expenses.");
         AssertNothingSaved(repository);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
     }
 
     [Fact]
@@ -666,10 +694,15 @@ public class ReserveServiceTests
         logger.Entries.Should().OnlyContain(e => !e.Message.Contains("Secret dentist") && !e.Message.Contains("Category is required"));
     }
 
-    private static StubCashFlowRepository CreateBankRepository()
+    private static StubCashFlowRepository CreateBankRepository(bool withReservaCategory = true)
     {
         var repository = new StubCashFlowRepository(
             seedDefaultBanks: true, seedDefaultReserveBuckets: true, seedDefaultCategories: true);
+        if (withReservaCategory)
+        {
+            repository.EnsureReserva().SetCategory(repository.Categories.First(c => c.Name == "Reserva"));
+        }
+
         repository.Seed("Investimento", 100m);
         return repository;
     }

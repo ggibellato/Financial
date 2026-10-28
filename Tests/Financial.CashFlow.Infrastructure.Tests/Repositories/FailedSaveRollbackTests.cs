@@ -57,6 +57,7 @@ public class FailedSaveRollbackTests
             data.AddCategory(category);
         }
 
+        TestAccounts.ReservaIn(data).SetCategory(data.Categories.Single(c => c.Name == "Reserva"));
         return data;
     }
 

@@ -290,23 +290,23 @@ public sealed class ReserveService : IReserveService
 
         var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), request.PaymentSourceBankId.Value);
 
-        var categories = _repository.GetCategories().ToList();
-        var reserva = categories.FirstOrDefault(c => string.Equals(c.Name, Category.ReservaName, StringComparison.OrdinalIgnoreCase))
-            ?? throw new ArgumentException($"Category '{Category.ReservaName}' is not configured.");
-        var expenseCategory = ResolveExpenseCategory(categories, request.ExpenseCategoryId.Value, reserva);
+        var accounts = _repository.GetAccounts().ToList();
+        var reservaCategory = ReservaAccount.Find(accounts)?.Category
+            ?? throw new ArgumentException("Choose the category for this account's bank expenses.");
+        var expenseCategory = ResolveExpenseCategory(_repository.GetCategories(), request.ExpenseCategoryId.Value, accounts);
 
         return
         [
-            Expense.Create(request.Date, request.Description, -request.Amount, reserva, bank, creditCard: null),
+            Expense.Create(request.Date, request.Description, -request.Amount, reservaCategory, bank, creditCard: null),
             Expense.Create(request.Date, request.Description, request.Amount, expenseCategory, bank, creditCard: null)
         ];
     }
 
-    private static Category ResolveExpenseCategory(IEnumerable<Category> categories, Guid categoryId, Category reserva)
+    private static Category ResolveExpenseCategory(IEnumerable<Category> categories, Guid categoryId, IEnumerable<Account> accounts)
     {
         var category = CashFlowReferenceResolver.ResolveActiveCategory(categories, categoryId);
 
-        if (category.IsInvestment || category.Id == reserva.Id)
+        if (category.IsInvestment || accounts.Any(account => account.Category?.Id == category.Id))
         {
             throw new ArgumentException($"Category '{category.Name}' cannot be used for a withdrawal expense.");
         }

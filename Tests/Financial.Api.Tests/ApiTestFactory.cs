@@ -148,7 +148,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
               { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000002", "Name": "HouseTreats", "IsActive": true, "SplitPercentage": 33.33 },
               { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000003", "Name": "Ariana", "IsActive": true, "SplitPercentage": 16.67 },
               { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000004", "Name": "Gleison", "IsActive": true, "SplitPercentage": 16.67 }
-            ] }
+            ], "CategoryId": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014" }
           ],
           "IncomeSources": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
