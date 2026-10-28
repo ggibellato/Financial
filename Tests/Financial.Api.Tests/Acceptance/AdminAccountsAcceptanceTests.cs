@@ -36,7 +36,7 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
           "Incomes": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Date": "2026-09-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": "September pay", "SplitToReserve": false }
           ],
-          "Version": 3
+          "Version": 4
         }
         """;
 

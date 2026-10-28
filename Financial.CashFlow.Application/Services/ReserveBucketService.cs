@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -70,13 +71,16 @@ public sealed class ReserveBucketService : IReserveBucketService
                 throw new ArgumentException("Reserve bucket name is required.", nameof(request));
             }
 
-            _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A reserve bucket");
+            var reserva = ReservaAccount.Find(_repository.GetAccounts())
+                ?? throw new ArgumentException("Create a Pots account first.");
+
+            reserva.Pots!.EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
 
             var bucket = ReserveBucket.Create(request.Name, request.SplitPercentage, request.IsActive);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.AddReserveBucket(bucket);
+                reserva.AddPot(bucket);
                 return true;
             }).ConfigureAwait(false);
 
@@ -107,7 +111,7 @@ public sealed class ReserveBucketService : IReserveBucketService
 
             var bucket = _repository.GetReserveBuckets().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
 
-            _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket");
+            _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
 
             await _repository.ApplyAndSaveAsync(() =>
             {

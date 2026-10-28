@@ -388,4 +388,72 @@ public class AccountTests
 
         act.Should().Throw<ArgumentException>().WithMessage("CreditCard accounts must be GBP.");
     }
+
+    [Fact]
+    public void Pots_PotsAccount_StartsEmpty_OtherTemplatesHaveNone()
+    {
+        using (new AssertionScope())
+        {
+            Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP).Pots.Should().BeEmpty();
+            CreateBank().Pots.Should().BeNull();
+            Account.Create("BA Amex", AccountTemplate.CreditCard, Currency.GBP).Pots.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void AddPot_PotsAccount_KeepsThePotsInOrderAndOwnsThem()
+    {
+        var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
+        var investimento = ReserveBucket.Create("Investimento", 50m);
+        var ariana = ReserveBucket.Create("Ariana", 50m);
+
+        reserva.AddPot(investimento);
+        reserva.AddPot(ariana);
+
+        using (new AssertionScope())
+        {
+            reserva.Pots.Should().Equal(investimento, ariana);
+            reserva.OwnsPot(ariana.Id).Should().BeTrue();
+            reserva.OwnsPot(Guid.NewGuid()).Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void AddPot_AccountWithoutPots_Throws()
+    {
+        var act = () => CreateBank().AddPot(ReserveBucket.Create("Investimento", 50m));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase has no pots.");
+    }
+
+    [Fact]
+    public void AddPot_NameAlreadyUsedInAnyCase_ThrowsAndKeepsThePots()
+    {
+        var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
+        reserva.AddPot(ReserveBucket.Create("Investimento", 50m));
+
+        var act = () => reserva.AddPot(ReserveBucket.Create("INVESTIMENTO", 10m));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("A reserve bucket named \"INVESTIMENTO\" already exists.");
+            reserva.Pots.Should().ContainSingle();
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_AwayFromPots_DropsThePots()
+    {
+        var account = Account.Create("Holiday", AccountTemplate.Pots, Currency.GBP);
+        account.AddPot(ReserveBucket.Create("Trip", 100m));
+
+        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+
+        using (new AssertionScope())
+        {
+            account.Pots.Should().BeNull();
+            account.ChangeTemplate(AccountTemplate.Pots, Currency.GBP);
+            account.Pots.Should().BeEmpty();
+        }
+    }
 }

@@ -50,7 +50,6 @@ public class CashFlowDataTests
     [
         Wiring("Banks", () => TestAccounts.Bank("Barclays", roundUpEnabled: false), (d, i) => d.AddAccount(i), (d, id) => d.RemoveAccount(id), d => d.Accounts, i => i.Id),
         Wiring("IncomeSources", () => IncomeSource.Create("Gleison", IncomeGroup.Salary), (d, i) => d.AddIncomeSource(i), (d, id) => d.RemoveIncomeSource(id), d => d.IncomeSources, i => i.Id),
-        Wiring("ReserveBuckets", () => ReserveBucketEntity.Create("Investimento", 33.33m), (d, i) => d.AddReserveBucket(i), null, d => d.ReserveBuckets, i => i.Id),
         Wiring("Categories", () => Category.Create("Mercado"), (d, i) => d.AddCategory(i), (d, id) => d.RemoveCategory(id), d => d.Categories, i => i.Id),
         Wiring("Expenses", () => Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Casa, Chase, null), (d, i) => d.AddExpense(i), (d, id) => d.RemoveExpense(id), d => d.Expenses, i => i.Id),
         Wiring("ReserveMovements", () => ReserveMovement.Create(TestBucket, 10m, new DateOnly(2026, 7, 1), "Test movement"), (d, i) => d.AddReserveMovement(i), (d, id) => d.RemoveReserveMovement(id), d => d.ReserveMovements, i => i.Id),

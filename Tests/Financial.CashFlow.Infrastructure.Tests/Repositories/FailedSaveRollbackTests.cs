@@ -9,6 +9,7 @@ using Financial.Shared.Abstractions.Persistence;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
+using Financial.TestUtilities;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
@@ -43,7 +44,7 @@ public class FailedSaveRollbackTests
 
         foreach (var bucket in StubCashFlowRepository.DefaultReserveBuckets())
         {
-            data.AddReserveBucket(bucket);
+            TestAccounts.ReservaIn(data).AddPot(bucket);
         }
 
         foreach (var card in StubCashFlowRepository.DefaultCreditCards())

@@ -48,7 +48,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
           "InvestmentAccounts": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-800000000001", "Name": "Linked balance", "IsActive": true, "IsLiability": true, "Source": "CreditCard", "CreditCardId": "{{LinkedId}}" }
           ],
-          "Version": 3
+          "Version": 4
         }
         """;
 

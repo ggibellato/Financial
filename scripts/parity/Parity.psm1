@@ -212,7 +212,7 @@ function Add-ParitySummaryFigures($Report, [string]$Month, [string]$Route, [scri
 }
 
 function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts, [bool]$IsCurrentMonth) {
-    foreach ($account in $Accounts) {
+    foreach ($account in @($Accounts | Where-Object { $_['templateName'] -in 'Bank', 'CreditCard' })) {
         $isCard = $account['templateName'] -eq 'CreditCard'
         if ($isCard -and -not $IsCurrentMonth) { continue }
         $detail = & $Fetch "accounts/$($account.id)/$Route"

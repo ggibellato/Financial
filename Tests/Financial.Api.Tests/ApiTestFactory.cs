@@ -142,19 +142,19 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000003", "Name": "ChaseMaster4023", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000004", "Name": "BaAmex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000005", "Name": "PaypalCredit", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000006", "Name": "RetiredTestCard", "Template": "CreditCard", "Currency": "GBP", "IsActive": false, "OpeningBalance": null, "RoundUp": null }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000006", "Name": "RetiredTestCard", "Template": "CreditCard", "Currency": "GBP", "IsActive": false, "OpeningBalance": null, "RoundUp": null },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-900000000001", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
+              { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000001", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 },
+              { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000002", "Name": "HouseTreats", "IsActive": true, "SplitPercentage": 33.33 },
+              { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000003", "Name": "Ariana", "IsActive": true, "SplitPercentage": 16.67 },
+              { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000004", "Name": "Gleison", "IsActive": true, "SplitPercentage": 16.67 }
+            ] }
           ],
           "IncomeSources": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable", "AutoSplitToReserve": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros", "AutoSplitToReserve": false }
-          ],
-          "ReserveBuckets": [
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000001", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000002", "Name": "HouseTreats", "IsActive": true, "SplitPercentage": 33.33 },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000003", "Name": "Ariana", "IsActive": true, "SplitPercentage": 16.67 },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-300000000004", "Name": "Gleison", "IsActive": true, "SplitPercentage": 16.67 }
           ],
           "InvestmentAccounts": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000001", "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },
@@ -185,7 +185,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000013", "Name": "Investimento", "Active": true, "IsInvestment": true, "IsTithe": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
-          "Version": 3
+          "Version": 4
         }
         """;
 

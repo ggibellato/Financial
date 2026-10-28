@@ -12,15 +12,15 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 [Trait("Category", "Unit")]
 public class AccountJsonConverterTests
 {
-    private const string V2Bank =
-        """{"Id":"5db5c88d-0000-0000-0000-000000000001","Name":"Chase","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":1250.70,"StartDate":"2026-09-01"},"RoundUp":{"Enabled":true}}""";
+    private const string V4Bank =
+        """{"Id":"5db5c88d-0000-0000-0000-000000000001","Name":"Chase","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":1250.70,"StartDate":"2026-09-01"},"RoundUp":{"Enabled":true},"Pots":null}""";
 
     private readonly JsonSerializerOptions _options = new() { Converters = { new AccountJsonConverter() } };
 
     [Fact]
-    public void Read_V2Bank_BuildsTheAccountWithTheSameValues()
+    public void Read_V4Bank_BuildsTheAccountWithTheSameValues()
     {
-        var account = JsonSerializer.Deserialize<Account>(V2Bank, _options)!;
+        var account = JsonSerializer.Deserialize<Account>(V4Bank, _options)!;
 
         using (new AssertionScope())
         {
@@ -35,22 +35,22 @@ public class AccountJsonConverterTests
     }
 
     [Fact]
-    public void ReadThenWrite_V2Bank_ProducesIdenticalBytes()
+    public void ReadThenWrite_V4Bank_ProducesIdenticalBytes()
     {
-        var account = JsonSerializer.Deserialize<Account>(V2Bank, _options)!;
+        var account = JsonSerializer.Deserialize<Account>(V4Bank, _options)!;
 
-        JsonSerializer.Serialize(account, _options).Should().Be(V2Bank);
+        JsonSerializer.Serialize(account, _options).Should().Be(V4Bank);
     }
 
     [Fact]
-    public void Write_NewBankAccount_UsesTheV2AccountShape()
+    public void Write_NewBankAccount_UsesTheV4AccountShape()
     {
         var account = Account.Create("Trading212", AccountTemplate.Bank, Currency.GBP);
 
         var json = JsonSerializer.Serialize(account, _options);
 
         json.Should().Be(
-            $$$"""{"Id":"{{{account.Id}}}","Name":"Trading212","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":0,"StartDate":"0001-01-01"},"RoundUp":{"Enabled":false}}""");
+            $$$"""{"Id":"{{{account.Id}}}","Name":"Trading212","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":0,"StartDate":"0001-01-01"},"RoundUp":{"Enabled":false},"Pots":null}""");
     }
 
     [Fact]
@@ -64,6 +64,22 @@ public class AccountJsonConverterTests
         {
             account.OpeningBalance.Should().BeNull();
             account.RoundUp.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void ReadThenWrite_PotsAccount_KeepsItsPotsInOrder()
+    {
+        const string reserva =
+            """{"Id":"5db5c88d-0000-0000-0000-000000000004","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{"Id":"5db5c88d-0000-0000-0000-000000000005","Name":"Investimento","IsActive":true,"SplitPercentage":33.33},{"Id":"5db5c88d-0000-0000-0000-000000000006","Name":"Ariana","IsActive":false,"SplitPercentage":0}]}""";
+
+        var account = JsonSerializer.Deserialize<Account>(reserva, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.Pots!.Select(pot => (pot.Name, pot.IsActive, pot.SplitPercentage)).Should().Equal(("Investimento", true, 33.33m), ("Ariana", false, 0m));
+            account.OwnsPot(Guid.Parse("5db5c88d-0000-0000-0000-000000000006")).Should().BeTrue();
+            JsonSerializer.Serialize(account, _options).Should().Be(reserva);
         }
     }
 

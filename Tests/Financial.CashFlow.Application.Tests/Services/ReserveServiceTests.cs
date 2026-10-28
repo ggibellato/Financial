@@ -59,9 +59,9 @@ public class ReserveServiceTests
     public async Task PostIncomeSplitAsync_WithThirdsSplit_PersistsConservedMovements()
     {
         var repository = new StubCashFlowRepository();
-        repository.AddReserveBucket(ReserveBucket.Create("Investimento", 33.33m));
-        repository.AddReserveBucket(ReserveBucket.Create("HouseTreats", 33.33m));
-        repository.AddReserveBucket(ReserveBucket.Create("Ariana", 33.34m));
+        repository.AddPot(ReserveBucket.Create("Investimento", 33.33m));
+        repository.AddPot(ReserveBucket.Create("HouseTreats", 33.33m));
+        repository.AddPot(ReserveBucket.Create("Ariana", 33.34m));
         var sut = CreateService(repository);
 
         var result = await sut.PostIncomeSplitAsync(new IncomeSplitRequestDTO
@@ -82,8 +82,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostIncomeSplitAsync_WithInactiveBucket_ExcludesItFromMovementsAndResult()
     {
-        _repository.ReserveBuckets.RemoveAll(b => b.Name == "Gleison");
-        _repository.ReserveBuckets.Add(ReserveBucket.Create("Gleison", 16.67m, isActive: false));
+        _repository.ReserveBuckets.Single(b => b.Name == "Gleison").Update("Gleison", 16.67m, isActive: false);
 
         var result = await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
@@ -99,7 +98,7 @@ public class ReserveServiceTests
     public async Task PostIncomeSplitAsync_WithNoActiveBuckets_ThrowsArgumentExceptionBeforeTouchingRepository()
     {
         var repository = new StubCashFlowRepository();
-        repository.ReserveBuckets.Add(ReserveBucket.Create("Investimento", 33.33m, isActive: false));
+        repository.AddPot(ReserveBucket.Create("Investimento", 33.33m, isActive: false));
         var service = CreateService(repository);
 
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
@@ -233,25 +232,6 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task PostWithdrawalAsync_TwoBucketsSharingAName_PostsAgainstTheOneWithTheGivenId()
-    {
-        var duplicate = ReserveBucket.Create("Investimento", 0m);
-        _repository.ReserveBuckets.Add(duplicate);
-
-        await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
-        {
-            BucketId = duplicate.Id,
-            Amount = 10m,
-            Date = new DateOnly(2026, 7, 1),
-            Description = "Test",
-            Confirmed = true
-        });
-
-        _repository.ReserveMovements.Should().ContainSingle()
-            .Which.Bucket.Should().BeSameAs(duplicate);
-    }
-
-    [Fact]
     public async Task PostWithdrawalAsync_WithUnknownBucket_ThrowsArgumentException()
     {
         var act = async () => await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
@@ -287,9 +267,8 @@ public class ReserveServiceTests
     [Fact]
     public void GetBucketBalances_IncludesInactiveBucketsWithTheirBalance()
     {
-        _repository.ReserveBuckets.RemoveAll(b => b.Name == "Gleison");
-        var retiredGleison = ReserveBucket.Create("Gleison", 16.67m, isActive: false);
-        _repository.ReserveBuckets.Add(retiredGleison);
+        var retiredGleison = _repository.ReserveBuckets.Single(b => b.Name == "Gleison");
+        retiredGleison.Update("Gleison", 16.67m, isActive: false);
         _repository.ReserveMovements.Add(ReserveMovement.Create(retiredGleison, 75m, new DateOnly(2026, 7, 1), "Before retirement"));
 
         var balances = _sut.GetBucketBalances();
@@ -301,7 +280,7 @@ public class ReserveServiceTests
     [Fact]
     public void GetBucketBalances_IsNotHardcodedToFourBuckets()
     {
-        _repository.ReserveBuckets.Add(ReserveBucket.Create("Emergency", 0m, isActive: false));
+        _repository.AddPot(ReserveBucket.Create("Emergency", 0m, isActive: false));
 
         var balances = _sut.GetBucketBalances();
 

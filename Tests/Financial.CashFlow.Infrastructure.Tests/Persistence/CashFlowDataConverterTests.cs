@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Currencies;
@@ -14,26 +15,29 @@ public class CashFlowDataConverterTests
     private const string RetiredId = "5db5c88d-0000-0000-0000-000000000502";
     private const string CategoryId = "5db5c88d-0000-0000-0000-000000000201";
     private const string PaymentId = "5db5c88d-0000-0000-0000-000000000701";
+    private const string ReservaId = "5db5c88d-0000-0000-0000-000000000801";
+    private const string PotId = "5db5c88d-0000-0000-0000-000000000802";
 
-    private const string V3File =
-        "{\"ReserveBuckets\":[],"
-        + "\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true,\"PaymentStatus\":\"CreditCardCharge\",\"RoundUpSuggestion\":0.5,\"SuggestedRoundUpAmount\":null,\"IsInvestment\":false,\"ReportingDate\":\"2026-10-01\",\"ListingDate\":\"2026-10-01\"}],"
-        + "\"ReserveMovements\":[],"
+    private const string V4File =
+        "{\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true,\"PaymentStatus\":\"CreditCardCharge\",\"RoundUpSuggestion\":0.5,\"SuggestedRoundUpAmount\":null,\"IsInvestment\":false,\"ReportingDate\":\"2026-10-01\",\"ListingDate\":\"2026-10-01\"}],"
+        + "\"ReserveMovements\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000901\",\"BucketId\":\"" + PotId + "\",\"Amount\":40,\"Date\":\"2026-10-05\",\"Description\":\"Deposit\",\"IncomeId\":null}],"
         + "\"CardStatements\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000401\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null},"
         + "{\"Id\":\"5db5c88d-0000-0000-0000-000000000402\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":11,\"IsPaid\":false,\"DueDate\":\"2026-11-18\"}],"
         + "\"RecurringBills\":[],\"MaeLedgerEntries\":[],\"InvestmentSnapshots\":[],"
         + "\"InvestmentAccounts\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000601\",\"Name\":\"Amex balance\",\"IsActive\":true,\"IsLiability\":true,\"Source\":\"CreditCard\",\"CreditCardId\":\"" + AmexId + "\"}],"
-        + "\"Accounts\":[{\"Id\":\"" + BarclaysId + "\",\"Name\":\"Barclays\",\"Template\":\"Bank\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":{\"Amount\":100,\"StartDate\":\"2026-09-01\"},\"RoundUp\":{\"Enabled\":false}},"
-        + "{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null},"
-        + "{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":false,\"OpeningBalance\":null,\"RoundUp\":null}],"
+        + "\"Accounts\":[{\"Id\":\"" + BarclaysId + "\",\"Name\":\"Barclays\",\"Template\":\"Bank\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":{\"Amount\":100,\"StartDate\":\"2026-09-01\"},\"RoundUp\":{\"Enabled\":false},\"Pots\":null},"
+        + "{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null},"
+        + "{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":false,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null},"
+        + "{\"Id\":\"" + ReservaId + "\",\"Name\":\"Reserva\",\"Template\":\"Pots\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,"
+        + "\"Pots\":[{\"Id\":\"" + PotId + "\",\"Name\":\"Investimento\",\"IsActive\":true,\"SplitPercentage\":33.33}]}],"
         + "\"IncomeSources\":[],\"Incomes\":[],"
         + "\"Categories\":[{\"Id\":\"" + CategoryId + "\",\"Name\":\"Mercado\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false}],"
-        + "\"Transfers\":[],\"BalanceAdjustments\":[],\"TitheCarryForwards\":[],\"TitheCarryForwardEffectiveFrom\":null,\"Version\":3}";
+        + "\"Transfers\":[],\"BalanceAdjustments\":[],\"TitheCarryForwards\":[],\"TitheCarryForwardEffectiveFrom\":null,\"Version\":4}";
 
     private const string UnpaidOctoberStatement = "\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null}";
     private const string PaidOctoberStatement = "\"Year\":2026,\"Month\":10,\"IsPaid\":true,\"DueDate\":null,\"PaymentTransferId\":\"" + PaymentId + "\"}";
 
-    private static readonly string V3FileWithPayment = V3File
+    private static readonly string V4FileWithPayment = V4File
         .Replace(UnpaidOctoberStatement, PaidOctoberStatement)
         .Replace(
             "\"Transfers\":[]",
@@ -42,29 +46,29 @@ public class CashFlowDataConverterTests
     private readonly CashFlowSerializerAdapter _serializer = new();
 
     [Fact]
-    public void LoadAndSave_V3FileWithCards_IsByteIdentical()
+    public void LoadAndSave_V4FileWithCardsAndPots_IsByteIdentical()
     {
-        var saved = _serializer.Serialize(_serializer.Deserialize(V3File));
+        var saved = _serializer.Serialize(_serializer.Deserialize(V4File));
 
-        saved.Should().Be(V3File);
+        saved.Should().Be(V4File);
     }
 
     [Fact]
     public void LoadAndSave_StatementPaidByTransfer_IsByteIdentical()
     {
-        var saved = _serializer.Serialize(_serializer.Deserialize(V3FileWithPayment));
+        var saved = _serializer.Serialize(_serializer.Deserialize(V4FileWithPayment));
 
         using (new AssertionScope())
         {
-            V3FileWithPayment.Should().Contain("\"PaymentTransferId\"");
-            saved.Should().Be(V3FileWithPayment);
+            V4FileWithPayment.Should().Contain("\"PaymentTransferId\"");
+            saved.Should().Be(V4FileWithPayment);
         }
     }
 
     [Fact]
     public void Load_StatementPaidByTransfer_LinksTheStatementToItsPayment()
     {
-        var data = _serializer.Deserialize(V3FileWithPayment);
+        var data = _serializer.Deserialize(V4FileWithPayment);
 
         using (new AssertionScope())
         {
@@ -79,14 +83,14 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
-    public void Load_V3Cards_AreCreditCardAccountsAfterTheBanksWithTheirIdsAndFlags()
+    public void Load_V4Cards_AreCreditCardAccountsAfterTheBanksWithTheirIdsAndFlags()
     {
-        var data = _serializer.Deserialize(V3File);
+        var data = _serializer.Deserialize(V4File);
 
         using (new AssertionScope())
         {
             data.Accounts.Select(account => (account.Id.ToString(), account.Template)).Should().Equal(
-                (BarclaysId, AccountTemplate.Bank), (AmexId, AccountTemplate.CreditCard), (RetiredId, AccountTemplate.CreditCard));
+                (BarclaysId, AccountTemplate.Bank), (AmexId, AccountTemplate.CreditCard), (RetiredId, AccountTemplate.CreditCard), (ReservaId, AccountTemplate.Pots));
             var amex = data.Accounts.Single(account => account.Id == Guid.Parse(AmexId));
             amex.Name.Should().Be("BA Amex");
             amex.Currency.Should().Be(Currency.GBP);
@@ -100,9 +104,9 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
-    public void Load_V3Statements_CarryTheirDueDates()
+    public void Load_V4Statements_CarryTheirDueDates()
     {
-        var data = _serializer.Deserialize(V3File);
+        var data = _serializer.Deserialize(V4File);
 
         data.CardStatements.Select(statement => (statement.Month, statement.DueDate)).Should().Equal(
             (10, (DateOnly?)null), (11, new DateOnly(2026, 11, 18)));
@@ -111,7 +115,7 @@ public class CashFlowDataConverterTests
     [Fact]
     public void Load_CardReferences_ShareTheCardAccountInstance()
     {
-        var data = _serializer.Deserialize(V3File);
+        var data = _serializer.Deserialize(V4File);
         var amex = data.Accounts.Single(account => account.Id == Guid.Parse(AmexId));
 
         using (new AssertionScope())
@@ -123,11 +127,46 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
-    public void Load_V2File_IsRefusedWithTheMigrateMessage()
+    public void Load_V4Pots_LiveInTheirAccountAndMovementsShareThePotInstance()
     {
-        var act = () => _serializer.Deserialize("""{ "Accounts": [], "CreditCards": [], "Version": 2 }""");
+        var data = _serializer.Deserialize(V4File);
+
+        using (new AssertionScope())
+        {
+            var reserva = data.Accounts.Single(account => account.Id == Guid.Parse(ReservaId));
+            var pot = reserva.Pots.Should().ContainSingle().Which;
+            pot.Id.Should().Be(Guid.Parse(PotId));
+            pot.Name.Should().Be("Investimento");
+            pot.SplitPercentage.Should().Be(33.33m);
+            data.ReserveMovements.Single().Bucket.Should().BeSameAs(pot);
+            data.Accounts.Where(account => account.Id != reserva.Id).Should().OnlyContain(account => account.Pots == null);
+        }
+    }
+
+    [Fact]
+    public void Load_MovementOfAnUnknownPot_Fails()
+    {
+        var act = () => _serializer.Deserialize(V4File.Replace("\"BucketId\":\"" + PotId, "\"BucketId\":\"5db5c88d-0000-0000-0000-000000000899"));
+
+        act.Should().Throw<JsonException>();
+    }
+
+    [Theory]
+    [InlineData("\"RoundUp\":null,\"Pots\":[{", "\"RoundUp\":null,\"Other\":[{")]
+    [InlineData("\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null", "\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":[]")]
+    public void Load_PotsPresentWithoutThePotsTemplateOrMissingWithIt_Fails(string original, string replacement)
+    {
+        var act = () => _serializer.Deserialize(V4File.Replace(original, replacement));
+
+        act.Should().Throw<JsonException>().WithMessage("*must have Pots exactly when its template has pots*");
+    }
+
+    [Fact]
+    public void Load_V3File_IsRefusedWithTheMigrateMessage()
+    {
+        var act = () => _serializer.Deserialize("""{ "Accounts": [], "ReserveBuckets": [], "Version": 3 }""");
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("data-cashflow.json is version 2; this build needs version 3. Run the migrate command first.");
+            .WithMessage("data-cashflow.json is version 3; this build needs version 4. Run the migrate command first.");
     }
 }

@@ -4,6 +4,8 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
 using Financial.Shared.Abstractions.Persistence;
 using FluentAssertions;
+using Financial.TestUtilities;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Repositories;
 
@@ -63,8 +65,8 @@ public class CashFlowJsonRepositoryConcurrencyTests
     public async Task GetReserveBuckets_EnumerationStartedBeforeSave_CompletesWhenSaveAddsBucket()
     {
         var data = CashFlowData.Create();
-        data.AddReserveBucket(ReserveBucket.Create("Investimento", 50m));
-        data.AddReserveBucket(ReserveBucket.Create("Viagem", 50m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 50m));
+        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Viagem", 50m));
         var storage = new BlockingJsonStorage();
         var repository = new CashFlowJsonRepository(data, storage, new CashFlowSerializerAdapter());
 
@@ -73,7 +75,7 @@ public class CashFlowJsonRepositoryConcurrencyTests
 
         var save = repository.ApplyAndSaveAsync(() =>
         {
-            repository.AddReserveBucket(ReserveBucket.Create("Casa", 10m));
+            ReservaAccount.Find(repository.GetAccounts())!.AddPot(ReserveBucket.Create("Casa", 10m));
             return true;
         });
         await storage.WriteEntered.Task;

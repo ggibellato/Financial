@@ -21,7 +21,7 @@ public sealed class DataFileMigrator
     {
         var serializer = new CashFlowSerializerAdapter();
         return new DataFileMigrator(
-            [new V1ToV2BanksToAccounts(), new V2ToV3CardsToAccounts()],
+            [new V1ToV2BanksToAccounts(), new V2ToV3CardsToAccounts(), new V3ToV4PotsAccounts()],
             CashFlowDataFileVersion.Current,
             json => serializer.Serialize(serializer.Deserialize(json)));
     }

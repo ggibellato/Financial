@@ -46,7 +46,7 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
           "BalanceAdjustments": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-800000000001", "Date": "2026-10-14", "AccountId": "{{BarclaysId}}", "TargetBalance": 2800.25, "Delta": 3.50, "Note": "Statement" }
           ],
-          "Version": 3
+          "Version": 4
         }
         """;
 

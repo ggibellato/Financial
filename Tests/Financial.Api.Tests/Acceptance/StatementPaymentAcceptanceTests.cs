@@ -50,7 +50,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
             { "Id": "{{OctoberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 10, "IsPaid": false, "DueDate": null },
             { "Id": "{{NovemberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 11, "IsPaid": false, "DueDate": "2026-12-03" }
           ],
-          "Version": 3
+          "Version": 4
         }
         """;
 

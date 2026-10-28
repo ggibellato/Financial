@@ -4,6 +4,7 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.CommandL
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.DataFileMigration;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Banks;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.BankOpeningBalance;
@@ -117,7 +118,7 @@ BankMigrator.Migrate(data);
 
 // Must also run before ImportReservasSheet below: once ReserveMovement references a real
 // ReserveBucket (F02), the importer resolves each column's bucket by name against
-// data.ReserveBuckets, so the 4 tracked buckets need to already exist. Seeding is idempotent,
+// the Reserva account's pots, so the tracked buckets need to already exist. Seeding is idempotent,
 // so re-running it at the end (below) to audit the final imported movement set is safe.
 ReserveBucketMigrator.Migrate(data);
 
@@ -208,11 +209,6 @@ static void CarryOverDataTheSpreadsheetDoesNotOwn(CashFlowData existingData, Cas
         data.AddIncomeSource(incomeSource);
     }
 
-    foreach (var reserveBucket in existingData.ReserveBuckets)
-    {
-        data.AddReserveBucket(reserveBucket);
-    }
-
     foreach (var income in existingData.Incomes)
     {
         data.AddIncome(income);
@@ -240,7 +236,7 @@ static void ImportMonthlyExpenseSheets(XLWorkbook workbook, CashFlowData data, I
     {
         var expenses = MonthlyExpenseSheetImporter.Import(
             sheet, year, month, today, report,
-            data.Accounts.Where(account => !account.Has(Capability.HasStatements)).ToList(),
+            data.Accounts.Where(account => account.CanPay).ToList(),
             data.Accounts.Where(account => account.Has(Capability.HasStatements)).ToList(),
             data.Categories);
         foreach (var expense in expenses)
@@ -260,7 +256,7 @@ static void ImportReservasSheet(XLWorkbook workbook, CashFlowData data, ImportRe
         return;
     }
 
-    foreach (var movement in ReservasSheetImporter.Import(sheet, data.ReserveBuckets, report))
+    foreach (var movement in ReservasSheetImporter.Import(sheet, ReservaAccount.Find(data.Accounts)?.Pots ?? [], report))
     {
         data.AddReserveMovement(movement);
     }

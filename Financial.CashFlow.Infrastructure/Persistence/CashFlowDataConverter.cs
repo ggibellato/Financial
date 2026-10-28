@@ -17,13 +17,12 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var unresolvedOptions = UnresolvedOptions;
         var accounts = DeserializeCollection<Account>(root, "Accounts", unresolvedOptions);
         var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
-        var reserveBuckets = DeserializeCollection<ReserveBucket>(root, "ReserveBuckets", unresolvedOptions);
         var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
 
         var context = new ReferenceResolutionContext();
         foreach (var account in accounts) context.Accounts[account.Id] = account;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
-        foreach (var bucket in reserveBuckets) context.ReserveBuckets[bucket.Id] = bucket;
+        foreach (var pot in accounts.SelectMany(account => account.Pots ?? [])) context.ReserveBuckets[pot.Id] = pot;
         foreach (var category in categories) context.Categories[category.Id] = category;
 
         var resolvedOptions = CashFlowElementOptions.Create(context);
@@ -34,7 +33,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var account in accounts) data.AddAccount(account);
         foreach (var incomeSource in incomeSources) data.AddIncomeSource(incomeSource);
         foreach (var investmentAccount in investmentAccounts) data.AddInvestmentAccount(investmentAccount);
-        foreach (var bucket in reserveBuckets) data.AddReserveBucket(bucket);
         foreach (var category in categories) data.AddCategory(category);
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
@@ -68,7 +66,6 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var elementOptions = UnresolvedOptions;
 
         writer.WriteStartObject();
-        WriteCollection(writer, "ReserveBuckets", value.ReserveBuckets, elementOptions);
         WriteCollection(writer, "Expenses", value.Expenses, elementOptions);
         WriteCollection(writer, "ReserveMovements", value.ReserveMovements, elementOptions);
         WriteCollection(writer, "CardStatements", value.CardStatements, elementOptions);
