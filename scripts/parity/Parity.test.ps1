@@ -34,7 +34,7 @@ $amexId = '33333333-3333-3333-3333-333333333333'
 $responses = @{
     'banks'                                       = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`"},{`"id`":`"$chaseId`",`"name`":`"Chase`"}]"
     'reserve/movements'                           = '[{"bucketName":"Casa","amount":100.00,"date":"2026-08-31T00:00:00"},{"bucketName":"Casa","amount":50.00,"date":"2026-09-01T00:00:00"},{"bucketName":"Viagem","amount":25.50,"date":"2026-09-15T00:00:00"}]'
-    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`"},{`"id`":`"$chaseId`",`"name`":`"Chase`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`"}]"
+    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`"},{`"id`":`"44444444-4444-4444-4444-444444444444`",`"name`":`"Reserva`",`"templateName`":`"Pots`"}]"
     'reserve/balances'                            = '[{"bucketName":"Casa","balance":150.00},{"bucketName":"Viagem","balance":25.50}]'
     'controle-mae/entries/totals'                 = '{"totalBrlValue":167.88,"totalGbpValue":7.94}'
     'annual-summary/2026/category-totals'         = '{"categoryTotals":[{"category":"Mercado","annualTotal":1200.00,"average":100.00,"monthlyTotals":[100.00,100.00]}],"incomeSummary":{"salaryAnnualTotal":5000.00,"salaryMonthly":[2500.00,2500.00]},"resultadoAnnualTotal":3800.00,"resultadoMonthly":[1900.00,1900.00]}'
@@ -146,6 +146,8 @@ try {
     Check 'account figures are built only with IncludeAccounts' (-not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'account' }) -and $report['2026-08/account/Barclays/balance'] -eq [decimal]'130.83' -and $report['2026-09/account/Chase/balance'] -eq [decimal]'10.00') ''
 
     Check 'card members are built under cardMembers, with their balance only in the current month' ($report['2026-08/summary/cardMembers/Amex/outstandingTotal'] -eq [decimal]'40.10' -and $report['2026-08/summary/cardMembers/Amex/isPaid'] -eq $false -and $report['2026-09/summary/cardMembers/Amex/balance'] -eq [decimal]'-40.10' -and -not $report.ContainsKey('2026-08/summary/cardMembers/Amex/balance') -and -not ($report.Keys | Where-Object { $_ -like '*/summary/members/Amex/*' }) -and $report['2026-09/summary/totals/GBP/cardOutstandingTotal'] -eq [decimal]'40.10') ''
+
+    Check 'account figures skip accounts that are neither banks nor cards' (-not ($report.Keys | Where-Object { $_ -like '*/Reserva/*' })) ''
 
     Check 'card account balance is built only in the current month' ($report['2026-09/cardAccount/Amex/balance'] -eq [decimal]'-40.10' -and -not $report.ContainsKey('2026-08/cardAccount/Amex/balance') -and -not ($report.Keys | Where-Object { $_ -like '*/account/Amex/*' })) ''
 

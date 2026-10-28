@@ -28,7 +28,7 @@ public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
         }
 
         var accountArray = root["Accounts"] as JsonArray ?? [];
-        accountArray.Add(ReservaAccount(buckets));
+        accountArray.Add(NewReservaAccount(buckets));
         root["Accounts"] = accountArray;
         root.Remove("ReserveBuckets");
 
@@ -66,7 +66,7 @@ public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
         }
     }
 
-    private static JsonObject ReservaAccount(IEnumerable<JsonObject> buckets) => new()
+    private static JsonObject NewReservaAccount(IEnumerable<JsonObject> buckets) => new()
     {
         ["Id"] = Guid.NewGuid().ToString(),
         ["Name"] = ReservaName,

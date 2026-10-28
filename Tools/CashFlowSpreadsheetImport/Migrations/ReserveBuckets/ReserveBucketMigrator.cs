@@ -68,9 +68,10 @@ public static class ReserveBucketMigrator
 
     private static void AuditReserveMovements(CashFlowData data, ReserveBucketMigrationSummary summary)
     {
+        var pots = PotsOf(data);
         foreach (var movement in data.ReserveMovements)
         {
-            if (PotsOf(data).Contains(movement.Bucket))
+            if (pots.Contains(movement.Bucket))
             {
                 summary.CountMovementResolved();
             }

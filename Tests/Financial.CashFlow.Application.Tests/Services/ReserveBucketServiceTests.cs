@@ -155,6 +155,7 @@ public class ReserveBucketServiceTests
         {
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
             repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveBucketService.CreateReserveBucket");
         }
     }
 
