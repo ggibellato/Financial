@@ -87,7 +87,7 @@ const CASES: FormDialogCase[] = [
   ),
   nameDialog(
     'InvestmentAccountFormDialog',
-    (h) => render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} {...h} />),
+    (h) => render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={[]} {...h} />),
     'ChaseSave',
     'An investment account named "ChaseSave" already exists.',
   ),

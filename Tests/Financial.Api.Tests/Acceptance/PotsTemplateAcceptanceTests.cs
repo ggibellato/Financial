@@ -96,7 +96,8 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             Name = "Reservas",
             IsActive = true,
             IsLiability = false,
-            Source = "ReserveBucketsSum"
+            Source = "PotsAccountTotal",
+            PotsAccountId = Guid.Parse(ReservaId)
         });
 
         var created = await Client.PostAsJsonAsync($"{Api}/accounts", new AccountCreateDTO
@@ -135,7 +136,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             var suggestion = suggestions!.Suggestions.Should().ContainSingle(s => s.AccountId == Guid.Parse(ReservasPessoaisId)).Subject;
             suggestion.SuggestedValue.Should().Be(624.5m);
             suggestion.SourceDescription.Should().Be("Reserva total — as of Oct 2026");
-            investmentAccounts!.Should().ContainSingle().Which.Source.Should().Be("ReserveBucketsSum");
+            investmentAccounts!.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Source = "PotsAccountTotal", PotsAccountId = (Guid?)Guid.Parse(ReservaId) });
         }
     }
 

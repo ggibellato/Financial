@@ -16,15 +16,20 @@ import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import { useCreditCards } from '../hooks/useCreditCards'
-import type { InvestmentAccountDto } from '../api/types'
+import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 
-function sourceDisplay(account: InvestmentAccountDto, creditCards: { id: string; name: string }[]): string {
+function sourceDisplay(
+  account: InvestmentAccountDto,
+  creditCards: { id: string; name: string }[],
+  accounts: AccountDto[],
+): string {
   if (account.source === 'CreditCard') {
     return creditCards.find((c) => c.id === account.creditCardId)?.name ?? '—'
   }
-  if (account.source === 'ReserveBucketsSum') {
-    return 'Sum of reserve buckets'
+  if (account.source === 'PotsAccountTotal') {
+    const potsAccount = accounts.find((a) => a.id === account.potsAccountId)
+    return potsAccount ? `${potsAccount.name} total` : '—'
   }
   return '—'
 }
@@ -32,6 +37,7 @@ function sourceDisplay(account: InvestmentAccountDto, creditCards: { id: string;
 export default function InvestmentAccountsPage() {
   const {
     investmentAccounts,
+    accounts,
     isLoading,
     error,
     retry,
@@ -52,10 +58,11 @@ export default function InvestmentAccountsPage() {
     isLiability: boolean,
     source: InvestmentAccountSourceOption,
     creditCardId: string | null,
+    potsAccountId: string | null,
   ) =>
     editingAccount
-      ? updateInvestmentAccount(editingAccount.id, { name, isActive, isLiability, source, creditCardId })
-      : createInvestmentAccount({ name, isActive, isLiability, source, creditCardId })
+      ? updateInvestmentAccount(editingAccount.id, { name, isActive, isLiability, source, creditCardId, potsAccountId })
+      : createInvestmentAccount({ name, isActive, isLiability, source, creditCardId, potsAccountId })
 
   const closeFormDialog = () => {
     setEditingAccount(null)
@@ -68,8 +75,9 @@ export default function InvestmentAccountsPage() {
     isLiability: boolean,
     source: InvestmentAccountSourceOption,
     creditCardId: string | null,
+    potsAccountId: string | null,
   ) => {
-    const result = await handleSubmit(name, isActive, isLiability, source, creditCardId)
+    const result = await handleSubmit(name, isActive, isLiability, source, creditCardId, potsAccountId)
     closeFormDialog()
     return result
   }
@@ -110,6 +118,7 @@ export default function InvestmentAccountsPage() {
             <InvestmentAccountFormDialog
               investmentAccount={editingAccount}
               creditCards={creditCards}
+              accounts={accounts}
               onCancel={closeFormDialog}
               onSubmit={handleFormSubmit}
             />
@@ -148,7 +157,7 @@ export default function InvestmentAccountsPage() {
               <DataTableCell label="Name"><TruncatedText text={account.name} /></DataTableCell>
               <DataTableCell label="Active">{account.isActive ? 'Yes' : 'No'}</DataTableCell>
               <DataTableCell label="Liability">{account.isLiability ? 'Yes' : 'No'}</DataTableCell>
-              <DataTableCell label="Source">{sourceDisplay(account, creditCards)}</DataTableCell>
+              <DataTableCell label="Source">{sourceDisplay(account, creditCards, accounts)}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
                 deleteDisabled={deletingId === account.id}

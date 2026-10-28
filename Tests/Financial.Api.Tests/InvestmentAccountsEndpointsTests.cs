@@ -256,7 +256,28 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task CreateInvestmentAccount_SourceReserveBucketsSum_Returns200WithNoCreditCardId()
+    public async Task CreateInvestmentAccount_SourcePotsAccountTotal_Returns200NamingThePotsAccount()
+    {
+        var reservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais copy",
+            IsActive = true,
+            IsLiability = false,
+            Source = "PotsAccountTotal",
+            PotsAccountId = reservaId
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
+        account!.Source.Should().Be("PotsAccountTotal");
+        account.PotsAccountId.Should().Be(reservaId);
+        account.CreditCardId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccount_LegacySourceReserveBucketsSum_Returns400()
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
         {
@@ -266,9 +287,6 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
             Source = "ReserveBucketsSum"
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var account = await response.Content.ReadFromJsonAsync<InvestmentAccountDTO>();
-        account!.Source.Should().Be("ReserveBucketsSum");
-        account.CreditCardId.Should().BeNull();
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }

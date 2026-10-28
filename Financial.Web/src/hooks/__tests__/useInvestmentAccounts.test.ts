@@ -2,10 +2,12 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentAccountDto } from '../../api/types'
+import { potsAccount } from '../../test/account'
 import { useInvestmentAccounts } from '../useInvestmentAccounts'
 
-const { getInvestmentAccountsMock, createInvestmentAccountMock, updateInvestmentAccountMock, deleteInvestmentAccountMock } = vi.hoisted(() => ({
+const { getInvestmentAccountsMock, getAccountsMock, createInvestmentAccountMock, updateInvestmentAccountMock, deleteInvestmentAccountMock } = vi.hoisted(() => ({
   getInvestmentAccountsMock: vi.fn<FinancialApiClient['getInvestmentAccounts']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   createInvestmentAccountMock: vi.fn<FinancialApiClient['createInvestmentAccount']>(),
   updateInvestmentAccountMock: vi.fn<FinancialApiClient['updateInvestmentAccount']>(),
   deleteInvestmentAccountMock: vi.fn<FinancialApiClient['deleteInvestmentAccount']>(),
@@ -14,6 +16,7 @@ const { getInvestmentAccountsMock, createInvestmentAccountMock, updateInvestment
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getInvestmentAccounts: getInvestmentAccountsMock,
+    getAccounts: getAccountsMock,
     createInvestmentAccount: createInvestmentAccountMock,
     updateInvestmentAccount: updateInvestmentAccountMock,
     deleteInvestmentAccount: deleteInvestmentAccountMock,
@@ -21,27 +24,32 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'None', creditCardId: null },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null, potsAccountId: null },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'None', creditCardId: null, potsAccountId: null },
 ]
+const ACCOUNTS = [potsAccount({ id: 'p1', name: 'Reserva' })]
 
 describe('useInvestmentAccounts', () => {
   beforeEach(() => {
     getInvestmentAccountsMock.mockReset()
+    getAccountsMock.mockReset()
     createInvestmentAccountMock.mockReset()
     updateInvestmentAccountMock.mockReset()
     deleteInvestmentAccountMock.mockReset()
     getInvestmentAccountsMock.mockResolvedValue(INVESTMENT_ACCOUNTS)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
   })
 
-  it('fetches the investment account list once on mount', async () => {
+  it('fetches the investment accounts and the accounts once on mount', async () => {
     const { result } = renderHook(() => useInvestmentAccounts())
 
     expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(1)
+    expect(getAccountsMock).toHaveBeenCalledTimes(1)
     expect(result.current.investmentAccounts).toEqual(INVESTMENT_ACCOUNTS)
+    expect(result.current.accounts).toEqual(ACCOUNTS)
   })
 
   it('surfaces a fetch error', async () => {
@@ -70,16 +78,16 @@ describe('useInvestmentAccounts', () => {
       isLiability: false,
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
-      creditCardId: null,
+      creditCardId: null, potsAccountId: null,
     })
     const { result } = renderHook(() => useInvestmentAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.createInvestmentAccount({ name: 'Monzo Pot', isActive: true, isLiability: false, source: 'None', creditCardId: null })
+      await result.current.createInvestmentAccount({ name: 'Monzo Pot', isActive: true, isLiability: false, source: 'None', creditCardId: null, potsAccountId: null })
     })
 
-    expect(createInvestmentAccountMock).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: false, source: 'None', creditCardId: null })
+    expect(createInvestmentAccountMock).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: false, source: 'None', creditCardId: null, potsAccountId: null })
     await waitFor(() => expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(2))
   })
 
@@ -89,7 +97,7 @@ describe('useInvestmentAccounts', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await expect(
-      result.current.createInvestmentAccount({ name: 'ChaseSave', isActive: true, isLiability: false, source: 'None', creditCardId: null }),
+      result.current.createInvestmentAccount({ name: 'ChaseSave', isActive: true, isLiability: false, source: 'None', creditCardId: null, potsAccountId: null }),
     ).rejects.toThrow('An investment account named "ChaseSave" already exists.')
   })
 
@@ -101,13 +109,13 @@ describe('useInvestmentAccounts', () => {
       isLiability: true,
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
-      creditCardId: null,
+      creditCardId: null, potsAccountId: null,
     })
     const { result } = renderHook(() => useInvestmentAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await act(async () => {
-      await result.current.updateInvestmentAccount('a1', { name: 'ChaseSaveRenamed', isActive: false, isLiability: true, source: 'None', creditCardId: null })
+      await result.current.updateInvestmentAccount('a1', { name: 'ChaseSaveRenamed', isActive: false, isLiability: true, source: 'None', creditCardId: null, potsAccountId: null })
     })
 
     expect(updateInvestmentAccountMock).toHaveBeenCalledWith('a1', {
@@ -115,7 +123,7 @@ describe('useInvestmentAccounts', () => {
       isActive: false,
       isLiability: true,
       source: 'None',
-      creditCardId: null,
+      creditCardId: null, potsAccountId: null,
     })
     await waitFor(() => expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(2))
   })
