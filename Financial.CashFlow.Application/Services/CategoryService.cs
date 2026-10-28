@@ -28,7 +28,9 @@ public sealed class CategoryService : ICategoryService
         using var span = StartSpan("GetCategories");
         try
         {
-            var referencedCategoryIds = _repository.GetExpenses().Select(e => e.Category.Id).ToHashSet();
+            var referencedCategoryIds = _repository.GetExpenses().Select(e => e.Category.Id)
+                .Concat(_repository.GetAccounts().Select(account => account.Category?.Id).OfType<Guid>())
+                .ToHashSet();
             var result = _repository.GetCategories().Select(category => ToDto(category, referencedCategoryIds.Contains(category.Id))).ToList();
 
             span.MarkSuccess();
@@ -144,10 +146,9 @@ public sealed class CategoryService : ICategoryService
         }
     }
 
-    /// <summary>Also drives <see cref="CategoryDTO.HasReferences"/>, so the client can disable Delete
-    /// before attempting it rather than only learning about the guard from a failed request.</summary>
     private bool IsReferenced(Guid categoryId) =>
-        _repository.GetExpenses().Any(e => e.Category.Id == categoryId);
+        _repository.GetExpenses().Any(e => e.Category.Id == categoryId)
+        || _repository.GetAccounts().Any(account => account.Category?.Id == categoryId);
 
     private ITelemetrySpan StartSpan(string operationName)
     {

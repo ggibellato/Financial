@@ -222,6 +222,42 @@ public class CategoryServiceTests
     }
 
     [Fact]
+    public async Task DeleteCategoryAsync_SetOnAPotsAccount_ThrowsAndWritesNothing()
+    {
+        var repository = new StubCashFlowRepository();
+        var category = Category.Create("Reserva");
+        repository.Categories.Add(category);
+        repository.Accounts.Add(TestAccounts.Pots("Reserva", category: category));
+        var sut = CreateService(repository);
+
+        var act = async () => await sut.DeleteCategoryAsync(category.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<EntityInUseException>().WithMessage("Cannot delete a category that is still used by a transaction.");
+            repository.Categories.Should().ContainSingle();
+            repository.SaveChangesCallCount.Should().Be(0);
+        }
+
+        _tracer.ShouldHaveFailedSpan<EntityInUseException>("CashFlow.CategoryService.DeleteCategory");
+    }
+
+    [Fact]
+    public void GetCategories_SetOnAPotsAccount_HasReferencesIsTrueForItOnly()
+    {
+        var repository = new StubCashFlowRepository();
+        var reserva = Category.Create("Reserva");
+        repository.Categories.Add(reserva);
+        repository.Categories.Add(Category.Create("Mercado"));
+        repository.Accounts.Add(TestAccounts.Pots("Reserva", category: reserva));
+        var sut = CreateService(repository);
+
+        var result = sut.GetCategories();
+
+        result.Select(c => (c.Name, c.HasReferences)).Should().BeEquivalentTo([("Reserva", true), ("Mercado", false)]);
+    }
+
+    [Fact]
     public void GetCategories_WhenReferencedByExpense_HasReferencesIsTrue()
     {
         var repository = new StubCashFlowRepository();

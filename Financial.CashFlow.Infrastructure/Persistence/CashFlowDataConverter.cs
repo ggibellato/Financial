@@ -15,17 +15,18 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         var root = document.RootElement;
 
         var unresolvedOptions = UnresolvedOptions;
-        var accounts = DeserializeCollection<Account>(root, "Accounts", unresolvedOptions);
-        var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
-        var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
-
         var context = new ReferenceResolutionContext();
+        var resolvedOptions = CashFlowElementOptions.Create(context);
+
+        var categories = DeserializeCollection<Category>(root, "Categories", unresolvedOptions);
+        foreach (var category in categories) context.Categories[category.Id] = category;
+
+        var accounts = DeserializeCollection<Account>(root, "Accounts", resolvedOptions);
+        var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         foreach (var account in accounts) context.Accounts[account.Id] = account;
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
         foreach (var pot in accounts.SelectMany(account => account.Pots ?? [])) context.ReserveBuckets[pot.Id] = pot;
-        foreach (var category in categories) context.Categories[category.Id] = category;
 
-        var resolvedOptions = CashFlowElementOptions.Create(context);
         var investmentAccounts = DeserializeCollection<InvestmentAccount>(root, "InvestmentAccounts", resolvedOptions);
         foreach (var investmentAccount in investmentAccounts) context.InvestmentAccounts[investmentAccount.Id] = investmentAccount;
 
