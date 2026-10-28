@@ -14,6 +14,7 @@ internal static class V2DataFile
     public const string InvestmentAccountId = "5db5c88d-0000-0000-0000-000000000601";
 
     private const string CategoryId = "c0000000-0000-0000-0000-000000000001";
+    private const string ReservaCategoryId = "c0000000-0000-0000-0000-000000000002";
 
     public static string Json => Build(Visa8003Id, Visa8003Id, Visa8003Id);
 
@@ -55,7 +56,7 @@ internal static class V2DataFile
             { "Id": "{{AmexId}}", "Name": "BA Amex", "IsActive": true, "NextInvoiceDueDate": "2026-10-25" },
             { "Id": "{{PaypalId}}", "Name": "Paypal Credit", "IsActive": true, "NextInvoiceDueDate": null }
           ],
-          "Categories": [{ "Id": "{{CategoryId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }],
+          "Categories": [{ "Id": "{{CategoryId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }, { "Id": "{{ReservaCategoryId}}", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false }],
           "Transfers": [], "BalanceAdjustments": [], "TitheCarryForwards": [],
           "TitheCarryForwardEffectiveFrom": null,
           "Version": 2

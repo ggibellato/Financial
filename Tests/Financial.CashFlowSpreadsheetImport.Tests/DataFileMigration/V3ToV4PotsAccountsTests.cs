@@ -13,6 +13,8 @@ public class V3ToV4PotsAccountsTests
     private const string InvestimentoId = "6a0f0000-0000-0000-0000-000000000101";
     private const string ArianaId = "6a0f0000-0000-0000-0000-000000000102";
     private const string MovementId = "6a0f0000-0000-0000-0000-000000000201";
+    private const string MercadoId = "6a0f0000-0000-0000-0000-000000000301";
+    private const string ReservaCategoryId = "6a0f0000-0000-0000-0000-000000000302";
 
     private const string V3Json = $$"""
         {
@@ -26,6 +28,10 @@ public class V3ToV4PotsAccountsTests
           "Accounts": [
             { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 100, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
             { "Id": "{{AmexId}}", "Name": "BA Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null }
+          ],
+          "Categories": [
+            { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "{{ReservaCategoryId}}", "Name": "reserva", "Active": false, "IsInvestment": false, "IsTithe": false }
           ],
           "Version": 3
         }
@@ -59,14 +65,14 @@ public class V3ToV4PotsAccountsTests
             Accounts(root).Should().HaveCount(3);
             Guid.TryParse((string)reserva["Id"]!, out _).Should().BeTrue();
             reserva.ToJsonString().Should().Be(
-                $$$"""{"Id":"{{{reserva["Id"]}}}","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{{{string.Join(",", bucketsBefore)}}}]}""");
-            summary.Should().Be("Reserva Pots account created with 2 pots");
+                $$$"""{"Id":"{{{reserva["Id"]}}}","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{{{string.Join(",", bucketsBefore)}}}],"CategoryId":"{{{ReservaCategoryId}}}"}""");
+            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva");
         }
     }
 
     [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-01")]
-    public void Apply_OtherAccountsGetNullPots_AndMovementsAreUnchanged()
+    public void Apply_OtherAccountsGetNullPotsAndCategory_AndMovementsAreUnchanged()
     {
         var root = Root();
         var movementsBefore = root["ReserveMovements"]!.ToJsonString();
@@ -75,7 +81,8 @@ public class V3ToV4PotsAccountsTests
 
         using (new AssertionScope())
         {
-            Accounts(root).Take(2).Should().OnlyContain(account => account.ContainsKey("Pots") && account["Pots"] == null);
+            Accounts(root).Take(2).Should().OnlyContain(account =>
+                account.ContainsKey("Pots") && account["Pots"] == null && account.ContainsKey("CategoryId") && account["CategoryId"] == null);
             root["ReserveMovements"]!.ToJsonString().Should().Be(movementsBefore);
         }
     }
@@ -83,14 +90,42 @@ public class V3ToV4PotsAccountsTests
     [Fact]
     public void Apply_NoBuckets_CreatesAnEmptyReserva()
     {
-        var root = Root("""{ "Accounts": [], "Version": 3 }""");
+        var root = Root($$"""{ "Accounts": [], "Categories": [{ "Id": "{{ReservaCategoryId}}", "Name": "Reserva" }], "Version": 3 }""");
 
         var summary = _sut.Apply(root);
 
         using (new AssertionScope())
         {
             Accounts(root).Should().ContainSingle().Which["Pots"]!.AsArray().Should().BeEmpty();
-            summary.Should().Be("Reserva Pots account created with 0 pots");
+            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-01")]
+    public void Apply_ReservaCategory_IsSetFromTheFirstCategoryNamedReservaIgnoringCase()
+    {
+        var root = Root(V3Json.Replace(
+            $"{{ \"Id\": \"{MercadoId}\", \"Name\": \"Mercado\"",
+            $"{{ \"Id\": \"{MercadoId}\", \"Name\": \"RESERVA\""));
+
+        _sut.Apply(root);
+
+        Accounts(root).Last()["CategoryId"]!.GetValue<string>().Should().Be(MercadoId);
+    }
+
+    [Fact]
+    public void Apply_NoCategoryNamedReserva_IsRefused()
+    {
+        var root = Root(V3Json.Replace("\"Name\": \"reserva\"", "\"Name\": \"Savings\""));
+        var before = root.ToJsonString();
+
+        var act = () => _sut.Apply(root);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<InvalidDataException>().WithMessage("No category named \"Reserva\" to assign to the Reserva Pots account.");
+            root.ToJsonString().Should().Be(before);
         }
     }
 
