@@ -360,8 +360,9 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSum_Succeeds()
+    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSum_NamesReservaAndKeepsTheWireValue()
     {
+        var reserva = _repository.EnsureReserva();
         var request = new InvestmentAccountCreateDTO
         {
             Name = "Reservas pessoais",
@@ -374,9 +375,121 @@ public class InvestmentAccountServiceTests
 
         using (new AssertionScope())
         {
+            var created = _repository.InvestmentAccounts.Should().ContainSingle(account => account.Id == result.Id).Which;
+            created.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
+            created.PotsAccount.Should().BeSameAs(reserva);
             result.Source.Should().Be("ReserveBucketsSum");
             result.CreditCardId.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSumWithNoPotsAccount_ThrowsAndWritesNothing()
+    {
+        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("A pots-account-sourced investment account requires a Pots account.");
+            _repository.InvestmentAccounts.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.InvestmentAccountService.CreateInvestmentAccount");
+        }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourcePotsAccountTotal_IsNotAcceptedYet()
+    {
+        _repository.EnsureReserva();
+
+        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "PotsAccountTotal"
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Source 'PotsAccountTotal' is not recognized.");
+            _repository.InvestmentAccounts.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.InvestmentAccountService.CreateInvestmentAccount");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_SourceReserveBucketsSum_NamesReservaAndKeepsTheWireValue()
+    {
+        var reserva = _repository.EnsureReserva();
+        var account = InvestmentAccount.Create("Reservas pessoais", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(account);
+
+        var result = await _sut.UpdateInvestmentAccountAsync(account.Id, new InvestmentAccountUpdateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        using (new AssertionScope())
+        {
+            account.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
+            account.PotsAccount.Should().BeSameAs(reserva);
+            result.Source.Should().Be("ReserveBucketsSum");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_ItsPotsAccountDeactivatedSinceLinking_KeepsTheLink()
+    {
+        var reserva = _repository.EnsureReserva();
+        var account = InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: reserva);
+        _repository.InvestmentAccounts.Add(account);
+        reserva.SetActive(false);
+
+        await _sut.UpdateInvestmentAccountAsync(account.Id, new InvestmentAccountUpdateDTO
+        {
+            Name = "Reservas",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        using (new AssertionScope())
+        {
+            account.Name.Should().Be("Reservas");
+            account.PotsAccount.Should().BeSameAs(reserva);
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_NamingASecondPotsAccount_KeepsIt()
+    {
+        _repository.EnsureReserva();
+        var holidays = TestAccounts.Pots("Holidays");
+        _repository.Accounts.Add(holidays);
+        var account = InvestmentAccount.Create(
+            "Holiday savings", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: holidays);
+        _repository.InvestmentAccounts.Add(account);
+
+        await _sut.UpdateInvestmentAccountAsync(account.Id, new InvestmentAccountUpdateDTO
+        {
+            Name = "Holiday savings",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        account.PotsAccount.Should().BeSameAs(holidays);
     }
 
     [Fact]

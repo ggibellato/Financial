@@ -15,6 +15,8 @@ public class V3ToV4PotsAccountsTests
     private const string MovementId = "6a0f0000-0000-0000-0000-000000000201";
     private const string MercadoId = "6a0f0000-0000-0000-0000-000000000301";
     private const string ReservaCategoryId = "6a0f0000-0000-0000-0000-000000000302";
+    private const string ReservasPessoaisId = "6a0f0000-0000-0000-0000-000000000401";
+    private const string AmexBalanceId = "6a0f0000-0000-0000-0000-000000000402";
 
     private const string V3Json = $$"""
         {
@@ -32,6 +34,10 @@ public class V3ToV4PotsAccountsTests
           "Categories": [
             { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
             { "Id": "{{ReservaCategoryId}}", "Name": "reserva", "Active": false, "IsInvestment": false, "IsTithe": false }
+          ],
+          "InvestmentAccounts": [
+            { "Id": "{{ReservasPessoaisId}}", "Name": "Reservas pessoais", "IsActive": true, "IsLiability": false, "Source": "ReserveBucketsSum", "CreditCardId": null },
+            { "Id": "{{AmexBalanceId}}", "Name": "Amex balance", "IsActive": true, "IsLiability": true, "Source": "CreditCard", "CreditCardId": "{{AmexId}}" }
           ],
           "Version": 3
         }
@@ -66,8 +72,22 @@ public class V3ToV4PotsAccountsTests
             Guid.TryParse((string)reserva["Id"]!, out _).Should().BeTrue();
             reserva.ToJsonString().Should().Be(
                 $$$"""{"Id":"{{{reserva["Id"]}}}","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{{{string.Join(",", bucketsBefore)}}}],"CategoryId":"{{{ReservaCategoryId}}}"}""");
-            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva");
+            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva; 1 snapshot sources point at it");
         }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-03")]
+    public void Apply_PotsSourcedInvestmentAccount_NamesReservaAndOthersGetNull()
+    {
+        var root = Root();
+
+        _sut.Apply(root);
+
+        var reservaId = (string)Accounts(root).Last()["Id"]!;
+        root["InvestmentAccounts"]!.AsArray().Select(account => account!.ToJsonString()).Should().Equal(
+            $$$"""{"Id":"{{{ReservasPessoaisId}}}","Name":"Reservas pessoais","IsActive":true,"IsLiability":false,"Source":"PotsAccountTotal","CreditCardId":null,"PotsAccountId":"{{{reservaId}}}"}""",
+            $$$"""{"Id":"{{{AmexBalanceId}}}","Name":"Amex balance","IsActive":true,"IsLiability":true,"Source":"CreditCard","CreditCardId":"{{{AmexId}}}","PotsAccountId":null}""");
     }
 
     [Fact]
@@ -97,7 +117,7 @@ public class V3ToV4PotsAccountsTests
         using (new AssertionScope())
         {
             Accounts(root).Should().ContainSingle().Which["Pots"]!.AsArray().Should().BeEmpty();
-            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva");
+            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources point at it");
         }
     }
 

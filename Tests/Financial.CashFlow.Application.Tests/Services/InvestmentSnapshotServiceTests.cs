@@ -161,7 +161,7 @@ public class InvestmentSnapshotServiceTests
         var creditCardAccount = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, card);
         var reserveAccount = InvestmentAccount.Create(
-            "ReservasPessoais", isActive: true, isLiability: true, InvestmentAccountSource.ReserveBucketsSum);
+            "ReservasPessoais", isActive: true, isLiability: true, InvestmentAccountSource.PotsAccountTotal, potsAccount: repository.EnsureReserva());
         var noneAccount = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
 
         repository.InvestmentAccounts.AddRange([creditCardAccount, reserveAccount, noneAccount]);
@@ -236,7 +236,7 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
-    public async Task GetSuggestionsForMonth_ReserveBucketsSum_UsesLastDayOfPriorMonth()
+    public async Task GetSuggestionsForMonth_PotsAccountTotal_UsesLastDayOfPriorMonthAndNamesTheAccount()
     {
         var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
         var investimento = repository.ReserveBuckets.First(b => b.Name == "Investimento");
@@ -248,12 +248,16 @@ public class InvestmentSnapshotServiceTests
         var result = await service.GetSuggestionsForMonthAsync(2026, 8);
 
         var suggestion = result.Suggestions.Should().ContainSingle(s => s.AccountId == reserveAccount.Id).Subject;
-        suggestion.SuggestedValue.Should().Be(150m);
+        using (new AssertionScope())
+        {
+            suggestion.SuggestedValue.Should().Be(150m);
+            suggestion.SourceDescription.Should().Be("Reserva total — as of Jul 2026");
+        }
     }
 
     [Fact]
-    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
-    public async Task GetSuggestionsForMonth_ReserveBucketsSum_IsReservasBalanceAndIgnoresASecondPotsAccount()
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-03")]
+    public async Task GetSuggestionsForMonth_PotsAccountTotal_IsTheNamedAccountsBalanceAndIgnoresASecondPotsAccount()
     {
         var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
         var investimento = repository.ReserveBuckets.First(b => b.Name == "Investimento");
@@ -272,21 +276,32 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
-    public async Task GetSuggestionsForMonth_ReserveBucketsSumWithNoPotsAccount_SuggestsZero()
+    public async Task GetSuggestionsForMonth_PotsAccountTotal_NamesASecondPotsAccountAndUsesItsBalance()
     {
-        var repository = new StubCashFlowRepository();
-        var reserveAccount = InvestmentAccount.Create(
-            "ReservasPessoais", isActive: true, isLiability: true, InvestmentAccountSource.ReserveBucketsSum);
-        repository.InvestmentAccounts.Add(reserveAccount);
+        var repository = new StubCashFlowRepository(seedDefaultReserveBuckets: true);
+        var investimento = repository.ReserveBuckets.First(b => b.Name == "Investimento");
+        var holidays = TestAccounts.Pots("Holidays");
+        var flights = ReserveBucket.Create("Flights", 100m);
+        holidays.AddPot(flights);
+        repository.Accounts.Add(holidays);
+        repository.ReserveMovements.Add(ReserveMovement.Create(investimento, 120m, new DateOnly(2026, 7, 10), "Reserva"));
+        repository.ReserveMovements.Add(ReserveMovement.Create(flights, 900m, new DateOnly(2026, 7, 10), "Holidays"));
+        var holidaySavings = InvestmentAccount.Create(
+            "Holiday savings", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: holidays);
+        repository.InvestmentAccounts.Add(holidaySavings);
 
         var result = await CreateService(repository).GetSuggestionsForMonthAsync(2026, 8);
 
-        result.Suggestions.Should().ContainSingle(s => s.AccountId == reserveAccount.Id)
-            .Which.SuggestedValue.Should().Be(0m);
+        var suggestion = result.Suggestions.Should().ContainSingle(s => s.AccountId == holidaySavings.Id).Subject;
+        using (new AssertionScope())
+        {
+            suggestion.SuggestedValue.Should().Be(900m);
+            suggestion.SourceDescription.Should().Be("Holidays total — as of Jul 2026");
+        }
     }
 
     [Fact]
-    public async Task GetSuggestionsForMonth_ReserveBucketsSum_NeverAddedToNotUpdated()
+    public async Task GetSuggestionsForMonth_PotsAccountTotal_NeverAddedToNotUpdated()
     {
         var (_, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
 

@@ -114,23 +114,113 @@ public class InvestmentAccountTests
     }
 
     [Fact]
-    public void Create_WithSourceReserveBucketsSumAndACard_Throws()
+    public void Create_WithSourcePotsAccountTotalAndACard_Throws()
     {
         var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
 
         var act = () => InvestmentAccount.Create(
-            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.ReserveBucketsSum, creditCard);
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, creditCard, TestAccounts.Pots("Reserva"));
 
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<ArgumentException>().WithMessage("Only a credit-card-sourced investment account can have a linked credit card.");
     }
 
     [Fact]
-    public void Create_WithSourceReserveBucketsSumAndNoCard_Succeeds()
+    public void Create_WithSourcePotsAccountTotalAndAPotsAccount_NamesIt()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+
+        var account = InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: reserva);
+
+        using (new AssertionScope())
+        {
+            account.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
+            account.PotsAccount.Should().BeSameAs(reserva);
+            account.CreditCard.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Create_WithSourcePotsAccountTotalAndNoPotsAccount_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal);
+
+        act.Should().Throw<ArgumentException>().WithMessage("A pots-account-sourced investment account requires a Pots account.");
+    }
+
+    [Fact]
+    public void Create_WithAPotsAccountAndAnotherSource_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "ChaseSave", isActive: true, isLiability: false, InvestmentAccountSource.None, potsAccount: TestAccounts.Pots("Reserva"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Only a pots-account-sourced investment account can name a Pots account.");
+    }
+
+    [Fact]
+    public void Create_NamingAnAccountWithoutPots_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: TestAccounts.Bank("Barclays"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays is not a Pots account.");
+    }
+
+    [Fact]
+    public void Create_NamingAnInactivePotsAccount_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal,
+            potsAccount: TestAccounts.Pots("Reserva", isActive: false));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Reserva is inactive.");
+    }
+
+    [Fact]
+    public void Update_KeepingAPotsAccountThatBecameInactive_Succeeds()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var account = InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: reserva);
+        reserva.SetActive(false);
+
+        account.Update("Reservas", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: reserva);
+
+        using (new AssertionScope())
+        {
+            account.Name.Should().Be("Reservas");
+            account.PotsAccount.Should().BeSameAs(reserva);
+        }
+    }
+
+    [Fact]
+    public void Update_ChangingToAnInactivePotsAccount_Throws()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var account = InvestmentAccount.Create(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: reserva);
+
+        var act = () => account.Update(
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal,
+            potsAccount: TestAccounts.Pots("Holidays", isActive: false));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Holidays is inactive.");
+            account.PotsAccount.Should().BeSameAs(reserva);
+        }
+    }
+
+    [Fact]
+    public void Update_SwitchingAwayFromPotsAccountTotal_ClearsThePotsAccount()
     {
         var account = InvestmentAccount.Create(
-            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.ReserveBucketsSum);
+            "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: TestAccounts.Pots("Reserva"));
 
-        account.Source.Should().Be(InvestmentAccountSource.ReserveBucketsSum);
+        account.Update("Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.None);
+
+        account.PotsAccount.Should().BeNull();
     }
 
     [Fact]
@@ -150,17 +240,18 @@ public class InvestmentAccountTests
     }
 
     [Fact]
-    public void Update_SwitchingFromCreditCardToReserveBucketsSum_ClearsCreditCard()
+    public void Update_SwitchingFromCreditCardToPotsAccountTotal_ClearsCreditCard()
     {
         var creditCard = TestAccounts.CreditCard("Platinum Visa 8003", isActive: true);
         var account = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
 
-        account.Update("PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.ReserveBucketsSum);
+        account.Update(
+            "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.PotsAccountTotal, potsAccount: TestAccounts.Pots("Reserva"));
 
         using (new AssertionScope())
         {
-            account.Source.Should().Be(InvestmentAccountSource.ReserveBucketsSum);
+            account.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
             account.CreditCard.Should().BeNull();
         }
     }

@@ -20,6 +20,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     private const string ReservaCategoryId = "9a1c0000-0000-0000-0000-000000000301";
     private const string HolidaysCategoryId = "9a1c0000-0000-0000-0000-000000000302";
     private const string MercadoId = "9a1c0000-0000-0000-0000-000000000303";
+    private const string ReservasPessoaisId = "9a1c0000-0000-0000-0000-000000000401";
 
     private const string SeededData = $$"""
         {
@@ -37,6 +38,9 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             { "Id": "{{ReservaCategoryId}}", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false },
             { "Id": "{{HolidaysCategoryId}}", "Name": "Holidays", "Active": true, "IsInvestment": false, "IsTithe": false },
             { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
+          ],
+          "InvestmentAccounts": [
+            { "Id": "{{ReservasPessoaisId}}", "Name": "Reservas pessoais", "IsActive": true, "IsLiability": false, "Source": "PotsAccountTotal", "CreditCardId": null, "PotsAccountId": "{{ReservaId}}" }
           ],
           "ReserveMovements": [
             { "Id": "9a1c0000-0000-0000-0000-000000000201", "BucketId": "{{InvestimentoId}}", "Amount": 500, "Date": "2024-03-01", "Description": "Split", "IncomeId": null },
@@ -87,7 +91,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-06")]
     public async Task SecondPotsAccount_CreatedThroughAccounts_LeavesReservaUnchanged()
     {
-        await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
+        var investmentAccount = await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
         {
             Name = "Reservas",
             IsActive = true,
@@ -108,13 +112,30 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
+            investmentAccount.StatusCode.Should().Be(HttpStatusCode.OK);
             created.StatusCode.Should().Be(HttpStatusCode.Created);
             travel!.Capabilities.Should().Contain("HasPots");
             travel.CategoryId.Should().Be(Guid.Parse(MercadoId));
             potBalances!.Select(pot => (pot.BucketName, pot.Balance)).Should().Equal(("Investimento", 424.5m), ("Ferias", 200m));
             (await BalanceAsync(ReservaId, 10)).Should().Be(624.5m);
             (await BalanceAsync(travel.Id.ToString(), 10)).Should().Be(0m);
-            suggestions!.Suggestions.Should().ContainSingle().Which.SuggestedValue.Should().Be(624.5m);
+            suggestions!.Suggestions.Select(suggestion => suggestion.SuggestedValue).Should().Equal(624.5m, 624.5m);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-03")]
+    public async Task Suggestions_PotsSourcedAccount_NameReservaWithTheSameValue()
+    {
+        var suggestions = await Client.GetFromJsonAsync<InvestmentSnapshotSuggestionsDTO>($"{Api}/investment-snapshots/2026/11/suggestions");
+        var investmentAccounts = await Client.GetFromJsonAsync<List<InvestmentAccountDTO>>($"{Api}/investment-accounts");
+
+        using (new AssertionScope())
+        {
+            var suggestion = suggestions!.Suggestions.Should().ContainSingle(s => s.AccountId == Guid.Parse(ReservasPessoaisId)).Subject;
+            suggestion.SuggestedValue.Should().Be(624.5m);
+            suggestion.SourceDescription.Should().Be("Reserva total — as of Oct 2026");
+            investmentAccounts!.Should().ContainSingle().Which.Source.Should().Be("ReserveBucketsSum");
         }
     }
 

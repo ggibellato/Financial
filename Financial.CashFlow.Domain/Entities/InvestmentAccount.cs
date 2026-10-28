@@ -12,6 +12,7 @@ public class InvestmentAccount
     public bool IsLiability { get; private set; }
     public InvestmentAccountSource Source { get; private set; }
     public Account? CreditCard { get; private set; }
+    public Account? PotsAccount { get; private set; }
 
     private InvestmentAccount() { }
 
@@ -20,7 +21,8 @@ public class InvestmentAccount
         bool isActive,
         bool isLiability,
         InvestmentAccountSource source = InvestmentAccountSource.None,
-        Account? creditCard = null)
+        Account? creditCard = null,
+        Account? potsAccount = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -28,6 +30,8 @@ public class InvestmentAccount
         }
 
         ValidateSourceShape(source, creditCard);
+        ValidatePotsAccount(source, potsAccount);
+        ActiveAccountRule.EnsureUsable(null, potsAccount);
 
         return new()
         {
@@ -36,7 +40,8 @@ public class InvestmentAccount
             IsActive = isActive,
             IsLiability = isLiability,
             Source = source,
-            CreditCard = creditCard
+            CreditCard = creditCard,
+            PotsAccount = potsAccount
         };
     }
 
@@ -45,7 +50,8 @@ public class InvestmentAccount
         bool isActive,
         bool isLiability,
         InvestmentAccountSource source = InvestmentAccountSource.None,
-        Account? creditCard = null)
+        Account? creditCard = null,
+        Account? potsAccount = null)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -53,12 +59,38 @@ public class InvestmentAccount
         }
 
         ValidateSourceShape(source, creditCard);
+        ValidatePotsAccount(source, potsAccount);
+        ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
 
         Name = name;
         IsActive = isActive;
         IsLiability = isLiability;
         Source = source;
         CreditCard = creditCard;
+        PotsAccount = potsAccount;
+    }
+
+    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? potsAccount)
+    {
+        if (source == InvestmentAccountSource.PotsAccountTotal && potsAccount is null)
+        {
+            throw new ArgumentException("A pots-account-sourced investment account requires a Pots account.");
+        }
+
+        if (source != InvestmentAccountSource.PotsAccountTotal && potsAccount is not null)
+        {
+            throw new ArgumentException("Only a pots-account-sourced investment account can name a Pots account.");
+        }
+
+        if (potsAccount is null)
+        {
+            return;
+        }
+
+        if (!potsAccount.Has(Capability.HasPots))
+        {
+            throw new ArgumentException($"{potsAccount.Name} is not a Pots account.");
+        }
     }
 
     private static void ValidateSourceShape(InvestmentAccountSource source, Account? creditCard)
