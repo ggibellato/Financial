@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Field, Input, Select, Switch } from '@fluentui/react-components'
-import type { AccountDto, AccountTemplateDto, AccountUpdateDto } from '../api/types'
+import { Field, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
+import type { LabelProps } from '@fluentui/react-components'
+import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -14,8 +15,10 @@ const UNSET_START_DATE = '0001-01-01'
 const NAME_MAX_LENGTH = 60
 const CONFLICT_STATUS = 409
 const LOCKED_HINT = "Can't change once the account has transactions."
+const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
+const CATEGORY_INFO = "When money moves between a bank and this account, the bank's entry is recorded in this category."
 
-const FIELD_ORDER = ['template', 'name', 'currency', 'openingBalance', 'balanceStartDate'] as const
+const FIELD_ORDER = ['template', 'name', 'currency', 'category', 'openingBalance', 'balanceStartDate'] as const
 
 type FieldName = (typeof FIELD_ORDER)[number]
 
@@ -27,6 +30,7 @@ interface FormValues {
   templateName: string
   name: string
   currency: string
+  categoryId: string
   openingBalance: string
   balanceStartDate: string
   roundUpEnabled: boolean
@@ -37,6 +41,7 @@ const FORM_FIELDS: readonly (keyof FormValues)[] = [
   'templateName',
   'name',
   'currency',
+  'categoryId',
   'openingBalance',
   'balanceStartDate',
   'roundUpEnabled',
@@ -46,6 +51,7 @@ const FORM_FIELDS: readonly (keyof FormValues)[] = [
 interface AccountFormDialogProps {
   account: AccountDto | null
   templates: AccountTemplateDto[]
+  categories: CategoryDto[]
   onCancel: () => void
   onSubmit: (values: AccountUpdateDto) => Promise<unknown>
 }
@@ -57,6 +63,7 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
       templateName: template?.name ?? '',
       name: '',
       currency: template?.currencies[0] ?? '',
+      categoryId: '',
       openingBalance: '0.00',
       balanceStartDate: todayIsoDate(),
       roundUpEnabled: false,
@@ -67,6 +74,7 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
     templateName: account.templateName,
     name: account.name,
     currency: account.currency,
+    categoryId: account.categoryId ?? '',
     openingBalance: account.openingBalance?.toFixed(2) ?? '0.00',
     balanceStartDate: !account.balanceStartDate || account.balanceStartDate === UNSET_START_DATE ? '' : account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled ?? false,
@@ -93,10 +101,17 @@ function validateAccountForm(
     if (values.balanceStartDate.length === 0 && !keepsUnsetStartDate) errors.balanceStartDate = 'Balance start date is required.'
     else if (values.balanceStartDate > todayIsoDate()) errors.balanceStartDate = "Balance start date can't be in the future."
   }
+  if (template?.capabilities.includes('HasPots') && !values.categoryId) errors.category = CATEGORY_REQUIRED
   return errors
 }
 
-export default function AccountFormDialog({ account, templates, onCancel, onSubmit }: AccountFormDialogProps) {
+function categoryOptions(categories: CategoryDto[], keptId: string): CategoryDto[] {
+  return categories
+    .filter((category) => (category.active && !category.isInvestment) || category.id === keptId)
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export default function AccountFormDialog({ account, templates, categories, onCancel, onSubmit }: AccountFormDialogProps) {
   const styles = useFormPanelStyles()
   const isEditing = account !== null
   const isLocked = account?.hasRecords === true
@@ -108,6 +123,7 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
   const templateRef = useRef<FieldControl>(null)
   const nameRef = useRef<FieldControl>(null)
   const currencyRef = useRef<FieldControl>(null)
+  const categoryRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
   const discardPrompt = useDiscardPrompt(hasChangedFields(values, initial, FORM_FIELDS))
@@ -116,6 +132,8 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
   const capabilities = template?.capabilities ?? []
   const hasOpeningBalance = capabilities.includes('HasOpeningBalance')
   const supportsRoundUp = capabilities.includes('SupportsRoundUp')
+  const hasPots = capabilities.includes('HasPots')
+  const selectableCategories = categoryOptions(categories, initial.categoryId)
   const currencies = template?.currencies ?? [values.currency]
   const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
@@ -151,6 +169,7 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
     templateName: values.templateName,
     name: trimmedName,
     currency: values.currency,
+    categoryId: hasPots ? values.categoryId : null,
     openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
     balanceStartDate: hasOpeningBalance ? values.balanceStartDate || UNSET_START_DATE : null,
     roundUpEnabled: supportsRoundUp ? values.roundUpEnabled : null,
@@ -165,6 +184,7 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
         template: templateRef,
         name: nameRef,
         currency: currencyRef,
+        category: categoryRef,
         openingBalance: openingBalanceRef,
         balanceStartDate: balanceStartDateRef,
       }
@@ -178,6 +198,13 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
   const requestClose = () => {
     if (!isSaving) discardPrompt.confirmDiscard(onCancel)
   }
+
+  const hasCategoryChoices = selectableCategories.length > 0
+  const categoryHint = !hasCategoryChoices
+    ? 'Add a category in Admin → Categories first.'
+    : isEditing
+      ? 'Changing it applies to later deposits and withdrawals; past ones keep their category.'
+      : undefined
 
   const templateLabel = accountTemplateLabel(values.templateName)
   const currencyHint = isLocked ? LOCKED_HINT : isCurrencyFixed ? `${templateLabel} accounts use ${values.currency}.` : undefined
@@ -236,6 +263,36 @@ export default function AccountFormDialog({ account, templates, onCancel, onSubm
             </Select>
           )}
         </Field>
+
+        {hasPots && (
+          <Field
+            label={{
+              children: (_: unknown, props: LabelProps) => (
+                <InfoLabel {...props} info={CATEGORY_INFO}>
+                  Bank expense category
+                </InfoLabel>
+              ),
+            }}
+            required
+            hint={categoryHint}
+            validationState={fieldState('category')}
+            validationMessage={fieldMessage('category')}
+          >
+            <Select
+              ref={categoryRef}
+              value={values.categoryId}
+              disabled={!hasCategoryChoices}
+              onChange={(_, data) => setField('categoryId', data.value)}
+            >
+              <option value="">{hasCategoryChoices ? 'Select a category' : 'No active categories'}</option>
+              {selectableCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.active ? category.name : `${category.name} (inactive)`}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
 
         {hasOpeningBalance && (
           <>

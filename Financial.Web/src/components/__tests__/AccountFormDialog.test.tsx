@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
-import type { AccountTemplateDto } from '../../api/types'
-import { account, cardAccount } from '../../test/account'
+import type { AccountTemplateDto, CategoryDto } from '../../api/types'
+import { account, cardAccount, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AccountFormDialog from '../AccountFormDialog'
 
@@ -12,11 +12,31 @@ const BANK: AccountTemplateDto = {
 }
 const PLAIN: AccountTemplateDto = { name: 'Plain', currencies: ['GBP', 'BRL'], capabilities: [] }
 const CREDIT_CARD: AccountTemplateDto = { name: 'CreditCard', currencies: ['GBP'], capabilities: ['HasStatements', 'HasCategories', 'ReceivesPayments'] }
+const POTS: AccountTemplateDto = { name: 'Pots', currencies: ['GBP'], capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'] }
+
+const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}): CategoryDto => ({
+  id,
+  name,
+  active: true,
+  isInvestment: false,
+  isTithe: false,
+  hasReferences: false,
+  ...overrides,
+})
+
+const CATEGORIES = [
+  category('c1', 'Reserva'),
+  category('c2', 'Holidays'),
+  category('c3', 'Investimento', { isInvestment: true }),
+  category('c4', 'Old', { active: false }),
+]
 
 function renderDialog(props: Partial<Parameters<typeof AccountFormDialog>[0]> = {}) {
   const onSubmit = vi.fn<(values: unknown) => Promise<unknown>>().mockResolvedValue(undefined)
   const onCancel = vi.fn()
-  render(<AccountFormDialog account={null} templates={[BANK]} onCancel={onCancel} onSubmit={onSubmit} {...props} />)
+  render(
+    <AccountFormDialog account={null} templates={[BANK]} categories={CATEGORIES} onCancel={onCancel} onSubmit={onSubmit} {...props} />,
+  )
   return { onSubmit: props.onSubmit ?? onSubmit, onCancel: props.onCancel ?? onCancel }
 }
 
@@ -86,6 +106,7 @@ describe('AccountFormDialog', () => {
         openingBalance: 250.5,
         balanceStartDate: '2026-09-01',
         roundUpEnabled: true,
+        categoryId: null,
         isActive: true,
       }),
     )
@@ -102,6 +123,66 @@ describe('AccountFormDialog', () => {
         expect.objectContaining({ openingBalance: null, balanceStartDate: null, roundUpEnabled: null }),
       ),
     )
+  })
+
+  it('shows no Category field for a template without pots', () => {
+    renderDialog()
+
+    expect(screen.queryByRole('combobox', { name: /^Bank expense category/ })).not.toBeInTheDocument()
+  })
+
+  it('lists the active non-investment categories by name for a Pots account, and sends the chosen one', async () => {
+    const { onSubmit } = renderDialog({ templates: [POTS] })
+
+    const select = screen.getByRole('combobox', { name: /^Bank expense category/ })
+    expect(select).toBeRequired()
+    expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Select a category',
+      'Holidays',
+      'Reserva',
+    ])
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Travel' } })
+    fireEvent.change(select, { target: { value: 'c2' } })
+    save()
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ templateName: 'Pots', name: 'Travel', categoryId: 'c2' })),
+    )
+  })
+
+  it('says when there is no category to choose for a Pots account', () => {
+    renderDialog({ templates: [POTS], categories: [category('c3', 'Investimento', { isInvestment: true })] })
+
+    const select = screen.getByRole('combobox', { name: /^Bank expense category/ })
+    expect(select).toBeDisabled()
+    expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual(['No active categories'])
+    expect(screen.getByText('Add a category in Admin → Categories first.')).toBeInTheDocument()
+  })
+
+  it('requires a category for a Pots account and focuses it', () => {
+    const { onSubmit } = renderDialog({ templates: [POTS] })
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Travel' } })
+    save()
+
+    expect(screen.getByText("Choose the category for this account's bank expenses.")).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /^Bank expense category/ })).toHaveFocus()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it("keeps a Pots account's inactive category, marked inactive, and sends it on Save", async () => {
+    const { onSubmit } = renderDialog({
+      account: potsAccount({ id: 'p1', name: 'Reserva', categoryId: 'c4', hasRecords: true }),
+      templates: [POTS],
+    })
+
+    const select = screen.getByRole('combobox', { name: /^Bank expense category/ })
+    expect(select).toHaveValue('c4')
+    expect(within(select).getByRole('option', { name: 'Old (inactive)' })).toBeInTheDocument()
+    expect(screen.getByText('Changing it applies to later deposits and withdrawals; past ones keep their category.')).toBeInTheDocument()
+    save('Save')
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'c4' })))
   })
 
   it('[AC P60-F06-admin-accounts-page-07] shows each problem under its field on submit and focuses the first one', () => {
@@ -229,6 +310,7 @@ describe('AccountFormDialog', () => {
         openingBalance: 12.3,
         balanceStartDate: '2026-02-01',
         roundUpEnabled: true,
+        categoryId: null,
         isActive: false,
       }),
     )

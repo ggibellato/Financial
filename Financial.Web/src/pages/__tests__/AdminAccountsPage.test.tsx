@@ -4,14 +4,15 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTemplateDto } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
-import { account, cardAccount } from '../../test/account'
+import { account, cardAccount, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AdminAccountsPage from '../AdminAccountsPage'
 
-const { getAccountsMock, getAccountTemplatesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
+const { getAccountsMock, getAccountTemplatesMock, getCategoriesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
   () => ({
     getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
     getAccountTemplatesMock: vi.fn<FinancialApiClient['getAccountTemplates']>(),
+    getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
     createAccountMock: vi.fn<FinancialApiClient['createAccount']>(),
     updateAccountMock: vi.fn<FinancialApiClient['updateAccount']>(),
     deleteAccountMock: vi.fn<FinancialApiClient['deleteAccount']>(),
@@ -22,6 +23,7 @@ vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getAccounts: getAccountsMock,
     getAccountTemplates: getAccountTemplatesMock,
+    getCategories: getCategoriesMock,
     createAccount: createAccountMock,
     updateAccount: updateAccountMock,
     deleteAccount: deleteAccountMock,
@@ -31,6 +33,7 @@ vi.mock('../../api/financialApiClient', () => ({
 const TEMPLATES: AccountTemplateDto[] = [
   { name: 'Bank', currencies: ['GBP'], capabilities: ['HasOpeningBalance', 'SupportsRoundUp'] },
 ]
+const POTS_TEMPLATE: AccountTemplateDto = { name: 'Pots', currencies: ['GBP'], capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'] }
 const BARCLAYS = account({ id: 'a1', name: 'Barclays', hasRecords: true })
 const CHASE = account({ id: 'a2', name: 'Chase', hasRecords: true, isActive: false })
 const MONZO = account({ id: 'a3', name: 'Monzo' })
@@ -52,6 +55,9 @@ describe('AdminAccountsPage', () => {
     vi.resetAllMocks()
     getAccountsMock.mockResolvedValue([BARCLAYS, CHASE, MONZO])
     getAccountTemplatesMock.mockResolvedValue(TEMPLATES)
+    getCategoriesMock.mockResolvedValue([
+      { id: 'c1', name: 'Holidays', active: true, isInvestment: false, isTithe: false, hasReferences: false },
+    ])
   })
 
   it('names a card account\'s template "Credit card"', async () => {
@@ -123,6 +129,33 @@ describe('AdminAccountsPage', () => {
     expect(createAccountMock.mock.calls[0][0]).not.toHaveProperty('isActive')
     expect(rowOf('Starling')).toBeInTheDocument()
     expect(screen.queryByRole('dialog', { name: 'New account' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F09-pots-template-and-reserva-migration-06] creates a second Pots account with its category through New account', async () => {
+    getAccountTemplatesMock.mockResolvedValue([...TEMPLATES, POTS_TEMPLATE])
+    const created = potsAccount({ id: 'p2', name: 'Travel', categoryId: 'c1' })
+    createAccountMock.mockResolvedValue(created)
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+    getAccountsMock.mockResolvedValue([BARCLAYS, CHASE, MONZO, created])
+
+    fireEvent.click(screen.getByRole('button', { name: 'New account' }))
+    fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Pots' } })
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Travel' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Bank expense category/ }), { target: { value: 'c1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add account' }))
+
+    expect(await screen.findByText('Account created')).toBeInTheDocument()
+    expect(createAccountMock).toHaveBeenCalledWith({
+      templateName: 'Pots',
+      name: 'Travel',
+      currency: 'GBP',
+      openingBalance: null,
+      balanceStartDate: null,
+      roundUpEnabled: null,
+      categoryId: 'c1',
+    })
+    expect(within(rowOf('Travel')).getByText('Pots')).toBeInTheDocument()
   })
 
   it('[AC P60-F06-admin-accounts-page-02] keeps the dialog open with the duplicate message under Name on a 409', async () => {

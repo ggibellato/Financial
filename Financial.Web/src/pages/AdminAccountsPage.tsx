@@ -19,6 +19,7 @@ export default function AdminAccountsPage() {
   const {
     accounts,
     templates,
+    categories,
     isLoading,
     error,
     retry,
@@ -41,8 +42,8 @@ export default function AdminAccountsPage() {
       await updateAccount(formTarget.account.id, request)
       showSuccess('Account updated')
     } else {
-      const { templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled } = request
-      await createAccount({ templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled })
+      const { templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled, categoryId } = request
+      await createAccount({ templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled, categoryId })
       showSuccess('Account created')
     }
     setFormTarget(null)
@@ -98,6 +99,7 @@ export default function AdminAccountsPage() {
             <AccountFormDialog
               account={formTarget.mode === 'edit' ? formTarget.account : null}
               templates={templates}
+              categories={categories}
               onCancel={() => setFormTarget(null)}
               onSubmit={handleFormSubmit}
             />

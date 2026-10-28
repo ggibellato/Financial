@@ -358,8 +358,13 @@ public sealed class AccountQueryService : IAccountQueryService
         HasRecords = hasRecords,
         OpeningBalance = account.OpeningBalance?.Amount,
         BalanceStartDate = account.OpeningBalance?.StartDate,
-        RoundUpEnabled = account.RoundUp?.Enabled
+        RoundUpEnabled = account.RoundUp?.Enabled,
+        CategoryId = account.Category?.Id,
+        Capabilities = CapabilityNames(account.Has)
     };
+
+    internal static IReadOnlyList<string> CapabilityNames(Func<Capability, bool> has) =>
+        Enum.GetValues<Capability>().Where(has).Select(capability => capability.ToString()).ToList();
 
     private static DateOnly EndOfMonth(int year, int month) => new(year, month, DateTime.DaysInMonth(year, month));
 

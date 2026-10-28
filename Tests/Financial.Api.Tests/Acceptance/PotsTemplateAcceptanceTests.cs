@@ -84,6 +84,41 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-06")]
+    public async Task SecondPotsAccount_CreatedThroughAccounts_LeavesReservaUnchanged()
+    {
+        await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        var created = await Client.PostAsJsonAsync($"{Api}/accounts", new AccountCreateDTO
+        {
+            TemplateName = "Pots",
+            Name = "Travel",
+            Currency = "GBP",
+            CategoryId = Guid.Parse(MercadoId)
+        });
+        var travel = await created.Content.ReadFromJsonAsync<AccountDTO>();
+        var potBalances = await Client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>($"{Api}/reserve/balances");
+        var suggestions = await Client.GetFromJsonAsync<InvestmentSnapshotSuggestionsDTO>($"{Api}/investment-snapshots/2026/11/suggestions");
+
+        using (new AssertionScope())
+        {
+            created.StatusCode.Should().Be(HttpStatusCode.Created);
+            travel!.Capabilities.Should().Contain("HasPots");
+            travel.CategoryId.Should().Be(Guid.Parse(MercadoId));
+            potBalances!.Select(pot => (pot.BucketName, pot.Balance)).Should().Equal(("Investimento", 424.5m), ("Ferias", 200m));
+            (await BalanceAsync(ReservaId, 10)).Should().Be(624.5m);
+            (await BalanceAsync(travel.Id.ToString(), 10)).Should().Be(0m);
+            suggestions!.Suggestions.Should().ContainSingle().Which.SuggestedValue.Should().Be(624.5m);
+        }
+    }
+
+    [Fact]
     public async Task ReservaTransactions_MonthWithMovements_ListsNoRows()
     {
         var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{ReservaId}/transactions/2026/10");

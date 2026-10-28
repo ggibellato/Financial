@@ -66,7 +66,9 @@ public sealed class AccountAdminService : IAccountAdminService
             var account = Account.Create(request.Name, ParseTemplate(request.TemplateName), ParseCurrency(request.Currency));
             _repository.GetAccounts().EnsureAccountNameIsUnique(account.Name, null, DisplayName);
             EnsureCapabilityFieldsArePresent(account.Has, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+            var category = ResolveCategory(account.Has, account.Name, request.CategoryId, currentCategory: null);
             ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+            ApplyCategory(account, category);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -111,6 +113,7 @@ public sealed class AccountAdminService : IAccountAdminService
             _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DisplayName);
             Func<Capability, bool> targetHas = changesTemplate ? AccountTemplates.CapabilitiesOf(template).Contains : account.Has;
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+            var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -120,6 +123,7 @@ public sealed class AccountAdminService : IAccountAdminService
                     account.ChangeTemplate(template, currency);
                 }
                 ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
+                ApplyCategory(account, category);
                 account.SetActive(request.IsActive);
                 return true;
             }).ConfigureAwait(false);
@@ -208,6 +212,32 @@ public sealed class AccountAdminService : IAccountAdminService
         }
     }
 
+    private Category? ResolveCategory(Func<Capability, bool> has, string accountName, Guid? categoryId, Category? currentCategory)
+    {
+        if (!has(Capability.HasPots))
+        {
+            return categoryId is null ? null : throw new ArgumentException($"{accountName} has no category setting.");
+        }
+
+        if (categoryId is not { } id)
+        {
+            throw new ArgumentException("Choose the category for this account's bank expenses.");
+        }
+
+        return currentCategory?.Id == id
+            ? currentCategory
+            : _repository.GetCategories().FirstOrDefault(category => category.Id == id && category.Active && !category.IsInvestment)
+                ?? throw new ArgumentException($"Category '{id}' is not recognized.");
+    }
+
+    private static void ApplyCategory(Account account, Category? category)
+    {
+        if (category is not null)
+        {
+            account.SetCategory(category);
+        }
+    }
+
     private static AccountTemplate ParseTemplate(string? name) =>
         EnumParser.TryParseEnum<AccountTemplate>(name, out var template) && AccountTemplates.Available.Contains(template)
             ? template
@@ -220,12 +250,11 @@ public sealed class AccountAdminService : IAccountAdminService
 
     private static AccountTemplateDTO ToTemplateDto(AccountTemplate template)
     {
-        var capabilities = AccountTemplates.CapabilitiesOf(template);
         return new AccountTemplateDTO
         {
             Name = template.ToString(),
             Currencies = AccountTemplates.AllowedCurrencies(template).Select(currency => currency.ToString()).ToList(),
-            Capabilities = Enum.GetValues<Capability>().Where(capabilities.Contains).Select(capability => capability.ToString()).ToList()
+            Capabilities = AccountQueryService.CapabilityNames(AccountTemplates.CapabilitiesOf(template).Contains)
         };
     }
 

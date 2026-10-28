@@ -1,14 +1,15 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountTemplateDto } from '../../api/types'
-import { account } from '../../test/account'
+import type { AccountTemplateDto, CategoryDto } from '../../api/types'
+import { account, potsAccount } from '../../test/account'
 import { useAdminAccounts } from '../useAdminAccounts'
 
-const { getAccountsMock, getAccountTemplatesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
+const { getAccountsMock, getAccountTemplatesMock, getCategoriesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
   () => ({
     getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
     getAccountTemplatesMock: vi.fn<FinancialApiClient['getAccountTemplates']>(),
+    getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
     createAccountMock: vi.fn<FinancialApiClient['createAccount']>(),
     updateAccountMock: vi.fn<FinancialApiClient['updateAccount']>(),
     deleteAccountMock: vi.fn<FinancialApiClient['deleteAccount']>(),
@@ -19,6 +20,7 @@ vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getAccounts: getAccountsMock,
     getAccountTemplates: getAccountTemplatesMock,
+    getCategories: getCategoriesMock,
     createAccount: createAccountMock,
     updateAccount: updateAccountMock,
     deleteAccount: deleteAccountMock,
@@ -29,15 +31,17 @@ const BARCLAYS = account({ id: 'a1', name: 'Barclays', hasRecords: true, opening
 const TEMPLATES: AccountTemplateDto[] = [
   { name: 'Bank', currencies: ['GBP'], capabilities: ['HasOpeningBalance', 'SupportsRoundUp'] },
 ]
+const CATEGORIES: CategoryDto[] = [{ id: 'c1', name: 'Reserva', active: true, isInvestment: false, isTithe: false, hasReferences: true }]
 
 describe('useAdminAccounts', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     getAccountsMock.mockResolvedValue([BARCLAYS])
     getAccountTemplatesMock.mockResolvedValue(TEMPLATES)
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
   })
 
-  it('loads the accounts and the templates together', async () => {
+  it('loads the accounts, the templates and the categories together', async () => {
     const { result } = renderHook(() => useAdminAccounts())
 
     expect(result.current.isLoading).toBe(true)
@@ -45,6 +49,7 @@ describe('useAdminAccounts', () => {
 
     expect(result.current.accounts).toEqual([BARCLAYS])
     expect(result.current.templates).toEqual(TEMPLATES)
+    expect(result.current.categories).toEqual(CATEGORIES)
   })
 
   it('surfaces a load error when the templates fail, and retry loads again', async () => {
@@ -65,7 +70,7 @@ describe('useAdminAccounts', () => {
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     getAccountsMock.mockResolvedValue([BARCLAYS, monzo])
-    const request = { templateName: 'Bank', name: 'Monzo', currency: 'GBP', openingBalance: 0, balanceStartDate: '2026-10-24', roundUpEnabled: false }
+    const request = { templateName: 'Bank', name: 'Monzo', currency: 'GBP', openingBalance: 0, balanceStartDate: '2026-10-24', roundUpEnabled: false, categoryId: null }
 
     await act(() => result.current.createAccount(request))
 
@@ -77,7 +82,7 @@ describe('useAdminAccounts', () => {
     updateAccountMock.mockResolvedValue(BARCLAYS)
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    const request = { templateName: 'Bank', name: 'Barclays UK', currency: 'GBP', openingBalance: 10, balanceStartDate: '2026-01-01', roundUpEnabled: true, isActive: true }
+    const request = { templateName: 'Bank', name: 'Barclays UK', currency: 'GBP', openingBalance: 10, balanceStartDate: '2026-01-01', roundUpEnabled: true, categoryId: null, isActive: true }
 
     await act(() => result.current.updateAccount('a1', request))
 
@@ -99,8 +104,20 @@ describe('useAdminAccounts', () => {
       openingBalance: 10,
       balanceStartDate: '2026-01-01',
       roundUpEnabled: true,
+      categoryId: null,
       isActive: false,
     })
+  })
+
+  it("keeps a Pots account's category when deactivating it", async () => {
+    const reserva = potsAccount({ id: 'p1', name: 'Reserva', categoryId: 'c1' })
+    updateAccountMock.mockResolvedValue({ ...reserva, isActive: false })
+    const { result } = renderHook(() => useAdminAccounts())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(() => result.current.deactivateAccount(reserva))
+
+    expect(updateAccountMock).toHaveBeenCalledWith('p1', expect.objectContaining({ categoryId: 'c1', isActive: false }))
   })
 
   it('deletes an account and refreshes the list', async () => {

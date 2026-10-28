@@ -8,5 +8,6 @@ public sealed class AccountUpdateDTO
     public decimal? OpeningBalance { get; init; }
     public DateOnly? BalanceStartDate { get; init; }
     public bool? RoundUpEnabled { get; init; }
+    public Guid? CategoryId { get; init; }
     public required bool IsActive { get; init; }
 }

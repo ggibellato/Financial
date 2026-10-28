@@ -10,6 +10,13 @@
               "string"
             ]
           },
+          "categoryId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "currency": {
             "type": "string"
           },
@@ -44,6 +51,19 @@
         "properties": {
           "balanceStartDate": {
             "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "capabilities": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "categoryId": {
+            "format": "uuid",
             "type": [
               "null",
               "string"
@@ -88,7 +108,8 @@
           "templateName",
           "currency",
           "isActive",
-          "hasRecords"
+          "hasRecords",
+          "capabilities"
         ],
         "type": "object"
       },
@@ -615,6 +636,13 @@
         "properties": {
           "balanceStartDate": {
             "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "format": "uuid",
             "type": [
               "null",
               "string"
