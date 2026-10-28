@@ -23,6 +23,7 @@ public class Account
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
     public IReadOnlyList<ReserveBucket>? Pots => Has(Capability.HasPots) ? _pots : null;
+    public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
     public string TemplateName => Template.ToString();
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
@@ -105,6 +106,18 @@ public class Account
         _pots = [.. _pots, pot];
     }
 
+    public void SetCategory(Category category)
+    {
+        ArgumentNullException.ThrowIfNull(category);
+
+        if (!Has(Capability.HasPots))
+        {
+            throw new ArgumentException($"{Name} has no category setting.");
+        }
+
+        Category = category;
+    }
+
     public bool OwnsPot(Guid potId) => _pots.Any(pot => pot.Id == potId);
 
     public void EnsureCanPay()
@@ -143,6 +156,7 @@ public class Account
         if (!Has(Capability.HasPots))
         {
             _pots = [];
+            Category = null;
         }
     }
 

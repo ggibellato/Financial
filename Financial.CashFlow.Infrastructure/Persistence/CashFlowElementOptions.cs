@@ -7,7 +7,7 @@ public static class CashFlowElementOptions
 {
     public static JsonSerializerOptions Create(ReferenceResolutionContext? context = null) => new()
     {
-        Converters = { new JsonStringEnumConverter(), new AccountJsonConverter() },
+        Converters = { new JsonStringEnumConverter(), new AccountJsonConverter(context) },
         TypeInfoResolver = new CashFlowTypeInfoResolver(context)
     };
 }

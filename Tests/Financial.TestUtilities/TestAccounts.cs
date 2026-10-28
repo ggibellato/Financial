@@ -17,10 +17,15 @@ public static class TestAccounts
         return account;
     }
 
-    public static Account Pots(string name, bool isActive = true)
+    public static Account Pots(string name, bool isActive = true, Category? category = null)
     {
         var account = Account.Create(name, AccountTemplate.Pots, Currency.GBP);
         account.SetActive(isActive);
+        if (category is not null)
+        {
+            account.SetCategory(category);
+        }
+
         return account;
     }
 

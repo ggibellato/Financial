@@ -456,4 +456,40 @@ public class AccountTests
             account.Pots.Should().BeEmpty();
         }
     }
+
+    [Fact]
+    public void SetCategory_PotsAccount_SetsIt()
+    {
+        var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
+        var category = Category.Create("Reserva");
+
+        reserva.SetCategory(category);
+
+        reserva.Category.Should().BeSameAs(category);
+    }
+
+    [Fact]
+    public void SetCategory_AccountWithoutPots_ThrowsAndLeavesItUnset()
+    {
+        var bank = CreateBank();
+
+        var act = () => bank.SetCategory(Category.Create("Reserva"));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Chase has no category setting.");
+            bank.Category.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_AwayFromPots_DropsTheCategory()
+    {
+        var account = Account.Create("Holiday", AccountTemplate.Pots, Currency.GBP);
+        account.SetCategory(Category.Create("Holidays"));
+
+        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+
+        account.Category.Should().BeNull();
+    }
 }

@@ -17,6 +17,9 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     private const string InvestimentoId = "9a1c0000-0000-0000-0000-000000000101";
     private const string FeriasId = "9a1c0000-0000-0000-0000-000000000102";
     private const string FlightsId = "9a1c0000-0000-0000-0000-000000000103";
+    private const string ReservaCategoryId = "9a1c0000-0000-0000-0000-000000000301";
+    private const string HolidaysCategoryId = "9a1c0000-0000-0000-0000-000000000302";
+    private const string MercadoId = "9a1c0000-0000-0000-0000-000000000303";
 
     private const string SeededData = $$"""
         {
@@ -25,10 +28,15 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             { "Id": "{{ReservaId}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
               { "Id": "{{InvestimentoId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 100 },
               { "Id": "{{FeriasId}}", "Name": "Ferias", "IsActive": false, "SplitPercentage": 0 }
-            ] },
+            ], "CategoryId": "{{ReservaCategoryId}}" },
             { "Id": "{{HolidaysId}}", "Name": "Holidays", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
               { "Id": "{{FlightsId}}", "Name": "Flights", "IsActive": true, "SplitPercentage": 100 }
-            ] }
+            ], "CategoryId": "{{HolidaysCategoryId}}" }
+          ],
+          "Categories": [
+            { "Id": "{{ReservaCategoryId}}", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "{{HolidaysCategoryId}}", "Name": "Holidays", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
           "ReserveMovements": [
             { "Id": "9a1c0000-0000-0000-0000-000000000201", "BucketId": "{{InvestimentoId}}", "Amount": 500, "Date": "2024-03-01", "Description": "Split", "IncomeId": null },
@@ -84,6 +92,19 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             problem!.Detail.Should().Be("Reserva has transactions and cannot be deleted. Deactivate it instead.");
             accounts!.Should().ContainSingle(account => account.Name == "Reserva").Which.HasRecords.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public async Task DeleteReservasCategory_SetOnTheAccount_Returns409AndKeepsIt()
+    {
+        var response = await Client.DeleteAsync($"{Api}/categories/{ReservaCategoryId}");
+        var categories = await Client.GetFromJsonAsync<List<CategoryDTO>>($"{Api}/categories");
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            categories!.Should().ContainSingle(category => category.Name == "Reserva").Which.HasReferences.Should().BeTrue();
         }
     }
 }

@@ -13,9 +13,23 @@ namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 public class AccountJsonConverterTests
 {
     private const string V4Bank =
-        """{"Id":"5db5c88d-0000-0000-0000-000000000001","Name":"Chase","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":1250.70,"StartDate":"2026-09-01"},"RoundUp":{"Enabled":true},"Pots":null}""";
+        """{"Id":"5db5c88d-0000-0000-0000-000000000001","Name":"Chase","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":1250.70,"StartDate":"2026-09-01"},"RoundUp":{"Enabled":true},"Pots":null,"CategoryId":null}""";
 
-    private readonly JsonSerializerOptions _options = new() { Converters = { new AccountJsonConverter() } };
+    private const string ReservaCategoryId = "5db5c88d-0000-0000-0000-000000000007";
+
+    private const string Reserva =
+        $$"""{"Id":"5db5c88d-0000-0000-0000-000000000004","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{"Id":"5db5c88d-0000-0000-0000-000000000005","Name":"Investimento","IsActive":true,"SplitPercentage":33.33},{"Id":"5db5c88d-0000-0000-0000-000000000006","Name":"Ariana","IsActive":false,"SplitPercentage":0}],"CategoryId":"{{ReservaCategoryId}}"}""";
+
+    private readonly JsonSerializerOptions _options;
+
+    public AccountJsonConverterTests()
+    {
+        var context = new ReferenceResolutionContext();
+        var category = JsonSerializer.Deserialize<Category>(
+            $$"""{"Id":"{{ReservaCategoryId}}","Name":"Reserva","Active":true,"IsInvestment":false,"IsTithe":false}""", CashFlowElementOptions.Create())!;
+        context.Categories[category.Id] = category;
+        _options = new JsonSerializerOptions { Converters = { new AccountJsonConverter(context) } };
+    }
 
     [Fact]
     public void Read_V4Bank_BuildsTheAccountWithTheSameValues()
@@ -50,7 +64,7 @@ public class AccountJsonConverterTests
         var json = JsonSerializer.Serialize(account, _options);
 
         json.Should().Be(
-            $$$"""{"Id":"{{{account.Id}}}","Name":"Trading212","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":0,"StartDate":"0001-01-01"},"RoundUp":{"Enabled":false},"Pots":null}""");
+            $$$"""{"Id":"{{{account.Id}}}","Name":"Trading212","Template":"Bank","Currency":"GBP","IsActive":true,"OpeningBalance":{"Amount":0,"StartDate":"0001-01-01"},"RoundUp":{"Enabled":false},"Pots":null,"CategoryId":null}""");
     }
 
     [Fact]
@@ -68,19 +82,41 @@ public class AccountJsonConverterTests
     }
 
     [Fact]
-    public void ReadThenWrite_PotsAccount_KeepsItsPotsInOrder()
+    public void ReadThenWrite_PotsAccount_KeepsItsPotsInOrderAndItsCategory()
     {
-        const string reserva =
-            """{"Id":"5db5c88d-0000-0000-0000-000000000004","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{"Id":"5db5c88d-0000-0000-0000-000000000005","Name":"Investimento","IsActive":true,"SplitPercentage":33.33},{"Id":"5db5c88d-0000-0000-0000-000000000006","Name":"Ariana","IsActive":false,"SplitPercentage":0}]}""";
-
-        var account = JsonSerializer.Deserialize<Account>(reserva, _options)!;
+        var account = JsonSerializer.Deserialize<Account>(Reserva, _options)!;
 
         using (new AssertionScope())
         {
             account.Pots!.Select(pot => (pot.Name, pot.IsActive, pot.SplitPercentage)).Should().Equal(("Investimento", true, 33.33m), ("Ariana", false, 0m));
             account.OwnsPot(Guid.Parse("5db5c88d-0000-0000-0000-000000000006")).Should().BeTrue();
-            JsonSerializer.Serialize(account, _options).Should().Be(reserva);
+            account.Category!.Id.Should().Be(Guid.Parse(ReservaCategoryId));
+            JsonSerializer.Serialize(account, _options).Should().Be(Reserva);
         }
+    }
+
+    [Fact]
+    public void Read_PotsAccountWithoutCategory_LeavesItUnset()
+    {
+        var account = JsonSerializer.Deserialize<Account>(Reserva.Replace("\"" + ReservaCategoryId + "\"", "null"), _options)!;
+
+        account.Category.Should().BeNull();
+    }
+
+    [Fact]
+    public void Read_UnknownCategoryId_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(Reserva.Replace(ReservaCategoryId, "5db5c88d-0000-0000-0000-000000000099"), _options);
+
+        act.Should().Throw<JsonException>().WithMessage("Category '5db5c88d-0000-0000-0000-000000000099' referenced but not found*");
+    }
+
+    [Fact]
+    public void Read_BankWithACategory_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(V4Bank.Replace("\"CategoryId\":null", "\"CategoryId\":\"" + ReservaCategoryId + "\""), _options);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase has no category setting.");
     }
 
     [Fact]

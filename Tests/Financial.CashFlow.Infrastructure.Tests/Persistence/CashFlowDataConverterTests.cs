@@ -17,6 +17,7 @@ public class CashFlowDataConverterTests
     private const string PaymentId = "5db5c88d-0000-0000-0000-000000000701";
     private const string ReservaId = "5db5c88d-0000-0000-0000-000000000801";
     private const string PotId = "5db5c88d-0000-0000-0000-000000000802";
+    private const string ReservaCategoryId = "5db5c88d-0000-0000-0000-000000000202";
 
     private const string V4File =
         "{\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true,\"PaymentStatus\":\"CreditCardCharge\",\"RoundUpSuggestion\":0.5,\"SuggestedRoundUpAmount\":null,\"IsInvestment\":false,\"ReportingDate\":\"2026-10-01\",\"ListingDate\":\"2026-10-01\"}],"
@@ -25,13 +26,14 @@ public class CashFlowDataConverterTests
         + "{\"Id\":\"5db5c88d-0000-0000-0000-000000000402\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":11,\"IsPaid\":false,\"DueDate\":\"2026-11-18\"}],"
         + "\"RecurringBills\":[],\"MaeLedgerEntries\":[],\"InvestmentSnapshots\":[],"
         + "\"InvestmentAccounts\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000601\",\"Name\":\"Amex balance\",\"IsActive\":true,\"IsLiability\":true,\"Source\":\"CreditCard\",\"CreditCardId\":\"" + AmexId + "\"}],"
-        + "\"Accounts\":[{\"Id\":\"" + BarclaysId + "\",\"Name\":\"Barclays\",\"Template\":\"Bank\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":{\"Amount\":100,\"StartDate\":\"2026-09-01\"},\"RoundUp\":{\"Enabled\":false},\"Pots\":null},"
-        + "{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null},"
-        + "{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":false,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null},"
+        + "\"Accounts\":[{\"Id\":\"" + BarclaysId + "\",\"Name\":\"Barclays\",\"Template\":\"Bank\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":{\"Amount\":100,\"StartDate\":\"2026-09-01\"},\"RoundUp\":{\"Enabled\":false},\"Pots\":null,\"CategoryId\":null},"
+        + "{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null,\"CategoryId\":null},"
+        + "{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":false,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null,\"CategoryId\":null},"
         + "{\"Id\":\"" + ReservaId + "\",\"Name\":\"Reserva\",\"Template\":\"Pots\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,"
-        + "\"Pots\":[{\"Id\":\"" + PotId + "\",\"Name\":\"Investimento\",\"IsActive\":true,\"SplitPercentage\":33.33}]}],"
+        + "\"Pots\":[{\"Id\":\"" + PotId + "\",\"Name\":\"Investimento\",\"IsActive\":true,\"SplitPercentage\":33.33}],\"CategoryId\":\"" + ReservaCategoryId + "\"}],"
         + "\"IncomeSources\":[],\"Incomes\":[],"
-        + "\"Categories\":[{\"Id\":\"" + CategoryId + "\",\"Name\":\"Mercado\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false}],"
+        + "\"Categories\":[{\"Id\":\"" + CategoryId + "\",\"Name\":\"Mercado\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false},"
+        + "{\"Id\":\"" + ReservaCategoryId + "\",\"Name\":\"Reserva\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false}],"
         + "\"Transfers\":[],\"BalanceAdjustments\":[],\"TitheCarryForwards\":[],\"TitheCarryForwardEffectiveFrom\":null,\"Version\":4}";
 
     private const string UnpaidOctoberStatement = "\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null}";
@@ -141,6 +143,27 @@ public class CashFlowDataConverterTests
             data.ReserveMovements.Single().Bucket.Should().BeSameAs(pot);
             data.Accounts.Where(account => account.Id != reserva.Id).Should().OnlyContain(account => account.Pots == null);
         }
+    }
+
+    [Fact]
+    public void Load_V4PotsAccountCategory_IsTheLoadedCategoryInstance()
+    {
+        var data = _serializer.Deserialize(V4File);
+
+        using (new AssertionScope())
+        {
+            data.Accounts.Single(account => account.Id == Guid.Parse(ReservaId)).Category
+                .Should().BeSameAs(data.Categories.Single(category => category.Id == Guid.Parse(ReservaCategoryId)));
+            data.Accounts.Where(account => account.Id != Guid.Parse(ReservaId)).Should().OnlyContain(account => account.Category == null);
+        }
+    }
+
+    [Fact]
+    public void Load_PotsAccountWithAnUnknownCategory_Fails()
+    {
+        var act = () => _serializer.Deserialize(V4File.Replace("\"CategoryId\":\"" + ReservaCategoryId, "\"CategoryId\":\"5db5c88d-0000-0000-0000-000000000299"));
+
+        act.Should().Throw<JsonException>().WithMessage("Category '5db5c88d-0000-0000-0000-000000000299' referenced but not found*");
     }
 
     [Fact]
