@@ -145,16 +145,14 @@ public sealed class ReserveService : IReserveService
         using var span = StartSpan("GetBucketBalances");
         try
         {
-            var balanceByBucket = _repository.GetReserveMovements()
-                .GroupBy(m => m.Bucket)
-                .ToDictionary(g => g.Key, g => g.Sum(m => m.Amount));
+            var movements = _repository.GetReserveMovements().ToList();
 
             var result = _repository.GetReserveBuckets()
                 .Select(bucket => new ReserveBucketBalanceDTO
                 {
                     BucketId = bucket.Id,
                     BucketName = bucket.Name,
-                    Balance = balanceByBucket.GetValueOrDefault(bucket)
+                    Balance = AccountBalanceRule.PotBalance(bucket, DateOnly.MaxValue, movements)
                 })
                 .ToList();
 
@@ -317,7 +315,7 @@ public sealed class ReserveService : IReserveService
     }
 
     private decimal GetBalance(ReserveBucket bucket) =>
-        _repository.GetReserveMovements().Where(m => m.Bucket == bucket).Sum(m => m.Amount);
+        AccountBalanceRule.PotBalance(bucket, DateOnly.MaxValue, _repository.GetReserveMovements());
 
     /// <summary>The per-bucket fan-out shared with IncomeService's automated split: one movement
     /// per active bucket, with the rounding residual allocated by ReserveSplitAllocator. No

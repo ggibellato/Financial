@@ -1,6 +1,7 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -96,5 +97,26 @@ public class ReserveMovementTests
             movement.Bucket.Should().BeSameAs(bucket);
             movement.Bucket.IsActive.Should().BeFalse();
         }
+    }
+
+    [Fact]
+    public void ContributionTo_AccountThatOwnsThePot_IsTheAmount()
+    {
+        var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
+        var pot = ReserveBucket.Create("Investimento", 100m);
+        reserva.AddPot(pot);
+
+        ReserveMovement.Create(pot, -40m, new DateOnly(2026, 7, 1), "Withdrawal").ContributionTo(reserva).Should().Be(-40m);
+    }
+
+    [Theory]
+    [InlineData(AccountTemplate.Pots)]
+    [InlineData(AccountTemplate.Bank)]
+    [InlineData(AccountTemplate.CreditCard)]
+    public void ContributionTo_AccountThatDoesNotOwnThePot_IsZero(AccountTemplate template)
+    {
+        var account = Account.Create("Other", template, Currency.GBP);
+
+        ReserveMovement.Create(Investimento, 100m, new DateOnly(2026, 7, 1), "Split").ContributionTo(account).Should().Be(0m);
     }
 }

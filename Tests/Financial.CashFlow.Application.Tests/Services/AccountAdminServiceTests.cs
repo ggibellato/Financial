@@ -462,4 +462,54 @@ public class AccountAdminServiceTests
             _tracer.ShouldHaveFailedSpan<EntityInUseException>("CashFlow.AccountAdminService.DeleteAccount");
         }
     }
+
+    [Fact]
+    public async Task DeleteAsync_PotsAccountThatOwnsPots_ThrowsTheDeactivateMessageAndKeepsIt()
+    {
+        var reserva = _repository.EnsureReserva();
+        reserva.AddPot(ReserveBucket.Create("Investimento", 100m));
+
+        var act = () => _sut.DeleteAsync(reserva.Id);
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<EntityInUseException>())
+                .WithMessage("Reserva has transactions and cannot be deleted. Deactivate it instead.");
+            _repository.Accounts.Should().Contain(reserva);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_TemplateChangeOfAPotsAccountThatOwnsPots_ThrowsAndKeepsItsPots()
+    {
+        var reserva = _repository.EnsureReserva();
+        reserva.AddPot(ReserveBucket.Create("Investimento", 100m));
+
+        var act = () => _sut.UpdateAsync(reserva.Id, Edit(reserva));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>())
+                .WithMessage("Template and currency can't change once the account has transactions.");
+            reserva.Template.Should().Be(AccountTemplate.Pots);
+            reserva.Pots.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteAsync_PotsAccountWithoutPots_RemovesAndSaves()
+    {
+        var holidays = TestAccounts.Pots("Holidays");
+        _repository.Accounts.Add(holidays);
+
+        await _sut.DeleteAsync(holidays.Id);
+
+        using (new AssertionScope())
+        {
+            _repository.Accounts.Should().NotContain(holidays);
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
 }

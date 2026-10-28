@@ -2,7 +2,7 @@ using System;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
-public class ReserveMovement
+public class ReserveMovement : IAccountTransaction
 {
     public Guid Id { get; private set; }
     public ReserveBucket Bucket { get; private set; } = null!;
@@ -31,4 +31,6 @@ public class ReserveMovement
         Date = date;
         Description = description;
     }
+
+    public decimal ContributionTo(Account account) => account.OwnsPot(Bucket.Id) ? Amount : 0m;
 }
