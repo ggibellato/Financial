@@ -7469,6 +7469,8 @@ export interface components {
         AccountCreateDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            /** Format: uuid */
+            categoryId?: null | string;
             currency: string;
             name: string;
             /** Format: double */
@@ -7479,6 +7481,9 @@ export interface components {
         AccountDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            capabilities: string[];
+            /** Format: uuid */
+            categoryId?: null | string;
             currency: string;
             hasRecords: boolean;
             /** Format: uuid */
@@ -7637,6 +7642,8 @@ export interface components {
         AccountUpdateDTO: {
             /** Format: date */
             balanceStartDate?: null | string;
+            /** Format: uuid */
+            categoryId?: null | string;
             currency: string;
             isActive: boolean;
             name: string;

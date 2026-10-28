@@ -1,11 +1,12 @@
 import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AccountCreateDto, AccountDto, AccountTemplateDto, AccountUpdateDto } from '../api/types'
+import type { AccountCreateDto, AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
 
 export interface AdminAccountsData {
   accounts: AccountDto[]
   templates: AccountTemplateDto[]
+  categories: CategoryDto[]
   isLoading: boolean
   error: string | null
   retry: () => void
@@ -17,16 +18,21 @@ export interface AdminAccountsData {
   deleteAccount: (id: string, onDeleted: () => void) => void
 }
 
-interface AccountsAndTemplates {
+interface AccountsReferenceData {
   accounts: AccountDto[]
   templates: AccountTemplateDto[]
+  categories: CategoryDto[]
 }
 
-const NOTHING_LOADED: AccountsAndTemplates = { accounts: [], templates: [] }
+const NOTHING_LOADED: AccountsReferenceData = { accounts: [], templates: [], categories: [] }
 
-async function loadAccountsAndTemplates(): Promise<AccountsAndTemplates> {
-  const [accounts, templates] = await Promise.all([apiClient.getAccounts(), apiClient.getAccountTemplates()])
-  return { accounts, templates }
+async function loadAccountsReferenceData(): Promise<AccountsReferenceData> {
+  const [accounts, templates, categories] = await Promise.all([
+    apiClient.getAccounts(),
+    apiClient.getAccountTemplates(),
+    apiClient.getCategories(),
+  ])
+  return { accounts, templates, categories }
 }
 
 function toUpdateRequest(account: AccountDto): AccountUpdateDto {
@@ -37,13 +43,14 @@ function toUpdateRequest(account: AccountDto): AccountUpdateDto {
     openingBalance: account.openingBalance,
     balanceStartDate: account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled,
+    categoryId: account.categoryId,
     isActive: account.isActive,
   }
 }
 
 export function useAdminAccounts(): AdminAccountsData {
   const resource = useCrudResource({
-    load: loadAccountsAndTemplates,
+    load: loadAccountsReferenceData,
     initialData: NOTHING_LOADED,
     loadErrorMessage: 'Unable to load accounts',
     refreshMode: 'silent',
@@ -74,6 +81,7 @@ export function useAdminAccounts(): AdminAccountsData {
   return {
     accounts: resource.data.accounts,
     templates: resource.data.templates,
+    categories: resource.data.categories,
     isLoading: resource.isLoading,
     error: resource.error,
     retry: resource.retry,

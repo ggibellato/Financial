@@ -24,10 +24,14 @@ public class AccountAdminServiceTests
     private readonly AccountAdminService _sut;
     private readonly Account _barclays = TestAccounts.Bank("Barclays");
     private readonly Account _chase = TestAccounts.Bank("Chase", roundUpEnabled: true);
+    private readonly Category _holidays = Category.Create("Holidays");
+    private readonly Category _retired = Category.Create("Retired", isActive: false);
+    private readonly Category _investimento = Category.Create("Investimento", isInvestment: true);
 
     public AccountAdminServiceTests()
     {
         _repository.Accounts.AddRange([_barclays, _chase]);
+        _repository.Categories.AddRange([_holidays, _retired, _investimento]);
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 9, 3), _barclays, 0m, 0m, null));
         _sut = new AccountAdminService(_repository, _calendarSyncTrigger, TestClock.At(), _tracer, NullLogger<AccountAdminService>.Instance);
     }
@@ -46,6 +50,23 @@ public class AccountAdminServiceTests
         OpeningBalance = openingBalance,
         BalanceStartDate = balanceStartDate ?? Today,
         RoundUpEnabled = roundUpEnabled
+    };
+
+    private static AccountCreateDTO NewPots(Guid? categoryId) => new()
+    {
+        TemplateName = "Pots",
+        Name = "Holiday pots",
+        Currency = "GBP",
+        CategoryId = categoryId
+    };
+
+    private static AccountUpdateDTO EditPots(Account account, Guid? categoryId) => new()
+    {
+        TemplateName = "Pots",
+        Name = account.Name,
+        Currency = "GBP",
+        CategoryId = categoryId,
+        IsActive = true
     };
 
     private static AccountUpdateDTO Edit(
@@ -378,7 +399,7 @@ public class AccountAdminServiceTests
     [Fact]
     public async Task CreateAsync_Pots_AddsAnEmptyGbpPotsAccountWithoutBankFields()
     {
-        var result = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Pots", Name = "Holiday pots", Currency = "GBP" });
+        var result = await _sut.CreateAsync(NewPots(_holidays.Id));
 
         var pots = _repository.Accounts.Single(account => account.Id == result.Id);
         using (new AssertionScope())
@@ -387,10 +408,176 @@ public class AccountAdminServiceTests
             pots.Has(Capability.HasPots).Should().BeTrue();
             pots.OpeningBalance.Should().BeNull();
             pots.RoundUp.Should().BeNull();
+            pots.Category.Should().BeSameAs(_holidays);
             result.TemplateName.Should().Be("Pots");
+            result.CategoryId.Should().Be(_holidays.Id);
+            result.Capabilities.Should().Equal("HasPots", "ReceivesIncomeSplit", "CanWithdraw");
             result.HasRecords.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(1);
             _calendarSyncTrigger.TriggeredCreditCardIds.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_PotsWithoutACategory_ThrowsAndWritesNothing()
+    {
+        var act = () => _sut.CreateAsync(NewPots(categoryId: null));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the category for this account's bank expenses.");
+            _repository.Accounts.Should().HaveCount(2);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.CreateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_PotsWithAnInactiveCategory_Throws()
+    {
+        var act = () => _sut.CreateAsync(NewPots(_retired.Id));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Category '{_retired.Id}' is not recognized.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.CreateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_PotsWithAnInvestmentCategory_Throws()
+    {
+        var act = () => _sut.CreateAsync(NewPots(_investimento.Id));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Category '{_investimento.Id}' is not recognized.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.CreateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_PotsWithAnUnknownCategory_Throws()
+    {
+        var unknownId = Guid.NewGuid();
+
+        var act = () => _sut.CreateAsync(NewPots(unknownId));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Category '{unknownId}' is not recognized.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.CreateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_BankWithACategory_Throws()
+    {
+        var request = NewBank();
+
+        var act = () => _sut.CreateAsync(new AccountCreateDTO
+        {
+            TemplateName = request.TemplateName,
+            Name = request.Name,
+            Currency = request.Currency,
+            OpeningBalance = request.OpeningBalance,
+            BalanceStartDate = request.BalanceStartDate,
+            RoundUpEnabled = request.RoundUpEnabled,
+            CategoryId = _holidays.Id
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Monzo has no category setting.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.CreateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PotsKeepingItsNowInactiveCategory_SavesIt()
+    {
+        var pots = TestAccounts.Pots("Holiday pots", category: _retired);
+        _repository.Accounts.Add(pots);
+
+        var result = await _sut.UpdateAsync(pots.Id, EditPots(pots, _retired.Id));
+
+        using (new AssertionScope())
+        {
+            pots.Category.Should().BeSameAs(_retired);
+            result.CategoryId.Should().Be(_retired.Id);
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PotsChangingItsCategory_SetsTheNewOne()
+    {
+        var pots = TestAccounts.Pots("Holiday pots", category: _retired);
+        _repository.Accounts.Add(pots);
+
+        await _sut.UpdateAsync(pots.Id, EditPots(pots, _holidays.Id));
+
+        using (new AssertionScope())
+        {
+            pots.Category.Should().BeSameAs(_holidays);
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PotsSwitchingToAnotherInactiveCategory_ThrowsAndKeepsItsOwn()
+    {
+        var pots = TestAccounts.Pots("Holiday pots", category: _holidays);
+        _repository.Accounts.Add(pots);
+
+        var act = () => _sut.UpdateAsync(pots.Id, EditPots(pots, _retired.Id));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Category '{_retired.Id}' is not recognized.");
+            pots.Category.Should().BeSameAs(_holidays);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_BankWithoutRecordsBecomingPots_RequiresACategory()
+    {
+        var spare = TestAccounts.Bank("Spare");
+        _repository.Accounts.Add(spare);
+
+        var withoutCategory = () => _sut.UpdateAsync(spare.Id, EditPots(spare, categoryId: null));
+        await withoutCategory.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the category for this account's bank expenses.");
+
+        await _sut.UpdateAsync(spare.Id, EditPots(spare, _holidays.Id));
+
+        using (new AssertionScope())
+        {
+            spare.Template.Should().Be(AccountTemplate.Pots);
+            spare.Category.Should().BeSameAs(_holidays);
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_PotsClearingItsCategory_ThrowsAndKeepsIt()
+    {
+        var pots = TestAccounts.Pots("Holiday pots", category: _holidays);
+        _repository.Accounts.Add(pots);
+
+        var act = () => _sut.UpdateAsync(pots.Id, EditPots(pots, categoryId: null));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the category for this account's bank expenses.");
+            pots.Category.Should().BeSameAs(_holidays);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountAdminService.UpdateAccount");
         }
     }
 

@@ -124,7 +124,13 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     [Fact]
     public async Task PostAccount_EmptyPots_IsListedWithNoActionsAndStaysOutOfTheDefaultGroup()
     {
-        var response = await Client.PostAsJsonAsync(AccountsUrl, new AccountCreateDTO { TemplateName = "Pots", Name = "Holiday pots", Currency = "GBP" });
+        var response = await Client.PostAsJsonAsync(AccountsUrl, new AccountCreateDTO
+        {
+            TemplateName = "Pots",
+            Name = "Holiday pots",
+            Currency = "GBP",
+            CategoryId = Guid.Parse(GroceriesId)
+        });
         var created = await response.Content.ReadFromJsonAsync<AccountDTO>();
         var accounts = await Client.GetFromJsonAsync<List<AccountDTO>>(AccountsUrl);
         var detail = await Client.GetFromJsonAsync<AccountDetailDTO>($"{AccountsUrl}/{created!.Id}/2026/10");
@@ -134,10 +140,35 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
         {
             response.StatusCode.Should().Be(HttpStatusCode.Created);
             accounts.Should().ContainSingle(account => account.Id == created.Id)
-                .Which.Should().BeEquivalentTo(new { TemplateName = "Pots", Currency = "GBP", IsActive = true, HasRecords = false, OpeningBalance = (decimal?)null, RoundUpEnabled = (bool?)null });
+                .Which.Should().BeEquivalentTo(new
+                {
+                    TemplateName = "Pots",
+                    Currency = "GBP",
+                    IsActive = true,
+                    HasRecords = false,
+                    OpeningBalance = (decimal?)null,
+                    RoundUpEnabled = (bool?)null,
+                    CategoryId = (Guid?)Guid.Parse(GroceriesId),
+                    Capabilities = new[] { "HasPots", "ReceivesIncomeSplit", "CanWithdraw" }
+                });
             detail!.Balance.Should().Be(0m);
             detail.AllowedActions.Should().BeEmpty();
             summary!.Members.Should().NotContain(member => member.AccountId == created.Id);
+        }
+    }
+
+    [Fact]
+    public async Task PostAccount_PotsWithoutACategory_Returns400AndCreatesNothing()
+    {
+        var response = await Client.PostAsJsonAsync(AccountsUrl, new AccountCreateDTO { TemplateName = "Pots", Name = "Holiday pots", Currency = "GBP" });
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        var accounts = await Client.GetFromJsonAsync<List<AccountDTO>>(AccountsUrl);
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            problem!.Detail.Should().Be("Choose the category for this account's bank expenses.");
+            accounts.Should().NotContain(account => account.Name == "Holiday pots");
         }
     }
 
