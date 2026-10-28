@@ -4,5 +4,5 @@ public enum InvestmentAccountSource
 {
     None,
     CreditCard,
-    ReserveBucketsSum
+    PotsAccountTotal
 }

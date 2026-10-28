@@ -360,8 +360,9 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSum_Succeeds()
+    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSum_NamesReservaAndKeepsTheWireValue()
     {
+        var reserva = _repository.EnsureReserva();
         var request = new InvestmentAccountCreateDTO
         {
             Name = "Reservas pessoais",
@@ -374,9 +375,47 @@ public class InvestmentAccountServiceTests
 
         using (new AssertionScope())
         {
+            var created = _repository.InvestmentAccounts.Should().ContainSingle(account => account.Id == result.Id).Which;
+            created.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
+            created.PotsAccount.Should().BeSameAs(reserva);
             result.Source.Should().Be("ReserveBucketsSum");
             result.CreditCardId.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourceReserveBucketsSumWithNoPotsAccount_ThrowsAndWritesNothing()
+    {
+        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "ReserveBucketsSum"
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("A pots-account-sourced investment account requires a Pots account.");
+            _repository.InvestmentAccounts.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.InvestmentAccountService.CreateInvestmentAccount");
+        }
+    }
+
+    [Fact]
+    public async Task CreateInvestmentAccountAsync_SourcePotsAccountTotal_IsNotAcceptedYet()
+    {
+        _repository.EnsureReserva();
+
+        var act = () => _sut.CreateInvestmentAccountAsync(new InvestmentAccountCreateDTO
+        {
+            Name = "Reservas pessoais",
+            IsActive = true,
+            IsLiability = false,
+            Source = "PotsAccountTotal"
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Source 'PotsAccountTotal' is not recognized.");
     }
 
     [Fact]

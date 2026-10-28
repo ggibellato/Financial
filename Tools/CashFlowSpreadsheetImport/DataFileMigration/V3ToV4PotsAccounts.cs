@@ -6,6 +6,8 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Data
 public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
 {
     private const string ReservaName = "Reserva";
+    private const string LegacyPotsSource = "ReserveBucketsSum";
+    private const string PotsSource = "PotsAccountTotal";
 
     public int FromVersion => 3;
 
@@ -29,12 +31,31 @@ public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
             account["CategoryId"] = null;
         }
 
+        var reserva = NewReservaAccount(buckets, categoryId);
         var accountArray = root["Accounts"] as JsonArray ?? [];
-        accountArray.Add(NewReservaAccount(buckets, categoryId));
+        accountArray.Add(reserva);
         root["Accounts"] = accountArray;
         root.Remove("ReserveBuckets");
 
-        return $"{ReservaName} Pots account created with {buckets.Count} pots; category {ReservaName}";
+        var snapshotSources = PointSnapshotSourcesAt(root, reserva["Id"]!.GetValue<string>());
+
+        return $"{ReservaName} Pots account created with {buckets.Count} pots; category {ReservaName}; {snapshotSources} snapshot sources point at it";
+    }
+
+    private static int PointSnapshotSourcesAt(JsonObject root, string reservaId)
+    {
+        var count = 0;
+        foreach (var investmentAccount in Objects(root, "InvestmentAccounts"))
+        {
+            var isPotsSourced = investmentAccount["Source"]?.GetValue<string>() == LegacyPotsSource;
+            if (isPotsSourced)
+            {
+                investmentAccount["Source"] = PotsSource;
+                count++;
+            }
+            investmentAccount["PotsAccountId"] = isPotsSourced ? reservaId : null;
+        }
+        return count;
     }
 
     private static string ReservaCategoryId(JsonObject root)
