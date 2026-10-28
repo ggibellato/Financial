@@ -65,7 +65,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
-            var potsAccount = ResolvePotsAccount(source);
+            var potsAccount = ResolvePotsAccount(source, currentPotsAccount: null);
 
             var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability, source, creditCard, potsAccount);
 
@@ -106,7 +106,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
-            var potsAccount = ResolvePotsAccount(source);
+            var potsAccount = ResolvePotsAccount(source, account.PotsAccount);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -176,8 +176,8 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         return creditCard;
     }
 
-    private Account? ResolvePotsAccount(InvestmentAccountSource source) =>
-        source == InvestmentAccountSource.PotsAccountTotal ? ReservaAccount.Find(_repository.GetAccounts()) : null;
+    private Account? ResolvePotsAccount(InvestmentAccountSource source, Account? currentPotsAccount) =>
+        source == InvestmentAccountSource.PotsAccountTotal ? currentPotsAccount ?? ReservaAccount.Find(_repository.GetAccounts()) : null;
 
     private void EnsureNoNonZeroInvestmentSnapshotExists(Guid accountId)
     {

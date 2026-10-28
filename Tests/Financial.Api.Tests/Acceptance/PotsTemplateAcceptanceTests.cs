@@ -91,7 +91,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-06")]
     public async Task SecondPotsAccount_CreatedThroughAccounts_LeavesReservaUnchanged()
     {
-        await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
+        var investmentAccount = await Client.PostAsJsonAsync($"{Api}/investment-accounts", new InvestmentAccountCreateDTO
         {
             Name = "Reservas",
             IsActive = true,
@@ -112,6 +112,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
+            investmentAccount.StatusCode.Should().Be(HttpStatusCode.OK);
             created.StatusCode.Should().Be(HttpStatusCode.Created);
             travel!.Capabilities.Should().Contain("HasPots");
             travel.CategoryId.Should().Be(Guid.Parse(MercadoId));

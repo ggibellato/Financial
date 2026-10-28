@@ -18,6 +18,7 @@ public class CashFlowDataConverterTests
     private const string ReservaId = "5db5c88d-0000-0000-0000-000000000801";
     private const string PotId = "5db5c88d-0000-0000-0000-000000000802";
     private const string ReservaCategoryId = "5db5c88d-0000-0000-0000-000000000202";
+    private const string ReservasPessoaisId = "5db5c88d-0000-0000-0000-000000000602";
 
     private const string V4File =
         "{\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true,\"PaymentStatus\":\"CreditCardCharge\",\"RoundUpSuggestion\":0.5,\"SuggestedRoundUpAmount\":null,\"IsInvestment\":false,\"ReportingDate\":\"2026-10-01\",\"ListingDate\":\"2026-10-01\"}],"
@@ -25,7 +26,8 @@ public class CashFlowDataConverterTests
         + "\"CardStatements\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000401\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":10,\"IsPaid\":false,\"DueDate\":null},"
         + "{\"Id\":\"5db5c88d-0000-0000-0000-000000000402\",\"CreditCardId\":\"" + AmexId + "\",\"Year\":2026,\"Month\":11,\"IsPaid\":false,\"DueDate\":\"2026-11-18\"}],"
         + "\"RecurringBills\":[],\"MaeLedgerEntries\":[],\"InvestmentSnapshots\":[],"
-        + "\"InvestmentAccounts\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000601\",\"Name\":\"Amex balance\",\"IsActive\":true,\"IsLiability\":true,\"Source\":\"CreditCard\",\"CreditCardId\":\"" + AmexId + "\",\"PotsAccountId\":null}],"
+        + "\"InvestmentAccounts\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000601\",\"Name\":\"Amex balance\",\"IsActive\":true,\"IsLiability\":true,\"Source\":\"CreditCard\",\"CreditCardId\":\"" + AmexId + "\",\"PotsAccountId\":null},"
+        + "{\"Id\":\"" + ReservasPessoaisId + "\",\"Name\":\"Reservas pessoais\",\"IsActive\":true,\"IsLiability\":false,\"Source\":\"PotsAccountTotal\",\"CreditCardId\":null,\"PotsAccountId\":\"" + ReservaId + "\"}],"
         + "\"Accounts\":[{\"Id\":\"" + BarclaysId + "\",\"Name\":\"Barclays\",\"Template\":\"Bank\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":{\"Amount\":100,\"StartDate\":\"2026-09-01\"},\"RoundUp\":{\"Enabled\":false},\"Pots\":null,\"CategoryId\":null},"
         + "{\"Id\":\"" + AmexId + "\",\"Name\":\"BA Amex\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null,\"CategoryId\":null},"
         + "{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":false,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null,\"CategoryId\":null},"
@@ -124,8 +126,33 @@ public class CashFlowDataConverterTests
         {
             data.Expenses.Single().CreditCard.Should().BeSameAs(amex);
             data.CardStatements.Should().OnlyContain(statement => ReferenceEquals(statement.CreditCard, amex));
-            data.InvestmentAccounts.Single().CreditCard.Should().BeSameAs(amex);
+            data.InvestmentAccounts.Single(account => account.Source == InvestmentAccountSource.CreditCard).CreditCard.Should().BeSameAs(amex);
         }
+    }
+
+    [Fact]
+    public void Load_PotsSourcedInvestmentAccount_SharesThePotsAccountInstance()
+    {
+        var data = _serializer.Deserialize(V4File);
+        var reserva = data.Accounts.Single(account => account.Id == Guid.Parse(ReservaId));
+
+        var investmentAccount = data.InvestmentAccounts.Single(account => account.Id == Guid.Parse(ReservasPessoaisId));
+
+        using (new AssertionScope())
+        {
+            investmentAccount.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
+            investmentAccount.PotsAccount.Should().BeSameAs(reserva);
+        }
+    }
+
+    [Fact]
+    public void Load_UnknownPotsAccountId_FailsTheLoad()
+    {
+        var file = V4File.Replace("\"PotsAccountId\":\"" + ReservaId + "\"", "\"PotsAccountId\":\"5db5c88d-0000-0000-0000-000000000999\"");
+
+        var act = () => _serializer.Deserialize(file);
+
+        act.Should().Throw<JsonException>();
     }
 
     [Fact]

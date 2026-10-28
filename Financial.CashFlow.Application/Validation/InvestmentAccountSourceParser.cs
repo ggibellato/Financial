@@ -5,11 +5,11 @@ namespace Financial.CashFlow.Application.Validation;
 
 public static class InvestmentAccountSourceParser
 {
-    private const string PotsAccountTotalWireName = "ReserveBucketsSum";
+    private const string LegacyPotsAccountTotalWireName = "ReserveBucketsSum";
 
     public static bool TryParse(string? value, out InvestmentAccountSource source)
     {
-        if (string.Equals(value, PotsAccountTotalWireName, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(value, LegacyPotsAccountTotalWireName, StringComparison.OrdinalIgnoreCase))
         {
             source = InvestmentAccountSource.PotsAccountTotal;
             return true;
@@ -19,5 +19,5 @@ public static class InvestmentAccountSourceParser
     }
 
     public static string WireName(InvestmentAccountSource source) =>
-        source == InvestmentAccountSource.PotsAccountTotal ? PotsAccountTotalWireName : source.ToString();
+        source == InvestmentAccountSource.PotsAccountTotal ? LegacyPotsAccountTotalWireName : source.ToString();
 }

@@ -121,7 +121,7 @@ public class InvestmentAccountTests
         var act = () => InvestmentAccount.Create(
             "Reservas pessoais", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, creditCard, TestAccounts.Pots("Reserva"));
 
-        act.Should().Throw<ArgumentException>();
+        act.Should().Throw<ArgumentException>().WithMessage("Only a credit-card-sourced investment account can have a linked credit card.");
     }
 
     [Fact]

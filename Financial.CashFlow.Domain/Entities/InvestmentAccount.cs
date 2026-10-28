@@ -30,7 +30,8 @@ public class InvestmentAccount
         }
 
         ValidateSourceShape(source, creditCard);
-        ValidatePotsAccount(source, potsAccount, isNewLink: true);
+        ValidatePotsAccount(source, potsAccount);
+        ActiveAccountRule.EnsureUsable(null, potsAccount);
 
         return new()
         {
@@ -58,7 +59,8 @@ public class InvestmentAccount
         }
 
         ValidateSourceShape(source, creditCard);
-        ValidatePotsAccount(source, potsAccount, isNewLink: potsAccount?.Id != PotsAccount?.Id);
+        ValidatePotsAccount(source, potsAccount);
+        ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
 
         Name = name;
         IsActive = isActive;
@@ -68,7 +70,7 @@ public class InvestmentAccount
         PotsAccount = potsAccount;
     }
 
-    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? potsAccount, bool isNewLink)
+    private static void ValidatePotsAccount(InvestmentAccountSource source, Account? potsAccount)
     {
         if (source == InvestmentAccountSource.PotsAccountTotal && potsAccount is null)
         {
@@ -88,11 +90,6 @@ public class InvestmentAccount
         if (!potsAccount.Has(Capability.HasPots))
         {
             throw new ArgumentException($"{potsAccount.Name} is not a Pots account.");
-        }
-
-        if (isNewLink && !potsAccount.IsActive)
-        {
-            throw new ArgumentException($"{potsAccount.Name} is inactive.");
         }
     }
 
