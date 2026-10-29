@@ -21,8 +21,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
-  { id: 's1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: true },
-  { id: 's2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true, hasReferences: false },
+  { id: 's1', name: 'Gleison', isActive: true, group: 'Salary', potsAccountId: null, hasReferences: true },
+  { id: 's2', name: 'Ariana', isActive: true, group: 'Salary', potsAccountId: 'p1', hasReferences: false },
 ]
 
 describe('useIncomeSources', () => {
@@ -68,7 +68,7 @@ describe('useIncomeSources', () => {
       name: 'Freelance',
       isActive: true,
       group: 'NonReportable',
-      autoSplitToReserve: false,
+      potsAccountId: null,
       hasReferences: false,
     })
     const { result } = renderHook(() => useIncomeSources())
@@ -79,7 +79,7 @@ describe('useIncomeSources', () => {
         name: 'Freelance',
         group: 'NonReportable',
         isActive: true,
-        autoSplitToReserve: false,
+        potsAccountId: null,
       })
     })
 
@@ -87,7 +87,7 @@ describe('useIncomeSources', () => {
       name: 'Freelance',
       group: 'NonReportable',
       isActive: true,
-      autoSplitToReserve: false,
+      potsAccountId: null,
     })
     await waitFor(() => expect(getIncomeSourcesMock).toHaveBeenCalledTimes(2))
   })
@@ -98,7 +98,7 @@ describe('useIncomeSources', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     await expect(
-      result.current.createIncomeSource({ name: 'Gleison', group: 'Salary', isActive: true, autoSplitToReserve: false }),
+      result.current.createIncomeSource({ name: 'Gleison', group: 'Salary', isActive: true, potsAccountId: null }),
     ).rejects.toThrow('An income source named "Gleison" already exists.')
   })
 
@@ -108,7 +108,7 @@ describe('useIncomeSources', () => {
       name: 'Gleison Renamed',
       isActive: false,
       group: 'NonReportable',
-      autoSplitToReserve: true,
+      potsAccountId: 'p1',
       hasReferences: true,
     })
     const { result } = renderHook(() => useIncomeSources())
@@ -119,7 +119,7 @@ describe('useIncomeSources', () => {
         name: 'Gleison Renamed',
         group: 'NonReportable',
         isActive: false,
-        autoSplitToReserve: true,
+        potsAccountId: 'p1',
       })
     })
 
@@ -127,7 +127,7 @@ describe('useIncomeSources', () => {
       name: 'Gleison Renamed',
       group: 'NonReportable',
       isActive: false,
-      autoSplitToReserve: true,
+      potsAccountId: 'p1',
     })
     await waitFor(() => expect(getIncomeSourcesMock).toHaveBeenCalledTimes(2))
   })

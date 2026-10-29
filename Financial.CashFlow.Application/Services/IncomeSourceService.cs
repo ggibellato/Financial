@@ -3,7 +3,6 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -62,7 +61,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
 
             _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, null, s => s.Name, s => s.Id, "An income source");
 
-            var incomeSource = IncomeSource.Create(request.Name, group, request.IsActive, request.AutoSplitToReserve ? FindReservaOrThrow() : null);
+            var incomeSource = IncomeSource.Create(request.Name, group, request.IsActive, ResolvePotsAccount(request.PotsAccountId));
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -104,7 +103,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
 
             _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, id, s => s.Name, s => s.Id, "An income source");
 
-            var potsAccount = request.AutoSplitToReserve ? incomeSource.PotsAccount ?? FindReservaOrThrow() : null;
+            var potsAccount = ResolvePotsAccount(request.PotsAccountId);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -162,8 +161,20 @@ public sealed class IncomeSourceService : IIncomeSourceService
     private bool IsReferenced(Guid incomeSourceId) =>
         _repository.GetIncomes().Any(i => i.IncomeSource.Id == incomeSourceId);
 
-    private Account FindReservaOrThrow() =>
-        ReservaAccount.Find(_repository.GetAccounts()) ?? throw new ArgumentException("Create a Pots account first.");
+    private Account? ResolvePotsAccount(Guid? potsAccountId)
+    {
+        if (potsAccountId is null)
+        {
+            return null;
+        }
+
+        if (!EntityIdResolver.TryResolve(potsAccountId, _repository.GetAccounts(), a => a.Id, out var potsAccount))
+        {
+            throw new ArgumentException($"Pots account '{potsAccountId}' is not recognized.");
+        }
+
+        return potsAccount;
+    }
 
     private ITelemetrySpan StartSpan(string operationName)
     {
@@ -179,7 +190,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
         Name = source.Name,
         IsActive = source.IsActive,
         Group = source.Group.ToString(),
-        AutoSplitToReserve = source.PotsAccount is not null,
+        PotsAccountId = source.PotsAccount?.Id,
         HasReferences = hasReferences
     };
 }

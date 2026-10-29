@@ -122,10 +122,10 @@ const BANKS: BankDto[] = [
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
-  { id: '1', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: false },
-  { id: '2', name: 'Ariana', isActive: true, group: 'Salary', autoSplitToReserve: true, hasReferences: false },
-  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable', autoSplitToReserve: false, hasReferences: false },
-  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', autoSplitToReserve: false, hasReferences: false },
+  { id: '1', name: 'Gleison', isActive: true, group: 'Salary', potsAccountId: null, hasReferences: false },
+  { id: '2', name: 'Ariana', isActive: true, group: 'Salary', potsAccountId: 'p1', hasReferences: false },
+  { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable', potsAccountId: null, hasReferences: false },
+  { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', potsAccountId: null, hasReferences: false },
 ]
 
 const CATEGORIES: CategoryDto[] = [

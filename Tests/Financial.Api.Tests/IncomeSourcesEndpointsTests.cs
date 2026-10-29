@@ -11,6 +11,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
+    private static readonly Guid ReservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");
 
     [Fact]
     public async Task GetIncomeSources_ReturnsTheFourSeededSourcesWithCorrectFields()
@@ -27,15 +28,15 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetIncomeSources_ReturnsAutoSplitToReserveInResponse()
+    public async Task GetIncomeSources_ReturnsThePotsAccountIdInResponse()
     {
         var response = await Client.GetAsync("/api/v1/financial/income-sources");
 
         var sources = await response.Content.ReadFromJsonAsync<List<IncomeSourceDTO>>();
-        sources.Should().ContainSingle(s => s.Name == "Ariana" && s.AutoSplitToReserve);
-        sources.Should().ContainSingle(s => s.Name == "Gleison" && !s.AutoSplitToReserve);
-        sources.Should().ContainSingle(s => s.Name == "Lottery" && !s.AutoSplitToReserve);
-        sources.Should().ContainSingle(s => s.Name == "DividendoJuros" && !s.AutoSplitToReserve);
+        sources.Should().ContainSingle(s => s.Name == "Ariana" && s.PotsAccountId == ReservaId);
+        sources.Should().ContainSingle(s => s.Name == "Gleison" && s.PotsAccountId == null);
+        sources.Should().ContainSingle(s => s.Name == "Lottery" && s.PotsAccountId == null);
+        sources.Should().ContainSingle(s => s.Name == "DividendoJuros" && s.PotsAccountId == null);
     }
 
     [Fact]
@@ -57,8 +58,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Freelance",
             Group = "NonReportable",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -77,8 +77,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Gleison",
             Group = "Salary",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -93,8 +92,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "   ",
             Group = "Salary",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -107,8 +105,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Freelance",
             Group = "NotAGroup",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -121,8 +118,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Ariana Renamed",
             Group = "NonReportable",
-            IsActive = false,
-            AutoSplitToReserve = false
+            IsActive = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -130,7 +126,39 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         source!.Name.Should().Be("Ariana Renamed");
         source.Group.Should().Be("NonReportable");
         source.IsActive.Should().BeFalse();
-        source.AutoSplitToReserve.Should().BeFalse();
+        source.PotsAccountId.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSource_WithAPotsAccountId_ReturnsOkNamingIt()
+    {
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/income-sources/{GleisonId}", new IncomeSourceUpdateDTO
+        {
+            Name = "Gleison",
+            Group = "Salary",
+            IsActive = true,
+            PotsAccountId = ReservaId
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var source = await response.Content.ReadFromJsonAsync<IncomeSourceDTO>();
+        source!.PotsAccountId.Should().Be(ReservaId);
+    }
+
+    [Fact]
+    public async Task CreateIncomeSource_WithAnAccountThatCannotReceiveAnIncomeSplit_ReturnsBadRequestWithMessage()
+    {
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/income-sources", new IncomeSourceCreateDTO
+        {
+            Name = "Freelance",
+            Group = "NonReportable",
+            IsActive = true,
+            PotsAccountId = BarclaysId
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("can't receive an income split.");
     }
 
     [Fact]
@@ -140,8 +168,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "X",
             Group = "Salary",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
@@ -154,8 +181,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Gleison",
             Group = "Salary",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
@@ -168,8 +194,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Ariana",
             Group = "NotAGroup",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -182,8 +207,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         {
             Name = "Freelance",
             Group = "NonReportable",
-            IsActive = true,
-            AutoSplitToReserve = false
+            IsActive = true
         });
         var source = await created.Content.ReadFromJsonAsync<IncomeSourceDTO>();
 

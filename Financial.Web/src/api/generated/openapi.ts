@@ -8594,19 +8594,21 @@ export interface components {
         /** @enum {unknown} */
         IncomePolicy: "Unknown" | "Distributing" | "Accumulating";
         IncomeSourceCreateDTO: {
-            autoSplitToReserve: boolean;
             group: string;
             isActive: boolean;
             name: string;
+            /** Format: uuid */
+            potsAccountId?: null | string;
         };
         IncomeSourceDTO: {
-            autoSplitToReserve: boolean;
             group: string;
             hasReferences: boolean;
             /** Format: uuid */
             id: string;
             isActive: boolean;
             name: string;
+            /** Format: uuid */
+            potsAccountId?: null | string;
         };
         IncomeSourceTotalDTO: {
             /** Format: double */
@@ -8618,10 +8620,11 @@ export interface components {
             netValue: number;
         };
         IncomeSourceUpdateDTO: {
-            autoSplitToReserve: boolean;
             group: string;
             isActive: boolean;
             name: string;
+            /** Format: uuid */
+            potsAccountId?: null | string;
         };
         IncomeSplitRequestDTO: {
             /** Format: double */

@@ -38,8 +38,8 @@ function resolveIncomeSourceName(sources: IncomeSourceDto[], incomeSourceId: str
   return sources.find((s) => s.id === incomeSourceId)?.name ?? ''
 }
 
-function resolveAutoSplitToReserve(sources: IncomeSourceDto[], incomeSourceId: string): boolean {
-  return sources.find((s) => s.id === incomeSourceId)?.autoSplitToReserve === true
+function sourceSplitsToPots(sources: IncomeSourceDto[], incomeSourceId: string): boolean {
+  return sources.find((s) => s.id === incomeSourceId)?.potsAccountId != null
 }
 
 const EDITABLE_FIELDS = ['date', 'incomeSource', 'grossValue', 'netValue', 'bank', 'description', 'splitToReserve'] as const
@@ -217,7 +217,7 @@ export function useIncomeForm(
     const source =
       state.incomeSource ||
       (storedSource && incomeSources.some((s) => s.id === storedSource) ? storedSource : (selectActiveIncomeSources(incomeSources)[0]?.id ?? ''))
-    const splitToReserve = resolveAutoSplitToReserve(incomeSources, source) ? 'true' : 'false'
+    const splitToReserve = sourceSplitsToPots(incomeSources, source) ? 'true' : 'false'
     dispatch({ type: 'SHOW_CREATE_FORM', payload: { date, bank, source, splitToReserve } })
   }
 
@@ -231,7 +231,7 @@ export function useIncomeForm(
       if (!INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(incomeSources, value))) {
         dispatch({ type: 'SET_FIELD', payload: { field: 'grossValue', value: '' } })
       }
-      const splitToReserve = resolveAutoSplitToReserve(incomeSources, value) ? 'true' : 'false'
+      const splitToReserve = sourceSplitsToPots(incomeSources, value) ? 'true' : 'false'
       dispatch({ type: 'SET_FIELD', payload: { field: 'splitToReserve', value: splitToReserve } })
     }
   }
@@ -286,7 +286,7 @@ export function useIncomeForm(
         if (!lockedBank) setStoredDefault(BANK_KEY, state.bank)
         setStoredDefault(SOURCE_KEY, state.incomeSource)
         if (keepOpenAfterSave && !state.isEditing) {
-          const nextSplitToReserve = resolveAutoSplitToReserve(incomeSources, state.incomeSource) ? 'true' : 'false'
+          const nextSplitToReserve = sourceSplitsToPots(incomeSources, state.incomeSource) ? 'true' : 'false'
           dispatch({ type: 'SAVE_SUCCESS_KEEP_OPEN', payload: { splitConfirmed: savedIncome.splitToReserve, nextSplitToReserve } })
         } else {
           dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })

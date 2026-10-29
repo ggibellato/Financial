@@ -150,7 +150,7 @@ const CATEGORIES: CategoryDto[] = [
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
-  { id: 'source-salary', name: 'Gleison', isActive: true, group: 'Salary', autoSplitToReserve: false, hasReferences: true },
+  { id: 'source-salary', name: 'Gleison', isActive: true, group: 'Salary', potsAccountId: null, hasReferences: true },
 ]
 
 const BANK_ACTIONS = ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'PayCardStatement', 'Reconcile']

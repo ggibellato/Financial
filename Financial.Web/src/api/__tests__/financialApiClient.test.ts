@@ -1939,7 +1939,7 @@ describe('financialApiClient', () => {
   })
 
   it('gets the income source list', async () => {
-    const responseBody: IncomeSourceDto[] = [{ id: 'is1', name: 'Salary', group: 'Salary', isActive: true, autoSplitToReserve: false, hasReferences: false }]
+    const responseBody: IncomeSourceDto[] = [{ id: 'is1', name: 'Salary', group: 'Salary', isActive: true, potsAccountId: null, hasReferences: false }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -1950,7 +1950,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts an income source create request', async () => {
-    const requestBody: IncomeSourceCreateDto = { name: 'Salary', group: 'Salary', isActive: true, autoSplitToReserve: false }
+    const requestBody: IncomeSourceCreateDto = { name: 'Salary', group: 'Salary', isActive: true, potsAccountId: null }
     const responseBody: IncomeSourceDto = { id: 'is1', ...requestBody, hasReferences: false }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -1965,7 +1965,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts an income source update', async () => {
-    const requestBody: IncomeSourceUpdateDto = { name: 'Salary Renamed', group: 'Salary', isActive: true, autoSplitToReserve: false }
+    const requestBody: IncomeSourceUpdateDto = { name: 'Salary Renamed', group: 'Salary', isActive: true, potsAccountId: null }
     const responseBody: IncomeSourceDto = { id: 'is1', ...requestBody, hasReferences: false }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
