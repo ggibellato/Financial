@@ -2,6 +2,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -66,7 +67,7 @@ public class ReserveMovementTests
     [Fact]
     public void Create_WithIncome_AssignsIncome()
     {
-        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), 3200m, 2450m, null, splitToReserve: true);
+        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Reserva")), 3200m, 2450m, null, splitToReserve: true);
 
         var movement = ReserveMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
@@ -76,7 +77,7 @@ public class ReserveMovementTests
     [Fact]
     public void Update_LeavesIncomeUntouched()
     {
-        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), 3200m, 2450m, null, splitToReserve: true);
+        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Reserva")), 3200m, 2450m, null, splitToReserve: true);
         var movement = ReserveMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
         movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");

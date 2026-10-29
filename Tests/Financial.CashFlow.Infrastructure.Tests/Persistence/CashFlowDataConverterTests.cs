@@ -19,6 +19,9 @@ public class CashFlowDataConverterTests
     private const string PotId = "5db5c88d-0000-0000-0000-000000000802";
     private const string ReservaCategoryId = "5db5c88d-0000-0000-0000-000000000202";
     private const string ReservasPessoaisId = "5db5c88d-0000-0000-0000-000000000602";
+    private const string ArianaId = "5db5c88d-0000-0000-0000-000000000901";
+    private const string GleisonId = "5db5c88d-0000-0000-0000-000000000902";
+    private const string ArianaPotsAccount = "\"Group\":\"Salary\",\"PotsAccountId\":\"" + ReservaId + "\"}";
 
     private const string V4File =
         "{\"Expenses\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000301\",\"Date\":\"2026-10-03\",\"Description\":\"Taxi\",\"Value\":30.5,\"CategoryId\":\"" + CategoryId + "\",\"PaymentSourceAccountId\":null,\"CreditCardId\":\"" + AmexId + "\",\"ChargeDate\":\"2026-10-03\",\"InvoiceDate\":\"2026-10-01\",\"RoundUpAmount\":null,\"CountsAsTithe\":true,\"PaymentStatus\":\"CreditCardCharge\",\"RoundUpSuggestion\":0.5,\"SuggestedRoundUpAmount\":null,\"IsInvestment\":false,\"ReportingDate\":\"2026-10-01\",\"ListingDate\":\"2026-10-01\"}],"
@@ -33,7 +36,8 @@ public class CashFlowDataConverterTests
         + "{\"Id\":\"" + RetiredId + "\",\"Name\":\"Ita\\u00FA Retired\",\"Template\":\"CreditCard\",\"Currency\":\"GBP\",\"IsActive\":false,\"OpeningBalance\":null,\"RoundUp\":null,\"Pots\":null,\"CategoryId\":null},"
         + "{\"Id\":\"" + ReservaId + "\",\"Name\":\"Reserva\",\"Template\":\"Pots\",\"Currency\":\"GBP\",\"IsActive\":true,\"OpeningBalance\":null,\"RoundUp\":null,"
         + "\"Pots\":[{\"Id\":\"" + PotId + "\",\"Name\":\"Investimento\",\"IsActive\":true,\"SplitPercentage\":33.33}],\"CategoryId\":\"" + ReservaCategoryId + "\"}],"
-        + "\"IncomeSources\":[],\"Incomes\":[],"
+        + "\"IncomeSources\":[{\"Id\":\"" + ArianaId + "\",\"Name\":\"Ariana\",\"IsActive\":true," + ArianaPotsAccount + ","
+        + "{\"Id\":\"" + GleisonId + "\",\"Name\":\"Gleison\",\"IsActive\":true,\"Group\":\"Salary\",\"PotsAccountId\":null}],\"Incomes\":[],"
         + "\"Categories\":[{\"Id\":\"" + CategoryId + "\",\"Name\":\"Mercado\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false},"
         + "{\"Id\":\"" + ReservaCategoryId + "\",\"Name\":\"Reserva\",\"Active\":true,\"IsInvestment\":false,\"IsTithe\":false}],"
         + "\"Transfers\":[],\"BalanceAdjustments\":[],\"TitheCarryForwards\":[],\"TitheCarryForwardEffectiveFrom\":null,\"Version\":4}";
@@ -143,6 +147,29 @@ public class CashFlowDataConverterTests
             investmentAccount.Source.Should().Be(InvestmentAccountSource.PotsAccountTotal);
             investmentAccount.PotsAccount.Should().BeSameAs(reserva);
         }
+    }
+
+    [Fact]
+    public void Load_IncomeSources_ShareTheirPotsAccountInstance()
+    {
+        var data = _serializer.Deserialize(V4File);
+        var reserva = data.Accounts.Single(account => account.Id == Guid.Parse(ReservaId));
+
+        using (new AssertionScope())
+        {
+            data.IncomeSources.Single(source => source.Id == Guid.Parse(ArianaId)).PotsAccount.Should().BeSameAs(reserva);
+            data.IncomeSources.Single(source => source.Id == Guid.Parse(GleisonId)).PotsAccount.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Load_IncomeSourceWithUnknownPotsAccountId_FailsTheLoad()
+    {
+        var file = V4File.Replace(ArianaPotsAccount, "\"Group\":\"Salary\",\"PotsAccountId\":\"5db5c88d-0000-0000-0000-000000000999\"}");
+
+        var act = () => _serializer.Deserialize(file);
+
+        act.Should().Throw<JsonException>();
     }
 
     [Fact]

@@ -37,9 +37,27 @@ public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
         root["Accounts"] = accountArray;
         root.Remove("ReserveBuckets");
 
-        var snapshotSources = PointSnapshotSourcesAt(root, reserva["Id"]!.GetValue<string>());
+        var reservaId = reserva["Id"]!.GetValue<string>();
+        var snapshotSources = PointSnapshotSourcesAt(root, reservaId);
+        var incomeSources = PointSplitIncomeSourcesAt(root, reservaId);
 
-        return $"{ReservaName} Pots account created with {buckets.Count} pots; category {ReservaName}; {snapshotSources} snapshot sources point at it";
+        return $"{ReservaName} Pots account created with {buckets.Count} pots; category {ReservaName}; {snapshotSources} snapshot sources and {incomeSources} income sources point at it";
+    }
+
+    private static int PointSplitIncomeSourcesAt(JsonObject root, string reservaId)
+    {
+        var count = 0;
+        foreach (var incomeSource in Objects(root, "IncomeSources"))
+        {
+            var splitsToReserve = incomeSource["AutoSplitToReserve"]?.GetValue<bool>() == true;
+            if (splitsToReserve)
+            {
+                count++;
+            }
+            incomeSource.Remove("AutoSplitToReserve");
+            incomeSource["PotsAccountId"] = splitsToReserve ? reservaId : null;
+        }
+        return count;
     }
 
     private static int PointSnapshotSourcesAt(JsonObject root, string reservaId)

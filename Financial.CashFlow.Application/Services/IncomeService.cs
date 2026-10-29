@@ -177,7 +177,7 @@ public sealed class IncomeService : IIncomeService
             throw new ArgumentException($"Income source '{incomeSourceId}' is not recognized.");
         }
 
-        if (splitToReserve && !resolvedIncomeSource!.AutoSplitToReserve)
+        if (splitToReserve && resolvedIncomeSource!.PotsAccount is null)
         {
             throw new ArgumentException("This income source does not support automatic reserve splitting.");
         }

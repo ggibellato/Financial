@@ -490,11 +490,11 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_ForArianaSource_ValidatesAgainstF01AutoSplitToReserveFlag()
+    public async Task AddIncomeAsync_ForArianaSource_SplitsBecauseTheSourceNamesAPotsAccount()
     {
         var repository = CreateSplitCapableRepository();
         var arianaSource = repository.IncomeSources.Single(s => s.Name == "Ariana");
-        arianaSource.AutoSplitToReserve.Should().BeTrue("the F01 migrator seeds Ariana with the flag enabled");
+        arianaSource.PotsAccount.Should().NotBeNull("the migrator seeds Ariana with the Reserva Pots account");
         var service = CreateService(repository);
 
         var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
