@@ -62,7 +62,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
 
             _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, null, s => s.Name, s => s.Id, "An income source");
 
-            var incomeSource = IncomeSource.Create(request.Name, group, request.IsActive, request.AutoSplitToReserve ? Reserva() : null);
+            var incomeSource = IncomeSource.Create(request.Name, group, request.IsActive, request.AutoSplitToReserve ? FindReservaOrThrow() : null);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -104,7 +104,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
 
             _repository.GetIncomeSources().EnsureNameIsUnique(request.Name, id, s => s.Name, s => s.Id, "An income source");
 
-            var potsAccount = request.AutoSplitToReserve ? incomeSource.PotsAccount ?? Reserva() : null;
+            var potsAccount = request.AutoSplitToReserve ? incomeSource.PotsAccount ?? FindReservaOrThrow() : null;
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -162,7 +162,7 @@ public sealed class IncomeSourceService : IIncomeSourceService
     private bool IsReferenced(Guid incomeSourceId) =>
         _repository.GetIncomes().Any(i => i.IncomeSource.Id == incomeSourceId);
 
-    private Account Reserva() =>
+    private Account FindReservaOrThrow() =>
         ReservaAccount.Find(_repository.GetAccounts()) ?? throw new ArgumentException("Create a Pots account first.");
 
     private ITelemetrySpan StartSpan(string operationName)

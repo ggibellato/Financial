@@ -87,7 +87,7 @@ public class IncomeSourceMigratorTests
     }
 
     [Fact]
-    public void Migrate_WithReserva_SeedsAriana_SplittingToReserva()
+    public void Migrate_WithReserva_SeedsArianaSplittingToReserva()
     {
         var data = CashFlowData.Create();
         var reserva = TestAccounts.ReservaIn(data);
@@ -98,7 +98,7 @@ public class IncomeSourceMigratorTests
     }
 
     [Fact]
-    public void Migrate_WithReserva_SeedsNonArianaSources_WithoutPotsAccount()
+    public void Migrate_WithReserva_SeedsOtherSourcesWithoutPotsAccount()
     {
         var data = CashFlowData.Create();
         TestAccounts.ReservaIn(data);
@@ -109,7 +109,7 @@ public class IncomeSourceMigratorTests
     }
 
     [Fact]
-    public void Migrate_WithoutPotsAccount_SeedsAriana_WithoutPotsAccount()
+    public void Migrate_WithoutPotsAccount_SeedsArianaWithoutPotsAccount()
     {
         var data = CashFlowData.Create();
 

@@ -9,12 +9,12 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class IncomeSourceTests
 {
-    private static readonly Account Reserva = TestAccounts.Pots("Reserva");
+    private readonly Account _reserva = TestAccounts.Pots("Reserva");
 
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
-        var incomeSource = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false, potsAccount: Reserva);
+        var incomeSource = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false, potsAccount: _reserva);
 
         using (new AssertionScope())
         {
@@ -22,7 +22,7 @@ public class IncomeSourceTests
             incomeSource.Name.Should().Be("Lottery");
             incomeSource.Group.Should().Be(IncomeGroup.NonReportable);
             incomeSource.IsActive.Should().BeFalse();
-            incomeSource.PotsAccount.Should().BeSameAs(Reserva);
+            incomeSource.PotsAccount.Should().BeSameAs(_reserva);
         }
     }
 
@@ -66,21 +66,21 @@ public class IncomeSourceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary, isActive: true);
 
-        incomeSource.Update("Ariana", IncomeGroup.NonReportable, isActive: false, potsAccount: Reserva);
+        incomeSource.Update("Ariana", IncomeGroup.NonReportable, isActive: false, potsAccount: _reserva);
 
         using (new AssertionScope())
         {
             incomeSource.Name.Should().Be("Ariana");
             incomeSource.Group.Should().Be(IncomeGroup.NonReportable);
             incomeSource.IsActive.Should().BeFalse();
-            incomeSource.PotsAccount.Should().BeSameAs(Reserva);
+            incomeSource.PotsAccount.Should().BeSameAs(_reserva);
         }
     }
 
     [Fact]
     public void Update_WithoutPotsAccount_ClearsIt()
     {
-        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: Reserva);
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva);
 
         incomeSource.Update("Ariana", IncomeGroup.Salary, isActive: true, potsAccount: null);
 
@@ -102,14 +102,14 @@ public class IncomeSourceTests
     [Fact]
     public void Update_ToAnInactivePotsAccount_ThrowsAndLeavesPriorValuesUntouched()
     {
-        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: Reserva);
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva);
 
         var act = () => incomeSource.Update("Ariana", IncomeGroup.Salary, isActive: true, potsAccount: TestAccounts.Pots("Old pots", isActive: false));
 
         using (new AssertionScope())
         {
             act.Should().Throw<ArgumentException>().WithMessage("Old pots is inactive.");
-            incomeSource.PotsAccount.Should().BeSameAs(Reserva);
+            incomeSource.PotsAccount.Should().BeSameAs(_reserva);
         }
     }
 
@@ -131,7 +131,7 @@ public class IncomeSourceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
 
-        var act = () => incomeSource.Update(name!, IncomeGroup.NonReportable, isActive: false, potsAccount: Reserva);
+        var act = () => incomeSource.Update(name!, IncomeGroup.NonReportable, isActive: false, potsAccount: _reserva);
 
         using (new AssertionScope())
         {

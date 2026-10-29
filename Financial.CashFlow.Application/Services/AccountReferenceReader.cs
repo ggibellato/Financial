@@ -45,9 +45,12 @@ internal static class AccountReferenceReader
                 yield return investmentAccount.PotsAccount.Id;
             }
         }
-        foreach (var incomeSource in repository.GetIncomeSources().Where(incomeSource => incomeSource.PotsAccount is not null))
+        foreach (var incomeSource in repository.GetIncomeSources())
         {
-            yield return incomeSource.PotsAccount!.Id;
+            if (incomeSource.PotsAccount is not null)
+            {
+                yield return incomeSource.PotsAccount.Id;
+            }
         }
         foreach (var transfer in repository.GetTransfers())
         {

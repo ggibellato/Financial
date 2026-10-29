@@ -113,6 +113,41 @@ public class IncomeSourceServiceTests
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
             _repository.IncomeSources.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.CreateIncomeSource");
+        }
+    }
+
+    [Fact]
+    public async Task CreateIncomeSourceAsync_WithAutoSplitToReserveAndAnInactiveReserva_ThrowsAndWritesNothing()
+    {
+        _repository.EnsureReserva().SetActive(false);
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, AutoSplitToReserve = true };
+
+        var act = async () => await _sut.CreateIncomeSourceAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Reserva is inactive.");
+            _repository.IncomeSources.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_WithAutoSplitToReserveAndNoPotsAccount_ThrowsAndWritesNothing()
+    {
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(incomeSource);
+        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "Salary", IsActive = true, AutoSplitToReserve = true };
+
+        var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
+            incomeSource.PotsAccount.Should().BeNull();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.UpdateIncomeSource");
         }
     }
 
