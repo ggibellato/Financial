@@ -51,6 +51,8 @@ public sealed class FreshImportVersionTests : IDisposable
             reserva.Should().BeEquivalentTo(new { Name = "Reserva", Currency = Currency.GBP, IsActive = true, OpeningBalance = (object?)null, RoundUp = (object?)null });
             reserva.Pots!.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Ariana", "Gleison", "Samuel");
             reserva.Category.Should().BeSameAs(data.Categories.Single(c => c.Name == "Reserva"));
+            data.IncomeSources.Single(s => s.Name == "Ariana").PotsAccount.Should().BeSameAs(reserva);
+            data.IncomeSources.Where(s => s.Name != "Ariana").Should().OnlyContain(s => s.PotsAccount == null);
             var banks = data.Accounts.Where(a => a.Template == AccountTemplate.Bank).ToList();
             banks.Select(a => (a.Name, a.RoundsUp)).Should().Equal(("Barclays", false), ("Trading212", true), ("Chase", true));
             banks.Should().OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance!.Amount == 0m);

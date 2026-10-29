@@ -37,7 +37,7 @@ public class FailedSaveRollbackTests
             data.AddAccount(bank);
         }
 
-        foreach (var source in StubCashFlowRepository.DefaultIncomeSources())
+        foreach (var source in StubCashFlowRepository.DefaultIncomeSources(TestAccounts.ReservaIn(data)))
         {
             data.AddIncomeSource(source);
         }

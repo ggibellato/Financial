@@ -72,7 +72,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
         if (seedDefaultIncomeSources)
         {
-            IncomeSources.AddRange(DefaultIncomeSources());
+            IncomeSources.AddRange(DefaultIncomeSources(EnsureReserva()));
         }
 
         if (seedDefaultReserveBuckets)
@@ -103,10 +103,10 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     ];
 
     /// <summary>The 4 income sources seeded in a real deployment by the CashFlowSpreadsheetImport migration tool.</summary>
-    public static IEnumerable<IncomeSource> DefaultIncomeSources() =>
+    public static IEnumerable<IncomeSource> DefaultIncomeSources(Account reserva) =>
     [
         IncomeSource.Create("Gleison", IncomeGroup.Salary),
-        IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true),
+        IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: reserva),
         IncomeSource.Create("Lottery", IncomeGroup.NonReportable),
         IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros)
     ];

@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -8,10 +9,12 @@ namespace Financial.CashFlow.Domain.Tests;
 [Trait("Category", "Unit")]
 public class IncomeSourceTests
 {
+    private readonly Account _reserva = TestAccounts.Pots("Reserva");
+
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
-        var incomeSource = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false, autoSplitToReserve: true);
+        var incomeSource = IncomeSource.Create("Lottery", IncomeGroup.NonReportable, isActive: false, potsAccount: _reserva);
 
         using (new AssertionScope())
         {
@@ -19,7 +22,7 @@ public class IncomeSourceTests
             incomeSource.Name.Should().Be("Lottery");
             incomeSource.Group.Should().Be(IncomeGroup.NonReportable);
             incomeSource.IsActive.Should().BeFalse();
-            incomeSource.AutoSplitToReserve.Should().BeTrue();
+            incomeSource.PotsAccount.Should().BeSameAs(_reserva);
         }
     }
 
@@ -35,27 +38,89 @@ public class IncomeSourceTests
     }
 
     [Fact]
-    public void Create_WithoutAutoSplitToReserve_DefaultsToFalse()
+    public void Create_WithoutPotsAccount_HasNone()
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
 
-        incomeSource.AutoSplitToReserve.Should().BeFalse();
+        incomeSource.PotsAccount.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_WithAnAccountThatCannotReceiveAnIncomeSplit_Throws()
+    {
+        var act = () => IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Bank("Barclays"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays can't receive an income split.");
+    }
+
+    [Fact]
+    public void Create_WithAnInactivePotsAccount_Throws()
+    {
+        var act = () => IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Old pots", isActive: false));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Old pots is inactive.");
     }
 
     [Fact]
     public void Update_ChangesAllFields()
     {
-        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary, isActive: true, autoSplitToReserve: false);
+        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary, isActive: true);
 
-        incomeSource.Update("Ariana", IncomeGroup.NonReportable, isActive: false, autoSplitToReserve: true);
+        incomeSource.Update("Ariana", IncomeGroup.NonReportable, isActive: false, potsAccount: _reserva);
 
         using (new AssertionScope())
         {
             incomeSource.Name.Should().Be("Ariana");
             incomeSource.Group.Should().Be(IncomeGroup.NonReportable);
             incomeSource.IsActive.Should().BeFalse();
-            incomeSource.AutoSplitToReserve.Should().BeTrue();
+            incomeSource.PotsAccount.Should().BeSameAs(_reserva);
         }
+    }
+
+    [Fact]
+    public void Update_WithoutPotsAccount_ClearsIt()
+    {
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva);
+
+        incomeSource.Update("Ariana", IncomeGroup.Salary, isActive: true, potsAccount: null);
+
+        incomeSource.PotsAccount.Should().BeNull();
+    }
+
+    [Fact]
+    public void Update_KeepingAPotsAccountThatHasSinceBeenDeactivated_Succeeds()
+    {
+        var holidays = TestAccounts.Pots("Holidays");
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: holidays);
+        holidays.SetActive(false);
+
+        incomeSource.Update("Ariana", IncomeGroup.Salary, isActive: true, potsAccount: holidays);
+
+        incomeSource.PotsAccount.Should().BeSameAs(holidays);
+    }
+
+    [Fact]
+    public void Update_ToAnInactivePotsAccount_ThrowsAndLeavesPriorValuesUntouched()
+    {
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva);
+
+        var act = () => incomeSource.Update("Ariana", IncomeGroup.Salary, isActive: true, potsAccount: TestAccounts.Pots("Old pots", isActive: false));
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Old pots is inactive.");
+            incomeSource.PotsAccount.Should().BeSameAs(_reserva);
+        }
+    }
+
+    [Fact]
+    public void Update_WithAnAccountThatCannotReceiveAnIncomeSplit_Throws()
+    {
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary);
+
+        var act = () => incomeSource.Update("Ariana", IncomeGroup.Salary, isActive: true, potsAccount: TestAccounts.Bank("Barclays"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays can't receive an income split.");
     }
 
     [Theory]
@@ -66,7 +131,7 @@ public class IncomeSourceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
 
-        var act = () => incomeSource.Update(name!, IncomeGroup.NonReportable, isActive: false, autoSplitToReserve: true);
+        var act = () => incomeSource.Update(name!, IncomeGroup.NonReportable, isActive: false, potsAccount: _reserva);
 
         using (new AssertionScope())
         {
@@ -74,7 +139,7 @@ public class IncomeSourceTests
             incomeSource.Name.Should().Be("Gleison");
             incomeSource.Group.Should().Be(IncomeGroup.Salary);
             incomeSource.IsActive.Should().BeTrue();
-            incomeSource.AutoSplitToReserve.Should().BeFalse();
+            incomeSource.PotsAccount.Should().BeNull();
         }
     }
 }

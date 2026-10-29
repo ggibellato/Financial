@@ -50,7 +50,7 @@ public sealed class MigrateCommandTests : IDisposable
             WithoutReservaId(File.ReadAllText(_outputPath)).Should().Be(WithoutReservaId(DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, _inputPath).Json));
             File.ReadAllText(_inputPath).Should().Be(V1DataFile.Json);
             _output.ToString().Trim().Should().Be(
-                $"Migrated {_inputPath} from version 1 to 4: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements; Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources point at it. Wrote {_outputPath}.");
+                $"Migrated {_inputPath} from version 1 to 4: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements; Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources and 0 income sources point at it. Wrote {_outputPath}.");
         }
     }
 

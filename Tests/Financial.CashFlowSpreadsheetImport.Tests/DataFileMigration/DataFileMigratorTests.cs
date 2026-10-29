@@ -45,7 +45,7 @@ public class DataFileMigratorTests
             result.StepSummaries.Should().Equal(
                 "3 banks became accounts; 5 references renamed",
                 "0 cards became accounts; 0 statements added; 0 due dates moved to statements",
-                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources point at it");
+                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources and 0 income sources point at it");
         }
     }
 
@@ -108,7 +108,7 @@ public class DataFileMigratorTests
             result.FromVersion.Should().Be(2);
             result.StepSummaries.Should().Equal(
                 "5 cards became accounts; 3 statements added; 2 due dates moved to statements",
-                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources point at it");
+                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources and 0 income sources point at it");
             cards.Keys.Should().Equal(V2DataFile.Visa8003Id, V2DataFile.Visa6007Id, V2DataFile.ChaseMasterId, V2DataFile.AmexId, V2DataFile.PaypalId);
             cards.Values.Should().OnlyContain(a => a.Template == AccountTemplate.CreditCard && a.Currency == Currency.GBP);
             cards[V2DataFile.ChaseMasterId].IsActive.Should().BeFalse();

@@ -151,10 +151,10 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             ], "CategoryId": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014" }
           ],
           "IncomeSources": [
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable", "AutoSplitToReserve": false },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros", "AutoSplitToReserve": false }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000001", "Name": "Gleison", "IsActive": true, "Group": "Salary", "PotsAccountId": null },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000002", "Name": "Ariana", "IsActive": true, "Group": "Salary", "PotsAccountId": "8f3b1c1a-2e3a-4b1a-9a7f-900000000001" },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000003", "Name": "Lottery", "IsActive": true, "Group": "NonReportable", "PotsAccountId": null },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-000000000004", "Name": "DividendoJuros", "IsActive": true, "Group": "DividendoJuros", "PotsAccountId": null }
           ],
           "InvestmentAccounts": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-200000000001", "Name": "BlueRewardsSaver", "IsActive": true, "IsLiability": false },

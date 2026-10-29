@@ -1,5 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 
@@ -10,7 +11,7 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 public static class IncomeSourceMigrator
 {
-    private static readonly (string Name, IncomeGroup Group, bool AutoSplitToReserve)[] SeededIncomeSources =
+    private static readonly (string Name, IncomeGroup Group, bool SplitsToReserva)[] SeededIncomeSources =
     [
         ("Gleison", IncomeGroup.Salary, false),
         ("Ariana", IncomeGroup.Salary, true),
@@ -32,7 +33,8 @@ public static class IncomeSourceMigrator
 
     private static void SeedIncomeSources(CashFlowData data, IncomeSourceMigrationSummary summary)
     {
-        foreach (var (name, group, autoSplitToReserve) in SeededIncomeSources)
+        var reserva = ReservaAccount.Find(data.Accounts);
+        foreach (var (name, group, splitsToReserva) in SeededIncomeSources)
         {
             if (data.IncomeSources.Any(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase)))
             {
@@ -40,7 +42,7 @@ public static class IncomeSourceMigrator
                 continue;
             }
 
-            data.AddIncomeSource(IncomeSource.Create(name, group, autoSplitToReserve: autoSplitToReserve));
+            data.AddIncomeSource(IncomeSource.Create(name, group, potsAccount: splitsToReserva ? reserva : null));
             summary.CountSourceSeeded();
         }
     }

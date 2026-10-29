@@ -87,29 +87,42 @@ public class IncomeSourceMigratorTests
     }
 
     [Fact]
-    public void Migrate_OnEmptyData_SeedsAriana_WithAutoSplitToReserveTrue()
+    public void Migrate_WithReserva_SeedsArianaSplittingToReserva()
+    {
+        var data = CashFlowData.Create();
+        var reserva = TestAccounts.ReservaIn(data);
+
+        IncomeSourceMigrator.Migrate(data);
+
+        data.IncomeSources.Should().ContainSingle(s => s.Name == "Ariana").Which.PotsAccount.Should().BeSameAs(reserva);
+    }
+
+    [Fact]
+    public void Migrate_WithReserva_SeedsOtherSourcesWithoutPotsAccount()
+    {
+        var data = CashFlowData.Create();
+        TestAccounts.ReservaIn(data);
+
+        IncomeSourceMigrator.Migrate(data);
+
+        data.IncomeSources.Where(s => s.Name != "Ariana").Should().OnlyContain(s => s.PotsAccount == null);
+    }
+
+    [Fact]
+    public void Migrate_WithoutPotsAccount_SeedsArianaWithoutPotsAccount()
     {
         var data = CashFlowData.Create();
 
         IncomeSourceMigrator.Migrate(data);
 
-        data.IncomeSources.Should().ContainSingle(s => s.Name == "Ariana" && s.AutoSplitToReserve);
+        data.IncomeSources.Should().ContainSingle(s => s.Name == "Ariana").Which.PotsAccount.Should().BeNull();
     }
 
     [Fact]
-    public void Migrate_OnEmptyData_SeedsNonArianaSources_WithAutoSplitToReserveFalse()
+    public void Migrate_WithArianaAlreadyPresentWithoutPotsAccount_LeavesExistingRecordUnchanged()
     {
         var data = CashFlowData.Create();
-
-        IncomeSourceMigrator.Migrate(data);
-
-        data.IncomeSources.Where(s => s.Name != "Ariana").Should().OnlyContain(s => !s.AutoSplitToReserve);
-    }
-
-    [Fact]
-    public void Migrate_WithArianaAlreadyPresentWithoutFlag_LeavesExistingRecordUnchanged()
-    {
-        var data = CashFlowData.Create();
+        TestAccounts.ReservaIn(data);
         var preExistingAriana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
         data.AddIncomeSource(preExistingAriana);
 
@@ -117,6 +130,6 @@ public class IncomeSourceMigratorTests
 
         summary.SourcesAlreadyPresentCount.Should().Be(1);
         data.IncomeSources.Should().ContainSingle(s => s.Name == "Ariana").Which.Should().BeSameAs(preExistingAriana);
-        preExistingAriana.AutoSplitToReserve.Should().BeFalse();
+        preExistingAriana.PotsAccount.Should().BeNull();
     }
 }

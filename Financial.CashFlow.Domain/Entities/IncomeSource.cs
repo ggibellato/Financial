@@ -1,5 +1,6 @@
 using System;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities;
 
@@ -9,16 +10,15 @@ public class IncomeSource
     public string Name { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
     public IncomeGroup Group { get; private set; }
-    public bool AutoSplitToReserve { get; private set; } = false;
+    public Account? PotsAccount { get; private set; }
 
     private IncomeSource() { }
 
-    public static IncomeSource Create(string name, IncomeGroup group, bool isActive = true, bool autoSplitToReserve = false)
+    public static IncomeSource Create(string name, IncomeGroup group, bool isActive = true, Account? potsAccount = null)
     {
-        if (string.IsNullOrWhiteSpace(name))
-        {
-            throw new ArgumentException("Income source name is required.");
-        }
+        ValidateName(name);
+        ValidatePotsAccount(potsAccount);
+        ActiveAccountRule.EnsureUsable(null, potsAccount);
 
         return new()
         {
@@ -26,22 +26,35 @@ public class IncomeSource
             Name = name,
             IsActive = isActive,
             Group = group,
-            AutoSplitToReserve = autoSplitToReserve
+            PotsAccount = potsAccount
         };
     }
 
-    /// <summary>Updates this income source's fields. Callers own uniqueness checks, since only the
-    /// repository can see across every income source.</summary>
-    public void Update(string name, IncomeGroup group, bool isActive, bool autoSplitToReserve)
+    public void Update(string name, IncomeGroup group, bool isActive, Account? potsAccount)
+    {
+        ValidateName(name);
+        ValidatePotsAccount(potsAccount);
+        ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
+
+        Name = name;
+        Group = group;
+        IsActive = isActive;
+        PotsAccount = potsAccount;
+    }
+
+    private static void ValidateName(string name)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new ArgumentException("Income source name is required.");
         }
+    }
 
-        Name = name;
-        Group = group;
-        IsActive = isActive;
-        AutoSplitToReserve = autoSplitToReserve;
+    private static void ValidatePotsAccount(Account? potsAccount)
+    {
+        if (potsAccount is not null && !potsAccount.Has(Capability.ReceivesIncomeSplit))
+        {
+            throw new ArgumentException($"{potsAccount.Name} can't receive an income split.");
+        }
     }
 }

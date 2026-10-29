@@ -32,7 +32,7 @@ public class CashFlowSerializerAdapterTests
         var destinationBank = TestAccounts.Bank("Trading212", roundUpEnabled: true);
         var investmentAccount = InvestmentAccount.Create(
             "PlatinumVisa8003", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, creditCard);
-        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true);
+        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.ReservaIn(original));
         var expense = Expense.Create(
             new DateOnly(2026, 7, 15),
             "Weekly groceries",
@@ -122,7 +122,7 @@ public class CashFlowSerializerAdapterTests
             resultIncomeSource.Name.Should().Be(incomeSource.Name);
             resultIncomeSource.IsActive.Should().Be(incomeSource.IsActive);
             resultIncomeSource.Group.Should().Be(incomeSource.Group);
-            resultIncomeSource.AutoSplitToReserve.Should().Be(incomeSource.AutoSplitToReserve);
+            resultIncomeSource.PotsAccount.Should().BeSameAs(TestAccounts.ReservaIn(result));
             var resultIncome = result.Incomes.Should().ContainSingle().Which;
             resultIncome.Id.Should().Be(income.Id);
             resultIncome.Date.Should().Be(income.Date);
@@ -335,7 +335,7 @@ public class CashFlowSerializerAdapterTests
               "Transfers": [], "BalanceAdjustments": [], "Categories": [],
               "Accounts": [{ "Id": "{{Guid.NewGuid()}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }] }],
               "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "August salary", "IncomeId": "{{incomeId}}" }],
-              "IncomeSources": [{ "Id": "{{incomeSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true }],
+              "IncomeSources": [{ "Id": "{{incomeSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "PotsAccountId": null }],
               "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{incomeSourceId}}", "NetValue": 50, "AccountId": null, "SplitToReserve": true }]
             }
             """;

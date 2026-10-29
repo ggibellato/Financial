@@ -22,8 +22,8 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var category in categories) context.Categories[category.Id] = category;
 
         var accounts = DeserializeCollection<Account>(root, "Accounts", resolvedOptions);
-        var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", unresolvedOptions);
         foreach (var account in accounts) context.Accounts[account.Id] = account;
+        var incomeSources = DeserializeCollection<IncomeSource>(root, "IncomeSources", resolvedOptions);
         foreach (var incomeSource in incomeSources) context.IncomeSources[incomeSource.Id] = incomeSource;
         foreach (var pot in accounts.SelectMany(account => account.Pots ?? [])) context.ReserveBuckets[pot.Id] = pot;
 

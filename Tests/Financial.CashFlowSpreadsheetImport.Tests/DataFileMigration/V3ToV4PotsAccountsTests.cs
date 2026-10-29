@@ -17,6 +17,9 @@ public class V3ToV4PotsAccountsTests
     private const string ReservaCategoryId = "6a0f0000-0000-0000-0000-000000000302";
     private const string ReservasPessoaisId = "6a0f0000-0000-0000-0000-000000000401";
     private const string AmexBalanceId = "6a0f0000-0000-0000-0000-000000000402";
+    private const string ArianaSourceId = "6a0f0000-0000-0000-0000-000000000501";
+    private const string GleisonSourceId = "6a0f0000-0000-0000-0000-000000000502";
+    private const string LotterySourceId = "6a0f0000-0000-0000-0000-000000000503";
 
     private const string V3Json = $$"""
         {
@@ -38,6 +41,11 @@ public class V3ToV4PotsAccountsTests
           "InvestmentAccounts": [
             { "Id": "{{ReservasPessoaisId}}", "Name": "Reservas pessoais", "IsActive": true, "IsLiability": false, "Source": "ReserveBucketsSum", "CreditCardId": null },
             { "Id": "{{AmexBalanceId}}", "Name": "Amex balance", "IsActive": true, "IsLiability": true, "Source": "CreditCard", "CreditCardId": "{{AmexId}}" }
+          ],
+          "IncomeSources": [
+            { "Id": "{{ArianaSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true },
+            { "Id": "{{GleisonSourceId}}", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
+            { "Id": "{{LotterySourceId}}", "Name": "Lottery", "IsActive": true, "Group": "NonReportable" }
           ],
           "Version": 3
         }
@@ -72,7 +80,7 @@ public class V3ToV4PotsAccountsTests
             Guid.TryParse((string)reserva["Id"]!, out _).Should().BeTrue();
             reserva.ToJsonString().Should().Be(
                 $$$"""{"Id":"{{{reserva["Id"]}}}","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{{{string.Join(",", bucketsBefore)}}}],"CategoryId":"{{{ReservaCategoryId}}}"}""");
-            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva; 1 snapshot sources point at it");
+            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva; 1 snapshot sources and 1 income sources point at it");
         }
     }
 
@@ -88,6 +96,21 @@ public class V3ToV4PotsAccountsTests
         root["InvestmentAccounts"]!.AsArray().Select(account => account!.ToJsonString()).Should().Equal(
             $$$"""{"Id":"{{{ReservasPessoaisId}}}","Name":"Reservas pessoais","IsActive":true,"IsLiability":false,"Source":"PotsAccountTotal","CreditCardId":null,"PotsAccountId":"{{{reservaId}}}"}""",
             $$$"""{"Id":"{{{AmexBalanceId}}}","Name":"Amex balance","IsActive":true,"IsLiability":true,"Source":"CreditCard","CreditCardId":"{{{AmexId}}}","PotsAccountId":null}""");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-01")]
+    public void Apply_AutoSplitIncomeSources_NameReservaAndLoseTheFlag()
+    {
+        var root = Root();
+
+        _sut.Apply(root);
+
+        var reservaId = (string)Accounts(root).Last()["Id"]!;
+        root["IncomeSources"]!.AsArray().Select(source => source!.ToJsonString()).Should().Equal(
+            $$$"""{"Id":"{{{ArianaSourceId}}}","Name":"Ariana","IsActive":true,"Group":"Salary","PotsAccountId":"{{{reservaId}}}"}""",
+            $$$"""{"Id":"{{{GleisonSourceId}}}","Name":"Gleison","IsActive":true,"Group":"Salary","PotsAccountId":null}""",
+            $$$"""{"Id":"{{{LotterySourceId}}}","Name":"Lottery","IsActive":true,"Group":"NonReportable","PotsAccountId":null}""");
     }
 
     [Fact]
@@ -117,7 +140,7 @@ public class V3ToV4PotsAccountsTests
         using (new AssertionScope())
         {
             Accounts(root).Should().ContainSingle().Which["Pots"]!.AsArray().Should().BeEmpty();
-            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources point at it");
+            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources and 0 income sources point at it");
         }
     }
 

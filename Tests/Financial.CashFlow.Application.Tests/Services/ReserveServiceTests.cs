@@ -396,7 +396,7 @@ public class ReserveServiceTests
     };
 
     private static Income LinkedIncome() =>
-        Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, autoSplitToReserve: true), null, 2450m, null, "August salary", splitToReserve: true);
+        Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Reserva")), null, 2450m, null, "August salary", splitToReserve: true);
 
     [Fact]
     public async Task UpdateMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
