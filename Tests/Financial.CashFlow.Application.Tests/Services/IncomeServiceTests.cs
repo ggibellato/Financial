@@ -319,6 +319,19 @@ public class IncomeServiceTests
     private static StubCashFlowRepository CreateSplitCapableRepository() =>
         new(seedDefaultBanks: true, seedDefaultIncomeSources: true, seedDefaultReserveBuckets: true);
 
+    private static (StubCashFlowRepository Repository, Account Holidays) RepositoryWithArianaSplittingToHolidays()
+    {
+        var repository = CreateSplitCapableRepository();
+        var holidays = TestAccounts.Pots("Holidays");
+        holidays.AddPot(ReserveBucket.Create("Flights", 50m));
+        holidays.AddPot(ReserveBucket.Create("Hotels", 50m));
+        holidays.AddPot(ReserveBucket.Create("Retired", 0m, isActive: false));
+        repository.Accounts.Add(holidays);
+        var ariana = repository.IncomeSources.Single(s => s.Name == "Ariana");
+        ariana.Update(ariana.Name, ariana.Group, ariana.IsActive, holidays);
+        return (repository, holidays);
+    }
+
     private static IncomeCreateRequest ValidArianaSplitRequest() => new(
         new DateOnly(2026, 7, 25), "Ariana", null, 2450.00m, "Barclays", null, SplitToReserve: true);
 
@@ -350,6 +363,39 @@ public class IncomeServiceTests
     }
 
     [Fact]
+    public async Task AddIncomeAsync_WithSplitForASourceSplittingToAnotherPotsAccount_SplitsIntoItsActivePotsOnly()
+    {
+        var (repository, holidays) = RepositoryWithArianaSplittingToHolidays();
+        var service = CreateService(repository);
+
+        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+
+        using (new AssertionScope())
+        {
+            result.SplitToReserve.Should().BeTrue();
+            repository.Incomes.Single().PotsAccount.Should().BeSameAs(holidays);
+            repository.ReserveMovements.Select(m => (m.Bucket.Name, m.Amount)).Should().Equal(("Flights", 1102.50m), ("Hotels", 1102.50m));
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_StillSplit_RebuildsTheMovementsInTheAccountTheIncomeNames()
+    {
+        var (repository, holidays) = RepositoryWithArianaSplittingToHolidays();
+        var service = CreateService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+
+        await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m }));
+
+        using (new AssertionScope())
+        {
+            repository.Incomes.Single().PotsAccount.Should().BeSameAs(holidays);
+            repository.ReserveMovements.Should().OnlyContain(m => holidays.OwnsPot(m.Bucket.Id) && m.Income!.Id == added.Id);
+            repository.ReserveMovements.Select(m => m.Amount).Should().Equal(450m, 450m);
+        }
+    }
+
+    [Fact]
     public async Task AddIncomeAsync_WithSplitForIneligibleSource_ThrowsAndPersistsNothing()
     {
         var repository = CreateSplitCapableRepository();
@@ -358,7 +404,7 @@ public class IncomeServiceTests
 
         var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, request));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*does not support automatic reserve splitting*");
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Gleison doesn't split income to pots.");
         repository.Incomes.Should().BeEmpty();
         repository.ReserveMovements.Should().BeEmpty();
     }
@@ -404,6 +450,7 @@ public class IncomeServiceTests
         using (new AssertionScope())
         {
             result.SplitToReserve.Should().BeFalse();
+            repository.Incomes.Single().PotsAccount.Should().BeNull();
             repository.ReserveMovements.Should().BeEmpty();
         }
     }

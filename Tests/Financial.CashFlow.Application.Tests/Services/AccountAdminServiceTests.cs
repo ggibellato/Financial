@@ -398,6 +398,26 @@ public class AccountAdminServiceTests
     }
 
     [Fact]
+    public async Task DeleteAsync_PotsAccountNamedOnlyByAnIncome_ThrowsEntityInUseAndKeepsIt()
+    {
+        var reserva = _repository.EnsureReserva();
+        var holidays = TestAccounts.Pots("Holidays", category: _holidays);
+        _repository.Accounts.Add(holidays);
+        var ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: reserva);
+        _repository.IncomeSources.Add(ariana);
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 10, 1), ariana, null, 1000m, null, potsAccount: holidays));
+
+        var act = () => _sut.DeleteAsync(holidays.Id);
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<EntityInUseException>())
+                .WithMessage("Holidays has transactions and cannot be deleted. Deactivate it instead.");
+            _repository.Accounts.Should().Contain(holidays);
+        }
+    }
+
+    [Fact]
     public async Task DeleteAsync_UnknownId_ThrowsKeyNotFoundAndRecordsAFailedSpan()
     {
         var act = () => _sut.DeleteAsync(Guid.NewGuid());

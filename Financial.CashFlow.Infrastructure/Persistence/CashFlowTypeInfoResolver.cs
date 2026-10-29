@@ -52,6 +52,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.CreditCard))] = ("CreditCardId", false),
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.PotsAccount))] = ("PotsAccountId", false),
         [(typeof(IncomeSource), nameof(IncomeSource.PotsAccount))] = ("PotsAccountId", false),
+        [(typeof(Income), nameof(Income.PotsAccount))] = ("PotsAccountId", false),
     };
 
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesOmittedWhenNull =

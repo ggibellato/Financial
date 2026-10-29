@@ -20,6 +20,9 @@ public class V3ToV4PotsAccountsTests
     private const string ArianaSourceId = "6a0f0000-0000-0000-0000-000000000501";
     private const string GleisonSourceId = "6a0f0000-0000-0000-0000-000000000502";
     private const string LotterySourceId = "6a0f0000-0000-0000-0000-000000000503";
+    private const string SplitIncomeId = "6a0f0000-0000-0000-0000-000000000601";
+    private const string UnsplitIncomeId = "6a0f0000-0000-0000-0000-000000000602";
+    private const string LegacyIncomeId = "6a0f0000-0000-0000-0000-000000000603";
 
     private const string V3Json = $$"""
         {
@@ -46,6 +49,11 @@ public class V3ToV4PotsAccountsTests
             { "Id": "{{ArianaSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": true },
             { "Id": "{{GleisonSourceId}}", "Name": "Gleison", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
             { "Id": "{{LotterySourceId}}", "Name": "Lottery", "IsActive": true, "Group": "NonReportable" }
+          ],
+          "Incomes": [
+            { "Id": "{{SplitIncomeId}}", "Date": "2026-07-25", "IncomeSourceId": "{{ArianaSourceId}}", "GrossValue": null, "NetValue": 2450, "AccountId": "{{BarclaysId}}", "Description": null, "SplitToReserve": true },
+            { "Id": "{{UnsplitIncomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{GleisonSourceId}}", "GrossValue": 3200, "NetValue": 2450, "AccountId": "{{BarclaysId}}", "Description": null, "SplitToReserve": false },
+            { "Id": "{{LegacyIncomeId}}", "Date": "2026-06-01", "IncomeSourceId": "{{LotterySourceId}}", "GrossValue": null, "NetValue": 10, "AccountId": null, "Description": null }
           ],
           "Version": 3
         }
@@ -80,7 +88,7 @@ public class V3ToV4PotsAccountsTests
             Guid.TryParse((string)reserva["Id"]!, out _).Should().BeTrue();
             reserva.ToJsonString().Should().Be(
                 $$$"""{"Id":"{{{reserva["Id"]}}}","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{{{string.Join(",", bucketsBefore)}}}],"CategoryId":"{{{ReservaCategoryId}}}"}""");
-            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva; 1 snapshot sources and 1 income sources point at it");
+            summary.Should().Be("Reserva Pots account created with 2 pots; category Reserva; 1 snapshot sources, 1 income sources and 1 incomes point at it");
         }
     }
 
@@ -115,6 +123,21 @@ public class V3ToV4PotsAccountsTests
 
     [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-01")]
+    public void Apply_SplitIncomes_NameReservaAndLoseTheFlag()
+    {
+        var root = Root();
+
+        _sut.Apply(root);
+
+        var reservaId = (string)Accounts(root).Last()["Id"]!;
+        root["Incomes"]!.AsArray().Select(income => income!.ToJsonString()).Should().Equal(
+            $$$"""{"Id":"{{{SplitIncomeId}}}","Date":"2026-07-25","IncomeSourceId":"{{{ArianaSourceId}}}","GrossValue":null,"NetValue":2450,"AccountId":"{{{BarclaysId}}}","Description":null,"PotsAccountId":"{{{reservaId}}}"}""",
+            $$$"""{"Id":"{{{UnsplitIncomeId}}}","Date":"2026-07-01","IncomeSourceId":"{{{GleisonSourceId}}}","GrossValue":3200,"NetValue":2450,"AccountId":"{{{BarclaysId}}}","Description":null,"PotsAccountId":null}""",
+            $$$"""{"Id":"{{{LegacyIncomeId}}}","Date":"2026-06-01","IncomeSourceId":"{{{LotterySourceId}}}","GrossValue":null,"NetValue":10,"AccountId":null,"Description":null,"PotsAccountId":null}""");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-01")]
     public void Apply_OtherAccountsGetNullPotsAndCategory_AndMovementsAreUnchanged()
     {
         var root = Root();
@@ -140,7 +163,7 @@ public class V3ToV4PotsAccountsTests
         using (new AssertionScope())
         {
             Accounts(root).Should().ContainSingle().Which["Pots"]!.AsArray().Should().BeEmpty();
-            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources and 0 income sources point at it");
+            summary.Should().Be("Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it");
         }
     }
 

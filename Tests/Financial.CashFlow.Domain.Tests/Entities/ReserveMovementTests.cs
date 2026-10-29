@@ -64,10 +64,17 @@ public class ReserveMovementTests
         movement.Income.Should().BeNull();
     }
 
+    private static Income SplitIncome()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        return Income.Create(
+            new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: reserva), 3200m, 2450m, null, potsAccount: reserva);
+    }
+
     [Fact]
     public void Create_WithIncome_AssignsIncome()
     {
-        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Reserva")), 3200m, 2450m, null, splitToReserve: true);
+        var income = SplitIncome();
 
         var movement = ReserveMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
@@ -77,7 +84,7 @@ public class ReserveMovementTests
     [Fact]
     public void Update_LeavesIncomeUntouched()
     {
-        var income = Income.Create(new DateOnly(2026, 7, 1), IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Reserva")), 3200m, 2450m, null, splitToReserve: true);
+        var income = SplitIncome();
         var movement = ReserveMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
         movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");

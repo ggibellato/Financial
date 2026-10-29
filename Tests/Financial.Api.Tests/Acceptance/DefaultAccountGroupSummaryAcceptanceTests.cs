@@ -35,8 +35,8 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
             { "Id": "{{HomeId}}", "Name": "Casa", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
           "IncomeSources": [
-            { "Id": "{{SalaryId}}", "Name": "Salary", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false },
-            { "Id": "{{DividendsId}}", "Name": "Dividends", "IsActive": true, "Group": "NonReportable", "AutoSplitToReserve": false }
+            { "Id": "{{SalaryId}}", "Name": "Salary", "IsActive": true, "Group": "Salary" },
+            { "Id": "{{DividendsId}}", "Name": "Dividends", "IsActive": true, "Group": "NonReportable" }
           ],
           "Expenses": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000001", "Date": "2026-08-20", "Description": "Closing", "Value": 40, "CategoryId": "{{HomeId}}", "PaymentSourceAccountId": "{{ClosedId}}", "CreditCardId": null, "ChargeDate": null, "InvoiceDate": null, "RoundUpAmount": null, "CountsAsTithe": true },
@@ -48,10 +48,10 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000007", "Date": "2026-10-02", "Description": "Later", "Value": 20, "CategoryId": "{{GroceriesId}}", "PaymentSourceAccountId": "{{ChaseId}}", "CreditCardId": null, "ChargeDate": null, "InvoiceDate": null, "RoundUpAmount": 0.40, "CountsAsTithe": true }
           ],
           "Incomes": [
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Date": "2026-08-05", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 40, "AccountId": "{{ClosedId}}", "Description": null, "SplitToReserve": false },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000002", "Date": "2026-09-25", "IncomeSourceId": "{{DividendsId}}", "GrossValue": null, "NetValue": 12.34, "AccountId": "{{BarclaysId}}", "Description": null, "SplitToReserve": false },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000003", "Date": "2026-09-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": 2500, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": null, "SplitToReserve": false },
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000004", "Date": "2026-09-15", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 100, "AccountId": "{{ChaseId}}", "Description": null, "SplitToReserve": false }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Date": "2026-08-05", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 40, "AccountId": "{{ClosedId}}", "Description": null },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000002", "Date": "2026-09-25", "IncomeSourceId": "{{DividendsId}}", "GrossValue": null, "NetValue": 12.34, "AccountId": "{{BarclaysId}}", "Description": null },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000003", "Date": "2026-09-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": 2500, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": null },
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000004", "Date": "2026-09-15", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 100, "AccountId": "{{ChaseId}}", "Description": null }
           ],
           "Version": 4
         }

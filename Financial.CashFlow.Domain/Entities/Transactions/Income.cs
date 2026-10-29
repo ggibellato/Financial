@@ -13,7 +13,7 @@ public class Income : IAccountTransaction
     public decimal NetValue { get; private set; }
     public Account? Account { get; private set; }
     public string? Description { get; private set; }
-    public bool SplitToReserve { get; private set; } = false;
+    public Account? PotsAccount { get; private set; }
 
     private Income() { }
 
@@ -24,12 +24,14 @@ public class Income : IAccountTransaction
         decimal netValue,
         Account? account,
         string? description = null,
-        bool splitToReserve = false)
+        Account? potsAccount = null)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
         ValidateAccount(account);
         ActiveAccountRule.EnsureUsable(null, account);
+        ValidatePotsAccount(incomeSource, potsAccount);
+        ActiveAccountRule.EnsureUsable(null, potsAccount);
 
         return new()
         {
@@ -40,7 +42,7 @@ public class Income : IAccountTransaction
             NetValue = netValue,
             Account = account,
             Description = NormalizeDescription(description),
-            SplitToReserve = splitToReserve
+            PotsAccount = potsAccount
         };
     }
 
@@ -51,12 +53,14 @@ public class Income : IAccountTransaction
         decimal netValue,
         Account? account,
         string? description = null,
-        bool splitToReserve = false)
+        Account? potsAccount = null)
     {
         ValidateValues(grossValue, netValue);
         ValidateIncomeSource(incomeSource);
         ValidateAccount(account);
         ActiveAccountRule.EnsureUsable(Account, account);
+        ValidatePotsAccount(incomeSource, potsAccount);
+        ActiveAccountRule.EnsureUsable(PotsAccount, potsAccount);
 
         Date = date;
         IncomeSource = incomeSource;
@@ -64,7 +68,7 @@ public class Income : IAccountTransaction
         NetValue = netValue;
         Account = account;
         Description = NormalizeDescription(description);
-        SplitToReserve = splitToReserve;
+        PotsAccount = potsAccount;
     }
 
     private static void ValidateValues(decimal? grossValue, decimal netValue)
@@ -90,6 +94,24 @@ public class Income : IAccountTransaction
         if (account is not null && !account.Has(Capability.ReceivesIncome))
         {
             throw new ArgumentException($"Account '{account.Name}' cannot receive income.");
+        }
+    }
+
+    private static void ValidatePotsAccount(IncomeSource incomeSource, Account? potsAccount)
+    {
+        if (potsAccount is null)
+        {
+            return;
+        }
+
+        if (incomeSource.PotsAccount is null)
+        {
+            throw new ArgumentException($"{incomeSource.Name} doesn't split income to pots.");
+        }
+
+        if (!potsAccount.Has(Capability.ReceivesIncomeSplit))
+        {
+            throw new ArgumentException($"{potsAccount.Name} can't receive an income split.");
         }
     }
 
