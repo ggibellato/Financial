@@ -8661,6 +8661,8 @@ export interface components {
             isActive: boolean;
             isLiability: boolean;
             name: string;
+            /** Format: uuid */
+            potsAccountId?: null | string;
             source?: string;
         };
         InvestmentAccountDTO: {
@@ -8672,6 +8674,8 @@ export interface components {
             isActive: boolean;
             isLiability: boolean;
             name: string;
+            /** Format: uuid */
+            potsAccountId?: null | string;
             source?: string;
         };
         InvestmentAccountUpdateDTO: {
@@ -8680,6 +8684,8 @@ export interface components {
             isActive: boolean;
             isLiability: boolean;
             name: string;
+            /** Format: uuid */
+            potsAccountId?: null | string;
             source?: string;
         };
         InvestmentAnnualResultDTO: {

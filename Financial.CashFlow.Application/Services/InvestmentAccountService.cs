@@ -4,7 +4,6 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -65,7 +64,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
-            var potsAccount = ResolvePotsAccount(source, currentPotsAccount: null);
+            var potsAccount = ResolvePotsAccount(source, request.PotsAccountId);
 
             var account = InvestmentAccount.Create(request.Name, request.IsActive, request.IsLiability, source, creditCard, potsAccount);
 
@@ -106,7 +105,7 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
 
             var source = ParseSource(request.Source);
             var creditCard = ResolveCreditCard(source, request.CreditCardId);
-            var potsAccount = ResolvePotsAccount(source, account.PotsAccount);
+            var potsAccount = ResolvePotsAccount(source, request.PotsAccountId);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -176,8 +175,20 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         return creditCard;
     }
 
-    private Account? ResolvePotsAccount(InvestmentAccountSource source, Account? currentPotsAccount) =>
-        source == InvestmentAccountSource.PotsAccountTotal ? currentPotsAccount ?? ReservaAccount.Find(_repository.GetAccounts()) : null;
+    private Account? ResolvePotsAccount(InvestmentAccountSource source, Guid? potsAccountId)
+    {
+        if (source != InvestmentAccountSource.PotsAccountTotal || potsAccountId is null)
+        {
+            return null;
+        }
+
+        if (!EntityIdResolver.TryResolve(potsAccountId, _repository.GetAccounts(), a => a.Id, out var potsAccount))
+        {
+            throw new ArgumentException($"Pots account '{potsAccountId}' is not recognized.");
+        }
+
+        return potsAccount;
+    }
 
     private void EnsureNoNonZeroInvestmentSnapshotExists(Guid accountId)
     {
@@ -210,7 +221,8 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         IsActive = account.IsActive,
         IsLiability = account.IsLiability,
         HasNonZeroInvestmentSnapshot = hasNonZeroInvestmentSnapshot,
-        Source = InvestmentAccountSourceParser.WireName(account.Source),
-        CreditCardId = account.CreditCard?.Id
+        Source = account.Source.ToString(),
+        CreditCardId = account.CreditCard?.Id,
+        PotsAccountId = account.PotsAccount?.Id
     };
 }

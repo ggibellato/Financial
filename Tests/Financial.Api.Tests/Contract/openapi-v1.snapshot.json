@@ -4063,6 +4063,13 @@
           "name": {
             "type": "string"
           },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "source": {
             "type": "string"
           }
@@ -4099,6 +4106,13 @@
           "name": {
             "type": "string"
           },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "source": {
             "type": "string"
           }
@@ -4129,6 +4143,13 @@
           },
           "name": {
             "type": "string"
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "source": {
             "type": "string"

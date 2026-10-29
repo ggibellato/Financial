@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CreditCardDto, InvestmentAccountDto } from '../../api/types'
+import { potsAccount } from '../../test/account'
 
 const {
   getInvestmentAccountsMock,
@@ -10,12 +11,14 @@ const {
   updateInvestmentAccountMock,
   deleteInvestmentAccountMock,
   getCreditCardsMock,
+  getAccountsMock,
 } = vi.hoisted(() => ({
   getInvestmentAccountsMock: vi.fn<FinancialApiClient['getInvestmentAccounts']>(),
   createInvestmentAccountMock: vi.fn<FinancialApiClient['createInvestmentAccount']>(),
   updateInvestmentAccountMock: vi.fn<FinancialApiClient['updateInvestmentAccount']>(),
   deleteInvestmentAccountMock: vi.fn<FinancialApiClient['deleteInvestmentAccount']>(),
   getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -25,6 +28,7 @@ vi.mock('../../api/financialApiClient', () => ({
     updateInvestmentAccount: updateInvestmentAccountMock,
     deleteInvestmentAccount: deleteInvestmentAccountMock,
     getCreditCards: getCreditCardsMock,
+    getAccounts: getAccountsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -33,9 +37,9 @@ const CREDIT_CARDS: CreditCardDto[] = [
 ]
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
-  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null },
-  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'CreditCard', creditCardId: 'cc1' },
-  { id: 'a3', name: 'Reservas pessoais', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'ReserveBucketsSum', creditCardId: null },
+  { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null, potsAccountId: null },
+  { id: 'a2', name: 'PlatinumVisa8003', isActive: true, isLiability: true, hasNonZeroInvestmentSnapshot: true, source: 'CreditCard', creditCardId: 'cc1', potsAccountId: null },
+  { id: 'a3', name: 'Reservas pessoais', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'PotsAccountTotal', creditCardId: null, potsAccountId: 'p1' },
 ]
 
 describe('InvestmentAccountsPage', () => {
@@ -45,8 +49,10 @@ describe('InvestmentAccountsPage', () => {
     updateInvestmentAccountMock.mockReset()
     deleteInvestmentAccountMock.mockReset()
     getCreditCardsMock.mockReset()
+    getAccountsMock.mockReset()
     getInvestmentAccountsMock.mockResolvedValue(INVESTMENT_ACCOUNTS)
     getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
+    getAccountsMock.mockResolvedValue([potsAccount({ id: 'p1', name: 'Reserva' })])
   })
 
   it('renders every investment account', async () => {
@@ -79,7 +85,16 @@ describe('InvestmentAccountsPage', () => {
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
   })
 
-  it('shows the dash, card name, or reserve buckets label per account source', async () => {
+  it('shows a warning and keeps the account list usable when accounts fail to load', async () => {
+    getAccountsMock.mockRejectedValue(new Error('Unable to load accounts'))
+    render(<InvestmentAccountsPage />)
+
+    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
+    expect(screen.getByText(/couldn.t load accounts/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry loading accounts' })).toBeInTheDocument()
+  })
+
+  it('[AC P60-F09-pots-template-and-reserva-migration-03] shows the dash, card name, or Pots account total per account source', async () => {
     render(<InvestmentAccountsPage />)
 
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -90,7 +105,7 @@ describe('InvestmentAccountsPage', () => {
 
     expect(chaseSaveRow?.textContent).toContain('—')
     expect(platinumRow?.textContent).toContain('Platinum Visa 8003')
-    expect(reservasRow?.textContent).toContain('Sum of reserve buckets')
+    expect(reservasRow?.textContent).toContain('Reserva total')
   })
 
   it('creates an investment account through the Create Investment Account dialog', async () => {
@@ -102,6 +117,7 @@ describe('InvestmentAccountsPage', () => {
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
       creditCardId: null,
+      potsAccountId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -117,6 +133,7 @@ describe('InvestmentAccountsPage', () => {
         isLiability: false,
         source: 'None',
         creditCardId: null,
+        potsAccountId: null,
       }),
     )
     await waitFor(() =>
@@ -133,6 +150,7 @@ describe('InvestmentAccountsPage', () => {
       hasNonZeroInvestmentSnapshot: false,
       source: 'None',
       creditCardId: null,
+      potsAccountId: null,
     })
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -149,6 +167,7 @@ describe('InvestmentAccountsPage', () => {
         isLiability: false,
         source: 'None',
         creditCardId: null,
+        potsAccountId: null,
       }),
     )
   })

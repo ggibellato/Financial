@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { Field, Input, Select, Switch, Text } from '@fluentui/react-components'
-import type { CreditCardDto, InvestmentAccountDto } from '../api/types'
+import { Field, Input, Select, Switch } from '@fluentui/react-components'
+import type { AccountDto, CreditCardDto, InvestmentAccountDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { accountsWith } from '../utils/accountCapabilities'
 
-export type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'ReserveBucketsSum'
+export type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccountTotal'
 
 interface InvestmentAccountFormDialogProps {
   investmentAccount: InvestmentAccountDto | null
   creditCards: CreditCardDto[]
+  accounts: AccountDto[]
   onCancel: () => void
   onSubmit: (
     name: string,
@@ -16,10 +18,17 @@ interface InvestmentAccountFormDialogProps {
     isLiability: boolean,
     source: InvestmentAccountSourceOption,
     creditCardId: string | null,
+    potsAccountId: string | null,
   ) => Promise<unknown>
 }
 
-export default function InvestmentAccountFormDialog({ investmentAccount, creditCards, onCancel, onSubmit }: InvestmentAccountFormDialogProps) {
+export default function InvestmentAccountFormDialog({
+  investmentAccount,
+  creditCards,
+  accounts,
+  onCancel,
+  onSubmit,
+}: InvestmentAccountFormDialogProps) {
   const isEditing = investmentAccount !== null
   const [name, setName] = useState(investmentAccount?.name ?? '')
   const [isActive, setIsActive] = useState(investmentAccount?.isActive ?? true)
@@ -28,12 +37,22 @@ export default function InvestmentAccountFormDialog({ investmentAccount, creditC
     (investmentAccount?.source as InvestmentAccountSourceOption | undefined) ?? 'None',
   )
   const [creditCardId, setCreditCardId] = useState(investmentAccount?.creditCardId ?? '')
+  const [potsAccountId, setPotsAccountId] = useState(investmentAccount?.potsAccountId ?? '')
   const { isSaving, error, submit } = useDialogSubmit('The investment account could not be saved.')
 
   const trimmedName = name.trim()
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
   const creditCardValidationMessage = source === 'CreditCard' && creditCardId === '' ? 'Select a credit card' : ''
-  const canSubmit = validationMessage.length === 0 && creditCardValidationMessage.length === 0 && !isSaving
+  const potsAccountOptions = accountsWith(accounts, 'HasPots', investmentAccount?.potsAccountId ?? undefined)
+  const hasPotsAccountChoices = potsAccountOptions.length > 0
+  const shownPotsAccountId = potsAccountOptions.some((account) => account.id === potsAccountId) ? potsAccountId : ''
+  const isPotsAccountMissing = source === 'PotsAccountTotal' && shownPotsAccountId === ''
+  const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account' : ''
+  const canSubmit =
+    validationMessage.length === 0 &&
+    creditCardValidationMessage.length === 0 &&
+    !isPotsAccountMissing &&
+    !isSaving
 
   // The picker always offers every active card, plus the account's currently-linked card even if
   // it has since become inactive - otherwise reopening Edit would silently show no selection for a
@@ -45,7 +64,14 @@ export default function InvestmentAccountFormDialog({ investmentAccount, creditC
   const handleSubmit = () => {
     if (!canSubmit) return
     void submit(() =>
-      onSubmit(trimmedName, isActive, isLiability, source, source === 'CreditCard' ? creditCardId : null),
+      onSubmit(
+        trimmedName,
+        isActive,
+        isLiability,
+        source,
+        source === 'CreditCard' ? creditCardId : null,
+        source === 'PotsAccountTotal' ? shownPotsAccountId : null,
+      ),
     )
   }
 
@@ -83,7 +109,7 @@ export default function InvestmentAccountFormDialog({ investmentAccount, creditC
         >
           <option value="None">None</option>
           <option value="CreditCard">Credit Card</option>
-          <option value="ReserveBucketsSum">Sum of Reserve Buckets</option>
+          <option value="PotsAccountTotal">Pots account total</option>
         </Select>
       </Field>
 
@@ -105,10 +131,31 @@ export default function InvestmentAccountFormDialog({ investmentAccount, creditC
         </Field>
       )}
 
-      {source === 'ReserveBucketsSum' && (
-        <Text as="p" size={200}>
-          Uses the total balance across all reserve buckets
-        </Text>
+      {source === 'PotsAccountTotal' && (
+        <Field
+          label="Pots account"
+          required
+          hint={
+            hasPotsAccountChoices
+              ? "Investment Snapshots will suggest the Pots account's total at the end of the previous month."
+              : 'Add a Pots account in Admin → Accounts first.'
+          }
+          validationState={potsAccountValidationMessage ? 'error' : 'none'}
+          validationMessage={potsAccountValidationMessage}
+        >
+          <Select
+            value={shownPotsAccountId}
+            onChange={(e) => setPotsAccountId(e.target.value)}
+            disabled={isSaving || !hasPotsAccountChoices}
+          >
+            <option value="">{hasPotsAccountChoices ? 'Select Pots account…' : 'No active Pots accounts'}</option>
+            {potsAccountOptions.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.isActive ? account.name : `${account.name} (inactive)`}
+              </option>
+            ))}
+          </Select>
+        </Field>
       )}
     </EntityFormDialog>
   )

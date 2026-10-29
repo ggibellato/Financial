@@ -111,8 +111,9 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
             Name = reservasPessoais.Name,
             IsActive = reservasPessoais.IsActive,
             IsLiability = reservasPessoais.IsLiability,
-            Source = "ReserveBucketsSum",
-            CreditCardId = null
+            Source = "PotsAccountTotal",
+            CreditCardId = null,
+            PotsAccountId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001")
         });
 
         await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO

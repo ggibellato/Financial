@@ -11,4 +11,6 @@ public sealed class InvestmentAccountCreateDTO
     public string Source { get; init; } = "None";
 
     public Guid? CreditCardId { get; init; }
+
+    public Guid? PotsAccountId { get; init; }
 }
