@@ -29,7 +29,7 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
             { "Id": "{{GroceriesId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
           "IncomeSources": [
-            { "Id": "{{SalaryId}}", "Name": "Salary", "IsActive": true, "Group": "Salary", "AutoSplitToReserve": false }
+            { "Id": "{{SalaryId}}", "Name": "Salary", "IsActive": true, "Group": "Salary" }
           ],
           "Expenses": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-500000000001", "Date": "2026-09-10", "Description": "Shop", "Value": 50, "CategoryId": "{{GroceriesId}}", "PaymentSourceAccountId": "{{BarclaysId}}", "CreditCardId": null, "ChargeDate": null, "InvoiceDate": null, "RoundUpAmount": null, "CountsAsTithe": true },
@@ -38,7 +38,7 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
             { "Id": "{{TaxiId}}", "Date": "2026-10-12", "Description": "Taxi", "Value": 30, "CategoryId": "{{GroceriesId}}", "PaymentSourceAccountId": "{{BarclaysId}}", "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-09-20", "InvoiceDate": "2026-10-01", "RoundUpAmount": null, "CountsAsTithe": true }
           ],
           "Incomes": [
-            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Date": "2026-10-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": "October pay", "SplitToReserve": false }
+            { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000001", "Date": "2026-10-01", "IncomeSourceId": "{{SalaryId}}", "GrossValue": null, "NetValue": 2000, "AccountId": "{{BarclaysId}}", "Description": "October pay" }
           ],
           "Transfers": [
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-700000000001", "Date": "2026-10-05", "SourceAccountId": "{{BarclaysId}}", "DestinationAccountId": "{{ChaseId}}", "Amount": 75.25, "Note": "Top-up" }

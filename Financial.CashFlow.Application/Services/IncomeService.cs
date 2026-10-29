@@ -31,12 +31,10 @@ public sealed class IncomeService : IIncomeService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
+            var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
 
-            var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
-            var movements = request.SplitToReserve
-                ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
-                : [];
+            var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, potsAccount);
+            var movements = BuildSplitMovements(income, potsAccount, request.NetValue, request.Date, request.Description);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -71,17 +69,15 @@ public sealed class IncomeService : IIncomeService
 
             var income = FindIncomeOrThrow(id);
 
-            var (incomeSource, bank) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
+            var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
 
             var oldLinkedMovements = GetLinkedMovements(income.Id);
 
-            var newMovements = request.SplitToReserve
-                ? BuildSplitMovements(income, request.NetValue, request.Date, request.Description)
-                : [];
+            var newMovements = BuildSplitMovements(income, potsAccount, request.NetValue, request.Date, request.Description);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, request.SplitToReserve);
+                income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, potsAccount);
                 foreach (var movement in oldLinkedMovements)
                 {
                     _repository.DeleteReserveMovement(movement.Id);
@@ -170,7 +166,7 @@ public sealed class IncomeService : IIncomeService
     private List<ReserveMovement> GetLinkedMovements(Guid incomeId) =>
         _repository.GetReserveMovements().Where(m => m.Income?.Id == incomeId).ToList();
 
-    private (IncomeSource IncomeSource, Account? Account) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
+    private (IncomeSource IncomeSource, Account? Account, Account? PotsAccount) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
     {
         if (!EntityIdResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), s => s.Id, out var resolvedIncomeSource))
         {
@@ -179,7 +175,7 @@ public sealed class IncomeService : IIncomeService
 
         if (splitToReserve && resolvedIncomeSource!.PotsAccount is null)
         {
-            throw new ArgumentException("This income source does not support automatic reserve splitting.");
+            throw new ArgumentException($"{resolvedIncomeSource.Name} doesn't split income to pots.");
         }
 
         DescriptionValidator.EnsureWithinLimit(description);
@@ -195,16 +191,18 @@ public sealed class IncomeService : IIncomeService
             resolvedBank = bank!;
         }
 
-        return (resolvedIncomeSource!, resolvedBank);
+        return (resolvedIncomeSource!, resolvedBank, splitToReserve ? resolvedIncomeSource!.PotsAccount : null);
     }
 
-    private List<ReserveMovement> BuildSplitMovements(Income linkedIncome, decimal netValue, DateOnly date, string? description) =>
-        ReserveService.CreateSplitMovements(
-            _repository.GetReserveBuckets().Where(b => b.IsActive),
-            ComputeSplitBase(netValue),
-            date,
-            description ?? string.Empty,
-            linkedIncome);
+    private static List<ReserveMovement> BuildSplitMovements(Income linkedIncome, Account? potsAccount, decimal netValue, DateOnly date, string? description) =>
+        potsAccount is null
+            ? []
+            : ReserveService.CreateSplitMovements(
+                (potsAccount.Pots ?? []).Where(pot => pot.IsActive),
+                ComputeSplitBase(netValue),
+                date,
+                description ?? string.Empty,
+                linkedIncome);
 
     private static decimal ComputeSplitBase(decimal netValue) =>
         Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
@@ -220,6 +218,6 @@ public sealed class IncomeService : IIncomeService
         BankId = income.Account?.Id,
         BankName = income.Account?.Name,
         Description = income.Description,
-        SplitToReserve = income.SplitToReserve
+        SplitToReserve = income.PotsAccount is not null
     };
 }

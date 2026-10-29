@@ -164,30 +164,99 @@ public class IncomeTests
     }
 
     [Fact]
-    public void Create_WithoutSplitToReserve_DefaultsToFalse()
+    public void Create_WithoutPotsAccount_HasNone()
     {
         var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays);
 
-        income.SplitToReserve.Should().BeFalse();
+        income.PotsAccount.Should().BeNull();
     }
 
     [Fact]
-    public void Create_WithSplitToReserveTrue_AssignsTrue()
+    public void Create_WithTheSourcesPotsAccount_NamesIt()
     {
-        var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays, splitToReserve: true);
+        var reserva = TestAccounts.Pots("Reserva");
 
-        income.SplitToReserve.Should().BeTrue();
+        var income = Income.Create(new DateOnly(2026, 7, 1), SplittingTo(reserva), 3200m, 2450m, Barclays, potsAccount: reserva);
+
+        income.PotsAccount.Should().BeSameAs(reserva);
     }
 
     [Fact]
-    public void UpdateDetails_TogglingSplitToReserve_ReplacesValue()
+    public void Create_WithAnotherPotsAccountThanTheSources_NamesIt()
     {
-        var income = Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays, splitToReserve: true);
+        var holidays = TestAccounts.Pots("Holidays");
 
-        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Account, income.Description, splitToReserve: false);
+        var income = Income.Create(new DateOnly(2026, 7, 1), SplittingTo(TestAccounts.Pots("Reserva")), 3200m, 2450m, Barclays, potsAccount: holidays);
 
-        income.SplitToReserve.Should().BeFalse();
+        income.PotsAccount.Should().BeSameAs(holidays);
     }
+
+    [Fact]
+    public void Create_WithPotsAccountWhenTheSourceHasNone_Throws()
+    {
+        var act = () => Income.Create(new DateOnly(2026, 7, 1), Ariana, 3200m, 2450m, Barclays, potsAccount: TestAccounts.Pots("Reserva"));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Ariana doesn't split income to pots.");
+    }
+
+    [Fact]
+    public void Create_WithAnAccountThatCannotReceiveAnIncomeSplit_Throws()
+    {
+        var act = () => Income.Create(new DateOnly(2026, 7, 1), SplittingTo(TestAccounts.Pots("Reserva")), 3200m, 2450m, Barclays, potsAccount: Chase);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase can't receive an income split.");
+    }
+
+    [Fact]
+    public void Create_WithAnInactivePotsAccount_Throws()
+    {
+        var act = () => Income.Create(
+            new DateOnly(2026, 7, 1), SplittingTo(TestAccounts.Pots("Reserva")), 3200m, 2450m, Barclays, potsAccount: TestAccounts.Pots("Old pots", isActive: false));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Old pots is inactive.");
+    }
+
+    [Fact]
+    public void UpdateDetails_WithoutPotsAccount_ClearsIt()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var income = Income.Create(new DateOnly(2026, 7, 1), SplittingTo(reserva), 3200m, 2450m, Barclays, potsAccount: reserva);
+
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, income.NetValue, income.Account, income.Description, potsAccount: null);
+
+        income.PotsAccount.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateDetails_KeepingAPotsAccountThatHasSinceBeenDeactivated_Succeeds()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var income = Income.Create(new DateOnly(2026, 7, 1), SplittingTo(reserva), 3200m, 2450m, Barclays, potsAccount: reserva);
+        reserva.SetActive(false);
+
+        income.UpdateDetails(income.Date, income.IncomeSource, income.GrossValue, 2500m, income.Account, income.Description, potsAccount: reserva);
+
+        income.PotsAccount.Should().BeSameAs(reserva);
+    }
+
+    [Fact]
+    public void UpdateDetails_ToASourceWithoutPotsAccount_WhileNamingOne_ThrowsAndLeavesPriorValuesUntouched()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var source = SplittingTo(reserva);
+        var income = Income.Create(new DateOnly(2026, 7, 1), source, 3200m, 2450m, Barclays, potsAccount: reserva);
+
+        var act = () => income.UpdateDetails(income.Date, Gleison, income.GrossValue, income.NetValue, income.Account, income.Description, potsAccount: reserva);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Gleison doesn't split income to pots.");
+            income.IncomeSource.Should().BeSameAs(source);
+            income.PotsAccount.Should().BeSameAs(reserva);
+        }
+    }
+
+    private static IncomeSource SplittingTo(Account potsAccount) => IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: potsAccount);
 
     [Fact]
     public void Create_OnAnInactiveBank_Throws()

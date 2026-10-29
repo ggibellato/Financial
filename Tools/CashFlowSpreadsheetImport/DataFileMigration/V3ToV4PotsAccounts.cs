@@ -39,23 +39,24 @@ public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
 
         var reservaId = reserva["Id"]!.GetValue<string>();
         var snapshotSources = PointSnapshotSourcesAt(root, reservaId);
-        var incomeSources = PointSplitIncomeSourcesAt(root, reservaId);
+        var incomeSources = PointSplitsAt(root, "IncomeSources", "AutoSplitToReserve", reservaId);
+        var incomes = PointSplitsAt(root, "Incomes", "SplitToReserve", reservaId);
 
-        return $"{ReservaName} Pots account created with {buckets.Count} pots; category {ReservaName}; {snapshotSources} snapshot sources and {incomeSources} income sources point at it";
+        return $"{ReservaName} Pots account created with {buckets.Count} pots; category {ReservaName}; {snapshotSources} snapshot sources, {incomeSources} income sources and {incomes} incomes point at it";
     }
 
-    private static int PointSplitIncomeSourcesAt(JsonObject root, string reservaId)
+    private static int PointSplitsAt(JsonObject root, string collection, string splitFlag, string reservaId)
     {
         var count = 0;
-        foreach (var incomeSource in Objects(root, "IncomeSources"))
+        foreach (var item in Objects(root, collection))
         {
-            var splitsToReserve = incomeSource["AutoSplitToReserve"]?.GetValue<bool>() == true;
-            if (splitsToReserve)
+            var isSplit = item[splitFlag]?.GetValue<bool>() == true;
+            if (isSplit)
             {
                 count++;
             }
-            incomeSource.Remove("AutoSplitToReserve");
-            incomeSource["PotsAccountId"] = splitsToReserve ? reservaId : null;
+            item.Remove(splitFlag);
+            item["PotsAccountId"] = isSplit ? reservaId : null;
         }
         return count;
     }

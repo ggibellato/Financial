@@ -15,9 +15,16 @@ internal static class AccountReferenceReader
         {
             yield return adjustment.Account.Id;
         }
-        foreach (var income in repository.GetIncomes().Where(income => income.Account is not null))
+        foreach (var income in repository.GetIncomes())
         {
-            yield return income.Account!.Id;
+            if (income.Account is not null)
+            {
+                yield return income.Account.Id;
+            }
+            if (income.PotsAccount is not null)
+            {
+                yield return income.PotsAccount.Id;
+            }
         }
         foreach (var expense in repository.GetExpenses())
         {
