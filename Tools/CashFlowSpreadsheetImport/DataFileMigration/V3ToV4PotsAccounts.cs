@@ -50,13 +50,13 @@ public sealed class V3ToV4PotsAccounts : IDataFileMigrationStep
         var count = 0;
         foreach (var item in Objects(root, collection))
         {
-            var splitsToReserve = item[splitFlag]?.GetValue<bool>() == true;
-            if (splitsToReserve)
+            var isSplit = item[splitFlag]?.GetValue<bool>() == true;
+            if (isSplit)
             {
                 count++;
             }
             item.Remove(splitFlag);
-            item["PotsAccountId"] = splitsToReserve ? reservaId : null;
+            item["PotsAccountId"] = isSplit ? reservaId : null;
         }
         return count;
     }

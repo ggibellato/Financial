@@ -404,9 +404,33 @@ public class IncomeServiceTests
 
         var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, request));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Gleison doesn't split income to pots.");
-        repository.Incomes.Should().BeEmpty();
-        repository.ReserveMovements.Should().BeEmpty();
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Gleison doesn't split income to pots.");
+            repository.Incomes.Should().BeEmpty();
+            repository.ReserveMovements.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_WithSplitAfterTheSourceStoppedSplitting_ThrowsAndKeepsTheMovements()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        var ariana = repository.IncomeSources.Single(s => s.Name == "Ariana");
+        ariana.Update(ariana.Name, ariana.Group, ariana.IsActive, potsAccount: null);
+
+        var act = async () => await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Ariana doesn't split income to pots.");
+            repository.Incomes.Single().NetValue.Should().Be(2450.00m);
+            repository.ReserveMovements.Should().HaveCount(4);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.UpdateIncome");
+        }
     }
 
     [Fact]
