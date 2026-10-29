@@ -2,8 +2,11 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
 
+export type AccountsStatus = 'loading' | 'failed' | 'ready'
+
 export interface AccountsData {
   accounts: AccountDto[]
+  status: AccountsStatus
   error: string | null
   retry: () => void
 }
@@ -16,5 +19,6 @@ export function useAccounts(): AccountsData {
     initialData: NO_ACCOUNTS,
     loadErrorMessage: 'Unable to load accounts',
   })
-  return { accounts: resource.data, error: resource.error, retry: resource.retry }
+  const status: AccountsStatus = resource.error ? 'failed' : resource.isLoading ? 'loading' : 'ready'
+  return { accounts: resource.data, status, error: resource.error, retry: resource.retry }
 }

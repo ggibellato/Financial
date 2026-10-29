@@ -3822,9 +3822,6 @@
       },
       "IncomeSourceCreateDTO": {
         "properties": {
-          "autoSplitToReserve": {
-            "type": "boolean"
-          },
           "group": {
             "type": "string"
           },
@@ -3833,21 +3830,24 @@
           },
           "name": {
             "type": "string"
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
           "name",
           "isActive",
-          "group",
-          "autoSplitToReserve"
+          "group"
         ],
         "type": "object"
       },
       "IncomeSourceDTO": {
         "properties": {
-          "autoSplitToReserve": {
-            "type": "boolean"
-          },
           "group": {
             "type": "string"
           },
@@ -3863,6 +3863,13 @@
           },
           "name": {
             "type": "string"
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -3870,7 +3877,6 @@
           "name",
           "isActive",
           "group",
-          "autoSplitToReserve",
           "hasReferences"
         ],
         "type": "object"
@@ -3905,9 +3911,6 @@
       },
       "IncomeSourceUpdateDTO": {
         "properties": {
-          "autoSplitToReserve": {
-            "type": "boolean"
-          },
           "group": {
             "type": "string"
           },
@@ -3916,13 +3919,19 @@
           },
           "name": {
             "type": "string"
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
           "name",
           "isActive",
-          "group",
-          "autoSplitToReserve"
+          "group"
         ],
         "type": "object"
       },

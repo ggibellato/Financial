@@ -42,7 +42,7 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false, hasReferences: false },
 ]
 const INCOME_SOURCES: IncomeSourceDto[] = [
-  { id: 'source-salary', name: 'Salary', isActive: true, group: 'Salary', autoSplitToReserve: true, hasReferences: false },
+  { id: 'source-salary', name: 'Salary', isActive: true, group: 'Salary', potsAccountId: 'p1', hasReferences: false },
 ]
 const OPTIONS: AccountFormOptions = {
   banks: BANKS,

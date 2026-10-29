@@ -55,7 +55,7 @@ export default function IncomeForm({
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
   )
-  const showSplitField = incomeSources.find((s) => s.id === incomeSource)?.autoSplitToReserve === true
+  const showSplitField = incomeSources.find((s) => s.id === incomeSource)?.potsAccountId != null
 
   return (
     <form

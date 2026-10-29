@@ -9,5 +9,5 @@ public sealed class IncomeSourceUpdateDTO
     /// <summary>Reporting group: "Salary", "DividendoJuros", or "NonReportable".</summary>
     public required string Group { get; init; }
 
-    public required bool AutoSplitToReserve { get; init; }
+    public Guid? PotsAccountId { get; init; }
 }

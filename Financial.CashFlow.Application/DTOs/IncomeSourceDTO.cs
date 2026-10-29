@@ -11,7 +11,7 @@ public sealed class IncomeSourceDTO
     /// <summary>Reporting group: "Salary", "DividendoJuros", or "NonReportable".</summary>
     public required string Group { get; init; }
 
-    public required bool AutoSplitToReserve { get; init; }
+    public Guid? PotsAccountId { get; init; }
 
     /// <summary>Whether an Income entry still references this source. Delete is refused (409) while this is true.</summary>
     public required bool HasReferences { get; init; }

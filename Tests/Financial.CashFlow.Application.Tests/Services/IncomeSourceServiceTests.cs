@@ -31,6 +31,13 @@ public class IncomeSourceServiceTests
     private IncomeSourceService CreateService(StubCashFlowRepository? repository = null) =>
         new(repository ?? _repository, _tracer, Logger);
 
+    private Account AddPotsAccount(string name)
+    {
+        var account = TestAccounts.Pots(name);
+        _repository.Accounts.Add(account);
+        return account;
+    }
+
     [Fact]
     public void GetIncomeSources_MapsEveryRepositoryIncomeSourceToADto()
     {
@@ -70,47 +77,47 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
-    public void GetIncomeSources_ReportsAutoSplitToReserveWhenTheSourceNamesAPotsAccount()
+    public void GetIncomeSources_ReturnsThePotsAccountEachSourceNames()
     {
-        var ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: TestAccounts.Pots("Holidays"));
-        var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
-        _repository.IncomeSources.Add(ariana);
-        _repository.IncomeSources.Add(gleison);
+        var holidays = TestAccounts.Pots("Holidays");
+        _repository.IncomeSources.Add(IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: holidays));
+        _repository.IncomeSources.Add(IncomeSource.Create("Gleison", IncomeGroup.Salary));
 
         var result = _sut.GetIncomeSources();
 
         using (new AssertionScope())
         {
-            result.Should().ContainSingle(s => s.Name == "Ariana").Which.AutoSplitToReserve.Should().BeTrue();
-            result.Should().ContainSingle(s => s.Name == "Gleison").Which.AutoSplitToReserve.Should().BeFalse();
+            result.Should().ContainSingle(s => s.Name == "Ariana").Which.PotsAccountId.Should().Be(holidays.Id);
+            result.Should().ContainSingle(s => s.Name == "Gleison").Which.PotsAccountId.Should().BeNull();
         }
     }
 
     [Fact]
-    public async Task CreateIncomeSourceAsync_WithAutoSplitToReserve_NamesReserva()
+    public async Task CreateIncomeSourceAsync_WithAPotsAccountId_NamesThatAccount()
     {
-        var reserva = _repository.EnsureReserva();
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, AutoSplitToReserve = true };
+        var holidays = AddPotsAccount("Holidays");
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, PotsAccountId = holidays.Id };
 
         var result = await _sut.CreateIncomeSourceAsync(request);
 
         using (new AssertionScope())
         {
-            result.AutoSplitToReserve.Should().BeTrue();
-            _repository.IncomeSources.Should().ContainSingle().Which.PotsAccount.Should().BeSameAs(reserva);
+            result.PotsAccountId.Should().Be(holidays.Id);
+            _repository.IncomeSources.Should().ContainSingle().Which.PotsAccount.Should().BeSameAs(holidays);
         }
     }
 
     [Fact]
-    public async Task CreateIncomeSourceAsync_WithAutoSplitToReserveAndNoPotsAccount_ThrowsAndWritesNothing()
+    public async Task CreateIncomeSourceAsync_WithAnUnknownPotsAccountId_ThrowsAndWritesNothing()
     {
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, AutoSplitToReserve = true };
+        var unknownId = Guid.NewGuid();
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, PotsAccountId = unknownId };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Pots account '{unknownId}' is not recognized.");
             _repository.IncomeSources.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.CreateIncomeSource");
@@ -118,10 +125,29 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
-    public async Task CreateIncomeSourceAsync_WithAutoSplitToReserveAndAnInactiveReserva_ThrowsAndWritesNothing()
+    public async Task CreateIncomeSourceAsync_WithAnAccountThatCannotReceiveAnIncomeSplit_ThrowsAndWritesNothing()
     {
-        _repository.EnsureReserva().SetActive(false);
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, AutoSplitToReserve = true };
+        var barclays = TestAccounts.Bank("Barclays");
+        _repository.Accounts.Add(barclays);
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, PotsAccountId = barclays.Id };
+
+        var act = async () => await _sut.CreateIncomeSourceAsync(request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays can't receive an income split.");
+            _repository.IncomeSources.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.CreateIncomeSource");
+        }
+    }
+
+    [Fact]
+    public async Task CreateIncomeSourceAsync_WithAnInactivePotsAccount_ThrowsAndWritesNothing()
+    {
+        var reserva = _repository.EnsureReserva();
+        reserva.SetActive(false);
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, PotsAccountId = reserva.Id };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
@@ -130,21 +156,22 @@ public class IncomeSourceServiceTests
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("Reserva is inactive.");
             _repository.IncomeSources.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.CreateIncomeSource");
         }
     }
 
     [Fact]
-    public async Task UpdateIncomeSourceAsync_WithAutoSplitToReserveAndNoPotsAccount_ThrowsAndWritesNothing()
+    public async Task UpdateIncomeSourceAsync_WithAnUnknownPotsAccountId_ThrowsAndWritesNothing()
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "Salary", IsActive = true, AutoSplitToReserve = true };
+        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "Salary", IsActive = true, PotsAccountId = Guid.NewGuid() };
 
         var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Pots account '*' is not recognized.");
             incomeSource.PotsAccount.Should().BeNull();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.UpdateIncomeSource");
@@ -154,7 +181,7 @@ public class IncomeSourceServiceTests
     [Fact]
     public async Task CreateIncomeSourceAsync_WithValidRequest_AddsAndSaves()
     {
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true };
 
         var result = await _sut.CreateIncomeSourceAsync(request);
 
@@ -174,7 +201,7 @@ public class IncomeSourceServiceTests
     [InlineData("   ")]
     public async Task CreateIncomeSourceAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
     {
-        var request = new IncomeSourceCreateDTO { Name = name!, Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceCreateDTO { Name = name!, Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
@@ -188,7 +215,7 @@ public class IncomeSourceServiceTests
     [Fact]
     public async Task CreateIncomeSourceAsync_WithInvalidGroup_ThrowsAndWritesNothing()
     {
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NotAGroup", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NotAGroup", IsActive = true };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
@@ -203,7 +230,7 @@ public class IncomeSourceServiceTests
     public async Task CreateIncomeSourceAsync_WithDuplicateName_ThrowsAndWritesNothing()
     {
         _repository.IncomeSources.Add(IncomeSource.Create("Gleison", IncomeGroup.Salary));
-        var request = new IncomeSourceCreateDTO { Name = "Gleison", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceCreateDTO { Name = "Gleison", Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
@@ -217,10 +244,10 @@ public class IncomeSourceServiceTests
     [Fact]
     public async Task UpdateIncomeSourceAsync_WithValidRequest_UpdatesAndSaves()
     {
-        var reserva = _repository.EnsureReserva();
+        var holidays = AddPotsAccount("Holidays");
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "NonReportable", IsActive = false, AutoSplitToReserve = true };
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "NonReportable", IsActive = false, PotsAccountId = holidays.Id };
 
         var result = await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
 
@@ -229,47 +256,50 @@ public class IncomeSourceServiceTests
             result.Name.Should().Be("Ariana");
             result.Group.Should().Be("NonReportable");
             result.IsActive.Should().BeFalse();
-            result.AutoSplitToReserve.Should().BeTrue();
-            incomeSource.PotsAccount.Should().BeSameAs(reserva);
+            result.PotsAccountId.Should().Be(holidays.Id);
+            incomeSource.PotsAccount.Should().BeSameAs(holidays);
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 
     [Fact]
-    public async Task UpdateIncomeSourceAsync_WithAutoSplitToReserve_KeepsThePotsAccountItAlreadyNames()
+    public async Task UpdateIncomeSourceAsync_KeepingAPotsAccountThatHasSinceBeenDeactivated_Succeeds()
     {
-        _repository.EnsureReserva();
-        var holidays = TestAccounts.Pots("Holidays");
-        _repository.Accounts.Add(holidays);
+        var holidays = AddPotsAccount("Holidays");
         var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: holidays);
         _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, AutoSplitToReserve = true };
+        holidays.SetActive(false);
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, PotsAccountId = holidays.Id };
 
-        await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
+        var result = await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
 
-        incomeSource.PotsAccount.Should().BeSameAs(holidays);
+        using (new AssertionScope())
+        {
+            result.PotsAccountId.Should().Be(holidays.Id);
+            incomeSource.PotsAccount.Should().BeSameAs(holidays);
+        }
     }
 
     [Fact]
-    public async Task UpdateIncomeSourceAsync_WithoutAutoSplitToReserve_ClearsThePotsAccount()
+    public async Task UpdateIncomeSourceAsync_WithoutAPotsAccountId_ClearsThePotsAccount()
     {
         var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _repository.EnsureReserva());
         _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, PotsAccountId = null };
 
         var result = await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
 
         using (new AssertionScope())
         {
             incomeSource.PotsAccount.Should().BeNull();
-            result.AutoSplitToReserve.Should().BeFalse();
+            result.PotsAccountId.Should().BeNull();
         }
     }
 
     [Fact]
     public async Task UpdateIncomeSourceAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), request);
 
@@ -281,7 +311,7 @@ public class IncomeSourceServiceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "NotAGroup", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "NotAGroup", IsActive = true };
 
         var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
 
@@ -299,7 +329,7 @@ public class IncomeSourceServiceTests
         var ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
         _repository.IncomeSources.Add(gleison);
         _repository.IncomeSources.Add(ariana);
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.UpdateIncomeSourceAsync(gleison.Id, request);
 
@@ -380,7 +410,7 @@ public class IncomeSourceServiceTests
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "   ", Group = "Salary", IsActive = true, AutoSplitToReserve = false };
+        var request = new IncomeSourceUpdateDTO { Name = "   ", Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
 
