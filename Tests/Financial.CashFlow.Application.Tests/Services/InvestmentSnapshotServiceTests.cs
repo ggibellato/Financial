@@ -126,14 +126,18 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
-    public async Task UpdateSnapshotValueAsync_WithNegativeValue_ThrowsArgumentException()
+    public async Task UpdateSnapshotValueAsync_WithNegativeValue_SavesTheValue()
     {
         await _sut.GetSnapshotsForMonthAsync(CurrentYear, 7);
-        var snapshot = _repository.InvestmentSnapshots.First();
+        var snapshot = _repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "ChaseSave");
 
-        var act = async () => await _sut.UpdateSnapshotValueAsync(snapshot.Id, new InvestmentSnapshotValueUpdateDTO { Value = -1m });
+        var result = await _sut.UpdateSnapshotValueAsync(snapshot.Id, new InvestmentSnapshotValueUpdateDTO { Value = -42.5m });
 
-        await act.Should().ThrowAsync<ArgumentException>();
+        using (new AssertionScope())
+        {
+            result.Value.Should().Be(-42.5m);
+            snapshot.Value.Should().Be(-42.5m);
+        }
     }
 
     [Fact]
