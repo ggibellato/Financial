@@ -58,28 +58,6 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         }
     }
 
-    public IReadOnlyList<AccountGroupMemberDTO> GetOtherAccounts(int year, int month)
-    {
-        using var span = StartSpan("GetOtherAccounts");
-        try
-        {
-            var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
-            var records = AccountTransactionReader.Read(_repository);
-            var result = DefaultAccountGroup.OthersFor(_repository.GetAccounts(), year, month, records)
-                .Select(account => ToMemberDto(account, endOfMonth, records))
-                .ToList();
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetOtherAccounts");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
     public IReadOnlyList<AccountTemplateGroupDTO> GetTemplateGroups(int year, int month)
     {
         using var span = StartSpan("GetTemplateGroups");
@@ -140,26 +118,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         IReadOnlyCollection<IAccountTransaction> records,
         IReadOnlyCollection<Expense> listedExpenses,
         AccountGroupStatementDTO? statement,
-        AccountNextStatementDTO? nextStatement) =>
-        ToMemberDto(
-            account,
-            endOfMonth,
-            records,
-            account.Has(Capability.SupportsRoundUp)
-                ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
-                : null,
-            statement,
-            account.BalanceIsOwed,
-            nextStatement);
-
-    private static AccountGroupMemberDTO ToMemberDto(
-        Account account,
-        DateOnly endOfMonth,
-        IReadOnlyCollection<IAccountTransaction> records,
-        decimal? roundUpTotal = null,
-        AccountGroupStatementDTO? statement = null,
-        bool balanceIsOwed = false,
-        AccountNextStatementDTO? nextStatement = null) => new()
+        AccountNextStatementDTO? nextStatement) => new()
         {
             AccountId = account.Id,
             Name = account.Name,
@@ -167,9 +126,11 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Currency = account.Currency.ToString(),
             IsActive = account.IsActive,
             Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
-            RoundUpTotal = roundUpTotal,
+            RoundUpTotal = account.Has(Capability.SupportsRoundUp)
+                ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
+                : null,
             Statement = statement,
-            BalanceIsOwed = balanceIsOwed,
+            BalanceIsOwed = account.BalanceIsOwed,
             TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
             NextStatement = nextStatement
         };

@@ -27,7 +27,7 @@ function Get-Error([scriptblock]$action) {
     try { $null = & $action; return '' } catch { return $_.Exception.Message }
 }
 
-$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'summary', 'otherAccounts', 'templateGroups', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
+$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'summary', 'templateGroups', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
 $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
@@ -52,7 +52,6 @@ foreach ($month in 8, 9) {
     $responses["tithe/month/$route"] = '{"calculatedTithe":211.23,"titheBalance":11.23,"carryForward":{"amount":5.00,"included":true,"fromYear":2026,"fromMonth":7}}'
     $responses["accounts/groups/default/summary/$route"] = "{`"members`":[{`"accountId`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":130.83,`"roundUpTotal`":0.17},{`"accountId`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":10.00,`"roundUpTotal`":0.50},{`"accountId`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"currency`":`"GBP`",`"balance`":-40.10,`"roundUpTotal`":null,`"statement`":{`"outstandingTotal`":40.10,`"isPaid`":false}}],`"totals`":[{`"currency`":`"GBP`",`"balance`":140.83,`"roundUpTotal`":0.67,`"cardOutstandingTotal`":40.10}],`"categoryTotalsSum`":0.3,`"incomeTotals`":[{`"name`":`"Salary`",`"netValue`":2100.00,`"grossValue`":2500.00},{`"name`":`"Dividends`",`"netValue`":12.34,`"grossValue`":null}],`"totalIncoming`":2112.34}"
     $potsTotal = if ($month -eq 8) { '100.00' } else { '175.50' }
-    $responses["accounts/groups/other/$route"] = "[{`"name`":`"Reserva`",`"templateName`":`"Pots`",`"balance`":$potsTotal},{`"name`":`"Savings`",`"templateName`":`"Other`",`"balance`":999.00}]"
     $responses["accounts/groups/by-template/$route"] = "[{`"templateName`":`"Bank`",`"members`":[{`"name`":`"Barclays`",`"balance`":130.83,`"totalOwed`":null},{`"name`":`"Chase`",`"balance`":10.00,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":140.83},{`"currency`":`"BRL`",`"total`":500.00}]},{`"templateName`":`"CreditCard`",`"members`":[{`"name`":`"Amex`",`"balance`":-40.10,`"totalOwed`":40.10}],`"totals`":[{`"currency`":`"GBP`",`"total`":40.10}]},{`"templateName`":`"Pots`",`"members`":[{`"name`":`"Reserva`",`"balance`":$potsTotal,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":$potsTotal}]}]"
     $responses["accounts/$barclaysId/$route"] = '{"balance":130.83}'
     $responses["accounts/$chaseId/$route"] = '{"balance":10.00}'
@@ -74,7 +73,6 @@ try {
         monthly    = '{0}/monthly/bankTotalsSum'
         pots       = '{0}/pots/total'
         summary    = '{0}/summary/members/Barclays/balance'
-        otherAccounts = '{0}/otherAccounts/potsTotal'
         templateGroups = '{0}/templateGroups/Pots/totals/GBP'
         account    = '{0}/account/Chase/balance'
     }
@@ -149,7 +147,6 @@ try {
     $mappedBefore = New-Report @{ '2026-09/banks/Barclays/balance' = [decimal]'130.83' }
     Check 'mapping renames without allowing a different value' ((Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/summary/banks/Barclays/balance' = [decimal]'130.83' }) $mappings).Count -eq 0 -and (Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/summary/banks/Barclays/balance' = [decimal]'130.84' }) $mappings).Count -eq 1) ''
     Check 'mapping negate compares opposite sign' ((Compare-ParityReport (New-Report @{ '2026-09/cards/Amex/outstandingTotal' = [decimal]'50.00' }) (New-Report @{ '2026-09/cards/Amex/balance' = [decimal]'-50.00' }) $mappings).Count -eq 0) ''
-    Check 'Other accounts figure sums only the Pots accounts and only with IncludeSummary' ($report['2026-08/otherAccounts/potsTotal'] -eq [decimal]'100.00' -and $report['2026-09/otherAccounts/potsTotal'] -eq [decimal]'175.50' -and -not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'otherAccounts' })) ''
     $templateGroupKeys = @($report.Keys | Where-Object { $_.Split('/')[1] -eq 'templateGroups' } | Sort-Object)
     $expectedTemplateGroupKeys = @(foreach ($month in '2026-08', '2026-09') { "$month/templateGroups/Bank/members/Barclays/balance", "$month/templateGroups/Bank/members/Chase/balance", "$month/templateGroups/Bank/totals/GBP", "$month/templateGroups/CreditCard/members/Amex/totalOwed", "$month/templateGroups/Pots/totals/GBP" }) | Sort-Object
     Check 'template group figures are only those with a baseline equivalent, and only with IncludeSummary' ((Compare-Object $templateGroupKeys $expectedTemplateGroupKeys).Count -eq 0 -and $report['2026-09/templateGroups/Bank/totals/GBP'] -eq [decimal]'140.83' -and $report['2026-09/templateGroups/CreditCard/members/Amex/totalOwed'] -eq [decimal]'40.10' -and $report['2026-09/templateGroups/Pots/totals/GBP'] -eq [decimal]'175.50' -and -not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'templateGroups' })) ($templateGroupKeys -join ', ')

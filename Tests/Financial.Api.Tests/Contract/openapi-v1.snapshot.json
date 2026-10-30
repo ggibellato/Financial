@@ -6847,63 +6847,6 @@
         ]
       }
     },
-    "/accounts/groups/other/{year}/{month}": {
-      "get": {
-        "parameters": [
-          {
-            "description": "",
-            "in": "path",
-            "name": "year",
-            "required": true,
-            "schema": {
-              "format": "int32",
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer"
-            }
-          },
-          {
-            "description": "",
-            "in": "path",
-            "name": "month",
-            "required": true,
-            "schema": {
-              "format": "int32",
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/AccountGroupMemberDTO"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Bad Request"
-          }
-        },
-        "summary": "",
-        "tags": [
-          "AccountGroups"
-        ]
-      }
-    },
     "/accounts/payable-statements": {
       "get": {
         "responses": {

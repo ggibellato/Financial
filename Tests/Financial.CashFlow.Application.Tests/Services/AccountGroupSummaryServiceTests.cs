@@ -197,7 +197,7 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
-    public void GetOtherAccounts_PotsAccounts_AreListedByNameWithTheirMonthEndBalance()
+    public void GetTemplateGroups_PotsGroup_ListsThePotsAccountsByNameWithTheirMonthEndBalanceAndTotal()
     {
         var reserva = TestAccounts.Pots("Reserva");
         var flights = ReserveBucket.Create("Flights", 100m);
@@ -207,48 +207,27 @@ public class AccountGroupSummaryServiceTests
         _repository.ReserveMovements.Add(ReserveMovement.Create(flights, 120m, new DateOnly(2026, 9, 5), "Saved"));
         _repository.ReserveMovements.Add(ReserveMovement.Create(flights, 30m, new DateOnly(2026, 10, 1), "Saved later"));
 
-        var others = _sut.GetOtherAccounts(2026, 9);
+        var pots = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "Pots");
 
         using (new AssertionScope())
         {
-            others.Select(member => member.Name).Should().Equal("holidays", "Reserva");
-            var reservaMember = others[1];
+            pots.Members.Select(member => member.Name).Should().Equal("holidays", "Reserva");
+            var reservaMember = pots.Members[1];
             reservaMember.AccountId.Should().Be(reserva.Id);
             reservaMember.TemplateName.Should().Be("Pots");
             reservaMember.Currency.Should().Be("GBP");
+            reservaMember.IsActive.Should().BeTrue();
             reservaMember.Balance.Should().Be(120m);
             reservaMember.RoundUpTotal.Should().BeNull();
             reservaMember.Statement.Should().BeNull();
             reservaMember.BalanceIsOwed.Should().BeFalse();
-            others[0].Balance.Should().Be(0m);
+            reservaMember.TotalOwed.Should().BeNull();
+            reservaMember.NextStatement.Should().BeNull();
+            pots.Members[0].Balance.Should().Be(0m);
+            pots.Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 120m));
         }
     }
 
-    [Fact]
-    public void GetOtherAccounts_OnlyGroupMembers_ReturnsNone()
-    {
-        _sut.GetOtherAccounts(2026, 9).Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetOtherAccounts_InvalidMonth_ThrowsArgumentOutOfRange()
-    {
-        var act = () => _sut.GetOtherAccounts(2026, 13);
-
-        act.Should().Throw<ArgumentOutOfRangeException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.AccountGroupSummaryService.GetOtherAccounts");
-    }
-
-    [Fact]
-    public void GetOtherAccounts_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
-    {
-        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
-
-        var act = () => _sut.GetOtherAccounts(2026, 9);
-
-        act.Should().Throw<InvalidOperationException>();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountGroupSummaryService.GetOtherAccounts");
-    }
 
     private void AddExpenseWithRoundUp(DateOnly date, decimal value, decimal roundUp, Account account)
     {

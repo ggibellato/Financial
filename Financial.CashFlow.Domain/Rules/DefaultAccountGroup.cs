@@ -12,10 +12,6 @@ public static class DefaultAccountGroup
         IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records) =>
         ListedIn(accounts, year, month, records).Where(account => account.JoinsDefaultGroup).ToList();
 
-    public static IReadOnlyList<Account> OthersFor(
-        IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records) =>
-        ListedIn(accounts, year, month, records).Where(account => !account.JoinsDefaultGroup).ToList();
-
     public static IReadOnlyList<Account> ListedIn(
         IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records)
     {
