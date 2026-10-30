@@ -151,6 +151,13 @@
           "templateName": {
             "type": "string"
           },
+          "totalOwed": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
           "year": {
             "format": "int32",
             "type": "integer"
@@ -167,6 +174,7 @@
           "balance",
           "balanceIsOwed",
           "hasStatements",
+          "totalOwed",
           "allowedActions"
         ],
         "type": "object"

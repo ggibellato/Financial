@@ -39,6 +39,7 @@ const DETAIL: AccountDetailDto = {
   balance: 1234.56,
   balanceIsOwed: false,
   hasStatements: false,
+  totalOwed: null,
   allowedActions: [],
 }
 

@@ -7556,6 +7556,8 @@ export interface components {
             month: number;
             name: string;
             templateName: string;
+            /** Format: double */
+            totalOwed: null | number;
             /** Format: int32 */
             year: number;
         };

@@ -99,6 +99,36 @@ public class CardChargeFilterTests
     }
 
     [Fact]
+    public void TotalOwed_CountsEveryUnpaidChargeWhateverItsDate()
+    {
+        var october = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        var later = Charge(_amex, new DateOnly(2027, 3, 9), 12.50m);
+        var otherCard = Charge(_visa, new DateOnly(2026, 10, 3), 40m);
+
+        CardChargeFilter.TotalOwed(_amex, [october, later, otherCard]).Should().Be(42.50m);
+    }
+
+    [Fact]
+    public void TotalOwed_NetsStatementPaymentsAndLeavesOutChargesSettledToABank()
+    {
+        var paidByTransfer = Charge(_amex, new DateOnly(2026, 9, 3), 100m);
+        var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 2), _barclays, _amex, 100m, new DateOnly(2026, 10, 30));
+        var settled = Charge(_amex, new DateOnly(2026, 10, 5), 20m);
+        settled.Settle(_barclays, new DateOnly(2026, 10, 20));
+        var unpaid = Charge(_amex, new DateOnly(2026, 10, 9), 25m);
+
+        CardChargeFilter.TotalOwed(_amex, [paidByTransfer, payment, settled, unpaid]).Should().Be(25m);
+    }
+
+    [Fact]
+    public void TotalOwed_CardInCredit_IsNegative()
+    {
+        var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 2), _barclays, _amex, 50m, new DateOnly(2026, 10, 30));
+
+        CardChargeFilter.TotalOwed(_amex, [payment]).Should().Be(-50m);
+    }
+
+    [Fact]
     public void OutstandingTotal_PaidStatement_IsZero()
     {
         var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);

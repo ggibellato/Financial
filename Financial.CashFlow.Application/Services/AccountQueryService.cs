@@ -68,6 +68,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var endOfMonth = EndOfMonth(year, month);
             var account = FindAccountOrThrow(id);
             var records = AccountTransactionReader.Read(_repository);
+            var hasStatements = account.Has(Capability.HasStatements);
 
             var result = new AccountDetailDTO
             {
@@ -80,7 +81,8 @@ public sealed class AccountQueryService : IAccountQueryService
                 Month = month,
                 Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
                 BalanceIsOwed = account.BalanceIsOwed,
-                HasStatements = account.Has(Capability.HasStatements),
+                HasStatements = hasStatements,
+                TotalOwed = hasStatements ? CardChargeFilter.TotalOwed(account, records) : null,
                 AllowedActions = AccountActions.AllowedFor(account).Select(action => action.ToString()).ToList()
             };
 

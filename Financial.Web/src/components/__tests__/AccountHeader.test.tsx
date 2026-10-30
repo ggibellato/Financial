@@ -24,6 +24,7 @@ const AMEX: AccountDetailDto = {
   balance: -812.33,
   balanceIsOwed: true,
   hasStatements: true,
+  totalOwed: 740.12,
   allowedActions: [],
 }
 
@@ -38,6 +39,7 @@ const BARCLAYS: AccountDetailDto = {
   balance: 1234.56,
   balanceIsOwed: false,
   hasStatements: false,
+  totalOwed: null,
   allowedActions: [],
 }
 
@@ -77,6 +79,51 @@ describe('AccountHeader', () => {
     expect(screen.getByText('Owed at end of October 2026')).toBeInTheDocument()
     expect(screen.getByText('812.33 GBP')).toBeInTheDocument()
     expect(screen.queryByText(/^Balance at end of/)).not.toBeInTheDocument()
+  })
+
+  it("[AC P60-F14-accounts-page-by-template-and-card-totals-03] shows a card's month-end owed balance and its total owed now, and a month change changes only the first", () => {
+    const header = (detail: AccountDetailDto) => (
+      <AccountHeader
+        account={detail}
+        accounts={ACCOUNTS}
+        selectedAccountId={detail.id}
+        monthInputValue={`${detail.year}-${String(detail.month).padStart(2, '0')}`}
+        isBusy={false}
+        onMonthChange={vi.fn()}
+        onAccountSelect={vi.fn()}
+      />
+    )
+    const { rerender } = render(header({ ...AMEX, month: 9, balance: -154.04 }))
+
+    expect(screen.getByText('Owed at end of September 2026')).toBeInTheDocument()
+    expect(screen.getByText('154.04 GBP')).toBeInTheDocument()
+    expect(screen.getByText('Total owed now')).toBeInTheDocument()
+    expect(screen.getByText('740.12 GBP')).toBeInTheDocument()
+
+    rerender(header({ ...AMEX, balance: -740.12 }))
+
+    expect(screen.getByText('Owed at end of October 2026')).toBeInTheDocument()
+    expect(screen.getAllByText('740.12 GBP')).toHaveLength(2)
+    expect(screen.getByText('Total owed now')).toBeInTheDocument()
+  })
+
+  it('shows a total owed of nothing as 0.00, not -0.00', () => {
+    renderHeader({ ...AMEX, balance: 0, totalOwed: -0 })
+
+    expect(screen.getAllByText('0.00 GBP')).toHaveLength(2)
+  })
+
+  it('shows a card in credit with a negative total owed', () => {
+    renderHeader({ ...AMEX, balance: 12, totalOwed: -12 })
+
+    expect(screen.getByText('Total owed now')).toBeInTheDocument()
+    expect(screen.getAllByText('-12.00 GBP')).toHaveLength(2)
+  })
+
+  it('shows no total owed for an account without statements', () => {
+    renderHeader()
+
+    expect(screen.queryByText('Total owed now')).not.toBeInTheDocument()
   })
 
   it('shows a card that owes nothing as 0.00, not -0.00', () => {

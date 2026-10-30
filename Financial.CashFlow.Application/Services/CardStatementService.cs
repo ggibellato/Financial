@@ -45,7 +45,7 @@ public sealed class CardStatementService : ICardStatementService
             var accumulatedByCard = existingStatements
                 .Select(s => s.CreditCard)
                 .Distinct()
-                .ToDictionary(card => card.Id, card => AccumulatedOutstandingTotal(card, records));
+                .ToDictionary(card => card.Id, card => CardChargeFilter.TotalOwed(card, records));
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
@@ -190,14 +190,11 @@ public sealed class CardStatementService : ICardStatementService
         };
     }
 
-    private static decimal AccumulatedOutstandingTotal(Account card, IEnumerable<IAccountTransaction> records) =>
-        -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
-
     private CardStatementDTO ToDto(CardStatement statement) =>
         ToDto(
             statement,
             CardChargeFilter.OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement),
-            AccumulatedOutstandingTotal(statement.CreditCard, AccountTransactionReader.Read(_repository)));
+            CardChargeFilter.TotalOwed(statement.CreditCard, AccountTransactionReader.Read(_repository)));
 
     private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal) => new()
     {
