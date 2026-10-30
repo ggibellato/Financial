@@ -15,7 +15,6 @@
     { "after": "{month}/summary/cardMembers/*/isPaid", "before": "{month}/cards/*/isPaid", "negate": false, "reason": "F07 summary card member" },
     { "after": "{month}/summary/cardMembers/*/balance", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": true, "reason": "F07 summary card member, current month only" },
     { "after": "{month}/summary/totals/GBP/cardOutstandingTotal", "before": "{month}/monthly/cardOutstandingTotal", "negate": false, "reason": "F07 summary card total" },
-    { "after": "{month}/otherAccounts/potsTotal", "before": "{month}/pots/total", "negate": false, "reason": "F09 Pots account total" },
     { "after": "{month}/templateGroups/Bank/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F14 Banks grid member" },
     { "after": "{month}/templateGroups/Bank/totals/GBP", "before": "{month}/monthly/bankTotalsSum", "negate": false, "reason": "F14 Banks grid total" },
     { "after": "{month}/templateGroups/CreditCard/members/*/totalOwed", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": false, "reason": "F14 Credit cards grid member" },

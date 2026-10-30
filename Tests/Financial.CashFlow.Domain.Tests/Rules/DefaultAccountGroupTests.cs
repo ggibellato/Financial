@@ -105,37 +105,7 @@ public class DefaultAccountGroupTests
     }
 
     [Fact]
-    public void OthersFor_ActiveAccountsOutsideTheGroup_AreListedByNameWithoutTheGroupMembers()
-    {
-        var bank = TestAccounts.Bank("Barclays");
-        var reserva = TestAccounts.Pots("Reserva");
-        var holidays = TestAccounts.Pots("holidays");
-
-        var others = DefaultAccountGroup.OthersFor([reserva, bank, holidays], 2026, 9, []);
-
-        others.Should().Equal(holidays, reserva);
-    }
-
-    [Fact]
-    public void OthersFor_InactiveAccountWithZeroBalanceAndNoRecords_IsDropped()
-    {
-        var closed = TestAccounts.Pots("Old pots", isActive: false);
-
-        DefaultAccountGroup.OthersFor([closed], 2026, 9, []).Should().BeEmpty();
-    }
-
-    [Fact]
-    public void OthersFor_InactiveAccountWithMoneyAtMonthEnd_IsIncluded()
-    {
-        var (closed, pot) = PotsWithOnePot("Old pots");
-        var records = new IAccountTransaction[] { ReserveMovement.Create(pot, 75m, new DateOnly(2026, 8, 10), "Saved") };
-        closed.SetActive(false);
-
-        DefaultAccountGroup.OthersFor([closed], 2026, 9, records).Should().Equal(closed);
-    }
-
-    [Fact]
-    public void OthersFor_InactiveAccountWithRecordInMonth_IsIncludedThatMonthOnly()
+    public void ListedIn_InactivePotsAccountWithRecordInMonth_IsIncludedThatMonthOnly()
     {
         var (closed, pot) = PotsWithOnePot("Old pots");
         var records = new IAccountTransaction[]
@@ -147,8 +117,8 @@ public class DefaultAccountGroupTests
 
         using (new AssertionScope())
         {
-            DefaultAccountGroup.OthersFor([closed], 2026, 9, records).Should().Equal(closed);
-            DefaultAccountGroup.OthersFor([closed], 2026, 10, records).Should().BeEmpty();
+            DefaultAccountGroup.ListedIn([closed], 2026, 9, records).Should().Equal(closed);
+            DefaultAccountGroup.ListedIn([closed], 2026, 10, records).Should().BeEmpty();
         }
     }
 

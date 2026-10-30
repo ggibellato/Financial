@@ -218,24 +218,26 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
-    public async Task OtherAccounts_Month_ListsThePotsAccountsByNameWithTheirMonthEndBalance()
+    public async Task PotsGroup_Month_ListsThePotsAccountsByNameWithTheirMonthEndBalance()
     {
-        var others = await Client.GetFromJsonAsync<List<AccountGroupMemberDTO>>($"{Api}/accounts/groups/other/2026/10");
+        var groups = await Client.GetFromJsonAsync<List<AccountTemplateGroupDTO>>($"{Api}/accounts/groups/by-template/2026/10");
+        var pots = groups!.Single(group => group.TemplateName == "Pots");
 
         using (new AssertionScope())
         {
-            others!.Select(member => (member.Name, member.TemplateName, member.Balance))
+            pots.Members.Select(member => (member.Name, member.TemplateName, member.Balance))
                 .Should().Equal(("Holidays", "Pots", 900m), ("Reserva", "Pots", 624.5m));
-            others.Should().OnlyContain(member => member.RoundUpTotal == null && member.Statement == null && !member.BalanceIsOwed);
+            pots.Members.Should().OnlyContain(member => member.RoundUpTotal == null && member.Statement == null && !member.BalanceIsOwed);
+            pots.Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 1524.5m));
         }
     }
 
     [Fact]
-    public async Task OtherAccounts_MonthOutOfRange_Returns400()
+    public async Task OtherAccountsRoute_IsRemoved_Returns404()
     {
-        var response = await Client.GetAsync($"{Api}/accounts/groups/other/2026/13");
+        var response = await Client.GetAsync($"{Api}/accounts/groups/other/2026/10");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     [Fact]

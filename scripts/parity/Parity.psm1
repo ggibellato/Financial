@@ -211,12 +211,6 @@ function Add-ParitySummaryFigures($Report, [string]$Month, [string]$Route, [scri
     Add-ParityFigure $Report "$Month/summary/totalIncoming" $summary.totalIncoming
 }
 
-function Add-ParityOtherAccountsFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
-    $members = & $Fetch "accounts/groups/other/$Route"
-    $potsAccounts = @($members | Where-Object { $_['templateName'] -eq 'Pots' })
-    Add-ParityFigure $Report "$Month/otherAccounts/potsTotal" (Get-ParitySum $potsAccounts { param($a) $a.balance })
-}
-
 function Add-ParityTemplateGroupFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
     $groups = & $Fetch "accounts/groups/by-template/$Route"
     foreach ($group in $groups) {
@@ -263,7 +257,6 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     Add-ParityPotFigures $Report $Month $PotBalances
     if ($IncludeSummary) {
         Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth)
-        Add-ParityOtherAccountsFigures $Report $Month $route $Fetch
         Add-ParityTemplateGroupFigures $Report $Month $route $Fetch
     }
     if ($null -ne $Accounts) { Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth) }

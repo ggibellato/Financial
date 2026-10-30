@@ -4,7 +4,6 @@ import type {
   AccountCreateDto,
   AccountDetailDto,
   AccountDto,
-  AccountGroupMemberDto,
   AccountGroupSummaryDto,
   AccountTemplateGroupDto,
   AccountTransactionDto,
@@ -256,7 +255,6 @@ export interface FinancialApiClient {
   updateInvestmentAccount: (id: string, request: InvestmentAccountUpdateDto) => Promise<InvestmentAccountDto>
   deleteInvestmentAccount: (id: string) => Promise<void>
   getDefaultGroupSummary: (year: number, month: number) => Promise<AccountGroupSummaryDto>
-  getOtherAccounts: (year: number, month: number) => Promise<AccountGroupMemberDto[]>
   getAccountTemplateGroups: (year: number, month: number) => Promise<AccountTemplateGroupDto[]>
   getAccounts: () => Promise<AccountDto[]>
   getAccountTemplates: () => Promise<AccountTemplateDto[]>
@@ -716,7 +714,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     deleteInvestmentAccount: (id) => requestVoid(`/investment-accounts/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getDefaultGroupSummary: (year, month) =>
       request<AccountGroupSummaryDto>(`/accounts/groups/default/summary/${year}/${month}`),
-    getOtherAccounts: (year, month) => request<AccountGroupMemberDto[]>(`/accounts/groups/other/${year}/${month}`),
     getAccountTemplateGroups: (year, month) =>
       request<AccountTemplateGroupDto[]>(`/accounts/groups/by-template/${year}/${month}`),
     getAccounts: () => request<AccountDto[]>('/accounts'),
