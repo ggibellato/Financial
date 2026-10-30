@@ -53,20 +53,21 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task UpdateSnapshotValue_NegativeValue_ReturnsBadRequestWithMessage()
+    public async Task UpdateSnapshotValue_NegativeValue_ReturnsOkAndSavesTheValue()
     {
         var monthResponse = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
         var snapshots = await monthResponse.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
-        var target = snapshots!.First();
+        var target = snapshots!.First(s => s.AccountName == "ChaseSave");
 
         var response = await Client.PutAsJsonAsync($"/api/v1/financial/investment-snapshots/{target.Id}", new InvestmentSnapshotValueUpdateDTO
         {
             Value = -10m
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("negative");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var refetch = await Client.GetAsync("/api/v1/financial/investment-snapshots/2026/7");
+        var refetched = await refetch.Content.ReadFromJsonAsync<List<InvestmentSnapshotDTO>>();
+        refetched!.Single(s => s.Id == target.Id).Value.Should().Be(-10m);
     }
 
     [Fact]

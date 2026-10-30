@@ -85,8 +85,8 @@ describe('useInvestmentSnapshots', () => {
     await waitFor(() => expect(getInvestmentSnapshotsMock).toHaveBeenCalledTimes(2))
   })
 
-  it('surfaces a save error without crashing', async () => {
-    updateInvestmentSnapshotValueMock.mockRejectedValue(new Error('Value must not be negative.'))
+  it('saves a negative value', async () => {
+    updateInvestmentSnapshotValueMock.mockResolvedValue({ ...SNAPSHOTS[0], value: -5 })
     const { result } = renderHook(() => useInvestmentSnapshots())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -94,6 +94,31 @@ describe('useInvestmentSnapshots', () => {
     act(() => result.current.setEditValue('-5'))
     act(() => result.current.saveEdit())
 
-    await waitFor(() => expect(result.current.saveError).toBeTruthy())
+    await waitFor(() => expect(updateInvestmentSnapshotValueMock).toHaveBeenCalledWith('s1', { value: -5 }))
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('rejects a value that is not a number without calling the server', async () => {
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(SNAPSHOTS[0]))
+    act(() => result.current.setEditValue('abc'))
+    act(() => result.current.saveEdit())
+
+    expect(result.current.saveError).toBe('Value must be a number')
+    expect(updateInvestmentSnapshotValueMock).not.toHaveBeenCalled()
+  })
+
+  it('surfaces a save error without crashing', async () => {
+    updateInvestmentSnapshotValueMock.mockRejectedValue(new Error('Snapshot not found'))
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(SNAPSHOTS[0]))
+    act(() => result.current.setEditValue('15'))
+    act(() => result.current.saveEdit())
+
+    await waitFor(() => expect(result.current.saveError).toBe('Snapshot not found'))
   })
 })

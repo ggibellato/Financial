@@ -79,11 +79,6 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            if (request.Value < 0)
-            {
-                throw new ArgumentException("Value must not be negative.");
-            }
-
             var snapshot = _repository.GetInvestmentSnapshots().FirstOrThrow(s => s.Id == id, "Investment snapshot", id);
 
             await _repository.ApplyAndSaveAsync(() =>

@@ -148,7 +148,7 @@ export default function InvestmentSnapshotsPage() {
               validationState={fieldError('editValue') ? 'error' : 'none'}
               validationMessage={fieldError('editValue')}
             >
-              <Input type="number" step="0.01" min="0" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
+              <Input type="number" step="0.01" value={editValue} onChange={(e) => setEditValue(e.target.value)} />
             </Field>
           </div>
 

@@ -147,13 +147,13 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   function saveEdit() {
     if (!state.editingId) return
 
-    const value = parseValidatedNumber(state.editValue, { min: 0 })
+    const value = parseValidatedNumber(state.editValue)
     if (value === null) {
       dispatch({
         type: 'SAVE_ERROR',
         payload: {
-          message: 'Value must be a non-negative number',
-          fields: { editValue: 'Value must be a non-negative number' },
+          message: 'Value must be a number',
+          fields: { editValue: 'Value must be a number' },
         },
       })
       return
