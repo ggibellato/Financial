@@ -621,20 +621,20 @@ Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and
 - Each card's next statement to pay and total owed, on the Accounts page and the card screen
 
 **Capabilities:**
-- **One grid per template:** the Accounts page shows one grid per template in a fixed order (Banks, Credit cards, Pots, then Settlement from F11), replacing the "Default group" and "Other accounts" sections. A template with no listed account this month gets no grid. Each grid keeps the membership rule (active accounts, plus an inactive one with a non-zero month-end balance or a record that month), name order and the Inactive badge; the Template column goes, since the heading names it. The page stays on the current month with no month picker (user decision 2026-10-30).
+- **One grid per template:** the Accounts page shows one grid per template in a fixed order (Banks, Credit cards, Pots, then Settlement from F11), replacing the "Default group" and "Other accounts" sections. A template with no listed account this month gets no grid. Each grid keeps the membership rule (active accounts, plus an inactive one with a non-zero month-end balance or a record that month), name order and the Inactive badge; the Template column goes, since the heading names it. The page stays on the current month with no month picker (user decision 2026-10-30). The page reads one grouped endpoint, and F09's Other accounts endpoint is removed.
 - **Columns and totals per currency:** Banks: Account, Currency, Balance; footer "Bank total". Credit cards: Account, Currency, Next statement, Total owed; footer "Total owed". Pots: Account, Currency, Balance; footer "Pots total". Bank and card rows open the account screen; Pots rows stay plain text until F10. A card row no longer shows the month-end owed balance: in the current month it repeats the total owed.
-- **Next statement:** the card's oldest unpaid statement, shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when every statement is paid. *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
+- **Next statement:** the card's oldest statement month that still has an unpaid charge, shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when the card has no unpaid charge. Empty unpaid statements are skipped (user decision 2026-10-30). *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
 - **Total owed:** every unpaid charge on the card, whatever its date or statement month (today's accumulated outstanding on Monthly's Card tab). It doesn't depend on the viewed month.
 - **Card screen header:** "Owed at end of <Mon yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled.
 - **Parity:** the new card figures are mapped to today's card figures in the figure map (mapping fixed in the spec). Monthly and its summary are unchanged.
 
 **Experience:**
 - Accounts → "Banks" (Barclays · GBP · £1,234.56 … Bank total GBP), "Credit cards" (BA Amex · GBP · Oct 2026 · £512.30 · £740.12 … Total owed GBP), "Pots" (Reserva · GBP · £704.08 … Pots total GBP).
-- BA Amex screen on September 2026 → header "Owed at end of Sep 2026 £154.04 · Total owed now £740.12"; switching to October changes only the first figure.
+- BA Amex screen on September 2026 → header "Owed at end of September 2026 £154.04 · Total owed now £740.12"; switching to October changes only the first figure.
 - States as today: one loading state and one error with Try again for the whole page.
 
 **Error Handling:**
-- A card with no unpaid statement: Next statement "—".
+- A card with no unpaid charge: Next statement "—".
 - Load failure: the page's error with Try again; no grid shows partial data.
 
 ## 7. Out of Scope
@@ -897,7 +897,7 @@ graph TD
 
 ### F14. Accounts Page by Template and Card Totals
 - [ ] The Accounts page shows one grid per template in the order Banks, Credit cards, Pots, with no grid for a template without listed accounts; each grid lists its accounts by name with the Inactive badge and its per-currency footer
-- [ ] Each credit card row shows its next statement to pay (oldest unpaid statement: month and unpaid total, "—" when none) and its total owed
+- [ ] Each credit card row shows its next statement to pay (oldest statement month with an unpaid charge: month and unpaid total, "—" when none) and its total owed
 - [ ] The card screen header shows "Owed at end of <month>" and "Total owed now"; changing the month changes the first and not the second
 - [ ] Bank and card rows open the account screen; Pots rows are plain text until F10
 - [ ] Parity: 0 differences with the new card figures mapped; `/simplify` run; architecture-reviewer and ui-reviewer passed
