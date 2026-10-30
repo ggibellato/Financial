@@ -799,14 +799,14 @@ graph TD
 - [x] Parity: 0 differences and card screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F09. Pots Template and Reserva Migration
-- [ ] `migrate` upgrades V3 to V4: Pots account "Reserva" with 5 pots keeping the bucket Ids, names, split % and active flags; category = "Reserva"; movements unchanged; auto-split income sources and split incomes name Reserva
-- [ ] Each pot balance and the Reserva total are identical to today for every month
-- [ ] The snapshot source names the Reserva Pots account and its suggestions are identical
-- [ ] Renaming the "Reserva" category does not break deposits or withdrawals (no lookup of the "Reserva" category by name remains in server or web)
-- [ ] An income from a source with a Pots account starts with the split ticked into that account; unticking it or choosing another Pots account is saved with the income, editing it recalculates into the same account, and a source without one offers no split
-- [ ] Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
-- [ ] A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
-- [ ] Parity: 0 differences apart from each month's snapshot source text, which now names the Pots account (values identical); `/simplify` run; architecture-reviewer passed
+- [x] `migrate` upgrades V3 to V4: Pots account "Reserva" with 5 pots keeping the bucket Ids, names, split % and active flags; category = "Reserva"; movements unchanged; auto-split income sources and split incomes name Reserva
+- [x] Each pot balance and the Reserva total are identical to today for every month
+- [x] The snapshot source names the Reserva Pots account and its suggestions are identical
+- [x] Renaming the "Reserva" category does not break deposits or withdrawals (no lookup of the "Reserva" category by name remains in server or web)
+- [x] An income from a source with a Pots account starts with the split ticked into that account; unticking it or choosing another Pots account is saved with the income, editing it recalculates into the same account, and a source without one offers no split
+- [x] Creating a second Pots account in Admin → Accounts needs no code and does not change Reserva's figures or snapshot suggestions
+- [x] A fresh spreadsheet import writes the Reserva Pots account with its pots and the API starts on it
+- [x] Parity: 0 differences apart from each month's snapshot source text, which now names the Pots account (values identical); `/simplify` run; architecture-reviewer passed
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
 - [ ] Saving a split-to-reserve income writes the income, the pot credits (90% of net, split by percentage) and one bank expense in the Pots account's category, in one save
