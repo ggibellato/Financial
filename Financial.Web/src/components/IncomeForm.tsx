@@ -1,13 +1,33 @@
 import { useState } from 'react'
-import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
-import type { BankDto, IncomeSourceDto } from '../api/types'
+import {
+  Button,
+  Checkbox,
+  Field,
+  Input,
+  MessageBar,
+  MessageBarActions,
+  MessageBarBody,
+  Select,
+  Spinner,
+  Text,
+} from '@fluentui/react-components'
+import type { AccountDto, BankDto, IncomeSourceDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
+import type { AccountsStatus } from '../hooks/useAccounts'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
 import { useFieldError } from '../hooks/useFieldError'
 import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
-export type IncomeFormField = 'date' | 'incomeSource' | 'grossValue' | 'netValue' | 'bank' | 'description' | 'splitToReserve'
+export type IncomeFormField =
+  | 'date'
+  | 'incomeSource'
+  | 'grossValue'
+  | 'netValue'
+  | 'bank'
+  | 'description'
+  | 'splitToReserve'
+  | 'potsAccountId'
 
 interface IncomeFormProps {
   isEditing: boolean
@@ -18,6 +38,10 @@ interface IncomeFormProps {
   bank: string
   description: string
   splitToReserve: boolean
+  potsAccountId: string
+  potsAccounts: AccountDto[]
+  potsAccountsStatus: AccountsStatus
+  onRetryPotsAccounts: () => void
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
@@ -29,6 +53,13 @@ interface IncomeFormProps {
   onCancel: () => void
 }
 
+function potsAccountHint(status: AccountsStatus, hasChoices: boolean): string | undefined {
+  if (status === 'loading') return 'Loading Pots accounts…'
+  if (status === 'failed') return undefined
+  if (!hasChoices) return 'No active Pots account. Add one in Admin → CashFlow → Accounts, or untick the split.'
+  return "The split goes into this account's active pots."
+}
+
 export default function IncomeForm({
   isEditing,
   date,
@@ -38,6 +69,10 @@ export default function IncomeForm({
   bank,
   description,
   splitToReserve,
+  potsAccountId,
+  potsAccounts,
+  potsAccountsStatus,
+  onRetryPotsAccounts,
   banks,
   incomeSources,
   isSaving,
@@ -56,6 +91,9 @@ export default function IncomeForm({
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
   )
   const showSplitField = incomeSources.find((s) => s.id === incomeSource)?.potsAccountId != null
+  const showPotsAccountField = showSplitField && splitToReserve
+  const isPotsAccountUnlisted = potsAccountId !== '' && !potsAccounts.some((account) => account.id === potsAccountId)
+  const canChoosePotsAccount = potsAccountsStatus === 'ready' && potsAccounts.length > 0
 
   return (
     <form
@@ -152,13 +190,48 @@ export default function IncomeForm({
           {showSplitField && (
             <div>
               <Checkbox
-                label="Split to reserve"
+                label="Split to pots"
                 checked={splitToReserve}
                 onChange={(_, data) => onFieldChange('splitToReserve', data.checked ? 'true' : 'false')}
               />
             </div>
           )}
+
+          {showPotsAccountField && (
+            <Field
+              label="Pots account"
+              required
+              hint={potsAccountHint(potsAccountsStatus, potsAccounts.length > 0)}
+              validationState={fieldError('potsAccountId') ? 'error' : 'none'}
+              validationMessage={fieldError('potsAccountId')}
+            >
+              <Select
+                value={potsAccountId}
+                onChange={(e) => onFieldChange('potsAccountId', e.target.value)}
+                disabled={!canChoosePotsAccount}
+              >
+                <option value="">Select Pots account…</option>
+                {isPotsAccountUnlisted && <option value={potsAccountId}>Selected Pots account</option>}
+                {potsAccounts.map((account) => (
+                  <option key={account.id} value={account.id}>
+                    {account.isActive ? account.name : `${account.name} (inactive)`}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
         </div>
+
+        {showPotsAccountField && potsAccountsStatus === 'failed' && (
+          <MessageBar intent="warning">
+            <MessageBarBody>Pots accounts couldn&rsquo;t be loaded, so the Pots account can&rsquo;t be changed.</MessageBarBody>
+            <MessageBarActions>
+              <Button appearance="primary" aria-label="Retry loading Pots accounts" onClick={onRetryPotsAccounts}>
+                Retry
+              </Button>
+            </MessageBarActions>
+          </MessageBar>
+        )}
 
         <div className={styles.actions}>
           <Button type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>

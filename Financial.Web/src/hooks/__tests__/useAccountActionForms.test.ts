@@ -1,16 +1,18 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountDetailDto, BankDto, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto } from '../../api/types'
+import { potsAccount } from '../../test/account'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { pinDate } from '../../test-utils/pinDate'
 import type { AccountFormOptions } from '../useAccountFormOptions'
 import { useAccountActionForms } from '../useAccountActionForms'
 
-const { createExpenseMock, createIncomeMock, getMensaisBillsMock } = vi.hoisted(() => ({
+const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMock } = vi.hoisted(() => ({
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -18,6 +20,7 @@ vi.mock('../../api/financialApiClient', () => ({
     createExpense: createExpenseMock,
     createIncome: createIncomeMock,
     getMensaisBills: getMensaisBillsMock,
+    getAccounts: getAccountsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -117,6 +120,7 @@ describe('useAccountActionForms', () => {
     createIncomeMock.mockReset()
     getMensaisBillsMock.mockReset()
     getMensaisBillsMock.mockResolvedValue([])
+    getAccountsMock.mockReset().mockResolvedValue([potsAccount({ id: 'p1', name: 'Reserva' })])
     sessionStorage.clear()
   })
 
@@ -298,11 +302,12 @@ describe('useAccountActionForms', () => {
   })
 
   it.each([
-    ['p1', 'Income added and split to reserve'],
+    ['p1', 'Income added and split to Reserva'],
     [null, 'Income added'],
   ])('announces a saved income whose Pots account is %s', async (potsAccountId, message) => {
     createIncomeMock.mockResolvedValue({ ...INCOME, id: 'i2', potsAccountId })
     const { result, onSaved } = renderActionForms()
+    await waitFor(() => expect(result.current.incomeForm.potsAccountsStatus).toBe('ready'))
     act(() => result.current.openAction('AddIncome', openerButton()))
     act(() => result.current.incomeForm.setIncomeField('date', '2026-10-14'))
     act(() => result.current.incomeForm.setIncomeField('netValue', '2450'))

@@ -127,6 +127,10 @@ export default function MonthlyPage() {
     incomeBank,
     incomeDescription,
     incomeSplitToReserve,
+    incomePotsAccountId,
+    potsAccounts,
+    potsAccountsStatus,
+    retryPotsAccounts,
     isSavingIncome,
     saveIncomeError,
     saveIncomeErrorFields,
@@ -329,6 +333,10 @@ export default function MonthlyPage() {
                   bank={incomeBank}
                   description={incomeDescription}
                   splitToReserve={incomeSplitToReserve === 'true'}
+                  potsAccountId={incomePotsAccountId}
+                  potsAccounts={potsAccounts}
+                  potsAccountsStatus={potsAccountsStatus}
+                  onRetryPotsAccounts={retryPotsAccounts}
                   banks={banks}
                   incomeSources={incomeSources}
                   isSaving={isSavingIncome}

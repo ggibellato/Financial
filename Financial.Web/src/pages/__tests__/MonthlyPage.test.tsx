@@ -25,6 +25,7 @@ const {
   getCategoryTotalsByMonthMock,
   getCardStatementsByMonthMock,
   getBanksMock,
+  getAccountsMock,
   getIncomeSourcesMock,
   getCategoriesMock,
   getCreditCardsMock,
@@ -55,6 +56,7 @@ const {
   getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
   getCardStatementsByMonthMock: vi.fn<FinancialApiClient['getCardStatementsByMonth']>(),
   getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
@@ -88,6 +90,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getCardStatementsByMonth: getCardStatementsByMonthMock,
     getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     getIncomeSources: getIncomeSourcesMock,
     getCategories: getCategoriesMock,
     getCreditCards: getCreditCardsMock,
@@ -258,6 +261,7 @@ describe('MonthlyPage', () => {
     getCategoryTotalsByMonthMock.mockReset()
     getCardStatementsByMonthMock.mockReset()
     getBanksMock.mockReset()
+    getAccountsMock.mockReset().mockResolvedValue([])
     getIncomeSourcesMock.mockReset()
     getCategoriesMock.mockReset()
     getCreditCardsMock.mockReset()
