@@ -90,6 +90,7 @@ public class AccountQueryServiceTests
             detail.Balance.Should().Be(950m);
             detail.BalanceIsOwed.Should().BeFalse();
             detail.HasStatements.Should().BeFalse();
+            detail.TotalOwed.Should().BeNull();
             detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccount")
                 .Which.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_barclays.Id.ToString());
@@ -495,6 +496,28 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetAccount_CardInTwoMonths_TotalOwedCountsEveryUnpaidChargeAndDoesNotChange()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 9, 12), "September", 9m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 10, 12), "Taxi", 30m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 11, 1), "November", 50m, _groceries, null, _amex)]);
+        _repository.Transfers.Add(Transfer.CreateStatementPayment(new DateOnly(2026, 10, 20), _barclays, _amex, 9m, Today));
+
+        var september = _sut.GetAccount(_amex.Id, 2026, 9);
+        var october = _sut.GetAccount(_amex.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            september.Balance.Should().Be(-9m);
+            october.Balance.Should().Be(-30m);
+            september.TotalOwed.Should().Be(80m);
+            october.TotalOwed.Should().Be(80m);
+        }
+    }
+
+    [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-02")]
     public void GetTransactions_BankWithAStatementPayment_ListsOneReadOnlyCardPaymentRowLinkedToItsStatement()
     {
@@ -667,6 +690,7 @@ public class AccountQueryServiceTests
             detail.Balance.Should().Be(250m);
             detail.BalanceIsOwed.Should().BeFalse();
             detail.HasStatements.Should().BeFalse();
+            detail.TotalOwed.Should().BeNull();
             detail.AllowedActions.Should().BeEmpty();
             _sut.GetAccount(_barclays.Id, 2026, 9).Balance.Should().Be(1000m);
         }

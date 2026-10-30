@@ -12,5 +12,6 @@ public sealed class AccountDetailDTO
     public required decimal Balance { get; init; }
     public required bool BalanceIsOwed { get; init; }
     public required bool HasStatements { get; init; }
+    public required decimal? TotalOwed { get; init; }
     public required IReadOnlyList<string> AllowedActions { get; init; }
 }

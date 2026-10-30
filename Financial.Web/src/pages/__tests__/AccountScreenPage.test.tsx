@@ -125,7 +125,7 @@ const ACCOUNTS: AccountDto[] = [
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
   const isCard = id === AMEX_ID
-  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, allowedActions: isCard ? ['AddCharge'] : [] }
+  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, allowedActions: isCard ? ['AddCharge'] : [] }
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [

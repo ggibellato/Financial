@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto } from '../api/types'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
-import { formatLongMonthYear } from '../utils/formatters'
+import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatShownBalance } from '../utils/owedBalance'
 
 interface AccountHeaderProps {
@@ -66,6 +66,15 @@ export default function AccountHeader({
             {formatShownBalance(account.balance, account.balanceIsOwed)} {account.currency}
           </Text>
         </div>
+
+        {account.totalOwed !== null && (
+          <div className="account-screen__balance">
+            <Text size={200}>Total owed now</Text>
+            <Text size={500} weight="semibold">
+              {formatN2(account.totalOwed === 0 ? 0 : account.totalOwed)} {account.currency}
+            </Text>
+          </div>
+        )}
       </div>
 
       <div className="account-screen__controls">

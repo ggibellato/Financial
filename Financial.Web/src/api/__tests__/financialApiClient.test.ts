@@ -2252,6 +2252,7 @@ describe('financialApiClient', () => {
       balance: 1234.56,
       balanceIsOwed: false,
       hasStatements: false,
+      totalOwed: null,
       allowedActions: ['AddExpense'],
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

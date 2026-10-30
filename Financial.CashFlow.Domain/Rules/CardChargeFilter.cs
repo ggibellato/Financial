@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Financial.CashFlow.Domain.Entities;
@@ -39,6 +40,9 @@ public static class CardChargeFilter
 
     public static bool IsPaidThroughStatement(Expense expense, IEnumerable<CardStatement> statements) =>
         expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge && IsOnPaidStatement(expense, statements);
+
+    public static decimal TotalOwed(Account card, IEnumerable<IAccountTransaction> records) =>
+        -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
     public static bool IsStatementPaid(IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         statements.Any(statement => statement.IsPaid && statement.IsFor(card.Id, year, month));

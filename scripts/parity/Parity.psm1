@@ -220,10 +220,15 @@ function Add-ParityOtherAccountsFigures($Report, [string]$Month, [string]$Route,
 function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts, [bool]$IsCurrentMonth) {
     foreach ($account in @($Accounts | Where-Object { $_['templateName'] -in 'Bank', 'CreditCard' })) {
         $isCard = $account['templateName'] -eq 'CreditCard'
-        if ($isCard -and -not $IsCurrentMonth) { continue }
+        $isActive = $account['isActive'] -eq $true
+        if ($isCard -and -not ($IsCurrentMonth -or $isActive)) { continue }
         $detail = & $Fetch "accounts/$($account.id)/$Route"
-        $family = if ($isCard) { 'cardAccount' } else { 'account' }
-        Add-ParityFigure $Report "$Month/$family/$($account.name)/balance" $detail.balance
+        if (-not $isCard) {
+            Add-ParityFigure $Report "$Month/account/$($account.name)/balance" $detail.balance
+            continue
+        }
+        if ($IsCurrentMonth) { Add-ParityFigure $Report "$Month/cardAccount/$($account.name)/balance" $detail.balance }
+        if ($isActive) { Add-ParityFigure $Report "$Month/cardAccount/$($account.name)/totalOwed" $detail.totalOwed }
     }
 }
 
