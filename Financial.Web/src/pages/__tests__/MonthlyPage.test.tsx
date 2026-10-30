@@ -207,7 +207,7 @@ const INCOMES: IncomeDto[] = [
 ]
 
 function member(accountId: string, name: string, balance: number, roundUpTotal = 0): AccountGroupMemberDto {
-  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal, statement: null, balanceIsOwed: false }
+  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, roundUpTotal, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null }
 }
 
 const SUMMARY: AccountGroupSummaryDto = {
@@ -381,7 +381,7 @@ describe('MonthlyPage', () => {
       ...SUMMARY,
       members: [
         ...SUMMARY.members,
-        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -64.1, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true },
+        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -64.1, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: 64.1 },
       ],
       totals: [{ ...SUMMARY.totals[0], cardOutstandingTotal: 64.1 }],
     })

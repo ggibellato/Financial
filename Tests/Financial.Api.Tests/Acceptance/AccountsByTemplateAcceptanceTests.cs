@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
@@ -11,16 +12,28 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
     private const string Api = "/api/v1/financial";
     private const string BarclaysId = "6d2e0000-0000-0000-0000-000000000001";
     private const string AmexId = "6d2e0000-0000-0000-0000-000000000002";
+    private const string OldPotsId = "6d2e0000-0000-0000-0000-000000000003";
+    private const string ItauId = "6d2e0000-0000-0000-0000-000000000004";
+    private const string FlightsId = "6d2e0000-0000-0000-0000-000000000301";
     private const string MercadoId = "6d2e0000-0000-0000-0000-000000000101";
+    private const string OldPotsCategoryId = "6d2e0000-0000-0000-0000-000000000102";
 
     private const string SeededData = $$"""
         {
           "Accounts": [
             { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
-            { "Id": "{{AmexId}}", "Name": "BA Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null }
+            { "Id": "{{AmexId}}", "Name": "BA Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
+            { "Id": "{{OldPotsId}}", "Name": "Old pots", "Template": "Pots", "Currency": "GBP", "IsActive": false, "OpeningBalance": null, "RoundUp": null, "Pots": [
+              { "Id": "{{FlightsId}}", "Name": "Flights", "IsActive": true, "SplitPercentage": 100 }
+            ], "CategoryId": "{{OldPotsCategoryId}}" },
+            { "Id": "{{ItauId}}", "Name": "Itaú", "Template": "Bank", "Currency": "BRL", "IsActive": true, "OpeningBalance": { "Amount": 500, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } }
           ],
           "Categories": [
-            { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
+            { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
+            { "Id": "{{OldPotsCategoryId}}", "Name": "Old pots", "Active": true, "IsInvestment": false, "IsTithe": false }
+          ],
+          "ReserveMovements": [
+            { "Id": "6d2e0000-0000-0000-0000-000000000401", "BucketId": "{{FlightsId}}", "Amount": 704.08, "Date": "2026-10-05", "Description": "Split", "IncomeId": null }
           ],
           "Expenses": [
             { "Id": "6d2e0000-0000-0000-0000-000000000201", "Date": "2026-09-10", "Description": "September shop", "Value": 154.04, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-09-10", "InvoiceDate": "2026-09-01", "RoundUpAmount": null, "CountsAsTithe": false },
@@ -53,6 +66,40 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
             september.TotalOwed.Should().Be(740.12m);
             october.TotalOwed.Should().Be(740.12m);
         }
+    }
+
+    private async Task<List<AccountTemplateGroupDTO>> TemplateGroupsAsync(int month) =>
+        (await Client.GetFromJsonAsync<List<AccountTemplateGroupDTO>>($"{Api}/accounts/groups/by-template/2026/{month}"))!;
+
+    [Fact]
+    [Trait("AC", "P60-F14-accounts-page-by-template-and-card-totals-01")]
+    public async Task TemplateGroups_Month_ReturnsGroupsInTemplateOrderWithoutEmptyOnes()
+    {
+        var september = await TemplateGroupsAsync(9);
+        var october = await TemplateGroupsAsync(10);
+
+        using (new AssertionScope())
+        {
+            september.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard");
+            october.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard", "Pots");
+            october[0].Members.Select(member => member.Name).Should().Equal("Barclays", "Itaú");
+            october[0].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 993m), ("BRL", 500m));
+            october[1].Members.Single().TotalOwed.Should().Be(740.12m);
+            october[1].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 740.12m));
+            var oldPots = october[2].Members.Single();
+            oldPots.Name.Should().Be("Old pots");
+            oldPots.IsActive.Should().BeFalse();
+            oldPots.Balance.Should().Be(704.08m);
+            october[2].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 704.08m));
+        }
+    }
+
+    [Fact]
+    public async Task TemplateGroups_MonthOutOfRange_Returns400()
+    {
+        var response = await Client.GetAsync($"{Api}/accounts/groups/by-template/2026/13");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

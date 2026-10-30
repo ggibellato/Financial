@@ -152,6 +152,29 @@ public class DefaultAccountGroupTests
         }
     }
 
+    [Fact]
+    public void ListedIn_EveryTemplate_IsListedByNameIgnoringCase()
+    {
+        var bank = TestAccounts.Bank("chase");
+        var card = TestAccounts.CreditCard("BA Amex");
+        var reserva = TestAccounts.Pots("Reserva");
+
+        DefaultAccountGroup.ListedIn([reserva, bank, card], 2026, 9, []).Should().Equal(card, bank, reserva);
+    }
+
+    [Fact]
+    public void ListedIn_InactiveAccountsOfEveryTemplate_FollowTheSameMembershipRule()
+    {
+        var (closedPots, pot) = PotsWithOnePot("Old pots");
+        var closedCard = TestAccounts.CreditCard("Old card", isActive: false);
+        var closedBank = InactiveBank("Closed", openingAmount: 0m);
+        var keptBank = InactiveBank("Savings", openingAmount: 25m);
+        var records = new IAccountTransaction[] { ReserveMovement.Create(pot, 75m, new DateOnly(2026, 8, 10), "Saved") };
+        closedPots.SetActive(false);
+
+        DefaultAccountGroup.ListedIn([closedPots, closedCard, closedBank, keptBank], 2026, 9, records).Should().Equal(closedPots, keptBank);
+    }
+
     private static (Account Account, ReserveBucket Pot) PotsWithOnePot(string name)
     {
         var account = TestAccounts.Pots(name);

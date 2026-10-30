@@ -76,6 +76,15 @@ public class AccountTests
         }
     }
 
+    [Theory]
+    [InlineData(AccountTemplate.Bank, 0)]
+    [InlineData(AccountTemplate.CreditCard, 1)]
+    [InlineData(AccountTemplate.Pots, 2)]
+    public void TemplateOrder_IsTheTemplatesPositionInTheAvailableTemplates(AccountTemplate template, int expected)
+    {
+        Account.Create("Account", template, Currency.GBP).TemplateOrder.Should().Be(expected);
+    }
+
     [Fact]
     public void CreateWithCapabilities_WithTemplateOutsideTheDefaultGroup_DoesNotJoinIt()
     {

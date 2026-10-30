@@ -26,6 +26,7 @@ public class Account
     public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
     public string TemplateName => Template.ToString();
+    public int TemplateOrder => AccountTemplates.Available.ToList().IndexOf(Template);
     public bool JoinsDefaultGroup => AccountTemplates.JoinsDefaultGroup(Template);
     public bool CanPay => Has(Capability.HasCategories) && !Has(Capability.HasStatements);
     public bool BalanceIsOwed => Has(Capability.HasStatements);

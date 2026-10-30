@@ -195,6 +195,9 @@
           "currency": {
             "type": "string"
           },
+          "isActive": {
+            "type": "boolean"
+          },
           "name": {
             "type": "string"
           },
@@ -217,6 +220,13 @@
           },
           "templateName": {
             "type": "string"
+          },
+          "totalOwed": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           }
         },
         "required": [
@@ -224,8 +234,10 @@
           "name",
           "templateName",
           "currency",
+          "isActive",
           "balance",
-          "balanceIsOwed"
+          "balanceIsOwed",
+          "totalOwed"
         ],
         "type": "object"
       },
@@ -371,6 +383,47 @@
           "name",
           "currencies",
           "capabilities"
+        ],
+        "type": "object"
+      },
+      "AccountTemplateGroupDTO": {
+        "properties": {
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/AccountGroupMemberDTO"
+            },
+            "type": "array"
+          },
+          "templateName": {
+            "type": "string"
+          },
+          "totals": {
+            "items": {
+              "$ref": "#/components/schemas/AccountTemplateGroupTotalDTO"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "templateName",
+          "members",
+          "totals"
+        ],
+        "type": "object"
+      },
+      "AccountTemplateGroupTotalDTO": {
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "total": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "currency",
+          "total"
         ],
         "type": "object"
       },
@@ -6647,6 +6700,63 @@
         "summary": "",
         "tags": [
           "Accounts"
+        ]
+      }
+    },
+    "/accounts/groups/by-template/{year}/{month}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AccountTemplateGroupDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountGroups"
         ]
       }
     },

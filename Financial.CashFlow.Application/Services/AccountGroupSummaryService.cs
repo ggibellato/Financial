@@ -29,15 +29,10 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         using var span = StartSpan("GetDefaultGroupSummary");
         try
         {
-            var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
             var records = AccountTransactionReader.Read(_repository);
             var expenses = records.OfType<Expense>().ToList();
-            var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
-
-            var statements = _repository.GetCardStatements().ToList();
             var members = DefaultAccountGroup.MembersFor(_repository.GetAccounts(), year, month, records)
-                .Select(account => ToGroupMemberDto(
-                    account, endOfMonth, records, listedExpenses, StatementFor(account, year, month, expenses, statements)))
+                .Select(GroupMemberBuilder(year, month, records, expenses))
                 .ToList();
             var incomeTotals = BuildIncomeTotals(year, month);
 
@@ -85,6 +80,55 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         }
     }
 
+    public IReadOnlyList<AccountTemplateGroupDTO> GetTemplateGroups(int year, int month)
+    {
+        using var span = StartSpan("GetTemplateGroups");
+        try
+        {
+            var records = AccountTransactionReader.Read(_repository);
+            var toMember = GroupMemberBuilder(year, month, records, records.OfType<Expense>().ToList());
+
+            var result = DefaultAccountGroup.ListedIn(_repository.GetAccounts(), year, month, records)
+                .GroupBy(account => account.TemplateOrder)
+                .OrderBy(group => group.Key)
+                .Select(group => ToTemplateGroupDto(group.Select(toMember).ToList()))
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetTemplateGroups");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private Func<Account, AccountGroupMemberDTO> GroupMemberBuilder(
+        int year, int month, IReadOnlyCollection<IAccountTransaction> records, IReadOnlyCollection<Expense> expenses)
+    {
+        var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+        var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
+        var statements = _repository.GetCardStatements().ToList();
+        return account => ToGroupMemberDto(
+            account, endOfMonth, records, listedExpenses, StatementFor(account, year, month, expenses, statements));
+    }
+
+    private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members) => new()
+    {
+        TemplateName = members[0].TemplateName,
+        Members = members,
+        Totals = members
+            .GroupBy(member => member.Currency)
+            .Select(group => new AccountTemplateGroupTotalDTO
+            {
+                Currency = group.Key,
+                Total = group.Sum(member => member.TotalOwed ?? member.Balance)
+            })
+            .ToList()
+    };
+
     private static AccountGroupMemberDTO ToGroupMemberDto(
         Account account,
         DateOnly endOfMonth,
@@ -113,10 +157,12 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Name = account.Name,
             TemplateName = account.TemplateName,
             Currency = account.Currency.ToString(),
+            IsActive = account.IsActive,
             Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
             RoundUpTotal = roundUpTotal,
             Statement = statement,
-            BalanceIsOwed = balanceIsOwed
+            BalanceIsOwed = balanceIsOwed,
+            TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null
         };
 
     private static AccountGroupStatementDTO? StatementFor(

@@ -26,4 +26,10 @@ public sealed class AccountGroupsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<IReadOnlyList<AccountGroupMemberDTO>> GetOtherAccounts(int year, int month) =>
         Ok(_accountGroupSummaryService.GetOtherAccounts(year, month));
+
+    [HttpGet("by-template/{year:int}/{month:int}")]
+    [ProducesResponseType(typeof(IReadOnlyList<AccountTemplateGroupDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<IReadOnlyList<AccountTemplateGroupDTO>> GetTemplateGroups(int year, int month) =>
+        Ok(_accountGroupSummaryService.GetTemplateGroups(year, month));
 }

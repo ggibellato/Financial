@@ -7,4 +7,6 @@ public interface IAccountGroupSummaryService
     AccountGroupSummaryDTO GetDefaultGroupSummary(int year, int month);
 
     IReadOnlyList<AccountGroupMemberDTO> GetOtherAccounts(int year, int month);
+
+    IReadOnlyList<AccountTemplateGroupDTO> GetTemplateGroups(int year, int month);
 }
