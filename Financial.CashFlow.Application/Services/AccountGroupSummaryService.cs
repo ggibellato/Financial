@@ -112,7 +112,12 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
         var statements = _repository.GetCardStatements().ToList();
         return account => ToGroupMemberDto(
-            account, endOfMonth, records, listedExpenses, StatementFor(account, year, month, expenses, statements));
+            account,
+            endOfMonth,
+            records,
+            listedExpenses,
+            StatementFor(account, year, month, expenses, statements),
+            NextStatementFor(account, expenses, statements));
     }
 
     private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members) => new()
@@ -134,7 +139,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         DateOnly endOfMonth,
         IReadOnlyCollection<IAccountTransaction> records,
         IReadOnlyCollection<Expense> listedExpenses,
-        AccountGroupStatementDTO? statement) =>
+        AccountGroupStatementDTO? statement,
+        AccountNextStatementDTO? nextStatement) =>
         ToMemberDto(
             account,
             endOfMonth,
@@ -143,7 +149,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
                 ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
                 : null,
             statement,
-            account.BalanceIsOwed);
+            account.BalanceIsOwed,
+            nextStatement);
 
     private static AccountGroupMemberDTO ToMemberDto(
         Account account,
@@ -151,7 +158,8 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         IReadOnlyCollection<IAccountTransaction> records,
         decimal? roundUpTotal = null,
         AccountGroupStatementDTO? statement = null,
-        bool balanceIsOwed = false) => new()
+        bool balanceIsOwed = false,
+        AccountNextStatementDTO? nextStatement = null) => new()
         {
             AccountId = account.Id,
             Name = account.Name,
@@ -162,8 +170,15 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             RoundUpTotal = roundUpTotal,
             Statement = statement,
             BalanceIsOwed = balanceIsOwed,
-            TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null
+            TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
+            NextStatement = nextStatement
         };
+
+    private static AccountNextStatementDTO? NextStatementFor(
+        Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>
+        account.Has(Capability.HasStatements) && CardChargeFilter.NextStatementToPay(expenses, statements, account) is { } next
+            ? new AccountNextStatementDTO { Year = next.Year, Month = next.Month, OutstandingTotal = next.OutstandingTotal }
+            : null;
 
     private static AccountGroupStatementDTO? StatementFor(
         Account account, int year, int month, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>

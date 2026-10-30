@@ -7617,6 +7617,7 @@ export interface components {
             currency: string;
             isActive: boolean;
             name: string;
+            nextStatement: null | components["schemas"]["AccountNextStatementDTO"];
             /** Format: double */
             roundUpTotal?: null | number;
             statement?: null | components["schemas"]["AccountGroupStatementDTO"];
@@ -7639,6 +7640,14 @@ export interface components {
             /** Format: double */
             totalIncoming: number;
             totals: components["schemas"]["CurrencyTotalDTO"][];
+            /** Format: int32 */
+            year: number;
+        };
+        AccountNextStatementDTO: {
+            /** Format: int32 */
+            month: number;
+            /** Format: double */
+            outstandingTotal: number;
             /** Format: int32 */
             year: number;
         };

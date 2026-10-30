@@ -32,6 +32,9 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
             { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false },
             { "Id": "{{OldPotsCategoryId}}", "Name": "Old pots", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
+          "CardStatements": [
+            { "Id": "6d2e0000-0000-0000-0000-000000000501", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 8, "IsPaid": false, "DueDate": null }
+          ],
           "ReserveMovements": [
             { "Id": "6d2e0000-0000-0000-0000-000000000401", "BucketId": "{{FlightsId}}", "Amount": 704.08, "Date": "2026-10-05", "Description": "Split", "IncomeId": null }
           ],
@@ -91,6 +94,25 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
             oldPots.IsActive.Should().BeFalse();
             oldPots.Balance.Should().Be(704.08m);
             october[2].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 704.08m));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F14-accounts-page-by-template-and-card-totals-02")]
+    public async Task TemplateGroups_Card_ReturnsNextStatementAndTotalOwed()
+    {
+        var september = (await TemplateGroupsAsync(9))[1].Members.Single();
+        var octoberGroups = await TemplateGroupsAsync(10);
+        var october = octoberGroups[1].Members.Single();
+
+        using (new AssertionScope())
+        {
+            september.Name.Should().Be("BA Amex");
+            september.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 154.04m });
+            september.TotalOwed.Should().Be(740.12m);
+            october.NextStatement.Should().BeEquivalentTo(september.NextStatement);
+            october.TotalOwed.Should().Be(740.12m);
+            octoberGroups[0].Members.Should().OnlyContain(member => member.NextStatement == null);
         }
     }
 

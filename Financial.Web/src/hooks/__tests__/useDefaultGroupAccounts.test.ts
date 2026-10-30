@@ -20,7 +20,7 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 function member(accountId: string, name: string): AccountGroupMemberDto {
-  return { accountId, name, balance: 100, balanceIsOwed: false, currency: 'GBP', templateName: 'Bank', roundUpTotal: null, statement: null, isActive: true, totalOwed: null }
+  return { accountId, name, balance: 100, balanceIsOwed: false, currency: 'GBP', templateName: 'Bank', roundUpTotal: null, statement: null, isActive: true, totalOwed: null, nextStatement: null }
 }
 
 const TOTALS = [{ currency: 'GBP', balance: 200, cardOutstandingTotal: 0, roundUpTotal: 0 }]

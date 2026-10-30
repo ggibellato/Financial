@@ -217,6 +217,22 @@ function Add-ParityOtherAccountsFigures($Report, [string]$Month, [string]$Route,
     Add-ParityFigure $Report "$Month/otherAccounts/potsTotal" (Get-ParitySum $potsAccounts { param($a) $a.balance })
 }
 
+function Add-ParityTemplateGroupFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
+    $groups = & $Fetch "accounts/groups/by-template/$Route"
+    foreach ($group in $groups) {
+        $prefix = "$Month/templateGroups/$($group.templateName)"
+        $gbpTotal = @($group.totals | Where-Object { $_['currency'] -eq 'GBP' })
+        switch ($group.templateName) {
+            'Bank' {
+                foreach ($member in $group.members) { Add-ParityFigure $Report "$prefix/members/$($member.name)/balance" $member.balance }
+                foreach ($total in $gbpTotal) { Add-ParityFigure $Report "$prefix/totals/GBP" $total.total }
+            }
+            'CreditCard' { foreach ($member in $group.members) { Add-ParityFigure $Report "$prefix/members/$($member.name)/totalOwed" $member.totalOwed } }
+            'Pots' { foreach ($total in $gbpTotal) { Add-ParityFigure $Report "$prefix/totals/GBP" $total.total } }
+        }
+    }
+}
+
 function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts, [bool]$IsCurrentMonth) {
     foreach ($account in @($Accounts | Where-Object { $_['templateName'] -in 'Bank', 'CreditCard' })) {
         $isCard = $account['templateName'] -eq 'CreditCard'
@@ -248,6 +264,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     if ($IncludeSummary) {
         Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth)
         Add-ParityOtherAccountsFigures $Report $Month $route $Fetch
+        Add-ParityTemplateGroupFigures $Report $Month $route $Fetch
     }
     if ($null -ne $Accounts) { Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth) }
 }

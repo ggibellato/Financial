@@ -142,9 +142,9 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: CURRENT_YEAR,
   month: CURRENT_MONTH,
   members: [
-    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
-    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
-    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
+    { accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1875.32, roundUpTotal: 0, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+    { accountId: 'bank-chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: -50, roundUpTotal: 0.1, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+    { accountId: 'bank-trading212', name: 'Trading212', templateName: 'Bank', currency: 'GBP', balance: 420.1, roundUpTotal: 0.6, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
   ],
   totals: [{ currency: 'GBP', balance: 2245.42, roundUpTotal: 0.7, cardOutstandingTotal: 0 }],
   categoryTotalsSum: 1234.56,
@@ -233,7 +233,7 @@ describe('useMonthly', () => {
       ...SUMMARY,
       members: [
         ...SUMMARY.members,
-        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: 812.33 },
+        { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: 812.33, nextStatement: null },
       ],
     })
     const { result } = renderHook(() => useMonthly())
@@ -265,7 +265,7 @@ describe('useMonthly', () => {
   it('keys bank rows by the member account Id, not by matching a bank name', async () => {
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
-      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null }],
+      members: [{ accountId: 'bank-new', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: 0, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null }],
     })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -276,7 +276,7 @@ describe('useMonthly', () => {
   it('shows a member without a round-up total as 0', async () => {
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,
-      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null }],
+      members: [{ accountId: 'bank-barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null }],
     })
     const { result } = renderHook(() => useMonthly())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

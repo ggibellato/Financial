@@ -129,6 +129,54 @@ public class CardChargeFilterTests
     }
 
     [Fact]
+    public void NextStatementToPay_IsTheOldestInvoiceMonthWithAnUnpaidChargeAndItsOutstandingTotal()
+    {
+        var november = Charge(_amex, new DateOnly(2026, 11, 3), 80m);
+        var october = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        var secondOctober = Charge(_amex, new DateOnly(2026, 10, 9), 12.50m);
+
+        CardChargeFilter.NextStatementToPay([november, october, secondOctober], [], _amex)
+            .Should().Be(new CardStatementMonth(2026, 10, 42.50m));
+    }
+
+    [Fact]
+    public void NextStatementToPay_SkipsPaidMonthsSettledChargesAndEmptyUnpaidStatements()
+    {
+        var paidMonth = Charge(_amex, new DateOnly(2026, 8, 3), 70m);
+        var settled = Charge(_amex, new DateOnly(2026, 9, 5), 20m);
+        settled.Settle(_barclays, new DateOnly(2026, 9, 20));
+        var due = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+        var statements = new[]
+        {
+            Statement(_amex, 2026, 7, isPaid: false),
+            Statement(_amex, 2026, 8, isPaid: true),
+            Statement(_amex, 2026, 9, isPaid: false)
+        };
+
+        CardChargeFilter.NextStatementToPay([paidMonth, settled, due], statements, _amex)
+            .Should().Be(new CardStatementMonth(2026, 10, 30m));
+    }
+
+    [Fact]
+    public void NextStatementToPay_LeavesOutAnotherCardsChargesAndBankExpenses()
+    {
+        var otherCard = Charge(_visa, new DateOnly(2026, 9, 3), 40m);
+        var bankExpense = Expense.Create(new DateOnly(2026, 9, 3), "Shop", 60m, _groceries, _barclays, null);
+        var due = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.NextStatementToPay([otherCard, bankExpense, due], [], _amex)
+            .Should().Be(new CardStatementMonth(2026, 10, 30m));
+    }
+
+    [Fact]
+    public void NextStatementToPay_NoUnpaidCharge_IsNull()
+    {
+        var paid = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
+
+        CardChargeFilter.NextStatementToPay([paid], [Statement(_amex, 2026, 10, isPaid: true)], _amex).Should().BeNull();
+    }
+
+    [Fact]
     public void OutstandingTotal_PaidStatement_IsZero()
     {
         var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);
