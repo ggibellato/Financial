@@ -82,6 +82,53 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/groups/by-template/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    year: number;
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["AccountTemplateGroupDTO"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/groups/default/summary/{year}/{month}": {
         parameters: {
             query?: never;
@@ -7568,11 +7615,14 @@ export interface components {
             balance: number;
             balanceIsOwed: boolean;
             currency: string;
+            isActive: boolean;
             name: string;
             /** Format: double */
             roundUpTotal?: null | number;
             statement?: null | components["schemas"]["AccountGroupStatementDTO"];
             templateName: string;
+            /** Format: double */
+            totalOwed: null | number;
         };
         AccountGroupStatementDTO: {
             isPaid: boolean;
@@ -7614,6 +7664,16 @@ export interface components {
             capabilities: string[];
             currencies: string[];
             name: string;
+        };
+        AccountTemplateGroupDTO: {
+            members: components["schemas"]["AccountGroupMemberDTO"][];
+            templateName: string;
+            totals: components["schemas"]["AccountTemplateGroupTotalDTO"][];
+        };
+        AccountTemplateGroupTotalDTO: {
+            currency: string;
+            /** Format: double */
+            total: number;
         };
         AccountTransactionDTO: {
             adjustment?: null | components["schemas"]["BalanceAdjustmentDTO"];

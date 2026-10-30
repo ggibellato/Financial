@@ -59,6 +59,8 @@ public class AccountGroupSummaryServiceTests
             summary.Members[0].Balance.Should().Be(950m);
             summary.Members[0].Statement.Should().BeNull();
             summary.Members[0].BalanceIsOwed.Should().BeFalse();
+            summary.Members[0].IsActive.Should().BeTrue();
+            summary.Members[0].TotalOwed.Should().BeNull();
             summary.Members[2].Currency.Should().Be("BRL");
         }
     }
@@ -274,7 +276,106 @@ public class AccountGroupSummaryServiceTests
             amex.RoundUpTotal.Should().BeNull();
             amex.Statement!.OutstandingTotal.Should().Be(42m);
             amex.Statement.IsPaid.Should().BeFalse();
+            amex.TotalOwed.Should().Be(87m);
         }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_Month_GroupsAccountsInTemplateOrderWithMembersByName()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var holidays = TestAccounts.Pots("holidays");
+        _repository.Accounts.AddRange([reserva, _amex, holidays]);
+
+        var groups = _sut.GetTemplateGroups(2026, 9);
+
+        using (new AssertionScope())
+        {
+            groups.Select(group => group.TemplateName).Should().Equal("Bank", "CreditCard", "Pots");
+            groups[0].Members.Select(member => member.Name).Should().Equal("Barclays", "Chase", "Itaú");
+            groups[1].Members.Select(member => member.Name).Should().Equal("Amex");
+            groups[2].Members.Select(member => member.Name).Should().Equal("holidays", "Reserva");
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountGroupSummaryService.GetTemplateGroups");
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_TemplateWithoutListedAccounts_HasNoGroup()
+    {
+        _repository.Accounts.Add(TestAccounts.CreditCard("Closed card", isActive: false));
+
+        _sut.GetTemplateGroups(2026, 9).Select(group => group.TemplateName).Should().Equal("Bank");
+    }
+
+    [Fact]
+    public void GetTemplateGroups_Members_CarryActiveFlagMonthEndBalanceAndCardTotalOwed()
+    {
+        var closed = TestAccounts.Bank("Closed", isActive: false);
+        closed.SetOpeningBalance(25m, StartDate);
+        _repository.Accounts.AddRange([closed, _amex]);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        AddCharge(new DateOnly(2026, 11, 3), 50m, new DateOnly(2026, 11, 1));
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 9));
+
+        var groups = _sut.GetTemplateGroups(2026, 9);
+
+        using (new AssertionScope())
+        {
+            var closedMember = groups[0].Members.Single(member => member.Name == "Closed");
+            closedMember.IsActive.Should().BeFalse();
+            closedMember.Balance.Should().Be(25m);
+            closedMember.TotalOwed.Should().BeNull();
+            var amex = groups[1].Members.Single();
+            amex.IsActive.Should().BeTrue();
+            amex.Balance.Should().Be(-30m);
+            amex.BalanceIsOwed.Should().BeTrue();
+            amex.TotalOwed.Should().Be(80m);
+            amex.Statement!.OutstandingTotal.Should().Be(30m);
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_Totals_ArePerCurrencyInFirstMemberOrderAndACardGroupTotalsWhatIsOwed()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        AddCharge(new DateOnly(2026, 11, 3), 50m, new DateOnly(2026, 11, 1));
+
+        var groups = _sut.GetTemplateGroups(2026, 9);
+
+        using (new AssertionScope())
+        {
+            groups[0].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 1200m), ("BRL", 500m));
+            groups[1].Totals.Select(total => (total.Currency, total.Total)).Should().Equal(("GBP", 80m));
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_NoAccounts_ReturnsNoGroups()
+    {
+        _repository.Accounts.Clear();
+
+        _sut.GetTemplateGroups(2026, 9).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetTemplateGroups_InvalidMonth_ThrowsArgumentOutOfRange()
+    {
+        var act = () => _sut.GetTemplateGroups(2026, 13);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.AccountGroupSummaryService.GetTemplateGroups");
+    }
+
+    [Fact]
+    public void GetTemplateGroups_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = () => _sut.GetTemplateGroups(2026, 9);
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountGroupSummaryService.GetTemplateGroups");
     }
 
     [Fact]

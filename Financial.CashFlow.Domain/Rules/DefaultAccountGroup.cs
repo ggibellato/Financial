@@ -10,14 +10,14 @@ public static class DefaultAccountGroup
 {
     public static IReadOnlyList<Account> MembersFor(
         IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records) =>
-        ListedFor(accounts, year, month, records, joinsDefaultGroup: true);
+        ListedIn(accounts, year, month, records).Where(account => account.JoinsDefaultGroup).ToList();
 
     public static IReadOnlyList<Account> OthersFor(
         IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records) =>
-        ListedFor(accounts, year, month, records, joinsDefaultGroup: false);
+        ListedIn(accounts, year, month, records).Where(account => !account.JoinsDefaultGroup).ToList();
 
-    private static IReadOnlyList<Account> ListedFor(
-        IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records, bool joinsDefaultGroup)
+    public static IReadOnlyList<Account> ListedIn(
+        IEnumerable<Account> accounts, int year, int month, IReadOnlyCollection<IAccountTransaction> records)
     {
         ArgumentNullException.ThrowIfNull(accounts);
         ArgumentNullException.ThrowIfNull(records);
@@ -26,7 +26,6 @@ public static class DefaultAccountGroup
         var end = start.AddMonths(1).AddDays(-1);
 
         return accounts
-            .Where(account => account.JoinsDefaultGroup == joinsDefaultGroup)
             .Where(account => account.IsActive || StillMattersIn(account, start, end, records))
             .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
             .ToList();
