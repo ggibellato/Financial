@@ -4,19 +4,28 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BankDto, IncomeDto, IncomeSourceDto } from '../../api/types'
 import { setStoredDefault } from '../../utils/createFormDefaults'
+import { potsAccount } from '../../test/account'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
-const { createIncomeMock, updateIncomeMock } = vi.hoisted(() => ({
+const { createIncomeMock, updateIncomeMock, getAccountsMock } = vi.hoisted(() => ({
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
   updateIncomeMock: vi.fn<FinancialApiClient['updateIncome']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     createIncome: createIncomeMock,
     updateIncome: updateIncomeMock,
+    getAccounts: getAccountsMock,
   } as Partial<FinancialApiClient>,
 }))
+
+const ACCOUNTS = [
+  potsAccount({ id: 'p1', name: 'Reserva' }),
+  potsAccount({ id: 'p2', name: 'Holidays' }),
+  potsAccount({ id: 'p3', name: 'Old pots', isActive: false }),
+]
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
@@ -28,7 +37,14 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
   { id: '2', name: 'Ariana', isActive: true, group: 'Salary', potsAccountId: 'p1', hasReferences: false },
   { id: '3', name: 'Lottery', isActive: true, group: 'NonReportable', potsAccountId: null, hasReferences: false },
   { id: '4', name: 'DividendoJuros', isActive: true, group: 'DividendoJuros', potsAccountId: null, hasReferences: false },
+  { id: '5', name: 'Bonus', isActive: true, group: 'NonReportable', potsAccountId: 'p3', hasReferences: false },
 ]
+
+async function renderIncomeForm(onSaved: () => void) {
+  const rendered = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+  await waitFor(() => expect(rendered.result.current.potsAccountsStatus).toBe('ready'))
+  return rendered
+}
 
 describe('useIncomeForm', () => {
   let onSaved: () => void
@@ -36,6 +52,7 @@ describe('useIncomeForm', () => {
   beforeEach(() => {
     createIncomeMock.mockReset()
     updateIncomeMock.mockReset()
+    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     onSaved = vi.fn<() => void>()
     sessionStorage.clear()
     // shouldAdvanceTime keeps real timers ticking so RTL's waitFor polling still resolves
@@ -106,7 +123,136 @@ describe('useIncomeForm', () => {
     )
   })
 
-  it('defaults splitToReserve to false when the default source is ineligible', () => {
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] starts ticked into the source\'s Pots account on create', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+
+    expect(result.current.incomeSplitToReserve).toBe('true')
+    expect(result.current.incomePotsAccountId).toBe('p1')
+  })
+
+  it('offers the active Pots accounts by name', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.potsAccounts.map((account) => account.name)).toEqual(['Holidays', 'Reserva'])
+  })
+
+  it('also offers the stored Pots account on edit when it is now inactive', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    const income: IncomeDto = {
+      id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
+      grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
+      potsAccountId: 'p3',
+    }
+
+    act(() => result.current.showEditIncomeForm(income))
+
+    expect(result.current.potsAccounts.map((account) => account.name)).toEqual(['Holidays', 'Old pots', 'Reserva'])
+    expect(result.current.incomePotsAccountId).toBe('p3')
+  })
+
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] sends another Pots account when one is chosen', async () => {
+    createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
+
+    act(() => result.current.setIncomeField('potsAccountId', 'p2'))
+    act(() => result.current.submitIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: 'p2' }))
+  })
+
+  it('marks an otherwise unchanged edit dirty when another Pots account is chosen', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    const income: IncomeDto = {
+      id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
+      grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
+      potsAccountId: 'p1',
+    }
+    act(() => result.current.showEditIncomeForm(income))
+    expect(result.current.isIncomeDirty).toBe(false)
+
+    act(() => result.current.setIncomeField('potsAccountId', 'p2'))
+
+    expect(result.current.isIncomeDirty).toBe(true)
+  })
+
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] resets the split and the Pots account when the source changes', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('potsAccountId', 'p2'))
+    act(() => result.current.setIncomeField('splitToReserve', 'false'))
+
+    act(() => result.current.setIncomeField('incomeSource', '1'))
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+
+    expect(result.current.incomeSplitToReserve).toBe('true')
+    expect(result.current.incomePotsAccountId).toBe('p1')
+  })
+
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] leaves no Pots account chosen when the source\'s is inactive, and asks for one on save', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '5'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
+
+    act(() => result.current.submitIncome())
+
+    expect(result.current.incomeSplitToReserve).toBe('true')
+    expect(result.current.incomePotsAccountId).toBe('')
+    expect(result.current.saveIncomeErrorFields).toEqual({ potsAccountId: 'Choose a Pots account.' })
+    expect(createIncomeMock).not.toHaveBeenCalled()
+  })
+
+  it('sends no Pots account when an income\'s source no longer splits, so the hidden split can\'t block the save', async () => {
+    updateIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['updateIncome']>>)
+    const { result } = await renderIncomeForm(onSaved)
+    const income: IncomeDto = {
+      id: 'i1', date: '2026-07-25', incomeSourceId: '1', incomeSourceName: 'Gleison',
+      grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
+      potsAccountId: 'p1',
+    }
+    act(() => result.current.showEditIncomeForm(income))
+
+    act(() => result.current.submitIncome())
+
+    expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ potsAccountId: null }))
+  })
+
+  it('clears an inactive default Pots account once the accounts arrive, without marking the form dirty', async () => {
+    let resolveAccounts: (accounts: typeof ACCOUNTS) => void = () => {}
+    getAccountsMock.mockReset().mockReturnValue(new Promise((resolve) => (resolveAccounts = resolve)))
+    setStoredDefault('income.incomeSource', '5')
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    expect(result.current.incomePotsAccountId).toBe('p3')
+
+    await act(async () => resolveAccounts(ACCOUNTS))
+
+    await waitFor(() => expect(result.current.incomePotsAccountId).toBe(''))
+    expect(result.current.incomeSplitToReserve).toBe('true')
+    expect(result.current.isIncomeDirty).toBe(false)
+  })
+
+  it('exposes the accounts load failure and retries it', async () => {
+    getAccountsMock.mockReset().mockRejectedValueOnce(new Error('down')).mockResolvedValue(ACCOUNTS)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    await waitFor(() => expect(result.current.potsAccountsStatus).toBe('failed'))
+
+    act(() => result.current.retryPotsAccounts())
+
+    await waitFor(() => expect(result.current.potsAccountsStatus).toBe('ready'))
+  })
+
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] defaults splitToReserve to false when the default source is ineligible', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
 
     act(() => result.current.showCreateIncomeForm())
@@ -173,7 +319,7 @@ describe('useIncomeForm', () => {
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: 'p1' }))
   })
 
-  it('submits null as the Pots account when the split is unticked', () => {
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] submits null as the Pots account when the split is unticked', () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
@@ -187,7 +333,7 @@ describe('useIncomeForm', () => {
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: null }))
   })
 
-  it('keeps the Pots account a split income names when it is edited, even if its source now names another', () => {
+  it('[AC P60-F09-pots-template-and-reserva-migration-05] keeps the Pots account a split income names when it is edited, even if its source now names another', () => {
     updateIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['updateIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     const income: IncomeDto = {
@@ -235,9 +381,9 @@ describe('useIncomeForm', () => {
     expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ potsAccountId: 'p1' }))
   })
 
-  it('sets splitConfirmationMessage when the create response comes back split', async () => {
-    createIncomeMock.mockResolvedValue({ potsAccountId: 'p1' } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+  it('names the Pots account in the confirmation and tells onSaved when the create response comes back split', async () => {
+    createIncomeMock.mockResolvedValue({ potsAccountId: 'p2' } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = await renderIncomeForm(onSaved)
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
@@ -246,7 +392,8 @@ describe('useIncomeForm', () => {
       result.current.submitIncome()
     })
 
-    expect(result.current.splitConfirmationMessage).toBe('Income saved and split to reserve')
+    expect(result.current.splitConfirmationMessage).toBe('Income saved and split to Holidays')
+    expect(onSaved).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: 'p2' }), false, 'Holidays')
   })
 
   it('leaves splitConfirmationMessage null when the create response comes back unsplit', async () => {
@@ -265,14 +412,14 @@ describe('useIncomeForm', () => {
 
   it('clears splitConfirmationMessage automatically after the delay', async () => {
     createIncomeMock.mockResolvedValue({ potsAccountId: 'p1' } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    const { result } = await renderIncomeForm(onSaved)
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
     act(() => result.current.setIncomeField('netValue', '2450'))
     await act(async () => {
       result.current.submitIncome()
     })
-    expect(result.current.splitConfirmationMessage).toBe('Income saved and split to reserve')
+    expect(result.current.splitConfirmationMessage).toBe('Income saved and split to Reserva')
 
     act(() => {
       vi.advanceTimersByTime(SPLIT_CONFIRMATION_DELAY_MS)
@@ -403,6 +550,7 @@ describe('useIncomeForm account settings', () => {
   beforeEach(() => {
     createIncomeMock.mockReset()
     updateIncomeMock.mockReset()
+    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     onSaved = vi.fn<() => void>()
     sessionStorage.clear()
   })

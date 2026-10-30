@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AccountDetailDto, AccountTransactionDto, CreditCardDto, IncomeDto } from '../api/types'
+import type { AccountDetailDto, AccountTransactionDto, CreditCardDto } from '../api/types'
 import { rowKey, type AccountFormAction } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
@@ -17,8 +17,8 @@ export const NO_CREDIT_CARDS: CreditCardDto[] = []
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
 
-function incomeSavedMessage(saved: IncomeDto): string {
-  return saved.potsAccountId != null ? 'Income added and split to reserve' : 'Income added'
+function incomeSavedMessage(potsAccountName: string | null): string {
+  return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
 }
 
 export interface ScreenForm {
@@ -71,7 +71,7 @@ export function useAccountActionForms(
   const incomeForm = useIncomeForm(
     options.incomeSources,
     options.banks,
-    (income, isEdit) => saved(isEdit ? 'Income updated' : incomeSavedMessage(income)),
+    (_, isEdit, potsAccountName) => saved(isEdit ? 'Income updated' : incomeSavedMessage(potsAccountName)),
     settings,
   )
   const adjustmentForm = useBalanceAdjustmentForm(

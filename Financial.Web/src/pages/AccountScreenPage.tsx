@@ -180,6 +180,10 @@ export default function AccountScreenPage() {
             bank={incomeForm.incomeBank}
             description={incomeForm.incomeDescription}
             splitToReserve={incomeForm.incomeSplitToReserve === 'true'}
+            potsAccountId={incomeForm.incomePotsAccountId}
+            potsAccounts={incomeForm.potsAccounts}
+            potsAccountsStatus={incomeForm.potsAccountsStatus}
+            onRetryPotsAccounts={incomeForm.retryPotsAccounts}
             banks={formOptions.options.banks}
             incomeSources={formOptions.options.incomeSources}
             isSaving={incomeForm.isSavingIncome}

@@ -25,7 +25,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
-import { account, cardAccount } from '../../test/account'
+import { account, cardAccount, potsAccount } from '../../test/account'
 
 const {
   getAccountsMock,
@@ -674,8 +674,9 @@ describe('AccountScreenPage actions', () => {
     await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
   })
 
-  it('says the income was split to reserve when it was', async () => {
+  it('names the Pots account the income was split to', async () => {
     const user = userEvent.setup()
+    getAccountsMock.mockResolvedValue([...ACCOUNTS, potsAccount({ id: 'reserva', name: 'Reserva' })])
     createIncomeMock.mockResolvedValue({ ...SAVED_INCOME, potsAccountId: 'reserva' })
     await openScreen()
 
@@ -683,7 +684,7 @@ describe('AccountScreenPage actions', () => {
     await user.type(screen.getByLabelText(/^Net Value/), '2500')
     await user.click(screen.getByRole('button', { name: 'Add Income' }))
 
-    expect(await screen.findByText('Income added and split to reserve')).toBeInTheDocument()
+    expect(await screen.findByText('Income added and split to Reserva')).toBeInTheDocument()
   })
 
   it('closes the open form when the open action is pressed again, returning focus to it', async () => {

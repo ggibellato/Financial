@@ -1,12 +1,14 @@
 import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
-import type { BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
+import type { AccountDto, BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { accountsWith } from '../utils/accountCapabilities'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
+import { type AccountsStatus, useAccounts } from './useAccounts'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
 
@@ -14,7 +16,6 @@ const DATE_KEY = 'income.date'
 const BANK_KEY = 'income.bank'
 const SOURCE_KEY = 'income.incomeSource'
 
-/** How long the post-save "split to reserve" confirmation stays visible before clearing itself. */
 export const SPLIT_CONFIRMATION_DELAY_MS = 4000
 
 /** Matches the previous hardcoded INCOME_SOURCES array's declaration order. Names outside this
@@ -42,16 +43,48 @@ function sourcePotsAccountId(sources: IncomeSourceDto[], incomeSourceId: string)
   return sources.find((s) => s.id === incomeSourceId)?.potsAccountId ?? ''
 }
 
-function splitInto(potsAccountId: string): Pick<IncomeFormState, 'splitToReserve' | 'potsAccountId'> {
-  return { splitToReserve: String(potsAccountId !== ''), potsAccountId }
+function offersSplit(sources: IncomeSourceDto[], incomeSourceId: string): boolean {
+  return sourcePotsAccountId(sources, incomeSourceId) !== ''
+}
+
+function findAccount(accounts: AccountDto[], accountId: string | null | undefined): AccountDto | undefined {
+  return accounts.find((account) => account.id === accountId)
+}
+
+type SplitFields = Pick<IncomeFormState, 'splitToReserve' | 'potsAccountId'>
+
+function defaultPotsAccountId(sources: IncomeSourceDto[], accounts: AccountDto[], incomeSourceId: string): string {
+  const potsAccountId = sourcePotsAccountId(sources, incomeSourceId)
+  return isInactive(accounts, potsAccountId) ? '' : potsAccountId
+}
+
+function sourceSplit(sources: IncomeSourceDto[], accounts: AccountDto[], incomeSourceId: string): SplitFields {
+  return {
+    splitToReserve: String(offersSplit(sources, incomeSourceId)),
+    potsAccountId: defaultPotsAccountId(sources, accounts, incomeSourceId),
+  }
 }
 
 function requestedPotsAccountId(state: IncomeFormState, sources: IncomeSourceDto[]): string | null {
-  if (state.splitToReserve !== 'true') return null
-  return state.potsAccountId || sourcePotsAccountId(sources, state.incomeSource) || null
+  return offersSplit(sources, state.incomeSource) && state.splitToReserve === 'true' ? state.potsAccountId || null : null
 }
 
-const EDITABLE_FIELDS = ['date', 'incomeSource', 'grossValue', 'netValue', 'bank', 'description', 'splitToReserve'] as const
+function isInactive(accounts: AccountDto[], accountId: string): boolean {
+  return findAccount(accounts, accountId)?.isActive === false
+}
+
+const UNNAMED_POTS_ACCOUNT = 'pots'
+
+const EDITABLE_FIELDS = [
+  'date',
+  'incomeSource',
+  'grossValue',
+  'netValue',
+  'bank',
+  'description',
+  'splitToReserve',
+  'potsAccountId',
+] as const
 
 type EditableValues = Pick<IncomeFormState, (typeof EDITABLE_FIELDS)[number]>
 
@@ -79,16 +112,17 @@ interface IncomeFormState {
 }
 
 type IncomeFormAction =
-  | { type: 'SHOW_CREATE_FORM'; payload: { date: string; bank: string; source: string; potsAccountId: string } }
+  | { type: 'SHOW_CREATE_FORM'; payload: { date: string; bank: string; source: string; split: SplitFields } }
   | { type: 'SHOW_EDIT_FORM'; payload: IncomeDto }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: IncomeFormField; value: string } }
-  | { type: 'SPLIT_INTO'; payload: string }
+  | { type: 'SET_SPLIT'; payload: SplitFields }
   | { type: 'SAVE_START' }
-  | { type: 'SAVE_SUCCESS'; payload: IncomeDto }
-  | { type: 'SAVE_SUCCESS_KEEP_OPEN'; payload: { splitConfirmed: boolean; nextPotsAccountId: string } }
+  | { type: 'SAVE_SUCCESS'; payload: { splitConfirmationMessage: string | null } }
+  | { type: 'SAVE_SUCCESS_KEEP_OPEN'; payload: { splitConfirmationMessage: string | null; nextSplit: SplitFields } }
   | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<IncomeFormField, string>> } }
   | { type: 'DISMISS_SPLIT_CONFIRMATION' }
+  | { type: 'CLEAR_UNTOUCHED_POTS_ACCOUNT' }
 
 const BLANK_ENTRY = {
   grossValue: '',
@@ -117,8 +151,6 @@ const INITIAL_STATE: IncomeFormState = {
   splitConfirmationMessage: null,
 }
 
-const SPLIT_CONFIRMATION_MESSAGE = 'Income saved and split to reserve'
-
 function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormState {
   switch (action.type) {
     case 'SHOW_CREATE_FORM':
@@ -133,7 +165,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         date: action.payload.date,
         bank: action.payload.bank,
         incomeSource: action.payload.source,
-        ...splitInto(action.payload.potsAccountId),
+        ...action.payload.split,
       })
     case 'SHOW_EDIT_FORM':
       return withOpenedValues({
@@ -147,7 +179,8 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         netValue: String(action.payload.netValue),
         bank: action.payload.bankId ?? '',
         description: action.payload.description ?? '',
-        ...splitInto(action.payload.potsAccountId ?? ''),
+        splitToReserve: String(action.payload.potsAccountId != null),
+        potsAccountId: action.payload.potsAccountId ?? '',
         saveError: null,
         saveErrorFields: {},
       })
@@ -155,8 +188,8 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
       return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
-    case 'SPLIT_INTO':
-      return { ...state, ...splitInto(action.payload) }
+    case 'SET_SPLIT':
+      return { ...state, ...action.payload }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
@@ -167,18 +200,24 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         isEditing: false,
         editingId: null,
         isSaving: false,
-        splitConfirmationMessage: action.payload.potsAccountId != null ? SPLIT_CONFIRMATION_MESSAGE : null,
+        splitConfirmationMessage: action.payload.splitConfirmationMessage,
       }
     case 'SAVE_SUCCESS_KEEP_OPEN':
       return withOpenedValues({
         ...state,
         ...BLANK_ENTRY,
-        ...splitInto(action.payload.nextPotsAccountId),
+        ...action.payload.nextSplit,
         isSaving: false,
-        splitConfirmationMessage: action.payload.splitConfirmed ? SPLIT_CONFIRMATION_MESSAGE : null,
+        splitConfirmationMessage: action.payload.splitConfirmationMessage,
       })
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
+    case 'CLEAR_UNTOUCHED_POTS_ACCOUNT':
+      return {
+        ...state,
+        potsAccountId: '',
+        openedValues: state.openedValues && { ...state.openedValues, potsAccountId: '' },
+      }
     case 'DISMISS_SPLIT_CONFIRMATION':
       return { ...state, splitConfirmationMessage: null }
     default:
@@ -197,6 +236,10 @@ export interface UseIncomeFormResult {
   incomeBank: string
   incomeDescription: string
   incomeSplitToReserve: string
+  incomePotsAccountId: string
+  potsAccounts: AccountDto[]
+  potsAccountsStatus: AccountsStatus
+  retryPotsAccounts: () => void
   isSavingIncome: boolean
   isIncomeDirty: boolean
   saveIncomeError: string | null
@@ -212,10 +255,25 @@ export interface UseIncomeFormResult {
 export function useIncomeForm(
   incomeSources: IncomeSourceDto[],
   banks: BankDto[],
-  onSaved: (saved: IncomeDto, isEdit: boolean) => void,
+  onSaved: (saved: IncomeDto, isEdit: boolean, potsAccountName: string | null) => void,
   { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const { accounts, status: potsAccountsStatus, retry: retryPotsAccounts } = useAccounts()
+
+  const potsAccountName = (potsAccountId: string | null | undefined): string | null =>
+    potsAccountId == null ? null : (findAccount(accounts, potsAccountId)?.name ?? UNNAMED_POTS_ACCOUNT)
+
+  const isUntouchedInactiveDefault =
+    state.isOpen &&
+    !state.isEditing &&
+    state.potsAccountId !== '' &&
+    state.potsAccountId === state.openedValues?.potsAccountId &&
+    isInactive(accounts, state.potsAccountId)
+
+  useEffect(() => {
+    if (isUntouchedInactiveDefault) dispatch({ type: 'CLEAR_UNTOUCHED_POTS_ACCOUNT' })
+  }, [isUntouchedInactiveDefault])
 
   useEffect(() => {
     if (!state.splitConfirmationMessage) return
@@ -231,7 +289,7 @@ export function useIncomeForm(
     const source =
       state.incomeSource ||
       (storedSource && incomeSources.some((s) => s.id === storedSource) ? storedSource : (selectActiveIncomeSources(incomeSources)[0]?.id ?? ''))
-    dispatch({ type: 'SHOW_CREATE_FORM', payload: { date, bank, source, potsAccountId: sourcePotsAccountId(incomeSources, source) } })
+    dispatch({ type: 'SHOW_CREATE_FORM', payload: { date, bank, source, split: sourceSplit(incomeSources, accounts, source) } })
   }
 
   const showEditIncomeForm = (income: IncomeDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: income })
@@ -244,7 +302,10 @@ export function useIncomeForm(
       if (!INCOME_SOURCES_WITH_GROSS_VALUE.includes(resolveIncomeSourceName(incomeSources, value))) {
         dispatch({ type: 'SET_FIELD', payload: { field: 'grossValue', value: '' } })
       }
-      dispatch({ type: 'SPLIT_INTO', payload: sourcePotsAccountId(incomeSources, value) })
+      dispatch({ type: 'SET_SPLIT', payload: sourceSplit(incomeSources, accounts, value) })
+    }
+    if (field === 'splitToReserve' && value === 'true' && state.potsAccountId === '') {
+      dispatch({ type: 'SET_FIELD', payload: { field: 'potsAccountId', value: defaultPotsAccountId(incomeSources, accounts, state.incomeSource) } })
     }
   }
 
@@ -262,6 +323,10 @@ export function useIncomeForm(
     const netValue = parseValidatedNumber(state.netValue, { min: 0 })
     if (netValue === null) {
       errors.netValue = 'Net value must be a non-negative number'
+    }
+
+    if (state.splitToReserve === 'true' && state.potsAccountId === '' && offersSplit(incomeSources, state.incomeSource)) {
+      errors.potsAccountId = 'Choose a Pots account.'
     }
 
     let grossValue: number | null = null
@@ -297,18 +362,17 @@ export function useIncomeForm(
         setStoredDefault(DATE_KEY, state.date)
         if (!lockedBank) setStoredDefault(BANK_KEY, state.bank)
         setStoredDefault(SOURCE_KEY, state.incomeSource)
+        const savedPotsAccountName = potsAccountName(savedIncome.potsAccountId)
+        const splitConfirmationMessage = savedPotsAccountName ? `Income saved and split to ${savedPotsAccountName}` : null
         if (keepOpenAfterSave && !state.isEditing) {
           dispatch({
             type: 'SAVE_SUCCESS_KEEP_OPEN',
-            payload: {
-              splitConfirmed: savedIncome.potsAccountId != null,
-              nextPotsAccountId: sourcePotsAccountId(incomeSources, state.incomeSource),
-            },
+            payload: { splitConfirmationMessage, nextSplit: sourceSplit(incomeSources, accounts, state.incomeSource) },
           })
         } else {
-          dispatch({ type: 'SAVE_SUCCESS', payload: savedIncome })
+          dispatch({ type: 'SAVE_SUCCESS', payload: { splitConfirmationMessage } })
         }
-        onSaved(savedIncome, state.isEditing)
+        onSaved(savedIncome, state.isEditing, savedPotsAccountName)
       })
       .catch((err: unknown) => {
         dispatch({
@@ -332,6 +396,10 @@ export function useIncomeForm(
     incomeBank: state.bank,
     incomeDescription: state.description,
     incomeSplitToReserve: state.splitToReserve,
+    incomePotsAccountId: state.potsAccountId,
+    potsAccounts: accountsWith(accounts, 'ReceivesIncomeSplit', state.openedValues?.potsAccountId || undefined),
+    potsAccountsStatus,
+    retryPotsAccounts,
     isSavingIncome: state.isSaving,
     isIncomeDirty: state.isOpen && hasChangedFields(state, state.openedValues, EDITABLE_FIELDS),
     saveIncomeError: state.saveError,
