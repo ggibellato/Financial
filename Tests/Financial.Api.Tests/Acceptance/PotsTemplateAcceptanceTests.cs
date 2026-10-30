@@ -217,6 +217,28 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     };
 
     [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
+    public async Task OtherAccounts_Month_ListsThePotsAccountsByNameWithTheirMonthEndBalance()
+    {
+        var others = await Client.GetFromJsonAsync<List<AccountGroupMemberDTO>>($"{Api}/accounts/groups/other/2026/10");
+
+        using (new AssertionScope())
+        {
+            others!.Select(member => (member.Name, member.TemplateName, member.Balance))
+                .Should().Equal(("Holidays", "Pots", 900m), ("Reserva", "Pots", 624.5m));
+            others.Should().OnlyContain(member => member.RoundUpTotal == null && member.Statement == null && !member.BalanceIsOwed);
+        }
+    }
+
+    [Fact]
+    public async Task OtherAccounts_MonthOutOfRange_Returns400()
+    {
+        var response = await Client.GetAsync($"{Api}/accounts/groups/other/2026/13");
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task ReservaTransactions_MonthWithMovements_ListsNoRows()
     {
         var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{ReservaId}/transactions/2026/10");

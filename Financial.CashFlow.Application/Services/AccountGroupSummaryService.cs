@@ -36,7 +36,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
 
             var statements = _repository.GetCardStatements().ToList();
             var members = DefaultAccountGroup.MembersFor(_repository.GetAccounts(), year, month, records)
-                .Select(account => ToMemberDto(
+                .Select(account => ToGroupMemberDto(
                     account, endOfMonth, records, listedExpenses, StatementFor(account, year, month, expenses, statements)))
                 .ToList();
             var incomeTotals = BuildIncomeTotals(year, month);
@@ -63,23 +63,60 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         }
     }
 
-    private static AccountGroupMemberDTO ToMemberDto(
+    public IReadOnlyList<AccountGroupMemberDTO> GetOtherAccounts(int year, int month)
+    {
+        using var span = StartSpan("GetOtherAccounts");
+        try
+        {
+            var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+            var records = AccountTransactionReader.Read(_repository);
+            var result = DefaultAccountGroup.OthersFor(_repository.GetAccounts(), year, month, records)
+                .Select(account => ToMemberDto(account, endOfMonth, records))
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetOtherAccounts");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    private static AccountGroupMemberDTO ToGroupMemberDto(
         Account account,
         DateOnly endOfMonth,
         IReadOnlyCollection<IAccountTransaction> records,
         IReadOnlyCollection<Expense> listedExpenses,
-        AccountGroupStatementDTO? statement) => new()
+        AccountGroupStatementDTO? statement) =>
+        ToMemberDto(
+            account,
+            endOfMonth,
+            records,
+            account.Has(Capability.SupportsRoundUp)
+                ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
+                : null,
+            statement,
+            account.BalanceIsOwed);
+
+    private static AccountGroupMemberDTO ToMemberDto(
+        Account account,
+        DateOnly endOfMonth,
+        IReadOnlyCollection<IAccountTransaction> records,
+        decimal? roundUpTotal = null,
+        AccountGroupStatementDTO? statement = null,
+        bool balanceIsOwed = false) => new()
         {
             AccountId = account.Id,
             Name = account.Name,
             TemplateName = account.TemplateName,
             Currency = account.Currency.ToString(),
             Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
-            RoundUpTotal = account.Has(Capability.SupportsRoundUp)
-                ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
-                : null,
+            RoundUpTotal = roundUpTotal,
             Statement = statement,
-            BalanceIsOwed = account.BalanceIsOwed
+            BalanceIsOwed = balanceIsOwed
         };
 
     private static AccountGroupStatementDTO? StatementFor(

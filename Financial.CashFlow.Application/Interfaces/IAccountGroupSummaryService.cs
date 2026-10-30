@@ -5,4 +5,6 @@ namespace Financial.CashFlow.Application.Interfaces;
 public interface IAccountGroupSummaryService
 {
     AccountGroupSummaryDTO GetDefaultGroupSummary(int year, int month);
+
+    IReadOnlyList<AccountGroupMemberDTO> GetOtherAccounts(int year, int month);
 }

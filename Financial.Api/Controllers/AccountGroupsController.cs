@@ -20,4 +20,10 @@ public sealed class AccountGroupsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<AccountGroupSummaryDTO> GetDefaultGroupSummary(int year, int month) =>
         Ok(_accountGroupSummaryService.GetDefaultGroupSummary(year, month));
+
+    [HttpGet("other/{year:int}/{month:int}")]
+    [ProducesResponseType(typeof(IReadOnlyList<AccountGroupMemberDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<IReadOnlyList<AccountGroupMemberDTO>> GetOtherAccounts(int year, int month) =>
+        Ok(_accountGroupSummaryService.GetOtherAccounts(year, month));
 }
