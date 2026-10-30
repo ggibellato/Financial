@@ -8,13 +8,13 @@ The product is the single-user, self-hosted Financial tool. Its React front end 
 
 The core value is one place per account, a new account from an existing template with no code, multiple Pots and Settlement accounts (the user's son's GBP account is expected soon), and a server-side summary in place of browser arithmetic — all while every balance, total and summary on the user's real data stays exactly as it is today. Nothing is deployed in the middle of a feature; a deploy may follow a feature's last stage, the first one after F05. Each stage proves parity by running its data migration chain on a fresh copy of the live data file and comparing a full figures report before and after.
 
-**Stages.** The design document's five slices are delivered as five stages of 13 features:
+**Stages.** The design document's five slices are delivered as five stages of 14 features:
 
 | Stage | Design doc slice | Features |
 |---|---|---|
 | 1 — Accounts and banks | F01 | F01 Parity toolkit, F02 Account model and Bank migration, F03 Generic transfer, F04 Default group summary, F05 Bank account screen, F06 Admin accounts page |
 | 2 — Credit cards | F02 | F07 Credit card template and migration, F08 Statement payment and card screen |
-| 3 — Pots | F03 | F09 Pots template and Reserva migration, F10 Linked deposit, withdrawal and Pots screen |
+| 3 — Pots | F03 | F09 Pots template and Reserva migration, F14 Accounts page by template and card totals (added 2026-10-30), F10 Linked deposit, withdrawal and Pots screen |
 | 4 — Settlement | F04 | F11 Settlement template and Mãe migration, F12 Settlement screen |
 | 5 — Consolidation | F05 | F13 Consolidated navigation and retirement |
 
@@ -162,6 +162,11 @@ The core value is one place per account, a new account from an existing template
 - As the user, I want the old Reserva, Controle Mãe and per-type admin pages removed once the account screen covers them, so that each task has exactly one place
 - As the user, I want old links to land on the matching account screen, so that bookmarks still work
 - As the system, I want the E2E journeys, `context.md`, README and example data updated, so that the documentation and tests describe the new model
+
+### F14. Accounts Page by Template and Card Totals
+- As the user, I want the Accounts page to show one grid per template, so that banks, cards and pots are each easy to scan
+- As the user, I want each card row to show the next statement to pay and the total owed, so that I see what is due next and what I owe overall
+- As the user, I want a card's account screen to show the owed balance at the end of the viewed month and the total owed now, so that changing month never hides what I owe today
 
 ## 6. Functionalities
 
@@ -313,7 +318,7 @@ Rules that apply to every feature:
 - Account screen shell — accounts list, picker, header, month selector, transactions grid, allowed-actions rendering and inline action area (used by F08, F10, F12)
 
 **Capabilities:**
-- **Accounts page** `/cashflow/accounts` (new CashFlow menu entry above Monthly): the default group's members with balance per row and totals per currency (from F04); each row opens the account screen. F09 adds an "Other accounts" section (Pots, then Settlement from F11) when the first account outside the default group exists. *Why not now:* in F05 the section would always be empty.
+- **Accounts page** `/cashflow/accounts` (new CashFlow menu entry above Monthly): the default group's members with balance per row and totals per currency (from F04); each row opens the account screen. F09 adds an "Other accounts" section (Pots, then Settlement from F11) when the first account outside the default group exists. *Why not now:* in F05 the section would always be empty. F14 replaces both sections with one grid per template.
 - **Account screen** `/cashflow/accounts/:accountId?month=YYYY-MM`:
   - **Picker** (Fluent `Dropdown`: a short, known list, and focus stays on it across an account switch) listing active accounts grouped by template; changing it keeps the selected month.
   - **Header:** name, template name, balance at the end of the selected month (the current month included, as on Monthly; records can be dated later in the month), currency.
@@ -471,7 +476,7 @@ Rules that apply to every feature:
 - **Migration step V3 → V4:** creates Pots account "Reserva" (new Id, GBP, category = the category named "Reserva", looked up once by name in the migration only); `ReserveBuckets` become its pots with the same Ids, names, split % and active flags; movements keep their pot Id; investment snapshot source "sum of reserve buckets" becomes "Pots account total" naming Reserva; income sources with `AutoSplitToReserve` get Reserva as their Pots account and the flag is removed, and incomes that split name Reserva as their Pots account; `Version` 4.
 - **Snapshot source:** investment accounts with the pots source name a Pots account; Admin investment accounts offers "Pots account total" plus the account; the suggestion text names the account ("Reserva total — as of Oct 2026"). *Why (deviation):* today the source adds every bucket; with a second Pots account it would silently include it.
 - Admin → Accounts gains the Pots template (fields: category). Pots themselves are managed from the Pots screen (F10).
-- **Accounts page:** adds the "Other accounts" section below the default group, listing each account outside the default group (Pots now, Settlement from F11) with its balance. In F09 the rows are not links, because the account screen has nothing to show for a Pots account until F10's Pots tab (user decision 2026-10-27).
+- **Accounts page:** adds the "Other accounts" section below the default group, listing each account outside the default group (Pots now, Settlement from F11) with its balance. In F09 the rows are not links, because the account screen has nothing to show for a Pots account until F10's Pots tab (user decision 2026-10-27). F14 replaces the section with the Pots grid.
 - `reserve` and `reserve-buckets` endpoints keep their shapes until F13, against Reserva: the first Pots account in the file (user decision 2026-10-27), so a second Pots account never appears on the Reserva page and renaming Reserva breaks nothing.
 - Test and example data migrated to V4.
 - The spreadsheet import creates the Reserva Pots account with its pots directly and its output loads under the version guard (the F02 import rule).
@@ -490,6 +495,7 @@ Rules that apply to every feature:
 **Consumes:**
 - F05: account screen shell
 - F09: Pots accounts, pots, split percentages, category setting
+- F14: the Accounts page Pots grid
 
 **Provides:**
 - Linked deposit and withdrawal operations, the pot expense rows on banks, and the Pots screen (used by F13)
@@ -508,7 +514,7 @@ Rules that apply to every feature:
 - **Legacy records** (forward-only): old deposits, withdrawal pairs and manual deposits stay unlinked and keep today's edit/delete behaviour, including deleting a manual deposit by date + description; new ones use the operation link.
 - **Pots screen:** Pots tab (each pot: name, split %, balance; account total); actions Deposit, Withdraw, Manage pots.
 - **Manage pots** (Dialog, admin CRUD per ADR-006): add, rename, change split, deactivate; all pots saved together; active split percentages must total exactly 100.00. *Deviation:* today the 100% rule is a warning because buckets are edited one at a time; saving them together makes the rule enforceable, and the live data already satisfies it (four active pots: 33.33 + 33.33 + 16.67 + 16.67).
-- **Accounts page:** the "Other accounts" rows from F09 become links that open the account screen on its Pots tab.
+- **Accounts page:** the Pots grid rows (F14) become links that open the account screen on its Pots tab.
 - **Bank screen:** deposit and withdrawal expense rows appear like other expenses; their row opens the operation (Edit/Delete apply to the whole operation).
 
 **Experience:**
@@ -529,6 +535,7 @@ Rules that apply to every feature:
 - F02: shared balance calculation, versioned `migrate` command, template-name architecture test
 - F06: account create/edit flow
 - F09: migration step V3 → V4 (the V4 → V5 step follows it in the chain)
+- F14: Accounts page grids per template (F11 adds the Settlement grid)
 
 **Provides:**
 - Settlement accounts with participants, currencies and entries with "paid by" (used by F12)
@@ -545,7 +552,7 @@ Rules that apply to every feature:
 - The spreadsheet import creates the Mãe Settlement account with its entries directly and its output loads under the version guard (the F02 import rule).
 
 **Experience:**
-- No visible change on Controle Mãe; the Accounts page lists "Mãe" under Other accounts with "Mãe owes you R$167.88 / £7.94".
+- No visible change on Controle Mãe; the Accounts page lists "Mãe" in its Settlement grid with "Mãe owes you R$167.88 / £7.94".
 
 **Error Handling:**
 - Migration total mismatch (BRL or GBP total after ≠ before): migration stops and writes nothing.
@@ -599,6 +606,37 @@ Rules that apply to every feature:
 - Redirect target account missing (e.g. Reserva deleted): the redirect lands on the Accounts page with "That page moved to the account screen."
 - Deploy run on an un-migrated file: the F02 version guard stops the API with its message.
 
+### F14. Accounts Page by Template and Card Totals
+
+Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and F11, which extend its grids.
+
+**Consumes:**
+- F05: Accounts page and account screen header
+- F07: card accounts and their owed balance
+- F08: stored statements and their paid status
+- F09: Pots accounts and the Other accounts endpoint
+
+**Provides:**
+- Accounts page grids per template (used by F10, which makes the Pots rows links, and F11, which adds the Settlement grid)
+- Each card's next statement to pay and total owed, on the Accounts page and the card screen
+
+**Capabilities:**
+- **One grid per template:** the Accounts page shows one grid per template in a fixed order (Banks, Credit cards, Pots, then Settlement from F11), replacing the "Default group" and "Other accounts" sections. A template with no listed account this month gets no grid. Each grid keeps the membership rule (active accounts, plus an inactive one with a non-zero month-end balance or a record that month), name order and the Inactive badge; the Template column goes, since the heading names it. The page stays on the current month with no month picker (user decision 2026-10-30).
+- **Columns and totals per currency:** Banks: Account, Currency, Balance; footer "Bank total". Credit cards: Account, Currency, Next statement, Total owed; footer "Total owed". Pots: Account, Currency, Balance; footer "Pots total". Bank and card rows open the account screen; Pots rows stay plain text until F10. A card row no longer shows the month-end owed balance: in the current month it repeats the total owed.
+- **Next statement:** the card's oldest unpaid statement, shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when every statement is paid. *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
+- **Total owed:** every unpaid charge on the card, whatever its date or statement month (today's accumulated outstanding on Monthly's Card tab). It doesn't depend on the viewed month.
+- **Card screen header:** "Owed at end of <Mon yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled.
+- **Parity:** the new card figures are mapped to today's card figures in the figure map (mapping fixed in the spec). Monthly and its summary are unchanged.
+
+**Experience:**
+- Accounts → "Banks" (Barclays · GBP · £1,234.56 … Bank total GBP), "Credit cards" (BA Amex · GBP · Oct 2026 · £512.30 · £740.12 … Total owed GBP), "Pots" (Reserva · GBP · £704.08 … Pots total GBP).
+- BA Amex screen on September 2026 → header "Owed at end of Sep 2026 £154.04 · Total owed now £740.12"; switching to October changes only the first figure.
+- States as today: one loading state and one error with Try again for the whole page.
+
+**Error Handling:**
+- A card with no unpaid statement: Next statement "—".
+- Load failure: the page's error with Try again; no grid shows partial data.
+
 ## 7. Out of Scope
 
 - **Card features:** partial payments, interest, fees, carry-over between statements and proper instalment purchases (Pay in 4 stays as 4 charges moved to their months).
@@ -628,10 +666,11 @@ Rules that apply to every feature:
 | F07 | Credit Card Template and Card Migration | 1 | F02, F04, F06 |
 | F08 | Statement Payment and Card Screen | 1 | F05, F07 |
 | F09 | Pots Template and Reserva Migration | 1 | F02, F06, F07 |
-| F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F09 |
-| F11 | Settlement Template and Mãe Migration | 1 | F02, F06, F09 |
+| F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F09, F14 |
+| F11 | Settlement Template and Mãe Migration | 1 | F02, F06, F09, F14 |
 | F12 | Settlement Screen | 1 | F05, F11 |
 | F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12 |
+| F14 | Accounts Page by Template and Card Totals | 2 | F08, F09 |
 
 F07 → F09 → F11 is a real ordering: their migration steps are sequential versions (V3, V4, V5) of one chain.
 
@@ -650,9 +689,10 @@ Features within the same wave can be built in parallel. A wave starts only after
 - **Wave 3**: F03, F04, F06
 - **Wave 4**: F05, F07
 - **Wave 5**: F08, F09
-- **Wave 6**: F10, F11
-- **Wave 7**: F12
-- **Wave 8**: F13
+- **Wave 6**: F14
+- **Wave 7**: F10, F11
+- **Wave 8**: F12
+- **Wave 9**: F13
 
 ### Part 4: Priority levels
 - **1** = Essential — product does not work without it
@@ -685,6 +725,10 @@ graph TD
   F09 --> F11
   F05 --> F12[F12 Settle screen]
   F11 --> F12
+  F08 --> F14[F14 Accounts by template]
+  F09 --> F14
+  F14 --> F10
+  F14 --> F11
   F08 --> F13[F13 Consolidation]
   F10 --> F13
   F12 --> F13
@@ -850,6 +894,13 @@ graph TD
 - [ ] `context.md`, README, example data and `docs/ui/` describe the account model
 - [ ] Final parity run on the latest live copy with the full V1 → V5 chain: 0 differences and the full screen checklist ticked
 - [ ] `/simplify` run; architecture-reviewer and ui-reviewer passed
+
+### F14. Accounts Page by Template and Card Totals
+- [ ] The Accounts page shows one grid per template in the order Banks, Credit cards, Pots, with no grid for a template without listed accounts; each grid lists its accounts by name with the Inactive badge and its per-currency footer
+- [ ] Each credit card row shows its next statement to pay (oldest unpaid statement: month and unpaid total, "—" when none) and its total owed
+- [ ] The card screen header shows "Owed at end of <month>" and "Total owed now"; changing the month changes the first and not the second
+- [ ] Bank and card rows open the account screen; Pots rows are plain text until F10
+- [ ] Parity: 0 differences with the new card figures mapped; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
