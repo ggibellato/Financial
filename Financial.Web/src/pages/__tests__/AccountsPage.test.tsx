@@ -25,10 +25,10 @@ const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 10,
   members: [
-    { accountId: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 2800.25, roundUpTotal: 1.2, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
-    { accountId: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: 500, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
-    { accountId: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
-    { accountId: 'itau', name: 'Itau', templateName: 'Bank', currency: 'BRL', balance: 1000, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
+    { accountId: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 2800.25, roundUpTotal: 1.2, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+    { accountId: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: 500, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+    { accountId: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+    { accountId: 'itau', name: 'Itau', templateName: 'Bank', currency: 'BRL', balance: 1000, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
   ],
   totals: [
     { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
@@ -40,12 +40,12 @@ const SUMMARY: AccountGroupSummaryDto = {
 }
 
 function cardMember(accountId: string, name: string, balance: number, outstandingTotal: number): AccountGroupMemberDto {
-  return { accountId, name, templateName: 'CreditCard', currency: 'GBP', balance, roundUpTotal: null, statement: { outstandingTotal, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: -balance }
+  return { accountId, name, templateName: 'CreditCard', currency: 'GBP', balance, roundUpTotal: null, statement: { outstandingTotal, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: -balance, nextStatement: null }
 }
 
 const OTHER_ACCOUNTS: AccountGroupMemberDto[] = [
-  { accountId: 'old-pots', name: 'Old pots', templateName: 'Pots', currency: 'GBP', balance: 12.5, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
-  { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 4210.55, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
+  { accountId: 'old-pots', name: 'Old pots', templateName: 'Pots', currency: 'GBP', balance: 12.5, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+  { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 4210.55, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
 ]
 
 const ACCOUNTS: AccountDto[] = [

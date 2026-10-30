@@ -31,6 +31,17 @@ public static class CardChargeFilter
     public static decimal OutstandingTotal(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, CardStatement statement) =>
         OutstandingTotal(expenses, statements, statement.CreditCard, statement.Year, statement.Month);
 
+    public static CardStatementMonth? NextStatementToPay(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card)
+    {
+        var oldest = expenses
+            .Where(expense => expense.IsUnpaidChargeOn(card) && !IsOnPaidStatement(expense, statements))
+            .Min(expense => expense.InvoiceDate);
+
+        return oldest is { } invoiceDate
+            ? new CardStatementMonth(invoiceDate.Year, invoiceDate.Month, OutstandingTotal(expenses, statements, card, invoiceDate.Year, invoiceDate.Month))
+            : null;
+    }
+
     public static bool IsPaid(Expense expense, IEnumerable<CardStatement> statements) =>
         expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled || IsOnPaidStatement(expense, statements);
 

@@ -2117,7 +2117,7 @@ describe('financialApiClient', () => {
       year: 2026,
       month: 7,
       members: [
-        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, roundUpTotal: 0.5, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
+        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, roundUpTotal: 0.5, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
       ],
       totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5, cardOutstandingTotal: 0 }],
       categoryTotalsSum: 320,
@@ -2135,7 +2135,7 @@ describe('financialApiClient', () => {
 
   it('gets the other accounts for a month', async () => {
     const responseBody: AccountGroupMemberDto[] = [
-      { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 4210.55, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null },
+      { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 4210.55, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

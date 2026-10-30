@@ -1,3 +1,4 @@
+using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
@@ -277,6 +278,7 @@ public class AccountGroupSummaryServiceTests
             amex.Statement!.OutstandingTotal.Should().Be(42m);
             amex.Statement.IsPaid.Should().BeFalse();
             amex.TotalOwed.Should().Be(87m);
+            amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 42m });
         }
     }
 
@@ -325,12 +327,30 @@ public class AccountGroupSummaryServiceTests
             closedMember.IsActive.Should().BeFalse();
             closedMember.Balance.Should().Be(25m);
             closedMember.TotalOwed.Should().BeNull();
+            closedMember.NextStatement.Should().BeNull();
             var amex = groups[1].Members.Single();
             amex.IsActive.Should().BeTrue();
             amex.Balance.Should().Be(-30m);
             amex.BalanceIsOwed.Should().BeTrue();
             amex.TotalOwed.Should().Be(80m);
             amex.Statement!.OutstandingTotal.Should().Be(30m);
+            amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 9, OutstandingTotal = 30m });
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_CardWithEverythingPaid_HasNoNextStatementInAnyMonth()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+        var statement = CardStatement.Create(_amex, 2026, 9);
+        statement.MarkLegacyPaid();
+        _repository.CardStatements.Add(statement);
+
+        using (new AssertionScope())
+        {
+            _sut.GetTemplateGroups(2026, 9)[1].Members.Single().NextStatement.Should().BeNull();
+            _sut.GetTemplateGroups(2026, 12)[1].Members.Single().NextStatement.Should().BeNull();
         }
     }
 

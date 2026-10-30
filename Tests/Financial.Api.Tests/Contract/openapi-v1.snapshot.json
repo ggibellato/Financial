@@ -201,6 +201,16 @@
           "name": {
             "type": "string"
           },
+          "nextStatement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccountNextStatementDTO"
+              }
+            ]
+          },
           "roundUpTotal": {
             "format": "double",
             "type": [
@@ -237,7 +247,8 @@
           "isActive",
           "balance",
           "balanceIsOwed",
-          "totalOwed"
+          "totalOwed",
+          "nextStatement"
         ],
         "type": "object"
       },
@@ -302,6 +313,28 @@
           "categoryTotalsSum",
           "incomeTotals",
           "totalIncoming"
+        ],
+        "type": "object"
+      },
+      "AccountNextStatementDTO": {
+        "properties": {
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "outstandingTotal": {
+            "format": "double",
+            "type": "number"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "month",
+          "outstandingTotal"
         ],
         "type": "object"
       },
