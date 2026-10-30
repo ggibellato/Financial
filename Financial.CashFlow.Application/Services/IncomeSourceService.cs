@@ -161,20 +161,8 @@ public sealed class IncomeSourceService : IIncomeSourceService
     private bool IsReferenced(Guid incomeSourceId) =>
         _repository.GetIncomes().Any(i => i.IncomeSource.Id == incomeSourceId);
 
-    private Account? ResolvePotsAccount(Guid? potsAccountId)
-    {
-        if (potsAccountId is null)
-        {
-            return null;
-        }
-
-        if (!EntityIdResolver.TryResolve(potsAccountId, _repository.GetAccounts(), a => a.Id, out var potsAccount))
-        {
-            throw new ArgumentException($"Pots account '{potsAccountId}' is not recognized.");
-        }
-
-        return potsAccount;
-    }
+    private Account? ResolvePotsAccount(Guid? potsAccountId) =>
+        CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId);
 
     private ITelemetrySpan StartSpan(string operationName)
     {

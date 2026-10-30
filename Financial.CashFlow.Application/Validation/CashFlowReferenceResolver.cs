@@ -29,6 +29,21 @@ public static class CashFlowReferenceResolver
         return account;
     }
 
+    public static Account? ResolvePotsAccount(IEnumerable<Account> accounts, Guid? potsAccountId)
+    {
+        if (potsAccountId is null)
+        {
+            return null;
+        }
+
+        if (!EntityIdResolver.TryResolve(potsAccountId, accounts, a => a.Id, out var potsAccount))
+        {
+            throw new ArgumentException($"Pots account '{potsAccountId}' is not recognized.");
+        }
+
+        return potsAccount;
+    }
+
     public static Account ResolveAccount(IEnumerable<Account> accounts, Guid accountId) =>
         EntityIdResolver.TryResolve(accountId, accounts, a => a.Id, out var account)
             ? account
