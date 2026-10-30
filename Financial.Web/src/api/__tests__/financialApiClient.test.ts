@@ -8,6 +8,7 @@ import type {
   AccountDto,
   AccountGroupMemberDto,
   AccountGroupSummaryDto,
+  AccountTemplateGroupDto,
   AccountTransactionDto,
   AccountTransferCreateDto,
   AccountTransferDto,
@@ -2144,6 +2145,25 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/other/2026/7`)
+  })
+
+  it('gets the accounts grouped by template for a month', async () => {
+    const responseBody: AccountTemplateGroupDto[] = [
+      {
+        templateName: 'Pots',
+        members: [
+          { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 704.08, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+        ],
+        totals: [{ currency: 'GBP', total: 704.08 }],
+      },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getAccountTemplateGroups(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/by-template/2026/7`)
   })
 
   it('gets every account', async () => {

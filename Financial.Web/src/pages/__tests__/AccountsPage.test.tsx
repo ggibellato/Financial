@@ -1,61 +1,73 @@
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDto, AccountGroupMemberDto, AccountGroupSummaryDto } from '../../api/types'
+import type { AccountGroupMemberDto, AccountTemplateGroupDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
-import { account, potsAccount } from '../../test/account'
 
-const { getDefaultGroupSummaryMock, getOtherAccountsMock, getAccountsMock } = vi.hoisted(() => ({
-  getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
-  getOtherAccountsMock: vi.fn<FinancialApiClient['getOtherAccounts']>(),
-  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
+const { getAccountTemplateGroupsMock } = vi.hoisted(() => ({
+  getAccountTemplateGroupsMock: vi.fn<FinancialApiClient['getAccountTemplateGroups']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
-  apiClient: {
-    getDefaultGroupSummary: getDefaultGroupSummaryMock,
-    getOtherAccounts: getOtherAccountsMock,
-    getAccounts: getAccountsMock,
-  } as Partial<FinancialApiClient>,
+  apiClient: { getAccountTemplateGroups: getAccountTemplateGroupsMock } as Partial<FinancialApiClient>,
 }))
 
-const SUMMARY: AccountGroupSummaryDto = {
-  year: 2026,
-  month: 10,
+function member(accountId: string, name: string, templateName: string, fields: Partial<AccountGroupMemberDto> = {}): AccountGroupMemberDto {
+  return {
+    accountId,
+    name,
+    templateName,
+    currency: 'GBP',
+    isActive: true,
+    balance: 0,
+    roundUpTotal: null,
+    statement: null,
+    balanceIsOwed: false,
+    totalOwed: null,
+    nextStatement: null,
+    ...fields,
+  }
+}
+
+const BANKS: AccountTemplateGroupDto = {
+  templateName: 'Bank',
   members: [
-    { accountId: 'barclays', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 2800.25, roundUpTotal: 1.2, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
-    { accountId: 'chase', name: 'Chase', templateName: 'Bank', currency: 'GBP', balance: 500, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
-    { accountId: 'old', name: 'Old Savings', templateName: 'Bank', currency: 'GBP', balance: 10, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
-    { accountId: 'itau', name: 'Itau', templateName: 'Bank', currency: 'BRL', balance: 1000, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+    member('barclays', 'Barclays', 'Bank', { balance: 2800.25, roundUpTotal: 1.2 }),
+    member('chase', 'Chase', 'Bank', { balance: 500 }),
+    member('itau', 'Itau', 'Bank', { currency: 'BRL', balance: 1000 }),
+    member('old', 'Old Savings', 'Bank', { balance: 10, isActive: false }),
   ],
   totals: [
-    { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
-    { currency: 'GBP', balance: 3310.25, roundUpTotal: 1.2, cardOutstandingTotal: 0 },
+    { currency: 'GBP', total: 3310.25 },
+    { currency: 'BRL', total: 1000 },
   ],
-  categoryTotalsSum: 0,
-  incomeTotals: [],
-  totalIncoming: 0,
 }
 
-function cardMember(accountId: string, name: string, balance: number, outstandingTotal: number): AccountGroupMemberDto {
-  return { accountId, name, templateName: 'CreditCard', currency: 'GBP', balance, roundUpTotal: null, statement: { outstandingTotal, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: -balance, nextStatement: null }
+const CARDS: AccountTemplateGroupDto = {
+  templateName: 'CreditCard',
+  members: [
+    member('amex', 'BA Amex', 'CreditCard', {
+      balance: -740.12,
+      balanceIsOwed: true,
+      statement: { outstandingTotal: 228, isPaid: false },
+      totalOwed: 740.12,
+      nextStatement: { year: 2026, month: 10, outstandingTotal: 512.3 },
+    }),
+    member('visa', 'Old Visa', 'CreditCard', { balanceIsOwed: true, isActive: false, totalOwed: 0 }),
+  ],
+  totals: [{ currency: 'GBP', total: 740.12 }],
 }
 
-const OTHER_ACCOUNTS: AccountGroupMemberDto[] = [
-  { accountId: 'old-pots', name: 'Old pots', templateName: 'Pots', currency: 'GBP', balance: 12.5, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
-  { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 4210.55, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
-]
-
-const ACCOUNTS: AccountDto[] = [
-  potsAccount({ id: 'reserva', name: 'Reserva' }),
-  potsAccount({ id: 'old-pots', name: 'Old pots', isActive: false }),
-  account({ id: 'barclays', name: 'Barclays' }),
-  account({ id: 'chase', name: 'Chase' }),
-  account({ id: 'itau', name: 'Itau', currency: 'BRL' }),
-  account({ id: 'old', name: 'Old Savings', isActive: false }),
-]
+const POTS: AccountTemplateGroupDto = {
+  templateName: 'Pots',
+  members: [
+    member('old-pots', 'Old pots', 'Pots', { balance: 12.5, isActive: false }),
+    member('reserva', 'Reserva', 'Pots', { balance: 704.08 }),
+  ],
+  totals: [{ currency: 'GBP', total: 716.58 }],
+}
 
 function renderPage() {
   return render(
@@ -65,136 +77,122 @@ function renderPage() {
   )
 }
 
+function bodyRows(table: HTMLElement) {
+  return within(table).getAllByRole('row').slice(1)
+}
+
+function accountNames(table: HTMLElement) {
+  return bodyRows(table).map((row) => within(row).getAllByRole('cell')[0].textContent?.replace(/^Account:/, ''))
+}
+
+function headers(table: HTMLElement) {
+  return within(within(table).getAllByRole('row')[0]).getAllByRole('columnheader').map((cell) => cell.textContent)
+}
+
+function footer(table: HTMLElement) {
+  return table.closest('section')?.querySelector('.monthly-page__section-total')?.textContent
+}
+
 describe('AccountsPage', () => {
   beforeEach(() => {
     pinDate('2026-10-15T12:00:00+01:00')
-    getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
-    getOtherAccountsMock.mockReset().mockResolvedValue(OTHER_ACCOUNTS)
-    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
+    getAccountTemplateGroupsMock.mockReset().mockResolvedValue([BANKS, CARDS, POTS])
   })
 
   afterEach(() => {
     vi.useRealTimers()
   })
 
-  it('[AC P60-F05-bank-account-screen-01] lists the default group members with balances and per-currency totals, each opening its account screen', async () => {
+  it('[AC P60-F14-accounts-page-by-template-and-card-totals-01] shows one grid per template in order, each listing its accounts with the Inactive badge and a per-currency footer', async () => {
     renderPage()
 
-    const table = await screen.findByRole('table', { name: 'Default group' })
-    expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 10)
-    const [, ...rows] = within(table).getAllByRole('row')
-    expect(rows.map((row) => within(row).getByRole('link').textContent)).toEqual(['Barclays', 'Chase', 'Old Savings', 'Itau'])
-    expect(within(rows[0]).getByText('2,800.25')).toBeInTheDocument()
-    expect(within(rows[0]).getByRole('link', { name: 'Barclays' })).toHaveAttribute(
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(1)
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 10)
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots'])
+    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance'])
+    expect(accountNames(banks)).toEqual(['Barclays', 'Chase', 'Itau', 'Old SavingsInactive'])
+    expect(within(bodyRows(banks)[0]).getByText('2,800.25')).toBeInTheDocument()
+    expect(within(bodyRows(banks)[2]).getByText('BRL')).toBeInTheDocument()
+    expect(within(bodyRows(banks)[0]).queryByText('Inactive')).not.toBeInTheDocument()
+    expect(footer(banks)).toBe('Bank total GBP: 3,310.25 · Bank total BRL: 1,000.00')
+
+    const pots = screen.getByRole('table', { name: 'Pots' })
+    expect(headers(pots)).toEqual(['Account', 'Currency', 'Balance'])
+    expect(accountNames(pots)).toEqual(['Old potsInactive', 'Reserva'])
+    expect(within(bodyRows(pots)[1]).getByText('704.08')).toBeInTheDocument()
+    expect(footer(pots)).toBe('Pots total GBP: 716.58')
+  })
+
+  it('shows no grid for a template without listed accounts', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([BANKS, CARDS])
+
+    renderPage()
+
+    expect(await screen.findByRole('table', { name: 'Banks' })).toBeInTheDocument()
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards'])
+    expect(screen.queryByRole('table', { name: 'Pots' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F14-accounts-page-by-template-and-card-totals-02] shows each card’s next statement to pay, or a dash, and its total owed', async () => {
+    renderPage()
+
+    const cards = await screen.findByRole('table', { name: 'Credit cards' })
+    expect(headers(cards)).toEqual(['Account', 'Currency', 'Next statement', 'Total owed'])
+    const [amex, visa] = bodyRows(cards)
+    expect(within(amex).getByText('Oct 2026 · 512.30')).toBeInTheDocument()
+    expect(within(amex).getByText('740.12')).toBeInTheDocument()
+    expect(within(amex).queryByText('Owed 740.12')).not.toBeInTheDocument()
+    expect(within(visa).getByText('—')).toBeInTheDocument()
+    expect(within(visa).getByText('0.00')).toBeInTheDocument()
+    expect(within(visa).getByText('Inactive')).toBeInTheDocument()
+    expect(footer(cards)).toBe('Total owed GBP: 740.12')
+  })
+
+  it('sorts the cards by total owed', async () => {
+    renderPage()
+
+    const cards = await screen.findByRole('table', { name: 'Credit cards' })
+    fireEvent.click(within(cards).getByRole('button', { name: 'Total owed' }))
+
+    expect(bodyRows(screen.getByRole('table', { name: 'Credit cards' })).map((row) => within(row).getByRole('link').textContent)).toEqual(['Old Visa', 'BA Amex'])
+  })
+
+  it('[AC P60-F14-accounts-page-by-template-and-card-totals-04] links bank and card rows to their account screen for the month, and leaves Pots rows as plain text', async () => {
+    renderPage()
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(within(banks).getByRole('link', { name: 'Barclays' })).toHaveAttribute('href', '/cashflow/accounts/barclays?month=2026-10')
+    expect(within(screen.getByRole('table', { name: 'Credit cards' })).getByRole('link', { name: 'BA Amex' })).toHaveAttribute(
       'href',
-      '/cashflow/accounts/barclays?month=2026-10',
+      '/cashflow/accounts/amex?month=2026-10',
     )
-    expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
+    const pots = screen.getByRole('table', { name: 'Pots' })
+    expect(within(pots).queryByRole('link')).not.toBeInTheDocument()
+    expect(within(pots).getByText('Reserva')).toBeInTheDocument()
   })
 
-  it('labels the footer as the bank total, which leaves out card members', async () => {
-    getDefaultGroupSummaryMock.mockResolvedValue({
-      ...SUMMARY,
-      members: [
-        ...SUMMARY.members,
-        cardMember('amex', 'BA Amex', -812.33, 64.1),
-      ],
-      totals: [
-        { currency: 'BRL', balance: 1000, roundUpTotal: 0, cardOutstandingTotal: 0 },
-        { currency: 'GBP', balance: 3310.25, roundUpTotal: 1.2, cardOutstandingTotal: 64.1 },
-      ],
-    })
+  it('shows an unknown template under its own name with a "Total" footer and plain-text rows', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([
+      { templateName: 'Settlement', members: [member('mae', 'Mãe', 'Settlement', { balance: 50 })], totals: [{ currency: 'GBP', total: 50 }] },
+    ])
+
     renderPage()
 
-    expect(await screen.findByRole('link', { name: 'BA Amex' })).toBeInTheDocument()
-    expect(screen.getByText('Bank total BRL:', { exact: false })).toHaveTextContent('Bank total BRL: 1,000.00 · Bank total GBP: 3,310.25')
-  })
-
-  it('[AC P60-F07-credit-card-template-and-card-migration-08] shows a card\'s balance as owed and names its template "Credit card"', async () => {
-    getDefaultGroupSummaryMock.mockResolvedValue({
-      ...SUMMARY,
-      members: [
-        ...SUMMARY.members,
-        cardMember('amex', 'BA Amex', -812.33, 64.1),
-        cardMember('visa', 'Visa', 0, 0),
-      ],
-    })
-    renderPage()
-
-    const amexRow = (await screen.findByRole('link', { name: 'BA Amex' })).closest('tr')!
-    expect(within(amexRow).getByText('Credit card')).toBeInTheDocument()
-    expect(within(amexRow).getByText('Owed 812.33')).toBeInTheDocument()
-    expect(within(screen.getByRole('link', { name: 'Visa' }).closest('tr')!).getByText('Owed 0.00')).toBeInTheDocument()
-    expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('Bank')).toBeInTheDocument()
-    expect(within(screen.getByRole('link', { name: 'Barclays' }).closest('tr')!).getByText('2,800.25')).toBeInTheDocument()
-  })
-
-  it('sorts the Balance column by net position, so the most owed card comes first', async () => {
-    getDefaultGroupSummaryMock.mockResolvedValue({
-      ...SUMMARY,
-      members: [
-        ...SUMMARY.members,
-        cardMember('amex', 'BA Amex', -812.33, 64.1),
-        cardMember('visa', 'Visa', -15, 15),
-      ],
-    })
-    renderPage()
-
-    const accountsTable = await screen.findByRole('table', { name: 'Default group' })
-    fireEvent.click(within(accountsTable).getByRole('button', { name: 'Balance' }))
-
-    const [, ...rows] = within(screen.getByRole('table', { name: 'Default group' })).getAllByRole('row')
-    expect(rows.map((row) => within(row).getByRole('link').textContent)).toEqual(['BA Amex', 'Visa', 'Old Savings', 'Chase', 'Itau', 'Barclays'])
-    expect(within(rows[0]).getByText('Owed 812.33')).toBeInTheDocument()
+    const table = await screen.findByRole('table', { name: 'Settlement' })
+    expect(headers(table)).toEqual(['Account', 'Currency', 'Balance'])
+    expect(within(table).queryByRole('link')).not.toBeInTheDocument()
+    expect(footer(table)).toBe('Total GBP: 50.00')
   })
 
   it('shows the month the balances belong to', async () => {
     renderPage()
 
     expect(await screen.findByText('Balances at end of October 2026')).toBeInTheDocument()
-    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Default group', 'Other accounts'])
   })
 
-  it('marks an inactive member with an Inactive badge', async () => {
-    renderPage()
-
-    const table = await screen.findByRole('table', { name: 'Default group' })
-    const oldRow = within(table).getByRole('link', { name: 'Old Savings' }).closest('tr') as HTMLElement
-    expect(within(oldRow).getByText('Inactive')).toBeInTheDocument()
-    const barclaysRow = within(table).getByRole('link', { name: 'Barclays' }).closest('tr') as HTMLElement
-    expect(within(barclaysRow).queryByText('Inactive')).not.toBeInTheDocument()
-  })
-
-  it('[AC P60-F09-pots-template-and-reserva-migration-02] lists the other accounts by name with their balance, as plain text with no footer', async () => {
-    renderPage()
-
-    const table = await screen.findByRole('table', { name: 'Other accounts' })
-    expect(getOtherAccountsMock).toHaveBeenCalledWith(2026, 10)
-    expect(screen.getByRole('heading', { name: 'Other accounts' })).toBeInTheDocument()
-    const [header, ...rows] = within(table).getAllByRole('row')
-    expect(within(header).getAllByRole('columnheader').map((cell) => cell.textContent)).toEqual(['Account', 'Template', 'Currency', 'Balance'])
-    expect(within(rows[0]).getByText('Old pots')).toBeInTheDocument()
-    expect(within(rows[1]).getByText('Reserva')).toBeInTheDocument()
-    expect(within(table).queryByRole('link')).not.toBeInTheDocument()
-    expect(within(rows[1]).getByText('Pots')).toBeInTheDocument()
-    expect(within(rows[1]).getByText('GBP')).toBeInTheDocument()
-    expect(within(rows[1]).getByText('4,210.55')).toBeInTheDocument()
-    expect(within(rows[0]).getByText('Inactive')).toBeInTheDocument()
-    expect(within(rows[1]).queryByText('Inactive')).not.toBeInTheDocument()
-    expect(table.closest('section')?.querySelector('.monthly-page__section-total')).toBeNull()
-  })
-
-  it('shows the empty message when there are no other accounts this month', async () => {
-    getOtherAccountsMock.mockResolvedValue([])
-
-    renderPage()
-
-    expect(await screen.findByText('No other accounts this month')).toBeInTheDocument()
-    expect(screen.getByRole('table', { name: 'Default group' })).toBeInTheDocument()
-  })
-
-  it('shows one loading state for both sections while the other accounts are pending', () => {
-    getOtherAccountsMock.mockReturnValueOnce(new Promise(() => {}))
+  it('shows one loading state while the groups are pending', () => {
+    getAccountTemplateGroupsMock.mockReturnValue(new Promise(() => {}))
 
     renderPage()
 
@@ -202,42 +200,26 @@ describe('AccountsPage', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  it('shows one error for both sections when the other accounts fail, and Try again reloads', async () => {
-    getOtherAccountsMock.mockRejectedValueOnce(new Error('boom'))
+  it('shows one error with Try again and no partial grid, and Try again reloads', async () => {
+    getAccountTemplateGroupsMock.mockRejectedValueOnce(new Error('boom'))
+
     renderPage()
 
     expect(await screen.findByText('Unable to load the accounts')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    expect(await screen.findByRole('table', { name: 'Other accounts' })).toBeInTheDocument()
+
+    expect(await screen.findByRole('table', { name: 'Banks' })).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(2)
   })
 
-  it('shows loading while the summary is pending', () => {
-    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+  it('shows "No accounts this month" when no template has a listed account', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([])
 
     renderPage()
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
-  })
-
-  it('shows an error with Try again, and Try again reloads', async () => {
-    getDefaultGroupSummaryMock.mockRejectedValueOnce(new Error('boom'))
-
-    renderPage()
-
-    expect(await screen.findByText('Unable to load the accounts')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-
-    expect(await screen.findByRole('table', { name: 'Default group' })).toBeInTheDocument()
-    expect(getDefaultGroupSummaryMock).toHaveBeenCalledTimes(2)
-  })
-
-  it('shows the empty message when the default group has no members', async () => {
-    getDefaultGroupSummaryMock.mockResolvedValue({ ...SUMMARY, members: [], totals: [] })
-
-    renderPage()
-
-    expect(await screen.findByText('No accounts in the default group for this month')).toBeInTheDocument()
+    expect(await screen.findByText('No accounts this month')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('opens the account screen when a row link is followed', async () => {
