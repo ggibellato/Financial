@@ -6,6 +6,7 @@ import type {
   AccountCreateDto,
   AccountDetailDto,
   AccountDto,
+  AccountGroupMemberDto,
   AccountGroupSummaryDto,
   AccountTransactionDto,
   AccountTransferCreateDto,
@@ -2130,6 +2131,19 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/default/summary/2026/7`)
+  })
+
+  it('gets the other accounts for a month', async () => {
+    const responseBody: AccountGroupMemberDto[] = [
+      { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 4210.55, roundUpTotal: null, statement: null, balanceIsOwed: false },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getOtherAccounts(2026, 7)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/groups/other/2026/7`)
   })
 
   it('gets every account', async () => {
