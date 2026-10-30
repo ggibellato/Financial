@@ -8,6 +8,16 @@
   gap: 24px;
 }
 
+.accounts-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.accounts-page__section h2 {
+  margin: 0;
+}
+
 .accounts-page__name {
   display: inline-flex;
   align-items: center;

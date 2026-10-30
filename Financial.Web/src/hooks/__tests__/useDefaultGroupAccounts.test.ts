@@ -5,14 +5,16 @@ import type { AccountGroupMemberDto, AccountGroupSummaryDto } from '../../api/ty
 import { account } from '../../test/account'
 import { DEFAULT_GROUP_LOAD_ERROR, useDefaultGroupAccounts } from '../useDefaultGroupAccounts'
 
-const { getDefaultGroupSummaryMock, getAccountsMock } = vi.hoisted(() => ({
+const { getDefaultGroupSummaryMock, getOtherAccountsMock, getAccountsMock } = vi.hoisted(() => ({
   getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
+  getOtherAccountsMock: vi.fn<FinancialApiClient['getOtherAccounts']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getDefaultGroupSummary: getDefaultGroupSummaryMock,
+    getOtherAccounts: getOtherAccountsMock,
     getAccounts: getAccountsMock,
   } as Partial<FinancialApiClient>,
 }))
@@ -27,11 +29,18 @@ const SUMMARY = { members: [member('barclays', 'Barclays'), member('old-bank', '
 describe('useDefaultGroupAccounts', () => {
   beforeEach(() => {
     getDefaultGroupSummaryMock.mockReset()
+    getOtherAccountsMock.mockReset()
     getAccountsMock.mockReset()
     getDefaultGroupSummaryMock.mockResolvedValue(SUMMARY)
+    getOtherAccountsMock.mockResolvedValue([
+      { ...member('reserva', 'Reserva'), templateName: 'Pots' },
+      { ...member('old-pots', 'Old pots'), templateName: 'Pots' },
+    ])
     getAccountsMock.mockResolvedValue([
       account({ id: 'barclays', name: 'Barclays' }),
       account({ id: 'old-bank', name: 'Old bank', isActive: false }),
+      account({ id: 'reserva', name: 'Reserva' }),
+      account({ id: 'old-pots', name: 'Old pots', isActive: false }),
     ])
   })
 
@@ -49,6 +58,26 @@ describe('useDefaultGroupAccounts', () => {
     expect(result.current.data?.totals).toEqual(TOTALS)
   })
 
+  it('loads the other accounts in the same load, marking the inactive ones', async () => {
+    const { result } = renderHook(() => useDefaultGroupAccounts(2026, 10))
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(getOtherAccountsMock).toHaveBeenCalledWith(2026, 10)
+    expect(result.current.data?.others.map((m) => [m.accountId, m.isActive])).toEqual([
+      ['reserva', true],
+      ['old-pots', false],
+    ])
+  })
+
+  it('reports the shared load error when the other accounts cannot be read', async () => {
+    getOtherAccountsMock.mockRejectedValue({ status: 503 })
+    const { result } = renderHook(() => useDefaultGroupAccounts(2026, 10))
+
+    await waitFor(() => expect(result.current.error).toBe(DEFAULT_GROUP_LOAD_ERROR))
+    expect(result.current.data).toBeNull()
+  })
+
   it('reloads the summary when the month changes', async () => {
     const { result, rerender } = renderHook(({ month }) => useDefaultGroupAccounts(2026, month), { initialProps: { month: 10 } })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -56,6 +85,7 @@ describe('useDefaultGroupAccounts', () => {
     rerender({ month: 11 })
 
     await waitFor(() => expect(getDefaultGroupSummaryMock).toHaveBeenLastCalledWith(2026, 11))
+    expect(getOtherAccountsMock).toHaveBeenLastCalledWith(2026, 11)
   })
 
   it('reports the load error when the accounts cannot be read', async () => {

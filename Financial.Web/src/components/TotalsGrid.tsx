@@ -75,7 +75,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
           </TableBody>
         </Table>
       </div>
-      <SectionTotals items={footerItems} />
+      {footerItems.length > 0 && <SectionTotals items={footerItems} />}
     </section>
   )
 }

@@ -11,14 +11,21 @@ export interface DefaultGroupAccount extends AccountGroupMemberDto {
 export interface DefaultGroupAccounts {
   members: DefaultGroupAccount[]
   totals: CurrencyTotalDto[]
+  others: DefaultGroupAccount[]
 }
 
 function loadDefaultGroupAccounts(year: number, month: number): Promise<DefaultGroupAccounts> {
-  return Promise.all([apiClient.getDefaultGroupSummary(year, month), apiClient.getAccounts()]).then(([summary, accounts]) => {
+  return Promise.all([
+    apiClient.getDefaultGroupSummary(year, month),
+    apiClient.getOtherAccounts(year, month),
+    apiClient.getAccounts(),
+  ]).then(([summary, others, accounts]) => {
     const inactiveIds = new Set(accounts.filter((account) => !account.isActive).map((account) => account.id))
+    const withActiveFlag = (member: AccountGroupMemberDto) => ({ ...member, isActive: !inactiveIds.has(member.accountId) })
     return {
-      members: summary.members.map((member) => ({ ...member, isActive: !inactiveIds.has(member.accountId) })),
+      members: summary.members.map(withActiveFlag),
       totals: summary.totals,
+      others: others.map(withActiveFlag),
     }
   })
 }
