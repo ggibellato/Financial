@@ -175,20 +175,10 @@ public sealed class InvestmentAccountService : IInvestmentAccountService
         return creditCard;
     }
 
-    private Account? ResolvePotsAccount(InvestmentAccountSource source, Guid? potsAccountId)
-    {
-        if (source != InvestmentAccountSource.PotsAccountTotal || potsAccountId is null)
-        {
-            return null;
-        }
-
-        if (!EntityIdResolver.TryResolve(potsAccountId, _repository.GetAccounts(), a => a.Id, out var potsAccount))
-        {
-            throw new ArgumentException($"Pots account '{potsAccountId}' is not recognized.");
-        }
-
-        return potsAccount;
-    }
+    private Account? ResolvePotsAccount(InvestmentAccountSource source, Guid? potsAccountId) =>
+        source == InvestmentAccountSource.PotsAccountTotal
+            ? CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId)
+            : null;
 
     private void EnsureNoNonZeroInvestmentSnapshotExists(Guid accountId)
     {
