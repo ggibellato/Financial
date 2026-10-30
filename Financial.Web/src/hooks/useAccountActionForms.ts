@@ -18,7 +18,7 @@ const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
 
 function incomeSavedMessage(saved: IncomeDto): string {
-  return saved.splitToReserve ? 'Income added and split to reserve' : 'Income added'
+  return saved.potsAccountId != null ? 'Income added and split to reserve' : 'Income added'
 }
 
 export interface ScreenForm {

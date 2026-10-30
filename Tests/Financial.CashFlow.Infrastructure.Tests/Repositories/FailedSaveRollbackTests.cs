@@ -76,7 +76,7 @@ public class FailedSaveRollbackTests
         IncomeSourceId = _repository.GetIncomeSources().Single(s => s.Name == "Ariana").Id,
         NetValue = 2450.00m,
         BankId = BankId("Barclays"),
-        SplitToReserve = true
+        PotsAccountId = _repository.GetIncomeSources().Single(s => s.Name == "Ariana").PotsAccount!.Id
     };
 
     private IncomeUpdateDTO ArianaSplitIncomeUpdate(decimal netValue) => new()
@@ -85,7 +85,7 @@ public class FailedSaveRollbackTests
         IncomeSourceId = _repository.GetIncomeSources().Single(s => s.Name == "Ariana").Id,
         NetValue = netValue,
         BankId = BankId("Barclays"),
-        SplitToReserve = true
+        PotsAccountId = _repository.GetIncomeSources().Single(s => s.Name == "Ariana").PotsAccount!.Id
     };
 
     [Fact]

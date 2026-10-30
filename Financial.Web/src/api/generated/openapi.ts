@@ -8571,7 +8571,8 @@ export interface components {
             incomeSourceId: string;
             /** Format: double */
             netValue: number;
-            splitToReserve?: boolean;
+            /** Format: uuid */
+            potsAccountId?: null | string;
         };
         IncomeDTO: {
             /** Format: uuid */
@@ -8589,7 +8590,8 @@ export interface components {
             incomeSourceName: string;
             /** Format: double */
             netValue: number;
-            splitToReserve: boolean;
+            /** Format: uuid */
+            potsAccountId?: null | string;
         };
         /** @enum {unknown} */
         IncomePolicy: "Unknown" | "Distributing" | "Accumulating";
@@ -8650,7 +8652,8 @@ export interface components {
             incomeSourceId: string;
             /** Format: double */
             netValue: number;
-            splitToReserve?: boolean;
+            /** Format: uuid */
+            potsAccountId?: null | string;
         };
         InvestmentAccountAnnualDiffDTO: {
             account: string;

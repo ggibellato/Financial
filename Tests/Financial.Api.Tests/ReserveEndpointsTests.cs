@@ -11,6 +11,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     private static readonly Guid InvestimentoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000001");
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000003");
     private static readonly Guid ArianaIncomeSourceId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
+    private static readonly Guid ReservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
     private static readonly Guid MercadoCategoryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
     private static readonly Guid InvestimentoCategoryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000013");
@@ -342,7 +343,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
             GrossValue = null,
             NetValue = 2450.00m,
             BankId = ChaseId,
-            SplitToReserve = true
+            PotsAccountId = ReservaId
         });
         var incomeDto = await income.Content.ReadFromJsonAsync<IncomeDTO>();
         var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");

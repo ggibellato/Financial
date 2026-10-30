@@ -11,6 +11,7 @@ public class IncomesEndpointsTests : ApiEndpointTests
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
+    private static readonly Guid ReservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
     private static readonly Guid LotteryId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000003");
@@ -282,14 +283,14 @@ public class IncomesEndpointsTests : ApiEndpointTests
             GrossValue = null,
             NetValue = 2450.00m,
             BankId = ChaseId,
-            SplitToReserve = true
+            PotsAccountId = ReservaId
         };
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
-        income!.SplitToReserve.Should().BeTrue();
+        income!.PotsAccountId.Should().Be(ReservaId);
         var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
         var linkedMovements = movements!.Where(m => m.IncomeId == income.Id).ToList();
         linkedMovements.Should().HaveCount(4);
@@ -306,12 +307,32 @@ public class IncomesEndpointsTests : ApiEndpointTests
             GrossValue = 3200.00m,
             NetValue = 2450.00m,
             BankId = BarclaysId,
-            SplitToReserve = true
+            PotsAccountId = ReservaId
         };
 
         var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task AddIncome_WithAnUnknownPotsAccountId_ReturnsBadRequestWithMessage()
+    {
+        var unknownId = Guid.NewGuid();
+        var request = new IncomeCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            IncomeSourceId = ArianaId,
+            GrossValue = null,
+            NetValue = 2450.00m,
+            BankId = ChaseId,
+            PotsAccountId = unknownId
+        };
+
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/incomes", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain($"Pots account '{unknownId}' is not recognized.");
     }
 
     [Fact]
@@ -324,7 +345,7 @@ public class IncomesEndpointsTests : ApiEndpointTests
             GrossValue = null,
             NetValue = 2450.00m,
             BankId = ChaseId,
-            SplitToReserve = true
+            PotsAccountId = ReservaId
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
         var movementsBeforeDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");

@@ -150,25 +150,34 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-05")]
     public async Task Income_SplitTarget_IsSavedAndRecalculatedIntoTheSameAccount()
     {
-        var created = await Client.PostAsJsonAsync($"{Api}/incomes", IncomeFrom(ArianaId, netValue: 1000m, splitToReserve: true));
+        var created = await Client.PostAsJsonAsync($"{Api}/incomes", IncomeFrom(ArianaId, netValue: 1000m, potsAccountId: HolidaysId));
         var income = await created.Content.ReadFromJsonAsync<IncomeDTO>();
         var holidaysAfterCreate = await BalanceAsync(HolidaysId, 10);
 
-        var edited = await Client.PutAsJsonAsync($"{Api}/incomes/{income!.Id}", ArianaIncomeUpdate(netValue: 500m, splitToReserve: true));
+        var edited = await Client.PutAsJsonAsync($"{Api}/incomes/{income!.Id}", ArianaIncomeUpdate(netValue: 500m, potsAccountId: HolidaysId));
         var holidaysAfterEdit = await BalanceAsync(HolidaysId, 10);
 
-        var unticked = await Client.PutAsJsonAsync($"{Api}/incomes/{income.Id}", ArianaIncomeUpdate(netValue: 500m, splitToReserve: false));
+        var moved = await Client.PutAsJsonAsync($"{Api}/incomes/{income.Id}", ArianaIncomeUpdate(netValue: 500m, potsAccountId: ReservaId));
+        var movedIncome = await moved.Content.ReadFromJsonAsync<IncomeDTO>();
+        var holidaysAfterMove = await BalanceAsync(HolidaysId, 10);
+        var reservaAfterMove = await BalanceAsync(ReservaId, 10);
+
+        var unticked = await Client.PutAsJsonAsync($"{Api}/incomes/{income.Id}", ArianaIncomeUpdate(netValue: 500m, potsAccountId: null));
         var untickedIncome = await unticked.Content.ReadFromJsonAsync<IncomeDTO>();
 
         using (new AssertionScope())
         {
             created.StatusCode.Should().Be(HttpStatusCode.OK);
-            income.SplitToReserve.Should().BeTrue();
+            income.PotsAccountId.Should().Be(Guid.Parse(HolidaysId));
             holidaysAfterCreate.Should().Be(1800m);
             edited.StatusCode.Should().Be(HttpStatusCode.OK);
             holidaysAfterEdit.Should().Be(1350m);
+            moved.StatusCode.Should().Be(HttpStatusCode.OK);
+            movedIncome!.PotsAccountId.Should().Be(Guid.Parse(ReservaId));
+            holidaysAfterMove.Should().Be(900m);
+            reservaAfterMove.Should().Be(1074.5m);
             unticked.StatusCode.Should().Be(HttpStatusCode.OK);
-            untickedIncome!.SplitToReserve.Should().BeFalse();
+            untickedIncome!.PotsAccountId.Should().BeNull();
             (await BalanceAsync(HolidaysId, 10)).Should().Be(900m);
             (await BalanceAsync(ReservaId, 10)).Should().Be(624.5m);
         }
@@ -177,7 +186,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     [Fact]
     public async Task Income_SplitFromASourceWithoutPotsAccount_Returns400AndSavesNothing()
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/incomes", IncomeFrom(GleisonId, netValue: 1000m, splitToReserve: true));
+        var response = await Client.PostAsJsonAsync($"{Api}/incomes", IncomeFrom(GleisonId, netValue: 1000m, potsAccountId: ReservaId));
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
         var incomes = await Client.GetFromJsonAsync<List<IncomeDTO>>($"{Api}/incomes/month/2026/10");
 
@@ -189,22 +198,22 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
         }
     }
 
-    private static IncomeCreateDTO IncomeFrom(string incomeSourceId, decimal netValue, bool splitToReserve) => new()
+    private static IncomeCreateDTO IncomeFrom(string incomeSourceId, decimal netValue, string? potsAccountId) => new()
     {
         Date = new DateOnly(2026, 10, 15),
         IncomeSourceId = Guid.Parse(incomeSourceId),
         NetValue = netValue,
         BankId = Guid.Parse(BarclaysId),
-        SplitToReserve = splitToReserve
+        PotsAccountId = potsAccountId is null ? null : Guid.Parse(potsAccountId)
     };
 
-    private static IncomeUpdateDTO ArianaIncomeUpdate(decimal netValue, bool splitToReserve) => new()
+    private static IncomeUpdateDTO ArianaIncomeUpdate(decimal netValue, string? potsAccountId) => new()
     {
         Date = new DateOnly(2026, 10, 15),
         IncomeSourceId = Guid.Parse(ArianaId),
         NetValue = netValue,
         BankId = Guid.Parse(BarclaysId),
-        SplitToReserve = splitToReserve
+        PotsAccountId = potsAccountId is null ? null : Guid.Parse(potsAccountId)
     };
 
     [Fact]

@@ -139,7 +139,7 @@ describe('useIncomeForm', () => {
     const income: IncomeDto = {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
-      splitToReserve: true,
+      potsAccountId: 'p1',
     }
 
     act(() => result.current.showEditIncomeForm(income))
@@ -152,7 +152,7 @@ describe('useIncomeForm', () => {
     const income: IncomeDto = {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
-      splitToReserve: false,
+      potsAccountId: null,
     }
 
     act(() => result.current.showEditIncomeForm(income))
@@ -160,7 +160,7 @@ describe('useIncomeForm', () => {
     expect(result.current.incomeSplitToReserve).toBe('false')
   })
 
-  it('submits a create request with splitToReserve true when checked', () => {
+  it("submits a create request with the source's Pots account when checked", () => {
     createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
@@ -170,11 +170,73 @@ describe('useIncomeForm', () => {
 
     act(() => result.current.submitIncome())
 
-    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ splitToReserve: true }))
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: 'p1' }))
+  })
+
+  it('submits null as the Pots account when the split is unticked', () => {
+    createIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('splitToReserve', 'false'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    act(() => result.current.setIncomeField('netValue', '2450'))
+
+    act(() => result.current.submitIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: null }))
+  })
+
+  it('keeps the Pots account a split income names when it is edited, even if its source now names another', () => {
+    updateIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['updateIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    const income: IncomeDto = {
+      id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
+      grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
+      potsAccountId: 'p9',
+    }
+    act(() => result.current.showEditIncomeForm(income))
+    act(() => result.current.setIncomeField('netValue', '1000'))
+
+    act(() => result.current.submitIncome())
+
+    expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ potsAccountId: 'p9' }))
+  })
+
+  it('submits null when the split of a split income is unticked on edit', () => {
+    updateIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['updateIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    const income: IncomeDto = {
+      id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
+      grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
+      potsAccountId: 'p9',
+    }
+    act(() => result.current.showEditIncomeForm(income))
+    act(() => result.current.setIncomeField('splitToReserve', 'false'))
+
+    act(() => result.current.submitIncome())
+
+    expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ potsAccountId: null }))
+  })
+
+  it("splits an unsplit income into its source's Pots account when the split is ticked on edit", () => {
+    updateIncomeMock.mockResolvedValue({} as Awaited<ReturnType<FinancialApiClient['updateIncome']>>)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    const income: IncomeDto = {
+      id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
+      grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
+      potsAccountId: null,
+    }
+    act(() => result.current.showEditIncomeForm(income))
+    act(() => result.current.setIncomeField('splitToReserve', 'true'))
+
+    act(() => result.current.submitIncome())
+
+    expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ potsAccountId: 'p1' }))
   })
 
   it('sets splitConfirmationMessage when the create response comes back split', async () => {
-    createIncomeMock.mockResolvedValue({ splitToReserve: true } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    createIncomeMock.mockResolvedValue({ potsAccountId: 'p1' } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
@@ -188,7 +250,7 @@ describe('useIncomeForm', () => {
   })
 
   it('leaves splitConfirmationMessage null when the create response comes back unsplit', async () => {
-    createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    createIncomeMock.mockResolvedValue({ potsAccountId: null } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
@@ -202,7 +264,7 @@ describe('useIncomeForm', () => {
   })
 
   it('clears splitConfirmationMessage automatically after the delay', async () => {
-    createIncomeMock.mockResolvedValue({ splitToReserve: true } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    createIncomeMock.mockResolvedValue({ potsAccountId: 'p1' } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
@@ -220,7 +282,7 @@ describe('useIncomeForm', () => {
   })
 
   it('persists date, bank, and income source after a successful create, for the next create form', async () => {
-    createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    createIncomeMock.mockResolvedValue({ potsAccountId: null } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
@@ -258,7 +320,7 @@ describe('useIncomeForm', () => {
   })
 
   it('always starts gross/net value and description blank on a new create form, even after a persisted save', async () => {
-    createIncomeMock.mockResolvedValue({ splitToReserve: false } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
+    createIncomeMock.mockResolvedValue({ potsAccountId: null } as Awaited<ReturnType<FinancialApiClient['createIncome']>>)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
@@ -334,7 +396,7 @@ describe('useIncomeForm account settings', () => {
   const SAVED: IncomeDto = {
     id: 'i9', date: '2026-10-14', incomeSourceId: '1', incomeSourceName: 'Gleison',
     grossValue: null, netValue: 100, bankId: 'bank-chase', bankName: 'Chase', description: 'Bonus',
-    splitToReserve: false,
+    potsAccountId: null,
   }
   let onSaved: () => void
 

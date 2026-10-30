@@ -419,7 +419,7 @@ describe('AccountScreenPage actions', () => {
     bankId: BARCLAYS_ID,
     bankName: 'Barclays',
     description: null,
-    splitToReserve: false,
+    potsAccountId: null,
   }
 
   beforeEach(() => {
@@ -676,7 +676,7 @@ describe('AccountScreenPage actions', () => {
 
   it('says the income was split to reserve when it was', async () => {
     const user = userEvent.setup()
-    createIncomeMock.mockResolvedValue({ ...SAVED_INCOME, splitToReserve: true })
+    createIncomeMock.mockResolvedValue({ ...SAVED_INCOME, potsAccountId: 'reserva' })
     await openScreen()
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
