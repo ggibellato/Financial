@@ -625,7 +625,7 @@ Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and
 - **Columns and totals per currency:** Banks: Account, Currency, Balance; footer "Bank total". Credit cards: Account, Currency, Next statement, Total owed; footer "Total owed". Pots: Account, Currency, Balance; footer "Pots total". Bank and card rows open the account screen; Pots rows stay plain text until F10. A card row no longer shows the month-end owed balance: in the current month it repeats the total owed.
 - **Next statement:** the card's oldest statement month that still has an unpaid charge, shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when the card has no unpaid charge. Empty unpaid statements are skipped (user decision 2026-10-30). *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
 - **Total owed:** every unpaid charge on the card, whatever its date or statement month (today's accumulated outstanding on Monthly's Card tab). It doesn't depend on the viewed month.
-- **Card screen header:** "Owed at end of <Mon yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled.
+- **Card screen header:** "Owed at end of <Month yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled.
 - **Parity:** the new card figures are mapped to today's card figures in the figure map (mapping fixed in the spec). Monthly and its summary are unchanged.
 
 **Experience:**
