@@ -211,6 +211,12 @@ function Add-ParitySummaryFigures($Report, [string]$Month, [string]$Route, [scri
     Add-ParityFigure $Report "$Month/summary/totalIncoming" $summary.totalIncoming
 }
 
+function Add-ParityOtherAccountsFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
+    $members = & $Fetch "accounts/groups/other/$Route"
+    $potsAccounts = @($members | Where-Object { $_['templateName'] -eq 'Pots' })
+    Add-ParityFigure $Report "$Month/otherAccounts/potsTotal" (Get-ParitySum $potsAccounts { param($a) $a.balance })
+}
+
 function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts, [bool]$IsCurrentMonth) {
     foreach ($account in @($Accounts | Where-Object { $_['templateName'] -in 'Bank', 'CreditCard' })) {
         $isCard = $account['templateName'] -eq 'CreditCard'
@@ -234,7 +240,10 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     Add-ParityFigure $Report "$Month/monthly/cardOutstandingTotal" $cardOutstandingTotal
     Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" $categoryTotalsSum
     Add-ParityPotFigures $Report $Month $PotBalances
-    if ($IncludeSummary) { Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth) }
+    if ($IncludeSummary) {
+        Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth)
+        Add-ParityOtherAccountsFigures $Report $Month $route $Fetch
+    }
     if ($null -ne $Accounts) { Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth) }
 }
 

@@ -27,7 +27,7 @@ function Get-Error([scriptblock]$action) {
     try { $null = & $action; return '' } catch { return $_.Exception.Message }
 }
 
-$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'summary', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
+$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'summary', 'otherAccounts', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
 $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
@@ -51,6 +51,8 @@ foreach ($month in 8, 9) {
     $responses["incomes/month/$route"] = '[{"incomeSourceName":"Salary","netValue":2000.00,"grossValue":2500.00},{"incomeSourceName":"Salary","netValue":100.00,"grossValue":null},{"incomeSourceName":"Dividends","netValue":12.34,"grossValue":null}]'
     $responses["tithe/month/$route"] = '{"calculatedTithe":211.23,"titheBalance":11.23,"carryForward":{"amount":5.00,"included":true,"fromYear":2026,"fromMonth":7}}'
     $responses["accounts/groups/default/summary/$route"] = "{`"members`":[{`"accountId`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":130.83,`"roundUpTotal`":0.17},{`"accountId`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":10.00,`"roundUpTotal`":0.50},{`"accountId`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"currency`":`"GBP`",`"balance`":-40.10,`"roundUpTotal`":null,`"statement`":{`"outstandingTotal`":40.10,`"isPaid`":false}}],`"totals`":[{`"currency`":`"GBP`",`"balance`":140.83,`"roundUpTotal`":0.67,`"cardOutstandingTotal`":40.10}],`"categoryTotalsSum`":0.3,`"incomeTotals`":[{`"name`":`"Salary`",`"netValue`":2100.00,`"grossValue`":2500.00},{`"name`":`"Dividends`",`"netValue`":12.34,`"grossValue`":null}],`"totalIncoming`":2112.34}"
+    $potsTotal = if ($month -eq 8) { '100.00' } else { '175.50' }
+    $responses["accounts/groups/other/$route"] = "[{`"name`":`"Reserva`",`"templateName`":`"Pots`",`"balance`":$potsTotal},{`"name`":`"Savings`",`"templateName`":`"Other`",`"balance`":999.00}]"
     $responses["accounts/$barclaysId/$route"] = '{"balance":130.83}'
     $responses["accounts/$chaseId/$route"] = '{"balance":10.00}'
     if ($month -eq 9) { $responses["accounts/$amexId/$route"] = '{"balance":-40.10}' }
@@ -71,6 +73,7 @@ try {
         monthly    = '{0}/monthly/bankTotalsSum'
         pots       = '{0}/pots/total'
         summary    = '{0}/summary/members/Barclays/balance'
+        otherAccounts = '{0}/otherAccounts/potsTotal'
         account    = '{0}/account/Chase/balance'
     }
     $missing = [System.Collections.Generic.List[string]]::new()
@@ -141,6 +144,7 @@ try {
     $mappedBefore = New-Report @{ '2026-09/banks/Barclays/balance' = [decimal]'130.83' }
     Check 'mapping renames without allowing a different value' ((Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/summary/banks/Barclays/balance' = [decimal]'130.83' }) $mappings).Count -eq 0 -and (Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/summary/banks/Barclays/balance' = [decimal]'130.84' }) $mappings).Count -eq 1) ''
     Check 'mapping negate compares opposite sign' ((Compare-ParityReport (New-Report @{ '2026-09/cards/Amex/outstandingTotal' = [decimal]'50.00' }) (New-Report @{ '2026-09/cards/Amex/balance' = [decimal]'-50.00' }) $mappings).Count -eq 0) ''
+    Check 'Other accounts figure sums only the Pots accounts and only with IncludeSummary' ($report['2026-08/otherAccounts/potsTotal'] -eq [decimal]'100.00' -and $report['2026-09/otherAccounts/potsTotal'] -eq [decimal]'175.50' -and -not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'otherAccounts' })) ''
     Check 'summary figures are built only with IncludeSummary' (-not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'summary' }) -and $report['2026-09/summary/totals/GBP/roundUpTotal'] -eq [decimal]'0.67' -and $null -eq $report['2026-09/summary/incomes/Dividends/gross']) ''
 
     Check 'account figures are built only with IncludeAccounts' (-not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'account' }) -and $report['2026-08/account/Barclays/balance'] -eq [decimal]'130.83' -and $report['2026-09/account/Chase/balance'] -eq [decimal]'10.00') ''

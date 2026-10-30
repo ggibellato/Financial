@@ -193,6 +193,60 @@ public class AccountGroupSummaryServiceTests
         _logger.Entries.Should().NotContain(entry => entry.Exception != null || entry.Level >= LogLevel.Warning);
     }
 
+    [Fact]
+    public void GetOtherAccounts_PotsAccounts_AreListedByNameWithTheirMonthEndBalance()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var flights = ReserveBucket.Create("Flights", 100m);
+        reserva.AddPot(flights);
+        var holidays = TestAccounts.Pots("holidays");
+        _repository.Accounts.AddRange([reserva, holidays]);
+        _repository.ReserveMovements.Add(ReserveMovement.Create(flights, 120m, new DateOnly(2026, 9, 5), "Saved"));
+        _repository.ReserveMovements.Add(ReserveMovement.Create(flights, 30m, new DateOnly(2026, 10, 1), "Saved later"));
+
+        var others = _sut.GetOtherAccounts(2026, 9);
+
+        using (new AssertionScope())
+        {
+            others.Select(member => member.Name).Should().Equal("holidays", "Reserva");
+            var reservaMember = others[1];
+            reservaMember.AccountId.Should().Be(reserva.Id);
+            reservaMember.TemplateName.Should().Be("Pots");
+            reservaMember.Currency.Should().Be("GBP");
+            reservaMember.Balance.Should().Be(120m);
+            reservaMember.RoundUpTotal.Should().BeNull();
+            reservaMember.Statement.Should().BeNull();
+            reservaMember.BalanceIsOwed.Should().BeFalse();
+            others[0].Balance.Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public void GetOtherAccounts_OnlyGroupMembers_ReturnsNone()
+    {
+        _sut.GetOtherAccounts(2026, 9).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetOtherAccounts_InvalidMonth_ThrowsArgumentOutOfRange()
+    {
+        var act = () => _sut.GetOtherAccounts(2026, 13);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.AccountGroupSummaryService.GetOtherAccounts");
+    }
+
+    [Fact]
+    public void GetOtherAccounts_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = () => _sut.GetOtherAccounts(2026, 9);
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountGroupSummaryService.GetOtherAccounts");
+    }
+
     private void AddExpenseWithRoundUp(DateOnly date, decimal value, decimal roundUp, Account account)
     {
         var expense = Expense.Create(date, "Coffee", value, _groceries, account, creditCard: null);
