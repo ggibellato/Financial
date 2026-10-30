@@ -3741,8 +3741,12 @@
             "format": "double",
             "type": "number"
           },
-          "splitToReserve": {
-            "type": "boolean"
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -3799,8 +3803,12 @@
             "format": "double",
             "type": "number"
           },
-          "splitToReserve": {
-            "type": "boolean"
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -3808,8 +3816,7 @@
           "date",
           "incomeSourceId",
           "incomeSourceName",
-          "netValue",
-          "splitToReserve"
+          "netValue"
         ],
         "type": "object"
       },
@@ -4009,8 +4016,12 @@
             "format": "double",
             "type": "number"
           },
-          "splitToReserve": {
-            "type": "boolean"
+          "potsAccountId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [

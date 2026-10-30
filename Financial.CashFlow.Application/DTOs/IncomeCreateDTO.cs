@@ -20,5 +20,5 @@ public sealed class IncomeCreateDTO
     /// <summary>Free-text description, up to 200 characters. Optional.</summary>
     public string? Description { get; init; }
 
-    public bool SplitToReserve { get; init; } = false;
+    public Guid? PotsAccountId { get; init; }
 }

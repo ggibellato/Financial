@@ -199,7 +199,7 @@ const INCOMES: IncomeDto[] = [
     bankId: 'bank-barclays',
     bankName: 'Barclays',
     description: null,
-    splitToReserve: false,
+    potsAccountId: null,
   },
 ]
 
@@ -448,7 +448,7 @@ describe('MonthlyPage', () => {
         bankId: 'bank-barclays',
         bankName: 'Barclays',
         description: null,
-        splitToReserve: false,
+        potsAccountId: null,
       },
     ])
 
@@ -1147,7 +1147,7 @@ describe('MonthlyPage', () => {
         bankId: 'bank-barclays',
         bankName: 'Barclays',
         description: null,
-        splitToReserve: false,
+        potsAccountId: null,
       },
     ])
 
@@ -1280,7 +1280,7 @@ describe('MonthlyPage', () => {
       bankId: 'bank-chase',
       bankName: 'Chase',
       description: null,
-      splitToReserve: false,
+      potsAccountId: null,
     })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
@@ -1301,7 +1301,7 @@ describe('MonthlyPage', () => {
       bankId: 'bank-chase',
       bankName: 'Chase',
       description: null,
-      splitToReserve: false,
+      potsAccountId: null,
     }])
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,

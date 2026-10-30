@@ -23,5 +23,5 @@ public sealed class IncomeDTO
 
     public string? Description { get; init; }
 
-    public required bool SplitToReserve { get; init; }
+    public Guid? PotsAccountId { get; init; }
 }

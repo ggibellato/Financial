@@ -2502,7 +2502,7 @@ describe('financialApiClient', () => {
       bankId: null,
       description: null,
       grossValue: null,
-      splitToReserve: false,
+      potsAccountId: null,
     }
     const responseBody = { id: 'i1', incomeSourceName: 'Salary', ...requestBody } as IncomeDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -2525,7 +2525,7 @@ describe('financialApiClient', () => {
       bankId: null,
       description: null,
       grossValue: null,
-      splitToReserve: false,
+      potsAccountId: null,
     }
     const responseBody = { id: 'i1', incomeSourceName: 'Salary', ...requestBody } as IncomeDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

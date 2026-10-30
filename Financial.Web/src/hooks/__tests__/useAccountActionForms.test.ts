@@ -81,7 +81,7 @@ const INCOME: IncomeDto = {
   bankId: 'bank-barclays',
   bankName: 'Barclays',
   description: null,
-  splitToReserve: false,
+  potsAccountId: null,
 }
 
 const EXPENSE_ROW = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-05', amount: -42.5, expense: EXPENSE })
@@ -298,10 +298,10 @@ describe('useAccountActionForms', () => {
   })
 
   it.each([
-    [true, 'Income added and split to reserve'],
-    [false, 'Income added'],
-  ])('announces a saved income whose split to reserve is %s', async (splitToReserve, message) => {
-    createIncomeMock.mockResolvedValue({ ...INCOME, id: 'i2', splitToReserve })
+    ['p1', 'Income added and split to reserve'],
+    [null, 'Income added'],
+  ])('announces a saved income whose Pots account is %s', async (potsAccountId, message) => {
+    createIncomeMock.mockResolvedValue({ ...INCOME, id: 'i2', potsAccountId })
     const { result, onSaved } = renderActionForms()
     act(() => result.current.openAction('AddIncome', openerButton()))
     act(() => result.current.incomeForm.setIncomeField('date', '2026-10-14'))

@@ -31,7 +31,7 @@ public sealed class IncomeService : IIncomeService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
+            var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.PotsAccountId);
 
             var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, potsAccount);
             var movements = BuildSplitMovements(income, potsAccount, request.NetValue, request.Date, request.Description);
@@ -69,7 +69,7 @@ public sealed class IncomeService : IIncomeService
 
             var income = FindIncomeOrThrow(id);
 
-            var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.SplitToReserve);
+            var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.PotsAccountId);
 
             var oldLinkedMovements = GetLinkedMovements(income.Id);
 
@@ -166,16 +166,11 @@ public sealed class IncomeService : IIncomeService
     private List<ReserveMovement> GetLinkedMovements(Guid incomeId) =>
         _repository.GetReserveMovements().Where(m => m.Income?.Id == incomeId).ToList();
 
-    private (IncomeSource IncomeSource, Account? Account, Account? PotsAccount) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, bool splitToReserve)
+    private (IncomeSource IncomeSource, Account? Account, Account? PotsAccount) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, Guid? potsAccountId)
     {
         if (!EntityIdResolver.TryResolve(incomeSourceId, _repository.GetIncomeSources(), s => s.Id, out var resolvedIncomeSource))
         {
             throw new ArgumentException($"Income source '{incomeSourceId}' is not recognized.");
-        }
-
-        if (splitToReserve && resolvedIncomeSource!.PotsAccount is null)
-        {
-            throw new ArgumentException($"{resolvedIncomeSource.Name} doesn't split income to pots.");
         }
 
         DescriptionValidator.EnsureWithinLimit(description);
@@ -191,7 +186,7 @@ public sealed class IncomeService : IIncomeService
             resolvedBank = bank!;
         }
 
-        return (resolvedIncomeSource!, resolvedBank, splitToReserve ? resolvedIncomeSource!.PotsAccount : null);
+        return (resolvedIncomeSource!, resolvedBank, CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId));
     }
 
     private static List<ReserveMovement> BuildSplitMovements(Income linkedIncome, Account? potsAccount, decimal netValue, DateOnly date, string? description) =>
@@ -218,6 +213,6 @@ public sealed class IncomeService : IIncomeService
         BankId = income.Account?.Id,
         BankName = income.Account?.Name,
         Description = income.Description,
-        SplitToReserve = income.PotsAccount is not null
+        PotsAccountId = income.PotsAccount?.Id
     };
 }

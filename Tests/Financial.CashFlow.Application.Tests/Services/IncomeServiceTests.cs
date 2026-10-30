@@ -291,7 +291,7 @@ public class IncomeServiceTests
         NetValue = r.NetValue,
         BankId = ResolveBankId(repository, r.Bank),
         Description = r.Description,
-        SplitToReserve = r.SplitToReserve
+        PotsAccountId = ResolveAccountId(repository, r.PotsAccount)
     };
 
     private static IncomeUpdateDTO ToUpdateDto(StubCashFlowRepository repository, IncomeCreateRequest r) => new()
@@ -302,7 +302,7 @@ public class IncomeServiceTests
         NetValue = r.NetValue,
         BankId = ResolveBankId(repository, r.Bank),
         Description = r.Description,
-        SplitToReserve = r.SplitToReserve
+        PotsAccountId = ResolveAccountId(repository, r.PotsAccount)
     };
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path.</summary>
@@ -313,8 +313,14 @@ public class IncomeServiceTests
     private static Guid? ResolveBankId(StubCashFlowRepository repository, string? bankName) =>
         bankName is null ? null : repository.Accounts.FirstOrDefault(b => b.Name == bankName)?.Id ?? Guid.NewGuid();
 
+    private static Guid? ResolveAccountId(StubCashFlowRepository repository, string? accountName) =>
+        accountName is null ? null : repository.Accounts.FirstOrDefault(a => a.Name == accountName)?.Id ?? Guid.NewGuid();
+
+    private static Guid AccountId(StubCashFlowRepository repository, string accountName) =>
+        repository.Accounts.Single(a => a.Name == accountName).Id;
+
     private sealed record IncomeCreateRequest(
-        DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description, bool SplitToReserve = false);
+        DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description, string? PotsAccount = null);
 
     private static StubCashFlowRepository CreateSplitCapableRepository() =>
         new(seedDefaultBanks: true, seedDefaultIncomeSources: true, seedDefaultReserveBuckets: true);
@@ -333,7 +339,7 @@ public class IncomeServiceTests
     }
 
     private static IncomeCreateRequest ValidArianaSplitRequest() => new(
-        new DateOnly(2026, 7, 25), "Ariana", null, 2450.00m, "Barclays", null, SplitToReserve: true);
+        new DateOnly(2026, 7, 25), "Ariana", null, 2450.00m, "Barclays", null, PotsAccount: "Reserva");
 
     [Fact]
     public async Task AddIncomeAsync_WithSplitForEligibleSource_CreatesLinkedMovementsForEveryActiveBucket()
@@ -345,7 +351,7 @@ public class IncomeServiceTests
 
         using (new AssertionScope())
         {
-            result.SplitToReserve.Should().BeTrue();
+            result.PotsAccountId.Should().Be(AccountId(repository, "Reserva"));
             repository.ReserveMovements.Should().HaveCount(4);
             var expectedAmounts = new Dictionary<string, decimal>
             {
@@ -368,11 +374,11 @@ public class IncomeServiceTests
         var (repository, holidays) = RepositoryWithArianaSplittingToHolidays();
         var service = CreateService(repository);
 
-        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Holidays" }));
 
         using (new AssertionScope())
         {
-            result.SplitToReserve.Should().BeTrue();
+            result.PotsAccountId.Should().Be(holidays.Id);
             repository.Incomes.Single().PotsAccount.Should().BeSameAs(holidays);
             repository.ReserveMovements.Select(m => (m.Bucket.Name, m.Amount)).Should().Equal(("Flights", 1102.50m), ("Hotels", 1102.50m));
         }
@@ -383,15 +389,82 @@ public class IncomeServiceTests
     {
         var (repository, holidays) = RepositoryWithArianaSplittingToHolidays();
         var service = CreateService(repository);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Holidays" }));
 
-        await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m }));
+        await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Holidays", NetValue = 1000m }));
 
         using (new AssertionScope())
         {
             repository.Incomes.Single().PotsAccount.Should().BeSameAs(holidays);
             repository.ReserveMovements.Should().OnlyContain(m => holidays.OwnsPot(m.Bucket.Id) && m.Income!.Id == added.Id);
             repository.ReserveMovements.Select(m => m.Amount).Should().Equal(450m, 450m);
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_NamingAnotherPotsAccountThanTheSource_SplitsIntoTheOneItNames()
+    {
+        var (repository, _) = RepositoryWithArianaSplittingToHolidays();
+        var service = CreateService(repository);
+
+        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+
+        using (new AssertionScope())
+        {
+            result.PotsAccountId.Should().Be(AccountId(repository, "Reserva"));
+            repository.ReserveMovements.Should().HaveCount(4);
+            repository.ReserveMovements.Should().OnlyContain(m => repository.ReserveBuckets.Contains(m.Bucket));
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_AfterTheSourceMovedToAnotherPotsAccount_KeepsTheAccountTheRequestNames()
+    {
+        var (repository, holidays) = RepositoryWithArianaSplittingToHolidays();
+        var service = CreateService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Holidays" }));
+        var ariana = repository.IncomeSources.Single(s => s.Name == "Ariana");
+        ariana.Update(ariana.Name, ariana.Group, ariana.IsActive, repository.Accounts.Single(a => a.Name == "Reserva"));
+
+        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Holidays", NetValue = 1000m }));
+
+        using (new AssertionScope())
+        {
+            result.PotsAccountId.Should().Be(holidays.Id);
+            repository.ReserveMovements.Should().OnlyContain(m => holidays.OwnsPot(m.Bucket.Id));
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithAnUnknownPotsAccountId_ThrowsAndPersistsNothing()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+
+        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Nowhere" }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Pots account '*' is not recognized.");
+            repository.Incomes.Should().BeEmpty();
+            repository.ReserveMovements.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_NamingAnAccountThatCannotReceiveAnIncomeSplit_ThrowsAndPersistsNothing()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+
+        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Barclays" }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays can't receive an income split.");
+            repository.Incomes.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
         }
     }
 
@@ -443,7 +516,7 @@ public class IncomeServiceTests
 
         using (new AssertionScope())
         {
-            result.SplitToReserve.Should().BeTrue();
+            result.PotsAccountId.Should().Be(AccountId(repository, "Reserva"));
             repository.Incomes.Should().ContainSingle();
             repository.ReserveMovements.Should().BeEmpty();
         }
@@ -469,11 +542,11 @@ public class IncomeServiceTests
         var service = CreateService(repository);
         var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
 
-        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { SplitToReserve = false }));
+        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
 
         using (new AssertionScope())
         {
-            result.SplitToReserve.Should().BeFalse();
+            result.PotsAccountId.Should().BeNull();
             repository.Incomes.Single().PotsAccount.Should().BeNull();
             repository.ReserveMovements.Should().BeEmpty();
         }
@@ -484,14 +557,14 @@ public class IncomeServiceTests
     {
         var repository = CreateSplitCapableRepository();
         var service = CreateService(repository);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { SplitToReserve = false }));
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
         repository.ReserveMovements.Should().BeEmpty();
 
         var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest()));
 
         using (new AssertionScope())
         {
-            result.SplitToReserve.Should().BeTrue();
+            result.PotsAccountId.Should().Be(AccountId(repository, "Reserva"));
             repository.ReserveMovements.Should().HaveCount(4);
             repository.ReserveMovements.Should().OnlyContain(m => m.Income!.Id == added.Id);
         }
@@ -552,7 +625,7 @@ public class IncomeServiceTests
         var service = CreateService(repository);
         var unrelatedMovement = ReserveMovement.Create(repository.ReserveBuckets[0], 10m, new DateOnly(2026, 7, 1), "Manual entry");
         repository.ReserveMovements.Add(unrelatedMovement);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { SplitToReserve = false }));
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
 
         await service.DeleteIncomeAsync(added.Id);
 
@@ -570,7 +643,7 @@ public class IncomeServiceTests
 
         var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
 
-        result.SplitToReserve.Should().BeTrue();
+        result.PotsAccountId.Should().Be(arianaSource.PotsAccount!.Id);
     }
 
     [Fact]
