@@ -533,6 +533,8 @@ Rules that apply to every feature:
 - Manage pots total ≠ 100: 400 "Active pots must total 100% (now 95%)." nothing saved.
 - One-pot deposit naming a pot that isn't in the Pots account: 400 (message fixed in the spec).
 - Save failure: all parts of the deposit or withdrawal saved together or none.
+- Editing or deleting one linked expense or pot movement on its own (Monthly, the bank screen, the Reserva page): 409 "This expense belongs to a pot deposit or withdrawal; edit it from the Pots account." (movements: "This movement …"); Monthly keeps listing these expenses (user decision 2026-10-31).
+- Editing or deleting an income's deposit as an operation: 409 "This deposit belongs to an income; edit the income."
 
 ### F11. Settlement Template and Mãe Migration
 
