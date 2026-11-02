@@ -20,6 +20,11 @@ public static class PotWithdrawal
         Category? category,
         Guid operationId)
     {
+        if (amount <= 0)
+        {
+            throw new ArgumentException("Amount must be greater than zero.");
+        }
+
         if (!potsAccount.OwnsPot(pot.Id))
         {
             throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
@@ -31,7 +36,11 @@ public static class PotWithdrawal
             return new(movement, []);
         }
 
-        ArgumentNullException.ThrowIfNull(category);
+        if (category is null)
+        {
+            throw new ArgumentException("Category is required when a bank is selected.");
+        }
+
         var potsCategory = potsAccount.Category
             ?? throw new ArgumentException($"Set a category on {potsAccount.Name} first.");
 

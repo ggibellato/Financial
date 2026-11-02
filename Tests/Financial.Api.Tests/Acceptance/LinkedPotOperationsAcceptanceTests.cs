@@ -64,6 +64,9 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             ExpenseCategoryId = Guid.Parse(MercadoId)
         });
 
+    private static async Task<string?> DetailOf(HttpResponseMessage response) =>
+        (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;
+
     private List<Expense> ExpensesOf(Guid? operationId) =>
         Repository.GetExpenses().Where(expense => expense.OperationId == operationId).ToList();
 
@@ -115,13 +118,13 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             expenseUpdate.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await expenseUpdate.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail.Should().Be(ExpenseMessage);
+            (await DetailOf(expenseUpdate)).Should().Be(ExpenseMessage);
             expenseDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await expenseDelete.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail.Should().Be(ExpenseMessage);
+            (await DetailOf(expenseDelete)).Should().Be(ExpenseMessage);
             movementUpdate.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await movementUpdate.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail.Should().Be(MovementMessage);
+            (await DetailOf(movementUpdate)).Should().Be(MovementMessage);
             movementDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await movementDelete.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail.Should().Be(MovementMessage);
+            (await DetailOf(movementDelete)).Should().Be(MovementMessage);
             Repository.GetExpenses().Select(e => (e.Description, e.Value)).Should().BeEquivalentTo([("Boots", -38.25m), ("Boots", 38.25m)]);
             Repository.GetReserveMovements().Single(m => m.Id == created.Id).Amount.Should().Be(-38.25m);
         }

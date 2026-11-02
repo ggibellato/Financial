@@ -61,6 +61,24 @@ public class PotWithdrawalTests
         }
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public void Build_AmountNotAboveZero_Throws(decimal amount)
+    {
+        var act = () => PotWithdrawal.Build(_reserva, _pot, amount, Date, "Cash", bank: null, category: null, OperationId);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Amount must be greater than zero.");
+    }
+
+    [Fact]
+    public void Build_ThroughABankWithoutACategory_Throws()
+    {
+        var act = () => PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Boots", _bank, category: null, OperationId);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Category is required when a bank is selected.");
+    }
+
     [Fact]
     public void Build_PotOfAnotherAccount_Throws()
     {

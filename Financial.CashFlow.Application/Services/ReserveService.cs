@@ -210,7 +210,7 @@ public sealed class ReserveService : IReserveService
 
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(movement);
-            LinkedOperationConflictException.ThrowIfLinked(movement);
+            LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -237,12 +237,8 @@ public sealed class ReserveService : IReserveService
         {
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(movement);
-            LinkedOperationConflictException.ThrowIfLinked(movement);
+            LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
 
-            // Movements from the same manual split share Date+Description (see PostIncomeSplitAsync) -
-            // deleting one deletes the whole split, not just this bucket's line. Income-linked
-            // movements are excluded even if they coincidentally match, since they can only be
-            // changed by editing their parent income.
             var group = _repository.GetReserveMovements()
                 .Where(m => m.Date == movement.Date && m.Description == movement.Description && m.Income is null && m.OperationId is null)
                 .ToList();

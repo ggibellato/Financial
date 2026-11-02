@@ -110,6 +110,7 @@ public class ExpenseServiceTests
             linked.Value.Should().Be(38.25m);
             linked.Description.Should().Be("Boots");
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ExpenseService.UpdateExpense");
         }
     }
 
@@ -125,6 +126,7 @@ public class ExpenseServiceTests
             await act.Should().ThrowAsync<LinkedOperationConflictException>()
                 .WithMessage("This expense belongs to a pot deposit or withdrawal; edit it from the Pots account.");
             _repository.Expenses.Should().ContainSingle().Which.Should().BeSameAs(linked);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ExpenseService.DeleteExpense");
         }
     }
 

@@ -577,6 +577,7 @@ public class ReserveServiceTests
                 .WithMessage("This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.");
             linked.Amount.Should().Be(-30m);
             linked.Description.Should().Be("Boots");
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.UpdateMovement");
         }
     }
 
@@ -592,6 +593,7 @@ public class ReserveServiceTests
             await act.Should().ThrowAsync<LinkedOperationConflictException>()
                 .WithMessage("This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.");
             _repository.ReserveMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.DeleteMovement");
         }
     }
 
