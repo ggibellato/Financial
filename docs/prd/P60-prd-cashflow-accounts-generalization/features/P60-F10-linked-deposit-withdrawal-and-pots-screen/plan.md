@@ -28,7 +28,7 @@
 
 **8. Deposit rule** - Add the rule that builds a deposit into the active pots or one pot with 0–5 funding lines. See spec §3 "Deposit rule".
 
-**9. Deposit route and Reserva split** - Add the deposit route, deposit edit through the operation routes, and run the Reserva income split as a manual deposit with no bank.
+**9. Deposit route and Reserva split** - Add the deposit route, deposit edit through `PUT accounts/{potsId}/deposits/{operationId}`, and run the Reserva income split as a manual deposit with no bank.
 
 **10. Stage 3 verification** - Regenerate the snapshot and web types, run the suites, parity, `/simplify` and the architecture-reviewer, then push and open the PR.
 
