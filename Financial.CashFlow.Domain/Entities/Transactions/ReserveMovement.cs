@@ -10,10 +10,11 @@ public class ReserveMovement : IAccountTransaction
     public DateOnly Date { get; private set; }
     public string Description { get; private set; } = string.Empty;
     public Income? Income { get; private set; }
+    public Guid? OperationId { get; private set; }
 
     private ReserveMovement() { }
 
-    public static ReserveMovement Create(ReserveBucket bucket, decimal amount, DateOnly date, string description, Income? income = null) =>
+    public static ReserveMovement Create(ReserveBucket bucket, decimal amount, DateOnly date, string description, Income? income = null, Guid? operationId = null) =>
         new()
         {
             Id = Guid.NewGuid(),
@@ -21,7 +22,8 @@ public class ReserveMovement : IAccountTransaction
             Amount = amount,
             Date = date,
             Description = description,
-            Income = income
+            Income = income,
+            OperationId = operationId
         };
 
     public void Update(ReserveBucket bucket, decimal amount, DateOnly date, string description)

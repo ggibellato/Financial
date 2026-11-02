@@ -16,6 +16,7 @@ public class ExceptionMappingTests(ThrowingApiHost host) : IClassFixture<Throwin
         (new OverdraftConfirmationRequiredException("overdraft"), HttpStatusCode.Conflict),
         (new ReserveMovementLinkedToIncomeException("linked"), HttpStatusCode.Conflict),
         (new StatementPaymentConflictException("statement"), HttpStatusCode.Conflict),
+        (new LinkedOperationConflictException("linked operation"), HttpStatusCode.Conflict),
         (new EntityInUseException("in use"), HttpStatusCode.Conflict),
         (new DuplicateNameException("duplicate"), HttpStatusCode.Conflict),
         (new InvestmentRuleViolationException("rule"), HttpStatusCode.Conflict),
