@@ -47,7 +47,7 @@ public sealed class PotsService : IPotsService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, operationId.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "Withdraw");
-            return ToDto(FindOperation(operationId));
+            return ToDto(OperationOf(operationId, records));
         }
         catch (Exception ex)
         {
@@ -65,7 +65,7 @@ public sealed class PotsService : IPotsService
             ArgumentNullException.ThrowIfNull(request);
 
             var operation = FindOperation(operationId);
-            if (!operation.IsWithdrawal || operation.PotsAccount.Id != potsAccountId)
+            if (operation.Kind != PotOperationKind.Withdrawal || operation.PotsAccount.Id != potsAccountId)
             {
                 throw new KeyNotFoundException($"Withdrawal '{operationId}' was not found.");
             }
@@ -82,7 +82,7 @@ public sealed class PotsService : IPotsService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateWithdrawal");
-            return ToDto(FindOperation(operationId));
+            return ToDto(OperationOf(operationId, records));
         }
         catch (Exception ex)
         {
@@ -202,6 +202,9 @@ public sealed class PotsService : IPotsService
         PotOperation.Read(operationId, _repository.GetReserveMovements(), _repository.GetExpenses(), _repository.GetAccounts())
             ?? throw new KeyNotFoundException($"Operation '{operationId}' was not found.");
 
+    private PotOperation OperationOf(Guid operationId, PotWithdrawalRecords records) =>
+        PotOperation.Read(operationId, [records.Movement], records.BankExpenses, _repository.GetAccounts())!;
+
     private void AddRecords(PotWithdrawalRecords records)
     {
         _repository.AddReserveMovement(records.Movement);
@@ -233,7 +236,7 @@ public sealed class PotsService : IPotsService
     private static PotOperationDTO ToDto(PotOperation operation) => new()
     {
         OperationId = operation.OperationId,
-        Kind = operation.IsWithdrawal ? "Withdrawal" : "Deposit",
+        Kind = operation.Kind.ToString(),
         PotsAccountId = operation.PotsAccount.Id,
         Date = operation.Date,
         Description = operation.Description,

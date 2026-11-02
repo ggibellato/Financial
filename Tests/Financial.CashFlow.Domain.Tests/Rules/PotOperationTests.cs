@@ -33,7 +33,7 @@ public class PotOperationTests
 
         using (new AssertionScope())
         {
-            operation!.IsWithdrawal.Should().BeTrue();
+            operation!.Kind.Should().Be(PotOperationKind.Withdrawal);
             operation.PotsAccount.Should().BeSameAs(_reserva);
             operation.Date.Should().Be(Date);
             operation.Description.Should().Be("Boots");
@@ -56,7 +56,7 @@ public class PotOperationTests
 
         using (new AssertionScope())
         {
-            operation!.IsWithdrawal.Should().BeTrue();
+            operation!.Kind.Should().Be(PotOperationKind.Withdrawal);
             operation.Amount.Should().Be(20m);
             operation.Bank.Should().BeNull();
             operation.Category.Should().BeNull();
@@ -91,6 +91,16 @@ public class PotOperationTests
     }
 
     [Fact]
+    public void Read_PotThatNoAccountOwns_ReturnsNull()
+    {
+        var orphan = ReserveBucket.Create("Orphan", 0m);
+
+        var operation = PotOperation.Read(OperationId, [ReserveMovement.Create(orphan, -7m, Date, "Cash", operationId: OperationId)], [], [_reserva]);
+
+        operation.Should().BeNull();
+    }
+
+    [Fact]
     public void Read_PositiveMovementsOfAnIncome_ReadAsADepositWithTheirIncome()
     {
         var second = ReserveBucket.Create("HouseTreats", 0m);
@@ -106,7 +116,7 @@ public class PotOperationTests
 
         using (new AssertionScope())
         {
-            operation!.IsWithdrawal.Should().BeFalse();
+            operation!.Kind.Should().Be(PotOperationKind.Deposit);
             operation.Amount.Should().Be(90m);
             operation.Pot.Should().BeNull();
             operation.IncomeId.Should().Be(income.Id);

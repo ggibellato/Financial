@@ -93,7 +93,7 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public async Task WithdrawAsync_OverdraftWithoutConfirmation_Returns409AndSavesNothing()
+    public async Task WithdrawAsync_OverdraftWithoutConfirmation_ThrowsAndSavesNothing()
     {
         var act = async () => await _sut.WithdrawAsync(Reserva.Id, Withdrawal(amount: 150m));
 
@@ -120,7 +120,11 @@ public class PotsServiceTests
     {
         var act = async () => await _sut.WithdrawAsync(Reserva.Id, Withdrawal(date: TestClock.Today.AddDays(1)));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Withdraw");
+        }
     }
 
     [Fact]
@@ -140,11 +144,15 @@ public class PotsServiceTests
             Description = request.Description
         });
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Withdraw");
+        }
     }
 
     [Fact]
-    public async Task WithdrawAsync_AccountWithoutPots_Returns404()
+    public async Task WithdrawAsync_AccountWithoutPots_ThrowsNotFound()
     {
         var act = async () => await _sut.WithdrawAsync(Bank("Chase").Id, Withdrawal());
 
@@ -166,7 +174,7 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public void GetOperation_UnknownId_Returns404()
+    public void GetOperation_UnknownId_ThrowsNotFound()
     {
         var act = () => _sut.GetOperation(Guid.NewGuid());
 
@@ -232,7 +240,7 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public async Task UpdateWithdrawalAsync_OverdraftWithoutConfirmation_Returns409AndKeepsTheRecords()
+    public async Task UpdateWithdrawalAsync_OverdraftWithoutConfirmation_ThrowsAndKeepsTheRecords()
     {
         var created = await _sut.WithdrawAsync(Reserva.Id, Withdrawal());
 
@@ -248,7 +256,7 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public async Task UpdateWithdrawalAsync_UnderAnotherAccount_Returns404()
+    public async Task UpdateWithdrawalAsync_UnderAnotherAccount_ThrowsNotFound()
     {
         var created = await _sut.WithdrawAsync(Reserva.Id, Withdrawal());
         var other = TestAccounts.Pots("Holidays");
@@ -256,18 +264,26 @@ public class PotsServiceTests
 
         var act = async () => await _sut.UpdateWithdrawalAsync(other.Id, created.OperationId, Withdrawal());
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.UpdateWithdrawal");
+        }
     }
 
     [Fact]
-    public async Task UpdateWithdrawalAsync_ADeposit_Returns404()
+    public async Task UpdateWithdrawalAsync_ADeposit_ThrowsNotFound()
     {
         var operationId = Guid.NewGuid();
         _repository.ReserveMovements.Add(ReserveMovement.Create(Pot("HouseTreats"), 50m, Date, "Split", operationId: operationId));
 
         var act = async () => await _sut.UpdateWithdrawalAsync(Reserva.Id, operationId, Withdrawal());
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.UpdateWithdrawal");
+        }
     }
 
     [Fact]
@@ -287,7 +303,7 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public async Task DeleteOperationAsync_AnIncomesDeposit_Returns409AndKeepsIt()
+    public async Task DeleteOperationAsync_AnIncomesDeposit_ThrowsConflictAndKeepsIt()
     {
         var operationId = Guid.NewGuid();
         var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: Reserva), null, 100m, Bank("Chase"), potsAccount: Reserva);
@@ -304,10 +320,14 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public async Task DeleteOperationAsync_UnknownId_Returns404()
+    public async Task DeleteOperationAsync_UnknownId_ThrowsNotFound()
     {
         var act = async () => await _sut.DeleteOperationAsync(Guid.NewGuid());
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.DeleteOperation");
+        }
     }
 }
