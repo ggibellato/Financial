@@ -46,6 +46,7 @@ internal sealed class DomainExceptionMappingMiddleware
         catch (Exception ex) when (ex is OverdraftConfirmationRequiredException
             or ReserveMovementLinkedToIncomeException
             or StatementPaymentConflictException
+            or LinkedOperationConflictException
             or EntityInUseException
             or DuplicateNameException
             or InvestmentRuleViolationException)

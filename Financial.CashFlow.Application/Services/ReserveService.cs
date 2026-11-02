@@ -106,7 +106,8 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
-            var bankExpenses = BuildBankExpenses(request);
+            var accounts = _repository.GetAccounts().ToList();
+            var (bank, category) = ResolveWithdrawalBank(request, accounts);
 
             var currentBalance = GetBalance(bucket!);
             if (request.Amount > currentBalance && !request.Confirmed)
@@ -115,12 +116,13 @@ public sealed class ReserveService : IReserveService
                     FormattableString.Invariant($"This withdrawal exceeds {bucket!.Name}'s balance of {currentBalance:F2}. Set confirmed=true to proceed."));
             }
 
-            var movement = ReserveMovement.Create(bucket!, -request.Amount, request.Date, request.Description);
+            var records = PotWithdrawal.Build(
+                ReservaAccount.Find(accounts)!, bucket!, request.Amount, request.Date, request.Description, bank, category, Guid.NewGuid());
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.AddReserveMovement(movement);
-                foreach (var expense in bankExpenses)
+                _repository.AddReserveMovement(records.Movement);
+                foreach (var expense in records.BankExpenses)
                 {
                     _repository.AddExpense(expense);
                 }
@@ -128,10 +130,10 @@ public sealed class ReserveService : IReserveService
                 return true;
             }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, records.Movement.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "PostWithdrawal");
-            return ToDto(movement);
+            return ToDto(records.Movement);
         }
         catch (Exception ex)
         {
@@ -208,6 +210,7 @@ public sealed class ReserveService : IReserveService
 
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(movement);
+            LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -234,13 +237,10 @@ public sealed class ReserveService : IReserveService
         {
             var movement = _repository.GetReserveMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(movement);
+            LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
 
-            // Movements from the same manual split share Date+Description (see PostIncomeSplitAsync) -
-            // deleting one deletes the whole split, not just this bucket's line. Income-linked
-            // movements are excluded even if they coincidentally match, since they can only be
-            // changed by editing their parent income.
             var group = _repository.GetReserveMovements()
-                .Where(m => m.Date == movement.Date && m.Description == movement.Description && m.Income is null)
+                .Where(m => m.Date == movement.Date && m.Description == movement.Description && m.Income is null && m.OperationId is null)
                 .ToList();
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -269,11 +269,11 @@ public sealed class ReserveService : IReserveService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
 
-    private List<Expense> BuildBankExpenses(WithdrawalRequestDTO request)
+    private (Account? Bank, Category? Category) ResolveWithdrawalBank(WithdrawalRequestDTO request, IReadOnlyList<Account> accounts)
     {
         if (request.PaymentSourceBankId is null && request.ExpenseCategoryId is null)
         {
-            return [];
+            return (null, null);
         }
 
         if (request.PaymentSourceBankId is null)
@@ -288,30 +288,11 @@ public sealed class ReserveService : IReserveService
 
         DescriptionValidator.EnsureWithinLimit(request.Description);
 
-        var bank = CashFlowReferenceResolver.ResolvePaymentSource(_repository.GetAccounts(), request.PaymentSourceBankId.Value);
+        var bank = CashFlowReferenceResolver.ResolvePaymentSource(accounts, request.PaymentSourceBankId.Value);
+        var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), request.ExpenseCategoryId.Value);
+        PotWithdrawal.EnsureUsableCategory(category, accounts);
 
-        var accounts = _repository.GetAccounts().ToList();
-        var reservaCategory = ReservaAccount.Find(accounts)?.Category
-            ?? throw new ArgumentException("Choose the category for this account's bank expenses.");
-        var expenseCategory = ResolveExpenseCategory(_repository.GetCategories(), request.ExpenseCategoryId.Value, accounts);
-
-        return
-        [
-            Expense.Create(request.Date, request.Description, -request.Amount, reservaCategory, bank, creditCard: null),
-            Expense.Create(request.Date, request.Description, request.Amount, expenseCategory, bank, creditCard: null)
-        ];
-    }
-
-    private static Category ResolveExpenseCategory(IEnumerable<Category> categories, Guid categoryId, IEnumerable<Account> accounts)
-    {
-        var category = CashFlowReferenceResolver.ResolveActiveCategory(categories, categoryId);
-
-        if (category.IsInvestment || accounts.Any(account => account.Category?.Id == category.Id))
-        {
-            throw new ArgumentException($"Category '{category.Name}' cannot be used for a withdrawal expense.");
-        }
-
-        return category;
+        return (bank, category);
     }
 
     private decimal GetBalance(ReserveBucket bucket) =>

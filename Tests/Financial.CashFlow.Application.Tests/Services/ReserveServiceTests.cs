@@ -532,6 +532,92 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task PostWithdrawalAsync_WithBankAndCategory_LinksTheMovementAndBothExpensesWithOneOperationId()
+    {
+        var repository = CreateBankRepository();
+        var request = BankWithdrawal(repository);
+
+        await CreateService(repository).PostWithdrawalAsync(request);
+
+        var movement = repository.ReserveMovements.Single(m => m.Amount == -request.Amount);
+        using (new AssertionScope())
+        {
+            movement.OperationId.Should().NotBeNull();
+            repository.Expenses.Should().HaveCount(2).And.OnlyContain(e => e.OperationId == movement.OperationId);
+        }
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_WithoutBank_GivesTheMovementAnOperationId()
+    {
+        var repository = CreateBankRepository();
+        var request = BankWithdrawal(repository, withBank: false, withCategory: false);
+
+        await CreateService(repository).PostWithdrawalAsync(request);
+
+        repository.ReserveMovements.Single(m => m.Amount == -request.Amount).OperationId.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task UpdateMovementAsync_MovementOfAPotOperation_ThrowsLinkedOperationConflictAndKeepsIt()
+    {
+        var linked = AddOperationMovement();
+
+        var act = async () => await _sut.UpdateMovementAsync(linked.Id, new ReserveMovementUpdateDTO
+        {
+            BucketId = BucketId("HouseTreats"),
+            Amount = -50m,
+            Date = new DateOnly(2026, 7, 5),
+            Description = "Corrected"
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<LinkedOperationConflictException>()
+                .WithMessage("This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.");
+            linked.Amount.Should().Be(-30m);
+            linked.Description.Should().Be("Boots");
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.UpdateMovement");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_MovementOfAPotOperation_ThrowsLinkedOperationConflictAndKeepsIt()
+    {
+        var linked = AddOperationMovement();
+
+        var act = async () => await _sut.DeleteMovementAsync(linked.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<LinkedOperationConflictException>()
+                .WithMessage("This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.");
+            _repository.ReserveMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.DeleteMovement");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_LegacyMovementSharingDateAndDescriptionWithAnOperationMovement_LeavesTheOperationMovement()
+    {
+        var linked = AddOperationMovement();
+        var legacy = ReserveMovement.Create(_repository.ReserveBuckets.First(b => b.Name == "HouseTreats"), 30m, linked.Date, linked.Description);
+        _repository.ReserveMovements.Add(legacy);
+
+        await _sut.DeleteMovementAsync(legacy.Id);
+
+        _repository.ReserveMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+    }
+
+    private ReserveMovement AddOperationMovement()
+    {
+        var linked = ReserveMovement.Create(
+            _repository.ReserveBuckets.First(b => b.Name == "Investimento"), -30m, new DateOnly(2026, 7, 1), "Boots", operationId: Guid.NewGuid());
+        _repository.ReserveMovements.Add(linked);
+        return linked;
+    }
+
+    [Fact]
     public async Task PostWithdrawalAsync_BankWithoutCategory_Throws()
     {
         var repository = CreateBankRepository();
@@ -650,7 +736,7 @@ public class ReserveServiceTests
 
         var act = async () => await CreateService(repository).PostWithdrawalAsync(BankWithdrawal(repository));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the category for this account's bank expenses.");
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Set a category on Reserva first.");
         AssertNothingSaved(repository);
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
     }

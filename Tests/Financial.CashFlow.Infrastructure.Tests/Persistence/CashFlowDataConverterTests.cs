@@ -51,6 +51,12 @@ public class CashFlowDataConverterTests
             "\"Transfers\":[]",
             "\"Transfers\":[{\"Id\":\"" + PaymentId + "\",\"Date\":\"2026-11-12\",\"SourceAccountId\":\"" + BarclaysId + "\",\"DestinationAccountId\":\"" + AmexId + "\",\"Amount\":30.5,\"Note\":null}]");
 
+    private const string OperationId = "5db5c88d-0000-0000-0000-000000000a01";
+
+    private static readonly string V4FileWithOperation = V4File
+        .Replace("\"CountsAsTithe\":true,", "\"CountsAsTithe\":true,\"OperationId\":\"" + OperationId + "\",")
+        .Replace("\"IncomeId\":null}", "\"IncomeId\":null,\"OperationId\":\"" + OperationId + "\"}");
+
     private readonly CashFlowSerializerAdapter _serializer = new();
 
     [Fact]
@@ -70,6 +76,28 @@ public class CashFlowDataConverterTests
         {
             V4FileWithPayment.Should().Contain("\"PaymentTransferId\"");
             saved.Should().Be(V4FileWithPayment);
+        }
+    }
+
+    [Fact]
+    public void LoadAndSave_RecordsWithoutAnOperation_WriteNoOperationId()
+    {
+        var saved = _serializer.Serialize(_serializer.Deserialize(V4File));
+
+        saved.Should().NotContain("\"OperationId\"");
+    }
+
+    [Fact]
+    public void LoadAndSave_ExpenseAndMovementOfAnOperation_KeepTheirOperationIdByteIdentical()
+    {
+        var data = _serializer.Deserialize(V4FileWithOperation);
+        var saved = _serializer.Serialize(data);
+
+        using (new AssertionScope())
+        {
+            data.Expenses.Single().OperationId.Should().Be(Guid.Parse(OperationId));
+            data.ReserveMovements.Single().OperationId.Should().Be(Guid.Parse(OperationId));
+            saved.Should().Be(V4FileWithOperation);
         }
     }
 

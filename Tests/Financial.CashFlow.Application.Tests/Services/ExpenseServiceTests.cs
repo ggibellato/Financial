@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities.Transactions;
@@ -93,6 +94,49 @@ public class ExpenseServiceTests
         await _sut.DeleteExpenseAsync(added.Id);
 
         _calendarSyncTrigger.InvoiceChecks.Should().Equal((card.Id, new DateOnly(2026, 9, 1)));
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_ExpenseOfAPotOperation_ThrowsLinkedOperationConflictAndKeepsIt()
+    {
+        var linked = AddLinkedExpense();
+
+        var act = async () => await _sut.UpdateExpenseAsync(linked.Id, ToUpdateDto(_repository, ValidCreateRequest()));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<LinkedOperationConflictException>()
+                .WithMessage("This expense belongs to a pot deposit or withdrawal; edit it from the Pots account.");
+            linked.Value.Should().Be(38.25m);
+            linked.Description.Should().Be("Boots");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ExpenseService.UpdateExpense");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteExpenseAsync_ExpenseOfAPotOperation_ThrowsLinkedOperationConflictAndKeepsIt()
+    {
+        var linked = AddLinkedExpense();
+
+        var act = async () => await _sut.DeleteExpenseAsync(linked.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<LinkedOperationConflictException>()
+                .WithMessage("This expense belongs to a pot deposit or withdrawal; edit it from the Pots account.");
+            _repository.Expenses.Should().ContainSingle().Which.Should().BeSameAs(linked);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ExpenseService.DeleteExpense");
+        }
+    }
+
+    private Expense AddLinkedExpense()
+    {
+        var linked = Expense.Create(
+            new DateOnly(2026, 10, 12), "Boots", 38.25m, _repository.Categories.First(), _repository.Accounts.First(a => a.Name == "Chase"),
+            creditCard: null, operationId: Guid.NewGuid());
+        _repository.Expenses.Add(linked);
+        return linked;
     }
 
     private static ExpenseCreateRequest CardExpenseRequest(DateOnly invoiceDate) =>

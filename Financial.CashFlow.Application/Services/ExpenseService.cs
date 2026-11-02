@@ -1,5 +1,6 @@
 using System.Globalization;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
@@ -77,6 +78,7 @@ public sealed class ExpenseService : IExpenseService
             ArgumentNullException.ThrowIfNull(request);
 
             var expense = FindExpenseOrThrow(id);
+            LinkedOperationConflictException.ThrowIfLinked(expense.OperationId, "expense");
 
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
@@ -122,6 +124,7 @@ public sealed class ExpenseService : IExpenseService
         try
         {
             var expense = FindExpenseOrThrow(id);
+            LinkedOperationConflictException.ThrowIfLinked(expense.OperationId, "expense");
             if (CardChargeFilter.IsOnPaidStatement(expense, _repository.GetCardStatements()))
             {
                 throw new ArgumentException(PaidStatementMessage);

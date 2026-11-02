@@ -267,7 +267,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task UpdateMovement_ExistingId_ReturnsOkAndUpdatesFields()
+    public async Task UpdateMovement_WithdrawalPostedThroughTheReservaRoute_Returns409()
     {
         var withdrawal = await Client.PostAsJsonAsync("/api/v1/financial/reserve/withdrawals", new WithdrawalRequestDTO
         {
@@ -287,10 +287,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
             Description = "Groceries (corrected)"
         });
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var updated = await response.Content.ReadFromJsonAsync<ReserveMovementDTO>();
-        updated!.Amount.Should().Be(-45m);
-        updated.Description.Should().Be("Groceries (corrected)");
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]

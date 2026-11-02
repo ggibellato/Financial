@@ -58,7 +58,9 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesOmittedWhenNull =
     [
         (typeof(Transfer), nameof(Transfer.DestinationAmount)),
-        (typeof(CardStatement), nameof(CardStatement.PaymentTransferId))
+        (typeof(CardStatement), nameof(CardStatement.PaymentTransferId)),
+        (typeof(Expense), nameof(Expense.OperationId)),
+        (typeof(ReserveMovement), nameof(ReserveMovement.OperationId))
     ];
 
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesNeverWritten =
