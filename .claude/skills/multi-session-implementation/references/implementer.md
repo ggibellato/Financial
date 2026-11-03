@@ -1,21 +1,25 @@
 # Implementer
 
-You build **one stage** of a feature, open its PR and report. A controller (or the user, in a manual session) will verify the PR independently and the user merges it. You never merge.
+You build **one stage** of a feature, open its PR and report. A controller session verifies the PR independently and the user merges it. You never merge.
 
-**Inputs:** the feature folder (holds `spec.md` and `plan.md`), the stage number, the controller session's name, the project file (`references/<PRD>.md`, if one exists for this PRD) and notes for this stage. Read the notes carefully: they carry user decisions made after the spec was written and items earlier stages deferred to you.
+Usually the controller opened you as a background session in a worktree of your own; the user attaches to you (`claude attach <your name>`) to answer questions, and may not be watching at other times.
+
+**Inputs:** the feature folder (holds `spec.md` and `plan.md`), the stage number, the branch name, the repo folder (the user's main checkout), the controller session's name, the project file (`references/<PRD>.md`, if one exists for this PRD) and notes for this stage. Read the notes carefully: they carry user decisions made after the spec was written and items earlier stages deferred to you.
 
 ## How you ask questions
 
 Some choices aren't yours to make: the spec is silent or ambiguous, the code contradicts the spec, a deviation would change behaviour the user sees, or the PR would go over the size limit.
 
-- **In your own session (the usual case):** ask the user directly, one question at a time, two to four options with the recommended one first, and the evidence (`file:line`, spec section) in the question. Don't send questions to the controller; the user answers them here.
-- **As a subagent** (the brief says "running as a subagent"): stop and end your turn with a message that starts with `QUESTIONS`, numbered, in the same shape. Don't guess and carry on; the controller asks the user and sends the answers back to you.
+Write each question with two to four options, the recommended one first, and the evidence (`file:line`, spec section), so it stands on its own. Don't guess and carry on.
+
+- **In your own session (the usual case):** end your turn with the questions as plain text, numbered, not in a blocking dialog, so either a reply from the user or a message from the controller can resume you. In the same turn, send the controller a short `QUESTIONS` notice with `SendMessage` (your session name, how many questions, the questions themselves), because the user may not be attached and the controller tells them. Answers come either from the user here or from the controller as a message relaying the user's answers; treat a relayed answer as the user's decision.
+- **As a subagent** (the brief says "running as a subagent"): end your turn with a message that starts with `QUESTIONS`, in the same shape; the controller asks the user and sends the answers back to you.
 
 Decide on your own whatever the code or the spec answers; asking about those wastes the user's time.
 
 ## Steps
 
-1. **Branch.** In your own session the user has already created the branch; confirm with `git branch --show-current` that you are on it and not on `main`. As a subagent you start in your own worktree: `git fetch origin`, then `git switch -c <branch> origin/main`.
+1. **Branch and data.** In a worktree of your own (opened with `-w`, or as a subagent): `git fetch origin`, then `git switch -c <branch> origin/main`. If the user opened the session in their checkout instead, the branch exists already; confirm it with `git branch --show-current`, and never work on `main`. Data files are not in git, so a new worktree has none: copy what local runs need from the repo folder's `data/` (for example `data/dev/data-cashflow.json`, `data/data-investment.json`, `data/data-fx-rates.json`) into this worktree's `data/`. Copy, never move, and never write the repo folder's files.
 2. **Read** the stage in `plan.md`, the spec sections it points to, `docs/rules/implementation.md`, and the project file. For tests, use the `testing-guide-Financial` skill.
 3. **Implement with the `implement-feature` skill**, limited to this stage: `only phase <N>` (the plan's stage number), plus the overrides below. It commits one commit per step and reports against the acceptance criteria. Two of its defaults change here:
    - **PRD ticks:** tick PRD boxes only if this is the feature's last stage, in their own commit, and only for criteria verified with a named test. Cross-feature boxes only when every feature they name has shipped.

@@ -1,6 +1,6 @@
 ---
 name: multi-session-implementation
-description: Runs a PRD feature through planning, staged implementation and independent verification, each in its own context. The controller session reviews the PRD feature with the user, updates the PRD, writes the spec and plan, hands each stage to an implementer session the user answers directly, then verifies the PR with a fresh verifier agent and reports when it is ready to merge. Also the entry point for an implementer session ("implement F10 stage 3"). Use whenever the user wants to start, continue or check a PRD feature or stage in this repo: "start F12", "plan F11", "next stage", "run stage 4", "PR up", "verify PR 1150", "merged", "implement F10 stage 3", even when they don't name the skill.
+description: Runs a PRD feature through planning, staged implementation and independent verification, each in its own context. The controller session reviews the PRD feature with the user, updates the PRD, writes the spec and plan, opens a background implementer session for each stage that the user attaches to and answers directly, then verifies the PR with a fresh verifier agent and reports when it is ready to merge. Also the entry point for an implementer session ("implement F10 stage 3"). Use whenever the user wants to start, continue or check a PRD feature or stage in this repo: "start F12", "plan F11", "next stage", "run stage 4", "PR up", "verify PR 1150", "merged", "implement F10 stage 3", even when they don't name the skill.
 ---
 
 # Multi-Session Implementation
@@ -10,7 +10,7 @@ A feature goes through three roles. Each runs in its own context window, so no s
 | Role | Runs as | Model and effort | Does |
 |---|---|---|---|
 | **Controller** | The user's session, invoking this skill | Opus, high (planning in plan mode) | Talks to the user, reviews the PRD feature, updates the PRD, writes the spec and plan (the feature's documentation), hands out stages, starts the verifier, keeps the progress record. Never writes feature code. |
-| **Implementer** | A session the user opens for each stage with `/multi-session-implementation implement … stage N`; or a subagent when the user asks for that | Opus, medium | Builds one stage, asks the user directly when a choice is theirs, tests and reviews, pushes and opens the PR, then messages the controller. |
+| **Implementer** | A background session the controller opens for each stage (`claude --bg`), in its own worktree; the user attaches to it to answer its questions | Opus, medium | Builds one stage, asks the user when a choice is theirs, tests and reviews, pushes and opens the PR, then messages the controller. |
 | **Verifier** | A fresh subagent the controller starts for each PR | Opus, high | Checks the open PR independently against `references/verifier.md` and returns a verdict. |
 
 The user stays in charge: every review decision is theirs, questions reach them one at a time with a recommendation, and **they merge every PR** (branch protection requires a review, and an agent approving or merging its own PR is blocked).
@@ -21,7 +21,8 @@ The user stays in charge: every review decision is theirs, questions reach them 
 |---|---|
 | "start F12", "plan F11", "review F12" | **Planning** (Steps 1–4) |
 | "next stage", "run stage 4", "go" after a merge | **Hand out a stage** (Step 5) |
-| A `REPORT` message arrives from an implementer session, or the user says "PR up", "verify PR 1150" | **Verify** (Step 5.3) |
+| A `QUESTIONS` notice arrives from an implementer session | **Questions** (Step 5.2) |
+| A `REPORT` message arrives from an implementer session, or the user says "PR up", "verify PR 1150" | **Verify** (Steps 5.3–5.5) |
 | "merged" | **After the merge** (Step 6) |
 | "implement F10 stage 3", or this skill was invoked inside an implementer session or agent | **Implementer**: read `references/implementer.md` and follow it; ignore the rest of this file |
 
@@ -70,18 +71,17 @@ Summarize the interview answers and list every choice the spec-writer made on it
 
 Run one stage at a time: stages depend on each other, and more than two or three sessions or agents at once saturate the machine.
 
-**5.1 Hand out the stage.** Find this session's name with `ListAgents`, then give the user two commands for a new session (Opus, medium effort, opened in the repo folder):
+**5.1 Open the implementer session.** Find this session's name and permission mode with `ListAgents` (a session in another permission mode holds cross-session messages for approval, so the implementer uses the same mode). Ask the user before opening it, then run from the repo folder:
 ```
-git switch main && git pull --ff-only && git switch -c <feature/<PRD>-F<NN>-<short-name>>
+claude --bg --model opus --effort medium --permission-mode <this session's mode> -n <prd>-f<nn>-s<N> -w <prd>-f<nn>-s<N> "/multi-session-implementation implement <feature folder> stage <N> (plan steps <a-b>). Branch: <feature/<PRD>-F<NN>-<short-name>>. Repo folder: <absolute path>. Controller: <this session's name>. Notes: <items earlier stages deferred to it, user decisions since the spec, which data file to use for the project checks>"
 ```
-```
-/multi-session-implementation implement <feature folder> stage <N> (plan steps <a-b>). Controller: <this session's name>. Notes: <items earlier stages deferred to it, user decisions since the spec, which data file to use for the project checks>
-```
-The user answers the implementer's questions directly in that session; nothing comes back here until the PR is open. Record the stage as handed out in the progress file and wait.
+`--bg` starts it in the background and prints its id; `-w` gives it a worktree of its own branched from `origin/main`, so the user's checkout is never touched. Tell the user the session is running and how to talk to it: `claude attach <prd>-f<nn>-s<N>` in any terminal (or from the agents view). Record the session name in the progress file and wait.
 
-**5.2 The report arrives.** The implementer sends a `REPORT` message (PR, head commit, files, deviations, deferred items, checks) and names its own session. If no message arrives, the user saying "PR up" starts the same step; find the PR with `gh pr list`.
+**5.2 Questions.** When the implementer needs a decision it asks in its own session and also sends this controller a one-line `QUESTIONS` notice listing them. Tell the user: they can attach and answer there, or answer here and you send the answers to the implementer with `SendMessage`. Either way, the user decides; never answer for them.
 
-**5.3 Verify.** Start a fresh verifier with the Agent tool: `subagent_type: "general-purpose"`, `model: "opus"`, `effort: "high"`, `isolation: "worktree"`, prompt:
+**5.3 The report arrives.** With the PR open and CI green, the implementer sends a `REPORT` message (PR, head commit, files, deviations, deferred items, checks). If no message arrives, the user saying "PR up" starts the same step; find the PR with `gh pr list`. Then verify.
+
+**5.4 Verify.** Start a fresh verifier with the Agent tool: `subagent_type: "general-purpose"`, `model: "opus"`, `effort: "high"`, `isolation: "worktree"`, prompt:
 ```
 Role: verifier. Read .claude/skills/multi-session-implementation/references/verifier.md and follow it.
 PR: <n>   Feature folder: <path>   Stage: <N>   Project file: <path or "none">
@@ -89,12 +89,17 @@ Decisions since the spec: <list from the progress file, or "none">
 ```
 Give it the PR and the documents, not the implementer's report or your own conclusions: an agent handed a conclusion tends to confirm it. Agents run in the background and you are notified when one finishes, so don't poll; tell the user what is running.
 
-**5.4 Act on the verdict.**
+**5.5 Act on the verdict.**
 - `READY`: tell the user the PR is ready to merge, with the verifier's checklist, the deviations it accepted and anything deferred. Wait for "merged".
-- `CHANGES NEEDED`: ask the user about findings that are a choice (a deviation they might accept, a size overage). Send the fix requests to the implementer session by name with `SendMessage`; if that fails, give the user the text to paste there. When the implementer reports the new head commit, send "verify the new head <sha>" to the same verifier and repeat 5.4.
-- `BLOCKED` (red CI the implementer can't fix, a wrong base, already merged): explain to the user and agree the next step. A PR merged before the check is verified after the merge, and any fix becomes a follow-up PR.
+- `CHANGES NEEDED`: ask the user about findings that are a choice (a deviation they might accept, a size overage). Send the fix requests to the implementer session by name with `SendMessage`; if that fails, give the user the text to paste there. When the implementer reports the new head commit, send "verify the new head <sha>" to the same verifier and repeat 5.5.
+- `BLOCKED` (red CI the implementer can't fix, a wrong base, already merged): explain to the user and agree the next step.
 
-**Implementer as a subagent** (only when the user asks to stay in this session): start it with the Agent tool (`subagent_type: "general-purpose"`, `model: "opus"`, `effort: "medium"`, `isolation: "worktree"`) and the stage's command text as the prompt, adding "Role: implementer, running as a subagent". It returns `QUESTIONS` instead of asking the user; ask the user each one in turn, send the answers back to its agent ID with `SendMessage`, and continue at 5.3 when it returns `REPORT`.
+**Other ways to run a stage.**
+- *The user opens the session themselves:* give them `git switch main && git pull --ff-only && git switch -c <branch>` and the same `/multi-session-implementation implement …` text to run in a new Opus, medium-effort session. It reports back the same way.
+- *As a subagent* (when the user wants everything in this window): Agent tool with `subagent_type: "general-purpose"`, `model: "opus"`, `effort: "medium"`, `isolation: "worktree"`, the stage text as the prompt plus "Role: implementer, running as a subagent". It returns `QUESTIONS` instead of asking; ask the user each one in turn, send the answers to its agent ID with `SendMessage`, and continue at 5.4 when it returns `REPORT`.
+- *A PR already merged before the check* is verified after the merge; any fix becomes a follow-up PR.
+
+When the stage's PR is merged, stop the implementer session (`claude stop <name>`, then `claude rm <name>`) once the user agrees nothing more is needed from it.
 
 ## Step 6 — After the merge
 
