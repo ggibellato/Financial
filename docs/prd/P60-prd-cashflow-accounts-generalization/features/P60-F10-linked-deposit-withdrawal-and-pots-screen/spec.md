@@ -117,7 +117,7 @@ All paths are relative to the repo root. Existing patterns: entities with privat
 |---|---|---|---|
 | `Exceptions/LinkedOperationConflictException.cs` | New | 1 | 409 for linked records on old routes and income deposits |
 | `Services/ExpenseService.cs` | Modified | 1 | Guard on update and delete |
-| `Services/ReserveService.cs` | Modified | 1, 2, 3, 6 | Withdrawal and income-split delegate; shares the withdrawal checks with `PotsService` (2); movement guards; narrowed legacy delete |
+| `Services/ReserveService.cs` | Modified | 1, 2, 3, 6 | Withdrawal through `PotWithdrawal` (1); calls `PotsService`'s withdrawal checks (2); both Reserva routes delegate to `IPotsService` (3b); movement guards (1); narrowed legacy delete (6) |
 | `Validation/PotWithdrawalValidator.cs` | New | 3b | The withdrawal's bank and category checks and the overdraft check, moved out of `PotsService`, its only caller once both Reserva routes delegate |
 | `Interfaces/IPotsService.cs`, `Services/PotsService.cs` | New | 2–6 | Withdrawals (2), deposits (3), operation read/edit/delete (2, 3), pots replace (5), pots read (6) |
 | `DTOs/PotWithdrawalRequestDTO.cs`, `PotOperationDTO.cs` | New | 2 | Withdrawal request; operation read model |
