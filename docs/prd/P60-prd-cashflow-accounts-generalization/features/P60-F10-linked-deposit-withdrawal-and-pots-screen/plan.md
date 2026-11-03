@@ -24,13 +24,23 @@
 
 **7. Stage 2 verification** - Regenerate the snapshot and web types, run the suites, parity, `/simplify` and the architecture-reviewer, then push and open the PR.
 
-### Stage 3: Manual deposit
+### Stage 3a: Manual deposit
 
 **8. Deposit rule** - Add the rule that builds a deposit into the active pots or one pot with 0–5 funding lines. See spec §3 "Deposit rule".
 
-**9. Deposit route and Reserva split** - Add the deposit route, deposit edit through `PUT accounts/{potsId}/deposits/{operationId}`, and run the Reserva income split as a manual deposit with no bank.
+**9. Deposit route** - Add the deposit route and deposit edit through `PUT accounts/{potsId}/deposits/{operationId}`.
 
-**10. Stage 3 verification** - Regenerate the snapshot and web types, run the suites, parity, `/simplify` and the architecture-reviewer, then push and open the PR.
+**10. Stage 3a verification** - Regenerate the snapshot and web types, run the suites, parity, `/simplify` and the architecture-reviewer, then push and open the PR.
+
+### Stage 3b: Reserva routes through the operations
+
+**10a. Reserva income split** - Run `POST reserve/income-split` as a manual deposit with no bank into the active pots of the first Pots account, through `IPotsService`.
+
+**10b. Reserva withdrawal** - `POST reserve/withdrawals` delegates to `IPotsService`, so it also refuses a future date.
+
+**10c. Shared checks** - Move the shared bank and overdraft checks out of `PotsService` into `Application/Validation`.
+
+**10d. Stage 3b verification** - Regenerate the snapshot and web types if the contract changes, run the suites, parity, `/simplify` and the architecture-reviewer, then push and open the PR.
 
 ### Stage 4: Deposit from an income
 

@@ -22,7 +22,8 @@ Complexity: **complex**. It adds linked operations across expenses and pot movem
 |---|---|---|
 | **1 — Linked withdrawal (Reserva route)** | `OperationId` on expenses and movements; `POST reserve/withdrawals` writes linked records; 409 on editing or deleting a linked record through the old routes | None (Reserva page and Monthly show the 409 message) |
 | **2 — Withdrawal operations API** | `POST accounts/{potsId}/withdrawals`; `PUT accounts/{potsId}/withdrawals/{operationId}`; `GET`/`DELETE accounts/operations/{operationId}` | None |
-| **3 — Manual deposit** | `POST accounts/{potsId}/deposits` (into active pots or one pot, 0–5 funding lines); `POST reserve/income-split` becomes a manual deposit with no bank | None |
+| **3a — Manual deposit** | `POST accounts/{potsId}/deposits` and `PUT accounts/{potsId}/deposits/{operationId}` (into active pots or one pot, 0–5 funding lines) | None |
+| **3b — Reserva routes** | `POST reserve/income-split` becomes a manual deposit with no bank; `POST reserve/withdrawals` delegates to `IPotsService` (so it also refuses a future date); the shared checks move to `Application/Validation` | None |
 | **4 — Deposit from an income** | Income save writes a linked deposit with funding lines; older split incomes keep today's behaviour | None |
 | **5 — Manage pots (server)** | `PUT accounts/{potsId}/pots`; 100% enforced | None |
 | **6 — Pots read, old-delete fix, parity** | `GET accounts/{potsId}/pots/{y}/{m}`; legacy manual-split delete narrowed; parity figures for pots | None |
@@ -81,7 +82,7 @@ flowchart LR
 | **Older split incomes** (user) | An income whose movements have no `OperationId` keeps today's path: edit rebuilds movements only, delete removes them; no expense, no link. `fundingLines` sent for such an income are ignored. | Convert on edit | No double counting with the hand-typed lines; parity unchanged. |
 | **Operation edit and delete** | `PUT accounts/{potsId}/deposits/{operationId}` or `PUT accounts/{potsId}/withdrawals/{operationId}` takes that kind's request and rebuilds all records in one save, keeping the id. Another kind's id or another Pots account → 404. An income's deposit is edited through the income (on the deposit route → 409 "This deposit belongs to an income; edit the income."). `DELETE operations/{id}` removes all records in one save (an income deposit → the same 409). | Patch records in place | One rebuild path; one save. |
 | **Guards on old routes** (user, 2026-10-31) | `PUT`/`DELETE expenses/{id}` (and the account-screen expense routes) on an expense with `OperationId` → 409 "This expense belongs to a pot deposit or withdrawal; edit it from the Pots account." `PUT`/`DELETE reserve/movements/{id}` on a linked movement → 409 "This movement belongs to a pot deposit or withdrawal; edit it from the Pots account." New `LinkedOperationConflictException` (Application/Exceptions), mapped to 409 next to `StatementPaymentConflictException`. Monthly keeps listing these expenses; totals unchanged. | Hide them from Monthly | Lists keep adding up to the totals. |
-| **Reserva routes** (user) | `POST reserve/withdrawals` → `PotWithdrawal` on the first Pots account (stage 1). `POST reserve/income-split` → a manual deposit with no funding lines into the active pots of the first Pots account (stage 3). Request and response shapes unchanged. | Leave unlinked until F13 | Every new record is linked. |
+| **Reserva routes** (user) | `POST reserve/withdrawals` → `PotWithdrawal` on the first Pots account (stage 1). `POST reserve/income-split` → a manual deposit with no funding lines into the active pots of the first Pots account (stage 3b). In stage 3b the Reserva withdrawal delegates to `IPotsService`, so it also refuses a future date. Request and response shapes unchanged. | Leave unlinked until F13 | Every new record is linked. |
 | **Old manual-split delete** (user) | `DELETE reserve/movements/{id}` on an unlinked movement without an income removes the movements with the same date and description that are positive, unlinked and have no income; a negative (withdrawal) movement is deleted alone. The Reserva page's warning states the real count of lines. | Keep today's | Fixes deleting unrelated movements. |
 | **Manage pots** | `PUT accounts/{potsId}/pots` takes the full list: existing pots by id (name, split %, active) and new ones without id. A pot missing from the list → 400 "Every pot must be in the list; pots can't be deleted." Active split % must total exactly 100.00 → else 400 "Active pots must total 100% (now 95%)." (one decimal shown only when needed). Names unique ignoring case (today's 409 text). `Account.ReplacePots` applies the rules in the Domain; `ReserveSplitRule` (Application) keeps its warning for `GET reserve-buckets/split-status` until F13. | Per-pot endpoints | The 100% rule can hold only when all pots save together. |
 | **Pots read** (user, 2026-10-31) | `GET accounts/{potsId}/pots/{year}/{month}`: each pot (id, name, split %, active, balance at the end of the month from `AccountBalanceRule`'s per-pot sum) and the account total; pots by name, inactive after active. | Today's balances | Matches the header. |
@@ -155,7 +156,8 @@ Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
 **Files per stage (non-test code, generated `openapi.ts` excluded):**
 - 1: 8 (`Expense`, `ReserveMovement`, `PotWithdrawal`, `CashFlowTypeInfoResolver`, `LinkedOperationConflictException`, `ExpenseService`, `ReserveService`, `DomainExceptionMappingMiddleware`).
 - 2: 8 (`PotOperation`, `IPotsService`, `PotsService`, `PotWithdrawalRequestDTO`, `PotOperationDTO`, `PotsController`, DI extensions, `ReserveService`).
-- 3: 7 (`PotDeposit`, `PotOperation`, `PotDepositRequestDTO`, `FundingLineDTO`, `PotsService`, `PotsController`, `ReserveService`).
+- 3a: 8 (`PotDeposit`, `PotOperation`, `PotDepositRequestDTO`, `FundingLineDTO`, `PotOperationDTO`, `IPotsService`, `PotsService`, `PotsController`).
+- 3b: 5 (`ReserveService`, `PotsService`, the new `Application/Validation` file for the shared bank and overdraft checks, `PotDeposit` and `PotWithdrawal` for one shared records type).
 - 4: 5 (`PotDeposit`, `IncomeService`, `IncomeCreateDTO`, `IncomeUpdateDTO`, `IncomeDTO`).
 - 5: 6 (`Account`, `PotsUpdateDTO`, `PotUpdateDTO`, `IPotsService`, `PotsService`, `PotsController`).
 - 6: 8 (`PotsSummaryDTO`, `PotBalanceDTO`, `IPotsService`, `PotsService`, `PotsController`, `ReserveService`, `Parity.psm1`, `figure-map.json`).
@@ -265,7 +267,7 @@ Following the `testing-guide-Financial` skill: Domain and Application unit tests
 | 09 | One-pot deposit, active or inactive, credits only that pot | `…ManualDeposit_OnePot_CreditsOnlyThatPot` | 3 |
 | 10 | Older split income edit adds no bank expense | `…OlderSplitIncome_Edit_AddsNoExpense` | 4 |
 | 11 | Old manual split delete removes only its own lines | `…LegacyManualSplit_Delete_RemovesOnlyItsLines` | 6 |
-| 12 | Reserva page split and withdrawal write linked records | `…ReservaRoutes_WriteLinkedRecords` | 1, 3 |
+| 12 | Reserva page split and withdrawal write linked records | `…ReservaRoutes_WriteLinkedRecords` | 1, 3b |
 | 13 | Admin → Reserve buckets retired; route opens the Pots tab | `…ReserveBucketWrites_AreGone`; routes test | 9 |
 | 14 | Manage pots saves together and rejects ≠ 100.00 | `…ManagePots_TotalNot100_Returns400`; `ManagePotsDialog.test.tsx` | 5, 9 |
 | 15 | Pots screen states, keyboard, narrow layout | ui-reviewer with `docs/ui/review-checklist.md`; `PotsTab.test.tsx` | 8–10 |
