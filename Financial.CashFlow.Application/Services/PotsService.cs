@@ -35,19 +35,13 @@ public sealed class PotsService : IPotsService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var operationId = Guid.NewGuid();
-            var records = BuildDeposit(potsAccountId, request, operationId);
+            var operation = BuildDeposit(potsAccountId, request, Guid.NewGuid());
+            await SaveAsync(operation).ConfigureAwait(false);
 
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                AddRecords(records.Movements, records.BankExpenses);
-                return true;
-            }).ConfigureAwait(false);
-
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, operationId.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, operation.OperationId.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "Deposit");
-            return ToDto(OperationOf(operationId, records.Movements, records.BankExpenses));
+            return ToDto(operation);
         }
         catch (Exception ex)
         {
@@ -64,20 +58,14 @@ public sealed class PotsService : IPotsService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var operation = FindOperationOfKind(operationId, PotOperationKind.Deposit, potsAccountId);
-            EnsureNotAnIncomeDeposit(operation);
-            var records = BuildDeposit(potsAccountId, request, operationId);
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                RemoveRecords(operation);
-                AddRecords(records.Movements, records.BankExpenses);
-                return true;
-            }).ConfigureAwait(false);
+            var existing = FindOperationOfKind(operationId, PotOperationKind.Deposit, potsAccountId);
+            EnsureNotAnIncomeDeposit(existing);
+            var operation = BuildDeposit(potsAccountId, request, operationId);
+            await SaveAsync(operation, existing).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateDeposit");
-            return ToDto(OperationOf(operationId, records.Movements, records.BankExpenses));
+            return ToDto(operation);
         }
         catch (Exception ex)
         {
@@ -93,19 +81,13 @@ public sealed class PotsService : IPotsService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var operationId = Guid.NewGuid();
-            var records = BuildWithdrawal(potsAccountId, request, operationId, _repository.GetReserveMovements());
+            var operation = BuildWithdrawal(potsAccountId, request, Guid.NewGuid(), _repository.GetReserveMovements());
+            await SaveAsync(operation).ConfigureAwait(false);
 
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                AddRecords([records.Movement], records.BankExpenses);
-                return true;
-            }).ConfigureAwait(false);
-
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, operationId.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, operation.OperationId.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "Withdraw");
-            return ToDto(OperationOf(operationId, [records.Movement], records.BankExpenses));
+            return ToDto(operation);
         }
         catch (Exception ex)
         {
@@ -122,20 +104,14 @@ public sealed class PotsService : IPotsService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var operation = FindOperationOfKind(operationId, PotOperationKind.Withdrawal, potsAccountId);
+            var existing = FindOperationOfKind(operationId, PotOperationKind.Withdrawal, potsAccountId);
             var otherMovements = _repository.GetReserveMovements().Where(movement => movement.OperationId != operationId);
-            var records = BuildWithdrawal(potsAccountId, request, operationId, otherMovements);
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                RemoveRecords(operation);
-                AddRecords([records.Movement], records.BankExpenses);
-                return true;
-            }).ConfigureAwait(false);
+            var operation = BuildWithdrawal(potsAccountId, request, operationId, otherMovements);
+            await SaveAsync(operation, existing).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateWithdrawal");
-            return ToDto(OperationOf(operationId, [records.Movement], records.BankExpenses));
+            return ToDto(operation);
         }
         catch (Exception ex)
         {
@@ -188,44 +164,7 @@ public sealed class PotsService : IPotsService
         }
     }
 
-    internal static (Account? Bank, Category? Category) ResolveWithdrawalBank(
-        Guid? bankId, Guid? categoryId, string description, IReadOnlyList<Account> accounts, IEnumerable<Category> categories)
-    {
-        if (bankId is null && categoryId is null)
-        {
-            return (null, null);
-        }
-
-        if (bankId is null)
-        {
-            throw new ArgumentException("A bank is required when an expense category is given.");
-        }
-
-        if (categoryId is null)
-        {
-            throw new ArgumentException("Category is required when a bank is selected.");
-        }
-
-        DescriptionValidator.EnsureWithinLimit(description);
-
-        var bank = CashFlowReferenceResolver.ResolvePaymentSource(accounts, bankId.Value);
-        var category = CashFlowReferenceResolver.ResolveActiveCategory(categories, categoryId.Value);
-        PotWithdrawal.EnsureUsableCategory(category, accounts);
-
-        return (bank, category);
-    }
-
-    internal static void EnsureWithinBalance(ReserveBucket pot, decimal amount, bool confirmed, IEnumerable<ReserveMovement> movements)
-    {
-        var balance = AccountBalanceRule.PotBalance(pot, DateOnly.MaxValue, movements);
-        if (amount > balance && !confirmed)
-        {
-            throw new OverdraftConfirmationRequiredException(
-                FormattableString.Invariant($"This withdrawal exceeds {pot.Name}'s balance of {balance:F2}. Set confirmed=true to proceed."));
-        }
-    }
-
-    private PotWithdrawalRecords BuildWithdrawal(
+    private PotOperation BuildWithdrawal(
         Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<ReserveMovement> balanceMovements)
     {
         EnsureDescriptionAndDate(request.Description, request.Date);
@@ -233,13 +172,15 @@ public sealed class PotsService : IPotsService
         var accounts = _repository.GetAccounts().ToList();
         var potsAccount = FindPotsAccount(accounts, potsAccountId);
         var pot = FindPot(potsAccount, request.PotId);
-        var (bank, category) = ResolveWithdrawalBank(request.BankId, request.CategoryId, request.Description, accounts, _repository.GetCategories());
-        EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceMovements);
+        var (bank, category) = PotWithdrawalValidator.ResolveBankAndCategory(
+            request.BankId, request.CategoryId, request.Description, accounts, _repository.GetCategories());
+        var operation = PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId);
+        PotWithdrawalValidator.EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceMovements);
 
-        return PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId);
+        return operation;
     }
 
-    private PotDepositRecords BuildDeposit(Guid potsAccountId, PotDepositRequestDTO request, Guid operationId)
+    private PotOperation BuildDeposit(Guid potsAccountId, PotDepositRequestDTO request, Guid operationId)
     {
         EnsureDescriptionAndDate(request.Description, request.Date);
 
@@ -293,17 +234,28 @@ public sealed class PotsService : IPotsService
         PotOperation.Read(operationId, _repository.GetReserveMovements(), _repository.GetExpenses(), _repository.GetAccounts())
             ?? throw new KeyNotFoundException($"Operation '{operationId}' was not found.");
 
-    private PotOperation OperationOf(Guid operationId, IReadOnlyList<ReserveMovement> movements, IReadOnlyList<Expense> expenses) =>
-        PotOperation.Read(operationId, movements, expenses, _repository.GetAccounts())!;
-
-    private void AddRecords(IEnumerable<ReserveMovement> movements, IEnumerable<Expense> expenses)
+    private async Task SaveAsync(PotOperation operation, PotOperation? replaced = null)
     {
-        foreach (var movement in movements)
+        await _repository.ApplyAndSaveAsync(() =>
+        {
+            if (replaced is not null)
+            {
+                RemoveRecords(replaced);
+            }
+
+            AddRecords(operation);
+            return true;
+        }).ConfigureAwait(false);
+    }
+
+    private void AddRecords(PotOperation operation)
+    {
+        foreach (var movement in operation.Movements)
         {
             _repository.AddReserveMovement(movement);
         }
 
-        foreach (var expense in expenses)
+        foreach (var expense in operation.Expenses)
         {
             _repository.AddExpense(expense);
         }

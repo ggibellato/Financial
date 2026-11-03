@@ -15,12 +15,14 @@ public sealed class ReserveService : IReserveService
     private const string EntityType = "ReserveMovement";
 
     private readonly ICashFlowRepository _repository;
+    private readonly IPotsService _potsService;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<ReserveService> _logger;
 
-    public ReserveService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ReserveService> logger)
+    public ReserveService(ICashFlowRepository repository, IPotsService potsService, ITelemetryTracer tracer, ILogger<ReserveService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _potsService = potsService ?? throw new ArgumentNullException(nameof(potsService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
@@ -32,49 +34,29 @@ public sealed class ReserveService : IReserveService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            if (request.Amount <= 0)
+            var potsAccount = ReservaAccount.Find(_repository.GetAccounts())
+                ?? throw new ArgumentException("No reserve bucket is currently active.");
+
+            var operation = await _potsService.DepositAsync(potsAccount.Id, new PotDepositRequestDTO
             {
-                throw new ArgumentException("Amount must be greater than zero.", nameof(request.Amount));
-            }
-
-            if (string.IsNullOrWhiteSpace(request.Description))
-            {
-                throw new ArgumentException("Description is required.", nameof(request.Description));
-            }
-
-            var activeBuckets = _repository.GetReserveBuckets().Where(b => b.IsActive).ToList();
-            if (activeBuckets.Count == 0)
-            {
-                throw new ArgumentException("No reserve bucket is currently active.");
-            }
-
-            var movements = CreateSplitMovements(activeBuckets, request.Amount, request.Date, request.Description);
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                foreach (var movement in movements)
-                {
-                    _repository.AddReserveMovement(movement);
-                }
-
-                return true;
+                Amount = request.Amount,
+                Date = request.Date,
+                Description = request.Description
             }).ConfigureAwait(false);
-
-            var splitAmounts = movements
-                .Select(movement => new BucketSplitAmountDTO
-                {
-                    BucketId = movement.Bucket.Id,
-                    BucketName = movement.Bucket.Name,
-                    Amount = movement.Amount
-                })
-                .ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "PostIncomeSplit");
             return new IncomeSplitResultDTO
             {
-                Buckets = splitAmounts,
-                Total = splitAmounts.Sum(b => b.Amount)
+                Buckets = MovementsOf(operation.OperationId)
+                    .Select(movement => new BucketSplitAmountDTO
+                    {
+                        BucketId = movement.Bucket.Id,
+                        BucketName = movement.Bucket.Name,
+                        Amount = movement.Amount
+                    })
+                    .ToList(),
+                Total = operation.Amount
             };
         }
         catch (Exception ex)
@@ -91,44 +73,28 @@ public sealed class ReserveService : IReserveService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            if (string.IsNullOrWhiteSpace(request.Description))
-            {
-                throw new ArgumentException("Description is required.");
-            }
-
-            if (request.Amount <= 0)
-            {
-                throw new ArgumentException("Amount must be greater than zero.");
-            }
-
-            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReserveBuckets(), b => b.Id, out var bucket))
+            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReserveBuckets(), b => b.Id, out _))
             {
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
-            var accounts = _repository.GetAccounts().ToList();
-            var (bank, category) = PotsService.ResolveWithdrawalBank(
-                request.PaymentSourceBankId, request.ExpenseCategoryId, request.Description, accounts, _repository.GetCategories());
-            PotsService.EnsureWithinBalance(bucket!, request.Amount, request.Confirmed, _repository.GetReserveMovements());
-
-            var records = PotWithdrawal.Build(
-                ReservaAccount.Find(accounts)!, bucket!, request.Amount, request.Date, request.Description, bank, category, Guid.NewGuid());
-
-            await _repository.ApplyAndSaveAsync(() =>
+            var operation = await _potsService.WithdrawAsync(ReservaAccount.Find(_repository.GetAccounts())!.Id, new PotWithdrawalRequestDTO
             {
-                _repository.AddReserveMovement(records.Movement);
-                foreach (var expense in records.BankExpenses)
-                {
-                    _repository.AddExpense(expense);
-                }
-
-                return true;
+                PotId = request.BucketId,
+                Amount = request.Amount,
+                Date = request.Date,
+                Description = request.Description,
+                BankId = request.PaymentSourceBankId,
+                CategoryId = request.ExpenseCategoryId,
+                Confirmed = request.Confirmed
             }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, records.Movement.Id.ToString());
+            var movement = MovementsOf(operation.OperationId).Single();
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "PostWithdrawal");
-            return ToDto(records.Movement);
+            return ToDto(movement);
         }
         catch (Exception ex)
         {
@@ -264,10 +230,6 @@ public sealed class ReserveService : IReserveService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
 
-    /// <summary>The per-bucket fan-out shared with IncomeService's automated split: one movement
-    /// per active bucket, with the rounding residual allocated by ReserveSplitAllocator. No
-    /// validation - callers apply their own request-level rules first (see PostIncomeSplitAsync
-    /// above).</summary>
     internal static List<ReserveMovement> CreateSplitMovements(
         IEnumerable<ReserveBucket> activeBuckets, decimal amount, DateOnly date, string description, Income? income = null)
     {
@@ -278,6 +240,9 @@ public sealed class ReserveService : IReserveService
             .Select((bucket, i) => ReserveMovement.Create(bucket, amounts[i], date, description, income))
             .ToList();
     }
+
+    private IEnumerable<ReserveMovement> MovementsOf(Guid operationId) =>
+        _repository.GetReserveMovements().Where(movement => movement.OperationId == operationId);
 
     private static void EnsureNotLinkedToIncome(ReserveMovement movement)
     {

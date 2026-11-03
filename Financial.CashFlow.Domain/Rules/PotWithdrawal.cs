@@ -6,11 +6,9 @@ using Financial.CashFlow.Domain.Entities.Transactions;
 
 namespace Financial.CashFlow.Domain.Rules;
 
-public sealed record PotWithdrawalRecords(ReserveMovement Movement, IReadOnlyList<Expense> BankExpenses);
-
 public static class PotWithdrawal
 {
-    public static PotWithdrawalRecords Build(
+    public static PotOperation Build(
         Account potsAccount,
         ReserveBucket pot,
         decimal amount,
@@ -33,7 +31,7 @@ public static class PotWithdrawal
         var movement = ReserveMovement.Create(pot, -amount, date, description, operationId: operationId);
         if (bank is null)
         {
-            return new(movement, []);
+            return new(operationId, potsAccount, [movement], []);
         }
 
         if (category is null)
@@ -44,7 +42,7 @@ public static class PotWithdrawal
         var potsCategory = potsAccount.Category
             ?? throw new ArgumentException($"Set a category on {potsAccount.Name} first.");
 
-        return new(movement,
+        return new(operationId, potsAccount, [movement],
         [
             Expense.Create(date, description, -amount, potsCategory, bank, creditCard: null, operationId: operationId),
             Expense.Create(date, description, amount, category, bank, creditCard: null, operationId: operationId)

@@ -305,7 +305,7 @@ public class ReserveEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task DeleteMovement_MovementFromASplit_DeletesAllFourLines()
+    public async Task DeleteMovement_LineOfASplitPostedThroughTheReservaRoute_Returns409AndKeepsAllFourLines()
     {
         await Client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
         {
@@ -318,9 +318,9 @@ public class ReserveEndpointsTests : ApiEndpointTests
 
         var response = await Client.DeleteAsync($"/api/v1/financial/reserve/movements/{oneLineOfTheSplit.Id}");
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var remaining = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
-        remaining.Should().BeEmpty();
+        remaining.Should().HaveCount(4);
     }
 
     [Fact]

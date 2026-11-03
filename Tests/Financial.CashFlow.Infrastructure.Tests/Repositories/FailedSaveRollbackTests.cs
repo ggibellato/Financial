@@ -63,7 +63,8 @@ public class FailedSaveRollbackTests
 
     private IncomeService CreateIncomeService() => new(_repository, _tracer, NullLogger<IncomeService>.Instance);
 
-    private ReserveService CreateReserveService() => new(_repository, _tracer, NullLogger<ReserveService>.Instance);
+    private ReserveService CreateReserveService() =>
+        new(_repository, new PotsService(_repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance), _tracer, NullLogger<ReserveService>.Instance);
 
     private CardStatementService CreateCardStatementService() =>
         new(_repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);

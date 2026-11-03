@@ -62,7 +62,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         {
             BucketId = Guid.Parse(InvestimentoId),
             Amount = 38.25m,
-            Date = new DateOnly(2026, 10, 12),
+            Date = new DateOnly(2026, 10, 3),
             Description = "Boots",
             PaymentSourceBankId = Guid.Parse(BarclaysId),
             ExpenseCategoryId = Guid.Parse(MercadoId)
@@ -270,12 +270,28 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-12")]
     public async Task ReservaRoutes_WriteLinkedRecords()
     {
+        var split = await Client.PostAsJsonAsync($"{Api}/reserve/income-split", new IncomeSplitRequestDTO
+        {
+            Date = new DateOnly(2026, 10, 2),
+            Amount = 90m,
+            Description = "Ramsay"
+        });
+        var splitResult = await split.Content.ReadFromJsonAsync<IncomeSplitResultDTO>();
+        var splitMovements = Repository.GetReserveMovements().Where(m => m.Description == "Ramsay").ToList();
+
         var response = await WithdrawThroughBarclaysAsync();
         var created = await response.Content.ReadFromJsonAsync<ReserveMovementDTO>();
 
         var movement = Repository.GetReserveMovements().Single(m => m.Id == created!.Id);
         using (new AssertionScope())
         {
+            split.StatusCode.Should().Be(HttpStatusCode.OK);
+            splitResult!.Total.Should().Be(90m);
+            splitResult.Buckets.Select(bucket => (bucket.BucketId, bucket.BucketName, bucket.Amount)).Should().BeEquivalentTo([
+                (Guid.Parse(InvestimentoId), "Investimento", 54m),
+                (Guid.Parse(HouseTreatsId), "HouseTreats", 36m)]);
+            splitMovements.Select(m => m.OperationId).Distinct().Should().ContainSingle().Which.Should().NotBeNull();
+            ExpensesOf(splitMovements[0].OperationId).Should().BeEmpty();
             response.StatusCode.Should().Be(HttpStatusCode.OK);
             movement.Amount.Should().Be(-38.25m);
             movement.OperationId.Should().NotBeNull();
