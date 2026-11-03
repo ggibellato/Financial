@@ -854,6 +854,138 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{potsId}/deposits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    potsId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["PotDepositRequestDTO"];
+                    "application/json": null | components["schemas"]["PotDepositRequestDTO"];
+                    "text/json": null | components["schemas"]["PotDepositRequestDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PotOperationDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{potsId}/deposits/{operationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    potsId: string;
+                    operationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["PotDepositRequestDTO"];
+                    "application/json": null | components["schemas"]["PotDepositRequestDTO"];
+                    "text/json": null | components["schemas"]["PotDepositRequestDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PotOperationDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{potsId}/withdrawals": {
         parameters: {
             query?: never;
@@ -8772,6 +8904,12 @@ export interface components {
             /** Format: double */
             value: number;
         };
+        FundingLineDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: uuid */
+            bankId: string;
+        };
         FxRateSnapshotDTO: {
             /** Format: double */
             rate?: number;
@@ -9272,6 +9410,16 @@ export interface components {
         };
         /** @enum {unknown} */
         PositionType: "Long" | "Flat" | "Short";
+        PotDepositRequestDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date: string;
+            description: string;
+            fundingLines?: components["schemas"]["FundingLineDTO"][];
+            /** Format: uuid */
+            potId?: null | string;
+        };
         PotOperationDTO: {
             /** Format: double */
             amount: number;
@@ -9282,8 +9430,10 @@ export interface components {
             /** Format: date */
             date: string;
             description: string;
+            fundingLines?: components["schemas"]["FundingLineDTO"][];
             /** Format: uuid */
             incomeId?: null | string;
+            into?: null | string;
             kind: string;
             /** Format: uuid */
             operationId: string;

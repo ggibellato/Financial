@@ -48,6 +48,16 @@ public class PotsServiceTests
         Confirmed = confirmed
     };
 
+    private PotDepositRequestDTO Deposit(
+        decimal amount = 100m, string? pot = null, DateOnly? date = null, (string Bank, decimal Amount)[]? lines = null) => new()
+    {
+        Amount = amount,
+        Date = date ?? Date,
+        Description = "Ramsay bonus",
+        PotId = pot is null ? null : Pot(pot).Id,
+        FundingLines = (lines ?? []).Select(line => new FundingLineDTO { BankId = Bank(line.Bank).Id, Amount = line.Amount }).ToList()
+    };
+
     private Expense AddUnrelatedExpense()
     {
         var expense = Expense.Create(Date, "Groceries", 12m, CategoryNamed("Mercado"), Bank("Chase"), creditCard: null);
@@ -328,6 +338,235 @@ public class PotsServiceTests
         {
             await act.Should().ThrowAsync<KeyNotFoundException>();
             _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.DeleteOperation");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_IntoActivePotsWithFundingLines_SavesTheLinkedRecordsAndReturnsTheOperation()
+    {
+        var result = await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Chase", 85m), ("Barclays", 15m)]));
+
+        using (new AssertionScope())
+        {
+            result.Kind.Should().Be("Deposit");
+            result.Into.Should().Be("ActivePots");
+            result.PotId.Should().BeNull();
+            result.Amount.Should().Be(100m);
+            result.Description.Should().Be("Ramsay bonus");
+            result.FundingLines.Select(line => (line.BankId, line.Amount))
+                .Should().Equal((Bank("Chase").Id, 85m), (Bank("Barclays").Id, 15m));
+            _repository.ReserveMovements.Where(m => m.OperationId == result.OperationId).Select(m => (m.Bucket.Name, m.Amount))
+                .Should().Equal(("Investimento", 33.33m), ("HouseTreats", 33.33m), ("Ariana", 16.67m), ("Gleison", 16.67m));
+            _repository.Expenses.Where(e => e.OperationId == result.OperationId).Select(e => (e.Category.Name, e.Value, e.PaymentSourceAccount!.Name))
+                .Should().Equal(("Reserva", 85m, "Chase"), ("Reserva", 15m, "Barclays"));
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_IntoOnePotWithoutLines_CreditsOnlyThatPot()
+    {
+        var result = await _sut.DepositAsync(Reserva.Id, Deposit(amount: 40m, pot: "Ariana"));
+
+        using (new AssertionScope())
+        {
+            result.Into.Should().Be("OnePot");
+            result.PotId.Should().Be(Pot("Ariana").Id);
+            result.FundingLines.Should().BeEmpty();
+            _repository.ReserveMovements.Should().ContainSingle(m => m.OperationId == result.OperationId && m.Bucket == Pot("Ariana") && m.Amount == 40m);
+            _repository.Expenses.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_LinesNotAddingUp_ThrowsAndSavesNothing()
+    {
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Chase", 80m)]));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Funding lines must add up to £100.00.");
+            _repository.ReserveMovements.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_UnknownFundingBank_Throws()
+    {
+        var request = Deposit();
+        var act = async () => await _sut.DepositAsync(Reserva.Id, new PotDepositRequestDTO
+        {
+            Amount = request.Amount,
+            Date = request.Date,
+            Description = request.Description,
+            FundingLines = [new FundingLineDTO { BankId = Guid.NewGuid(), Amount = 100m }]
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Payment source '*' is not recognized.");
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_FromAnInactiveBank_Throws()
+    {
+        var closed = TestAccounts.Bank("Closed", isActive: false);
+        _repository.Accounts.Add(closed);
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Closed", 100m)]));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_PotOfAnotherAccount_Throws()
+    {
+        var other = TestAccounts.Pots("Holidays");
+        var foreignPot = ReserveBucket.Create("Trip", 100m);
+        other.AddPot(foreignPot);
+        _repository.Accounts.Add(other);
+        var request = Deposit();
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, new PotDepositRequestDTO
+        {
+            Amount = request.Amount,
+            Date = request.Date,
+            Description = request.Description,
+            PotId = foreignPot.Id
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_FutureDate_Throws()
+    {
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(date: TestClock.Today.AddDays(1)));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_AccountWithoutPots_ThrowsNotFound()
+    {
+        var act = async () => await _sut.DepositAsync(Bank("Chase").Id, Deposit());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task GetOperation_SavedDeposit_ReturnsItsFormValues()
+    {
+        var created = await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Chase", 100m)]));
+
+        var result = _sut.GetOperation(created.OperationId);
+
+        result.Should().BeEquivalentTo(created);
+    }
+
+    [Fact]
+    public async Task UpdateDepositAsync_ChangedValues_RebuildsEveryRecordUnderTheSameIdInOneSave()
+    {
+        var created = await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Chase", 100m)]));
+        var unrelated = AddUnrelatedExpense();
+
+        var result = await _sut.UpdateDepositAsync(Reserva.Id, created.OperationId, Deposit(amount: 60m, pot: "Gleison", lines: [("Barclays", 60m)]));
+
+        using (new AssertionScope())
+        {
+            result.OperationId.Should().Be(created.OperationId);
+            result.Into.Should().Be("OnePot");
+            result.Amount.Should().Be(60m);
+            _repository.ReserveMovements.Where(m => m.OperationId == created.OperationId).Select(m => (m.Bucket.Name, m.Amount))
+                .Should().Equal(("Gleison", 60m));
+            _repository.Expenses.Where(e => e.OperationId == created.OperationId).Select(e => (e.Value, e.PaymentSourceAccount!.Name))
+                .Should().Equal((60m, "Barclays"));
+            _repository.Expenses.Should().Contain(unrelated).And.HaveCount(2);
+            _repository.SaveChangesCallCount.Should().Be(2);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateDepositAsync_AWithdrawal_ThrowsNotFound()
+    {
+        var created = await _sut.WithdrawAsync(Reserva.Id, Withdrawal());
+
+        var act = async () => await _sut.UpdateDepositAsync(Reserva.Id, created.OperationId, Deposit());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _repository.Expenses.Should().HaveCount(2);
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.UpdateDeposit");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateDepositAsync_UnderAnotherAccount_ThrowsNotFound()
+    {
+        var created = await _sut.DepositAsync(Reserva.Id, Deposit());
+        var other = TestAccounts.Pots("Holidays");
+        _repository.Accounts.Add(other);
+
+        var act = async () => await _sut.UpdateDepositAsync(other.Id, created.OperationId, Deposit());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.UpdateDeposit");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateDepositAsync_AnIncomesDeposit_ThrowsConflictAndKeepsIt()
+    {
+        var operationId = Guid.NewGuid();
+        var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: Reserva), null, 100m, Bank("Chase"), potsAccount: Reserva);
+        _repository.ReserveMovements.Add(ReserveMovement.Create(Pot("HouseTreats"), 90m, Date, "Split", income, operationId));
+
+        var act = async () => await _sut.UpdateDepositAsync(Reserva.Id, operationId, Deposit());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<LinkedOperationConflictException>().WithMessage("This deposit belongs to an income; edit the income.");
+            _repository.ReserveMovements.Should().HaveCount(2);
+            _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.PotsService.UpdateDeposit");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteOperationAsync_Deposit_RemovesEveryRecordInOneSave()
+    {
+        var created = await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Chase", 100m)]));
+
+        await _sut.DeleteOperationAsync(created.OperationId);
+
+        using (new AssertionScope())
+        {
+            _repository.ReserveMovements.Should().ContainSingle().Which.Description.Should().Be("Seed");
+            _repository.Expenses.Should().BeEmpty();
+            _repository.SaveChangesCallCount.Should().Be(2);
         }
     }
 }

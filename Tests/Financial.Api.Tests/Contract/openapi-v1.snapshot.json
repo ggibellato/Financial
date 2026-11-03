@@ -3586,6 +3586,23 @@
         ],
         "type": "object"
       },
+      "FundingLineDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "bankId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "bankId",
+          "amount"
+        ],
+        "type": "object"
+      },
       "FxRateSnapshotDTO": {
         "properties": {
           "rate": {
@@ -5160,6 +5177,40 @@
           "Short"
         ]
       },
+      "PotDepositRequestDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "fundingLines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingLineDTO"
+            },
+            "type": "array"
+          },
+          "potId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "amount",
+          "date",
+          "description"
+        ],
+        "type": "object"
+      },
       "PotOperationDTO": {
         "properties": {
           "amount": {
@@ -5187,8 +5238,20 @@
           "description": {
             "type": "string"
           },
+          "fundingLines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingLineDTO"
+            },
+            "type": "array"
+          },
           "incomeId": {
             "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "into": {
             "type": [
               "null",
               "string"
@@ -7737,6 +7800,210 @@
         "summary": "",
         "tags": [
           "Accounts"
+        ]
+      }
+    },
+    "/accounts/{potsId}/deposits": {
+      "post": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "potsId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotDepositRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotDepositRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotDepositRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PotOperationDTO"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
+        ]
+      }
+    },
+    "/accounts/{potsId}/deposits/{operationId}": {
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "potsId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "operationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotDepositRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotDepositRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotDepositRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PotOperationDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
         ]
       }
     },

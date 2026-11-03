@@ -16,8 +16,10 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     private const string Api = "/api/v1/financial";
     private const string BarclaysId = "9a1d0000-0000-0000-0000-000000000001";
     private const string ReservaId = "9a1d0000-0000-0000-0000-000000000002";
+    private const string ChaseId = "9a1d0000-0000-0000-0000-000000000003";
     private const string InvestimentoId = "9a1d0000-0000-0000-0000-000000000101";
     private const string HouseTreatsId = "9a1d0000-0000-0000-0000-000000000102";
+    private const string HolidaysId = "9a1d0000-0000-0000-0000-000000000103";
     private const string ReservaCategoryId = "9a1d0000-0000-0000-0000-000000000301";
     private const string MercadoId = "9a1d0000-0000-0000-0000-000000000302";
     private const string LegacyDepositId = "9a1d0000-0000-0000-0000-000000000201";
@@ -29,9 +31,11 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         {
           "Accounts": [
             { "Id": "{{BarclaysId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false }, "Pots": null },
+            { "Id": "{{ChaseId}}", "Name": "Chase", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 1000, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false }, "Pots": null },
             { "Id": "{{ReservaId}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
               { "Id": "{{InvestimentoId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 60 },
-              { "Id": "{{HouseTreatsId}}", "Name": "HouseTreats", "IsActive": true, "SplitPercentage": 40 }
+              { "Id": "{{HouseTreatsId}}", "Name": "HouseTreats", "IsActive": true, "SplitPercentage": 40 },
+              { "Id": "{{HolidaysId}}", "Name": "Holidays", "IsActive": false, "SplitPercentage": 0 }
             ], "CategoryId": "{{ReservaCategoryId}}" }
           ],
           "Categories": [
@@ -81,6 +85,111 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             CategoryId = withBank ? Guid.Parse(MercadoId) : null,
             Confirmed = confirmed
         });
+
+    private Task<HttpResponseMessage> DepositAsync(decimal amount, string? potId = null, params (string BankId, decimal Amount)[] lines) =>
+        Client.PostAsJsonAsync($"{Api}/accounts/{ReservaId}/deposits", DepositRequest(amount, potId, lines));
+
+    private static PotDepositRequestDTO DepositRequest(decimal amount, string? potId, (string BankId, decimal Amount)[] lines) => new()
+    {
+        Amount = amount,
+        Date = new DateOnly(2026, 10, 2),
+        Description = "Ramsay bonus",
+        PotId = potId is null ? null : Guid.Parse(potId),
+        FundingLines = lines.Select(line => new FundingLineDTO { BankId = Guid.Parse(line.BankId), Amount = line.Amount }).ToList()
+    };
+
+    private List<(Guid PotId, decimal Amount)> MovementsOf(Guid operationId) =>
+        Repository.GetReserveMovements().Where(m => m.OperationId == operationId).Select(m => (m.Bucket.Id, m.Amount)).ToList();
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-02")]
+    public async Task Deposit_FundingLines_OneExpensePerBankOrRejected()
+    {
+        var split = await DepositAsync(90m, null, (BarclaysId, 85m), (ChaseId, 5m));
+        var mismatch = await DepositAsync(90m, null, (BarclaysId, 80m));
+        var created = await split.Content.ReadFromJsonAsync<PotOperationDTO>();
+
+        using (new AssertionScope())
+        {
+            split.StatusCode.Should().Be(HttpStatusCode.Created);
+            ExpensesOf(created!.OperationId).Select(expense => (expense.Category.Id, expense.Value, expense.PaymentSourceAccount!.Id, expense.Description))
+                .Should().Equal(
+                    (Guid.Parse(ReservaCategoryId), 85m, Guid.Parse(BarclaysId), "Deposit to Reserva"),
+                    (Guid.Parse(ReservaCategoryId), 5m, Guid.Parse(ChaseId), "Deposit to Reserva"));
+            MovementsOf(created.OperationId).Should().Equal((Guid.Parse(InvestimentoId), 54m), (Guid.Parse(HouseTreatsId), 36m));
+            mismatch.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(mismatch)).Should().Be("Funding lines must add up to £90.00.");
+            Repository.GetExpenses().Should().HaveCount(2);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-03")]
+    public async Task ManualDeposit_NoLines_CreditsPotsOnly()
+    {
+        var response = await DepositAsync(50m);
+        var created = await response.Content.ReadFromJsonAsync<PotOperationDTO>();
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            created!.Into.Should().Be("ActivePots");
+            MovementsOf(created.OperationId).Should().Equal((Guid.Parse(InvestimentoId), 30m), (Guid.Parse(HouseTreatsId), 20m));
+            Repository.GetExpenses().Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-09")]
+    public async Task ManualDeposit_OnePot_CreditsOnlyThatPot()
+    {
+        var active = await (await DepositAsync(25m, HouseTreatsId)).Content.ReadFromJsonAsync<PotOperationDTO>();
+        var inactive = await (await DepositAsync(40m, HolidaysId)).Content.ReadFromJsonAsync<PotOperationDTO>();
+
+        using (new AssertionScope())
+        {
+            MovementsOf(active!.OperationId).Should().Equal((Guid.Parse(HouseTreatsId), 25m));
+            MovementsOf(inactive!.OperationId).Should().Equal((Guid.Parse(HolidaysId), 40m));
+            (active.Into, active.PotId).Should().Be(("OnePot", Guid.Parse(HouseTreatsId)));
+            (inactive.Into, inactive.PotId).Should().Be(("OnePot", Guid.Parse(HolidaysId)));
+        }
+    }
+
+    [Fact]
+    public async Task DepositOperation_ReadEditedAndDeleted_ChangesEveryRecordTogether()
+    {
+        var created = await (await DepositAsync(90m, null, (BarclaysId, 90m))).Content.ReadFromJsonAsync<PotOperationDTO>();
+        var operationUrl = $"{Api}/accounts/operations/{created!.OperationId}";
+
+        var read = await Client.GetFromJsonAsync<PotOperationDTO>(operationUrl);
+        var asWithdrawal = await Client.PutAsJsonAsync($"{Api}/accounts/{ReservaId}/withdrawals/{created.OperationId}", new PotWithdrawalRequestDTO
+        {
+            PotId = Guid.Parse(InvestimentoId),
+            Amount = 5m,
+            Date = new DateOnly(2026, 10, 3),
+            Description = "Cinema"
+        });
+        var update = await Client.PutAsJsonAsync(
+            $"{Api}/accounts/{ReservaId}/deposits/{created.OperationId}", DepositRequest(30m, InvestimentoId, [(ChaseId, 30m)]));
+        var updated = await update.Content.ReadFromJsonAsync<PotOperationDTO>();
+        var movementsAfterUpdate = MovementsOf(created.OperationId);
+        var expensesAfterUpdate = ExpensesOf(created.OperationId).Select(expense => (expense.Value, expense.PaymentSourceAccount!.Id)).ToList();
+        var delete = await Client.DeleteAsync(operationUrl);
+
+        using (new AssertionScope())
+        {
+            read.Should().BeEquivalentTo(created);
+            read!.FundingLines.Select(line => (line.BankId, line.Amount)).Should().Equal((Guid.Parse(BarclaysId), 90m));
+            asWithdrawal.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            update.StatusCode.Should().Be(HttpStatusCode.OK);
+            (updated!.Into, updated.PotId, updated.Amount).Should().Be(("OnePot", Guid.Parse(InvestimentoId), 30m));
+            movementsAfterUpdate.Should().Equal((Guid.Parse(InvestimentoId), 30m));
+            expensesAfterUpdate.Should().Equal((30m, Guid.Parse(ChaseId)));
+            delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            MovementsOf(created.OperationId).Should().BeEmpty();
+            ExpensesOf(created.OperationId).Should().BeEmpty();
+        }
+    }
 
     [Fact]
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-05")]
