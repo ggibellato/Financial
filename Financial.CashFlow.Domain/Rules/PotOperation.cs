@@ -25,11 +25,18 @@ public sealed record PotOperation(
     public DateOnly Date => Movements[0].Date;
     public string Description => Movements[0].Description;
     public decimal Amount => Movements.Sum(movement => Math.Abs(movement.Amount));
-    public PotDepositTarget? Into => Kind == PotOperationKind.Withdrawal ? null
-        : Movements.Count == 1 ? PotDepositTarget.OnePot : PotDepositTarget.ActivePots;
+    public PotDepositTarget? Into => (Kind, Movements.Count) switch
+    {
+        (PotOperationKind.Withdrawal, _) => null,
+        (_, 1) => PotDepositTarget.OnePot,
+        _ => PotDepositTarget.ActivePots
+    };
     public ReserveBucket? Pot => Into == PotDepositTarget.ActivePots ? null : Movements[0].Bucket;
     public IReadOnlyList<PotFundingLine> FundingLines => Kind == PotOperationKind.Deposit
-        ? Expenses.Select(expense => new PotFundingLine(expense.PaymentSourceAccount!, expense.Value)).ToList()
+        ? Expenses
+            .Where(expense => expense.Category.Id == PotsAccount.Category?.Id)
+            .Select(expense => new PotFundingLine(expense.PaymentSourceAccount!, expense.Value))
+            .ToList()
         : [];
     public Account? Bank => ChosenExpense?.PaymentSourceAccount;
     public Category? Category => ChosenExpense?.Category;

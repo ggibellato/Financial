@@ -138,6 +138,16 @@ public class PotDepositTests
         act.Should().Throw<ArgumentException>().WithMessage("Savings has no active pots.");
     }
 
+    [Fact]
+    public void Build_ActivePotsNotTotalling100_Throws()
+    {
+        _ariana.Update("Ariana", 19.99m, isActive: true);
+
+        var act = () => PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_chase, 90m)], OperationId);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Active pots must total 100% (now 99.99%).");
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]

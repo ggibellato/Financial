@@ -163,6 +163,16 @@ public class PotOperationTests
     }
 
     [Fact]
+    public void Read_SplitIntoTheOnlyActivePot_ReadsBackAsThatPot()
+    {
+        var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", pot: null, [], OperationId);
+
+        var operation = PotOperation.Read(OperationId, records.Movements, records.BankExpenses, [_reserva]);
+
+        (operation!.Into, operation.Pot).Should().Be((PotDepositTarget.OnePot, _pot));
+    }
+
+    [Fact]
     public void Read_Withdrawal_HasNoTargetOrFundingLines()
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);

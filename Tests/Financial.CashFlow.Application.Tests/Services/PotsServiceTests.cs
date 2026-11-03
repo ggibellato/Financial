@@ -412,6 +412,46 @@ public class PotsServiceTests
     }
 
     [Fact]
+    public async Task DepositAsync_FromAnInactiveBank_Throws()
+    {
+        var closed = TestAccounts.Bank("Closed", isActive: false);
+        _repository.Accounts.Add(closed);
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(lines: [("Closed", 100m)]));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_PotOfAnotherAccount_Throws()
+    {
+        var other = TestAccounts.Pots("Holidays");
+        var foreignPot = ReserveBucket.Create("Trip", 100m);
+        other.AddPot(foreignPot);
+        _repository.Accounts.Add(other);
+        var request = Deposit();
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, new PotDepositRequestDTO
+        {
+            Amount = request.Amount,
+            Date = request.Date,
+            Description = request.Description,
+            PotId = foreignPot.Id
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
     public async Task DepositAsync_FutureDate_Throws()
     {
         var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(date: TestClock.Today.AddDays(1)));

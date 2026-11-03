@@ -84,6 +84,12 @@ public static class PotDeposit
             throw new ArgumentException($"{potsAccount.Name} has no active pots.");
         }
 
+        var splitTotal = activePots.Sum(pot => pot.SplitPercentage);
+        if (splitTotal != 100m)
+        {
+            throw new ArgumentException(FormattableString.Invariant($"Active pots must total 100% (now {splitTotal:0.##}%)."));
+        }
+
         var amounts = ReserveSplitAllocator.Allocate(activePots, amount);
         return activePots
             .Select((pot, index) => ReserveMovement.Create(pot, amounts[index], date, description, operationId: operationId))
@@ -96,7 +102,8 @@ public static class PotDeposit
         {
             Currency.GBP => "£",
             Currency.BRL => "R$",
-            _ => "$"
+            Currency.USD => "$",
+            _ => throw new ArgumentOutOfRangeException(nameof(currency), currency, null)
         };
 
         return FormattableString.Invariant($"{symbol}{amount:F2}");
