@@ -181,5 +181,6 @@ A change is **not** complete unless:
 - [ ] New code documented where necessary (see §Comments).
 - [ ] The change is a complete working vertical increment — implementation, configuration, tests and docs.
 - [ ] The application remains deployable after merge, and the PR documents the commands used to verify it (build, test, start-up under production config).
+- [ ] Wherever the code differs from the spec, plan or PRD (a route, a component, a message, a rule), the same PR updates those documents in its own docs commit and lists each deviation in the PR body. Never leave the fix for a later PR.
 
 Provide this checklist, filled in, before marking work complete.

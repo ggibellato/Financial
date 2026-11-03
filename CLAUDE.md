@@ -12,8 +12,8 @@ Financial.CashFlow.{Domain,Application,Infrastructure}     CashFlow bounded cont
 Financial.Shared.Infrastructure                             JSON/Google Drive storage primitives shared by both contexts
 Financial.Api                                                ASP.NET Core, serves REST API + hosts the built SPA
 Financial.Web                                                React + TypeScript SPA, separate from the .slnx
-Integrations/       GoogleCore, GoogleDrive, GoogleSheets, Observability, WebPageParser (vendor SDKs, no bounded-context types)
-Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets, InvestmentSpreadsheetImport
+Integrations/       Frankfurter, GoogleCalendar, GoogleCore, GoogleDrive, GoogleFinancialSupport, GoogleSheets, Observability, WebPageParser (vendor SDKs, no bounded-context types)
+Tools/              CashFlowSpreadsheetImport, ImportGoogleSpreadSheets, InvestmentSpreadsheetImport, InvestmentCurrencyBackfill, InvestmentDataQualityReport, InvestmentTransactionIncomeVocabularyMigration
 Tests/              One test project per Domain/Application/Infrastructure/Presentation project
 ```
 
@@ -134,7 +134,7 @@ npm run generate-api-types  # regenerate src/api/generated/openapi.ts from the O
 ```
 docker-compose up
 ```
-Builds the React SPA and the API into a single image (`Dockerfile`), API serves both from port 8080. Volumes mount `./data` for the JSON files.
+Builds the React SPA and the API into a single image (`Dockerfile`), API serves both from port 8080. Volumes mount `./data` for the JSON files, so it serves the live `data/data-cashflow.json`: it is the user's local install, not a test environment. For local testing and browsing use `dotnet run --project Financial.Api` (Development, `data/dev/`) plus `npm run dev`.
 
 ## CI
 
@@ -161,12 +161,21 @@ git commit -m "short description
 Detailed description if there are many files or changes"
 ```
 
+**Always:**
+- Branch per change; never commit to `main`.
+- "Commit" means a local commit. Push only when the user asks.
+- Several sessions work on this repo at once. Do your work in a worktree outside the repo (`git worktree add ../financial-wt-<topic> -b <branch> origin/main`); never switch branches in a checkout you didn't create.
+- Run `git branch --show-current` before any merge, fast-forward or reset.
+- The user merges every PR (branch protection requires review). Wait for the user to confirm a merge before starting work that depends on it.
+
 **Never:**
 - Update git config
 - Run destructive commands (force push, hard reset) without explicit request
-- Skip hookd (--no-verify) unless requested
-- Use `git commit --amend` unles explicity safe
+- Skip hooks (--no-verify) unless requested
+- Use `git commit --amend` unless explicitly safe
 - Force push to main/master
+- Use `git stash`; compare through a worktree or `git show` instead
+- Approve your own PR, merge with `--admin`, or enable auto-merge
 
 ## Architecture invariants
 
@@ -244,7 +253,7 @@ workflow.
   - Clearer structure and types
 - When in doubt: NO COMMENT.
 - This rule applies to:
-  - All C#, TypeScript, XAML, SQL, config, and script files.
+  - All C#, TypeScript, SQL, config, and script files.
   - Inline comments, block comments, and XML/doc comments.
 - Violating this rule will cause the code to be rejected in review. Comply strictly.
 
@@ -258,9 +267,6 @@ workflow.
   - behaviour that would surprise a reader
 - Don’t explain WHAT the code does. Well-named identifiers already do that.
 - Don’t reference the current task, fix, or callers in comments; those belong in the PR description.
-
-## Behaviour
-When working in automatic mode on tasks that create pull requests, always check whether the current GitHub account has permission to merge PRs before proceeding. If you detect that you cannot merge (for example, due to branch protection rules, missing write/merge permissions, or a failed permission check), stop the automation immediately, explain clearly that the PR cannot be merged with the current account, and wait for the user to confirm that the PR has been merged (or to switch to an account with merge rights) before creating any follow-up PRs or continuing with dependent work.
 
 ## Rule files
 
