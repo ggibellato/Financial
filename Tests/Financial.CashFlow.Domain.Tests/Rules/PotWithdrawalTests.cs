@@ -29,13 +29,14 @@ public class PotWithdrawalTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId);
 
+        var movement = records.Movements.Single();
         using (new AssertionScope())
         {
-            records.Movements.Single().Bucket.Should().BeSameAs(_pot);
-            records.Movements.Single().Amount.Should().Be(-38.25m);
-            records.Movements.Single().Date.Should().Be(Date);
-            records.Movements.Single().Description.Should().Be("Boots");
-            records.Movements.Single().OperationId.Should().Be(OperationId);
+            movement.Bucket.Should().BeSameAs(_pot);
+            movement.Amount.Should().Be(-38.25m);
+            movement.Date.Should().Be(Date);
+            movement.Description.Should().Be("Boots");
+            movement.OperationId.Should().Be(OperationId);
             records.Expenses.Select(expense => (expense.Category, expense.Value)).Should().Equal((_reservaCategory, -38.25m), (_health, 38.25m));
             records.Expenses.Should().OnlyContain(expense =>
                 expense.PaymentSourceAccount == _bank
@@ -53,10 +54,11 @@ public class PotWithdrawalTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId);
 
+        var movement = records.Movements.Single();
         using (new AssertionScope())
         {
-            records.Movements.Single().Amount.Should().Be(-20m);
-            records.Movements.Single().OperationId.Should().Be(OperationId);
+            movement.Amount.Should().Be(-20m);
+            movement.OperationId.Should().Be(OperationId);
             records.Expenses.Should().BeEmpty();
         }
     }

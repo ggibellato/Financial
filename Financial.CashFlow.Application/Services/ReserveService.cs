@@ -73,12 +73,12 @@ public sealed class ReserveService : IReserveService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReserveBuckets(), b => b.Id, out _))
+            if (ReservaAccount.Find(_repository.GetAccounts()) is not { } potsAccount || !potsAccount.OwnsPot(request.BucketId))
             {
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
-            var operation = await _potsService.WithdrawAsync(ReservaAccount.Find(_repository.GetAccounts())!.Id, new PotWithdrawalRequestDTO
+            var operation = await _potsService.WithdrawAsync(potsAccount.Id, new PotWithdrawalRequestDTO
             {
                 PotId = request.BucketId,
                 Amount = request.Amount,

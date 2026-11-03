@@ -9,6 +9,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
@@ -16,8 +17,6 @@ namespace Financial.CashFlow.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class ReserveServiceTests
 {
-    private static readonly Microsoft.Extensions.Logging.ILogger<ReserveService> Logger = NullLogger<ReserveService>.Instance;
-
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
     private readonly ReserveService _sut;
@@ -29,11 +28,12 @@ public class ReserveServiceTests
         _sut = CreateService();
     }
 
-    private ReserveService CreateService(StubCashFlowRepository? repository = null) =>
-        CreateService(repository ?? _repository, Logger);
-
-    private ReserveService CreateService(StubCashFlowRepository repository, Microsoft.Extensions.Logging.ILogger<ReserveService> logger) =>
-        new(repository, new PotsService(repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance), _tracer, logger);
+    private ReserveService CreateService(StubCashFlowRepository? repository = null, ILogger<ReserveService>? logger = null)
+    {
+        var target = repository ?? _repository;
+        var potsService = new PotsService(target, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
+        return new ReserveService(target, potsService, _tracer, logger ?? NullLogger<ReserveService>.Instance);
+    }
 
     /// <summary>The seeded bucket's id. The stub repository generates a fresh Guid per test run,
     /// so a test names the bucket it means and lets this resolve the id it must send.</summary>
@@ -107,19 +107,23 @@ public class ReserveServiceTests
 
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
-        await act.Should().ThrowAsync<ArgumentException>();
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*has no active pots.");
         repository.ReserveMovements.Should().BeEmpty();
         repository.SaveChangesCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
     [Fact]
     public async Task PostIncomeSplitAsync_WithoutAPotsAccount_ThrowsArgumentException()
     {
-        var service = CreateService(new StubCashFlowRepository());
+        var repository = new StubCashFlowRepository();
+        var service = CreateService(repository);
 
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("No reserve bucket is currently active.");
+        repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
     [Theory]
@@ -138,6 +142,7 @@ public class ReserveServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Amount must be greater than zero.");
         _repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
     [Theory]
@@ -157,6 +162,7 @@ public class ReserveServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Description is required.");
         _repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
     [Fact]
@@ -185,6 +191,7 @@ public class ReserveServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Active pots must total 100% (now 83.33%).");
         _repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
     [Fact]
@@ -293,6 +300,28 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Amount must be greater than zero.");
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
+    }
+
+    [Fact]
+    public async Task PostWithdrawalAsync_PotOfASecondPotsAccount_ThrowsNotRecognizedAndSavesNothing()
+    {
+        var holidays = TestAccounts.Pots("Holiday pots");
+        var beach = ReserveBucket.Create("Beach", 0m);
+        holidays.AddPot(beach);
+        _repository.Accounts.Add(holidays);
+
+        var act = async () => await _sut.PostWithdrawalAsync(new WithdrawalRequestDTO
+        {
+            BucketId = beach.Id,
+            Amount = 10m,
+            Date = new DateOnly(2026, 7, 1),
+            Description = "Towels"
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not recognized*");
+        _repository.ReserveMovements.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
     }
 
     [Fact]
@@ -497,6 +526,7 @@ public class ReserveServiceTests
 
         await act.Should().ThrowAsync<LinkedOperationConflictException>();
         _repository.ReserveMovements.Should().HaveCount(4);
+        _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.DeleteMovement");
     }
 
     [Fact]

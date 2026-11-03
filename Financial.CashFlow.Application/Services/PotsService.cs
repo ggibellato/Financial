@@ -234,9 +234,8 @@ public sealed class PotsService : IPotsService
         PotOperation.Read(operationId, _repository.GetReserveMovements(), _repository.GetExpenses(), _repository.GetAccounts())
             ?? throw new KeyNotFoundException($"Operation '{operationId}' was not found.");
 
-    private async Task SaveAsync(PotOperation operation, PotOperation? replaced = null)
-    {
-        await _repository.ApplyAndSaveAsync(() =>
+    private Task SaveAsync(PotOperation operation, PotOperation? replaced = null) =>
+        _repository.ApplyAndSaveAsync(() =>
         {
             if (replaced is not null)
             {
@@ -245,8 +244,7 @@ public sealed class PotsService : IPotsService
 
             AddRecords(operation);
             return true;
-        }).ConfigureAwait(false);
-    }
+        });
 
     private void AddRecords(PotOperation operation)
     {
