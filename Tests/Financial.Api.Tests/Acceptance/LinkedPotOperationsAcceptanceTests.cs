@@ -70,6 +70,93 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     private List<Expense> ExpensesOf(Guid? operationId) =>
         Repository.GetExpenses().Where(expense => expense.OperationId == operationId).ToList();
 
+    private Task<HttpResponseMessage> WithdrawFromPotsAccountAsync(decimal amount, bool withBank, bool confirmed = false) =>
+        Client.PostAsJsonAsync($"{Api}/accounts/{ReservaId}/withdrawals", new PotWithdrawalRequestDTO
+        {
+            PotId = Guid.Parse(InvestimentoId),
+            Amount = amount,
+            Date = new DateOnly(2026, 10, 2),
+            Description = "Boots",
+            BankId = withBank ? Guid.Parse(BarclaysId) : null,
+            CategoryId = withBank ? Guid.Parse(MercadoId) : null,
+            Confirmed = confirmed
+        });
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-05")]
+    public async Task Withdrawal_ThroughBank_WritesLinkedRecords()
+    {
+        var throughBank = await WithdrawFromPotsAccountAsync(38.25m, withBank: true);
+        var potOnly = await WithdrawFromPotsAccountAsync(10m, withBank: false);
+        var linked = await throughBank.Content.ReadFromJsonAsync<PotOperationDTO>();
+        var unlinked = await potOnly.Content.ReadFromJsonAsync<PotOperationDTO>();
+
+        using (new AssertionScope())
+        {
+            throughBank.StatusCode.Should().Be(HttpStatusCode.Created);
+            potOnly.StatusCode.Should().Be(HttpStatusCode.Created);
+            Repository.GetReserveMovements().Where(m => m.OperationId == linked!.OperationId).Select(m => (m.Bucket.Id, m.Amount))
+                .Should().Equal((Guid.Parse(InvestimentoId), -38.25m));
+            ExpensesOf(linked!.OperationId).Select(expense => (expense.Category.Id, expense.Value, expense.PaymentSourceAccount!.Id))
+                .Should().BeEquivalentTo([
+                    (Guid.Parse(ReservaCategoryId), -38.25m, Guid.Parse(BarclaysId)),
+                    (Guid.Parse(MercadoId), 38.25m, Guid.Parse(BarclaysId))]);
+            Repository.GetReserveMovements().Should().ContainSingle(m => m.OperationId == unlinked!.OperationId && m.Amount == -10m);
+            ExpensesOf(unlinked!.OperationId).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-06")]
+    public async Task Withdrawal_Overdraft_Returns409UntilConfirmed()
+    {
+        var unconfirmed = await WithdrawFromPotsAccountAsync(600m, withBank: true);
+        var movementsAfterRefusal = Repository.GetReserveMovements().Count();
+        var confirmed = await WithdrawFromPotsAccountAsync(600m, withBank: true, confirmed: true);
+
+        using (new AssertionScope())
+        {
+            unconfirmed.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            movementsAfterRefusal.Should().Be(2);
+            confirmed.StatusCode.Should().Be(HttpStatusCode.Created);
+            Repository.GetReserveMovements().Should().ContainSingle(m => m.Amount == -600m);
+        }
+    }
+
+    [Fact]
+    public async Task WithdrawalOperation_ReadEditedAndDeleted_ChangesEveryRecordTogether()
+    {
+        var created = await (await WithdrawFromPotsAccountAsync(38.25m, withBank: true)).Content.ReadFromJsonAsync<PotOperationDTO>();
+        var operationUrl = $"{Api}/accounts/operations/{created!.OperationId}";
+
+        var read = await Client.GetFromJsonAsync<PotOperationDTO>(operationUrl);
+        var update = await Client.PutAsJsonAsync($"{Api}/accounts/{ReservaId}/withdrawals/{created.OperationId}", new PotWithdrawalRequestDTO
+        {
+            PotId = Guid.Parse(HouseTreatsId),
+            Amount = 5m,
+            Date = new DateOnly(2026, 10, 3),
+            Description = "Cinema",
+            Confirmed = true
+        });
+        var afterUpdate = ExpensesOf(created.OperationId).Count;
+        var movementAfterUpdate = Repository.GetReserveMovements().Single(m => m.OperationId == created.OperationId);
+        var delete = await Client.DeleteAsync(operationUrl);
+        var readAfterDelete = await Client.GetAsync(operationUrl);
+
+        using (new AssertionScope())
+        {
+            read.Should().BeEquivalentTo(created);
+            read!.Kind.Should().Be("Withdrawal");
+            update.StatusCode.Should().Be(HttpStatusCode.OK);
+            afterUpdate.Should().Be(0);
+            (movementAfterUpdate.Bucket.Id, movementAfterUpdate.Amount, movementAfterUpdate.Description)
+                .Should().Be((Guid.Parse(HouseTreatsId), -5m, "Cinema"));
+            delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            readAfterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Repository.GetReserveMovements().Should().NotContain(m => m.OperationId == created.OperationId);
+        }
+    }
+
     [Fact]
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-12")]
     public async Task ReservaRoutes_WriteLinkedRecords()

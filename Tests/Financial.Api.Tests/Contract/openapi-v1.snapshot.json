@@ -5160,6 +5160,112 @@
           "Short"
         ]
       },
+      "PotOperationDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "bankId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "incomeId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "kind": {
+            "type": "string"
+          },
+          "operationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "potId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "operationId",
+          "kind",
+          "potsAccountId",
+          "date",
+          "description",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "PotWithdrawalRequestDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "bankId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "categoryId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "confirmed": {
+            "type": "boolean"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "potId": {
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "potId",
+          "amount",
+          "date",
+          "description"
+        ],
+        "type": "object"
+      },
       "PriceSource": {
         "enum": [
           "Unknown",
@@ -6847,6 +6953,91 @@
         ]
       }
     },
+    "/accounts/operations/{operationId}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "operationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
+        ]
+      },
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "operationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PotOperationDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
+        ]
+      }
+    },
     "/accounts/payable-statements": {
       "get": {
         "responses": {
@@ -7546,6 +7737,220 @@
         "summary": "",
         "tags": [
           "Accounts"
+        ]
+      }
+    },
+    "/accounts/{potsId}/withdrawals": {
+      "post": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "potsId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotWithdrawalRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotWithdrawalRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotWithdrawalRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PotOperationDTO"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
+        ]
+      }
+    },
+    "/accounts/{potsId}/withdrawals/{operationId}": {
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "potsId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "operationId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotWithdrawalRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotWithdrawalRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotWithdrawalRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PotOperationDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
         ]
       }
     },
@@ -15867,6 +16272,9 @@
     },
     {
       "name": "Portfolios"
+    },
+    {
+      "name": "Pots"
     },
     {
       "name": "ReportingCurrency"

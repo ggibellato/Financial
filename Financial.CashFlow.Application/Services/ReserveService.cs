@@ -107,14 +107,9 @@ public sealed class ReserveService : IReserveService
             }
 
             var accounts = _repository.GetAccounts().ToList();
-            var (bank, category) = ResolveWithdrawalBank(request, accounts);
-
-            var currentBalance = GetBalance(bucket!);
-            if (request.Amount > currentBalance && !request.Confirmed)
-            {
-                throw new OverdraftConfirmationRequiredException(
-                    FormattableString.Invariant($"This withdrawal exceeds {bucket!.Name}'s balance of {currentBalance:F2}. Set confirmed=true to proceed."));
-            }
+            var (bank, category) = PotsService.ResolveWithdrawalBank(
+                request.PaymentSourceBankId, request.ExpenseCategoryId, request.Description, accounts, _repository.GetCategories());
+            PotsService.EnsureWithinBalance(bucket!, request.Amount, request.Confirmed, _repository.GetReserveMovements());
 
             var records = PotWithdrawal.Build(
                 ReservaAccount.Find(accounts)!, bucket!, request.Amount, request.Date, request.Description, bank, category, Guid.NewGuid());
@@ -268,35 +263,6 @@ public sealed class ReserveService : IReserveService
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
-
-    private (Account? Bank, Category? Category) ResolveWithdrawalBank(WithdrawalRequestDTO request, IReadOnlyList<Account> accounts)
-    {
-        if (request.PaymentSourceBankId is null && request.ExpenseCategoryId is null)
-        {
-            return (null, null);
-        }
-
-        if (request.PaymentSourceBankId is null)
-        {
-            throw new ArgumentException("A bank is required when an expense category is given.");
-        }
-
-        if (request.ExpenseCategoryId is null)
-        {
-            throw new ArgumentException("Category is required when a bank is selected.");
-        }
-
-        DescriptionValidator.EnsureWithinLimit(request.Description);
-
-        var bank = CashFlowReferenceResolver.ResolvePaymentSource(accounts, request.PaymentSourceBankId.Value);
-        var category = CashFlowReferenceResolver.ResolveActiveCategory(_repository.GetCategories(), request.ExpenseCategoryId.Value);
-        PotWithdrawal.EnsureUsableCategory(category, accounts);
-
-        return (bank, category);
-    }
-
-    private decimal GetBalance(ReserveBucket bucket) =>
-        AccountBalanceRule.PotBalance(bucket, DateOnly.MaxValue, _repository.GetReserveMovements());
 
     /// <summary>The per-bucket fan-out shared with IncomeService's automated split: one movement
     /// per active bucket, with the rounding residual allocated by ReserveSplitAllocator. No
