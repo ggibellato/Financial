@@ -9,13 +9,11 @@ namespace Financial.CashFlow.Domain.Rules;
 
 public sealed record PotFundingLine(Account Bank, decimal Amount);
 
-public sealed record PotDepositRecords(IReadOnlyList<ReserveMovement> Movements, IReadOnlyList<Expense> BankExpenses);
-
 public static class PotDeposit
 {
     public const int MaxFundingLines = 5;
 
-    public static PotDepositRecords Build(
+    public static PotOperation Build(
         Account potsAccount,
         decimal amount,
         DateOnly date,
@@ -42,7 +40,7 @@ public static class PotDeposit
 
         if (fundingLines.Count == 0)
         {
-            return new(movements, []);
+            return new(operationId, potsAccount, movements, []);
         }
 
         var potsCategory = potsAccount.Category
@@ -54,7 +52,7 @@ public static class PotDeposit
                 countsAsTithe: false, operationId: operationId))
             .ToList();
 
-        return new(movements, expenses);
+        return new(operationId, potsAccount, movements, expenses);
     }
 
     private static void EnsureFundingLinesAddUp(Account potsAccount, decimal amount, IReadOnlyList<PotFundingLine> fundingLines)

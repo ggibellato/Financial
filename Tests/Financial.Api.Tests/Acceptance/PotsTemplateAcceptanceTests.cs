@@ -71,7 +71,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
         {
             BucketId = Guid.Parse(InvestimentoId),
             Amount = 10m,
-            Date = new DateOnly(2026, 10, 20),
+            Date = new DateOnly(2026, 10, 3),
             Description = "Dentist",
             PaymentSourceBankId = Guid.Parse(BarclaysId),
             ExpenseCategoryId = Guid.Parse(categoryId)

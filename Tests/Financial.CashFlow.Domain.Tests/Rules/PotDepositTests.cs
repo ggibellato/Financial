@@ -41,7 +41,7 @@ public class PotDepositTests
                 .Should().Equal((_investimento, 16.66m), (_houseTreats, 10.00m), (_ariana, 6.67m));
             records.Movements.Should().OnlyContain(movement =>
                 movement.Date == Date && movement.Description == "Ramsay bonus" && movement.OperationId == OperationId && movement.Income == null);
-            records.BankExpenses.Should().BeEmpty();
+            records.Expenses.Should().BeEmpty();
         }
     }
 
@@ -61,9 +61,9 @@ public class PotDepositTests
 
         using (new AssertionScope())
         {
-            records.BankExpenses.Select(expense => (expense.PaymentSourceAccount, expense.Value))
+            records.Expenses.Select(expense => (expense.PaymentSourceAccount, expense.Value))
                 .Should().Equal((_chase, 85m), (_barclays, 5m));
-            records.BankExpenses.Should().OnlyContain(expense =>
+            records.Expenses.Should().OnlyContain(expense =>
                 expense.Category == _reservaCategory
                 && expense.CreditCard == null
                 && expense.Date == Date

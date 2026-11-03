@@ -29,15 +29,16 @@ public class PotWithdrawalTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId);
 
+        var movement = records.Movements.Single();
         using (new AssertionScope())
         {
-            records.Movement.Bucket.Should().BeSameAs(_pot);
-            records.Movement.Amount.Should().Be(-38.25m);
-            records.Movement.Date.Should().Be(Date);
-            records.Movement.Description.Should().Be("Boots");
-            records.Movement.OperationId.Should().Be(OperationId);
-            records.BankExpenses.Select(expense => (expense.Category, expense.Value)).Should().Equal((_reservaCategory, -38.25m), (_health, 38.25m));
-            records.BankExpenses.Should().OnlyContain(expense =>
+            movement.Bucket.Should().BeSameAs(_pot);
+            movement.Amount.Should().Be(-38.25m);
+            movement.Date.Should().Be(Date);
+            movement.Description.Should().Be("Boots");
+            movement.OperationId.Should().Be(OperationId);
+            records.Expenses.Select(expense => (expense.Category, expense.Value)).Should().Equal((_reservaCategory, -38.25m), (_health, 38.25m));
+            records.Expenses.Should().OnlyContain(expense =>
                 expense.PaymentSourceAccount == _bank
                 && expense.CreditCard == null
                 && expense.Date == Date
@@ -53,11 +54,12 @@ public class PotWithdrawalTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId);
 
+        var movement = records.Movements.Single();
         using (new AssertionScope())
         {
-            records.Movement.Amount.Should().Be(-20m);
-            records.Movement.OperationId.Should().Be(OperationId);
-            records.BankExpenses.Should().BeEmpty();
+            movement.Amount.Should().Be(-20m);
+            movement.OperationId.Should().Be(OperationId);
+            records.Expenses.Should().BeEmpty();
         }
     }
 
