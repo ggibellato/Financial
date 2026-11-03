@@ -122,4 +122,57 @@ public class PotOperationTests
             operation.IncomeId.Should().Be(income.Id);
         }
     }
+
+    [Fact]
+    public void Read_DepositIntoActivePotsWithFundingLines_RebuildsTheFormValues()
+    {
+        var second = ReserveBucket.Create("HouseTreats", 0m);
+        _reserva.AddPot(second);
+        var barclays = TestAccounts.Bank("Barclays");
+        var records = PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_bank, 85m), new(barclays, 5m)], OperationId);
+
+        var operation = PotOperation.Read(OperationId, records.Movements, records.BankExpenses, [_bank, barclays, _reserva]);
+
+        using (new AssertionScope())
+        {
+            operation!.Kind.Should().Be(PotOperationKind.Deposit);
+            operation.Into.Should().Be(PotDepositTarget.ActivePots);
+            operation.Pot.Should().BeNull();
+            operation.Amount.Should().Be(90m);
+            operation.Description.Should().Be("Bonus");
+            operation.FundingLines.Should().Equal(new PotFundingLine(_bank, 85m), new PotFundingLine(barclays, 5m));
+            operation.Bank.Should().BeNull();
+            operation.Category.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Read_DepositIntoOnePotWithoutLines_ReadsBackAsThatPot()
+    {
+        var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", _pot, [], OperationId);
+
+        var operation = PotOperation.Read(OperationId, records.Movements, records.BankExpenses, [_reserva]);
+
+        using (new AssertionScope())
+        {
+            operation!.Into.Should().Be(PotDepositTarget.OnePot);
+            operation.Pot.Should().BeSameAs(_pot);
+            operation.Amount.Should().Be(40m);
+            operation.FundingLines.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void Read_Withdrawal_HasNoTargetOrFundingLines()
+    {
+        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);
+
+        var operation = PotOperation.Read(OperationId, [records.Movement], records.BankExpenses, [_bank, _reserva]);
+
+        using (new AssertionScope())
+        {
+            operation!.Into.Should().BeNull();
+            operation.FundingLines.Should().BeEmpty();
+        }
+    }
 }

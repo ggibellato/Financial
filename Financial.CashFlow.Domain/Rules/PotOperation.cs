@@ -12,6 +12,12 @@ public enum PotOperationKind
     Withdrawal
 }
 
+public enum PotDepositTarget
+{
+    ActivePots,
+    OnePot
+}
+
 public sealed record PotOperation(
     Guid OperationId, Account PotsAccount, IReadOnlyList<ReserveMovement> Movements, IReadOnlyList<Expense> Expenses)
 {
@@ -19,7 +25,12 @@ public sealed record PotOperation(
     public DateOnly Date => Movements[0].Date;
     public string Description => Movements[0].Description;
     public decimal Amount => Movements.Sum(movement => Math.Abs(movement.Amount));
-    public ReserveBucket? Pot => Kind == PotOperationKind.Withdrawal ? Movements[0].Bucket : null;
+    public PotDepositTarget? Into => Kind == PotOperationKind.Withdrawal ? null
+        : Movements.Count == 1 ? PotDepositTarget.OnePot : PotDepositTarget.ActivePots;
+    public ReserveBucket? Pot => Into == PotDepositTarget.ActivePots ? null : Movements[0].Bucket;
+    public IReadOnlyList<PotFundingLine> FundingLines => Kind == PotOperationKind.Deposit
+        ? Expenses.Select(expense => new PotFundingLine(expense.PaymentSourceAccount!, expense.Value)).ToList()
+        : [];
     public Account? Bank => ChosenExpense?.PaymentSourceAccount;
     public Category? Category => ChosenExpense?.Category;
     public Guid? IncomeId => Movements.Select(movement => movement.Income?.Id).FirstOrDefault(id => id is not null);
