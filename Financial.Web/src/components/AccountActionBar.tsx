@@ -1,5 +1,5 @@
 import { Button } from '@fluentui/react-components'
-import { ACTION_LABELS, formActionsOf, type AccountFormAction } from './accountActions'
+import { ACTION_LABELS, formActionsOf, opensDialog, type AccountFormAction } from './accountActions'
 
 interface AccountActionBarProps {
   allowedActions: string[]
@@ -26,8 +26,9 @@ export default function AccountActionBar({
           key={action}
           appearance="primary"
           disabled={isActionDisabled(action)}
-          aria-expanded={activeAction === action}
-          aria-controls={formAreaId}
+          {...(opensDialog(action)
+            ? { 'aria-haspopup': 'dialog' as const }
+            : { 'aria-expanded': activeAction === action, 'aria-controls': formAreaId })}
           onClick={(event) => onAction(action, event.currentTarget)}
         >
           {ACTION_LABELS[action]}

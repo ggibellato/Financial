@@ -13,6 +13,7 @@ import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm from '../components/ExpenseForm'
 import IncomeForm from '../components/IncomeForm'
+import ManagePotsDialog from '../components/ManagePotsDialog'
 import MoveChargeForm from '../components/MoveChargeForm'
 import PayCardStatementForm from '../components/PayCardStatementForm'
 import PayRecurringBillForm from '../components/PayRecurringBillForm'
@@ -35,7 +36,7 @@ export default function AccountScreenPage() {
   const navigate = useNavigate()
   const { account, hasPots } = screen
   const allowedActions = account?.allowedActions ?? []
-  const hasFormActions = formActionsOf(allowedActions).length > 0
+  const hasFormActions = formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
   const isFocusAfterRowLeavesPending = useRef(false)
@@ -67,6 +68,8 @@ export default function AccountScreenPage() {
     payStatementForm,
     moveForm,
     potTransactionForm,
+    isManagePotsOpen,
+    closeManagePots,
     discardPrompt,
     lockedBank,
     lockedCard,
@@ -137,7 +140,8 @@ export default function AccountScreenPage() {
           isActionDisabled={(action) =>
             !isAccountCurrent ||
             (needsFormOptions(action) && !formOptions.isReady) ||
-            (isTransferAction(action) && !formOptions.areCounterpartsReady)
+            (isTransferAction(action) && !formOptions.areCounterpartsReady) ||
+            (action === 'ManagePots' && pots.data === null)
           }
           onAction={openAction}
         />
@@ -365,6 +369,19 @@ export default function AccountScreenPage() {
         onConfirm={rowDelete.confirm}
         onCancel={rowDelete.cancel}
       />
+
+      {isManagePotsOpen && account && (
+        <ManagePotsDialog
+          potsAccountId={account.id}
+          accountName={account.name}
+          initialPots={pots.data?.pots ?? []}
+          onSaved={() => {
+            closeManagePots()
+            notifySaved('Pots saved')
+          }}
+          onClose={closeManagePots}
+        />
+      )}
 
       <DiscardChangesDialog
         open={discardPrompt.isPromptOpen}

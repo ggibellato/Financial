@@ -10,6 +10,7 @@ export type AccountFormAction =
   | 'PayRecurringBill'
   | 'PayCardStatement'
   | 'Reconcile'
+  | 'ManagePots'
 
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'Add expense',
@@ -20,6 +21,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   PayRecurringBill: 'Pay recurring bill',
   PayCardStatement: 'Pay card statement',
   Reconcile: 'Adjust balance',
+  ManagePots: 'Manage pots',
 }
 
 const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferFrom']
@@ -52,8 +54,12 @@ export function formActionsOf(allowedActions: readonly string[]): AccountFormAct
   return allowedActions.filter(isFormAction)
 }
 
+export function opensDialog(action: AccountFormAction): boolean {
+  return action === 'ManagePots'
+}
+
 export function needsFormOptions(action: AccountFormAction): boolean {
-  return action !== 'PayCardStatement'
+  return action !== 'PayCardStatement' && !opensDialog(action)
 }
 
 export function isTransferAction(action: AccountFormAction): boolean {
