@@ -70,8 +70,6 @@ import type {
   PortfolioDto,
   PortfolioUpdateDto,
   RecurringBillCreateDto,
-  ReserveBucketCreateDto,
-  ReserveBucketUpdateDto,
   SetAssetPriceDto,
   TitheCarryForwardUpdateDto,
   TitheSummaryDto,
@@ -1813,36 +1811,6 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/dividends/BCIA11/history?exchange=BVMF`)
   })
 
-  it('posts a reserve bucket create request', async () => {
-    const requestBody: ReserveBucketCreateDto = { name: 'Travel', splitPercentage: 20, isActive: true }
-    const responseBody: ReserveBucketDto = { id: 'rb1', name: 'Travel', splitPercentage: 20, isActive: true, warning: null }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.createReserveBucket(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/reserve-buckets`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('puts a reserve bucket update', async () => {
-    const requestBody: ReserveBucketUpdateDto = { name: 'Travel', splitPercentage: 25, isActive: true }
-    const responseBody: ReserveBucketDto = { id: 'rb1', name: 'Travel', splitPercentage: 25, isActive: true, warning: null }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.updateReserveBucket('rb1', requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/reserve-buckets/rb1`)
-    expect(init?.method).toBe('PUT')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
   it('gets investment snapshot suggestions', async () => {
     const responseBody = { suggestions: [], notUpdated: [] } as InvestmentSnapshotSuggestionsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -2292,6 +2260,20 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/p1/pots/2026/10`)
+  })
+
+  it('puts the full pots list of a Pots account', async () => {
+    const requestBody = { pots: [{ id: 'pot-1', name: 'Home', splitPercentage: 60, isActive: true }, { id: null, name: 'Trips', splitPercentage: 40, isActive: true }] }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.updatePots('p1', requestBody)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/p1/pots`)
+    expect(new Headers(init?.headers).get('Content-Type')).toBe('application/json')
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
   it('moves a charge to a later statement', async () => {

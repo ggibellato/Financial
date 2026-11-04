@@ -523,6 +523,27 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-13")]
+    public async Task ReserveBucketWrites_AreGone()
+    {
+        var bucket = new { name = "Ferias", splitPercentage = 0m, isActive = false };
+
+        var create = await Client.PostAsJsonAsync($"{Api}/reserve-buckets", bucket);
+        var update = await Client.PutAsJsonAsync($"{Api}/reserve-buckets/{InvestimentoId}", bucket);
+        var list = await Client.GetAsync($"{Api}/reserve-buckets");
+        var splitStatus = await Client.GetAsync($"{Api}/reserve-buckets/split-status");
+
+        using (new AssertionScope())
+        {
+            create.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            update.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            list.StatusCode.Should().Be(HttpStatusCode.OK);
+            splitStatus.StatusCode.Should().Be(HttpStatusCode.OK);
+            Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
+        }
+    }
+
     private Task<HttpResponseMessage> AddSplitIncomeAsync(decimal net, params (string BankId, decimal Amount)[] lines) =>
         Client.PostAsJsonAsync($"{Api}/incomes", new IncomeCreateDTO
         {

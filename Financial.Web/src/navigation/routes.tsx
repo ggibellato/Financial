@@ -26,7 +26,7 @@ import {
   RecurringBillsPage,
   ReportingCurrencyPage,
   ReservaPage,
-  ReserveBucketsPage,
+  ReserveBucketsRedirect,
   TaxPage,
   TaxRulesPage,
 } from './lazyPages'
@@ -71,7 +71,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },
   { path: 'admin/cashflow/investment-accounts', element: <InvestmentAccountsPage /> },
   { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
-  { path: 'admin/cashflow/reserve-buckets', element: <ReserveBucketsPage /> },
   { path: 'settings/appearance', element: <AppearancePage /> },
   { path: 'settings/reporting-currency', element: <ReportingCurrencyPage /> },
   { path: 'settings/integrations', element: <IntegrationsPage /> },
@@ -81,4 +80,8 @@ export const DETAIL_ROUTES: PageRoute[] = [
   { path: 'cashflow/accounts/:accountId', element: <AccountScreenPage /> },
 ]
 
-export const ALL_ROUTES: PageRoute[] = [...PAGE_ROUTES, ...DETAIL_ROUTES]
+export const REDIRECT_ROUTES: PageRoute[] = [
+  { path: 'admin/cashflow/reserve-buckets', element: <ReserveBucketsRedirect /> },
+]
+
+export const ALL_ROUTES: PageRoute[] = [...PAGE_ROUTES, ...DETAIL_ROUTES, ...REDIRECT_ROUTES]

@@ -97,11 +97,10 @@ import type {
   SetCostBasisMethodRequestDto,
   SetReportingCurrencyEnabledRequestDto,
   ReserveBucketBalanceDto,
-  ReserveBucketCreateDto,
   ReserveBucketDto,
-  ReserveBucketUpdateDto,
   ReserveSplitStatusDto,
   PotsSummaryDto,
+  PotsUpdateDto,
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
@@ -211,8 +210,6 @@ export interface FinancialApiClient {
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
   getReserveSplitStatus: () => Promise<ReserveSplitStatusDto>
-  createReserveBucket: (request: ReserveBucketCreateDto) => Promise<ReserveBucketDto>
-  updateReserveBucket: (id: string, request: ReserveBucketUpdateDto) => Promise<ReserveBucketDto>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   updateReserveMovement: (id: string, request: ReserveMovementUpdateDto) => Promise<ReserveMovementDto>
@@ -266,6 +263,7 @@ export interface FinancialApiClient {
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
   getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
   getPots: (potsAccountId: string, year: number, month: number) => Promise<PotsSummaryDto>
+  updatePots: (potsAccountId: string, request: PotsUpdateDto) => Promise<void>
   getPayableStatements: () => Promise<PayableStatementDto[]>
   getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
   getTransferSources: (accountId: string) => Promise<TransferAccountOptionDto[]>
@@ -595,13 +593,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
     getReserveSplitStatus: () => request<ReserveSplitStatusDto>('/reserve-buckets/split-status'),
-    createReserveBucket: (requestBody) =>
-      request<ReserveBucketDto>('/reserve-buckets', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateReserveBucket: (id, requestBody) =>
-      request<ReserveBucketDto>(`/reserve-buckets/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
     postIncomeSplit: (requestBody) =>
       request<IncomeSplitResultDto>('/reserve/income-split', {
         method: 'POST',
@@ -735,6 +726,12 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAccountStatements: (id) => request<AccountStatementDto[]>(`/accounts/${encodeURIComponent(id)}/statements`),
     getPots: (potsAccountId, year, month) =>
       request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),
+    updatePots: (potsAccountId, requestBody) =>
+      requestVoid(`/accounts/${encodeURIComponent(potsAccountId)}/pots`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      }),
     getPayableStatements: () => request<PayableStatementDto[]>('/accounts/payable-statements'),
     getTransferDestinations: (accountId) =>
       request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),

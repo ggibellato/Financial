@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { NAV_TREE } from '../navTree'
-import { ALL_ROUTES, DETAIL_ROUTES, PAGE_ROUTES } from '../routes'
+import { ALL_ROUTES, DETAIL_ROUTES, PAGE_ROUTES, REDIRECT_ROUTES } from '../routes'
 
 // The sidebar and the router are two independent lists that have to describe the same set of
 // pages. Nothing in the type system connects them, and neither failure mode is visible at build
@@ -36,6 +36,11 @@ describe('route and sidebar agreement', () => {
     const navDetailRoutes = NAV_TREE.flatMap((category) => category.children.flatMap((child) => (child.detail ? [child.detail.route] : [])))
 
     expect(DETAIL_ROUTES.map((route) => `/${route.path}`).sort()).toEqual(navDetailRoutes.sort())
+  })
+
+  it('keeps the retired Admin reserve buckets address as a redirect, off the sidebar', () => {
+    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets'])
+    expect(navRoutes).not.toContain('/admin/cashflow/reserve-buckets')
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

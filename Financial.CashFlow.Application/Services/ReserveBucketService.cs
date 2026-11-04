@@ -1,6 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
-using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
@@ -51,77 +50,6 @@ public sealed class ReserveBucketService : IReserveBucketService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetSplitStatus");
             return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
-    public async Task<ReserveBucketDTO> CreateReserveBucketAsync(ReserveBucketCreateDTO request)
-    {
-        using var span = StartSpan("CreateReserveBucket");
-        try
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new ArgumentException("Reserve bucket name is required.", nameof(request));
-            }
-
-            var reserva = ReservaAccount.Find(_repository.GetAccounts())
-                ?? throw new ArgumentException("Create a Pots account first.");
-
-            reserva.Pots!.EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
-
-            var pot = Pot.Create(request.Name, request.SplitPercentage, request.IsActive);
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                reserva.AddPot(pot);
-                return true;
-            }).ConfigureAwait(false);
-
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, pot.Id.ToString());
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "CreateReserveBucket");
-            return ToDto(pot, BuildSplitStatus().Warning);
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
-    public async Task<ReserveBucketDTO> UpdateReserveBucketAsync(Guid id, ReserveBucketUpdateDTO request)
-    {
-        using var span = StartSpan("UpdateReserveBucket");
-        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
-        try
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            if (string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new ArgumentException("Reserve bucket name is required.", nameof(request));
-            }
-
-            var pot = _repository.GetReservaPots().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
-
-            _repository.GetReservaPots().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
-
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                pot.Update(request.Name, request.SplitPercentage, request.IsActive);
-                return true;
-            }).ConfigureAwait(false);
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "UpdateReserveBucket");
-            return ToDto(pot, BuildSplitStatus().Warning);
         }
         catch (Exception ex)
         {

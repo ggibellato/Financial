@@ -91,7 +91,6 @@ export const NAV_TREE: NavCategory[] = [
           { id: 'income-sources', label: 'Income Sources', route: '/admin/cashflow/income-sources' },
           { id: 'investment-accounts', label: 'Investment Accounts', route: '/admin/cashflow/investment-accounts' },
           { id: 'recurring-bills', label: 'Recurring Bills', route: '/admin/cashflow/recurring-bills' },
-          { id: 'reserve-buckets', label: 'Reserve Buckets', route: '/admin/cashflow/reserve-buckets' },
         ],
       },
     ],

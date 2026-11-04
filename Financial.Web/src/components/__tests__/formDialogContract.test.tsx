@@ -10,7 +10,6 @@ import IncomeSourceFormDialog from '../IncomeSourceFormDialog'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import PortfolioFormDialog from '../PortfolioFormDialog'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
-import ReserveBucketFormDialog from '../ReserveBucketFormDialog'
 import TaxRuleFormDialog from '../TaxRuleFormDialog'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
@@ -124,17 +123,6 @@ const CASES: FormDialogCase[] = [
       change(/^Value/, '1500')
     },
     serverError: 'Due day must be between 1 and 31.',
-  },
-  {
-    name: 'ReserveBucketFormDialog',
-    renderDialog: (h) => render(<ReserveBucketFormDialog reserveBucket={null} {...h} />),
-    makeInvalid: () => change(/^Split Percentage/, '50'),
-    validationMessage: 'Name is required.',
-    fillValid: () => {
-      change(/^Name/, 'Ferias')
-      change(/^Split Percentage/, '20')
-    },
-    serverError: 'A reserve bucket named "Ferias" already exists.',
   },
   {
     name: 'TaxRuleFormDialog',
