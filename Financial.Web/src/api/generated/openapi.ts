@@ -8133,6 +8133,7 @@ export interface components {
             id: string;
             income?: null | components["schemas"]["IncomeDTO"];
             kind: string;
+            movement?: null | components["schemas"]["ReserveMovementDTO"];
             operation?: null | components["schemas"]["AccountTransactionOperationDTO"];
             /** Format: double */
             roundUp?: null | number;

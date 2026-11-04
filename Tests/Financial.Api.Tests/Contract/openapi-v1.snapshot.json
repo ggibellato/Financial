@@ -528,6 +528,16 @@
           "kind": {
             "type": "string"
           },
+          "movement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ReserveMovementDTO"
+              }
+            ]
+          },
           "operation": {
             "oneOf": [
               {

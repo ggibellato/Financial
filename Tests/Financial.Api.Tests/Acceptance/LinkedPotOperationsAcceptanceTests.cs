@@ -668,9 +668,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-10")]
     public async Task OlderSplitIncome_Edit_AddsNoExpense()
     {
-        ReplaceCashFlowDataBeforeStart(SeededData
-            .Replace("\"Incomes\": [],", OlderIncomeJson)
-            .Replace("\"ReserveMovements\": [", OlderMovementJson));
+        SeedOlderSplitIncome();
 
         var edit = await UpdateSplitIncomeAsync(Guid.Parse(OlderIncomeId), 200m, ReservaId, (ChaseId, 180m));
         var incomes = await Client.GetFromJsonAsync<List<IncomeDTO>>($"{Api}/incomes/month/{IncomeDate.Year}/{IncomeDate.Month}");
@@ -686,11 +684,16 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         }
     }
 
-    private Task<AccountDetailDTO?> AccountDetailAsync(string accountId) =>
-        Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/10");
+    private async Task<AccountDetailDTO> AccountDetailAsync(string accountId) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/10"))!;
 
-    private async Task<List<AccountTransactionDTO>> RowsAsync(string accountId) =>
-        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/10"))!;
+    private async Task<List<AccountTransactionDTO>> RowsAsync(string accountId, int month = 10) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/{month}"))!;
+
+    private void SeedOlderSplitIncome() =>
+        ReplaceCashFlowDataBeforeStart(SeededData
+            .Replace("\"Incomes\": [],", OlderIncomeJson)
+            .Replace("\"ReserveMovements\": [", OlderMovementJson));
 
     [Fact]
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-07")]
@@ -707,8 +710,8 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            bank!.AllowedActions.Should().Contain("WithdrawFromPots").And.NotContain("Withdraw");
-            pots!.AllowedActions.Should().Equal("Deposit", "Withdraw", "ManagePots");
+            bank.AllowedActions.Should().Contain("WithdrawFromPots").And.NotContain("Withdraw");
+            pots.AllowedActions.Should().Equal("Deposit", "Withdraw", "ManagePots");
             bankRows.Select(row => (row.Kind, row.Amount)).Should().BeEquivalentTo([("Expense", 38.25m), ("Expense", -38.25m)]);
             potRows.Select(row => (row.Kind, row.Counterpart, row.Description, row.Amount))
                 .Should().Equal(("PotTransaction", "Investimento", "Boots", -38.25m));
@@ -749,9 +752,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     [Fact]
     public async Task OlderSplitIncome_AccountRows_HaveNoLinkAndCannotBeEdited()
     {
-        ReplaceCashFlowDataBeforeStart(SeededData
-            .Replace("\"Incomes\": [],", OlderIncomeJson)
-            .Replace("\"ReserveMovements\": [", OlderMovementJson));
+        SeedOlderSplitIncome();
 
         var incomeRow = (await RowsAsync(BarclaysId)).Single();
         var potRows = await RowsAsync(ReservaId);
@@ -767,14 +768,14 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     [Fact]
     public async Task LegacyMovement_PotsAccountRow_HasNoLinkAndCanBeEdited()
     {
-        var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{ReservaId}/transactions/2026/9");
+        var rows = await RowsAsync(ReservaId, month: 9);
 
         using (new AssertionScope())
         {
-            rows!.Select(row => (row.Id, row.Date, row.Counterpart, row.Description, row.Amount)).Should().Equal(
+            rows.Select(row => (row.Id, row.Date, row.Counterpart, row.Description, row.Amount)).Should().Equal(
                 (Guid.Parse(LegacyWithdrawalId), new DateOnly(2026, 9, 15), "HouseTreats", "Cinema", -20m),
                 (Guid.Parse(LegacyDepositId), new DateOnly(2026, 9, 1), "Investimento", "Split", 500m));
-            rows.Should().OnlyContain(row => row.Kind == "PotTransaction" && row.CanEdit && row.Operation == null);
+            rows.Should().OnlyContain(row => row.Kind == "PotTransaction" && row.CanEdit && row.Operation == null && row.Movement!.Id == row.Id);
         }
     }
 }

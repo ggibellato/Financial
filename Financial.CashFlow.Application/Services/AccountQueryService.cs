@@ -294,23 +294,18 @@ public sealed class AccountQueryService : IAccountQueryService
             Expense = ExpenseService.ToDto(expense, statements)
         };
 
-    private AccountTransactionOperationDTO? OperationLink(Guid? operationId)
-    {
-        var operation = operationId is { } id
-            ? PotOperation.Read(id, _repository.GetPotTransactions(), _repository.GetExpenses(), _repository.GetAccounts())
-            : null;
-
-        return operation is null
-            ? null
-            : new AccountTransactionOperationDTO
+    private AccountTransactionOperationDTO? OperationLink(Guid? operationId) =>
+        operationId is { } id
+        && PotOperation.Read(id, _repository.GetPotTransactions(), _repository.GetExpenses(), _repository.GetAccounts()) is { } operation
+            ? new AccountTransactionOperationDTO
             {
                 OperationId = operation.OperationId,
                 PotsAccountId = operation.PotsAccount.Id,
                 Year = operation.Date.Year,
                 Month = operation.Date.Month,
                 IncomeId = operation.IncomeId
-            };
-    }
+            }
+            : null;
 
     private AccountTransactionDTO ToRow(PotTransaction transaction, Account account) => new()
     {
@@ -321,7 +316,8 @@ public sealed class AccountQueryService : IAccountQueryService
         Counterpart = transaction.Pot.Name,
         Amount = transaction.Amount,
         CanEdit = account.IsActive && transaction.OperationId is null && transaction.Income is null,
-        Operation = OperationLink(transaction.OperationId)
+        Operation = OperationLink(transaction.OperationId),
+        Movement = ReserveService.ToDto(transaction)
     };
 
     private AccountTransactionDTO ToRow(Income income, Account account) => new()
@@ -333,7 +329,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Counterpart = income.IncomeSource.Name,
         Amount = income.NetValue,
         CanEdit = account.IsActive,
-        Income = IncomeService.ToDto(income, _repository)
+        Income = IncomeService.ToDto(income, IncomeService.DepositExpensesOf(income.Id, _repository))
     };
 
     private static IEnumerable<AccountTransactionDTO> ToRows(Transfer transfer, Account account, IReadOnlyList<CardStatement> statements)

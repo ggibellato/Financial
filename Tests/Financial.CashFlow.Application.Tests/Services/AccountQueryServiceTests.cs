@@ -274,6 +274,14 @@ public class AccountQueryServiceTests
         return (pots, pot);
     }
 
+    private Income AddPotsIncome(Account pots)
+    {
+        var income = Income.Create(
+            new DateOnly(2026, 10, 14), IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: pots), null, 100m, _barclays, null, pots);
+        _repository.Incomes.Add(income);
+        return income;
+    }
+
     [Fact]
     public void GetTransactions_PotsAccount_ListsOnlyItsOwnMovementsInTheMonth()
     {
@@ -297,6 +305,9 @@ public class AccountQueryServiceTests
             row.Amount.Should().Be(-12.40m);
             row.CanEdit.Should().BeTrue();
             row.Operation.Should().BeNull();
+            row.Movement!.Id.Should().Be(legacy.Id);
+            row.Movement.BucketId.Should().Be(pot.Id);
+            row.Expense.Should().BeNull();
         }
     }
 
@@ -339,9 +350,8 @@ public class AccountQueryServiceTests
     public void GetTransactions_IncomeWithLinkedDeposit_RowCarriesItsFundingLines()
     {
         var (pots, pot) = AddPotsAccount();
-        var income = Income.Create(new DateOnly(2026, 10, 14), IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: pots), null, 100m, _barclays, null, pots);
+        var income = AddPotsIncome(pots);
         var operationId = Guid.NewGuid();
-        _repository.Incomes.Add(income);
         _repository.PotTransactions.Add(PotTransaction.Create(pot, 90m, income.Date, "Pay", income, operationId));
         _repository.Expenses.Add(Expense.Create(income.Date, "Deposit", 90m, _groceries, _barclays, creditCard: null, operationId: operationId));
 
@@ -362,8 +372,7 @@ public class AccountQueryServiceTests
     public void GetTransactions_OlderSplitIncome_MovementCannotBeEditedAndIncomeHasNoDeposit()
     {
         var (pots, pot) = AddPotsAccount();
-        var income = Income.Create(new DateOnly(2026, 10, 14), IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: pots), null, 100m, _barclays, null, pots);
-        _repository.Incomes.Add(income);
+        var income = AddPotsIncome(pots);
         _repository.PotTransactions.Add(PotTransaction.Create(pot, 90m, income.Date, "Pay", income));
 
         var movementRow = _sut.GetTransactions(pots.Id, 2026, 10).Single();
@@ -810,7 +819,7 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetTransactions_PotsAccountWithMovementsInTheMonth_ListsThemAndBanksListNone()
+    public void GetTransactions_Bank_DoesNotListPotMovements()
     {
         var reserva = _repository.EnsureReserva();
         var pot = Pot.Create("Investimento", 100m);
@@ -818,11 +827,7 @@ public class AccountQueryServiceTests
         _repository.PotTransactions.Add(PotTransaction.Create(pot, 300m, new DateOnly(2026, 9, 5), "Split"));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 5), _salary, null, 300m, _barclays));
 
-        using (new AssertionScope())
-        {
-            _sut.GetTransactions(reserva.Id, 2026, 9).Should().ContainSingle().Which.Kind.Should().Be("PotTransaction");
-            _sut.GetTransactions(_barclays.Id, 2026, 9).Should().ContainSingle().Which.Kind.Should().Be("Income");
-        }
+        _sut.GetTransactions(_barclays.Id, 2026, 9).Should().ContainSingle().Which.Kind.Should().Be("Income");
     }
 
     [Fact]

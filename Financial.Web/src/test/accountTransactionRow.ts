@@ -15,6 +15,7 @@ export function accountTransactionRow(fields: RequiredRowFields & Partial<Accoun
     adjustment: null,
     statement: null,
     operation: null,
+    movement: null,
     ...fields,
   }
 }

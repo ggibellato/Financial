@@ -32,6 +32,18 @@ function bodyRows() {
 }
 
 describe('AccountTransactionsGrid', () => {
+  it('offers no row actions on a pot movement until the Pots screen can act on it', () => {
+    render(
+      <AccountTransactionsGrid
+        transactions={[accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-05', counterpart: 'Trips', amount: -20, canEdit: true })]}
+        emptyMessage={EMPTY_MESSAGE}
+        {...NO_ROW_ACTIONS}
+      />,
+    )
+
+    expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+  })
+
   it('[AC P60-F05-bank-account-screen-04] shows signed, right-aligned amounts and a separate round-up column', () => {
     render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 

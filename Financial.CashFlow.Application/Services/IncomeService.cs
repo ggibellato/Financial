@@ -46,7 +46,7 @@ public sealed class IncomeService : IIncomeService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddIncome");
-            return ToDto(income, _repository);
+            return ToDtoWithDeposit(income);
         }
         catch (Exception ex)
         {
@@ -67,7 +67,7 @@ public sealed class IncomeService : IIncomeService
 
             var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.PotsAccountId);
 
-            var oldRecords = RecordsOf(income.Id, _repository);
+            var oldRecords = RecordsOf(income.Id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -80,7 +80,7 @@ public sealed class IncomeService : IIncomeService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");
-            return ToDto(income, _repository);
+            return ToDtoWithDeposit(income);
         }
         catch (Exception ex)
         {
@@ -97,7 +97,7 @@ public sealed class IncomeService : IIncomeService
         {
             FindIncomeOrThrow(id);
 
-            var records = RecordsOf(id, _repository);
+            var records = RecordsOf(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -123,7 +123,7 @@ public sealed class IncomeService : IIncomeService
         {
             var result = _repository.GetIncomes()
                 .Where(i => i.Date.Year == year && i.Date.Month == month)
-                .Select(income => ToDto(income, _repository))
+                .Select(ToDtoWithDeposit)
                 .ToList();
 
             span.MarkSuccess();
@@ -146,6 +146,8 @@ public sealed class IncomeService : IIncomeService
     private Income FindIncomeOrThrow(Guid id) =>
         _repository.GetIncomes().FirstOrThrow(i => i.Id == id, "Income", id);
 
+    private SplitRecords RecordsOf(Guid incomeId) => RecordsOf(incomeId, _repository);
+
     private static SplitRecords RecordsOf(Guid incomeId, ICashFlowRepository repository)
     {
         var transactions = repository.GetPotTransactions().Where(transaction => transaction.Income?.Id == incomeId).ToList();
@@ -155,6 +157,9 @@ public sealed class IncomeService : IIncomeService
 
         return new(transactions, expenses);
     }
+
+    internal static IReadOnlyList<Expense> DepositExpensesOf(Guid incomeId, ICashFlowRepository repository) =>
+        RecordsOf(incomeId, repository).Expenses;
 
     private SplitRecords Rebuild(Income income, SplitRecords oldRecords, IReadOnlyList<FundingLineDTO>? fundingLines)
     {
@@ -229,28 +234,25 @@ public sealed class IncomeService : IIncomeService
         return (resolvedIncomeSource!, resolvedBank, CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId));
     }
 
-    internal static IncomeDTO ToDto(Income income, ICashFlowRepository repository)
-    {
-        var depositExpenses = RecordsOf(income.Id, repository).Expenses;
+    private IncomeDTO ToDtoWithDeposit(Income income) => ToDto(income, RecordsOf(income.Id).Expenses);
 
-        return new IncomeDTO
-        {
-            Id = income.Id,
-            Date = income.Date,
-            IncomeSourceId = income.IncomeSource.Id,
-            IncomeSourceName = income.IncomeSource.Name,
-            GrossValue = income.GrossValue,
-            NetValue = income.NetValue,
-            BankId = income.Account?.Id,
-            BankName = income.Account?.Name,
-            Description = income.Description,
-            PotsAccountId = income.PotsAccount?.Id,
-            HasLinkedDeposit = depositExpenses.Count > 0,
-            FundingLines = depositExpenses
-                .Select(expense => new FundingLineDTO { BankId = expense.PaymentSourceAccount!.Id, Amount = expense.Value })
-                .ToList()
-        };
-    }
+    internal static IncomeDTO ToDto(Income income, IReadOnlyList<Expense> depositExpenses) => new()
+    {
+        Id = income.Id,
+        Date = income.Date,
+        IncomeSourceId = income.IncomeSource.Id,
+        IncomeSourceName = income.IncomeSource.Name,
+        GrossValue = income.GrossValue,
+        NetValue = income.NetValue,
+        BankId = income.Account?.Id,
+        BankName = income.Account?.Name,
+        Description = income.Description,
+        PotsAccountId = income.PotsAccount?.Id,
+        HasLinkedDeposit = depositExpenses.Count > 0,
+        FundingLines = depositExpenses
+            .Select(expense => new FundingLineDTO { BankId = expense.PaymentSourceAccount!.Id, Amount = expense.Value })
+            .ToList()
+    };
 
     private sealed record SplitRecords(IReadOnlyList<PotTransaction> Transactions, IReadOnlyList<Expense> Expenses);
 }

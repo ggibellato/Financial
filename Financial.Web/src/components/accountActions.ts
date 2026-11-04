@@ -76,7 +76,7 @@ export function recordTitle(kind: string): string {
 }
 
 export function hasRowActions(row: AccountTransactionDto): boolean {
-  return row.canEdit
+  return row.canEdit && row.kind !== 'PotTransaction'
 }
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {

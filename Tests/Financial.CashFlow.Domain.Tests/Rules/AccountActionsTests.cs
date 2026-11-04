@@ -14,7 +14,7 @@ public class AccountActionsTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     [Fact]
-    public void AllowedFor_Bank_ReturnsAllEightActionsInOrder()
+    public void AllowedFor_Bank_ReturnsEveryActionInOrder()
     {
         AccountActions.AllowedFor(TestAccounts.Bank("Barclays")).Should().Equal(
             AccountAction.AddExpense,
