@@ -632,7 +632,8 @@ describe('financialApiClient', () => {
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
-      incomeId: null, splitLineCount: 1,
+      incomeId: null,
+      splitLineCount: 1,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -659,7 +660,8 @@ describe('financialApiClient', () => {
       amount: -45,
       date: '2026-07-03',
       description: 'Groceries (corrected)',
-      incomeId: null, splitLineCount: 1,
+      incomeId: null,
+      splitLineCount: 1,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

@@ -288,7 +288,8 @@ describe('useReserva', () => {
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
-      incomeId: null, splitLineCount: 1,
+      incomeId: null,
+      splitLineCount: 1,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -315,7 +316,8 @@ describe('useReserva', () => {
         amount: -100,
         date: '2026-07-01',
         description: 'Big purchase',
-        incomeId: null, splitLineCount: 1,
+        incomeId: null,
+        splitLineCount: 1,
       })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -467,7 +469,8 @@ describe('useReserva', () => {
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
-      incomeId: null, splitLineCount: 1,
+      incomeId: null,
+      splitLineCount: 1,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
