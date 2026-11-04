@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { AccountDetailDto, AccountTransactionDto, CreditCardDto } from '../api/types'
+import type { AccountDetailDto, AccountDto, AccountTransactionDto, CreditCardDto } from '../api/types'
 import { rowKey, type AccountFormAction } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
@@ -10,7 +10,11 @@ import { useIncomeForm } from './useIncomeForm'
 import { useMoveChargeForm } from './useMoveChargeForm'
 import { usePayCardStatementForm } from './usePayCardStatementForm'
 import { usePayRecurringBill } from './usePayRecurringBill'
+import type { OperationToOpen } from './useOperationRoute'
+import { usePotDepositForm } from './usePotDepositForm'
+import { usePotOperationDelete, type PotOperationNoun } from './usePotOperationDelete'
 import { usePotTransactionEditForm } from './usePotTransactionEditForm'
+import { usePotWithdrawalForm } from './usePotWithdrawalForm'
 import type { YearMonth } from './useMonthSelection'
 
 export const NO_CREDIT_CARDS: CreditCardDto[] = []
@@ -29,6 +33,15 @@ export interface ScreenForm {
 
 const NO_SCREEN_FORM: ScreenForm = { isDirty: false, close: () => {} }
 
+export interface PotsContext {
+  accounts: AccountDto[]
+  hasPots: boolean
+}
+
+const NO_POTS: PotsContext = { accounts: [], hasPots: false }
+
+const OPERATION_TITLES: Record<PotOperationNoun, string> = { deposit: 'Deposit', withdrawal: 'Withdrawal' }
+
 export function useAccountActionForms(
   routeAccountId: string,
   account: AccountDetailDto | null,
@@ -36,6 +49,7 @@ export function useAccountActionForms(
   viewedMonth: YearMonth,
   onSaved: (message: string) => void,
   screenForm: ScreenForm = NO_SCREEN_FORM,
+  { accounts, hasPots }: PotsContext = NO_POTS,
 ) {
   const isAccountCurrent = account !== null && account.id.toLowerCase() === routeAccountId.toLowerCase()
   const currentAccount = isAccountCurrent ? account : null
@@ -43,11 +57,11 @@ export function useAccountActionForms(
   const accountName = currentAccount?.name
   const accountCurrency = currentAccount?.currency
   const isCard = currentAccount?.hasStatements ?? false
-  const lockedBank = useMemo(
-    () =>
-      !isCard && accountId && accountName && accountCurrency ? { id: accountId, name: accountName, currency: accountCurrency } : undefined,
-    [isCard, accountId, accountName, accountCurrency],
+  const currentAccountOption = useMemo(
+    () => (accountId && accountName && accountCurrency ? { id: accountId, name: accountName, currency: accountCurrency } : undefined),
+    [accountId, accountName, accountCurrency],
   )
+  const lockedBank = isCard || hasPots ? undefined : currentAccountOption
   const lockedCard = useMemo(
     () => (isCard && accountId && accountName ? { id: accountId, name: accountName } : undefined),
     [isCard, accountId, accountName],
@@ -72,8 +86,8 @@ export function useAccountActionForms(
   const incomeForm = useIncomeForm(
     options.incomeSources,
     options.banks,
-    (_, isEdit, potsAccountName) => saved(isEdit ? 'Income updated' : incomeSavedMessage(potsAccountName)),
-    settings,
+    (_, isEdit, potsAccountName) => saved(isEdit ? 'Income updated' : hasPots && potsAccountName ? 'Deposit saved' : incomeSavedMessage(potsAccountName)),
+    { ...settings, keepOpenAfterSave: !hasPots },
   )
   const adjustmentForm = useBalanceAdjustmentForm(
     balances,
@@ -92,6 +106,8 @@ export function useAccountActionForms(
   const payStatementForm = usePayCardStatementForm(lockedBank, () => saved('Statement paid'))
   const moveForm = useMoveChargeForm(onSaved)
   const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
+  const depositForm = usePotDepositForm(hasPots ? currentAccountOption : undefined, viewedMonth, () => saved('Deposit saved'))
+  const withdrawalForm = usePotWithdrawalForm(accounts, options.categories, viewedMonth, () => saved('Withdrawal saved'))
   const [isManagePotsOpen, setIsManagePotsOpen] = useState(false)
 
   const openers: Record<AccountFormAction, () => void> = {
@@ -103,12 +119,17 @@ export function useAccountActionForms(
     PayRecurringBill: () => payBillForm.open(),
     PayCardStatement: () => payStatementForm.open(),
     Reconcile: () => adjustmentForm.openCreateForm(),
+    Deposit: () => depositForm.open(),
+    Withdraw: () => withdrawalForm.openFromPotsAccount(routeAccountId),
     ManagePots: () => setIsManagePotsOpen(true),
+    WithdrawFromPots: () => withdrawalForm.openFromBank(routeAccountId),
   }
 
   const createAction = (): AccountFormAction | null => {
     if (expenseForm.isOpen && !expenseForm.isEditing) return isCard ? 'AddCharge' : 'AddExpense'
-    if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return 'AddIncome'
+    if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return hasPots ? 'Deposit' : 'AddIncome'
+    if (depositForm.isOpen && !depositForm.isEditing) return 'Deposit'
+    if (withdrawalForm.isOpen && !withdrawalForm.isEditing) return withdrawalForm.isBankLocked ? 'WithdrawFromPots' : 'Withdraw'
     if (transferForm.isOpen && !transferForm.isEditing) return transferForm.direction === 'to' ? 'TransferTo' : 'TransferFrom'
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'
@@ -118,10 +139,19 @@ export function useAccountActionForms(
   }
   const activeAction = createAction()
   const isAnyFormOpen =
-    expenseForm.isOpen || incomeForm.isIncomeFormOpen || transferForm.isOpen || adjustmentForm.isOpen || moveForm.isOpen || potTransactionForm.isOpen
+    expenseForm.isOpen ||
+    incomeForm.isIncomeFormOpen ||
+    transferForm.isOpen ||
+    adjustmentForm.isOpen ||
+    moveForm.isOpen ||
+    potTransactionForm.isOpen ||
+    depositForm.isOpen ||
+    withdrawalForm.isOpen
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
-  const activeFormKey = activeAction ?? (editingRowKey && `${moveForm.isOpen ? 'move' : 'edit'}:${editingRowKey}`)
+  const activeFormKey = activeAction
+    ? `${activeAction}${incomeForm.isIncomeFormOpen ? ':income' : ''}`
+    : editingRowKey && `${moveForm.isOpen ? 'move' : 'edit'}:${editingRowKey}`
 
   const isDirty =
     expenseForm.isDirty ||
@@ -132,9 +162,11 @@ export function useAccountActionForms(
     payStatementForm.isDirty ||
     moveForm.isDirty ||
     potTransactionForm.isDirty ||
+    depositForm.isDirty ||
+    withdrawalForm.isDirty ||
     screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
-  const openerRef = useRef<HTMLButtonElement | null>(null)
+  const openerRef = useRef<HTMLElement | null>(null)
   const formAreaRef = useRef<HTMLDivElement | null>(null)
 
   const closeForms = () => {
@@ -146,6 +178,8 @@ export function useAccountActionForms(
     if (payStatementForm.isOpen) payStatementForm.cancel()
     if (moveForm.isOpen) moveForm.cancel()
     if (potTransactionForm.isOpen) potTransactionForm.cancel()
+    if (depositForm.isOpen) depositForm.cancel()
+    if (withdrawalForm.isOpen) withdrawalForm.cancel()
     setIsManagePotsOpen(false)
     screenForm.close()
   }
@@ -175,8 +209,14 @@ export function useAccountActionForms(
 
   const closeActiveForm = () => {
     closeForms()
-    openerRef.current?.focus()
+    if (openerRef.current?.isConnected) openerRef.current.focus()
+    else formAreaRef.current?.focus()
   }
+
+  const operationDelete = usePotOperationDelete((noun) => {
+    closeForms()
+    saved(`${OPERATION_TITLES[noun]} deleted`)
+  })
 
   const openAction = (action: AccountFormAction, button: HTMLButtonElement) => {
     discardPrompt.confirmDiscard(() => {
@@ -209,6 +249,28 @@ export function useAccountActionForms(
     })
   }
 
+  const openDepositFromIncome = () => {
+    discardPrompt.confirmDiscard(() => {
+      closeForms()
+      incomeForm.showDepositIncomeForm(routeAccountId)
+    })
+  }
+
+  const openOperation = ({ operation, income }: OperationToOpen) => {
+    closeForms()
+    setEditedRowKey(`operation:${operation.operationId}`)
+    if (income) incomeForm.showEditIncomeForm(income)
+    else if (operation.kind === 'Deposit') depositForm.openEdit(operation)
+    else withdrawalForm.openEdit(operation)
+  }
+
+  const followOperationLink = (link: HTMLAnchorElement, navigate: () => void) =>
+    discardPrompt.confirmDiscard(() => {
+      closeForms()
+      openerRef.current = link
+      navigate()
+    })
+
   const closeFormsOf = (row: AccountTransactionDto) => {
     if (editingRowKey === rowKey(row)) closeForms()
   }
@@ -228,6 +290,10 @@ export function useAccountActionForms(
     payStatementForm,
     moveForm,
     potTransactionForm,
+    depositForm,
+    withdrawalForm,
+    operationDelete,
+    isOperationFormOpen: depositForm.isEditing || withdrawalForm.isEditing || incomeForm.isIncomeEditing,
     isManagePotsOpen,
     closeManagePots: () => setIsManagePotsOpen(false),
     lockedBank,
@@ -239,6 +305,9 @@ export function useAccountActionForms(
     openAction,
     openRowEdit,
     openRowMove,
+    openDepositFromIncome,
+    openOperation,
+    followOperationLink,
     closeActiveForm,
     closeFormsOf,
     guardChange,

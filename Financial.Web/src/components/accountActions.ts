@@ -1,4 +1,4 @@
-import type { AccountTransactionDto, AccountTransactionStatementDto } from '../api/types'
+import type { AccountTransactionDto, AccountTransactionOperationDto, AccountTransactionStatementDto } from '../api/types'
 import { formatMonthInputValue } from '../utils/formatters'
 
 export type AccountFormAction =
@@ -10,7 +10,10 @@ export type AccountFormAction =
   | 'PayRecurringBill'
   | 'PayCardStatement'
   | 'Reconcile'
+  | 'Deposit'
+  | 'Withdraw'
   | 'ManagePots'
+  | 'WithdrawFromPots'
 
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'Add expense',
@@ -21,7 +24,10 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   PayRecurringBill: 'Pay recurring bill',
   PayCardStatement: 'Pay card statement',
   Reconcile: 'Adjust balance',
+  Deposit: 'Deposit',
+  Withdraw: 'Withdraw',
   ManagePots: 'Manage pots',
+  WithdrawFromPots: 'Withdraw from pots',
 }
 
 const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferFrom']
@@ -113,6 +119,11 @@ export function canMoveToStatement(row: AccountTransactionDto): boolean {
 
 export function statementPath(statement: AccountTransactionStatementDto): string {
   return `/cashflow/accounts/${statement.accountId}?month=${formatMonthInputValue(statement.year, statement.month)}&tab=statements`
+}
+
+export function operationPath(operation: AccountTransactionOperationDto): string {
+  const month = formatMonthInputValue(operation.year, operation.month)
+  return `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
 }
 
 export function rowKey(row: AccountTransactionDto): string {

@@ -2262,6 +2262,41 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/p1/pots/2026/10`)
   })
 
+  it.each([
+    ['createPotDeposit', (client: ReturnType<typeof createFinancialApiClient>, body: never) => client.createPotDeposit('p1', body), 'POST', '/accounts/p1/deposits'],
+    ['updatePotDeposit', (client: ReturnType<typeof createFinancialApiClient>, body: never) => client.updatePotDeposit('p1', 'op1', body), 'PUT', '/accounts/p1/deposits/op1'],
+    ['createPotWithdrawal', (client: ReturnType<typeof createFinancialApiClient>, body: never) => client.createPotWithdrawal('p1', body), 'POST', '/accounts/p1/withdrawals'],
+    ['updatePotWithdrawal', (client: ReturnType<typeof createFinancialApiClient>, body: never) => client.updatePotWithdrawal('p1', 'op1', body), 'PUT', '/accounts/p1/withdrawals/op1'],
+  ])('%s sends the request to its route', async (_, call, method, path) => {
+    const requestBody = { amount: 90 } as never
+    const responseBody = { operationId: 'op1' }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await call(client, requestBody)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(result).toEqual(responseBody)
+    expect(url).toBe(`${API_BASE_URL}${path}`)
+    expect(init?.method).toBe(method)
+    expect(JSON.parse(init?.body as string)).toEqual({ amount: 90 })
+  })
+
+  it('reads and deletes a pot operation', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(okResponse({ operationId: 'op1' }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.getPotOperation('op1')).resolves.toEqual({ operationId: 'op1' })
+    await client.deletePotOperation('op1')
+
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/operations/op1`)
+    expect(fetchMock.mock.calls[1][0]).toBe(`${API_BASE_URL}/accounts/operations/op1`)
+    expect(fetchMock.mock.calls[1][1]?.method).toBe('DELETE')
+  })
+
   it('puts the full pots list of a Pots account', async () => {
     const requestBody = { pots: [{ id: 'pot-1', name: 'Home', splitPercentage: 60, isActive: true }, { id: null, name: 'Trips', splitPercentage: 40, isActive: true }] }
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))

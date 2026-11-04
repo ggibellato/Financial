@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import { useFieldError } from '../hooks/useFieldError'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { EditMovementField } from '../utils/movementEdit'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -42,18 +42,9 @@ export default function EditMovementForm({
   onCancel,
 }: EditMovementFormProps) {
   const styles = useFormPanelStyles()
-  const formRef = useRef<HTMLFormElement | null>(null)
-  const saveRef = useRef<HTMLButtonElement | null>(null)
   const fieldError = useFieldError(errorFields)
   const generalError = Object.keys(errorFields).length === 0 ? error : null
-
-  useEffect(() => {
-    formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-  }, [errorFields])
-
-  useEffect(() => {
-    if (generalError) saveRef.current?.focus()
-  }, [generalError])
+  const { formRef, saveRef } = useFormErrorFocus(errorFields, generalError)
 
   return (
     <form

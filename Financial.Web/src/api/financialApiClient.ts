@@ -99,6 +99,9 @@ import type {
   ReserveBucketBalanceDto,
   ReserveBucketDto,
   ReserveSplitStatusDto,
+  PotDepositRequestDto,
+  PotOperationDto,
+  PotWithdrawalRequestDto,
   PotsSummaryDto,
   PotsUpdateDto,
   ReserveMovementDto,
@@ -264,6 +267,12 @@ export interface FinancialApiClient {
   getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
   getPots: (potsAccountId: string, year: number, month: number) => Promise<PotsSummaryDto>
   updatePots: (potsAccountId: string, request: PotsUpdateDto) => Promise<void>
+  createPotDeposit: (potsAccountId: string, request: PotDepositRequestDto) => Promise<PotOperationDto>
+  updatePotDeposit: (potsAccountId: string, operationId: string, request: PotDepositRequestDto) => Promise<PotOperationDto>
+  createPotWithdrawal: (potsAccountId: string, request: PotWithdrawalRequestDto) => Promise<PotOperationDto>
+  updatePotWithdrawal: (potsAccountId: string, operationId: string, request: PotWithdrawalRequestDto) => Promise<PotOperationDto>
+  getPotOperation: (operationId: string) => Promise<PotOperationDto>
+  deletePotOperation: (operationId: string) => Promise<void>
   getPayableStatements: () => Promise<PayableStatementDto[]>
   getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
   getTransferSources: (accountId: string) => Promise<TransferAccountOptionDto[]>
@@ -732,6 +741,22 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),
     updatePots: (potsAccountId, requestBody) =>
       requestVoid(`/accounts/${encodeURIComponent(potsAccountId)}/pots`, { method: 'PUT', body: JSON.stringify(requestBody) }),
+    createPotDeposit: (potsAccountId, requestBody) =>
+      request<PotOperationDto>(`/accounts/${encodeURIComponent(potsAccountId)}/deposits`, { method: 'POST', body: JSON.stringify(requestBody) }),
+    updatePotDeposit: (potsAccountId, operationId, requestBody) =>
+      request<PotOperationDto>(`/accounts/${encodeURIComponent(potsAccountId)}/deposits/${encodeURIComponent(operationId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    createPotWithdrawal: (potsAccountId, requestBody) =>
+      request<PotOperationDto>(`/accounts/${encodeURIComponent(potsAccountId)}/withdrawals`, { method: 'POST', body: JSON.stringify(requestBody) }),
+    updatePotWithdrawal: (potsAccountId, operationId, requestBody) =>
+      request<PotOperationDto>(`/accounts/${encodeURIComponent(potsAccountId)}/withdrawals/${encodeURIComponent(operationId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
+    getPotOperation: (operationId) => request<PotOperationDto>(`/accounts/operations/${encodeURIComponent(operationId)}`),
+    deletePotOperation: (operationId) => requestVoid(`/accounts/operations/${encodeURIComponent(operationId)}`, { method: 'DELETE' }),
     getPayableStatements: () => request<PayableStatementDto[]>('/accounts/payable-statements'),
     getTransferDestinations: (accountId) =>
       request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),

@@ -237,9 +237,10 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
     save()
 
-    expect(await screen.findByText('Bank accounts must be GBP.')).toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Bank accounts must be GBP.')
     expect(screen.getByLabelText(/Name/)).toHaveValue('Monzo')
     expect(screen.getByRole('button', { name: 'Add account' })).toBeEnabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add account' })).toHaveFocus())
   })
 
   it('[AC P60-F06-admin-accounts-page-07] disables the fields and the buttons while saving', async () => {

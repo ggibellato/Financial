@@ -19,7 +19,7 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { canMoveToStatement, kindLabel, recordNoun, rowKey, statementPath } from './accountActions'
+import { canMoveToStatement, kindLabel, operationPath, recordNoun, rowKey, statementPath } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -85,6 +85,7 @@ interface AccountTransactionsGridProps {
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
   onOpenStatement?: (path: string) => void
+  onOpenOperation?: (path: string, link: HTMLAnchorElement) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -99,6 +100,7 @@ export default function AccountTransactionsGrid({
   onMove,
   isMoveDisabled = false,
   onOpenStatement,
+  onOpenOperation,
 }: AccountTransactionsGridProps) {
   const columns = showsPotColumns ? POT_COLUMNS : ACCOUNT_COLUMNS
   const columnCount = columns.length + 1
@@ -106,14 +108,27 @@ export default function AccountTransactionsGrid({
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = onMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
   const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
-    if (column.key !== 'description' || !row.statement) return column.render(row)
-    const path = statementPath(row.statement)
-    return <TruncatedText text={row.description} to={path} onClick={(event) => openStatement(path, event)} />
+    if (column.key !== 'description') return column.render(row)
+    if (row.statement) {
+      const path = statementPath(row.statement)
+      return <TruncatedText text={row.description} to={path} onClick={(event) => followLink(event, () => onOpenStatement?.(path), onOpenStatement)} />
+    }
+    if (row.operation && showsPotColumns) {
+      const path = operationPath(row.operation)
+      return (
+        <TruncatedText
+          text={row.description}
+          to={path}
+          onClick={(event) => followLink(event, () => onOpenOperation?.(path, event.currentTarget), onOpenOperation)}
+        />
+      )
+    }
+    return column.render(row)
   }
-  const openStatement = (path: string, event: MouseEvent<HTMLAnchorElement>) => {
-    if (!onOpenStatement || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  const followLink = (event: MouseEvent<HTMLAnchorElement>, open: () => void, handler: unknown) => {
+    if (!handler || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
-    onOpenStatement(path)
+    open()
   }
 
   return (

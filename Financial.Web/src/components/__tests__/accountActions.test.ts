@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AccountTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { deleteConfirmation, deletedMessage, kindLabel, linesDeletedWith, recordNoun, recordTitle } from '../accountActions'
+import { deleteConfirmation, deletedMessage, kindLabel, linesDeletedWith, operationPath, recordNoun, recordTitle } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -17,6 +17,14 @@ function movementRow(id: string, fields: Partial<ReserveMovementDto> = {}, row: 
     ...row,
   })
 }
+
+describe('operationPath', () => {
+  it('opens the Transactions tab of the operation\'s Pots account in its month', () => {
+    expect(operationPath({ operationId: 'op1', potsAccountId: 'p1', year: 2026, month: 3, incomeId: null })).toBe(
+      '/cashflow/accounts/p1?month=2026-03&tab=transactions&operation=op1',
+    )
+  })
+})
 
 describe('pot transaction wording', () => {
   it('labels a pot movement as a pot transaction', () => {
