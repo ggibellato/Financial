@@ -283,15 +283,28 @@ describe('PotDepositForm', () => {
     expect(screen.getByRole('button', { name: 'Add deposit' })).toBeEnabled()
   })
 
-  it('hands From an income to the income form', async () => {
+  it('choosing From an income only selects it; the income form opens from an explicit Continue', async () => {
     const onFromIncome = vi.fn()
     render(<Harness onFromIncome={onFromIncome} />)
-
-    fireEvent.click(screen.getByRole('radio', { name: 'From an income' }))
-
-    expect(onFromIncome).toHaveBeenCalledOnce()
-    expect(screen.getByRole('radio', { name: 'Manual' })).toBeChecked()
     await screen.findByRole('table', { name: 'Split preview' })
+    setDepositAmount('90')
+
+    const fromIncome = screen.getByRole('radio', { name: 'From an income' })
+    fireEvent.click(fromIncome)
+
+    expect(onFromIncome).not.toHaveBeenCalled()
+    expect(fromIncome).toBeChecked()
+    expect(screen.queryByRole('radio', { name: 'One pot' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Funding line 1' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Split preview' })).not.toBeInTheDocument()
+
+    save('Continue to the income form')
+    expect(onFromIncome).toHaveBeenCalledOnce()
+    expect(createPotDepositMock).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('radio', { name: 'Manual' }))
+    expect(depositAmount()).toHaveValue(90)
+    expect(screen.getByRole('button', { name: 'Add deposit' })).toBeEnabled()
   })
 
   it('offers no income source when none names a Pots account', async () => {

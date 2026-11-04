@@ -476,7 +476,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await screen.findByRole('table', { name: 'Pots' })
     await waitFor(() => expect(screen.getByRole('button', { name: 'Deposit' })).toBeEnabled())
     await user.click(screen.getByRole('button', { name: 'Deposit' }))
-    await user.click(within(await operationForm('New deposit')).getByRole('radio', { name: 'From an income' }))
+    const depositForm = await operationForm('New deposit')
+    await user.click(within(depositForm).getByRole('radio', { name: 'From an income' }))
+    await user.click(within(depositForm).getByRole('button', { name: 'Continue to the income form' }))
 
     expect(await screen.findByRole('heading', { name: 'New Income' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Deposit' })).toHaveAttribute('aria-expanded', 'true')

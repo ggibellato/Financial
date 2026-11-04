@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   Checkbox,
   Field,
@@ -87,6 +88,8 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
   const { formRef, saveRef } = useFormErrorFocus(form.errorFields, form.error)
+  const [source, setSource] = useState(MANUAL_SOURCE)
+  const isFromIncome = source === INCOME_SOURCE
   const { values } = form
   if (!values) return null
   const canSplitFromIncome = incomeSources.some((source) => source.isActive && source.potsAccountId != null)
@@ -99,7 +102,8 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
       aria-labelledby="pot-deposit-title"
       onSubmit={(event) => {
         event.preventDefault()
-        form.submit()
+        if (isFromIncome) onFromIncome()
+        else form.submit()
       }}
     >
       <fieldset disabled={form.isSaving} className={styles.savingFieldset}>
@@ -107,7 +111,7 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
           {form.isEditing ? 'Edit deposit' : 'New deposit'}
         </Text>
 
-        {form.hasPotsError && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
+        {form.hasPotsError && !isFromIncome && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
 
         <div className={styles.grid}>
           {form.isEditing ? (
@@ -121,10 +125,8 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
               <RadioGroup
                 className={styles.radioRow}
                 layout="horizontal"
-                value={MANUAL_SOURCE}
-                onChange={(_, data) => {
-                  if (data.value === INCOME_SOURCE) onFromIncome()
-                }}
+                value={source}
+                onChange={(_, data) => setSource(data.value)}
               >
                 <Radio value={MANUAL_SOURCE} label="Manual" />
                 <Radio value={INCOME_SOURCE} label="From an income" disabled={!canSplitFromIncome} />
@@ -132,88 +134,96 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
             </Field>
           )}
 
-          <Field className={styles.spanTwo} label="Into">
-            <RadioGroup className={styles.radioRow} layout="horizontal" value={values.into} onChange={(_, data) => form.setInto(data.value as DepositInto)}>
-              <Radio value="ActivePots" label="Active pots by split" />
-              <Radio value="OnePot" label="One pot" />
-            </RadioGroup>
-          </Field>
+          {!isFromIncome && (
+            <>
+              <Field className={styles.spanTwo} label="Into">
+                <RadioGroup className={styles.radioRow} layout="horizontal" value={values.into} onChange={(_, data) => form.setInto(data.value as DepositInto)}>
+                  <Radio value="ActivePots" label="Active pots by split" />
+                  <Radio value="OnePot" label="One pot" />
+                </RadioGroup>
+              </Field>
 
-          {values.into === 'OnePot' && (
-            <PotField
-              value={values.potId}
-              pots={form.pots}
-              hasLoadError={form.hasPotsError}
-              error={fieldError('potId')}
-              onChange={(potId) => form.setField('potId', potId)}
-            />
+              {values.into === 'OnePot' && (
+                <PotField
+                  value={values.potId}
+                  pots={form.pots}
+                  hasLoadError={form.hasPotsError}
+                  error={fieldError('potId')}
+                  onChange={(potId) => form.setField('potId', potId)}
+                />
+              )}
+
+              <Field
+                label={`Amount (${form.currency})`}
+                required
+                validationState={fieldError('amount') ? 'error' : 'none'}
+                validationMessage={fieldError('amount')}
+              >
+                <Input type="number" step="0.01" min="0" value={values.amount} onChange={(event) => form.setAmount(event.target.value)} />
+              </Field>
+
+              <Field label="Date" required validationState={fieldError('date') ? 'error' : 'none'} validationMessage={fieldError('date')}>
+                <Input type="date" value={values.date} onChange={(event) => form.setField('date', event.target.value)} />
+              </Field>
+
+              <Field
+                className={styles.spanTwo}
+                label="Description"
+                required
+                validationState={fieldError('description') ? 'error' : 'none'}
+                validationMessage={fieldError('description')}
+              >
+                <Input name="description" value={values.description} onChange={(event) => form.setField('description', event.target.value)} />
+              </Field>
+            </>
           )}
-
-          <Field
-            label={`Amount (${form.currency})`}
-            required
-            validationState={fieldError('amount') ? 'error' : 'none'}
-            validationMessage={fieldError('amount')}
-          >
-            <Input type="number" step="0.01" min="0" value={values.amount} onChange={(event) => form.setAmount(event.target.value)} />
-          </Field>
-
-          <Field label="Date" required validationState={fieldError('date') ? 'error' : 'none'} validationMessage={fieldError('date')}>
-            <Input type="date" value={values.date} onChange={(event) => form.setField('date', event.target.value)} />
-          </Field>
-
-          <Field
-            className={styles.spanTwo}
-            label="Description"
-            required
-            validationState={fieldError('description') ? 'error' : 'none'}
-            validationMessage={fieldError('description')}
-          >
-            <Input name="description" value={values.description} onChange={(event) => form.setField('description', event.target.value)} />
-          </Field>
         </div>
 
-        <Text as="h3" weight="semibold">
-          Funded from
-        </Text>
-        <Checkbox
-          label="No bank — money from outside CashFlow"
-          checked={values.hasNoBank}
-          onChange={(_, data) => form.setHasNoBank(data.checked === true)}
-        />
-        {!values.hasNoBank && (
-          <FundingLinesField
-            lines={values.lines}
-            banks={banks}
-            keptBankIds={form.openedBankIds}
-            mismatch={form.mismatch}
-            currency={form.currency}
-            errors={form.errorFields}
-            onChange={form.changeLine}
-            onAdd={form.addLine}
-            onRemove={form.removeLine}
-          />
-        )}
-
-        {values.into === 'ActivePots' && (
+        {!isFromIncome && (
           <>
             <Text as="h3" weight="semibold">
-              Split preview
+              Funded from
             </Text>
-            {form.pots ? (
-              <PotSplitPreview pots={form.pots} amount={form.depositAmount} currency={form.currency} />
-            ) : (
-              !form.hasPotsError && <Spinner size="tiny" labelPosition="after" label="Loading pots…" />
+            <Checkbox
+              label="No bank — money from outside CashFlow"
+              checked={values.hasNoBank}
+              onChange={(_, data) => form.setHasNoBank(data.checked === true)}
+            />
+            {!values.hasNoBank && (
+              <FundingLinesField
+                lines={values.lines}
+                banks={banks}
+                keptBankIds={form.openedBankIds}
+                mismatch={form.mismatch}
+                currency={form.currency}
+                errors={form.errorFields}
+                onChange={form.changeLine}
+                onAdd={form.addLine}
+                onRemove={form.removeLine}
+              />
+            )}
+
+            {values.into === 'ActivePots' && (
+              <>
+                <Text as="h3" weight="semibold">
+                  Split preview
+                </Text>
+                {form.pots ? (
+                  <PotSplitPreview pots={form.pots} amount={form.depositAmount} currency={form.currency} />
+                ) : (
+                  !form.hasPotsError && <Spinner size="tiny" labelPosition="after" label="Loading pots…" />
+                )}
+              </>
             )}
           </>
         )}
 
         <PotFormFooter
           saveRef={saveRef}
-          saveLabel={form.isEditing ? 'Save' : 'Add deposit'}
+          saveLabel={isFromIncome ? 'Continue to the income form' : form.isEditing ? 'Save' : 'Add deposit'}
           deleteLabel={form.isEditing ? 'Delete deposit' : null}
           isSaving={form.isSaving}
-          isSaveDisabled={form.mismatch !== null || form.pots === null}
+          isSaveDisabled={!isFromIncome && (form.mismatch !== null || form.pots === null)}
           error={form.error}
           onDelete={onDelete}
           onCancel={onCancel}
