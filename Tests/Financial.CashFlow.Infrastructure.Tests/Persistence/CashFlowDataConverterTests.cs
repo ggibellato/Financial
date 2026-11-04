@@ -96,7 +96,7 @@ public class CashFlowDataConverterTests
         using (new AssertionScope())
         {
             data.Expenses.Single().OperationId.Should().Be(Guid.Parse(OperationId));
-            data.ReserveMovements.Single().OperationId.Should().Be(Guid.Parse(OperationId));
+            data.PotTransactions.Single().OperationId.Should().Be(Guid.Parse(OperationId));
             saved.Should().Be(V4FileWithOperation);
         }
     }
@@ -222,7 +222,7 @@ public class CashFlowDataConverterTests
             pot.Id.Should().Be(Guid.Parse(PotId));
             pot.Name.Should().Be("Investimento");
             pot.SplitPercentage.Should().Be(33.33m);
-            data.ReserveMovements.Single().Bucket.Should().BeSameAs(pot);
+            data.PotTransactions.Single().Pot.Should().BeSameAs(pot);
             data.Accounts.Where(account => account.Id != reserva.Id).Should().OnlyContain(account => account.Pots == null);
         }
     }

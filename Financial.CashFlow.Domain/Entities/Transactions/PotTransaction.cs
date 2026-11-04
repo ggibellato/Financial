@@ -2,23 +2,23 @@ using System;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
-public class ReserveMovement : IAccountTransaction
+public class PotTransaction : IAccountTransaction
 {
     public Guid Id { get; private set; }
-    public ReserveBucket Bucket { get; private set; } = null!;
+    public Pot Pot { get; private set; } = null!;
     public decimal Amount { get; private set; }
     public DateOnly Date { get; private set; }
     public string Description { get; private set; } = string.Empty;
     public Income? Income { get; private set; }
     public Guid? OperationId { get; private set; }
 
-    private ReserveMovement() { }
+    private PotTransaction() { }
 
-    public static ReserveMovement Create(ReserveBucket bucket, decimal amount, DateOnly date, string description, Income? income = null, Guid? operationId = null) =>
+    public static PotTransaction Create(Pot pot, decimal amount, DateOnly date, string description, Income? income = null, Guid? operationId = null) =>
         new()
         {
             Id = Guid.NewGuid(),
-            Bucket = bucket,
+            Pot = pot,
             Amount = amount,
             Date = date,
             Description = description,
@@ -26,13 +26,13 @@ public class ReserveMovement : IAccountTransaction
             OperationId = operationId
         };
 
-    public void Update(ReserveBucket bucket, decimal amount, DateOnly date, string description)
+    public void Update(Pot pot, decimal amount, DateOnly date, string description)
     {
-        Bucket = bucket;
+        Pot = pot;
         Amount = amount;
         Date = date;
         Description = description;
     }
 
-    public decimal ContributionTo(Account account) => account.OwnsPot(Bucket.Id) ? Amount : 0m;
+    public decimal ContributionTo(Account account) => account.OwnsPot(Pot.Id) ? Amount : 0m;
 }

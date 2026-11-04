@@ -2,16 +2,16 @@ using System;
 
 namespace Financial.CashFlow.Domain.Entities;
 
-public class ReserveBucket
+public class Pot
 {
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
     public decimal SplitPercentage { get; private set; }
 
-    private ReserveBucket() { }
+    private Pot() { }
 
-    public static ReserveBucket Create(string name, decimal splitPercentage, bool isActive = true)
+    public static Pot Create(string name, decimal splitPercentage, bool isActive = true)
     {
         Validate(name, splitPercentage);
 
@@ -24,10 +24,10 @@ public class ReserveBucket
         };
     }
 
-    /// <summary>Updates this bucket's fields. Callers own uniqueness checks, since only the
-    /// repository can see across every bucket. "Deleting" a bucket is an ordinary Update call with
-    /// isActive: false - no hard delete exists, since ReserveMovement holds a permanent,
-    /// non-nullable reference to its Bucket.</summary>
+    /// <summary>Updates this pot's fields. Callers own uniqueness checks, since only the
+    /// repository can see across every pot. "Deleting" a pot is an ordinary Update call with
+    /// isActive: false - no hard delete exists, since PotTransaction holds a permanent,
+    /// non-nullable reference to its Pot.</summary>
     public void Update(string name, decimal splitPercentage, bool isActive)
     {
         Validate(name, splitPercentage);

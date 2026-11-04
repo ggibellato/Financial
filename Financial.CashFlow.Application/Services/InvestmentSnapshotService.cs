@@ -111,7 +111,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                 .ToList();
 
             var monthLabel = new DateOnly(year, month, 1).ToString("MMM yyyy", CultureInfo.InvariantCulture);
-            var potsAsOfDate = ReserveBucketAsOfDateResolver.LastDayOfPriorMonth(year, month);
+            var potsAsOfDate = PotAsOfDateResolver.LastDayOfPriorMonth(year, month);
             var potsAsOfLabel = potsAsOfDate.ToString("MMM yyyy", CultureInfo.InvariantCulture);
 
             var suggestions = new List<InvestmentSnapshotSuggestionDTO>();
@@ -157,7 +157,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                             AccountId = account.Id,
                             AccountName = account.Name,
                             CurrentValue = snapshot.Value,
-                            SuggestedValue = AccountBalanceRule.Balance(potsAccount, potsAsOfDate, _repository.GetReserveMovements()),
+                            SuggestedValue = AccountBalanceRule.Balance(potsAccount, potsAsOfDate, _repository.GetPotTransactions()),
                             SourceDescription = $"{potsAccount.Name} total — as of {potsAsOfLabel}"
                         });
                         break;

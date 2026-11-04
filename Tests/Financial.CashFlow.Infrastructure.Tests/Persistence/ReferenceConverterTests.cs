@@ -87,9 +87,9 @@ public class InvestmentAccountReferenceConverterTests : ReferenceConverterTests<
     protected override JsonConverter CreateConverter(Dictionary<Guid, InvestmentAccount>? lookup) => new InvestmentAccountReferenceConverter(lookup);
 }
 
-public class ReserveBucketReferenceConverterTests : ReferenceConverterTests<ReserveBucket>
+public class PotReferenceConverterTests : ReferenceConverterTests<Pot>
 {
-    protected override ReserveBucket CreateEntity() => ReserveBucket.Create("Investimento", 33.33m);
-    protected override Guid IdOf(ReserveBucket entity) => entity.Id;
-    protected override JsonConverter CreateConverter(Dictionary<Guid, ReserveBucket>? lookup) => new ReserveBucketReferenceConverter(lookup);
+    protected override Pot CreateEntity() => Pot.Create("Investimento", 33.33m);
+    protected override Guid IdOf(Pot entity) => entity.Id;
+    protected override JsonConverter CreateConverter(Dictionary<Guid, Pot>? lookup) => new PotReferenceConverter(lookup);
 }

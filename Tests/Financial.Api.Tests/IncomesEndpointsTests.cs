@@ -274,7 +274,7 @@ public class IncomesEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddIncome_WithSplitForEligibleSource_ReturnsOkAndCreatesLinkedReserveMovements()
+    public async Task AddIncome_WithSplitForEligibleSource_ReturnsOkAndCreatesLinkedPotTransactions()
     {
         var request = new IncomeCreateDTO
         {

@@ -445,19 +445,19 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void DeleteReserveMovement_RemovesTheMatchingMovement()
+    public void DeletePotTransaction_RemovesTheMatchingMovement()
     {
         var path = Path.GetTempFileName();
         try
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var movement = ReserveMovement.Create(ReserveBucket.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
-            repository.AddReserveMovement(movement);
+            var movement = PotTransaction.Create(Pot.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
+            repository.AddPotTransaction(movement);
 
-            repository.DeleteReserveMovement(movement.Id);
+            repository.DeletePotTransaction(movement.Id);
 
-            repository.GetReserveMovements().Should().BeEmpty();
+            repository.GetPotTransactions().Should().BeEmpty();
         }
         finally
         {
@@ -502,16 +502,16 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void GetReserveBuckets_ReturnsReserveBucketsFromTheUnderlyingData()
+    public void GetReservaPots_ReturnsPotsFromTheUnderlyingData()
     {
         var path = Path.GetTempFileName();
         try
         {
             var data = CashFlowData.Create();
-            TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 33.33m));
+            TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 33.33m));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-            repository.GetReserveBuckets().Should().ContainSingle().Which.Name.Should().Be("Investimento");
+            repository.GetReservaPots().Should().ContainSingle().Which.Name.Should().Be("Investimento");
         }
         finally
         {

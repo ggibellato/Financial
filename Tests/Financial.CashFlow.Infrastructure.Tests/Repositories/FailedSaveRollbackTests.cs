@@ -42,9 +42,9 @@ public class FailedSaveRollbackTests
             data.AddIncomeSource(source);
         }
 
-        foreach (var bucket in StubCashFlowRepository.DefaultReserveBuckets())
+        foreach (var pot in StubCashFlowRepository.DefaultPots())
         {
-            TestAccounts.ReservaIn(data).AddPot(bucket);
+            TestAccounts.ReservaIn(data).AddPot(pot);
         }
 
         foreach (var card in StubCashFlowRepository.DefaultCreditCards())
@@ -100,7 +100,7 @@ public class FailedSaveRollbackTests
         using (new AssertionScope())
         {
             _repository.GetIncomes().Should().BeEmpty();
-            _repository.GetReserveMovements().Should().BeEmpty();
+            _repository.GetPotTransactions().Should().BeEmpty();
         }
     }
 
@@ -109,7 +109,7 @@ public class FailedSaveRollbackTests
     {
         var service = CreateIncomeService();
         var added = await service.AddIncomeAsync(ArianaSplitIncome());
-        var originalMovementIds = _repository.GetReserveMovements().Select(m => m.Id).ToList();
+        var originalMovementIds = _repository.GetPotTransactions().Select(m => m.Id).ToList();
         _storage.FailWrites = true;
 
         var act = async () => await service.UpdateIncomeAsync(added.Id, ArianaSplitIncomeUpdate(1000.00m));
@@ -118,12 +118,12 @@ public class FailedSaveRollbackTests
         using (new AssertionScope())
         {
             _repository.GetIncomes().Should().ContainSingle().Which.NetValue.Should().Be(2450.00m);
-            _repository.GetReserveMovements().Select(m => m.Id).Should().BeEquivalentTo(originalMovementIds);
+            _repository.GetPotTransactions().Select(m => m.Id).Should().BeEquivalentTo(originalMovementIds);
         }
     }
 
     [Fact]
-    public async Task PostIncomeSplitAsync_WhenTheWriteFails_LeavesNoMovementInAnyBucket()
+    public async Task PostIncomeSplitAsync_WhenTheWriteFails_LeavesNoMovementInAnyPot()
     {
         _storage.FailWrites = true;
 
@@ -135,16 +135,16 @@ public class FailedSaveRollbackTests
         });
 
         await act.Should().ThrowAsync<IOException>();
-        _repository.GetReserveMovements().Should().BeEmpty();
+        _repository.GetPotTransactions().Should().BeEmpty();
     }
 
     [Fact]
     public async Task PostWithdrawalAsync_ThroughABank_WhenTheWriteFails_LeavesNoMovementAndNoExpense()
     {
-        var investimento = _repository.GetReserveBuckets().Single(b => b.Name == "Investimento");
+        var investimento = _repository.GetReservaPots().Single(b => b.Name == "Investimento");
         await _repository.ApplyAndSaveAsync(() =>
         {
-            _repository.AddReserveMovement(ReserveMovement.Create(investimento, 100m, July1, "Seed"));
+            _repository.AddPotTransaction(PotTransaction.Create(investimento, 100m, July1, "Seed"));
             return true;
         });
         _storage.FailWrites = true;
@@ -162,7 +162,7 @@ public class FailedSaveRollbackTests
         await act.Should().ThrowAsync<IOException>();
         using (new AssertionScope())
         {
-            _repository.GetReserveMovements().Should().ContainSingle().Which.Description.Should().Be("Seed");
+            _repository.GetPotTransactions().Should().ContainSingle().Which.Description.Should().Be("Seed");
             _repository.GetExpenses().Should().BeEmpty();
         }
     }

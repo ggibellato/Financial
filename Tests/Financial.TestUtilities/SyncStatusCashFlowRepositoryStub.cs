@@ -30,9 +30,9 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public IEnumerable<Expense> GetExpenses() => throw new NotImplementedException();
     public void AddExpense(Expense expense) => throw new NotImplementedException();
     public void DeleteExpense(Guid id) => throw new NotImplementedException();
-    public IEnumerable<ReserveMovement> GetReserveMovements() => throw new NotImplementedException();
-    public void AddReserveMovement(ReserveMovement movement) => throw new NotImplementedException();
-    public void DeleteReserveMovement(Guid id) => throw new NotImplementedException();
+    public IEnumerable<PotTransaction> GetPotTransactions() => throw new NotImplementedException();
+    public void AddPotTransaction(PotTransaction movement) => throw new NotImplementedException();
+    public void DeletePotTransaction(Guid id) => throw new NotImplementedException();
     public IEnumerable<CardStatement> GetCardStatements() => throw new NotImplementedException();
     public void AddCardStatement(CardStatement statement) => throw new NotImplementedException();
     public IEnumerable<RecurringBill> GetRecurringBills() => throw new NotImplementedException();
@@ -52,7 +52,7 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public IEnumerable<IncomeSource> GetIncomeSources() => throw new NotImplementedException();
     public void AddIncomeSource(IncomeSource incomeSource) => throw new NotImplementedException();
     public void DeleteIncomeSource(Guid id) => throw new NotImplementedException();
-    public IEnumerable<ReserveBucket> GetReserveBuckets() => throw new NotImplementedException();
+    public IEnumerable<Pot> GetReservaPots() => throw new NotImplementedException();
     public IEnumerable<Category> GetCategories() => throw new NotImplementedException();
     public void AddCategory(Category category) => throw new NotImplementedException();
     public void DeleteCategory(Guid id) => throw new NotImplementedException();

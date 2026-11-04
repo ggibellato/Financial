@@ -7,11 +7,11 @@ namespace Financial.CashFlowSpreadsheetImport.Tests.Parsing;
 [Trait("Category", "Unit")]
 public class ReserveBucketNameResolverTests
 {
-    private static readonly ReserveBucket[] Buckets =
+    private static readonly Pot[] Buckets =
     [
-        ReserveBucket.Create("Investimento", 33.33m),
-        ReserveBucket.Create("HouseTreats", 33.33m),
-        ReserveBucket.Create("Ariana", 16.67m)
+        Pot.Create("Investimento", 33.33m),
+        Pot.Create("HouseTreats", 33.33m),
+        Pot.Create("Ariana", 16.67m)
     ];
 
     [Fact]

@@ -16,10 +16,10 @@ public class PotDepositTests
     private readonly Account _chase = TestAccounts.Bank("Chase");
     private readonly Account _barclays = TestAccounts.Bank("Barclays");
     private readonly Account _reserva;
-    private readonly ReserveBucket _investimento = ReserveBucket.Create("Investimento", 50m);
-    private readonly ReserveBucket _houseTreats = ReserveBucket.Create("HouseTreats", 30m);
-    private readonly ReserveBucket _ariana = ReserveBucket.Create("Ariana", 20m);
-    private readonly ReserveBucket _holidays = ReserveBucket.Create("Holidays", 0m, isActive: false);
+    private readonly Pot _investimento = Pot.Create("Investimento", 50m);
+    private readonly Pot _houseTreats = Pot.Create("HouseTreats", 30m);
+    private readonly Pot _ariana = Pot.Create("Ariana", 20m);
+    private readonly Pot _holidays = Pot.Create("Holidays", 0m, isActive: false);
 
     public PotDepositTests()
     {
@@ -37,7 +37,7 @@ public class PotDepositTests
 
         using (new AssertionScope())
         {
-            records.Movements.Select(movement => (movement.Bucket, movement.Amount))
+            records.Movements.Select(movement => (movement.Pot, movement.Amount))
                 .Should().Equal((_investimento, 16.66m), (_houseTreats, 10.00m), (_ariana, 6.67m));
             records.Movements.Should().OnlyContain(movement =>
                 movement.Date == Date && movement.Description == "Ramsay bonus" && movement.OperationId == OperationId && movement.Income == null);
@@ -50,7 +50,7 @@ public class PotDepositTests
     {
         var records = PotDeposit.Build(_reserva, 40m, Date, "Trip fund", _holidays, [], OperationId);
 
-        records.Movements.Select(movement => (movement.Bucket, movement.Amount)).Should().Equal((_holidays, 40m));
+        records.Movements.Select(movement => (movement.Pot, movement.Amount)).Should().Equal((_holidays, 40m));
     }
 
     [Fact]
@@ -112,7 +112,7 @@ public class PotDepositTests
     public void Build_FundedWithoutAPotsCategory_Throws()
     {
         var reserva = TestAccounts.Pots("Savings");
-        reserva.AddPot(ReserveBucket.Create("Rainy day", 100m));
+        reserva.AddPot(Pot.Create("Rainy day", 100m));
 
         var act = () => PotDeposit.Build(reserva, 10m, Date, "Bonus", pot: null, [new(_chase, 10m)], OperationId);
 
@@ -122,7 +122,7 @@ public class PotDepositTests
     [Fact]
     public void Build_PotOfAnotherAccount_Throws()
     {
-        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", ReserveBucket.Create("Trip", 0m), [], OperationId);
+        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", Pot.Create("Trip", 0m), [], OperationId);
 
         act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
     }
@@ -131,7 +131,7 @@ public class PotDepositTests
     public void Build_NoActivePots_Throws()
     {
         var savings = TestAccounts.Pots("Savings");
-        savings.AddPot(ReserveBucket.Create("Old", 0m, isActive: false));
+        savings.AddPot(Pot.Create("Old", 0m, isActive: false));
 
         var act = () => PotDeposit.Build(savings, 10m, Date, "Bonus", pot: null, [], OperationId);
 

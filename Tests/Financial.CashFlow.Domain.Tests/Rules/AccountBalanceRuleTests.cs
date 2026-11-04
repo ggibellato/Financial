@@ -196,19 +196,19 @@ public class AccountBalanceRuleTests
     public void Balance_PotsAccount_SumsTheMovementsOfItsOwnPotsUpToAsOf()
     {
         var reserva = TestAccounts.Pots("Reserva");
-        var investimento = ReserveBucket.Create("Investimento", 50m);
-        var ferias = ReserveBucket.Create("Ferias", 50m, isActive: false);
+        var investimento = Pot.Create("Investimento", 50m);
+        var ferias = Pot.Create("Ferias", 50m, isActive: false);
         reserva.AddPot(investimento);
         reserva.AddPot(ferias);
         var holidays = TestAccounts.Pots("Holidays");
-        var flights = ReserveBucket.Create("Flights", 100m);
+        var flights = Pot.Create("Flights", 100m);
         holidays.AddPot(flights);
         var records = new IAccountTransaction[]
         {
-            ReserveMovement.Create(investimento, 100m, new DateOnly(2020, 1, 1), "First split"),
-            ReserveMovement.Create(ferias, -30m, new DateOnly(2026, 9, 30), "Withdrawal"),
-            ReserveMovement.Create(investimento, 40m, new DateOnly(2026, 10, 1), "Next month"),
-            ReserveMovement.Create(flights, 500m, new DateOnly(2026, 9, 1), "Other account")
+            PotTransaction.Create(investimento, 100m, new DateOnly(2020, 1, 1), "First split"),
+            PotTransaction.Create(ferias, -30m, new DateOnly(2026, 9, 30), "Withdrawal"),
+            PotTransaction.Create(investimento, 40m, new DateOnly(2026, 10, 1), "Next month"),
+            PotTransaction.Create(flights, 500m, new DateOnly(2026, 9, 1), "Other account")
         };
 
         using (new AssertionScope())
@@ -223,14 +223,14 @@ public class AccountBalanceRuleTests
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
     public void PotBalance_CountsThatPotsMovementsOnOrBeforeAsOf()
     {
-        var investimento = ReserveBucket.Create("Investimento", 50m);
-        var ferias = ReserveBucket.Create("Ferias", 50m);
+        var investimento = Pot.Create("Investimento", 50m);
+        var ferias = Pot.Create("Ferias", 50m);
         var movements = new[]
         {
-            ReserveMovement.Create(investimento, 100m, new DateOnly(2026, 9, 1), "Split"),
-            ReserveMovement.Create(investimento, -25m, new DateOnly(2026, 9, 30), "On as-of"),
-            ReserveMovement.Create(investimento, 40m, new DateOnly(2026, 10, 1), "After as-of"),
-            ReserveMovement.Create(ferias, 70m, new DateOnly(2026, 9, 1), "Other pot")
+            PotTransaction.Create(investimento, 100m, new DateOnly(2026, 9, 1), "Split"),
+            PotTransaction.Create(investimento, -25m, new DateOnly(2026, 9, 30), "On as-of"),
+            PotTransaction.Create(investimento, 40m, new DateOnly(2026, 10, 1), "After as-of"),
+            PotTransaction.Create(ferias, 70m, new DateOnly(2026, 9, 1), "Other pot")
         };
 
         AccountBalanceRule.PotBalance(investimento, new DateOnly(2026, 9, 30), movements).Should().Be(75m);
@@ -239,11 +239,11 @@ public class AccountBalanceRuleTests
     [Fact]
     public void PotBalance_InactivePotAndMaxAsOf_CountsEveryMovement()
     {
-        var ferias = ReserveBucket.Create("Ferias", 0m, isActive: false);
+        var ferias = Pot.Create("Ferias", 0m, isActive: false);
         var movements = new[]
         {
-            ReserveMovement.Create(ferias, 100m, new DateOnly(2020, 1, 1), "Old split"),
-            ReserveMovement.Create(ferias, 20m, new DateOnly(2030, 1, 1), "Future-dated")
+            PotTransaction.Create(ferias, 100m, new DateOnly(2020, 1, 1), "Old split"),
+            PotTransaction.Create(ferias, 20m, new DateOnly(2030, 1, 1), "Future-dated")
         };
 
         AccountBalanceRule.PotBalance(ferias, DateOnly.MaxValue, movements).Should().Be(120m);

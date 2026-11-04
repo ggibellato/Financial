@@ -24,7 +24,7 @@ public class CashFlowSerializerAdapterTests
     public void SerializeThenDeserialize_RoundTripsAllCollectionsAndSharesReferenceInstances()
     {
         var original = CashFlowData.Create();
-        var reserveBucket = ReserveBucket.Create("Investimento", 33.33m);
+        var pot = Pot.Create("Investimento", 33.33m);
         var creditCard = TestAccounts.CreditCard("Barclays Platinum Visa 8003", isActive: true);
         var category = Category.Create("Investimento", isInvestment: true, isTithe: false, isActive: true);
         var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
@@ -42,7 +42,7 @@ public class CashFlowSerializerAdapterTests
             creditCard);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
         var income = Income.Create(new DateOnly(2026, 7, 25), incomeSource, 3200.00m, 2450.00m, bank, potsAccount: TestAccounts.ReservaIn(original));
-        var reserveMovement = ReserveMovement.Create(reserveBucket, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split", income);
+        var potTransaction = PotTransaction.Create(pot, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split", income);
         var cardStatement = CardStatement.Create(creditCard, 2026, 7);
         cardStatement.SetDueDate(new DateOnly(2026, 8, 18));
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
@@ -52,11 +52,11 @@ public class CashFlowSerializerAdapterTests
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
         var titheCarryForward = TitheCarryForward.Create(2026, 8, false);
 
-        TestAccounts.ReservaIn(original).AddPot(reserveBucket);
+        TestAccounts.ReservaIn(original).AddPot(pot);
         original.AddAccount(creditCard);
         original.AddCategory(category);
         original.AddExpense(expense);
-        original.AddReserveMovement(reserveMovement);
+        original.AddPotTransaction(potTransaction);
         original.AddCardStatement(cardStatement);
         original.AddRecurringBill(recurringBill);
         original.AddMaeLedgerEntry(maeLedgerEntry);
@@ -76,11 +76,11 @@ public class CashFlowSerializerAdapterTests
 
         using (new AssertionScope())
         {
-            var resultReserveBucket = TestAccounts.ReservaIn(result).Pots.Should().ContainSingle().Which;
-            resultReserveBucket.Id.Should().Be(reserveBucket.Id);
-            resultReserveBucket.Name.Should().Be(reserveBucket.Name);
-            resultReserveBucket.IsActive.Should().Be(reserveBucket.IsActive);
-            resultReserveBucket.SplitPercentage.Should().Be(reserveBucket.SplitPercentage);
+            var resultPot = TestAccounts.ReservaIn(result).Pots.Should().ContainSingle().Which;
+            resultPot.Id.Should().Be(pot.Id);
+            resultPot.Name.Should().Be(pot.Name);
+            resultPot.IsActive.Should().Be(pot.IsActive);
+            resultPot.SplitPercentage.Should().Be(pot.SplitPercentage);
             var resultExpense = result.Expenses.Should().ContainSingle().Which;
             resultExpense.Id.Should().Be(expense.Id);
             resultExpense.Date.Should().Be(expense.Date);
@@ -91,12 +91,12 @@ public class CashFlowSerializerAdapterTests
             resultExpense.CreditCard!.Id.Should().Be(expense.CreditCard!.Id);
             resultExpense.ChargeDate.Should().Be(expense.ChargeDate);
             resultExpense.InvoiceDate.Should().Be(expense.InvoiceDate);
-            var resultMovement = result.ReserveMovements.Should().ContainSingle().Which;
-            resultMovement.Id.Should().Be(reserveMovement.Id);
-            resultMovement.Bucket.Should().BeSameAs(resultReserveBucket);
-            resultMovement.Amount.Should().Be(reserveMovement.Amount);
-            resultMovement.Date.Should().Be(reserveMovement.Date);
-            resultMovement.Description.Should().Be(reserveMovement.Description);
+            var resultMovement = result.PotTransactions.Should().ContainSingle().Which;
+            resultMovement.Id.Should().Be(potTransaction.Id);
+            resultMovement.Pot.Should().BeSameAs(resultPot);
+            resultMovement.Amount.Should().Be(potTransaction.Amount);
+            resultMovement.Date.Should().Be(potTransaction.Date);
+            resultMovement.Description.Should().Be(potTransaction.Description);
             var resultCardStatement = result.CardStatements.Should().ContainSingle().Which;
             resultCardStatement.Id.Should().Be(cardStatement.Id);
             resultCardStatement.DueDate.Should().Be(new DateOnly(2026, 8, 18));
@@ -180,12 +180,12 @@ public class CashFlowSerializerAdapterTests
         var original = CashFlowData.Create();
         var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
-        var reserveBucket = Financial.CashFlow.Domain.Entities.ReserveBucket.Create("Investimento", 33.33m);
+        var pot = Financial.CashFlow.Domain.Entities.Pot.Create("Investimento", 33.33m);
         original.AddAccount(bank);
         original.AddIncomeSource(incomeSource);
-        TestAccounts.ReservaIn(original).AddPot(reserveBucket);
+        TestAccounts.ReservaIn(original).AddPot(pot);
         original.AddIncome(Income.Create(new DateOnly(2026, 7, 1), incomeSource, 100m, 90m, bank));
-        original.AddReserveMovement(ReserveMovement.Create(reserveBucket, 50m, new DateOnly(2026, 7, 1), "Deposit"));
+        original.AddPotTransaction(PotTransaction.Create(pot, 50m, new DateOnly(2026, 7, 1), "Deposit"));
 
         var json = _sut.Serialize(original);
 
@@ -200,7 +200,7 @@ public class CashFlowSerializerAdapterTests
 
         var movement = document.RootElement.GetProperty("ReserveMovements")[0];
         movement.GetProperty("BucketId").ValueKind.Should().Be(JsonValueKind.String);
-        movement.GetProperty("BucketId").GetGuid().Should().Be(reserveBucket.Id);
+        movement.GetProperty("BucketId").GetGuid().Should().Be(pot.Id);
         movement.TryGetProperty("Bucket", out _).Should().BeFalse();
     }
 
@@ -273,9 +273,9 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_ReserveMovementMissingIncomeIdKeyEntirely_DefaultsToUnlinked()
+    public void Deserialize_PotTransactionMissingIncomeIdKeyEntirely_DefaultsToUnlinked()
     {
-        var bucketId = Guid.NewGuid();
+        var potId = Guid.NewGuid();
         var json = $$"""
             {
               "Version": 4,
@@ -283,14 +283,14 @@ public class CashFlowSerializerAdapterTests
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Incomes": [], "IncomeSources": [], "Transfers": [], "BalanceAdjustments": [],
               "Categories": [],
-              "Accounts": [{ "Id": "{{Guid.NewGuid()}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }] }],
-              "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "Legacy manual movement" }]
+              "Accounts": [{ "Id": "{{Guid.NewGuid()}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [{ "Id": "{{potId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }] }],
+              "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{potId}}", "Amount": 50, "Date": "2026-07-01", "Description": "Legacy manual movement" }]
             }
             """;
 
         var result = _sut.Deserialize(json);
 
-        result.ReserveMovements.Should().ContainSingle().Which.Income.Should().BeNull();
+        result.PotTransactions.Should().ContainSingle().Which.Income.Should().BeNull();
     }
 
     [Fact]
@@ -318,11 +318,11 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_ReserveMovementWithIncomeIdReferencingAnIncomeDeserializedLater_ResolvesTheSameReference()
+    public void Deserialize_PotTransactionWithIncomeIdReferencingAnIncomeDeserializedLater_ResolvesTheSameReference()
     {
         var incomeSourceId = Guid.NewGuid();
         var incomeId = Guid.NewGuid();
-        var bucketId = Guid.NewGuid();
+        var potId = Guid.NewGuid();
         // "ReserveMovements" appears BEFORE "Incomes" in the text on purpose, to prove
         // resolution doesn't depend on encountering Incomes first in the JSON text - only in the
         // converter's own read order (Incomes before ReserveMovements), which is independent of
@@ -333,8 +333,8 @@ public class CashFlowSerializerAdapterTests
               "Expenses": [], "CardStatements": [], "RecurringBills": [],
               "MaeLedgerEntries": [], "InvestmentSnapshots": [], "InvestmentAccounts": [],
               "Transfers": [], "BalanceAdjustments": [], "Categories": [],
-              "Accounts": [{ "Id": "{{Guid.NewGuid()}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [{ "Id": "{{bucketId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }] }],
-              "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{bucketId}}", "Amount": 50, "Date": "2026-07-01", "Description": "August salary", "IncomeId": "{{incomeId}}" }],
+              "Accounts": [{ "Id": "{{Guid.NewGuid()}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [{ "Id": "{{potId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 33.33 }] }],
+              "ReserveMovements": [{ "Id": "{{Guid.NewGuid()}}", "BucketId": "{{potId}}", "Amount": 50, "Date": "2026-07-01", "Description": "August salary", "IncomeId": "{{incomeId}}" }],
               "IncomeSources": [{ "Id": "{{incomeSourceId}}", "Name": "Ariana", "IsActive": true, "Group": "Salary", "PotsAccountId": null }],
               "Incomes": [{ "Id": "{{incomeId}}", "Date": "2026-07-01", "IncomeSourceId": "{{incomeSourceId}}", "NetValue": 50, "AccountId": null, "PotsAccountId": null }]
             }
@@ -342,7 +342,7 @@ public class CashFlowSerializerAdapterTests
 
         var result = _sut.Deserialize(json);
 
-        result.ReserveMovements.Should().ContainSingle().Which.Income.Should().BeSameAs(result.Incomes.Should().ContainSingle().Which);
+        result.PotTransactions.Should().ContainSingle().Which.Income.Should().BeSameAs(result.Incomes.Should().ContainSingle().Which);
     }
 
     [Fact]
@@ -364,7 +364,7 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_LegacyReserveMovementMissingBucketId_FailsWithADescriptiveMessage()
+    public void Deserialize_LegacyPotTransactionMissingBucketId_FailsWithADescriptiveMessage()
     {
         var json = """
             {
@@ -400,7 +400,7 @@ public class CashFlowSerializerAdapterTests
         var result = _sut.Deserialize(json);
 
         result.Expenses.Should().BeEmpty();
-        result.ReserveMovements.Should().BeEmpty();
+        result.PotTransactions.Should().BeEmpty();
         result.CardStatements.Should().BeEmpty();
         result.RecurringBills.Should().BeEmpty();
         result.MaeLedgerEntries.Should().BeEmpty();

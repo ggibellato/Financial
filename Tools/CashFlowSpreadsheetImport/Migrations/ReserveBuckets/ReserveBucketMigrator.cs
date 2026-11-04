@@ -7,7 +7,7 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 
 /// <summary>
 /// Idempotently seeds the 5 tracked reserve buckets and audits every reserve movement's bucket
-/// against them. <see cref="ReserveMovement.Bucket"/> is a real <see cref="ReserveBucket"/>
+/// against them. <see cref="PotTransaction.Pot"/> is a real <see cref="Pot"/>
 /// reference (F02), so a movement resolves exactly when its bucket is one of the seeded instances.
 /// </summary>
 public static class ReserveBucketMigrator
@@ -48,7 +48,7 @@ public static class ReserveBucketMigrator
                 continue;
             }
 
-            reserva.AddPot(ReserveBucket.Create(name, splitPercentage));
+            reserva.AddPot(Pot.Create(name, splitPercentage));
             summary.CountBucketSeeded();
         }
     }
@@ -80,14 +80,14 @@ public static class ReserveBucketMigrator
         return created;
     }
 
-    private static IReadOnlyList<ReserveBucket> PotsOf(CashFlowData data) => ReservaAccount.Find(data.Accounts)?.Pots ?? [];
+    private static IReadOnlyList<Pot> PotsOf(CashFlowData data) => ReservaAccount.Find(data.Accounts)?.Pots ?? [];
 
     private static void AuditReserveMovements(CashFlowData data, ReserveBucketMigrationSummary summary)
     {
         var pots = PotsOf(data);
-        foreach (var movement in data.ReserveMovements)
+        foreach (var movement in data.PotTransactions)
         {
-            if (pots.Contains(movement.Bucket))
+            if (pots.Contains(movement.Pot))
             {
                 summary.CountMovementResolved();
             }

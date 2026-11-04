@@ -34,7 +34,7 @@ internal static class PotWithdrawalValidator
         return (bank, category);
     }
 
-    internal static void EnsureWithinBalance(ReserveBucket pot, decimal amount, bool confirmed, IEnumerable<ReserveMovement> movements)
+    internal static void EnsureWithinBalance(Pot pot, decimal amount, bool confirmed, IEnumerable<PotTransaction> movements)
     {
         var balance = AccountBalanceRule.PotBalance(pot, DateOnly.MaxValue, movements);
         if (amount > balance && !confirmed)

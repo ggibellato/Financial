@@ -52,7 +52,7 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
 
         foreach (var pot in record.Pots ?? [])
         {
-            account.AddPot(pot.Deserialize<ReserveBucket>(AccountOptions)!);
+            account.AddPot(pot.Deserialize<Pot>(AccountOptions)!);
         }
 
         if (record.Category is { } category)

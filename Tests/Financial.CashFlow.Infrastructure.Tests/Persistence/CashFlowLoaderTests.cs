@@ -23,7 +23,7 @@ public class CashFlowLoaderTests
         var data = CashFlowLoader.LoadSync(storage, _serializer);
 
         data.Expenses.Should().BeEmpty();
-        data.ReserveMovements.Should().BeEmpty();
+        data.PotTransactions.Should().BeEmpty();
         data.CardStatements.Should().BeEmpty();
         data.RecurringBills.Should().BeEmpty();
         data.MaeLedgerEntries.Should().BeEmpty();

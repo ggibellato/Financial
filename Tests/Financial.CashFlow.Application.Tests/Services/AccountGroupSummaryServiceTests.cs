@@ -200,12 +200,12 @@ public class AccountGroupSummaryServiceTests
     public void GetTemplateGroups_PotsGroup_ListsThePotsAccountsByNameWithTheirMonthEndBalanceAndTotal()
     {
         var reserva = TestAccounts.Pots("Reserva");
-        var flights = ReserveBucket.Create("Flights", 100m);
+        var flights = Pot.Create("Flights", 100m);
         reserva.AddPot(flights);
         var holidays = TestAccounts.Pots("holidays");
         _repository.Accounts.AddRange([reserva, holidays]);
-        _repository.ReserveMovements.Add(ReserveMovement.Create(flights, 120m, new DateOnly(2026, 9, 5), "Saved"));
-        _repository.ReserveMovements.Add(ReserveMovement.Create(flights, 30m, new DateOnly(2026, 10, 1), "Saved later"));
+        _repository.PotTransactions.Add(PotTransaction.Create(flights, 120m, new DateOnly(2026, 9, 5), "Saved"));
+        _repository.PotTransactions.Add(PotTransaction.Create(flights, 30m, new DateOnly(2026, 10, 1), "Saved later"));
 
         var pots = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "Pots");
 

@@ -8,10 +8,10 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Shee
 
 /// <summary>
 /// Parses the single continuous "Reservas" sheet (spanning every year) into
-/// <see cref="ReserveMovement"/> entities. Each row can populate any subset of the 5 bucket
+/// <see cref="PotTransaction"/> entities. Each row can populate any subset of the 5 bucket
 /// columns; one movement is created per populated bucket column on that row, regardless of
 /// whether the row represents an income-split deposit (all bucket columns populated, proportioned
-/// per each bucket's own <see cref="ReserveBucket.SplitPercentage"/>) or a single-bucket
+/// per each bucket's own <see cref="Pot.SplitPercentage"/>) or a single-bucket
 /// withdrawal (one column populated) — both shapes reconstruct correct running balances this way
 /// without needing to be told apart.
 /// Column 4 (Dizimo/tithe) is a non-bucket intermediate value and is not imported.
@@ -31,10 +31,10 @@ public static class ReservasSheetImporter
         (10, "Samuel"),
     ];
 
-    public static IReadOnlyList<ReserveMovement> Import(IXLWorksheet sheet, IReadOnlyCollection<ReserveBucket> buckets, ImportReport report)
+    public static IReadOnlyList<PotTransaction> Import(IXLWorksheet sheet, IReadOnlyCollection<Pot> buckets, ImportReport report)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        var movements = new List<ReserveMovement>();
+        var movements = new List<PotTransaction>();
         var resolvedBuckets = ResolveBucketColumns(sheet.Name, buckets, report);
 
         for (var row = FirstDataRow; row <= lastRow; row++)
@@ -56,17 +56,17 @@ public static class ReservasSheetImporter
                     continue;
                 }
 
-                movements.Add(ReserveMovement.Create(bucket, Math.Round(amount.Value, 2, MidpointRounding.AwayFromZero), date, description));
+                movements.Add(PotTransaction.Create(bucket, Math.Round(amount.Value, 2, MidpointRounding.AwayFromZero), date, description));
             }
         }
 
         return movements;
     }
 
-    private static (int Column, ReserveBucket Bucket)[] ResolveBucketColumns(
-        string sheetName, IReadOnlyCollection<ReserveBucket> buckets, ImportReport report)
+    private static (int Column, Pot Bucket)[] ResolveBucketColumns(
+        string sheetName, IReadOnlyCollection<Pot> buckets, ImportReport report)
     {
-        var resolved = new List<(int Column, ReserveBucket Bucket)>();
+        var resolved = new List<(int Column, Pot Bucket)>();
 
         foreach (var entry in BucketColumns)
         {

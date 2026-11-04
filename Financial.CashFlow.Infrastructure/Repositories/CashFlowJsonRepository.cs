@@ -31,9 +31,9 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddExpense(Expense expense) => _data.AddExpense(expense);
     public void DeleteExpense(Guid id) => _data.RemoveExpense(id);
 
-    public IEnumerable<ReserveMovement> GetReserveMovements() => _data.ReserveMovements;
-    public void AddReserveMovement(ReserveMovement movement) => _data.AddReserveMovement(movement);
-    public void DeleteReserveMovement(Guid id) => _data.RemoveReserveMovement(id);
+    public IEnumerable<PotTransaction> GetPotTransactions() => _data.PotTransactions;
+    public void AddPotTransaction(PotTransaction movement) => _data.AddPotTransaction(movement);
+    public void DeletePotTransaction(Guid id) => _data.RemovePotTransaction(id);
 
     public IEnumerable<CardStatement> GetCardStatements() => _data.CardStatements;
     public void AddCardStatement(CardStatement statement) => _data.AddCardStatement(statement);
@@ -61,7 +61,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddIncomeSource(IncomeSource incomeSource) => _data.AddIncomeSource(incomeSource);
     public void DeleteIncomeSource(Guid id) => _data.RemoveIncomeSource(id);
 
-    public IEnumerable<ReserveBucket> GetReserveBuckets() => ReservaAccount.Find(_data.Accounts)?.Pots ?? [];
+    public IEnumerable<Pot> GetReservaPots() => ReservaAccount.Find(_data.Accounts)?.Pots ?? [];
 
     public IEnumerable<Category> GetCategories() => _data.Categories;
     public void AddCategory(Category category) => _data.AddCategory(category);

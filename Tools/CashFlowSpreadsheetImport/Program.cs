@@ -116,8 +116,8 @@ InvestmentAccountMigrator.Migrate(data);
 // imported expense set is safe.
 BankMigrator.Migrate(data);
 
-// Must also run before ImportReservasSheet below: once ReserveMovement references a real
-// ReserveBucket (F02), the importer resolves each column's bucket by name against
+// Must also run before ImportReservasSheet below: once PotTransaction references a real
+// Pot (F02), the importer resolves each column's bucket by name against
 // the Reserva account's pots, so the tracked buckets need to already exist. Seeding is idempotent,
 // so re-running it at the end (below) to audit the final imported movement set is safe.
 ReserveBucketMigrator.Migrate(data);
@@ -258,7 +258,7 @@ static void ImportReservasSheet(XLWorkbook workbook, CashFlowData data, ImportRe
 
     foreach (var movement in ReservasSheetImporter.Import(sheet, ReservaAccount.Find(data.Accounts)?.Pots ?? [], report))
     {
-        data.AddReserveMovement(movement);
+        data.AddPotTransaction(movement);
     }
 
     report.SheetImported(sheet.Name);
