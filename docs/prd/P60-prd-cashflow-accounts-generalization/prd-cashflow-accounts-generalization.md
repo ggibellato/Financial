@@ -13,10 +13,10 @@ The core value is one place per account, a new account from an existing template
 | Stage | Design doc slice | Features |
 |---|---|---|
 | 1 — Accounts and banks | F01 | F01 Parity toolkit, F02 Account model and Bank migration, F03 Generic transfer, F04 Default group summary, F05 Bank account screen, F06 Admin accounts page |
-| 2 — Credit cards | F02 | F07 Credit card template and migration, F08 Statement payment and card screen |
+| 2 — Credit cards | F02 | F07 Credit card template and migration, F08 Statement payment and card screen, F15 Card refunds and credit (added 2026-11-04) |
 | 3 — Pots | F03 | F09 Pots template and Reserva migration, F14 Accounts page by template and card totals (added 2026-10-30), F10 Linked deposit, withdrawal and Pots screen |
 | 4 — Settlement | F04 | F11 Settlement template and Mãe migration, F12 Settlement screen |
-| 5 — Consolidation | F05 | F13 Consolidated navigation and retirement |
+| 5 — Consolidation | F05 | F16 Month transactions view (added 2026-11-04, built before F11), F13 Consolidated navigation and retirement |
 
 ## 2. Problem and Opportunity
 
@@ -168,6 +168,16 @@ The core value is one place per account, a new account from an existing template
 - As the user, I want the Accounts page to show one grid per template, so that banks, cards and pots are each easy to scan
 - As the user, I want each card row to show the next statement to pay and the total owed, so that I see what is due next and what I owe overall
 - As the user, I want a card's account screen to show the owed balance at the end of the viewed month and the total owed now, so that changing month never hides what I owe today
+
+### F15. Card Refunds and Credit
+- As the user, I want to record a refund on a card as a positive amount, so that it lowers what I owe without typing a negative charge
+- As the user, I want a credit left by refunds to lower the next statement, as the card issuer does, so that the amount to pay matches the real card
+- As the user, I want to record the card issuer paying a credit back to my bank, so that both balances match the real accounts
+- As the user, I want a statement for every month, and a month with nothing to pay to count as settled, so that no empty statement stays unpaid or reminds me to pay
+
+### F16. Month Transactions View
+- As the user, I want to see every transaction of a month, whatever the account, in one grid, so that I can review the month without opening each account
+- As the user, I want to filter that grid by category, account and type, so that I can see where the money for one category went
 
 ## 6. Functionalities
 
@@ -436,7 +446,7 @@ Rules that apply to every feature:
 - **Pay from both sides:** from the card (Statements tab → Pay on an unpaid statement → choose bank) and from the bank ("Pay card statement" → choose card → choose unpaid statement). *Why:* user decision, actions spanning accounts start from both.
 - **Unmark paid, two paths:** a statement paid through a transfer → the linked transfer is deleted and the statement is unpaid; a statement paid before V3 (charges re-pointed, no transfer) → today's reversal (bank cleared, date back to charge date). *Why:* keeps the undo for both new and the 6 legacy paid statements (55 charges), as the forward-only rule promises.
 - **Statements created on write:** a statement record is created when a charge is moved to it or it is paid (a charge landing in its month creates it from F07); reads never write: the statements GET returns stored statements only, and a missing statement counts as unpaid with no charges (Monthly's card grid already fills the gap from the card list; parity's after side emits 0 and unpaid for an active card without one). *Why:* removes a write inside a GET (design doc weak spot) and makes parity reads side-effect free. Snapshot and tithe GET writes are unchanged.
-- **Card screen:** adds the account screen's tab bar (Fluent `TabList`: Transactions as the default tab, then Statements), which F05 ships without; Statements tab (one row per month with charges, newest first, the viewed month highlighted: month, total, status with the paid date and bank, due date read-only, Pay / Unmark actions; due dates are still edited on Admin Credit cards and Monthly's Card tab until F13); actions Add charge (ExpenseForm with the card pre-selected), and on a charge of an unpaid statement Edit, Delete and Move to a later statement (target month later than the current one and unpaid), Pay statement. Monthly's expense edit keeps moving an unpaid charge's statement month either way, except into or out of a paid statement.
+- **Card screen:** adds the account screen's tab bar (Fluent `TabList`: Transactions as the default tab, then Statements), which F05 ships without; Statements tab (one row per month with charges, every month from F15, newest first, the viewed month highlighted: month, total, status with the paid date and bank, due date read-only, Pay / Unmark actions; due dates are still edited on Admin Credit cards and Monthly's Card tab until F13); actions Add charge (ExpenseForm with the card pre-selected), and on a charge of an unpaid statement Edit, Delete and Move to a later statement (target month later than the current one and unpaid), Pay statement. Monthly's expense edit keeps moving an unpaid charge's statement month either way, except into or out of a paid statement.
 - **Card Transactions tab by statement month:** on a card, the month picks charges by statement month, as Monthly and the category totals do, and lists every charge of that statement, paid or not (charges paid before V3 included, read-only), with the purchase date in its own column; payments into the card show on their payment date. The header's owed balance is unchanged. *Why:* since F07 the tab picked unpaid charges by purchase date, so a statement's charges showed under the month before it and its own month looked empty (user decision 2026-10-26).
 - **Bank screen:** one "Card payment" row per payment (Description "<card name> payment – <Mon yyyy> statement", e.g. "Platinum Visa 6007 payment – Nov 2026 statement"; Counterpart = card; Amount −total); the payment's row on the card reads the same. The description names the statement the payment paid; it is worked out when the row is read, never stored, and falls back to the transfer's note when no statement links the payment. Selecting the description opens the card's Statements tab on that statement's month (user decision 2026-10-27).
 - **Payment transfers stay with their statement:** they are left out of the `/transfers` month list (Monthly looks the same), and `/transfers` and `/accounts/transfers` refuse to edit or delete them; the bank screen shows them only as the read-only "Card payment" row. *Why:* changing one outside its statement would leave the statement paid with the wrong payment (user decision 2026-10-26).
@@ -444,7 +454,7 @@ Rules that apply to every feature:
 
 **Experience:**
 - Card screen → Statements → "October 2026 · £512.30 · Unpaid · Pay" → inline form with Bank (required), Date (today), Amount (read-only £512.30) → Save → status "Paid", card balance owed drops by £512.30, the bank gains a "Card payment" row "<card name> payment – Oct 2026 statement −£512.30" that opens this statement.
-- States as in F05, plus: Pay disabled with tooltip "Nothing to pay" on a £0.00 statement.
+- States as in F05, plus: Pay disabled with tooltip "Nothing to pay" on a £0.00 statement (from F15 such a statement reads "Nothing due" with no Pay).
 
 **Error Handling:**
 - Paying an already paid statement: 409 "This statement is already paid." list refreshes.
@@ -600,7 +610,7 @@ Rules that apply to every feature:
 
 **Capabilities:**
 - **Navigation:** CashFlow menu = Accounts (the CashFlow entry point), Monthly, Annual summary, Mensais, Investment snapshots. Admin CashFlow menu = Accounts, Categories, Income sources, Investment accounts, Recurring bills.
-- **Monthly becomes an overview:** month picker, default group summary (F04), category totals, income totals per source, tithe — all read-only. All entry (expense, income, transfer, reconcile, card statements) lives on the account screen.
+- **Monthly becomes an overview:** month picker, default group summary (F04), category totals, income totals per source, tithe and F16's All transactions grid — all read-only. All entry (expense, income, transfer, reconcile, card statements) lives on the account screen.
 - **Retired:** Reserva page, Controle Mãe page, Monthly's entry and bank/card sections, Admin Banks, Admin Credit cards (Admin Reserve buckets already went in F10), and the API endpoints only they used (exact list fixed by grep in the spec; the OpenAPI snapshot and generated types updated). Balance adjustments move from `/banks/{id}/adjustments` to an account route first, since the account screen's Reconcile and adjustment edits use them. Due-date editing moves onto the card's Statements tab before Admin Credit cards and Monthly's Card tab retire, and the F07 rule that clearing a card's due date clears every statement's date is revisited then. Old routes redirect: `/cashflow/reserva` → the Reserva account screen, `/cashflow/controle-mae` → the Mãe account screen, admin routes → Admin → Accounts.
 - **Removed code (design doc's list):** the 4 old balance calculations (already replaced), name-string joins, the fixed-name Reserva lookups, the duplicated card filter, client-side summary maths, single-instance Mãe/Reserva code, and the per-type pages.
 - **E2E journeys** (Playwright, `Financial.Web/tests/e2e`): add-expense moves to the account screen; new smoke journeys: pay a card statement, deposit into pots from a manual deposit, settle a Settlement account. Test seed data contains one account per template.
@@ -631,7 +641,7 @@ Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and
 **Capabilities:**
 - **One grid per template:** the Accounts page shows one grid per template in a fixed order (Banks, Credit cards, Pots, then Settlement from F11), replacing the "Default group" and "Other accounts" sections. A template with no listed account this month gets no grid. Each grid keeps the membership rule (active accounts, plus an inactive one with a non-zero month-end balance or a record that month), name order and the Inactive badge; the Template column goes, since the heading names it. The page stays on the current month with no month picker (user decision 2026-10-30). The page reads one grouped endpoint, and F09's Other accounts endpoint is removed.
 - **Columns and totals per currency:** Banks: Account, Currency, Balance; footer "Bank total". Credit cards: Account, Currency, Next statement, Total owed; footer "Total owed". Pots: Account, Currency, Balance; footer "Pots total". Bank and card rows open the account screen; Pots rows stay plain text until F10. A card row no longer shows the month-end owed balance: in the current month it repeats the total owed.
-- **Next statement:** the card's oldest statement month that still has an unpaid charge, shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when the card has no unpaid charge. Empty unpaid statements are skipped (user decision 2026-10-30). *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
+- **Next statement:** the card's oldest statement month that still has an unpaid charge (from F15, the oldest with an amount to pay above £0, refunds and carried credit included), shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when the card has no unpaid charge. Empty unpaid statements are skipped (user decision 2026-10-30). *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
 - **Total owed:** every unpaid charge on the card, whatever its date or statement month (today's accumulated outstanding on Monthly's Card tab). It doesn't depend on the viewed month.
 - **Card screen header:** "Owed at end of <Month yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled.
 - **Parity:** the new card figures are mapped to today's card figures in the figure map (mapping fixed in the spec). Monthly and its summary are unchanged.
@@ -644,6 +654,71 @@ Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and
 **Error Handling:**
 - A card with no unpaid charge: Next statement "—".
 - Load failure: the page's error with Try again; no grid shows partial data.
+
+### F15. Card Refunds and Credit
+
+Added 2026-11-04 at the user's request, after F10's deploy, from cases met on real cards: a refund after its statement was paid, a refund larger than its statement's charges, the issuer paying a credit back to the bank, and months with no card use whose statement is £0. Built before F11.
+
+**Consumes:**
+- F05: account screen shell and its action forms
+- F07: card accounts and card charges
+- F08: statements, statement payments as linked transfers, the Statements tab, the pair rule bank → card
+- F14: each card's next statement to pay and total owed
+
+**Provides:**
+- Card refunds, credit carried between statements, credit refunded to a bank, and settled £0 statements on the card screen, Monthly's Card tab, the Accounts page and the due reminders (used by F13)
+
+**Capabilities:**
+- **Add refund:** a card action next to Add charge, for accounts with `HasStatements`. The user enters a positive amount, date (not in the future), description and category; it is saved as a card charge with a negative value, so there is no new record type and the data file stays V4. It follows Add charge's statement-month rules, so a paid statement stays locked and a refund for a purchase on a paid statement lands on an open one, as on the real card. It lowers its category's spend in its statement month and the card's owed balance. The card's grids show it as a refund with a positive amount (user decision 2026-11-04).
+- **Amount to pay and credit:** a statement's amount to pay is its charges (refunds counting negative) less any credit carried from earlier statements. When that is £0 or below, nothing is due, and anything below £0 is credit that carries to the next statement and lowers its amount to pay, continuing while the credit is larger. The credit ends when later charges use it up or when it is refunded to a bank. The exact rule is fixed in the spec (user decision 2026-11-04).
+- **Settled £0 statements:** a statement whose amount to pay is £0 or less counts as settled: status "Nothing due", no Pay action, no payment-due banner and no calendar reminder. Nothing is stored; adding a charge that brings it above £0 makes it Unpaid again. Monthly's Card tab shows the same status until F13 (user decision 2026-11-04).
+- **A statement for every month:** the card's Statements tab lists every month from the card's first statement to the current month (and any later stored statement), months without charges shown as £0 "Nothing due". These rows are worked out when read, not stored (user decision 2026-11-04).
+- **Refund credit to bank:** a card action for a card in credit: amount (defaults to the credit, at most the credit), date (not in the future) and the bank that received it. It is saved as one transfer card → bank, linked to the card's credit like a statement payment is to its statement, through a new pair rule (`ReceivesPayments` card → bank that can receive transfers) allowed only through this action. It lowers the credit and the card's balance, and the bank shows a read-only "Card credit refund" row. It starts from the card, and from the bank as "Receive card credit", per the both-sides rule (user decision 2026-11-04).
+- **Card totals:** F14's next statement becomes the oldest statement with an amount to pay above £0, and its total owed counts refunds and credit; a card in credit shows "Credit £x" instead of an owed amount.
+- **Parity:** the live data has no statement at or below £0 with charges and no refunded credit, so parity expects 0 differences; the spec maps any new figure.
+
+**Experience:**
+- BA Amex → Add refund → £40.00, 3 Nov 2026, "Shoes returned", Clothing → Save → the November statement drops by £40.00 and Clothing's November spend drops by £40.00.
+- A £60.00 refund on a statement with £25.00 of charges → that statement shows "Nothing due" and December's amount to pay is £35.00 lower.
+- Card in credit £35.00 → Refund credit to bank → Barclays, £35.00 → the card shows no credit and Barclays shows "Card credit refund +£35.00".
+- Statements tab in a month without card use → that month's row reads "£0.00 · Nothing due" with no Pay.
+
+**Error Handling:**
+- Refund amount not above £0: 400 "Amount must be greater than zero."
+- A refund into a paid statement: F08's 400 "This charge's statement is paid; unmark it first."
+- Refunding more credit than the card has: 400 "The card's credit is £35.00." (message fixed in the spec); with no credit the action is not offered.
+- Editing or deleting a credit refund transfer through `/transfers` or `/accounts/transfers`: 409 (message fixed in the spec), as for payment transfers.
+- Paying a statement that is settled: F08's 400 "There is nothing to pay on this statement."
+
+### F16. Month Transactions View
+
+Added 2026-11-04 at the user's request: a view of every transaction in a month across all accounts, filtered by category, which F13's read-only Monthly would otherwise lose with Monthly's Expenses section. Built after F15 and before F11.
+
+**Consumes:**
+- F05: the account-transactions reader behind every account screen's Transactions grid, and the account screen links
+- F08: card charges by statement month and statement payment rows
+- F10: pot transaction rows and operation links
+- F15: refund rows on cards
+
+**Provides:**
+- The All transactions grid on Monthly (kept by F13 when Monthly becomes an overview)
+
+**Capabilities:**
+- **All transactions grid:** Monthly gains an "All transactions" grid for the picked month: every record that touched an account that month, from every account (any template, active or inactive), one row per account it touched, as the account screens show them. It reads F05's account-transactions reader for each account, so Settlement rows join when F11 and F12 ship with no change here (user decision 2026-11-04).
+- **Which month:** a row belongs to the month the category totals use: card charges and refunds by statement month, with the purchase date shown; every other record by its own date. Filtered to one category, the grid's total equals that category's line in Category totals (user decision 2026-11-04).
+- **Columns:** Date, Account, Type, Description, Category, Amount (signed for that account, right-aligned); newest first; sortable.
+- **Filters:** Category (the main one), Account and Type, as the column filters Monthly's Expenses section uses today; a footer shows the number of rows and the total of the filtered rows.
+- **Read-only:** a row links to its account screen at that month, and a linked deposit or withdrawal row opens its operation there. Entry stays where it is today: Monthly's Expenses section and forms stay until F13 retires them, and from F13 the account screen is the only place to enter or edit.
+- **Parity:** the spec decides whether the grid's per-category totals are added to the figures report and checked against Category totals.
+
+**Experience:**
+- Monthly → October 2026 → All transactions: "28 Oct · Barclays · Expense · Tesco · Groceries · −£45.20", "15 Oct · BA Amex · Card charge (statement Oct 2026, bought 2 Oct) · Amazon · Clothing · −£39.99", "10 Oct · Reserva · Pot transaction · Deposit to Reserva · — · +£90.00" …
+- Filter Category = Groceries → only Groceries rows, footer "12 rows · £412.37", the same figure as Groceries in Category totals.
+- States: loading, empty month ("No transactions in October 2026."), load error with Try again; a filter with no match says so and offers to clear the filters.
+
+**Error Handling:**
+- Load failure: the grid's error with Try again; the rest of Monthly still shows.
+- A row whose account was deleted cannot occur (accounts in use cannot be deleted); an inactive account's rows still show, with the account marked Inactive.
 
 ## 7. Out of Scope
 
@@ -677,8 +752,10 @@ Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and
 | F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F09, F14 |
 | F11 | Settlement Template and Mãe Migration | 1 | F02, F06, F09, F14 |
 | F12 | Settlement Screen | 1 | F05, F11 |
-| F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12 |
+| F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12, F15, F16 |
 | F14 | Accounts Page by Template and Card Totals | 2 | F08, F09 |
+| F15 | Card Refunds and Credit | 2 | F08, F14 |
+| F16 | Month Transactions View | 2 | F05, F08, F10, F15 |
 
 F07 → F09 → F11 is a real ordering: their migration steps are sequential versions (V3, V4, V5) of one chain.
 
@@ -698,8 +775,8 @@ Features within the same wave can be built in parallel. A wave starts only after
 - **Wave 4**: F05, F07
 - **Wave 5**: F08, F09
 - **Wave 6**: F14
-- **Wave 7**: F10, F11
-- **Wave 8**: F12
+- **Wave 7**: F10, F11, F15 (F15 is built before F11, at the user's request)
+- **Wave 8**: F12, F16 (F16 is built before F11, at the user's request)
 - **Wave 9**: F13
 
 ### Part 4: Priority levels
@@ -737,6 +814,14 @@ graph TD
   F09 --> F14
   F14 --> F10
   F14 --> F11
+  F08 --> F15[F15 Card refunds]
+  F14 --> F15
+  F15 --> F13
+  F05 --> F16[F16 Month transactions]
+  F08 --> F16
+  F10 --> F16
+  F15 --> F16
+  F16 --> F13
   F08 --> F13[F13 Consolidation]
   F10 --> F13
   F12 --> F13
@@ -899,7 +984,7 @@ graph TD
 
 ### F13. Consolidated Navigation and Retirement
 - [ ] Opening CashFlow lands on Accounts; the menus match the F13 lists
-- [ ] Monthly shows only the overview (group summary, category totals, income totals, tithe) with no entry forms
+- [ ] Monthly shows only the overview (group summary, category totals, income totals, tithe, All transactions) with no entry forms
 - [ ] Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are removed (Admin Reserve buckets in F10); their old routes redirect as specified
 - [ ] The API endpoints only those pages used are removed; the OpenAPI snapshot and generated types are updated
 - [ ] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins
@@ -914,6 +999,22 @@ graph TD
 - [x] The card screen header shows "Owed at end of <month>" and "Total owed now"; changing the month changes the first and not the second
 - [x] Bank and card rows open the account screen; Pots rows are plain text until F10
 - [x] Parity: 0 differences with the new card figures mapped; `/simplify` run; architecture-reviewer and ui-reviewer passed
+
+### F15. Card Refunds and Credit
+- [ ] Add refund saves a negative charge on the statement for its date; the card's owed balance and the category's spend in that statement month drop by the amount
+- [ ] A statement whose amount to pay is £0 or less shows "Nothing due", offers no Pay, and raises no payment-due banner or calendar reminder; a charge that brings it above £0 makes it Unpaid
+- [ ] The Statements tab lists every month from the card's first statement to the current month, months without charges as £0 "Nothing due"
+- [ ] A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger
+- [ ] Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes
+- [ ] F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x"
+- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+
+### F16. Month Transactions View
+- [ ] Monthly's All transactions grid lists, for the picked month, every record of every account (one row per account it touched), card charges and refunds by statement month and every other record by its own date
+- [ ] Filtering by category, account or type narrows the rows; filtered to one category, the footer total equals that category's Category totals figure
+- [ ] Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation
+- [ ] Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too
+- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
