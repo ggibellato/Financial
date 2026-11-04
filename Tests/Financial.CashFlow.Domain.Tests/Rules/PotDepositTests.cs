@@ -224,11 +224,35 @@ public class PotDepositTests
     [InlineData(2450, 2205)]
     [InlineData(100.05, 90.05)]
     [InlineData(0.05, 0.05)]
-    public void IncomeAmount_IsNinetyPercentOfNetRoundedAwayFromZero(double net, double expected)
+    public void BuildFromIncome_AmountIsNinetyPercentOfNetRoundedAwayFromZero(double net, double expected)
     {
-        PotDeposit.IncomeAmount((decimal)net).Should().Be((decimal)expected);
+        var operation = PotDeposit.BuildFromIncome(IncomeOf(net: (decimal)net), _reserva, [], OperationId);
+
+        operation.Amount.Should().Be((decimal)expected);
     }
 
-    private Income IncomeOf(decimal net, string? description = "Bonus") =>
-        Income.Create(Date, IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: _reserva), null, net, _chase, description);
+    [Fact]
+    public void OlderIncomeTransactions_SplitsWithoutTheLinkOrTheHundredPercentRule()
+    {
+        _ariana.Update("Ariana", 0m, isActive: false);
+        var income = IncomeOf(net: 100m, description: null, potsAccount: _reserva);
+
+        var transactions = PotDeposit.OlderIncomeTransactions(income);
+
+        using (new AssertionScope())
+        {
+            transactions.Select(transaction => (transaction.Pot, transaction.Amount)).Should().Equal((_investimento, 45m), (_houseTreats, 27m));
+            transactions.Should().OnlyContain(transaction =>
+                transaction.Income == income && transaction.OperationId == null && transaction.Date == Date && transaction.Description == string.Empty);
+        }
+    }
+
+    [Fact]
+    public void OlderIncomeTransactions_WithNoPotsAccount_IsEmpty()
+    {
+        PotDeposit.OlderIncomeTransactions(IncomeOf(net: 100m)).Should().BeEmpty();
+    }
+
+    private Income IncomeOf(decimal net, string? description = "Bonus", Account? potsAccount = null) =>
+        Income.Create(Date, IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: _reserva), null, net, _chase, description, potsAccount);
 }

@@ -115,7 +115,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         Date = new DateOnly(2026, 10, 2),
         Description = "Ramsay bonus",
         PotId = potId is null ? null : Guid.Parse(potId),
-        FundingLines = lines.Select(line => new FundingLineDTO { BankId = Guid.Parse(line.BankId), Amount = line.Amount }).ToList()
+        FundingLines = ToFundingLines(lines)
     };
 
     private List<(Guid PotId, decimal Amount)> MovementsOf(Guid operationId) =>

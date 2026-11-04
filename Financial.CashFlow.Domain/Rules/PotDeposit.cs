@@ -35,7 +35,10 @@ public static class PotDeposit
             income, $"Deposit to {potsAccount.Name} – {income.IncomeSource.Name}");
     }
 
-    public static decimal IncomeAmount(decimal netValue) =>
+    public static IReadOnlyList<PotTransaction> OlderIncomeTransactions(Income income) =>
+        Allocate(ActivePots(income.PotsAccount), IncomeAmount(income.NetValue), income.Date, income.Description ?? string.Empty, income, operationId: null);
+
+    private static decimal IncomeAmount(decimal netValue) =>
         Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
 
     private static PotOperation Build(
@@ -63,7 +66,7 @@ public static class PotDeposit
 
         var transactions = pot is null
             ? SplitAcrossActivePots(potsAccount, amount, date, description, operationId, income)
-            : [PotTransaction.Create(pot, amount, date, description, income, operationId)];
+            : [PotTransaction.Create(pot, amount, date, description, operationId: operationId)];
 
         if (fundingLines.Count == 0)
         {
@@ -103,7 +106,7 @@ public static class PotDeposit
     private static List<PotTransaction> SplitAcrossActivePots(
         Account potsAccount, decimal amount, DateOnly date, string description, Guid operationId, Income? income)
     {
-        var activePots = (potsAccount.Pots ?? []).Where(pot => pot.IsActive).ToList();
+        var activePots = ActivePots(potsAccount);
         if (activePots.Count == 0)
         {
             throw new ArgumentException($"{potsAccount.Name} has no active pots.");
@@ -115,8 +118,17 @@ public static class PotDeposit
             throw new ArgumentException(FormattableString.Invariant($"Active pots must total 100% (now {splitTotal:0.##}%)."));
         }
 
-        var amounts = PotSplitAllocator.Allocate(activePots, amount);
-        return activePots
+        return Allocate(activePots, amount, date, description, income, operationId);
+    }
+
+    private static List<Pot> ActivePots(Account? potsAccount) =>
+        (potsAccount?.Pots ?? []).Where(pot => pot.IsActive).ToList();
+
+    private static List<PotTransaction> Allocate(
+        IReadOnlyList<Pot> pots, decimal amount, DateOnly date, string description, Income? income, Guid? operationId)
+    {
+        var amounts = PotSplitAllocator.Allocate(pots, amount);
+        return pots
             .Select((pot, index) => PotTransaction.Create(pot, amounts[index], date, description, income, operationId))
             .ToList();
     }

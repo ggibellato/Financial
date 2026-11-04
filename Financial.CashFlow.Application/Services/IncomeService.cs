@@ -160,7 +160,7 @@ public sealed class IncomeService : IIncomeService
     {
         var firstOld = oldRecords.Transactions.FirstOrDefault();
         return firstOld is { OperationId: null }
-            ? new(OlderSplitTransactions(income), [])
+            ? new(PotDeposit.OlderIncomeTransactions(income), [])
             : BuildDeposit(income, fundingLines, firstOld?.OperationId ?? Guid.NewGuid());
     }
 
@@ -178,16 +178,6 @@ public sealed class IncomeService : IIncomeService
         var deposit = PotDeposit.BuildFromIncome(income, potsAccount, handSplitLines, operationId);
 
         return new(deposit.Transactions, deposit.Expenses);
-    }
-
-    private static List<PotTransaction> OlderSplitTransactions(Income income)
-    {
-        var activePots = (income.PotsAccount?.Pots ?? []).Where(pot => pot.IsActive).ToList();
-        var amounts = PotSplitAllocator.Allocate(activePots, PotDeposit.IncomeAmount(income.NetValue));
-
-        return activePots
-            .Select((pot, index) => PotTransaction.Create(pot, amounts[index], income.Date, income.Description ?? string.Empty, income))
-            .ToList();
     }
 
     private void AddRecords(SplitRecords records)
