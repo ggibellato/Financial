@@ -46,8 +46,8 @@ public class ReserveServiceTests
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Should().HaveCount(4);
-            _repository.PotMovements.Should().OnlyContain(m => m.Description == "Ramsay");
+            _repository.PotTransactions.Should().HaveCount(4);
+            _repository.PotTransactions.Should().OnlyContain(m => m.Description == "Ramsay");
             result.Buckets.Should().HaveCount(4);
             result.Buckets.Should().ContainSingle(b => b.BucketName == "Investimento" && b.Amount == 654.27m);
             result.Buckets.Should().ContainSingle(b => b.BucketName == "HouseTreats" && b.Amount == 654.27m);
@@ -78,7 +78,7 @@ public class ReserveServiceTests
         {
             result.Buckets.Select(b => b.Amount).Should().Equal(33.33m, 33.33m, 33.35m);
             result.Total.Should().Be(100.01m);
-            repository.PotMovements.Select(m => m.Amount).Should().Equal(33.33m, 33.33m, 33.35m);
+            repository.PotTransactions.Select(m => m.Amount).Should().Equal(33.33m, 33.33m, 33.35m);
         }
     }
 
@@ -92,7 +92,7 @@ public class ReserveServiceTests
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Should().HaveCount(3);
+            _repository.PotTransactions.Should().HaveCount(3);
             result.Buckets.Should().HaveCount(3);
             result.Buckets.Should().NotContain(b => b.BucketName == "Gleison");
         }
@@ -108,7 +108,7 @@ public class ReserveServiceTests
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*has no active pots.");
-        repository.PotMovements.Should().BeEmpty();
+        repository.PotTransactions.Should().BeEmpty();
         repository.SaveChangesCallCount.Should().Be(0);
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
@@ -122,7 +122,7 @@ public class ReserveServiceTests
         var act = async () => await service.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("No reserve bucket is currently active.");
-        repository.PotMovements.Should().BeEmpty();
+        repository.PotTransactions.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
@@ -141,7 +141,7 @@ public class ReserveServiceTests
         var act = async () => await _sut.PostIncomeSplitAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Amount must be greater than zero.");
-        _repository.PotMovements.Should().BeEmpty();
+        _repository.PotTransactions.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
@@ -161,7 +161,7 @@ public class ReserveServiceTests
         var act = async () => await _sut.PostIncomeSplitAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Description is required.");
-        _repository.PotMovements.Should().BeEmpty();
+        _repository.PotTransactions.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
@@ -178,7 +178,7 @@ public class ReserveServiceTests
         var act = async () => await _sut.PostIncomeSplitAsync(request);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
-        _repository.PotMovements.Should().BeEmpty();
+        _repository.PotTransactions.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
@@ -190,7 +190,7 @@ public class ReserveServiceTests
         var act = async () => await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Active pots must total 100% (now 83.33%).");
-        _repository.PotMovements.Should().BeEmpty();
+        _repository.PotTransactions.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostIncomeSplit");
     }
 
@@ -201,7 +201,7 @@ public class ReserveServiceTests
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Select(m => m.OperationId).Distinct().Should().ContainSingle().Which.Should().NotBeNull();
+            _repository.PotTransactions.Select(m => m.OperationId).Distinct().Should().ContainSingle().Which.Should().NotBeNull();
             _repository.Expenses.Should().BeEmpty();
         }
     }
@@ -233,7 +233,7 @@ public class ReserveServiceTests
         });
 
         result.Amount.Should().Be(-30m);
-        _repository.PotMovements.Should().HaveCount(2);
+        _repository.PotTransactions.Should().HaveCount(2);
     }
 
     [Fact]
@@ -251,7 +251,7 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>().WithMessage("*Ariana*50*");
-        _repository.PotMovements.Should().HaveCount(1);
+        _repository.PotTransactions.Should().HaveCount(1);
     }
 
     [Fact]
@@ -269,7 +269,7 @@ public class ReserveServiceTests
         });
 
         result.Amount.Should().Be(-100m);
-        _repository.PotMovements.Should().HaveCount(2);
+        _repository.PotTransactions.Should().HaveCount(2);
     }
 
     [Fact]
@@ -320,7 +320,7 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not recognized*");
-        _repository.PotMovements.Should().BeEmpty();
+        _repository.PotTransactions.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
     }
 
@@ -338,7 +338,7 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
-        _repository.PotMovements.Should().ContainSingle();
+        _repository.PotTransactions.Should().ContainSingle();
         _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.PostWithdrawal");
     }
 
@@ -355,7 +355,7 @@ public class ReserveServiceTests
             Description = "Groceries top-up"
         });
 
-        var saved = _repository.PotMovements.Single(m => m.Id == result.Id);
+        var saved = _repository.PotTransactions.Single(m => m.Id == result.Id);
         using (new AssertionScope())
         {
             result.BucketId.Should().Be(BucketId("Investimento"));
@@ -406,7 +406,7 @@ public class ReserveServiceTests
     {
         var retiredGleison = _repository.ReservaPots.Single(b => b.Name == "Gleison");
         retiredGleison.Update("Gleison", 16.67m, isActive: false);
-        _repository.PotMovements.Add(PotMovement.Create(retiredGleison, 75m, new DateOnly(2026, 7, 1), "Before retirement"));
+        _repository.PotTransactions.Add(PotTransaction.Create(retiredGleison, 75m, new DateOnly(2026, 7, 1), "Before retirement"));
 
         var balances = _sut.GetBucketBalances();
 
@@ -440,7 +440,7 @@ public class ReserveServiceTests
     public async Task UpdateMovementAsync_ExistingId_UpdatesFieldsAndSaves()
     {
         _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
-        var movement = _repository.PotMovements[0];
+        var movement = _repository.PotTransactions[0];
 
         var result = await _sut.UpdateMovementAsync(movement.Id, new ReserveMovementUpdateDTO
         {
@@ -480,7 +480,7 @@ public class ReserveServiceTests
     {
         _repository.Seed("Investimento", 100m);
 
-        var act = async () => await _sut.UpdateMovementAsync(_repository.PotMovements[0].Id, new ReserveMovementUpdateDTO
+        var act = async () => await _sut.UpdateMovementAsync(_repository.PotTransactions[0].Id, new ReserveMovementUpdateDTO
         {
             BucketId = Guid.NewGuid(),
             Amount = 10m,
@@ -495,12 +495,12 @@ public class ReserveServiceTests
     public async Task DeleteMovementAsync_SoloMovement_DeletesOnlyThatOne()
     {
         _repository.Seed("Investimento", -30m, new DateOnly(2026, 7, 1));
-        var toDelete = _repository.PotMovements[0];
+        var toDelete = _repository.PotTransactions[0];
         _repository.Seed("Ariana", -20m, new DateOnly(2026, 7, 2));
 
         await _sut.DeleteMovementAsync(toDelete.Id);
 
-        _repository.PotMovements.Should().ContainSingle();
+        _repository.PotTransactions.Should().ContainSingle();
         _repository.SaveChangesCallCount.Should().Be(1);
     }
 
@@ -509,12 +509,12 @@ public class ReserveServiceTests
     {
         foreach (var pot in _repository.ReservaPots)
         {
-            _repository.PotMovements.Add(PotMovement.Create(pot, 10m, new DateOnly(2026, 7, 1), "Ramsay"));
+            _repository.PotTransactions.Add(PotTransaction.Create(pot, 10m, new DateOnly(2026, 7, 1), "Ramsay"));
         }
 
-        await _sut.DeleteMovementAsync(_repository.PotMovements[0].Id);
+        await _sut.DeleteMovementAsync(_repository.PotTransactions[0].Id);
 
-        _repository.PotMovements.Should().BeEmpty();
+        _repository.PotTransactions.Should().BeEmpty();
     }
 
     [Fact]
@@ -522,10 +522,10 @@ public class ReserveServiceTests
     {
         await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
-        var act = async () => await _sut.DeleteMovementAsync(_repository.PotMovements[0].Id);
+        var act = async () => await _sut.DeleteMovementAsync(_repository.PotTransactions[0].Id);
 
         await act.Should().ThrowAsync<LinkedOperationConflictException>();
-        _repository.PotMovements.Should().HaveCount(4);
+        _repository.PotTransactions.Should().HaveCount(4);
         _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.DeleteMovement");
     }
 
@@ -557,8 +557,8 @@ public class ReserveServiceTests
     public async Task UpdateMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
     {
         var pot = _repository.ReservaPots.First(b => b.Name == "Investimento");
-        var linked = PotMovement.Create(pot, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
-        _repository.PotMovements.Add(linked);
+        var linked = PotTransaction.Create(pot, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
+        _repository.PotTransactions.Add(linked);
 
         var act = async () => await _sut.UpdateMovementAsync(linked.Id, new ReserveMovementUpdateDTO
         {
@@ -576,13 +576,13 @@ public class ReserveServiceTests
     public async Task DeleteMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
     {
         var pot = _repository.ReservaPots.First(b => b.Name == "Investimento");
-        var linked = PotMovement.Create(pot, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
-        _repository.PotMovements.Add(linked);
+        var linked = PotTransaction.Create(pot, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
+        _repository.PotTransactions.Add(linked);
 
         var act = async () => await _sut.DeleteMovementAsync(linked.Id);
 
         await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage("*linked to an income*");
-        _repository.PotMovements.Should().ContainSingle();
+        _repository.PotTransactions.Should().ContainSingle();
     }
 
     [Fact]
@@ -591,16 +591,16 @@ public class ReserveServiceTests
         var investimento = _repository.ReservaPots.First(b => b.Name == "Investimento");
         var houseTreats = _repository.ReservaPots.First(b => b.Name == "HouseTreats");
         var sameDate = new DateOnly(2026, 7, 1);
-        var manual1 = PotMovement.Create(investimento, 50m, sameDate, "August salary");
-        var manual2 = PotMovement.Create(houseTreats, 50m, sameDate, "August salary");
-        var linked = PotMovement.Create(investimento, 100m, sameDate, "August salary", LinkedIncome());
-        _repository.PotMovements.AddRange([manual1, manual2, linked]);
+        var manual1 = PotTransaction.Create(investimento, 50m, sameDate, "August salary");
+        var manual2 = PotTransaction.Create(houseTreats, 50m, sameDate, "August salary");
+        var linked = PotTransaction.Create(investimento, 100m, sameDate, "August salary", LinkedIncome());
+        _repository.PotTransactions.AddRange([manual1, manual2, linked]);
 
         await _sut.DeleteMovementAsync(manual1.Id);
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+            _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(linked);
         }
     }
 
@@ -609,7 +609,7 @@ public class ReserveServiceTests
     {
         await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
-        _repository.PotMovements.Should().OnlyContain(m => m.Income == null);
+        _repository.PotTransactions.Should().OnlyContain(m => m.Income == null);
     }
 
     [Fact]
@@ -654,7 +654,7 @@ public class ReserveServiceTests
 
         using (new AssertionScope())
         {
-            repository.PotMovements.Should().HaveCount(2);
+            repository.PotTransactions.Should().HaveCount(2);
             repository.Expenses.Should().BeEmpty();
         }
     }
@@ -669,7 +669,7 @@ public class ReserveServiceTests
 
         using (new AssertionScope())
         {
-            repository.PotMovements.Should().ContainSingle(m => m.Amount == -request.Amount);
+            repository.PotTransactions.Should().ContainSingle(m => m.Amount == -request.Amount);
             repository.Expenses.Should().HaveCount(2);
             repository.Expenses.Should().OnlyContain(e =>
                 e.PaymentSourceAccount!.Id == request.PaymentSourceBankId
@@ -690,7 +690,7 @@ public class ReserveServiceTests
 
         await CreateService(repository).PostWithdrawalAsync(request);
 
-        var movement = repository.PotMovements.Single(m => m.Amount == -request.Amount);
+        var movement = repository.PotTransactions.Single(m => m.Amount == -request.Amount);
         using (new AssertionScope())
         {
             movement.OperationId.Should().NotBeNull();
@@ -706,7 +706,7 @@ public class ReserveServiceTests
 
         await CreateService(repository).PostWithdrawalAsync(request);
 
-        repository.PotMovements.Single(m => m.Amount == -request.Amount).OperationId.Should().NotBeNull();
+        repository.PotTransactions.Single(m => m.Amount == -request.Amount).OperationId.Should().NotBeNull();
     }
 
     [Fact]
@@ -743,7 +743,7 @@ public class ReserveServiceTests
         {
             await act.Should().ThrowAsync<LinkedOperationConflictException>()
                 .WithMessage("This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.");
-            _repository.PotMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+            _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(linked);
             _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.DeleteMovement");
         }
     }
@@ -752,19 +752,19 @@ public class ReserveServiceTests
     public async Task DeleteMovementAsync_LegacyMovementSharingDateAndDescriptionWithAnOperationMovement_LeavesTheOperationMovement()
     {
         var linked = AddOperationMovement();
-        var legacy = PotMovement.Create(_repository.ReservaPots.First(b => b.Name == "HouseTreats"), 30m, linked.Date, linked.Description);
-        _repository.PotMovements.Add(legacy);
+        var legacy = PotTransaction.Create(_repository.ReservaPots.First(b => b.Name == "HouseTreats"), 30m, linked.Date, linked.Description);
+        _repository.PotTransactions.Add(legacy);
 
         await _sut.DeleteMovementAsync(legacy.Id);
 
-        _repository.PotMovements.Should().ContainSingle().Which.Should().BeSameAs(linked);
+        _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(linked);
     }
 
-    private PotMovement AddOperationMovement()
+    private PotTransaction AddOperationMovement()
     {
-        var linked = PotMovement.Create(
+        var linked = PotTransaction.Create(
             _repository.ReservaPots.First(b => b.Name == "Investimento"), -30m, new DateOnly(2026, 7, 1), "Boots", operationId: Guid.NewGuid());
-        _repository.PotMovements.Add(linked);
+        _repository.PotTransactions.Add(linked);
         return linked;
     }
 
@@ -973,7 +973,7 @@ public class ReserveServiceTests
         using (new AssertionScope())
         {
             repository.Expenses.Should().BeEmpty();
-            repository.PotMovements.Should().HaveCount(movements, "only the seed movement may remain");
+            repository.PotTransactions.Should().HaveCount(movements, "only the seed movement may remain");
         }
     }
 
@@ -1003,7 +1003,7 @@ public class ReserveServiceTests
     public async Task UpdateMovementAsync_WithBlankDescription_ThrowsArgumentException()
     {
         _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
-        var movement = _repository.PotMovements[0];
+        var movement = _repository.PotTransactions[0];
 
         var act = async () => await _sut.UpdateMovementAsync(movement.Id, new ReserveMovementUpdateDTO
         {
@@ -1022,7 +1022,7 @@ internal static class ReserveServiceTestsStubExtensions
     public static void Seed(this StubCashFlowRepository repository, string bucketName, decimal amount, DateOnly? date = null)
     {
         var pot = repository.ReservaPots.First(b => b.Name == bucketName);
-        repository.PotMovements.Add(PotMovement.Create(pot, amount, date ?? new DateOnly(2026, 1, 1), "Seed"));
+        repository.PotTransactions.Add(PotTransaction.Create(pot, amount, date ?? new DateOnly(2026, 1, 1), "Seed"));
     }
 
 }

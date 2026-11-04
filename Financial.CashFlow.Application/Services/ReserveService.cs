@@ -108,7 +108,7 @@ public sealed class ReserveService : IReserveService
         using var span = StartSpan("GetBucketBalances");
         try
         {
-            var movements = _repository.GetPotMovements().ToList();
+            var movements = _repository.GetPotTransactions().ToList();
 
             var result = _repository.GetReservaPots()
                 .Select(pot => new ReserveBucketBalanceDTO
@@ -135,7 +135,7 @@ public sealed class ReserveService : IReserveService
         using var span = StartSpan("GetMovementHistory");
         try
         {
-            var result = _repository.GetPotMovements()
+            var result = _repository.GetPotTransactions()
                 .OrderByDescending(m => m.Date)
                 .Select(ToDto)
                 .ToList();
@@ -169,7 +169,7 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
-            var movement = _repository.GetPotMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            var movement = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(movement);
             LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
 
@@ -196,11 +196,11 @@ public sealed class ReserveService : IReserveService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            var movement = _repository.GetPotMovements().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            var movement = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(movement);
             LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
 
-            var group = _repository.GetPotMovements()
+            var group = _repository.GetPotTransactions()
                 .Where(m => m.Date == movement.Date && m.Description == movement.Description && m.Income is null && m.OperationId is null)
                 .ToList();
 
@@ -208,7 +208,7 @@ public sealed class ReserveService : IReserveService
             {
                 foreach (var groupMovement in group)
                 {
-                    _repository.DeletePotMovement(groupMovement.Id);
+                    _repository.DeletePotTransaction(groupMovement.Id);
                 }
 
                 return true;
@@ -230,21 +230,21 @@ public sealed class ReserveService : IReserveService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
 
-    internal static List<PotMovement> CreateSplitMovements(
+    internal static List<PotTransaction> CreateSplitMovements(
         IEnumerable<Pot> activePots, decimal amount, DateOnly date, string description, Income? income = null)
     {
         var pots = activePots.ToList();
         var amounts = PotSplitAllocator.Allocate(pots, amount);
 
         return pots
-            .Select((pot, i) => PotMovement.Create(pot, amounts[i], date, description, income))
+            .Select((pot, i) => PotTransaction.Create(pot, amounts[i], date, description, income))
             .ToList();
     }
 
-    private IEnumerable<PotMovement> MovementsOf(Guid operationId) =>
-        _repository.GetPotMovements().Where(movement => movement.OperationId == operationId);
+    private IEnumerable<PotTransaction> MovementsOf(Guid operationId) =>
+        _repository.GetPotTransactions().Where(movement => movement.OperationId == operationId);
 
-    private static void EnsureNotLinkedToIncome(PotMovement movement)
+    private static void EnsureNotLinkedToIncome(PotTransaction movement)
     {
         if (movement.Income is not null)
         {
@@ -253,7 +253,7 @@ public sealed class ReserveService : IReserveService
         }
     }
 
-    private static ReserveMovementDTO ToDto(PotMovement movement) => new()
+    private static ReserveMovementDTO ToDto(PotTransaction movement) => new()
     {
         Id = movement.Id,
         BucketId = movement.Pot.Id,

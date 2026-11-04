@@ -245,9 +245,9 @@ public class InvestmentSnapshotServiceTests
         var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
         var investimento = repository.ReservaPots.First(b => b.Name == "Investimento");
         var houseTreats = repository.ReservaPots.First(b => b.Name == "HouseTreats");
-        repository.PotMovements.Add(PotMovement.Create(investimento, 100m, new DateOnly(2026, 7, 31), "Contribution"));
-        repository.PotMovements.Add(PotMovement.Create(houseTreats, 50m, new DateOnly(2026, 7, 15), "Contribution"));
-        repository.PotMovements.Add(PotMovement.Create(investimento, 30m, new DateOnly(2026, 8, 1), "Too late"));
+        repository.PotTransactions.Add(PotTransaction.Create(investimento, 100m, new DateOnly(2026, 7, 31), "Contribution"));
+        repository.PotTransactions.Add(PotTransaction.Create(houseTreats, 50m, new DateOnly(2026, 7, 15), "Contribution"));
+        repository.PotTransactions.Add(PotTransaction.Create(investimento, 30m, new DateOnly(2026, 8, 1), "Too late"));
 
         var result = await service.GetSuggestionsForMonthAsync(2026, 8);
 
@@ -270,8 +270,8 @@ public class InvestmentSnapshotServiceTests
         var flights = Pot.Create("Flights", 100m);
         holidays.AddPot(flights);
         repository.Accounts.Add(holidays);
-        repository.PotMovements.Add(PotMovement.Create(investimento, 120m, new DateOnly(2026, 7, 10), "Inactive pot still counts"));
-        repository.PotMovements.Add(PotMovement.Create(flights, 900m, new DateOnly(2026, 7, 10), "Second Pots account"));
+        repository.PotTransactions.Add(PotTransaction.Create(investimento, 120m, new DateOnly(2026, 7, 10), "Inactive pot still counts"));
+        repository.PotTransactions.Add(PotTransaction.Create(flights, 900m, new DateOnly(2026, 7, 10), "Second Pots account"));
 
         var result = await service.GetSuggestionsForMonthAsync(2026, 8);
 
@@ -288,8 +288,8 @@ public class InvestmentSnapshotServiceTests
         var flights = Pot.Create("Flights", 100m);
         holidays.AddPot(flights);
         repository.Accounts.Add(holidays);
-        repository.PotMovements.Add(PotMovement.Create(investimento, 120m, new DateOnly(2026, 7, 10), "Reserva"));
-        repository.PotMovements.Add(PotMovement.Create(flights, 900m, new DateOnly(2026, 7, 10), "Holidays"));
+        repository.PotTransactions.Add(PotTransaction.Create(investimento, 120m, new DateOnly(2026, 7, 10), "Reserva"));
+        repository.PotTransactions.Add(PotTransaction.Create(flights, 900m, new DateOnly(2026, 7, 10), "Holidays"));
         var holidaySavings = InvestmentAccount.Create(
             "Holiday savings", isActive: true, isLiability: false, InvestmentAccountSource.PotsAccountTotal, potsAccount: holidays);
         repository.InvestmentAccounts.Add(holidaySavings);

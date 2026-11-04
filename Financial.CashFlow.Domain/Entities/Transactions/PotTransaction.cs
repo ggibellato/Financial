@@ -2,7 +2,7 @@ using System;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
-public class PotMovement : IAccountTransaction
+public class PotTransaction : IAccountTransaction
 {
     public Guid Id { get; private set; }
     public Pot Pot { get; private set; } = null!;
@@ -12,9 +12,9 @@ public class PotMovement : IAccountTransaction
     public Income? Income { get; private set; }
     public Guid? OperationId { get; private set; }
 
-    private PotMovement() { }
+    private PotTransaction() { }
 
-    public static PotMovement Create(Pot pot, decimal amount, DateOnly date, string description, Income? income = null, Guid? operationId = null) =>
+    public static PotTransaction Create(Pot pot, decimal amount, DateOnly date, string description, Income? income = null, Guid? operationId = null) =>
         new()
         {
             Id = Guid.NewGuid(),

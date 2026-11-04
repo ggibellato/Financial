@@ -445,19 +445,19 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void DeletePotMovement_RemovesTheMatchingMovement()
+    public void DeletePotTransaction_RemovesTheMatchingMovement()
     {
         var path = Path.GetTempFileName();
         try
         {
             var data = CashFlowData.Create();
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            var movement = PotMovement.Create(Pot.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
-            repository.AddPotMovement(movement);
+            var movement = PotTransaction.Create(Pot.Create("Investimento", 33.33m), 10m, new DateOnly(2026, 7, 1), "Test movement");
+            repository.AddPotTransaction(movement);
 
-            repository.DeletePotMovement(movement.Id);
+            repository.DeletePotTransaction(movement.Id);
 
-            repository.GetPotMovements().Should().BeEmpty();
+            repository.GetPotTransactions().Should().BeEmpty();
         }
         finally
         {

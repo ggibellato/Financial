@@ -41,7 +41,7 @@ public sealed class IncomeService : IIncomeService
                 _repository.AddIncome(income);
                 foreach (var movement in movements)
                 {
-                    _repository.AddPotMovement(movement);
+                    _repository.AddPotTransaction(movement);
                 }
 
                 return true;
@@ -80,12 +80,12 @@ public sealed class IncomeService : IIncomeService
                 income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, potsAccount);
                 foreach (var movement in oldLinkedMovements)
                 {
-                    _repository.DeletePotMovement(movement.Id);
+                    _repository.DeletePotTransaction(movement.Id);
                 }
 
                 foreach (var movement in newMovements)
                 {
-                    _repository.AddPotMovement(movement);
+                    _repository.AddPotTransaction(movement);
                 }
 
                 return true;
@@ -116,7 +116,7 @@ public sealed class IncomeService : IIncomeService
             {
                 foreach (var movement in linkedMovements)
                 {
-                    _repository.DeletePotMovement(movement.Id);
+                    _repository.DeletePotTransaction(movement.Id);
                 }
 
                 _repository.DeleteIncome(id);
@@ -163,8 +163,8 @@ public sealed class IncomeService : IIncomeService
     private Income FindIncomeOrThrow(Guid id) =>
         _repository.GetIncomes().FirstOrThrow(i => i.Id == id, "Income", id);
 
-    private List<PotMovement> GetLinkedMovements(Guid incomeId) =>
-        _repository.GetPotMovements().Where(m => m.Income?.Id == incomeId).ToList();
+    private List<PotTransaction> GetLinkedMovements(Guid incomeId) =>
+        _repository.GetPotTransactions().Where(m => m.Income?.Id == incomeId).ToList();
 
     private (IncomeSource IncomeSource, Account? Account, Account? PotsAccount) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, Guid? potsAccountId)
     {
@@ -189,7 +189,7 @@ public sealed class IncomeService : IIncomeService
         return (resolvedIncomeSource!, resolvedBank, CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId));
     }
 
-    private static List<PotMovement> BuildSplitMovements(Income linkedIncome, Account? potsAccount, decimal netValue, DateOnly date, string? description) =>
+    private static List<PotTransaction> BuildSplitMovements(Income linkedIncome, Account? potsAccount, decimal netValue, DateOnly date, string? description) =>
         potsAccount is null
             ? []
             : ReserveService.CreateSplitMovements(

@@ -51,7 +51,7 @@ public class CashFlowDataTests
         Wiring("IncomeSources", () => IncomeSource.Create("Gleison", IncomeGroup.Salary), (d, i) => d.AddIncomeSource(i), (d, id) => d.RemoveIncomeSource(id), d => d.IncomeSources, i => i.Id),
         Wiring("Categories", () => Category.Create("Mercado"), (d, i) => d.AddCategory(i), (d, id) => d.RemoveCategory(id), d => d.Categories, i => i.Id),
         Wiring("Expenses", () => Expense.Create(new DateOnly(2026, 7, 1), "Test expense", 10m, Casa, Chase, null), (d, i) => d.AddExpense(i), (d, id) => d.RemoveExpense(id), d => d.Expenses, i => i.Id),
-        Wiring("PotMovements", () => PotMovement.Create(TestPot, 10m, new DateOnly(2026, 7, 1), "Test movement"), (d, i) => d.AddPotMovement(i), (d, id) => d.RemovePotMovement(id), d => d.PotMovements, i => i.Id),
+        Wiring("PotTransactions", () => PotTransaction.Create(TestPot, 10m, new DateOnly(2026, 7, 1), "Test movement"), (d, i) => d.AddPotTransaction(i), (d, id) => d.RemovePotTransaction(id), d => d.PotTransactions, i => i.Id),
         Wiring("CardStatements", () => CardStatement.Create(TestAccounts.CreditCard("BarclaysPlatinumVisa8003"), 2026, 7), (d, i) => d.AddCardStatement(i), null, d => d.CardStatements, i => i.Id),
         Wiring("RecurringBills", () => RecurringBill.Create(10, "Test bill", 100m, Area.Brasil, string.Empty, null, null), (d, i) => d.AddRecurringBill(i), (d, id) => d.RemoveRecurringBill(id), d => d.RecurringBills, i => i.Id),
         Wiring("MaeLedgerEntries", () => MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Test entry", string.Empty, Currency.BRL, 100m, 15m), (d, i) => d.AddMaeLedgerEntry(i), (d, id) => d.RemoveMaeLedgerEntry(id), d => d.MaeLedgerEntries, i => i.Id),

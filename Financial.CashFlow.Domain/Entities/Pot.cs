@@ -26,7 +26,7 @@ public class Pot
 
     /// <summary>Updates this pot's fields. Callers own uniqueness checks, since only the
     /// repository can see across every pot. "Deleting" a pot is an ordinary Update call with
-    /// isActive: false - no hard delete exists, since PotMovement holds a permanent,
+    /// isActive: false - no hard delete exists, since PotTransaction holds a permanent,
     /// non-nullable reference to its Pot.</summary>
     public void Update(string name, decimal splitPercentage, bool isActive)
     {

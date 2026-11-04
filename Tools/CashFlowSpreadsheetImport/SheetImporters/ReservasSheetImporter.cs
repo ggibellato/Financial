@@ -8,7 +8,7 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Shee
 
 /// <summary>
 /// Parses the single continuous "Reservas" sheet (spanning every year) into
-/// <see cref="PotMovement"/> entities. Each row can populate any subset of the 5 bucket
+/// <see cref="PotTransaction"/> entities. Each row can populate any subset of the 5 bucket
 /// columns; one movement is created per populated bucket column on that row, regardless of
 /// whether the row represents an income-split deposit (all bucket columns populated, proportioned
 /// per each bucket's own <see cref="Pot.SplitPercentage"/>) or a single-bucket
@@ -31,10 +31,10 @@ public static class ReservasSheetImporter
         (10, "Samuel"),
     ];
 
-    public static IReadOnlyList<PotMovement> Import(IXLWorksheet sheet, IReadOnlyCollection<Pot> buckets, ImportReport report)
+    public static IReadOnlyList<PotTransaction> Import(IXLWorksheet sheet, IReadOnlyCollection<Pot> buckets, ImportReport report)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        var movements = new List<PotMovement>();
+        var movements = new List<PotTransaction>();
         var resolvedBuckets = ResolveBucketColumns(sheet.Name, buckets, report);
 
         for (var row = FirstDataRow; row <= lastRow; row++)
@@ -56,7 +56,7 @@ public static class ReservasSheetImporter
                     continue;
                 }
 
-                movements.Add(PotMovement.Create(bucket, Math.Round(amount.Value, 2, MidpointRounding.AwayFromZero), date, description));
+                movements.Add(PotTransaction.Create(bucket, Math.Round(amount.Value, 2, MidpointRounding.AwayFromZero), date, description));
             }
         }
 

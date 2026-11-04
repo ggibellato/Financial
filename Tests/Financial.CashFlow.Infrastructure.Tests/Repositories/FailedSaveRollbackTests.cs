@@ -100,7 +100,7 @@ public class FailedSaveRollbackTests
         using (new AssertionScope())
         {
             _repository.GetIncomes().Should().BeEmpty();
-            _repository.GetPotMovements().Should().BeEmpty();
+            _repository.GetPotTransactions().Should().BeEmpty();
         }
     }
 
@@ -109,7 +109,7 @@ public class FailedSaveRollbackTests
     {
         var service = CreateIncomeService();
         var added = await service.AddIncomeAsync(ArianaSplitIncome());
-        var originalMovementIds = _repository.GetPotMovements().Select(m => m.Id).ToList();
+        var originalMovementIds = _repository.GetPotTransactions().Select(m => m.Id).ToList();
         _storage.FailWrites = true;
 
         var act = async () => await service.UpdateIncomeAsync(added.Id, ArianaSplitIncomeUpdate(1000.00m));
@@ -118,7 +118,7 @@ public class FailedSaveRollbackTests
         using (new AssertionScope())
         {
             _repository.GetIncomes().Should().ContainSingle().Which.NetValue.Should().Be(2450.00m);
-            _repository.GetPotMovements().Select(m => m.Id).Should().BeEquivalentTo(originalMovementIds);
+            _repository.GetPotTransactions().Select(m => m.Id).Should().BeEquivalentTo(originalMovementIds);
         }
     }
 
@@ -135,7 +135,7 @@ public class FailedSaveRollbackTests
         });
 
         await act.Should().ThrowAsync<IOException>();
-        _repository.GetPotMovements().Should().BeEmpty();
+        _repository.GetPotTransactions().Should().BeEmpty();
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class FailedSaveRollbackTests
         var investimento = _repository.GetReservaPots().Single(b => b.Name == "Investimento");
         await _repository.ApplyAndSaveAsync(() =>
         {
-            _repository.AddPotMovement(PotMovement.Create(investimento, 100m, July1, "Seed"));
+            _repository.AddPotTransaction(PotTransaction.Create(investimento, 100m, July1, "Seed"));
             return true;
         });
         _storage.FailWrites = true;
@@ -162,7 +162,7 @@ public class FailedSaveRollbackTests
         await act.Should().ThrowAsync<IOException>();
         using (new AssertionScope())
         {
-            _repository.GetPotMovements().Should().ContainSingle().Which.Description.Should().Be("Seed");
+            _repository.GetPotTransactions().Should().ContainSingle().Which.Description.Should().Be("Seed");
             _repository.GetExpenses().Should().BeEmpty();
         }
     }

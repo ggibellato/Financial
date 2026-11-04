@@ -69,7 +69,7 @@ public class PotOperationTests
     {
         var mine = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);
         var other = PotWithdrawal.Build(_reserva, _pot, 5m, Date, "Cash", _bank, _health, Guid.NewGuid());
-        var legacy = PotMovement.Create(_pot, -7m, Date, "Cash");
+        var legacy = PotTransaction.Create(_pot, -7m, Date, "Cash");
 
         var operation = PotOperation.Read(
             OperationId, [.. mine.Movements, .. other.Movements, legacy], [.. mine.Expenses, .. other.Expenses], [_reserva]);
@@ -85,7 +85,7 @@ public class PotOperationTests
     [Fact]
     public void Read_UnknownOperation_ReturnsNull()
     {
-        var operation = PotOperation.Read(OperationId, [PotMovement.Create(_pot, -7m, Date, "Cash")], [], [_reserva]);
+        var operation = PotOperation.Read(OperationId, [PotTransaction.Create(_pot, -7m, Date, "Cash")], [], [_reserva]);
 
         operation.Should().BeNull();
     }
@@ -95,7 +95,7 @@ public class PotOperationTests
     {
         var orphan = Pot.Create("Orphan", 0m);
 
-        var operation = PotOperation.Read(OperationId, [PotMovement.Create(orphan, -7m, Date, "Cash", operationId: OperationId)], [], [_reserva]);
+        var operation = PotOperation.Read(OperationId, [PotTransaction.Create(orphan, -7m, Date, "Cash", operationId: OperationId)], [], [_reserva]);
 
         operation.Should().BeNull();
     }
@@ -106,10 +106,10 @@ public class PotOperationTests
         var second = Pot.Create("HouseTreats", 0m);
         _reserva.AddPot(second);
         var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva), null, 100m, _bank, potsAccount: _reserva);
-        PotMovement[] movements =
+        PotTransaction[] movements =
         [
-            PotMovement.Create(_pot, 60m, Date, "Split", income, OperationId),
-            PotMovement.Create(second, 30m, Date, "Split", income, OperationId)
+            PotTransaction.Create(_pot, 60m, Date, "Split", income, OperationId),
+            PotTransaction.Create(second, 30m, Date, "Split", income, OperationId)
         ];
 
         var operation = PotOperation.Read(OperationId, movements, [], [_reserva]);

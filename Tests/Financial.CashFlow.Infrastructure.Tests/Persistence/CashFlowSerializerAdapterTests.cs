@@ -42,7 +42,7 @@ public class CashFlowSerializerAdapterTests
             creditCard);
         expense.Settle(bank, new DateOnly(2026, 7, 31));
         var income = Income.Create(new DateOnly(2026, 7, 25), incomeSource, 3200.00m, 2450.00m, bank, potsAccount: TestAccounts.ReservaIn(original));
-        var potMovement = PotMovement.Create(pot, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split", income);
+        var potTransaction = PotTransaction.Create(pot, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split", income);
         var cardStatement = CardStatement.Create(creditCard, 2026, 7);
         cardStatement.SetDueDate(new DateOnly(2026, 8, 18));
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
@@ -56,7 +56,7 @@ public class CashFlowSerializerAdapterTests
         original.AddAccount(creditCard);
         original.AddCategory(category);
         original.AddExpense(expense);
-        original.AddPotMovement(potMovement);
+        original.AddPotTransaction(potTransaction);
         original.AddCardStatement(cardStatement);
         original.AddRecurringBill(recurringBill);
         original.AddMaeLedgerEntry(maeLedgerEntry);
@@ -91,12 +91,12 @@ public class CashFlowSerializerAdapterTests
             resultExpense.CreditCard!.Id.Should().Be(expense.CreditCard!.Id);
             resultExpense.ChargeDate.Should().Be(expense.ChargeDate);
             resultExpense.InvoiceDate.Should().Be(expense.InvoiceDate);
-            var resultMovement = result.PotMovements.Should().ContainSingle().Which;
-            resultMovement.Id.Should().Be(potMovement.Id);
+            var resultMovement = result.PotTransactions.Should().ContainSingle().Which;
+            resultMovement.Id.Should().Be(potTransaction.Id);
             resultMovement.Pot.Should().BeSameAs(resultPot);
-            resultMovement.Amount.Should().Be(potMovement.Amount);
-            resultMovement.Date.Should().Be(potMovement.Date);
-            resultMovement.Description.Should().Be(potMovement.Description);
+            resultMovement.Amount.Should().Be(potTransaction.Amount);
+            resultMovement.Date.Should().Be(potTransaction.Date);
+            resultMovement.Description.Should().Be(potTransaction.Description);
             var resultCardStatement = result.CardStatements.Should().ContainSingle().Which;
             resultCardStatement.Id.Should().Be(cardStatement.Id);
             resultCardStatement.DueDate.Should().Be(new DateOnly(2026, 8, 18));
@@ -185,7 +185,7 @@ public class CashFlowSerializerAdapterTests
         original.AddIncomeSource(incomeSource);
         TestAccounts.ReservaIn(original).AddPot(pot);
         original.AddIncome(Income.Create(new DateOnly(2026, 7, 1), incomeSource, 100m, 90m, bank));
-        original.AddPotMovement(PotMovement.Create(pot, 50m, new DateOnly(2026, 7, 1), "Deposit"));
+        original.AddPotTransaction(PotTransaction.Create(pot, 50m, new DateOnly(2026, 7, 1), "Deposit"));
 
         var json = _sut.Serialize(original);
 
@@ -273,7 +273,7 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_PotMovementMissingIncomeIdKeyEntirely_DefaultsToUnlinked()
+    public void Deserialize_PotTransactionMissingIncomeIdKeyEntirely_DefaultsToUnlinked()
     {
         var potId = Guid.NewGuid();
         var json = $$"""
@@ -290,7 +290,7 @@ public class CashFlowSerializerAdapterTests
 
         var result = _sut.Deserialize(json);
 
-        result.PotMovements.Should().ContainSingle().Which.Income.Should().BeNull();
+        result.PotTransactions.Should().ContainSingle().Which.Income.Should().BeNull();
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_PotMovementWithIncomeIdReferencingAnIncomeDeserializedLater_ResolvesTheSameReference()
+    public void Deserialize_PotTransactionWithIncomeIdReferencingAnIncomeDeserializedLater_ResolvesTheSameReference()
     {
         var incomeSourceId = Guid.NewGuid();
         var incomeId = Guid.NewGuid();
@@ -342,7 +342,7 @@ public class CashFlowSerializerAdapterTests
 
         var result = _sut.Deserialize(json);
 
-        result.PotMovements.Should().ContainSingle().Which.Income.Should().BeSameAs(result.Incomes.Should().ContainSingle().Which);
+        result.PotTransactions.Should().ContainSingle().Which.Income.Should().BeSameAs(result.Incomes.Should().ContainSingle().Which);
     }
 
     [Fact]
@@ -364,7 +364,7 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
-    public void Deserialize_LegacyPotMovementMissingBucketId_FailsWithADescriptiveMessage()
+    public void Deserialize_LegacyPotTransactionMissingBucketId_FailsWithADescriptiveMessage()
     {
         var json = """
             {
@@ -400,7 +400,7 @@ public class CashFlowSerializerAdapterTests
         var result = _sut.Deserialize(json);
 
         result.Expenses.Should().BeEmpty();
-        result.PotMovements.Should().BeEmpty();
+        result.PotTransactions.Should().BeEmpty();
         result.CardStatements.Should().BeEmpty();
         result.RecurringBills.Should().BeEmpty();
         result.MaeLedgerEntries.Should().BeEmpty();

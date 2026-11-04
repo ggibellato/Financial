@@ -9,9 +9,9 @@ public interface ICashFlowRepository
     void AddExpense(Expense expense);
     void DeleteExpense(Guid id);
 
-    IEnumerable<PotMovement> GetPotMovements();
-    void AddPotMovement(PotMovement movement);
-    void DeletePotMovement(Guid id);
+    IEnumerable<PotTransaction> GetPotTransactions();
+    void AddPotTransaction(PotTransaction movement);
+    void DeletePotTransaction(Guid id);
 
     IEnumerable<CardStatement> GetCardStatements();
     void AddCardStatement(CardStatement statement);

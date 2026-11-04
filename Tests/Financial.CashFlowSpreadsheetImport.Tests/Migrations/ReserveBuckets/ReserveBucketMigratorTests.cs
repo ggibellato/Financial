@@ -124,8 +124,8 @@ public class ReserveBucketMigratorTests
         var data = CashFlowData.Create();
         var bucket = Pot.Create("Investimento", 33.33m);
         TestAccounts.ReservaIn(data).AddPot(bucket);
-        var movement = PotMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Split");
-        data.AddPotMovement(movement);
+        var movement = PotTransaction.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Split");
+        data.AddPotTransaction(movement);
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
@@ -138,8 +138,8 @@ public class ReserveBucketMigratorTests
     {
         var data = CashFlowData.Create();
         var orphanBucket = Pot.Create("RetiredBucket", 10m);
-        var movement = PotMovement.Create(orphanBucket, 100m, new DateOnly(2026, 7, 1), "Orphaned");
-        data.AddPotMovement(movement);
+        var movement = PotTransaction.Create(orphanBucket, 100m, new DateOnly(2026, 7, 1), "Orphaned");
+        data.AddPotTransaction(movement);
 
         var summary = ReserveBucketMigrator.Migrate(data);
 

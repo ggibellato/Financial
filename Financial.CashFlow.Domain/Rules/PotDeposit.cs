@@ -36,7 +36,7 @@ public static class PotDeposit
 
         var movements = pot is null
             ? SplitAcrossActivePots(potsAccount, amount, date, description, operationId)
-            : [PotMovement.Create(pot, amount, date, description, operationId: operationId)];
+            : [PotTransaction.Create(pot, amount, date, description, operationId: operationId)];
 
         if (fundingLines.Count == 0)
         {
@@ -73,7 +73,7 @@ public static class PotDeposit
         }
     }
 
-    private static List<PotMovement> SplitAcrossActivePots(
+    private static List<PotTransaction> SplitAcrossActivePots(
         Account potsAccount, decimal amount, DateOnly date, string description, Guid operationId)
     {
         var activePots = (potsAccount.Pots ?? []).Where(pot => pot.IsActive).ToList();
@@ -90,7 +90,7 @@ public static class PotDeposit
 
         var amounts = PotSplitAllocator.Allocate(activePots, amount);
         return activePots
-            .Select((pot, index) => PotMovement.Create(pot, amounts[index], date, description, operationId: operationId))
+            .Select((pot, index) => PotTransaction.Create(pot, amounts[index], date, description, operationId: operationId))
             .ToList();
     }
 

@@ -22,7 +22,7 @@ public static class AccountBalanceRule
                 .Sum(record => record.ContributionTo(account));
     }
 
-    public static decimal PotBalance(Pot pot, DateOnly asOf, IEnumerable<PotMovement> movements)
+    public static decimal PotBalance(Pot pot, DateOnly asOf, IEnumerable<PotTransaction> movements)
     {
         ArgumentNullException.ThrowIfNull(pot);
         ArgumentNullException.ThrowIfNull(movements);

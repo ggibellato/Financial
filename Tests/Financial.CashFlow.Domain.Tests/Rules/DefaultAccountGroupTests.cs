@@ -110,8 +110,8 @@ public class DefaultAccountGroupTests
         var (closed, pot) = PotsWithOnePot("Old pots");
         var records = new IAccountTransaction[]
         {
-            PotMovement.Create(pot, 40m, new DateOnly(2026, 9, 3), "Saved"),
-            PotMovement.Create(pot, -40m, new DateOnly(2026, 9, 20), "Spent")
+            PotTransaction.Create(pot, 40m, new DateOnly(2026, 9, 3), "Saved"),
+            PotTransaction.Create(pot, -40m, new DateOnly(2026, 9, 20), "Spent")
         };
         closed.SetActive(false);
 
@@ -139,7 +139,7 @@ public class DefaultAccountGroupTests
         var closedCard = TestAccounts.CreditCard("Old card", isActive: false);
         var closedBank = InactiveBank("Closed", openingAmount: 0m);
         var keptBank = InactiveBank("Savings", openingAmount: 25m);
-        var records = new IAccountTransaction[] { PotMovement.Create(pot, 75m, new DateOnly(2026, 8, 10), "Saved") };
+        var records = new IAccountTransaction[] { PotTransaction.Create(pot, 75m, new DateOnly(2026, 8, 10), "Saved") };
         closedPots.SetActive(false);
 
         DefaultAccountGroup.ListedIn([closedPots, closedCard, closedBank, keptBank], 2026, 9, records).Should().Equal(closedPots, keptBank);

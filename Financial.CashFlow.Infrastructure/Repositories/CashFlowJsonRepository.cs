@@ -31,9 +31,9 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddExpense(Expense expense) => _data.AddExpense(expense);
     public void DeleteExpense(Guid id) => _data.RemoveExpense(id);
 
-    public IEnumerable<PotMovement> GetPotMovements() => _data.PotMovements;
-    public void AddPotMovement(PotMovement movement) => _data.AddPotMovement(movement);
-    public void DeletePotMovement(Guid id) => _data.RemovePotMovement(id);
+    public IEnumerable<PotTransaction> GetPotTransactions() => _data.PotTransactions;
+    public void AddPotTransaction(PotTransaction movement) => _data.AddPotTransaction(movement);
+    public void DeletePotTransaction(Guid id) => _data.RemovePotTransaction(id);
 
     public IEnumerable<CardStatement> GetCardStatements() => _data.CardStatements;
     public void AddCardStatement(CardStatement statement) => _data.AddCardStatement(statement);

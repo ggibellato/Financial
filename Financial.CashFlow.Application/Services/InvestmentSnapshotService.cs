@@ -157,7 +157,7 @@ public sealed class InvestmentSnapshotService : IInvestmentSnapshotService
                             AccountId = account.Id,
                             AccountName = account.Name,
                             CurrentValue = snapshot.Value,
-                            SuggestedValue = AccountBalanceRule.Balance(potsAccount, potsAsOfDate, _repository.GetPotMovements()),
+                            SuggestedValue = AccountBalanceRule.Balance(potsAccount, potsAsOfDate, _repository.GetPotTransactions()),
                             SourceDescription = $"{potsAccount.Name} total — as of {potsAsOfLabel}"
                         });
                         break;

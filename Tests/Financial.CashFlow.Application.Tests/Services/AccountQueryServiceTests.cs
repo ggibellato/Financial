@@ -676,10 +676,10 @@ public class AccountQueryServiceTests
         var reserva = _repository.EnsureReserva();
         var pot = Pot.Create("Investimento", 100m);
         reserva.AddPot(pot);
-        _repository.PotMovements.AddRange([
-            PotMovement.Create(pot, 300m, new DateOnly(2025, 6, 1), "Split"),
-            PotMovement.Create(pot, -50m, new DateOnly(2026, 9, 30), "Withdrawal"),
-            PotMovement.Create(pot, 80m, new DateOnly(2026, 10, 1), "Next month")
+        _repository.PotTransactions.AddRange([
+            PotTransaction.Create(pot, 300m, new DateOnly(2025, 6, 1), "Split"),
+            PotTransaction.Create(pot, -50m, new DateOnly(2026, 9, 30), "Withdrawal"),
+            PotTransaction.Create(pot, 80m, new DateOnly(2026, 10, 1), "Next month")
         ]);
 
         var detail = _sut.GetAccount(reserva.Id, 2026, 9);
@@ -702,7 +702,7 @@ public class AccountQueryServiceTests
         var reserva = _repository.EnsureReserva();
         var pot = Pot.Create("Investimento", 100m);
         reserva.AddPot(pot);
-        _repository.PotMovements.Add(PotMovement.Create(pot, 300m, new DateOnly(2026, 9, 5), "Split"));
+        _repository.PotTransactions.Add(PotTransaction.Create(pot, 300m, new DateOnly(2026, 9, 5), "Split"));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 5), _salary, null, 300m, _barclays));
 
         using (new AssertionScope())

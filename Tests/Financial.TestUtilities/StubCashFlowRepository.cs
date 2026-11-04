@@ -15,7 +15,7 @@ namespace Financial.TestUtilities;
 public sealed class StubCashFlowRepository : ICashFlowRepository
 {
     public List<Expense> Expenses { get; } = new();
-    public List<PotMovement> PotMovements { get; } = new();
+    public List<PotTransaction> PotTransactions { get; } = new();
     public List<CardStatement> CardStatements { get; } = new();
     public List<RecurringBill> RecurringBills { get; } = new();
     public List<MaeLedgerEntry> MaeLedgerEntries { get; } = new();
@@ -173,9 +173,9 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddExpense(Expense expense) => Expenses.Add(expense);
     public void DeleteExpense(Guid id) => Expenses.RemoveAll(e => e.Id == id);
 
-    public IEnumerable<PotMovement> GetPotMovements() => CheckThrow(PotMovements);
-    public void AddPotMovement(PotMovement movement) => PotMovements.Add(movement);
-    public void DeletePotMovement(Guid id) => PotMovements.RemoveAll(m => m.Id == id);
+    public IEnumerable<PotTransaction> GetPotTransactions() => CheckThrow(PotTransactions);
+    public void AddPotTransaction(PotTransaction movement) => PotTransactions.Add(movement);
+    public void DeletePotTransaction(Guid id) => PotTransactions.RemoveAll(m => m.Id == id);
 
     public IEnumerable<CardStatement> GetCardStatements() => CheckThrow(CardStatements);
     public void AddCardStatement(CardStatement statement) => CardStatements.Add(statement);

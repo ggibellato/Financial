@@ -10,8 +10,8 @@ public class CashFlowData
     private readonly IdCollection<Expense> _expenses = new(i => i.Id);
     public IReadOnlyCollection<Expense> Expenses => _expenses;
 
-    private readonly IdCollection<PotMovement> _potMovements = new(i => i.Id);
-    public IReadOnlyCollection<PotMovement> PotMovements => _potMovements;
+    private readonly IdCollection<PotTransaction> _potTransactions = new(i => i.Id);
+    public IReadOnlyCollection<PotTransaction> PotTransactions => _potTransactions;
 
     private readonly ItemCollection<CardStatement> _cardStatements = new();
     public IReadOnlyCollection<CardStatement> CardStatements => _cardStatements;
@@ -59,9 +59,9 @@ public class CashFlowData
 
     public void RemoveExpense(Guid id) => _expenses.RemoveById(id);
 
-    public void AddPotMovement(PotMovement movement) => _potMovements.Add(movement);
+    public void AddPotTransaction(PotTransaction movement) => _potTransactions.Add(movement);
 
-    public void RemovePotMovement(Guid id) => _potMovements.RemoveById(id);
+    public void RemovePotTransaction(Guid id) => _potTransactions.RemoveById(id);
 
     public void AddCardStatement(CardStatement statement) => _cardStatements.Add(statement);
 

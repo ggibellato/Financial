@@ -99,7 +99,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     };
 
     private List<(Guid PotId, decimal Amount)> MovementsOf(Guid operationId) =>
-        Repository.GetPotMovements().Where(m => m.OperationId == operationId).Select(m => (m.Pot.Id, m.Amount)).ToList();
+        Repository.GetPotTransactions().Where(m => m.OperationId == operationId).Select(m => (m.Pot.Id, m.Amount)).ToList();
 
     [Fact]
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-02")]
@@ -204,13 +204,13 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         {
             throughBank.StatusCode.Should().Be(HttpStatusCode.Created);
             potOnly.StatusCode.Should().Be(HttpStatusCode.Created);
-            Repository.GetPotMovements().Where(m => m.OperationId == linked!.OperationId).Select(m => (m.Pot.Id, m.Amount))
+            Repository.GetPotTransactions().Where(m => m.OperationId == linked!.OperationId).Select(m => (m.Pot.Id, m.Amount))
                 .Should().Equal((Guid.Parse(InvestimentoId), -38.25m));
             ExpensesOf(linked!.OperationId).Select(expense => (expense.Category.Id, expense.Value, expense.PaymentSourceAccount!.Id))
                 .Should().BeEquivalentTo([
                     (Guid.Parse(ReservaCategoryId), -38.25m, Guid.Parse(BarclaysId)),
                     (Guid.Parse(MercadoId), 38.25m, Guid.Parse(BarclaysId))]);
-            Repository.GetPotMovements().Should().ContainSingle(m => m.OperationId == unlinked!.OperationId && m.Amount == -10m);
+            Repository.GetPotTransactions().Should().ContainSingle(m => m.OperationId == unlinked!.OperationId && m.Amount == -10m);
             ExpensesOf(unlinked!.OperationId).Should().BeEmpty();
         }
     }
@@ -220,7 +220,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     public async Task Withdrawal_Overdraft_Returns409UntilConfirmed()
     {
         var unconfirmed = await WithdrawFromPotsAccountAsync(600m, withBank: true);
-        var movementsAfterRefusal = Repository.GetPotMovements().Count();
+        var movementsAfterRefusal = Repository.GetPotTransactions().Count();
         var confirmed = await WithdrawFromPotsAccountAsync(600m, withBank: true, confirmed: true);
 
         using (new AssertionScope())
@@ -228,7 +228,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             unconfirmed.StatusCode.Should().Be(HttpStatusCode.Conflict);
             movementsAfterRefusal.Should().Be(2);
             confirmed.StatusCode.Should().Be(HttpStatusCode.Created);
-            Repository.GetPotMovements().Should().ContainSingle(m => m.Amount == -600m);
+            Repository.GetPotTransactions().Should().ContainSingle(m => m.Amount == -600m);
         }
     }
 
@@ -248,7 +248,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             Confirmed = true
         });
         var afterUpdate = ExpensesOf(created.OperationId).Count;
-        var movementAfterUpdate = Repository.GetPotMovements().Single(m => m.OperationId == created.OperationId);
+        var movementAfterUpdate = Repository.GetPotTransactions().Single(m => m.OperationId == created.OperationId);
         var delete = await Client.DeleteAsync(operationUrl);
         var readAfterDelete = await Client.GetAsync(operationUrl);
 
@@ -262,7 +262,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
                 .Should().Be((Guid.Parse(HouseTreatsId), -5m, "Cinema"));
             delete.StatusCode.Should().Be(HttpStatusCode.NoContent);
             readAfterDelete.StatusCode.Should().Be(HttpStatusCode.NotFound);
-            Repository.GetPotMovements().Should().NotContain(m => m.OperationId == created.OperationId);
+            Repository.GetPotTransactions().Should().NotContain(m => m.OperationId == created.OperationId);
         }
     }
 
@@ -277,12 +277,12 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             Description = "Ramsay"
         });
         var splitResult = await split.Content.ReadFromJsonAsync<IncomeSplitResultDTO>();
-        var splitMovements = Repository.GetPotMovements().Where(m => m.Description == "Ramsay").ToList();
+        var splitMovements = Repository.GetPotTransactions().Where(m => m.Description == "Ramsay").ToList();
 
         var response = await WithdrawThroughBarclaysAsync();
         var created = await response.Content.ReadFromJsonAsync<ReserveMovementDTO>();
 
-        var movement = Repository.GetPotMovements().Single(m => m.Id == created!.Id);
+        var movement = Repository.GetPotTransactions().Single(m => m.Id == created!.Id);
         using (new AssertionScope())
         {
             split.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -338,7 +338,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             movementDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
             (await DetailOf(movementDelete)).Should().Be(MovementMessage);
             Repository.GetExpenses().Select(e => (e.Description, e.Value)).Should().BeEquivalentTo([("Boots", -38.25m), ("Boots", 38.25m)]);
-            Repository.GetPotMovements().Single(m => m.Id == created.Id).Amount.Should().Be(-38.25m);
+            Repository.GetPotTransactions().Single(m => m.Id == created.Id).Amount.Should().Be(-38.25m);
         }
     }
 
@@ -359,7 +359,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         {
             update.StatusCode.Should().Be(HttpStatusCode.OK);
             delete.StatusCode.Should().Be(HttpStatusCode.OK);
-            Repository.GetPotMovements().Select(m => (m.Id, m.Amount, m.Description))
+            Repository.GetPotTransactions().Select(m => (m.Id, m.Amount, m.Description))
                 .Should().Equal((Guid.Parse(LegacyDepositId), 450m, "Split corrected"));
         }
     }

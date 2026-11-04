@@ -28,7 +28,7 @@ public static class PotWithdrawal
             throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
         }
 
-        var movement = PotMovement.Create(pot, -amount, date, description, operationId: operationId);
+        var movement = PotTransaction.Create(pot, -amount, date, description, operationId: operationId);
         if (bank is null)
         {
             return new(operationId, potsAccount, [movement], []);

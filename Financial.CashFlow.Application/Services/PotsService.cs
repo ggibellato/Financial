@@ -81,7 +81,7 @@ public sealed class PotsService : IPotsService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var operation = BuildWithdrawal(potsAccountId, request, Guid.NewGuid(), _repository.GetPotMovements());
+            var operation = BuildWithdrawal(potsAccountId, request, Guid.NewGuid(), _repository.GetPotTransactions());
             await SaveAsync(operation).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, operation.OperationId.ToString());
@@ -105,7 +105,7 @@ public sealed class PotsService : IPotsService
             ArgumentNullException.ThrowIfNull(request);
 
             var existing = FindOperationOfKind(operationId, PotOperationKind.Withdrawal, potsAccountId);
-            var otherMovements = _repository.GetPotMovements().Where(movement => movement.OperationId != operationId);
+            var otherMovements = _repository.GetPotTransactions().Where(movement => movement.OperationId != operationId);
             var operation = BuildWithdrawal(potsAccountId, request, operationId, otherMovements);
             await SaveAsync(operation, existing).ConfigureAwait(false);
 
@@ -165,7 +165,7 @@ public sealed class PotsService : IPotsService
     }
 
     private PotOperation BuildWithdrawal(
-        Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotMovement> balanceMovements)
+        Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotTransaction> balanceMovements)
     {
         EnsureDescriptionAndDate(request.Description, request.Date);
 
@@ -231,7 +231,7 @@ public sealed class PotsService : IPotsService
     }
 
     private PotOperation FindOperation(Guid operationId) =>
-        PotOperation.Read(operationId, _repository.GetPotMovements(), _repository.GetExpenses(), _repository.GetAccounts())
+        PotOperation.Read(operationId, _repository.GetPotTransactions(), _repository.GetExpenses(), _repository.GetAccounts())
             ?? throw new KeyNotFoundException($"Operation '{operationId}' was not found.");
 
     private Task SaveAsync(PotOperation operation, PotOperation? replaced = null) =>
@@ -250,7 +250,7 @@ public sealed class PotsService : IPotsService
     {
         foreach (var movement in operation.Movements)
         {
-            _repository.AddPotMovement(movement);
+            _repository.AddPotTransaction(movement);
         }
 
         foreach (var expense in operation.Expenses)
@@ -263,7 +263,7 @@ public sealed class PotsService : IPotsService
     {
         foreach (var movement in operation.Movements)
         {
-            _repository.DeletePotMovement(movement.Id);
+            _repository.DeletePotTransaction(movement.Id);
         }
 
         foreach (var expense in operation.Expenses)

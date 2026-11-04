@@ -38,13 +38,13 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
         foreach (var expense in DeserializeCollection<Expense>(root, "Expenses", resolvedOptions)) data.AddExpense(expense);
 
-        // Incomes must resolve - and populate context.Incomes - before PotMovements, since a
+        // Incomes must resolve - and populate context.Incomes - before PotTransactions, since a
         // linked movement's IncomeId reference converter reads that same lookup at Read time.
         var incomes = DeserializeCollection<Income>(root, "Incomes", resolvedOptions);
         foreach (var income in incomes) context.Incomes[income.Id] = income;
         foreach (var income in incomes) data.AddIncome(income);
 
-        foreach (var movement in DeserializeCollection<PotMovement>(root, "ReserveMovements", resolvedOptions)) data.AddPotMovement(movement);
+        foreach (var movement in DeserializeCollection<PotTransaction>(root, "ReserveMovements", resolvedOptions)) data.AddPotTransaction(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", resolvedOptions)) data.AddRecurringBill(bill);
         foreach (var entry in DeserializeCollection<MaeLedgerEntry>(root, "MaeLedgerEntries", resolvedOptions)) data.AddMaeLedgerEntry(entry);
@@ -68,7 +68,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
 
         writer.WriteStartObject();
         WriteCollection(writer, "Expenses", value.Expenses, elementOptions);
-        WriteCollection(writer, "ReserveMovements", value.PotMovements, elementOptions);
+        WriteCollection(writer, "ReserveMovements", value.PotTransactions, elementOptions);
         WriteCollection(writer, "CardStatements", value.CardStatements, elementOptions);
         WriteCollection(writer, "RecurringBills", value.RecurringBills, elementOptions);
         WriteCollection(writer, "MaeLedgerEntries", value.MaeLedgerEntries, elementOptions);

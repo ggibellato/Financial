@@ -12,7 +12,7 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 {
-    private readonly List<PotMovement> _unresolvedMovements = new();
+    private readonly List<PotTransaction> _unresolvedMovements = new();
 
     public int BucketsSeededCount => SeededCount;
     public int BucketsAlreadyPresentCount => AlreadyPresentCount;
@@ -21,13 +21,13 @@ public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 
     public bool ActiveSplitPercentageIsBalanced => ReserveSplitRule.IsBalanced(ActiveSplitPercentageSum);
 
-    public IReadOnlyList<PotMovement> UnresolvedMovements => _unresolvedMovements;
+    public IReadOnlyList<PotTransaction> UnresolvedMovements => _unresolvedMovements;
 
     public void CountBucketSeeded() => CountSeeded();
     public void CountBucketAlreadyPresent() => CountAlreadyPresent();
     public void CountMovementResolved() => MovementsResolvedCount++;
 
-    public void FlagUnresolvedMovement(PotMovement movement) => _unresolvedMovements.Add(movement);
+    public void FlagUnresolvedMovement(PotTransaction movement) => _unresolvedMovements.Add(movement);
 
     public void SetActiveSplitPercentageSum(decimal sum) => ActiveSplitPercentageSum = sum;
 

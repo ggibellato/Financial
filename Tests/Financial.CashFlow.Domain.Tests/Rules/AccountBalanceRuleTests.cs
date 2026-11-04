@@ -205,10 +205,10 @@ public class AccountBalanceRuleTests
         holidays.AddPot(flights);
         var records = new IAccountTransaction[]
         {
-            PotMovement.Create(investimento, 100m, new DateOnly(2020, 1, 1), "First split"),
-            PotMovement.Create(ferias, -30m, new DateOnly(2026, 9, 30), "Withdrawal"),
-            PotMovement.Create(investimento, 40m, new DateOnly(2026, 10, 1), "Next month"),
-            PotMovement.Create(flights, 500m, new DateOnly(2026, 9, 1), "Other account")
+            PotTransaction.Create(investimento, 100m, new DateOnly(2020, 1, 1), "First split"),
+            PotTransaction.Create(ferias, -30m, new DateOnly(2026, 9, 30), "Withdrawal"),
+            PotTransaction.Create(investimento, 40m, new DateOnly(2026, 10, 1), "Next month"),
+            PotTransaction.Create(flights, 500m, new DateOnly(2026, 9, 1), "Other account")
         };
 
         using (new AssertionScope())
@@ -227,10 +227,10 @@ public class AccountBalanceRuleTests
         var ferias = Pot.Create("Ferias", 50m);
         var movements = new[]
         {
-            PotMovement.Create(investimento, 100m, new DateOnly(2026, 9, 1), "Split"),
-            PotMovement.Create(investimento, -25m, new DateOnly(2026, 9, 30), "On as-of"),
-            PotMovement.Create(investimento, 40m, new DateOnly(2026, 10, 1), "After as-of"),
-            PotMovement.Create(ferias, 70m, new DateOnly(2026, 9, 1), "Other pot")
+            PotTransaction.Create(investimento, 100m, new DateOnly(2026, 9, 1), "Split"),
+            PotTransaction.Create(investimento, -25m, new DateOnly(2026, 9, 30), "On as-of"),
+            PotTransaction.Create(investimento, 40m, new DateOnly(2026, 10, 1), "After as-of"),
+            PotTransaction.Create(ferias, 70m, new DateOnly(2026, 9, 1), "Other pot")
         };
 
         AccountBalanceRule.PotBalance(investimento, new DateOnly(2026, 9, 30), movements).Should().Be(75m);
@@ -242,8 +242,8 @@ public class AccountBalanceRuleTests
         var ferias = Pot.Create("Ferias", 0m, isActive: false);
         var movements = new[]
         {
-            PotMovement.Create(ferias, 100m, new DateOnly(2020, 1, 1), "Old split"),
-            PotMovement.Create(ferias, 20m, new DateOnly(2030, 1, 1), "Future-dated")
+            PotTransaction.Create(ferias, 100m, new DateOnly(2020, 1, 1), "Old split"),
+            PotTransaction.Create(ferias, 20m, new DateOnly(2030, 1, 1), "Future-dated")
         };
 
         AccountBalanceRule.PotBalance(ferias, DateOnly.MaxValue, movements).Should().Be(120m);

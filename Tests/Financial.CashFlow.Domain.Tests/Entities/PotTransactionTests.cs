@@ -9,7 +9,7 @@ using FluentAssertions.Execution;
 namespace Financial.CashFlow.Domain.Tests;
 
 [Trait("Category", "Unit")]
-public class PotMovementTests
+public class PotTransactionTests
 {
     private static readonly Pot Investimento = Pot.Create("Investimento", 33.33m);
     private static readonly Pot Ariana = Pot.Create("Ariana", 16.67m);
@@ -19,7 +19,7 @@ public class PotMovementTests
     {
         var date = new DateOnly(2026, 7, 1);
 
-        var movement = PotMovement.Create(Investimento, 866.67m, date, "Monthly income split");
+        var movement = PotTransaction.Create(Investimento, 866.67m, date, "Monthly income split");
 
         using (new AssertionScope())
         {
@@ -34,7 +34,7 @@ public class PotMovementTests
     [Fact]
     public void Create_WithNegativeAmount_RepresentsAWithdrawal()
     {
-        var movement = PotMovement.Create(Ariana, -50m, new DateOnly(2026, 7, 1), "Withdrawal");
+        var movement = PotTransaction.Create(Ariana, -50m, new DateOnly(2026, 7, 1), "Withdrawal");
 
         movement.Amount.Should().Be(-50m);
     }
@@ -43,7 +43,7 @@ public class PotMovementTests
     [Fact]
     public void Update_ChangesAllFields()
     {
-        var movement = PotMovement.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "Original");
+        var movement = PotTransaction.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "Original");
 
         movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
 
@@ -59,7 +59,7 @@ public class PotMovementTests
     [Fact]
     public void Create_WithoutIncome_DefaultsToNull()
     {
-        var movement = PotMovement.Create(Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
+        var movement = PotTransaction.Create(Investimento, 866.67m, new DateOnly(2026, 7, 1), "Monthly income split");
 
         movement.Income.Should().BeNull();
     }
@@ -76,7 +76,7 @@ public class PotMovementTests
     {
         var income = SplitIncome();
 
-        var movement = PotMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
+        var movement = PotTransaction.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
         movement.Income.Should().BeSameAs(income);
     }
@@ -85,7 +85,7 @@ public class PotMovementTests
     public void Update_LeavesIncomeUntouched()
     {
         var income = SplitIncome();
-        var movement = PotMovement.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
+        var movement = PotTransaction.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
         movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
 
@@ -96,7 +96,7 @@ public class PotMovementTests
     public void Pot_DeactivatedAfterMovementCreated_MovementKeepsAValidPotReference()
     {
         var pot = Pot.Create("Ferias", 20m, isActive: true);
-        var movement = PotMovement.Create(pot, 100m, new DateOnly(2026, 7, 1), "Monthly split");
+        var movement = PotTransaction.Create(pot, 100m, new DateOnly(2026, 7, 1), "Monthly split");
 
         pot.Update(pot.Name, pot.SplitPercentage, isActive: false);
 
@@ -114,7 +114,7 @@ public class PotMovementTests
         var pot = Pot.Create("Investimento", 100m);
         reserva.AddPot(pot);
 
-        PotMovement.Create(pot, -40m, new DateOnly(2026, 7, 1), "Withdrawal").ContributionTo(reserva).Should().Be(-40m);
+        PotTransaction.Create(pot, -40m, new DateOnly(2026, 7, 1), "Withdrawal").ContributionTo(reserva).Should().Be(-40m);
     }
 
     [Theory]
@@ -125,6 +125,6 @@ public class PotMovementTests
     {
         var account = Account.Create("Other", template, Currency.GBP);
 
-        PotMovement.Create(Investimento, 100m, new DateOnly(2026, 7, 1), "Split").ContributionTo(account).Should().Be(0m);
+        PotTransaction.Create(Investimento, 100m, new DateOnly(2026, 7, 1), "Split").ContributionTo(account).Should().Be(0m);
     }
 }

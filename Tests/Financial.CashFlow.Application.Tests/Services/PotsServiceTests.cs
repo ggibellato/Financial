@@ -24,7 +24,7 @@ public class PotsServiceTests
     {
         _repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultPots: true, seedDefaultCategories: true);
         Reserva.SetCategory(CategoryNamed("Reserva"));
-        _repository.PotMovements.Add(PotMovement.Create(PotNamed("Investimento"), 100m, new DateOnly(2026, 1, 1), "Seed"));
+        _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("Investimento"), 100m, new DateOnly(2026, 1, 1), "Seed"));
         _sut = new PotsService(_repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
     }
 
@@ -81,7 +81,7 @@ public class PotsServiceTests
             result.BankId.Should().Be(Bank("Chase").Id);
             result.CategoryId.Should().Be(CategoryNamed("Saude").Id);
             result.IncomeId.Should().BeNull();
-            _repository.PotMovements.Should().ContainSingle(m => m.OperationId == result.OperationId && m.Amount == -30m);
+            _repository.PotTransactions.Should().ContainSingle(m => m.OperationId == result.OperationId && m.Amount == -30m);
             _repository.Expenses.Where(e => e.OperationId == result.OperationId).Select(e => (e.Category.Name, e.Value))
                 .Should().BeEquivalentTo([("Reserva", -30m), ("Saude", 30m)]);
             _repository.SaveChangesCallCount.Should().Be(1);
@@ -97,7 +97,7 @@ public class PotsServiceTests
         {
             result.BankId.Should().BeNull();
             result.CategoryId.Should().BeNull();
-            _repository.PotMovements.Should().ContainSingle(m => m.OperationId == result.OperationId);
+            _repository.PotTransactions.Should().ContainSingle(m => m.OperationId == result.OperationId);
             _repository.Expenses.Should().BeEmpty();
         }
     }
@@ -111,7 +111,7 @@ public class PotsServiceTests
         {
             await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>()
                 .WithMessage("This withdrawal exceeds Investimento's balance of 100.00. Set confirmed=true to proceed.");
-            _repository.PotMovements.Should().ContainSingle();
+            _repository.PotTransactions.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<OverdraftConfirmationRequiredException>("CashFlow.PotsService.Withdraw");
         }
@@ -216,7 +216,7 @@ public class PotsServiceTests
             result.OperationId.Should().Be(created.OperationId);
             result.Amount.Should().Be(45m);
             result.BankId.Should().Be(Bank("Barclays").Id);
-            _repository.PotMovements.Where(m => m.OperationId == created.OperationId).Select(m => (m.Amount, m.Description, m.Date))
+            _repository.PotTransactions.Where(m => m.OperationId == created.OperationId).Select(m => (m.Amount, m.Description, m.Date))
                 .Should().Equal((-45m, "Optician", new DateOnly(2026, 9, 30)));
             _repository.Expenses.Where(e => e.OperationId == created.OperationId).Select(e => (e.Category.Name, e.Value, e.PaymentSourceAccount!.Name))
                 .Should().BeEquivalentTo([("Reserva", -45m, "Barclays"), ("Familia", 45m, "Barclays")]);
@@ -234,7 +234,7 @@ public class PotsServiceTests
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Should().ContainSingle(m => m.OperationId == created.OperationId);
+            _repository.PotTransactions.Should().ContainSingle(m => m.OperationId == created.OperationId);
             _repository.Expenses.Should().BeEmpty();
         }
     }
@@ -259,7 +259,7 @@ public class PotsServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>();
-            _repository.PotMovements.Should().ContainSingle(m => m.OperationId == created.OperationId && m.Amount == -30m);
+            _repository.PotTransactions.Should().ContainSingle(m => m.OperationId == created.OperationId && m.Amount == -30m);
             _repository.Expenses.Should().HaveCount(2);
             _tracer.ShouldHaveFailedSpan<OverdraftConfirmationRequiredException>("CashFlow.PotsService.UpdateWithdrawal");
         }
@@ -285,7 +285,7 @@ public class PotsServiceTests
     public async Task UpdateWithdrawalAsync_ADeposit_ThrowsNotFound()
     {
         var operationId = Guid.NewGuid();
-        _repository.PotMovements.Add(PotMovement.Create(PotNamed("HouseTreats"), 50m, Date, "Split", operationId: operationId));
+        _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("HouseTreats"), 50m, Date, "Split", operationId: operationId));
 
         var act = async () => await _sut.UpdateWithdrawalAsync(Reserva.Id, operationId, Withdrawal());
 
@@ -306,7 +306,7 @@ public class PotsServiceTests
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Should().ContainSingle().Which.Description.Should().Be("Seed");
+            _repository.PotTransactions.Should().ContainSingle().Which.Description.Should().Be("Seed");
             _repository.Expenses.Should().Equal(unrelated);
             _repository.SaveChangesCallCount.Should().Be(2);
         }
@@ -317,14 +317,14 @@ public class PotsServiceTests
     {
         var operationId = Guid.NewGuid();
         var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: Reserva), null, 100m, Bank("Chase"), potsAccount: Reserva);
-        _repository.PotMovements.Add(PotMovement.Create(PotNamed("HouseTreats"), 90m, Date, "Split", income, operationId));
+        _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("HouseTreats"), 90m, Date, "Split", income, operationId));
 
         var act = async () => await _sut.DeleteOperationAsync(operationId);
 
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<LinkedOperationConflictException>().WithMessage("This deposit belongs to an income; edit the income.");
-            _repository.PotMovements.Should().HaveCount(2);
+            _repository.PotTransactions.Should().HaveCount(2);
             _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.PotsService.DeleteOperation");
         }
     }
@@ -355,7 +355,7 @@ public class PotsServiceTests
             result.Description.Should().Be("Ramsay bonus");
             result.FundingLines.Select(line => (line.BankId, line.Amount))
                 .Should().Equal((Bank("Chase").Id, 85m), (Bank("Barclays").Id, 15m));
-            _repository.PotMovements.Where(m => m.OperationId == result.OperationId).Select(m => (m.Pot.Name, m.Amount))
+            _repository.PotTransactions.Where(m => m.OperationId == result.OperationId).Select(m => (m.Pot.Name, m.Amount))
                 .Should().Equal(("Investimento", 33.33m), ("HouseTreats", 33.33m), ("Ariana", 16.67m), ("Gleison", 16.67m));
             _repository.Expenses.Where(e => e.OperationId == result.OperationId).Select(e => (e.Category.Name, e.Value, e.PaymentSourceAccount!.Name))
                 .Should().Equal(("Reserva", 85m, "Chase"), ("Reserva", 15m, "Barclays"));
@@ -373,7 +373,7 @@ public class PotsServiceTests
             result.Into.Should().Be("OnePot");
             result.PotId.Should().Be(PotNamed("Ariana").Id);
             result.FundingLines.Should().BeEmpty();
-            _repository.PotMovements.Should().ContainSingle(m => m.OperationId == result.OperationId && m.Pot == PotNamed("Ariana") && m.Amount == 40m);
+            _repository.PotTransactions.Should().ContainSingle(m => m.OperationId == result.OperationId && m.Pot == PotNamed("Ariana") && m.Amount == 40m);
             _repository.Expenses.Should().BeEmpty();
         }
     }
@@ -386,7 +386,7 @@ public class PotsServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("Funding lines must add up to £100.00.");
-            _repository.PotMovements.Should().ContainSingle();
+            _repository.PotTransactions.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
         }
@@ -498,7 +498,7 @@ public class PotsServiceTests
             result.OperationId.Should().Be(created.OperationId);
             result.Into.Should().Be("OnePot");
             result.Amount.Should().Be(60m);
-            _repository.PotMovements.Where(m => m.OperationId == created.OperationId).Select(m => (m.Pot.Name, m.Amount))
+            _repository.PotTransactions.Where(m => m.OperationId == created.OperationId).Select(m => (m.Pot.Name, m.Amount))
                 .Should().Equal(("Gleison", 60m));
             _repository.Expenses.Where(e => e.OperationId == created.OperationId).Select(e => (e.Value, e.PaymentSourceAccount!.Name))
                 .Should().Equal((60m, "Barclays"));
@@ -543,14 +543,14 @@ public class PotsServiceTests
     {
         var operationId = Guid.NewGuid();
         var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: Reserva), null, 100m, Bank("Chase"), potsAccount: Reserva);
-        _repository.PotMovements.Add(PotMovement.Create(PotNamed("HouseTreats"), 90m, Date, "Split", income, operationId));
+        _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("HouseTreats"), 90m, Date, "Split", income, operationId));
 
         var act = async () => await _sut.UpdateDepositAsync(Reserva.Id, operationId, Deposit());
 
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<LinkedOperationConflictException>().WithMessage("This deposit belongs to an income; edit the income.");
-            _repository.PotMovements.Should().HaveCount(2);
+            _repository.PotTransactions.Should().HaveCount(2);
             _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.PotsService.UpdateDeposit");
         }
     }
@@ -564,7 +564,7 @@ public class PotsServiceTests
 
         using (new AssertionScope())
         {
-            _repository.PotMovements.Should().ContainSingle().Which.Description.Should().Be("Seed");
+            _repository.PotTransactions.Should().ContainSingle().Which.Description.Should().Be("Seed");
             _repository.Expenses.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(2);
         }
