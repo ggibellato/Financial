@@ -2,6 +2,10 @@ import { formatCurrency, parseValidatedNumber, positiveAmount, toPence } from '.
 
 export const MAX_FUNDING_LINES = 5
 
+const NET_PRECISION = 10000
+const DEPOSIT_TENTHS_OF_NET = 9
+const PENCE_IN_A_POUND = 100
+
 export interface FundingLineValues {
   key: string
   bankId: string
@@ -55,8 +59,9 @@ export function remainingAmount(lines: readonly FundingLineValues[], depositAmou
 }
 
 export function incomeDepositAmount(netValue: number): number {
-  const netInTenThousandths = Math.round(netValue * 10000)
-  return Math.round((netInTenThousandths * 9) / 1000) / 100
+  const scaledNet = Math.round(netValue * NET_PRECISION)
+  const depositInPence = (scaledNet * DEPOSIT_TENTHS_OF_NET * PENCE_IN_A_POUND) / (NET_PRECISION * 10)
+  return Math.round(depositInPence) / PENCE_IN_A_POUND
 }
 
 export function fundingLineErrors(lines: readonly FundingLineValues[]): Partial<Record<string, string>> {

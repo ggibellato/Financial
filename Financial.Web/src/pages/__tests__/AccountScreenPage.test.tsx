@@ -698,12 +698,16 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
       expect(screen.getByRole('link', { name: 'Deposit to Reserva' })).toHaveFocus()
     })
 
-    it('says the operation is not here when a bank address names one with no income', async () => {
+    it('says the operation is not here when a bank address names one with no income, and Dismiss moves focus to the heading', async () => {
+      const user = userEvent.setup()
       withPotsAccount([])
       getPotOperationMock.mockResolvedValue(DEPOSIT)
       renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op1`)
 
       expect(await screen.findByRole('alert')).toHaveTextContent('This deposit or withdrawal no longer exists.')
+      await user.click(screen.getByRole('button', { name: 'Dismiss' }))
+
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
     })
   })
 

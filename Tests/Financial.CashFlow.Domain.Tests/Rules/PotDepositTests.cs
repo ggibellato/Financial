@@ -1,3 +1,4 @@
+using System.Globalization;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
@@ -183,6 +184,21 @@ public class PotDepositTests
             expense.CountsAsTithe.Should().BeFalse();
             expense.RoundUpAmount.Should().BeNull();
         }
+    }
+
+    [Theory]
+    [InlineData("100", "90")]
+    [InlineData("123.45", "111.11")]
+    [InlineData("0.05", "0.05")]
+    [InlineData("1963", "1766.70")]
+    [InlineData("100.005", "90.00")]
+    public void BuildFromIncome_Amount_MatchesTheFiguresTheWebFormShows(string net, string deposit)
+    {
+        var income = IncomeOf(net: decimal.Parse(net, CultureInfo.InvariantCulture));
+
+        var operation = PotDeposit.BuildFromIncome(income, _reserva, [], OperationId);
+
+        operation.Amount.Should().Be(decimal.Parse(deposit, CultureInfo.InvariantCulture));
     }
 
     [Fact]

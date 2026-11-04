@@ -116,7 +116,7 @@ export default function IncomeForm({
           {isEditing ? 'Edit Income' : 'New Income'}
         </Text>
         {!hasFieldErrors && saveError && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -148,6 +148,7 @@ export default function IncomeForm({
 
           <Field
             label="Bank"
+            required={funding.isShown}
             validationState={fieldError('bank') ? 'error' : 'none'}
             validationMessage={fieldError('bank')}
           >

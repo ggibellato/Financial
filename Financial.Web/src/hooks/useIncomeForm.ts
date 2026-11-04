@@ -453,6 +453,8 @@ export function useIncomeForm(
 
     if (netValue === null) {
       errors.netValue = 'Net value must be a non-negative number'
+    } else if (isFundingShown && netValue === 0) {
+      errors.netValue = 'Net value must be greater than zero to split to pots.'
     }
 
     if (state.splitToReserve === 'true' && state.potsAccountId === '' && offersSplit(incomeSources, state.incomeSource)) {

@@ -4,6 +4,7 @@ import type { BankDto } from '../api/types'
 import type { IncomeFunding } from '../hooks/useIncomeForm'
 import { formatCurrency } from '../utils/formatters'
 import FundingLinesField from './FundingLinesField'
+import './FundingLinesField.css'
 
 interface FundedFromSectionProps {
   funding: IncomeFunding
@@ -21,10 +22,11 @@ export default function FundedFromSection({ funding, banks }: FundedFromSectionP
   }, [funding.isHandSplit])
 
   return (
-    <div ref={containerRef} role="group" aria-labelledby={headingId}>
+    <div ref={containerRef} className="funding-lines" role="group" aria-labelledby={headingId}>
       <Text as="h3" block id={headingId} weight="semibold">
         Funded from
       </Text>
+      <Text size={200}>The deposit is 90% of the net value.</Text>
       {funding.isHandSplit ? (
         <FundingLinesField
           lines={funding.lines}
@@ -41,7 +43,12 @@ export default function FundedFromSection({ funding, banks }: FundedFromSectionP
         <div className="funding-lines__footer">
           <Text>
             {funding.bankName ?? 'Choose the bank above'}
-            {funding.depositAmount !== null && `: ${formatCurrency(funding.depositAmount, funding.currency)}`}
+            {funding.depositAmount !== null && (
+              <>
+                {': '}
+                <Text weight="semibold">{formatCurrency(funding.depositAmount, funding.currency)}</Text>
+              </>
+            )}
           </Text>
           <Button appearance="primary" onClick={funding.splitAcrossBanks}>
             Split across banks

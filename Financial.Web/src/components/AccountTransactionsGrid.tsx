@@ -74,6 +74,13 @@ const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, 
 
 const ACCESSORS = Object.fromEntries(ACCOUNT_COLUMNS.map((column) => [column.key, column.accessor]))
 
+const BLANK_OPERATION_LINK = 'Deposit from an income'
+
+function actionColumnClass(hasHint: boolean, hasMove: boolean): string {
+  if (hasHint) return 'data-table__col--action data-table__col--action-wide'
+  return hasMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
+}
+
 interface AccountTransactionsGridProps {
   accountId: string
   transactions: AccountTransactionDto[]
@@ -109,11 +116,7 @@ export default function AccountTransactionsGrid({
   const columnCount = columns.length + 1
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
-  const actionClassName = sortedRows.some(isOlderIncomeLine)
-    ? 'data-table__col--action data-table__col--action-wide'
-    : onMove
-      ? 'data-table__col--action data-table__col--action-triple'
-      : 'data-table__col--action'
+  const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
   const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
     if (column.key !== 'description') return column.render(row)
     if (row.statement) {
@@ -125,7 +128,7 @@ export default function AccountTransactionsGrid({
       const { operation } = row
       return (
         <TruncatedText
-          text={row.description}
+          text={row.description || BLANK_OPERATION_LINK}
           to={operationPath(operation, accountId)}
           onClick={(event) => {
             const link = event.currentTarget

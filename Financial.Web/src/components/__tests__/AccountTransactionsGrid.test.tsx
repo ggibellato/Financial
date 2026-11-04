@@ -232,6 +232,17 @@ describe('AccountTransactionsGrid', () => {
       expect(onOpenOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), link)
     })
 
+    it('still links a Pots row whose income has no description', () => {
+      const blank = accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description: '', counterpart: 'Home', amount: 30, canEdit: false, operation: { ...OPERATION, incomeId: 'i1' } })
+      render(
+        <MemoryRouter>
+          <AccountTransactionsGrid accountId="pots-1" showsPotColumns transactions={[blank]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />
+        </MemoryRouter>,
+      )
+
+      expect(screen.getByRole('link', { name: 'Deposit from an income' })).toHaveAttribute('href', '/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=op1')
+    })
+
     it("links a bank row of an income's deposit to the income on this bank screen", () => {
       render(
         <MemoryRouter>

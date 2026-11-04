@@ -22,7 +22,7 @@ export const NO_CREDIT_CARDS: CreditCardDto[] = []
 
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
-const SELECTED_TAB_SELECTOR = '[role="tab"][aria-selected="true"]'
+const RESTING_FOCUS_SELECTOR = '[role="tab"][aria-selected="true"], #account-screen-transactions'
 
 function incomeSavedMessage(potsAccountName: string | null): string {
   return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
@@ -222,7 +222,7 @@ export function useAccountActionForms(
 
   const restoreFocus = () => {
     if (openerRef.current?.isConnected) openerRef.current.focus()
-    else formAreaRef.current?.parentElement?.querySelector<HTMLElement>(SELECTED_TAB_SELECTOR)?.focus()
+    else formAreaRef.current?.parentElement?.querySelector<HTMLElement>(RESTING_FOCUS_SELECTOR)?.focus()
   }
 
   const closeActiveForm = () => {

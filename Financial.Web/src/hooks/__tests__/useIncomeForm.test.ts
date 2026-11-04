@@ -614,6 +614,18 @@ describe('useIncomeForm funding lines', () => {
     expect(result.current.saveIncomeErrorFields.bank).toBe('Choose the bank this income landed in.')
   })
 
+  it('asks for a net value above zero before saving a split', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    openNewSplitIncome(result)
+    act(() => result.current.setIncomeField('bank', 'bank-barclays'))
+    act(() => result.current.setIncomeField('netValue', '0'))
+
+    await act(async () => result.current.submitIncome())
+
+    expect(createIncomeMock).not.toHaveBeenCalled()
+    expect(result.current.saveIncomeErrorFields.netValue).toBe('Net value must be greater than zero to split to pots.')
+  })
+
   it('sends no lines when the split is not ticked', async () => {
     updateIncomeMock.mockResolvedValue(LINKED_INCOME)
     const { result } = await renderIncomeForm(onSaved)

@@ -134,6 +134,15 @@ describe('IncomeForm funded from', () => {
     rerender(<IncomeForm {...baseProps} saveError="Barclays is inactive." saveErrorFields={{}} />)
 
     expect(screen.getByRole('button', { name: 'Add Income' })).toHaveFocus()
+    expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
+  })
+
+  it('marks Bank as required only while the funding shows', () => {
+    const { rerender } = render(<IncomeForm {...baseProps} />)
+    expect(screen.getByRole('combobox', { name: 'Bank' })).not.toBeRequired()
+
+    rerender(<IncomeForm {...baseProps} funding={{ ...FUNDING, isShown: true }} />)
+    expect(screen.getByRole('combobox', { name: /^Bank/ })).toBeRequired()
   })
 })
 

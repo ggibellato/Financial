@@ -1,4 +1,4 @@
-export interface ApiErrorDetails {
+interface ApiErrorDetails {
   code?: string
   balance?: number
 }

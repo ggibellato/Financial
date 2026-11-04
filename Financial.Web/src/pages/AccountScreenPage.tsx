@@ -93,8 +93,7 @@ export default function AccountScreenPage() {
   } = forms
   const operationRoute = useOperationRoute(
     screen.operationId,
-    screen.accountId,
-    hasPots,
+    hasPots ? screen.accountId : null,
     isAccountCurrent && formOptions.isReady,
     forms.isOperationFormOpen,
     forms.openOperation,
