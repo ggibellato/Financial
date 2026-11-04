@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError } from '../../api/apiError'
+import { ApiError, overdraftBalance } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountDto, BankDto, CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
 import { overdraftMessage, usePotWithdrawalForm } from '../../hooks/usePotWithdrawalForm'
@@ -137,8 +137,11 @@ function fillWithdrawal() {
   setValue(/^Amount/, '38.25')
 }
 
-function overdraftError(balance = '25.85') {
-  return new ApiError(`This withdrawal exceeds Ariana's balance of ${balance}. Set confirmed=true to proceed.`, 409)
+function overdraftError(balance = 25.85) {
+  return new ApiError(`This withdrawal exceeds Ariana's balance of ${balance}. Set confirmed=true to proceed.`, 409, {
+    code: 'overdraftConfirmationRequired',
+    balance,
+  })
 }
 
 const findDialog = () =>
@@ -162,15 +165,27 @@ afterEach(() => {
 
 describe('overdraftMessage', () => {
   it('states how far below zero the withdrawal takes the pot', () => {
-    expect(overdraftMessage(overdraftError().message, 'Ariana', 38.25, 'GBP')).toBe('This takes Ariana below zero (−£12.40). Continue?')
+    expect(overdraftMessage(25.85, 'Ariana', 38.25, 'GBP')).toBe('This takes Ariana below zero (−£12.40). Continue?')
   })
 
   it('counts a pot already below zero', () => {
-    expect(overdraftMessage(overdraftError('-5.00').message, 'Ariana', 10, 'GBP')).toBe('This takes Ariana below zero (−£15.00). Continue?')
+    expect(overdraftMessage(-5, 'Ariana', 10, 'GBP')).toBe('This takes Ariana below zero (−£15.00). Continue?')
   })
 
-  it('still asks when the figure cannot be read', () => {
-    expect(overdraftMessage('Not enough money.', 'Ariana', 10, 'GBP')).toBe('This takes Ariana below zero. Continue?')
+  it('still asks when there is no figure', () => {
+    expect(overdraftMessage(null, 'Ariana', 10, 'GBP')).toBe('This takes Ariana below zero. Continue?')
+  })
+})
+
+describe('overdraftBalance', () => {
+  it("reads the balance of the server's overdraft code", () => {
+    expect(overdraftBalance(overdraftError(25.85))).toBe(25.85)
+    expect(overdraftBalance(overdraftError(0))).toBe(0)
+  })
+
+  it('has no balance without the code, whatever the text says', () => {
+    expect(overdraftBalance(new ApiError("exceeds Ariana's balance of 25.85. Set confirmed=true", 409))).toBeNull()
+    expect(overdraftBalance(new ApiError('Conflict', 409, { code: 'other', balance: 5 }))).toBeNull()
   })
 })
 
@@ -262,6 +277,17 @@ describe('PotWithdrawalForm from the Pots account', () => {
     save()
     expect(await screen.findByText('Enter the withdrawal date.')).toBeInTheDocument()
     expect(createPotWithdrawalMock).not.toHaveBeenCalled()
+  })
+
+  it('asks without a figure on a 409 without the code', async () => {
+    createPotWithdrawalMock.mockRejectedValueOnce(new ApiError('Conflict', 409))
+    render(<Harness onSaved={vi.fn()} />)
+    await potsLoaded()
+    fillWithdrawal()
+
+    save()
+
+    expect(await findDialog()).toHaveTextContent('This takes Ariana below zero. Continue?')
   })
 
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-06] asks on an overdraft and resends confirmed on Continue', async () => {

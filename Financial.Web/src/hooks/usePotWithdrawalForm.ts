@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { isConflict } from '../api/apiError'
+import { isConflict, overdraftBalance } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountDto, CategoryDto, PotOperationDto, PotWithdrawalRequestDto } from '../api/types'
 import { accountsWith } from '../utils/accountCapabilities'
@@ -11,7 +11,6 @@ import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
 
 const DATE_KEY = 'potWithdrawal.date'
-const OVERDRAFT_BALANCE = /balance of (-?\d+(?:\.\d+)?)\. Set confirmed/
 const MINUS_SIGN = '−'
 
 const FIELDS = ['potsAccountId', 'potId', 'date', 'description', 'amount', 'bankId', 'categoryId'] as const
@@ -56,10 +55,9 @@ function toRequest(values: WithdrawalValues, confirmed: boolean): PotWithdrawalR
   }
 }
 
-export function overdraftMessage(serverMessage: string, potName: string, amount: number, currency: string): string {
-  const balance = OVERDRAFT_BALANCE.exec(serverMessage)?.[1]
-  if (balance === undefined) return `This takes ${potName} below zero. Continue?`
-  const below = (toPence(amount) - toPence(Number(balance))) / 100
+export function overdraftMessage(balance: number | null, potName: string, amount: number, currency: string): string {
+  if (balance === null) return `This takes ${potName} below zero. Continue?`
+  const below = (toPence(amount) - toPence(balance)) / 100
   return `This takes ${potName} below zero (${MINUS_SIGN}${formatCurrency(below, currency)}). Continue?`
 }
 
@@ -143,7 +141,7 @@ export function usePotWithdrawalForm(
       .catch((err: unknown) => {
         const overdraft =
           !confirmed && isConflict(err)
-            ? overdraftMessage(err.message, potName, request.amount, potsRead.data?.currency ?? '')
+            ? overdraftMessage(overdraftBalance(err), potName, request.amount, potsRead.data?.currency ?? '')
             : null
         setForm(
           (current) =>
