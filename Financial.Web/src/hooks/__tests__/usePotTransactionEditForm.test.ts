@@ -31,7 +31,7 @@ describe('usePotTransactionEditForm', () => {
 
     expect(result.current.isOpen).toBe(true)
     expect(result.current.isDirty).toBe(false)
-    expect(result.current.values).toEqual({
+    expect(result.current.edit?.values).toEqual({
       editMovementBucketId: 'p1',
       editMovementAmount: '-20',
       editMovementDate: '2026-10-05',
@@ -56,7 +56,7 @@ describe('usePotTransactionEditForm', () => {
     act(() => result.current.setField('editMovementAmount', '-21.50'))
     act(() => result.current.submit())
 
-    expect(result.current.isSaving).toBe(true)
+    expect(result.current.edit?.isSaving).toBe(true)
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
     expect(updateReserveMovementMock).toHaveBeenCalledWith('m1', { bucketId: 'p1', amount: -21.5, date: '2026-10-05', description: 'Boots' })
     expect(result.current.isOpen).toBe(false)
@@ -70,7 +70,7 @@ describe('usePotTransactionEditForm', () => {
     act(() => result.current.setField('editMovementAmount', ''))
     act(() => result.current.submit())
 
-    expect(result.current.errorFields).toEqual({ editMovementDescription: 'Description is required', editMovementAmount: 'Amount must be a number' })
+    expect(result.current.edit?.errorFields).toEqual({ editMovementDescription: 'Description is required', editMovementAmount: 'Amount must be a number' })
     expect(updateReserveMovementMock).not.toHaveBeenCalled()
     expect(onSaved).not.toHaveBeenCalled()
   })
@@ -83,9 +83,9 @@ describe('usePotTransactionEditForm', () => {
     act(() => result.current.setField('editMovementDate', '2030-01-01'))
     act(() => result.current.submit())
 
-    await waitFor(() => expect(result.current.error).toBe('Date must not be in the future.'))
-    expect(result.current.isSaving).toBe(false)
-    expect(result.current.values.editMovementDate).toBe('2030-01-01')
+    await waitFor(() => expect(result.current.edit?.error).toBe('Date must not be in the future.'))
+    expect(result.current.edit?.isSaving).toBe(false)
+    expect(result.current.edit?.values.editMovementDate).toBe('2030-01-01')
     expect(onSaved).not.toHaveBeenCalled()
   })
 

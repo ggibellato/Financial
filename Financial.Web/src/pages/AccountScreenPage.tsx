@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Skeleton, SkeletonItem, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, formActionsOf, isTransferAction, needsFormOptions, recordNoun, recordTitle } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardStatementsTab from '../components/CardStatementsTab'
@@ -30,21 +30,6 @@ import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
 
-interface ScreenTab {
-  value: AccountScreenTab
-  label: string
-}
-
-const CARD_TABS: ScreenTab[] = [
-  { value: 'transactions', label: 'Transactions' },
-  { value: 'statements', label: 'Statements' },
-]
-
-const POTS_TABS: ScreenTab[] = [
-  { value: 'pots', label: 'Pots' },
-  { value: 'transactions', label: 'Transactions' },
-]
-
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const navigate = useNavigate()
@@ -62,8 +47,8 @@ export default function AccountScreenPage() {
     showSuccess(message)
   }
   const isCard = account?.hasStatements ?? false
-  const screenTabs = isCard ? CARD_TABS : hasPots ? POTS_TABS : null
-  const activeTab: AccountScreenTab = screenTabs ? screen.tab : 'transactions'
+  const hasTabs = screen.tabs.length > 0
+  const activeTab = screen.tab
   const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
   const forms = useAccountActionForms(
     screen.accountId,
@@ -97,8 +82,8 @@ export default function AccountScreenPage() {
   } = forms
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
-    closeFormsOf(row)
-    notifySaved(`${recordTitle(row.kind)} deleted`)
+    linesDeletedWith(row, screen.transactions).forEach(closeFormsOf)
+    notifySaved(deletedMessage(row, screen.transactions))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
 
@@ -162,8 +147,6 @@ export default function AccountScreenPage() {
         <ErrorState message={FORM_OPTIONS_LOAD_ERROR} onRetry={formOptions.retry} />
       )}
 
-      {pots.error && activeTab === 'transactions' && <ErrorState message={POTS_LOAD_ERROR} onRetry={pots.retry} />}
-
       <div id={FORM_AREA_ID} ref={formAreaRef} className="account-screen__form-area">
         {expenseForm.isOpen && (
           <ExpenseForm
@@ -194,18 +177,18 @@ export default function AccountScreenPage() {
           />
         )}
         {moveForm.isOpen && <MoveChargeForm moveForm={moveForm} onCancel={closeActiveForm} />}
-        {potTransactionForm.isOpen && (
+        {potTransactionForm.edit && (
           <EditMovementForm
             title="Edit pot transaction"
             potLabel="Pot"
-            bucketId={potTransactionForm.values.editMovementBucketId}
-            amount={potTransactionForm.values.editMovementAmount}
-            date={potTransactionForm.values.editMovementDate}
-            description={potTransactionForm.values.editMovementDescription}
+            bucketId={potTransactionForm.edit.values.editMovementBucketId}
+            amount={potTransactionForm.edit.values.editMovementAmount}
+            date={potTransactionForm.edit.values.editMovementDate}
+            description={potTransactionForm.edit.values.editMovementDescription}
             buckets={pots.data?.pots ?? []}
-            isSaving={potTransactionForm.isSaving}
-            error={potTransactionForm.error}
-            errorFields={potTransactionForm.errorFields}
+            isSaving={potTransactionForm.edit.isSaving}
+            error={potTransactionForm.edit.error}
+            errorFields={potTransactionForm.edit.errorFields}
             onFieldChange={potTransactionForm.setField}
             onSave={potTransactionForm.submit}
             onCancel={closeActiveForm}
@@ -304,14 +287,14 @@ export default function AccountScreenPage() {
         )}
       </div>
 
-      {screenTabs && (
+      {hasTabs && (
         <TabList
           className="account-screen__tabs"
           aria-label={isCard ? 'Card views' : 'Pots views'}
           selectedValue={activeTab}
           onTabSelect={(_, data) => guardChange(() => screen.setTab(data.value as AccountScreenTab))}
         >
-          {screenTabs.map((tab) => (
+          {screen.tabs.map((tab) => (
             <Tab key={tab.value} id={`account-screen-tab-${tab.value}`} value={tab.value} aria-controls="account-screen-panel">
               {tab.label}
             </Tab>
@@ -320,12 +303,20 @@ export default function AccountScreenPage() {
       )}
 
       <section
-        id={screenTabs ? 'account-screen-panel' : undefined}
-        role={screenTabs ? 'tabpanel' : undefined}
+        id={hasTabs ? 'account-screen-panel' : undefined}
+        role={hasTabs ? 'tabpanel' : undefined}
         className="account-screen__transactions"
-        aria-labelledby={screenTabs ? `account-screen-tab-${activeTab}` : 'account-screen-transactions'}
+        aria-labelledby={hasTabs ? `account-screen-tab-${activeTab}` : 'account-screen-transactions'}
       >
-        {activeTab === 'statements' ? (
+        {!isAccountCurrent && !screen.error ? (
+          <Skeleton aria-label="Loading account details" className="account-screen__grid-skeleton">
+            <SkeletonItem />
+            <SkeletonItem />
+            <SkeletonItem />
+          </Skeleton>
+        ) : screen.error ? (
+          <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
+        ) : activeTab === 'statements' ? (
           <CardStatementsTab
             cardStatements={cardStatements}
             viewedYear={screen.year}
@@ -337,7 +328,6 @@ export default function AccountScreenPage() {
         ) : activeTab === 'pots' ? (
           <PotsTab
             summary={pots.data}
-            isLoading={pots.isLoading}
             hasError={pots.error !== null}
             onRetry={pots.retry}
             year={screen.year}
@@ -348,23 +338,20 @@ export default function AccountScreenPage() {
             <Text as="h2" id="account-screen-transactions" ref={transactionsHeadingRef} tabIndex={-1} size={400} weight="semibold">
               Transactions
             </Text>
-            {screen.error ? (
-              <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
-            ) : (
-              <AccountTransactionsGrid
-                transactions={screen.transactions}
-                showsPotColumns={hasPots}
-                isLoading={screen.isLoading}
-                emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
-                dateHeader={isCard ? 'Purchased' : 'Date'}
-                isEditDisabled={!isAccountCurrent || !(hasPots ? pots.data !== null : formOptions.isReady)}
-                onEdit={openRowEdit}
-                onDelete={rowDelete.requestDelete}
-                onMove={isCard ? openRowMove : undefined}
-                isMoveDisabled={!isAccountCurrent}
-                onOpenStatement={(path) => guardChange(() => navigate(path))}
-              />
-            )}
+            {pots.error && <ErrorState message={POTS_LOAD_ERROR} onRetry={pots.retry} />}
+            <AccountTransactionsGrid
+              transactions={screen.transactions}
+              showsPotColumns={hasPots}
+              isLoading={screen.isLoading}
+              emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
+              dateHeader={isCard ? 'Purchased' : 'Date'}
+              isEditDisabled={(row) => !isAccountCurrent || (row.movement ? pots.data === null : !formOptions.isReady)}
+              onEdit={openRowEdit}
+              onDelete={rowDelete.requestDelete}
+              onMove={isCard ? openRowMove : undefined}
+              isMoveDisabled={!isAccountCurrent}
+              onOpenStatement={(path) => guardChange(() => navigate(path))}
+            />
           </>
         )}
       </section>

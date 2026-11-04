@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
-import type { EditMovementField } from '../hooks/useReserva'
 import { useFieldError } from '../hooks/useFieldError'
+import type { EditMovementField } from '../utils/movementEdit'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface PotOption {
@@ -43,12 +43,17 @@ export default function EditMovementForm({
 }: EditMovementFormProps) {
   const styles = useFormPanelStyles()
   const formRef = useRef<HTMLFormElement | null>(null)
+  const saveRef = useRef<HTMLButtonElement | null>(null)
   const fieldError = useFieldError(errorFields)
   const generalError = Object.keys(errorFields).length === 0 ? error : null
 
   useEffect(() => {
     formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
   }, [errorFields])
+
+  useEffect(() => {
+    if (generalError) saveRef.current?.focus()
+  }, [generalError])
 
   return (
     <form
@@ -117,7 +122,7 @@ export default function EditMovementForm({
         </div>
 
         <div className={styles.actions}>
-          <Button type="submit" appearance="primary" disabled={isSaving}>
+          <Button ref={saveRef} type="submit" appearance="primary" disabled={isSaving}>
             {isSaving ? 'Saving...' : 'Save'}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>

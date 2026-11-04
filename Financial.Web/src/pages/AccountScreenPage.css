@@ -116,6 +116,17 @@
   gap: 8px;
 }
 
+.pots-tab__name {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.pots-tab__content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 @media (max-width: 599px) {
   .account-screen {
     padding: 16px 16px 0;

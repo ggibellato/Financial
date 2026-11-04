@@ -4,6 +4,7 @@ import { POTS_LOAD_ERROR } from '../hooks/usePots'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import ErrorState from './ErrorState'
 import TotalsGrid from './TotalsGrid'
+import TruncatedText from './TruncatedText'
 
 const COLUMNS = [
   {
@@ -11,7 +12,7 @@ const COLUMNS = [
     header: 'Pot',
     render: (pot: PotBalanceDto) => (
       <span className="pots-tab__name">
-        {pot.name}
+        <TruncatedText text={pot.name} />
         {!pot.isActive && (
           <Badge appearance="outline" color="informative">
             Inactive
@@ -39,14 +40,13 @@ const COLUMNS = [
 
 interface PotsTabProps {
   summary: PotsSummaryDto | null
-  isLoading: boolean
   hasError: boolean
   onRetry: () => void
   year: number
   month: number
 }
 
-export default function PotsTab({ summary, isLoading, hasError, onRetry, year, month }: PotsTabProps) {
+export default function PotsTab({ summary, hasError, onRetry, year, month }: PotsTabProps) {
   return (
     <>
       <Text as="h2" size={400} weight="semibold">
@@ -54,14 +54,14 @@ export default function PotsTab({ summary, isLoading, hasError, onRetry, year, m
       </Text>
       {hasError ? (
         <ErrorState message={POTS_LOAD_ERROR} onRetry={onRetry} />
-      ) : isLoading || !summary ? (
+      ) : !summary ? (
         <Skeleton aria-label="Loading pots" className="account-screen__grid-skeleton">
           <SkeletonItem />
           <SkeletonItem />
           <SkeletonItem />
         </Skeleton>
       ) : (
-        <>
+        <div className="account-screen__grid-scroll pots-tab__content">
           <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
           <TotalsGrid
             label="Pots"
@@ -71,7 +71,7 @@ export default function PotsTab({ summary, isLoading, hasError, onRetry, year, m
             emptyMessage="This account has no pots yet"
             footerItems={summary.pots.length > 0 ? [{ label: `Pots total ${summary.currency}`, value: formatN2(summary.total) }] : []}
           />
-        </>
+        </div>
       )}
     </>
   )

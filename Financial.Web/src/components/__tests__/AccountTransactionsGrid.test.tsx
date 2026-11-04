@@ -130,7 +130,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('disables Edit, but not Delete, while editing is unavailable', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} isEditDisabled {...NO_ROW_ACTIONS} />)
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
 
     expect(within(bodyRows()[0]).getByRole('button', { name: 'Edit expense' })).toBeDisabled()
     expect(within(bodyRows()[0]).getByRole('button', { name: 'Delete expense' })).toBeEnabled()

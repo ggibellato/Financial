@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AccountTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { deleteConfirmation, kindLabel, recordNoun, recordTitle } from '../accountActions'
+import { deleteConfirmation, deletedMessage, kindLabel, linesDeletedWith, recordNoun, recordTitle } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -53,6 +53,16 @@ describe('deleteConfirmation', () => {
     const withdrawal = movementRow('m1', { amount: -25 })
 
     expect(deleteConfirmation(withdrawal, [withdrawal, movementRow('m2'), movementRow('m3')])).toBe(SINGLE_LINE)
+  })
+
+  it('reports the lines a split delete removed and a single record by its title', () => {
+    const line = movementRow('m1')
+    const other = movementRow('m2')
+    const withdrawal = movementRow('m3', { amount: -25 })
+
+    expect(linesDeletedWith(line, [line, other, withdrawal])).toEqual([line, other])
+    expect(deletedMessage(line, [line, other, withdrawal])).toBe('2 pot transaction lines deleted')
+    expect(deletedMessage(withdrawal, [line, other, withdrawal])).toBe('Pot transaction deleted')
   })
 
   it('keeps the plain question for other kinds of record', () => {

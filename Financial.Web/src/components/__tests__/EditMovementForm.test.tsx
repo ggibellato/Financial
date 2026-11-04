@@ -58,10 +58,11 @@ describe('EditMovementForm', () => {
     expect(screen.getAllByText('Description is required')).toHaveLength(1)
   })
 
-  it('shows a failed save without a field in a message bar', () => {
+  it('shows a failed save without a field in a message bar and brings focus back to Save', () => {
     renderForm({ error: 'Failed to update' })
 
     expect(screen.getByText('Failed to update')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus()
   })
 
   it('disables the fields and the actions while saving', () => {

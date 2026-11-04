@@ -79,7 +79,7 @@ interface AccountTransactionsGridProps {
   isLoading?: boolean
   emptyMessage: string
   dateHeader?: string
-  isEditDisabled?: boolean
+  isEditDisabled?: (row: AccountTransactionDto) => boolean
   onEdit: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   onDelete: (row: AccountTransactionDto) => void
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
@@ -93,7 +93,7 @@ export default function AccountTransactionsGrid({
   isLoading = false,
   emptyMessage,
   dateHeader = 'Date',
-  isEditDisabled = false,
+  isEditDisabled,
   onEdit,
   onDelete,
   onMove,
@@ -167,7 +167,7 @@ export default function AccountTransactionsGrid({
                   <RowActionsCell
                     className={actionClassName}
                     itemName={recordNoun(row.kind)}
-                    editDisabled={isEditDisabled}
+                    editDisabled={isEditDisabled?.(row) ?? false}
                     onEdit={(button) => onEdit(row, button)}
                     onDelete={() => onDelete(row)}
                   >

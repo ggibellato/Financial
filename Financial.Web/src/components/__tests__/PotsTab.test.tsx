@@ -15,7 +15,7 @@ const SUMMARY: PotsSummaryDto = {
 }
 
 function renderTab(props: Partial<Parameters<typeof PotsTab>[0]> = {}) {
-  return render(<PotsTab summary={SUMMARY} isLoading={false} hasError={false} onRetry={vi.fn()} year={2026} month={10} {...props} />)
+  return render(<PotsTab summary={SUMMARY} hasError={false} onRetry={vi.fn()} year={2026} month={10} {...props} />)
 }
 
 function bodyRows() {
@@ -53,17 +53,11 @@ describe('PotsTab', () => {
     expect(within(bodyRows()[0]).getByText('-20.15')).toBeInTheDocument()
   })
 
-  it('shows a skeleton while loading, without the previous figures', () => {
-    renderTab({ isLoading: true })
-
-    expect(screen.getByLabelText('Loading pots')).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
-  })
-
-  it('shows a skeleton before the first read starts', () => {
+  it('shows a skeleton while there are no figures to show', () => {
     renderTab({ summary: null })
 
     expect(screen.getByLabelText('Loading pots')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('shows the error with a retry instead of stale figures', () => {

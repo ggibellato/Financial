@@ -10,6 +10,23 @@ export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
 
 export type AccountScreenTab = 'transactions' | 'statements' | 'pots'
 
+export interface ScreenTab {
+  value: AccountScreenTab
+  label: string
+}
+
+const CARD_TABS: ScreenTab[] = [
+  { value: 'transactions', label: 'Transactions' },
+  { value: 'statements', label: 'Statements' },
+]
+
+const POTS_TABS: ScreenTab[] = [
+  { value: 'pots', label: 'Pots' },
+  { value: 'transactions', label: 'Transactions' },
+]
+
+const NO_TABS: ScreenTab[] = []
+
 function withParam(params: URLSearchParams, key: string, value: string | null): URLSearchParams {
   const next = new URLSearchParams(params)
   if (value === null) next.delete(key)
@@ -37,9 +54,9 @@ function isPotsAccount({ accounts, account }: AccountScreenData, routeAccountId:
   )
 }
 
-function tabFromParam(param: string | null, hasPots: boolean): AccountScreenTab {
-  if (hasPots) return param === 'transactions' ? 'transactions' : 'pots'
-  return param === 'statements' ? 'statements' : 'transactions'
+function tabsOf(data: AccountScreenData | null, hasPots: boolean): ScreenTab[] {
+  if (hasPots) return POTS_TABS
+  return data?.account.hasStatements ? CARD_TABS : NO_TABS
 }
 
 export interface AccountScreen {
@@ -48,6 +65,7 @@ export interface AccountScreen {
   month: number
   monthInputValue: string
   setMonthInputValue: (value: string) => void
+  tabs: ScreenTab[]
   tab: AccountScreenTab
   setTab: (tab: AccountScreenTab) => void
   selectAccount: (accountId: string) => void
@@ -106,13 +124,12 @@ export function useAccountScreen(): AccountScreen {
 
   const loaded = resource.data === 'not-found' ? null : resource.data
   const hasPots = loaded !== null && isPotsAccount(loaded, accountId)
-  const defaultTab: AccountScreenTab = hasPots ? 'pots' : 'transactions'
+  const tabs = tabsOf(loaded, hasPots)
+  const defaultTab: AccountScreenTab = tabs[0]?.value ?? 'transactions'
+  const tabParam = searchParams.get('tab')
 
-  const setTab = useCallback(
-    (nextTab: AccountScreenTab) =>
-      setSearchParams((params) => withParam(params, 'tab', nextTab === defaultTab ? null : nextTab), { replace: true }),
-    [setSearchParams, defaultTab],
-  )
+  const setTab = (nextTab: AccountScreenTab) =>
+    setSearchParams((params) => withParam(params, 'tab', nextTab === defaultTab ? null : nextTab), { replace: true })
 
   const selectAccount = useCallback(
     (nextAccountId: string) => navigate(`/cashflow/accounts/${nextAccountId}?month=${monthInputValue}`),
@@ -125,7 +142,8 @@ export function useAccountScreen(): AccountScreen {
     month,
     monthInputValue,
     setMonthInputValue,
-    tab: tabFromParam(searchParams.get('tab'), hasPots),
+    tabs,
+    tab: tabs.find((candidate) => candidate.value === tabParam)?.value ?? defaultTab,
     setTab,
     selectAccount,
     accounts: loaded?.accounts ?? NO_ACCOUNTS,

@@ -514,7 +514,57 @@ describe('AccountScreenPage on a Pots account', () => {
     await user.click(await dialogButton('Delete pot transaction', 'Delete'))
 
     await waitFor(() => expect(deleteReserveMovementMock).toHaveBeenCalledWith('m-1'))
-    expect(await screen.findByText('Pot transaction deleted')).toBeInTheDocument()
+    expect(await screen.findByText('2 pot transaction lines deleted')).toBeInTheDocument()
+  })
+
+  it('closes the edit form of another line of the split when the split is deleted', async () => {
+    const user = userEvent.setup()
+    withPotsAccount([
+      movementRow({ id: 'm-1', bucketName: 'Home' }),
+      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15 }),
+    ])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const tripsRow = (await screen.findByText('Trips')).closest('tr') as HTMLElement
+    const edit = within(tripsRow).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    await user.click(within(screen.getByRole('cell', { name: /Home/ }).closest('tr') as HTMLElement).getByRole('button', { name: 'Delete pot transaction' }))
+    await user.click(await dialogButton('Delete pot transaction', 'Delete'))
+
+    expect(await screen.findByText('2 pot transaction lines deleted')).toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'Edit pot transaction' })).not.toBeInTheDocument()
+  })
+
+  it('shows a failed account reload on the Pots tab instead of figures the header disagrees with', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Pots' })
+
+    getAccountMock.mockRejectedValueOnce(new Error('offline'))
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Unable to load this account')).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Pots' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
+  })
+
+  it('paints a neutral skeleton, with no Transactions heading, until the account is known', async () => {
+    withPotsAccount()
+    let finishAccount: (account: AccountDetailDto) => void = () => {}
+    getAccountMock.mockReturnValueOnce(new Promise((resolve) => { finishAccount = resolve }))
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=pots`)
+
+    expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
+
+    finishAccount({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, allowedActions: [] })
+
+    expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
   })
 
   it('[AC P60-F05-bank-account-screen-02] keeps the month and opens the Pots tab of the account picked', async () => {
@@ -601,7 +651,7 @@ describe('AccountScreenPage', () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
-    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
   })
 
   it('shows the empty message naming the month when it has no transactions', async () => {
@@ -806,7 +856,7 @@ describe('AccountScreenPage actions', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
-    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))

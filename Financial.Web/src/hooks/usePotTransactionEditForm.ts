@@ -2,46 +2,29 @@ import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ReserveMovementDto } from '../api/types'
 import { getSaveErrorMessage } from '../utils/formatters'
-import { validateEditMovement, type EditMovementField } from './useReserva'
-
-type PotTransactionValues = Record<EditMovementField, string>
+import {
+  EDIT_MOVEMENT_FIELDS,
+  editMovementValues,
+  toMovementUpdate,
+  validateEditMovement,
+  type EditMovementField,
+  type EditMovementValues,
+} from '../utils/movementEdit'
+import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 
 interface PotTransactionEdit {
-  movementId: string
-  original: PotTransactionValues
-  values: PotTransactionValues
+  movement: ReserveMovementDto
+  values: EditMovementValues
   isSaving: boolean
   error: string | null
-  errorFields: Partial<PotTransactionValues>
-}
-
-const BLANK_VALUES: PotTransactionValues = {
-  editMovementBucketId: '',
-  editMovementAmount: '',
-  editMovementDate: '',
-  editMovementDescription: '',
-}
-
-function valuesOf(movement: ReserveMovementDto): PotTransactionValues {
-  return {
-    editMovementBucketId: movement.bucketId,
-    editMovementAmount: String(movement.amount),
-    editMovementDate: movement.date,
-    editMovementDescription: movement.description,
-  }
-}
-
-function hasChanges({ original, values }: PotTransactionEdit): boolean {
-  return (Object.keys(values) as EditMovementField[]).some((field) => values[field] !== original[field])
+  errorFields: FieldErrors<EditMovementField>
 }
 
 export function usePotTransactionEditForm(onSaved: () => void) {
   const [edit, setEdit] = useState<PotTransactionEdit | null>(null)
 
-  const open = (movement: ReserveMovementDto) => {
-    const values = valuesOf(movement)
-    setEdit({ movementId: movement.id, original: values, values, isSaving: false, error: null, errorFields: {} })
-  }
+  const open = (movement: ReserveMovementDto) =>
+    setEdit({ movement, values: editMovementValues(movement), isSaving: false, error: null, errorFields: {} })
 
   const cancel = () => setEdit(null)
 
@@ -57,14 +40,8 @@ export function usePotTransactionEditForm(onSaved: () => void) {
     }
 
     setEdit({ ...edit, isSaving: true, error: null, errorFields: {} })
-    const { editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription } = edit.values
-    apiClient
-      .updateReserveMovement(edit.movementId, {
-        bucketId: editMovementBucketId,
-        amount: Number(editMovementAmount),
-        date: editMovementDate,
-        description: editMovementDescription,
-      })
+    void apiClient
+      .updateReserveMovement(edit.movement.id, toMovementUpdate(edit.values))
       .then(() => {
         setEdit(null)
         onSaved()
@@ -75,12 +52,9 @@ export function usePotTransactionEditForm(onSaved: () => void) {
   }
 
   return {
+    edit,
     isOpen: edit !== null,
-    isDirty: edit !== null && hasChanges(edit),
-    isSaving: edit?.isSaving ?? false,
-    values: edit?.values ?? BLANK_VALUES,
-    error: edit?.error ?? null,
-    errorFields: edit?.errorFields ?? {},
+    isDirty: edit !== null && hasChangedFields(edit.values, editMovementValues(edit.movement), EDIT_MOVEMENT_FIELDS),
     open,
     cancel,
     setField,

@@ -159,9 +159,11 @@ describe('useAccountScreen', () => {
   })
 
   it('reads the Statements tab from the URL and keeps it across a month change', async () => {
+    getAccountMock.mockResolvedValue({ ...DETAIL, hasStatements: true })
     const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=statements`)
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
 
+    expect(result.current.screen.tabs.map((tab) => tab.label)).toEqual(['Transactions', 'Statements'])
     expect(result.current.screen.tab).toBe('statements')
 
     act(() => result.current.screen.setMonthInputValue('2026-08'))
@@ -191,6 +193,7 @@ describe('useAccountScreen', () => {
       await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
 
       expect(result.current.screen.hasPots).toBe(true)
+      expect(result.current.screen.tabs.map((tab) => tab.label)).toEqual(['Pots', 'Transactions'])
       expect(result.current.screen.tab).toBe('pots')
 
       act(() => result.current.screen.setTab('transactions'))
@@ -217,6 +220,7 @@ describe('useAccountScreen', () => {
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
 
     expect(result.current.screen.hasPots).toBe(false)
+    expect(result.current.screen.tabs).toEqual([])
     expect(result.current.screen.tab).toBe('transactions')
   })
 
