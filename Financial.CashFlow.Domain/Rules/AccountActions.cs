@@ -19,7 +19,7 @@ public static class AccountActions
         (AccountAction.PayCardStatement, account => account.Has(Capability.CanPayBills)),
         (AccountAction.Reconcile, account => account.Has(Capability.CanReconcile)),
         (AccountAction.Deposit, account => account.Has(Capability.HasPots)),
-        (AccountAction.Withdraw, account => account.Has(Capability.HasPots)),
+        (AccountAction.Withdraw, account => account.Has(Capability.CanWithdraw)),
         (AccountAction.ManagePots, account => account.Has(Capability.HasPots)),
         (AccountAction.WithdrawFromPots, account => account.Has(Capability.CanPayBills))
     ];

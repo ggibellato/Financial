@@ -47,10 +47,15 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_HasPots_ReturnsDepositWithdrawAndManagePots()
+    public void AllowedFor_HasPots_ReturnsDepositAndManagePots()
     {
-        AccountActions.AllowedFor(Minimal(Capability.HasPots)).Should().Equal(
-            AccountAction.Deposit, AccountAction.Withdraw, AccountAction.ManagePots);
+        AccountActions.AllowedFor(Minimal(Capability.HasPots)).Should().Equal(AccountAction.Deposit, AccountAction.ManagePots);
+    }
+
+    [Fact]
+    public void AllowedFor_CanWithdraw_ReturnsWithdraw()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.CanWithdraw)).Should().Equal(AccountAction.Withdraw);
     }
 
     [Fact]
