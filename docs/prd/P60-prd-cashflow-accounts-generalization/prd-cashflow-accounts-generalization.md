@@ -861,22 +861,22 @@ graph TD
 - [x] Parity: 0 differences apart from each month's snapshot source text, which now names the Pots account (values identical); `/simplify` run; architecture-reviewer passed
 
 ### F10. Linked Deposit, Withdrawal and Pots Screen
-- [ ] Saving a split-to-reserve income writes the income, the pot credits (90% of net, split by percentage) and one bank expense in the Pots account's category, in one save
-- [ ] Hand-split funding lines (up to 5) that add up are saved as one expense per bank; lines that do not add up are rejected with 400
-- [ ] A manual deposit with no funding lines credits the pots and writes no bank expense
-- [ ] Editing the income recalculates the deposit; deleting it removes every linked record
-- [ ] A withdrawal through a bank writes pot −X, bank −X in the Pots account's category and +X in the chosen category, linked; without a bank only the pot changes
-- [ ] A pot overdraft needs confirmation (409 without it)
-- [ ] Deposit and withdrawal can be started from both the bank and the Pots account and produce the same records
-- [ ] Legacy deposits and withdrawals keep today's edit and delete behaviour
-- [ ] A manual deposit into one pot, active or inactive, credits only that pot
-- [ ] Editing a split income saved before F10 rebuilds its pot movements and adds no bank expense
-- [ ] Deleting an old manual split removes only its own lines
-- [ ] The Reserva page's income split and withdrawal write linked records
-- [ ] Admin → Reserve buckets is retired; its route opens the Reserva account's Pots tab
-- [ ] Manage pots saves all pots together and rejects active splits that do not total 100.00
-- [ ] Pots screen states, keyboard use and narrow layout pass the review checklist
-- [ ] Parity: 0 differences and Pots screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] Saving a split-to-reserve income writes the income, the pot credits (90% of net, split by percentage) and one bank expense in the Pots account's category, in one save
+- [x] Hand-split funding lines (up to 5) that add up are saved as one expense per bank; lines that do not add up are rejected with 400
+- [x] A manual deposit with no funding lines credits the pots and writes no bank expense
+- [x] Editing the income recalculates the deposit; deleting it removes every linked record
+- [x] A withdrawal through a bank writes pot −X, bank −X in the Pots account's category and +X in the chosen category, linked; without a bank only the pot changes
+- [x] A pot overdraft needs confirmation (409 without it)
+- [x] Deposit and withdrawal can be started from both the bank and the Pots account and produce the same records
+- [x] Legacy deposits and withdrawals keep today's edit and delete behaviour
+- [x] A manual deposit into one pot, active or inactive, credits only that pot
+- [x] Editing a split income saved before F10 rebuilds its pot movements and adds no bank expense
+- [x] Deleting an old manual split removes only its own lines
+- [x] The Reserva page's income split and withdrawal write linked records
+- [x] Admin → Reserve buckets is retired; its route opens the Reserva account's Pots tab
+- [x] Manage pots saves all pots together and rejects active splits that do not total 100.00
+- [x] Pots screen states, keyboard use and narrow layout pass the review checklist
+- [x] Parity: 0 differences and Pots screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F11. Settlement Template and Mãe Migration
 - [ ] `migrate` upgrades V4 to V5: Settlement account "Mãe" (BRL + GBP, 2 participants) with the 36 entries; positive entries paid by the user, negative by Mãe; amounts stored positive
@@ -927,8 +927,8 @@ graph TD
 - [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
 - [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header with no change to the shell's allowed-actions rendering
 - [x] F07's card accounts and charge filter give the statement totals F08 pays
-- [ ] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
-- [ ] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
+- [x] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
+- [x] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
 - [ ] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
 - [ ] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill
 - [ ] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it
