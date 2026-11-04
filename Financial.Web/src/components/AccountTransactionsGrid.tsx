@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableHeaderCell,
   TableRow,
+  Text,
   Tooltip,
 } from '@fluentui/react-components'
 import { CalendarArrowRightRegular } from '@fluentui/react-icons'
@@ -19,7 +20,7 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { canMoveToStatement, kindLabel, operationPath, recordNoun, rowKey, statementPath } from './accountActions'
+import { canMoveToStatement, isOlderIncomeLine, kindLabel, operationPath, recordNoun, rowKey, statementPath } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -74,6 +75,7 @@ const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, 
 const ACCESSORS = Object.fromEntries(ACCOUNT_COLUMNS.map((column) => [column.key, column.accessor]))
 
 interface AccountTransactionsGridProps {
+  accountId: string
   transactions: AccountTransactionDto[]
   showsPotColumns?: boolean
   isLoading?: boolean
@@ -89,6 +91,7 @@ interface AccountTransactionsGridProps {
 }
 
 export default function AccountTransactionsGrid({
+  accountId,
   transactions,
   showsPotColumns = false,
   isLoading = false,
@@ -106,7 +109,11 @@ export default function AccountTransactionsGrid({
   const columnCount = columns.length + 1
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
-  const actionClassName = onMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
+  const actionClassName = sortedRows.some(isOlderIncomeLine)
+    ? 'data-table__col--action data-table__col--action-wide'
+    : onMove
+      ? 'data-table__col--action data-table__col--action-triple'
+      : 'data-table__col--action'
   const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
     if (column.key !== 'description') return column.render(row)
     if (row.statement) {
@@ -114,12 +121,12 @@ export default function AccountTransactionsGrid({
       const open = onOpenStatement && (() => onOpenStatement(path))
       return <TruncatedText text={row.description} to={path} onClick={(event) => followLink(event, open)} />
     }
-    if (row.operation && showsPotColumns) {
+    if (row.operation) {
       const { operation } = row
       return (
         <TruncatedText
           text={row.description}
-          to={operationPath(operation)}
+          to={operationPath(operation, accountId)}
           onClick={(event) => {
             const link = event.currentTarget
             followLink(event, onOpenOperation && (() => onOpenOperation(operation, link)))
@@ -204,7 +211,7 @@ export default function AccountTransactionsGrid({
                     )}
                   </RowActionsCell>
                 ) : (
-                  <TableCell className={actionClassName} />
+                  <TableCell className={actionClassName}>{isOlderIncomeLine(row) && <Text size={200}>Edit from the income</Text>}</TableCell>
                 )}
               </TableRow>
             ))

@@ -14,10 +14,11 @@ export interface OperationToOpen {
 
 type OperationLoad = OperationToOpen | 'not-found'
 
-async function loadOperation(operationId: string, potsAccountId: string): Promise<OperationLoad> {
+async function loadOperation(operationId: string, accountId: string, isPotsScreen: boolean): Promise<OperationLoad> {
   try {
     const operation = await apiClient.getPotOperation(operationId)
-    if (operation.potsAccountId.toLowerCase() !== potsAccountId.toLowerCase()) return 'not-found'
+    const opensHere = isPotsScreen ? operation.potsAccountId.toLowerCase() === accountId.toLowerCase() : operation.incomeId != null
+    if (!opensHere) return 'not-found'
     if (!operation.incomeId) return { operation, income: null }
 
     const [year, month] = operation.date.split('-').map(Number)
@@ -32,15 +33,16 @@ async function loadOperation(operationId: string, potsAccountId: string): Promis
 
 export function useOperationRoute(
   operationId: string | null,
-  potsAccountId: string,
+  accountId: string,
+  isPotsScreen: boolean,
   isReady: boolean,
   isFormOpen: boolean,
   openForm: (toOpen: OperationToOpen) => void,
   clearOperation: () => void,
 ) {
   const load = useAsyncResource<OperationLoad>(
-    () => (operationId && isReady ? loadOperation(operationId, potsAccountId) : null),
-    [operationId, potsAccountId, isReady],
+    () => (operationId && isReady ? loadOperation(operationId, accountId, isPotsScreen) : null),
+    [operationId, accountId, isPotsScreen, isReady],
     OPERATION_LOAD_ERROR,
   )
   const openedOperationId = useRef<string | null>(null)

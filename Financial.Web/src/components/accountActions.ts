@@ -90,27 +90,25 @@ export function recordTitle(kind: string): string {
   return noun.charAt(0).toUpperCase() + noun.slice(1)
 }
 
-function isManualSplitLine(row: AccountTransactionDto): boolean {
-  return row.kind === 'PotTransaction' && row.amount > 0 && !row.operation && row.movement?.incomeId == null
+function linesDeletedWith(row: AccountTransactionDto): number {
+  return row.movement?.splitLineCount ?? 1
 }
 
-export function linesDeletedWith(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): readonly AccountTransactionDto[] {
-  return isManualSplitLine(row)
-    ? rows.filter((line) => isManualSplitLine(line) && line.date === row.date && line.description === row.description)
-    : [row]
-}
-
-export function deleteConfirmation(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): string {
+export function deleteConfirmation(row: AccountTransactionDto): string {
   const question = `Delete this ${recordNoun(row.kind)}?`
-  const lines = linesDeletedWith(row, rows).length
+  const lines = linesDeletedWith(row)
   return lines > 1
     ? `${question} It is part of a split, so all ${lines} lines will be deleted. This cannot be undone.`
     : `${question} This cannot be undone.`
 }
 
-export function deletedMessage(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): string {
-  const lines = linesDeletedWith(row, rows).length
+export function deletedMessage(row: AccountTransactionDto): string {
+  const lines = linesDeletedWith(row)
   return lines > 1 ? `${lines} ${recordNoun(row.kind)} lines deleted` : `${recordTitle(row.kind)} deleted`
+}
+
+export function isOlderIncomeLine(row: AccountTransactionDto): boolean {
+  return row.movement?.incomeId != null && !row.operation
 }
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {
@@ -121,9 +119,12 @@ export function statementPath(statement: AccountTransactionStatementDto): string
   return `/cashflow/accounts/${statement.accountId}?month=${formatMonthInputValue(statement.year, statement.month)}&tab=statements`
 }
 
-export function operationPath(operation: AccountTransactionOperationDto): string {
+export function operationPath(operation: AccountTransactionOperationDto, screenAccountId: string): string {
   const month = formatMonthInputValue(operation.year, operation.month)
-  return `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
+  const isOnPotsScreen = operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase()
+  return operation.incomeId != null && !isOnPotsScreen
+    ? `/cashflow/accounts/${screenAccountId}?month=${month}&operation=${operation.operationId}`
+    : `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
 }
 
 export function rowKey(row: AccountTransactionDto): string {

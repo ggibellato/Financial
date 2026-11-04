@@ -2,12 +2,6 @@ import type { AccountDto, CategoryDto } from '../api/types'
 
 const sameName = (a: string, b: string) => a.toLowerCase() === b.toLowerCase()
 
-export function potsAccountCategoryIds(accounts: AccountDto[]): string[] {
-  return accounts.flatMap((account) =>
-    account.capabilities.includes('HasPots') && account.categoryId ? [account.categoryId] : [],
-  )
-}
-
 export function accountCategoryIds(accounts: AccountDto[]): string[] {
   return accounts.flatMap((account) => (account.categoryId ? [account.categoryId] : []))
 }

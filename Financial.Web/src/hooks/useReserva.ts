@@ -12,7 +12,7 @@ import type {
 import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { BUCKET_REQUIRED_ERROR, editMovementValues, toMovementUpdate, validateEditMovement, type EditMovementField } from '../utils/movementEdit'
-import { defaultExpenseCategoryId, eligibleWithdrawalCategories, potsAccountCategoryIds } from '../utils/withdrawalExpenseCategories'
+import { accountCategoryIds, defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
 
 const EXPENSE_CATEGORY_REQUIRED_ERROR = 'Category is required when a bank is selected.'
 
@@ -30,16 +30,8 @@ export type WithdrawalFormField =
   | 'withdrawalBankId'
   | 'withdrawalExpenseCategoryId'
 
-/**
- * A movement row for display. `groupTotal` is set only on the last movement of a same
- * date+description group (2+ movements) — how a split's total is found when browsing history.
- * `isPartOfGroup` is set on every movement in such a group (used to warn before a cascading
- * delete, since removing any one line of a split removes all of them). `isLocked` is set for a
- * movement created by an automated income split (F02) — its Edit/Delete controls are disabled.
- */
 export interface ReserveMovementRow extends ReserveMovementDto {
   groupTotal: number | null
-  isPartOfGroup: boolean
   isLocked: boolean
 }
 
@@ -53,7 +45,7 @@ interface ReservaState {
   splitPercentageWarning: string | null
   banks: BankDto[]
   categories: CategoryDto[]
-  potsCategoryIds: string[]
+  excludedCategoryIds: string[]
   isLoading: boolean
   error: string | null
   retryCount: number
@@ -98,7 +90,7 @@ type ReservaAction =
         splitPercentageWarning?: string | null
         banks?: BankDto[]
         categories?: CategoryDto[]
-        potsCategoryIds?: string[]
+        excludedCategoryIds?: string[]
       }
     }
   | { type: 'FETCH_ERROR'; payload: string }
@@ -147,7 +139,7 @@ const INITIAL_STATE: ReservaState = {
   splitPercentageWarning: null,
   banks: [],
   categories: [],
-  potsCategoryIds: [],
+  excludedCategoryIds: [],
   isLoading: true,
   error: null,
   retryCount: 0,
@@ -191,7 +183,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
           action.payload.splitPercentageWarning === undefined ? state.splitPercentageWarning : action.payload.splitPercentageWarning,
         banks: action.payload.banks ?? state.banks,
         categories: action.payload.categories ?? state.categories,
-        potsCategoryIds: action.payload.potsCategoryIds ?? state.potsCategoryIds,
+        excludedCategoryIds: action.payload.excludedCategoryIds ?? state.excludedCategoryIds,
         withdrawalBucketId: state.withdrawalBucketId || defaultBucketId(buckets),
       }
     }
@@ -386,7 +378,6 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
     return {
       ...m,
       groupTotal: group.count > 1 && group.lastIndex === index ? group.total : null,
-      isPartOfGroup: group.count > 1,
       isLocked: m.incomeId != null,
     }
   })
@@ -415,12 +406,12 @@ export function useReserva(): ReservaData {
       includeReferenceData ? apiClient.getReserveSplitStatus().then((status) => status.warning ?? null).catch(() => null) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getBanks().catch(() => []) : Promise.resolve(undefined),
       includeReferenceData ? apiClient.getCategories().catch(() => []) : Promise.resolve(undefined),
-      includeReferenceData ? apiClient.getAccounts().then(potsAccountCategoryIds).catch(() => []) : Promise.resolve(undefined),
+      includeReferenceData ? apiClient.getAccounts().then(accountCategoryIds).catch(() => []) : Promise.resolve(undefined),
     ])
-      .then(([balances, movements, buckets, splitPercentageWarning, banks, categories, potsCategoryIds]) =>
+      .then(([balances, movements, buckets, splitPercentageWarning, banks, categories, excludedCategoryIds]) =>
         dispatch({
           type: 'FETCH_SUCCESS',
-          payload: { balances, movements, buckets, splitPercentageWarning, banks, categories, potsCategoryIds },
+          payload: { balances, movements, buckets, splitPercentageWarning, banks, categories, excludedCategoryIds },
         }),
       )
       .catch((err: unknown) => {
@@ -441,8 +432,8 @@ export function useReserva(): ReservaData {
   const movementRows = useMemo(() => buildMovementRows(state.movements), [state.movements])
 
   const withdrawalCategoryOptions = useMemo(
-    () => eligibleWithdrawalCategories(state.categories, state.potsCategoryIds),
-    [state.categories, state.potsCategoryIds],
+    () => eligibleWithdrawalCategories(state.categories, state.excludedCategoryIds),
+    [state.categories, state.excludedCategoryIds],
   )
 
   const withdrawalExpenseCategoryId =

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { CategoryDto } from '../../api/types'
 import { account, cardAccount, potsAccount } from '../../test/account'
-import { accountCategoryIds, defaultExpenseCategoryId, eligibleWithdrawalCategories, potsAccountCategoryIds } from '../withdrawalExpenseCategories'
+import { accountCategoryIds, defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../withdrawalExpenseCategories'
 
 const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}): CategoryDto => ({
   id,
@@ -11,20 +11,6 @@ const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}
   isTithe: false,
   hasReferences: false,
   ...overrides,
-})
-
-describe('potsAccountCategoryIds', () => {
-  it("collects each Pots account's category and skips other accounts and Pots accounts without one", () => {
-    const result = potsAccountCategoryIds([
-      potsAccount({ id: 'p1', name: 'Reserva', categoryId: '4' }),
-      potsAccount({ id: 'p2', name: 'Holidays', categoryId: '6' }),
-      potsAccount({ id: 'p3', name: 'New pots' }),
-      account({ id: 'b1', name: 'Barclays' }),
-      cardAccount({ id: 'c1', name: 'Amex' }),
-    ])
-
-    expect(result).toEqual(['4', '6'])
-  })
 })
 
 describe('accountCategoryIds', () => {

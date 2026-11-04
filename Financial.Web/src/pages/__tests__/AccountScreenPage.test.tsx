@@ -655,6 +655,58 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     expect(screen.queryByRole('button', { name: /^Delete (deposit|withdrawal)$/ })).not.toBeInTheDocument()
   })
 
+  describe('linked rows on a bank screen', () => {
+    const BANK_ROW_LINK = { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null as string | null }
+    const INCOME: IncomeDto = {
+      id: 'i1', date: '2026-10-05', incomeSourceId: 'source-bonus', incomeSourceName: 'Bonus', grossValue: null, netValue: 100,
+      bankId: BARCLAYS_ID, bankName: 'Barclays', description: 'Ramsay bonus', potsAccountId: RESERVA_ID, hasLinkedDeposit: true,
+      fundingLines: [{ bankId: BARCLAYS_ID, amount: 90 }],
+    }
+    const bankRow = (incomeId: string | null) =>
+      accountTransactionRow({ id: 'e-linked', kind: 'Expense', date: '2026-10-05', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...BANK_ROW_LINK, incomeId } })
+
+    it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-07] goes to the operation on the Pots screen, as the row is read-only here', async () => {
+      const user = userEvent.setup()
+      withPotsAccount([bankRow(null)])
+      getPotOperationMock.mockResolvedValue(DEPOSIT)
+      renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+      const link = await screen.findByRole('link', { name: 'Deposit to Reserva' })
+      expect(within(link.closest('tr') as HTMLElement).queryByRole('button')).not.toBeInTheDocument()
+      await user.click(link)
+
+      await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions&operation=op1`)).toBeInTheDocument())
+    })
+
+    it("opens the income's edit form on the bank screen for an income's deposit, and takes the link out of the address on Cancel", async () => {
+      const user = userEvent.setup()
+      withPotsAccount([bankRow('i1')])
+      getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, { id: 'source-bonus', name: 'Bonus', isActive: true, group: 'Other', potsAccountId: RESERVA_ID, hasReferences: true }])
+      getPotOperationMock.mockResolvedValue({ ...DEPOSIT, incomeId: 'i1' })
+      getIncomesByMonthMock.mockResolvedValue([INCOME])
+      renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+      await user.click(await screen.findByRole('link', { name: 'Deposit to Reserva' }))
+
+      expect(await screen.findByRole('heading', { name: 'Edit Income' })).toBeInTheDocument()
+      expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op1`)).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: 'Funded from' })).toHaveTextContent('Barclays')
+
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)).toBeInTheDocument())
+      expect(screen.getByRole('link', { name: 'Deposit to Reserva' })).toHaveFocus()
+    })
+
+    it('says the operation is not here when a bank address names one with no income', async () => {
+      withPotsAccount([])
+      getPotOperationMock.mockResolvedValue(DEPOSIT)
+      renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op1`)
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('This deposit or withdrawal no longer exists.')
+    })
+  })
+
   it('opens the form on an inactive Pots account, which has no actions to load its options', async () => {
     getPotOperationMock.mockResolvedValue(DEPOSIT)
     const reserva = potsAccount({ id: RESERVA_ID, name: 'Reserva', isActive: false })
@@ -982,8 +1034,8 @@ describe('AccountScreenPage on a Pots account', () => {
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-08] deletes a legacy movement after a confirmation that counts the lines of its split', async () => {
     const user = userEvent.setup()
     withPotsAccount([
-      movementRow({ id: 'm-1', bucketName: 'Home' }),
-      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15 }),
+      movementRow({ id: 'm-1', bucketName: 'Home', splitLineCount: 2 }),
+      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15, splitLineCount: 2 }),
     ])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
 
@@ -1001,8 +1053,8 @@ describe('AccountScreenPage on a Pots account', () => {
   it('closes the edit form of another line of the split when the split is deleted', async () => {
     const user = userEvent.setup()
     withPotsAccount([
-      movementRow({ id: 'm-1', bucketName: 'Home' }),
-      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15 }),
+      movementRow({ id: 'm-1', bucketName: 'Home', splitLineCount: 2 }),
+      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15, splitLineCount: 2 }),
     ])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
 
@@ -1010,11 +1062,41 @@ describe('AccountScreenPage on a Pots account', () => {
     const edit = within(tripsRow).getByRole('button', { name: 'Edit pot transaction' })
     await waitFor(() => expect(edit).toBeEnabled())
     await user.click(edit)
+    await screen.findByRole('form', { name: 'Edit pot transaction' })
+    getAccountTransactionsMock.mockResolvedValue([])
     await user.click(within(screen.getByRole('cell', { name: /Home/ }).closest('tr') as HTMLElement).getByRole('button', { name: 'Delete pot transaction' }))
     await user.click(await dialogButton('Delete pot transaction', 'Delete'))
 
     expect(await screen.findByText('2 pot transaction lines deleted')).toBeInTheDocument()
-    expect(screen.queryByRole('form', { name: 'Edit pot transaction' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Edit pot transaction' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Transactions', selected: true })).toHaveFocus())
+  })
+
+  it('keeps the edit form of a line the delete did not remove', async () => {
+    const user = userEvent.setup()
+    const trips = movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: -15, description: 'Boots' })
+    withPotsAccount([movementRow({ id: 'm-1', bucketName: 'Home', amount: -5, description: 'Taxi' }), trips])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const tripsRow = (await screen.findByText('Trips')).closest('tr') as HTMLElement
+    const edit = within(tripsRow).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    await screen.findByRole('form', { name: 'Edit pot transaction' })
+    getAccountTransactionsMock.mockResolvedValue([trips])
+    await user.click(within(screen.getByRole('cell', { name: /Home/ }).closest('tr') as HTMLElement).getByRole('button', { name: 'Delete pot transaction' }))
+    await user.click(await dialogButton('Delete pot transaction', 'Delete'))
+
+    expect(await screen.findByText('Pot transaction deleted')).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('cell', { name: /Home/ })).not.toBeInTheDocument())
+    expect(screen.getByRole('form', { name: 'Edit pot transaction' })).toBeInTheDocument()
+  })
+
+  it('tells where to edit a line of an older split income', async () => {
+    withPotsAccount([movementRow({ id: 'm-1', incomeId: 'i1' }, { canEdit: false })])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    expect(await screen.findByText('Edit from the income')).toBeInTheDocument()
   })
 
   it('shows a failed account reload on the Pots tab instead of figures the header disagrees with', async () => {

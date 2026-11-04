@@ -506,6 +506,34 @@ describe('ReservaPage', () => {
     await waitFor(() => expect(screen.queryAllByText('Ramsay').length).toBe(0))
   })
 
+  it('states the real number of lines in the warning', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    getReserveMovementsMock.mockResolvedValue([
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-07-17', description: 'Refund', incomeId: null, splitLineCount: 2 },
+      { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 100, date: '2026-07-17', description: 'Refund', incomeId: null, splitLineCount: 2 },
+    ])
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Refund').length).toBe(2))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete movement' })[0])
+
+    expect(window.confirm).toHaveBeenCalledWith('Delete "Refund"? This is part of a split and will delete all 2 lines.')
+  })
+
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-11] gives a withdrawal no split warning, even when a line shares its text', async () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(false)
+    getReserveMovementsMock.mockResolvedValue([
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: -30, date: '2026-07-17', description: 'Refund', incomeId: null, splitLineCount: 1 },
+      { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 30, date: '2026-07-17', description: 'Refund', incomeId: null, splitLineCount: 1 },
+    ])
+    render(<ReservaPage />)
+
+    await waitFor(() => expect(screen.getAllByText('Refund').length).toBe(2))
+    fireEvent.click(screen.getAllByRole('button', { name: 'Delete movement' })[0])
+
+    expect(window.confirm).toHaveBeenCalledWith('Delete "Refund"? This removes it for good.')
+  })
+
   it('does not delete a movement when the confirmation prompt is declined', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     render(<ReservaPage />)

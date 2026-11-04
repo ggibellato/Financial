@@ -49,7 +49,9 @@ interface OperationDeleteTarget {
   noun: PotOperationNoun
 }
 
-const operationRowKey = (operationId: string) => `operation:${operationId}`
+const OPERATION_ROW_KEY_PREFIX = 'operation:'
+const operationRowKey = (operationId: string) => `${OPERATION_ROW_KEY_PREFIX}${operationId}`
+const isOperationRowKey = (key: string) => key.startsWith(OPERATION_ROW_KEY_PREFIX)
 
 const OPERATION_TITLES: Record<PotOperationNoun, string> = { deposit: 'Deposit', withdrawal: 'Withdrawal' }
 
@@ -302,6 +304,10 @@ export function useAccountActionForms(
     if (editingRowKey === rowKey(row)) closeForms()
   }
 
+  const closeFormOfRemovedRow = (rows: readonly AccountTransactionDto[]) => {
+    if (editingRowKey && !isOperationRowKey(editingRowKey) && !rows.some((row) => rowKey(row) === editingRowKey)) closeActiveForm()
+  }
+
   const guardChange = (change: () => void) =>
     discardPrompt.confirmDiscard(() => {
       closeForms()
@@ -338,6 +344,7 @@ export function useAccountActionForms(
     closeActiveForm,
     restoreFocus,
     closeFormsOf,
+    closeFormOfRemovedRow,
     guardChange,
   }
 }
