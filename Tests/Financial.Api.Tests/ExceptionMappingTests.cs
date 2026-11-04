@@ -13,7 +13,7 @@ public class ExceptionMappingTests(ThrowingApiHost host) : IClassFixture<Throwin
 {
     private static readonly (Exception Exception, HttpStatusCode Status)[] MappedExceptions =
     [
-        (new OverdraftConfirmationRequiredException("overdraft"), HttpStatusCode.Conflict),
+        (new OverdraftConfirmationRequiredException("Ariana", 654.27m), HttpStatusCode.Conflict),
         (new ReserveMovementLinkedToIncomeException("linked"), HttpStatusCode.Conflict),
         (new StatementPaymentConflictException("statement"), HttpStatusCode.Conflict),
         (new LinkedOperationConflictException("linked operation"), HttpStatusCode.Conflict),

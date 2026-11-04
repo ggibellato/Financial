@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities.Transactions;
@@ -242,10 +243,14 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         var unconfirmed = await WithdrawFromPotsAccountAsync(600m, withBank: true);
         var movementsAfterRefusal = Repository.GetPotTransactions().Count();
         var confirmed = await WithdrawFromPotsAccountAsync(600m, withBank: true, confirmed: true);
+        var problem = await unconfirmed.Content.ReadFromJsonAsync<JsonElement>();
 
         using (new AssertionScope())
         {
             unconfirmed.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            problem.GetProperty("code").GetString().Should().Be("overdraftConfirmationRequired");
+            problem.GetProperty("potName").GetString().Should().Be("Investimento");
+            problem.GetProperty("balance").GetDecimal().Should().Be(500m);
             movementsAfterRefusal.Should().Be(2);
             confirmed.StatusCode.Should().Be(HttpStatusCode.Created);
             Repository.GetPotTransactions().Should().ContainSingle(m => m.Amount == -600m);

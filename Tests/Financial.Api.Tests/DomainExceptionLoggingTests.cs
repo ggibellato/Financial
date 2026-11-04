@@ -1,9 +1,11 @@
+using System.Text.Json;
 using Financial.Api.Middleware;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.Investment.Domain.Exceptions;
 using Financial.Shared.Abstractions.Resilience;
 using Financial.TestUtilities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -19,9 +21,7 @@ public class DomainExceptionLoggingTests
     [Fact]
     public async Task RejectedWithdrawal_LogsTheExceptionType_WithoutTheFinancialValuesInItsMessage()
     {
-        // The real message ReserveService throws, verbatim in shape: it names the bucket and its balance.
-        var exception = new OverdraftConfirmationRequiredException(
-            "This withdrawal exceeds Ariana's balance of 654.27. Set confirmed=true to proceed.");
+        var exception = new OverdraftConfirmationRequiredException("Ariana", 654.27m);
         var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
@@ -37,16 +37,37 @@ public class DomainExceptionLoggingTests
     }
 
     [Fact]
-    public async Task RejectedWithdrawal_StillWritesTheFullMessageToTheCaller()
+    public async Task RejectedWithdrawal_StillWritesTheFullMessageAndItsDataToTheCaller()
     {
-        // The redaction is log-side only - the API response must keep explaining why it failed.
-        var exception = new OverdraftConfirmationRequiredException(
-            "This withdrawal exceeds Ariana's balance of 654.27. Set confirmed=true to proceed.");
+        var exception = new OverdraftConfirmationRequiredException("Ariana", 654.27m);
 
-        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
+        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
 
-        var body = await ReadResponseBodyAsync(context);
-        body.Should().Contain("Ariana");
+        using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
+        using (new AssertionScope())
+        {
+            body.RootElement.GetProperty("status").GetInt32().Should().Be(StatusCodes.Status409Conflict);
+            body.RootElement.GetProperty("detail").GetString()
+                .Should().Be("This withdrawal exceeds Ariana's balance of 654.27. Set confirmed=true to proceed.");
+            body.RootElement.GetProperty("code").GetString().Should().Be("overdraftConfirmationRequired");
+            body.RootElement.GetProperty("potName").GetString().Should().Be("Ariana");
+            body.RootElement.GetProperty("balance").GetDecimal().Should().Be(654.27m);
+            logger.Entries.Should().ContainSingle().Which.Message.Should().NotContain("654.27");
+        }
+    }
+
+    [Fact]
+    public async Task OtherConflict_WritesNoOverdraftData()
+    {
+        var (_, context) = await InvokeWithAsync(new DuplicateNameException("duplicate"), "POST", "/api/v1/financial/banks");
+
+        using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
+        using (new AssertionScope())
+        {
+            body.RootElement.TryGetProperty("code", out _).Should().BeFalse();
+            body.RootElement.TryGetProperty("potName", out _).Should().BeFalse();
+            body.RootElement.TryGetProperty("balance", out _).Should().BeFalse();
+        }
     }
 
     [Fact]

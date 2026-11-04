@@ -109,8 +109,10 @@ public class PotsServiceTests
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>()
-                .WithMessage("This withdrawal exceeds Investimento's balance of 100.00. Set confirmed=true to proceed.");
+            var overdraft = (await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>()
+                .WithMessage("This withdrawal exceeds Investimento's balance of 100.00. Set confirmed=true to proceed.")).Which;
+            overdraft.PotName.Should().Be("Investimento");
+            overdraft.Balance.Should().Be(100m);
             _repository.PotTransactions.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<OverdraftConfirmationRequiredException>("CashFlow.PotsService.Withdraw");
@@ -258,7 +260,7 @@ public class PotsServiceTests
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>();
+            (await act.Should().ThrowAsync<OverdraftConfirmationRequiredException>()).Which.Balance.Should().Be(100m);
             _repository.PotTransactions.Should().ContainSingle(m => m.OperationId == created.OperationId && m.Amount == -30m);
             _repository.Expenses.Should().HaveCount(2);
             _tracer.ShouldHaveFailedSpan<OverdraftConfirmationRequiredException>("CashFlow.PotsService.UpdateWithdrawal");
