@@ -531,31 +531,20 @@ public class ReserveServiceTests
         _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(withdrawal);
     }
 
-    [Fact]
-    public async Task DeleteMovementAsync_Withdrawal_DeletesItAlone()
+    [Theory]
+    [InlineData(-5)]
+    [InlineData(0)]
+    public async Task DeleteMovementAsync_NotPositiveMovement_DeletesItAlone(decimal amount)
     {
         var date = new DateOnly(2026, 7, 1);
         var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
-        var withdrawal = PotTransaction.Create(_repository.ReservaPots.First(), -5m, date, "Ramsay");
+        var notPositive = PotTransaction.Create(_repository.ReservaPots.First(), amount, date, "Ramsay");
         var otherWithdrawal = PotTransaction.Create(_repository.ReservaPots.Last(), -5m, date, "Ramsay");
-        _repository.PotTransactions.AddRange([line, withdrawal, otherWithdrawal]);
+        _repository.PotTransactions.AddRange([line, notPositive, otherWithdrawal]);
 
-        await _sut.DeleteMovementAsync(withdrawal.Id);
+        await _sut.DeleteMovementAsync(notPositive.Id);
 
-        _repository.PotTransactions.Should().BeEquivalentTo([line, otherWithdrawal], options => options.WithStrictOrdering());
-    }
-
-    [Fact]
-    public async Task DeleteMovementAsync_ZeroMovement_DeletesItAlone()
-    {
-        var date = new DateOnly(2026, 7, 1);
-        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
-        var zero = PotTransaction.Create(_repository.ReservaPots.First(), 0m, date, "Ramsay");
-        _repository.PotTransactions.AddRange([line, zero]);
-
-        await _sut.DeleteMovementAsync(zero.Id);
-
-        _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(line);
+        _repository.PotTransactions.Should().Equal(line, otherWithdrawal);
     }
 
     [Fact]

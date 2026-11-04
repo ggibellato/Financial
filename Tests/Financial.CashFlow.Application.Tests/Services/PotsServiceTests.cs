@@ -669,12 +669,7 @@ public class PotsServiceTests
 
         var names = _sut.GetPots(Reserva.Id, 2026, 2).Pots.Select(pot => pot.Name).ToList();
 
-        using (new AssertionScope())
-        {
-            names.Last().Should().Be("Aardvark");
-            names.SkipLast(1).Should().BeInAscendingOrder(StringComparer.OrdinalIgnoreCase);
-            names.Should().ContainInOrder("beta", "zebra");
-        }
+        names.Should().Equal("Ariana", "beta", "Gleison", "HouseTreats", "Investimento", "zebra", "Aardvark");
     }
 
     [Fact]
@@ -707,10 +702,14 @@ public class PotsServiceTests
     }
 
     [Fact]
-    public void GetPots_InvalidMonth_ThrowsArgumentOutOfRange()
+    public void GetPots_InvalidMonth_ThrowsArgumentOutOfRangeAndRecordsFailedSpan()
     {
         var act = () => _sut.GetPots(Reserva.Id, 2026, 13);
 
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentOutOfRangeException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.PotsService.GetPots");
+        }
     }
 }
