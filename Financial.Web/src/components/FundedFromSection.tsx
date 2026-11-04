@@ -38,15 +38,15 @@ export default function FundedFromSection({ funding, banks }: FundedFromSectionP
           onRemove={funding.removeLine}
         />
       ) : (
-        <>
-          <Text block>
+        <div className="funding-lines__footer">
+          <Text>
             {funding.bankName ?? 'Choose the bank above'}
             {funding.depositAmount !== null && `: ${formatCurrency(funding.depositAmount, funding.currency)}`}
           </Text>
           <Button appearance="primary" onClick={funding.splitAcrossBanks}>
             Split across banks
           </Button>
-        </>
+        </div>
       )}
     </div>
   )
