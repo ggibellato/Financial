@@ -10,6 +10,7 @@ import { useIncomeForm } from './useIncomeForm'
 import { useMoveChargeForm } from './useMoveChargeForm'
 import { usePayCardStatementForm } from './usePayCardStatementForm'
 import { usePayRecurringBill } from './usePayRecurringBill'
+import { usePotTransactionEditForm } from './usePotTransactionEditForm'
 import type { YearMonth } from './useMonthSelection'
 
 export const NO_CREDIT_CARDS: CreditCardDto[] = []
@@ -90,6 +91,7 @@ export function useAccountActionForms(
   const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
   const payStatementForm = usePayCardStatementForm(lockedBank, () => saved('Statement paid'))
   const moveForm = useMoveChargeForm(onSaved)
+  const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
 
   const openers: Record<AccountFormAction, () => void> = {
     AddExpense: () => expenseForm.showCreateForm('bank'),
@@ -113,7 +115,7 @@ export function useAccountActionForms(
   }
   const activeAction = createAction()
   const isAnyFormOpen =
-    expenseForm.isOpen || incomeForm.isIncomeFormOpen || transferForm.isOpen || adjustmentForm.isOpen || moveForm.isOpen
+    expenseForm.isOpen || incomeForm.isIncomeFormOpen || transferForm.isOpen || adjustmentForm.isOpen || moveForm.isOpen || potTransactionForm.isOpen
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
   const activeFormKey = activeAction ?? (editingRowKey && `${moveForm.isOpen ? 'move' : 'edit'}:${editingRowKey}`)
@@ -126,6 +128,7 @@ export function useAccountActionForms(
     payBillForm.isDirty ||
     payStatementForm.isDirty ||
     moveForm.isDirty ||
+    potTransactionForm.isDirty ||
     screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLButtonElement | null>(null)
@@ -139,6 +142,7 @@ export function useAccountActionForms(
     if (payBillForm.isOpen) payBillForm.cancel()
     if (payStatementForm.isOpen) payStatementForm.cancel()
     if (moveForm.isOpen) moveForm.cancel()
+    if (potTransactionForm.isOpen) potTransactionForm.cancel()
     screenForm.close()
   }
 
@@ -188,6 +192,7 @@ export function useAccountActionForms(
       else if (row.income) incomeForm.showEditIncomeForm(row.income)
       else if (row.transfer) transferForm.openEditForm(row.transfer)
       else if (row.adjustment) adjustmentForm.openEditForm(row.adjustment)
+      else if (row.movement) potTransactionForm.open(row.movement)
     })
   }
 
@@ -218,6 +223,7 @@ export function useAccountActionForms(
     payBillForm,
     payStatementForm,
     moveForm,
+    potTransactionForm,
     lockedBank,
     lockedCard,
     isAccountCurrent,

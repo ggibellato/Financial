@@ -2,25 +2,28 @@ import { useEffect, useRef } from 'react'
 import { Skeleton, SkeletonItem, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, formActionsOf, isTransferAction, needsFormOptions, recordNoun, recordTitle } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardStatementsTab from '../components/CardStatementsTab'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DiscardChangesDialog from '../components/DiscardChangesDialog'
+import EditMovementForm from '../components/EditMovementForm'
 import ErrorState from '../components/ErrorState'
 import ExpenseForm from '../components/ExpenseForm'
 import IncomeForm from '../components/IncomeForm'
 import MoveChargeForm from '../components/MoveChargeForm'
 import PayCardStatementForm from '../components/PayCardStatementForm'
 import PayRecurringBillForm from '../components/PayRecurringBillForm'
+import PotsTab from '../components/PotsTab'
 import TransferForm from '../components/TransferForm'
 import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
 import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../hooks/useAccountScreen'
 import { useCardStatements } from '../hooks/useCardStatements'
+import { POTS_LOAD_ERROR, usePots } from '../hooks/usePots'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import { formatLongMonthYear } from '../utils/formatters'
 import './AccountScreenPage.css'
@@ -30,19 +33,22 @@ const FORM_AREA_ID = 'account-screen-form'
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const navigate = useNavigate()
-  const { account } = screen
+  const { account, hasPots } = screen
   const allowedActions = account?.allowedActions ?? []
   const hasFormActions = formActionsOf(allowedActions).length > 0
   const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
   const isFocusAfterRowLeavesPending = useRef(false)
+  const pots = usePots(hasPots ? screen.accountId : null, screen.year, screen.month)
   const notifySaved = (message: string) => {
     isFocusAfterRowLeavesPending.current = true
     void screen.refreshSilently()
+    void pots.refresh()
     showSuccess(message)
   }
   const isCard = account?.hasStatements ?? false
-  const activeTab: AccountScreenTab = isCard ? screen.tab : 'transactions'
+  const hasTabs = screen.tabs.length > 0
+  const activeTab = screen.tab
   const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
   const forms = useAccountActionForms(
     screen.accountId,
@@ -60,6 +66,7 @@ export default function AccountScreenPage() {
     payBillForm,
     payStatementForm,
     moveForm,
+    potTransactionForm,
     discardPrompt,
     lockedBank,
     lockedCard,
@@ -75,8 +82,8 @@ export default function AccountScreenPage() {
   } = forms
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
-    closeFormsOf(row)
-    notifySaved(`${recordTitle(row.kind)} deleted`)
+    linesDeletedWith(row, screen.transactions).forEach(closeFormsOf)
+    notifySaved(deletedMessage(row, screen.transactions))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
 
@@ -170,6 +177,23 @@ export default function AccountScreenPage() {
           />
         )}
         {moveForm.isOpen && <MoveChargeForm moveForm={moveForm} onCancel={closeActiveForm} />}
+        {potTransactionForm.edit && (
+          <EditMovementForm
+            title="Edit pot transaction"
+            potLabel="Pot"
+            bucketId={potTransactionForm.edit.values.editMovementBucketId}
+            amount={potTransactionForm.edit.values.editMovementAmount}
+            date={potTransactionForm.edit.values.editMovementDate}
+            description={potTransactionForm.edit.values.editMovementDescription}
+            buckets={pots.data?.pots ?? []}
+            isSaving={potTransactionForm.edit.isSaving}
+            error={potTransactionForm.edit.error}
+            errorFields={potTransactionForm.edit.errorFields}
+            onFieldChange={potTransactionForm.setField}
+            onSave={potTransactionForm.submit}
+            onCancel={closeActiveForm}
+          />
+        )}
         {incomeForm.isIncomeFormOpen && (
           <IncomeForm
             isEditing={incomeForm.isIncomeEditing}
@@ -263,29 +287,36 @@ export default function AccountScreenPage() {
         )}
       </div>
 
-      {isCard && (
+      {hasTabs && (
         <TabList
           className="account-screen__tabs"
-          aria-label="Card views"
+          aria-label={isCard ? 'Card views' : 'Pots views'}
           selectedValue={activeTab}
           onTabSelect={(_, data) => guardChange(() => screen.setTab(data.value as AccountScreenTab))}
         >
-          <Tab id="account-screen-tab-transactions" value="transactions" aria-controls="account-screen-panel">
-            Transactions
-          </Tab>
-          <Tab id="account-screen-tab-statements" value="statements" aria-controls="account-screen-panel">
-            Statements
-          </Tab>
+          {screen.tabs.map((tab) => (
+            <Tab key={tab.value} id={`account-screen-tab-${tab.value}`} value={tab.value} aria-controls="account-screen-panel">
+              {tab.label}
+            </Tab>
+          ))}
         </TabList>
       )}
 
       <section
-        id={isCard ? 'account-screen-panel' : undefined}
-        role={isCard ? 'tabpanel' : undefined}
+        id={hasTabs ? 'account-screen-panel' : undefined}
+        role={hasTabs ? 'tabpanel' : undefined}
         className="account-screen__transactions"
-        aria-labelledby={isCard ? `account-screen-tab-${activeTab}` : 'account-screen-transactions'}
+        aria-labelledby={hasTabs ? `account-screen-tab-${activeTab}` : 'account-screen-transactions'}
       >
-        {activeTab === 'statements' ? (
+        {!isAccountCurrent && !screen.error ? (
+          <Skeleton aria-label="Loading account details" className="account-screen__grid-skeleton">
+            <SkeletonItem />
+            <SkeletonItem />
+            <SkeletonItem />
+          </Skeleton>
+        ) : screen.error ? (
+          <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
+        ) : activeTab === 'statements' ? (
           <CardStatementsTab
             cardStatements={cardStatements}
             viewedYear={screen.year}
@@ -294,27 +325,33 @@ export default function AccountScreenPage() {
             canAct={account?.isActive ?? false}
             guardChange={guardChange}
           />
+        ) : activeTab === 'pots' ? (
+          <PotsTab
+            summary={pots.data}
+            hasError={pots.error !== null}
+            onRetry={pots.retry}
+            year={screen.year}
+            month={screen.month}
+          />
         ) : (
           <>
             <Text as="h2" id="account-screen-transactions" ref={transactionsHeadingRef} tabIndex={-1} size={400} weight="semibold">
               Transactions
             </Text>
-            {screen.error ? (
-              <ErrorState message={ACCOUNT_LOAD_ERROR} onRetry={screen.retry} />
-            ) : (
-              <AccountTransactionsGrid
-                transactions={screen.transactions}
-                isLoading={screen.isLoading}
-                emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
-                dateHeader={isCard ? 'Purchased' : 'Date'}
-                isEditDisabled={!formOptions.isReady || !isAccountCurrent}
-                onEdit={openRowEdit}
-                onDelete={rowDelete.requestDelete}
-                onMove={isCard ? openRowMove : undefined}
-                isMoveDisabled={!isAccountCurrent}
-                onOpenStatement={(path) => guardChange(() => navigate(path))}
-              />
-            )}
+            {pots.error && <ErrorState message={POTS_LOAD_ERROR} onRetry={pots.retry} />}
+            <AccountTransactionsGrid
+              transactions={screen.transactions}
+              showsPotColumns={hasPots}
+              isLoading={screen.isLoading}
+              emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
+              dateHeader={isCard ? 'Purchased' : 'Date'}
+              isEditDisabled={(row) => !isAccountCurrent || (row.movement ? pots.data === null : !formOptions.isReady)}
+              onEdit={openRowEdit}
+              onDelete={rowDelete.requestDelete}
+              onMove={isCard ? openRowMove : undefined}
+              isMoveDisabled={!isAccountCurrent}
+              onOpenStatement={(path) => guardChange(() => navigate(path))}
+            />
           </>
         )}
       </section>
@@ -322,7 +359,7 @@ export default function AccountScreenPage() {
       <ConfirmDeleteDialog
         open={rowDelete.isOpen}
         entityLabel={recordNoun(deleteKind)}
-        message={`Delete this ${recordNoun(deleteKind)}? This cannot be undone.`}
+        message={rowDelete.row ? deleteConfirmation(rowDelete.row, screen.transactions) : ''}
         isBusy={rowDelete.isDeleting}
         error={rowDelete.error}
         onConfirm={rowDelete.confirm}

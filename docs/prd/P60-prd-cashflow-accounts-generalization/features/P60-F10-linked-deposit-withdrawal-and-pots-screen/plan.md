@@ -96,11 +96,17 @@
 
 **30. Stage 10 verification** - Run the web suites and build, parity, `/simplify`, the architecture-reviewer and the ui-reviewer, then push and open the PR stating its size.
 
+### Stage 10b: Split line count (server)
+
+**30a. Split line count** - Add `splitLineCount` to `ReserveMovementDTO`, set by `ReserveService` from `IsLineOfSameManualSplit`, on the movement list and the account rows. Additions-only contract change: regenerate the snapshot and web types, and update the web test fixtures the required property changes. See spec §3 "Split line count".
+
+**30b. Stage 10b verification** - Run the suites and build, parity, `/simplify` and the architecture-reviewer, then push and open the PR.
+
 ### Stage 11: Income funding lines, bank links and ticks
 
 **31. Funded from** - Add the funding lines section to the shared income form. See spec §3 "Web: income funding".
 
-**32. Bank links and fixes** - Link linked bank rows to their operation, align the withdrawal category list with the server and show the real line count on the Reserva page's delete warning.
+**32. Bank links and fixes** - Link linked bank rows to their operation, align the withdrawal category list with the server, and use the server's `splitLineCount` on the Pots screen's delete dialog and toast and on the Reserva page's delete warning. Remove the web copy of the rule (`isManualSplitLine`, `linesDeletedWith`); a form open on another deleted line still closes.
 
 **33. PRD ticks** - Tick the F10 boxes in their own commit, each naming its test; tick a cross-feature box only when every feature it names has shipped.
 

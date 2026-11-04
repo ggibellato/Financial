@@ -11,12 +11,13 @@ export interface AccountTemplateGrid {
   footerLabel: string
   columns: AccountGridColumns
   linksRows: boolean
+  rowLinkTab?: string
 }
 
 const TEMPLATE_GRIDS: Record<string, AccountTemplateGrid> = {
   Bank: { heading: 'Banks', footerLabel: 'Bank total', columns: 'balance', linksRows: true },
   CreditCard: { heading: 'Credit cards', footerLabel: 'Total owed', columns: 'card', linksRows: true },
-  Pots: { heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: false },
+  Pots: { heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: true, rowLinkTab: 'pots' },
 }
 
 export function accountTemplateLabel(templateName: string): string {

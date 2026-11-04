@@ -11,8 +11,9 @@ import type {
 } from '../api/types'
 import { getErrorMessage, todayIsoDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { BUCKET_REQUIRED_ERROR, editMovementValues, toMovementUpdate, validateEditMovement, type EditMovementField } from '../utils/movementEdit'
 import { defaultExpenseCategoryId, eligibleWithdrawalCategories, potsAccountCategoryIds } from '../utils/withdrawalExpenseCategories'
-const BUCKET_REQUIRED_ERROR = 'Bucket is required'
+
 const EXPENSE_CATEGORY_REQUIRED_ERROR = 'Category is required when a bank is selected.'
 
 const SPLIT_DATE_KEY = 'incomeSplit.date'
@@ -28,8 +29,6 @@ export type WithdrawalFormField =
   | 'withdrawalDescription'
   | 'withdrawalBankId'
   | 'withdrawalExpenseCategoryId'
-
-export type EditMovementField = 'editMovementBucketId' | 'editMovementAmount' | 'editMovementDate' | 'editMovementDescription'
 
 /**
  * A movement row for display. `groupTotal` is set only on the last movement of a same
@@ -260,10 +259,7 @@ function reducer(state: ReservaState, action: ReservaAction): ReservaState {
       return {
         ...state,
         editingMovementId: action.payload.id,
-        editMovementBucketId: action.payload.bucketId,
-        editMovementAmount: String(action.payload.amount),
-        editMovementDate: action.payload.date,
-        editMovementDescription: action.payload.description,
+        ...editMovementValues(action.payload),
         saveMovementError: null,
         saveMovementErrorFields: {},
       }
@@ -606,24 +602,8 @@ export function useReserva(): ReservaData {
     const { editingMovementId, editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription } = state
     if (!editingMovementId) return
 
-    const errors: Partial<Record<EditMovementField, string>> = {}
-
-    if (!editMovementDate.trim()) {
-      errors.editMovementDate = 'Date is required'
-    }
-
-    if (!editMovementBucketId.trim()) {
-      errors.editMovementBucketId = BUCKET_REQUIRED_ERROR
-    }
-
-    if (!editMovementDescription.trim()) {
-      errors.editMovementDescription = 'Description is required'
-    }
-
-    const amount = Number(editMovementAmount)
-    if (!editMovementAmount.trim() || !isFinite(amount)) {
-      errors.editMovementAmount = 'Amount must be a number'
-    }
+    const values = { editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription }
+    const errors = validateEditMovement(values)
 
     if (Object.keys(errors).length > 0) {
       dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
@@ -633,12 +613,7 @@ export function useReserva(): ReservaData {
     dispatch({ type: 'SAVE_MOVEMENT_START' })
 
     void apiClient
-      .updateReserveMovement(editingMovementId, {
-        bucketId: editMovementBucketId,
-        amount,
-        date: editMovementDate,
-        description: editMovementDescription,
-      })
+      .updateReserveMovement(editingMovementId, toMovementUpdate(values))
       .then(() => {
         dispatch({ type: 'SAVE_MOVEMENT_SUCCESS' })
         void fetchReservaData({ includeReferenceData: false })

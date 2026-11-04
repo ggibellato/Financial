@@ -30,6 +30,7 @@ const KIND_LABELS: Record<string, string> = {
   TransferIn: 'Transfer in',
   TransferOut: 'Transfer out',
   Adjustment: 'Balance adjustment',
+  PotTransaction: 'Pot transaction',
 }
 
 const RECORD_NOUNS: Record<string, string> = {
@@ -40,6 +41,7 @@ const RECORD_NOUNS: Record<string, string> = {
   TransferIn: 'transfer',
   TransferOut: 'transfer',
   Adjustment: 'balance adjustment',
+  PotTransaction: 'pot transaction',
 }
 
 export function isFormAction(action: string): action is AccountFormAction {
@@ -75,8 +77,27 @@ export function recordTitle(kind: string): string {
   return noun.charAt(0).toUpperCase() + noun.slice(1)
 }
 
-export function hasRowActions(row: AccountTransactionDto): boolean {
-  return row.canEdit && row.kind !== 'PotTransaction'
+function isManualSplitLine(row: AccountTransactionDto): boolean {
+  return row.kind === 'PotTransaction' && row.amount > 0 && !row.operation && row.movement?.incomeId == null
+}
+
+export function linesDeletedWith(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): readonly AccountTransactionDto[] {
+  return isManualSplitLine(row)
+    ? rows.filter((line) => isManualSplitLine(line) && line.date === row.date && line.description === row.description)
+    : [row]
+}
+
+export function deleteConfirmation(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): string {
+  const question = `Delete this ${recordNoun(row.kind)}?`
+  const lines = linesDeletedWith(row, rows).length
+  return lines > 1
+    ? `${question} It is part of a split, so all ${lines} lines will be deleted. This cannot be undone.`
+    : `${question} This cannot be undone.`
+}
+
+export function deletedMessage(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): string {
+  const lines = linesDeletedWith(row, rows).length
+  return lines > 1 ? `${lines} ${recordNoun(row.kind)} lines deleted` : `${recordTitle(row.kind)} deleted`
 }
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {

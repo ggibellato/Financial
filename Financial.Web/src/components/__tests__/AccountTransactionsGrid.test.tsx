@@ -32,16 +32,32 @@ function bodyRows() {
 }
 
 describe('AccountTransactionsGrid', () => {
-  it('offers no row actions on a pot movement until the Pots screen can act on it', () => {
+  it('shows pot movements as date, pot, description and amount, with edit and delete only on legacy rows', () => {
     render(
       <AccountTransactionsGrid
-        transactions={[accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-05', counterpart: 'Trips', amount: -20, canEdit: true })]}
+        showsPotColumns
+        transactions={[
+          accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-05', description: 'Boots', counterpart: 'Trips', amount: -20, canEdit: true }),
+          accountTransactionRow({ id: 'm2', kind: 'PotTransaction', date: '2026-10-04', description: 'Bonus', counterpart: 'Home', amount: 30, canEdit: false }),
+        ]}
         emptyMessage={EMPTY_MESSAGE}
         {...NO_ROW_ACTIONS}
       />,
     )
 
-    expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Date', 'Pot', 'Description', 'Amount', ''])
+    const [legacyRow, linkedRow] = bodyRows()
+    expect(within(legacyRow).getByRole('button', { name: 'Edit pot transaction' })).toBeInTheDocument()
+    expect(within(legacyRow).getByRole('button', { name: 'Delete pot transaction' })).toBeInTheDocument()
+    expect(within(legacyRow).getByText('Trips')).toBeInTheDocument()
+    expect(within(legacyRow).getByText('-20.00')).toBeInTheDocument()
+    expect(within(linkedRow).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('spans the message across the pot columns when there are no movements', () => {
+    render(<AccountTransactionsGrid showsPotColumns transactions={[]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    expect(screen.getByText(EMPTY_MESSAGE)).toHaveAttribute('colspan', '5')
   })
 
   it('[AC P60-F05-bank-account-screen-04] shows signed, right-aligned amounts and a separate round-up column', () => {
@@ -114,7 +130,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('disables Edit, but not Delete, while editing is unavailable', () => {
-    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} isEditDisabled {...NO_ROW_ACTIONS} />)
+    render(<AccountTransactionsGrid transactions={ROWS} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
 
     expect(within(bodyRows()[0]).getByRole('button', { name: 'Edit expense' })).toBeDisabled()
     expect(within(bodyRows()[0]).getByRole('button', { name: 'Delete expense' })).toBeEnabled()

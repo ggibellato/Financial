@@ -17,7 +17,9 @@ import type {
   IncomeDto,
   IncomeSourceDto,
   PayableStatementDto,
+  PotsSummaryDto,
   RecurringBillDto,
+  ReserveMovementDto,
 } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
@@ -53,6 +55,9 @@ const {
   unmarkCardStatementPaidMock,
   moveChargeToStatementMock,
   getPayableStatementsMock,
+  getPotsMock,
+  updateReserveMovementMock,
+  deleteReserveMovementMock,
 } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
@@ -79,6 +84,9 @@ const {
   unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
   moveChargeToStatementMock: vi.fn<FinancialApiClient['moveChargeToStatement']>(),
   getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
+  getPotsMock: vi.fn<FinancialApiClient['getPots']>(),
+  updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
+  deleteReserveMovementMock: vi.fn<FinancialApiClient['deleteReserveMovement']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -108,6 +116,9 @@ vi.mock('../../api/financialApiClient', () => ({
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
     moveChargeToStatement: moveChargeToStatementMock,
     getPayableStatements: getPayableStatementsMock,
+    getPots: getPotsMock,
+    updateReserveMovement: updateReserveMovementMock,
+    deleteReserveMovement: deleteReserveMovementMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -182,6 +193,48 @@ const BILLS: RecurringBillDto[] = [
   recurringBill({ id: 'iptu', dueDay: 2, description: 'IPTU', value: 80, area: 'BR' }),
   COUNCIL_TAX,
 ]
+
+const RESERVA_ID = '8f3b1c1a-2e3a-4b1a-9a7f-700000000001'
+
+const POTS_SUMMARY: PotsSummaryDto = {
+  potsAccountId: RESERVA_ID,
+  currency: 'GBP',
+  total: 1500.5,
+  pots: [
+    { id: 'pot-home', name: 'Home', splitPercentage: 60, isActive: true, balance: 1000.25 },
+    { id: 'pot-trips', name: 'Trips', splitPercentage: 40, isActive: true, balance: 500.25 },
+    { id: 'pot-old', name: 'Old car', splitPercentage: 0, isActive: false, balance: 0 },
+  ],
+}
+
+function movementRow(movement: Partial<ReserveMovementDto> & { id: string }, row: Partial<AccountTransactionDto> = {}): AccountTransactionDto {
+  const fields: ReserveMovementDto = { bucketId: 'pot-home', bucketName: 'Home', amount: 25, date: '2026-10-05', description: 'Bonus', incomeId: null, ...movement }
+  return accountTransactionRow({
+    id: fields.id,
+    kind: 'PotTransaction',
+    date: fields.date,
+    description: fields.description,
+    counterpart: fields.bucketName,
+    amount: fields.amount,
+    movement: fields,
+    ...row,
+  })
+}
+
+const LEGACY_WITHDRAWAL = movementRow({ id: 'm-boots', bucketId: 'pot-trips', bucketName: 'Trips', amount: -20, date: '2026-10-09', description: 'Boots' })
+
+function withPotsAccount(transactions: AccountTransactionDto[] = [LEGACY_WITHDRAWAL]) {
+  const reserva = potsAccount({ id: RESERVA_ID, name: 'Reserva' })
+  getAccountsMock.mockResolvedValue([...ACCOUNTS, reserva])
+  getAccountMock.mockImplementation((id, year, month) =>
+    Promise.resolve(
+      id === RESERVA_ID
+        ? { ...reserva, year, month, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'] }
+        : detailFor(id, year, month),
+    ),
+  )
+  getAccountTransactionsMock.mockResolvedValue(transactions)
+}
 
 function withActions(allowedActions: string[]) {
   getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), allowedActions }))
@@ -268,11 +321,271 @@ beforeEach(() => {
   unmarkCardStatementPaidMock.mockReset()
   moveChargeToStatementMock.mockReset()
   getPayableStatementsMock.mockReset().mockResolvedValue(PAYABLE_STATEMENTS)
+  getPotsMock.mockReset().mockResolvedValue(POTS_SUMMARY)
+  updateReserveMovementMock.mockReset()
+  deleteReserveMovementMock.mockReset().mockResolvedValue(undefined)
   sessionStorage.clear()
 })
 
 afterEach(() => {
   vi.useRealTimers()
+})
+
+describe('AccountScreenPage on a Pots account', () => {
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-15] opens on the Pots tab with each pot, its split and balance at the end of the month, and the total', async () => {
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+
+    const table = await screen.findByRole('table', { name: 'Pots' })
+    expect(screen.getByRole('tab', { name: 'Pots', selected: true })).toBeInTheDocument()
+    expect(screen.getByRole('tabpanel', { name: 'Pots' })).toBeInTheDocument()
+    expect(getPotsMock).toHaveBeenCalledWith(RESERVA_ID, 2026, 10)
+    expect(screen.getByText('Balances at end of October 2026')).toBeInTheDocument()
+    const homeRow = within(table).getByText('Home').closest('tr') as HTMLElement
+    expect(within(homeRow).getByText('60.00%').closest('td')).toHaveClass('data-table__col--numeric')
+    expect(within(homeRow).getByText('1,000.25').closest('td')).toHaveClass('data-table__col--numeric')
+    expect(within(within(table).getByText('Old car').closest('tr') as HTMLElement).getByText('Inactive')).toBeInTheDocument()
+    expect(screen.getByText('1,500.50', { selector: 'strong' }).closest('p')).toHaveTextContent('Pots total GBP: 1,500.50')
+  })
+
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-15] shows the loading state, then the error with a retry that reloads the pots', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    let failLoad: (reason: Error) => void = () => {}
+    getPotsMock.mockReturnValueOnce(new Promise((_, reject) => { failLoad = reject }))
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+
+    expect(await screen.findByLabelText('Loading pots')).toBeInTheDocument()
+    failLoad(new Error('offline'))
+
+    expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
+  })
+
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-15] says when the account has no pots yet, with no total', async () => {
+    withPotsAccount()
+    getPotsMock.mockResolvedValue({ ...POTS_SUMMARY, total: 0, pots: [] })
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+
+    expect(await screen.findByText('This account has no pots yet')).toBeInTheDocument()
+    expect(screen.queryByText(/Pots total/)).not.toBeInTheDocument()
+  })
+
+  it('reads the pots again for another month', async () => {
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Pots' })
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(getPotsMock).toHaveBeenLastCalledWith(RESERVA_ID, 2026, 8))
+    expect(await screen.findByText('Balances at end of August 2026')).toBeInTheDocument()
+  })
+
+  it('shows no action the Pots screen cannot run yet', async () => {
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Pots' })
+
+    expect(screen.queryByRole('group', { name: 'Account actions' })).not.toBeInTheDocument()
+    expect(getBanksMock).not.toHaveBeenCalled()
+  })
+
+  it('switches to Transactions in the URL and lists the movements as date, pot, description and amount', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Pots' })
+
+    await user.click(screen.getByRole('tab', { name: 'Transactions' }))
+
+    expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)).toBeInTheDocument()
+    const row = screen.getByText('Boots').closest('tr') as HTMLElement
+    expect(within(row).getByText('Trips')).toBeInTheDocument()
+    expect(within(row).getByText('-20.00')).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: /^Pot/ })).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: /^Round-up/ })).not.toBeInTheDocument()
+  })
+
+  it('offers no actions on a linked movement', async () => {
+    const linked = movementRow(
+      { id: 'm-linked', description: 'Ramsay bonus' },
+      { canEdit: false, operation: { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null } },
+    )
+    withPotsAccount([linked])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const row = (await screen.findByText('Ramsay bonus')).closest('tr') as HTMLElement
+    expect(within(row).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-08] edits a legacy movement with no form actions on the account, then refreshes the rows and the pots', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    updateReserveMovementMock.mockResolvedValue(LEGACY_WITHDRAWAL.movement as ReserveMovementDto)
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const row = (await screen.findByText('Boots')).closest('tr') as HTMLElement
+    const edit = within(row).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+
+    const form = screen.getByRole('form', { name: 'Edit pot transaction' })
+    expect(within(form).getByLabelText(/^Pot/)).toHaveValue('pot-trips')
+    expect(within(form).getByRole('option', { name: 'Old car (inactive)' })).toBeInTheDocument()
+    const potsReadsBeforeSave = getPotsMock.mock.calls.length
+    await user.clear(within(form).getByLabelText(/^Description/))
+    await user.type(within(form).getByLabelText(/^Description/), 'Boots chemist')
+    await user.selectOptions(within(form).getByLabelText(/^Pot/), 'pot-home')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+
+    await waitFor(() =>
+      expect(updateReserveMovementMock).toHaveBeenCalledWith('m-boots', { bucketId: 'pot-home', amount: -20, date: '2026-10-09', description: 'Boots chemist' }),
+    )
+    expect(await screen.findByText('Pot transaction updated')).toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'Edit pot transaction' })).not.toBeInTheDocument()
+    await waitFor(() => expect(getPotsMock.mock.calls.length).toBeGreaterThan(potsReadsBeforeSave))
+  })
+
+  it('keeps the values and shows the server message when a movement edit fails', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    updateReserveMovementMock.mockRejectedValue(new ApiError('This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.', 409))
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const edit = within((await screen.findByText('Boots')).closest('tr') as HTMLElement).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    const form = screen.getByRole('form', { name: 'Edit pot transaction' })
+    await user.clear(within(form).getByLabelText(/^Description/))
+    await user.type(within(form).getByLabelText(/^Description/), 'Boots chemist')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+
+    expect(await within(form).findByText(/belongs to a pot deposit or withdrawal/)).toBeInTheDocument()
+    expect(within(form).getByLabelText(/^Description/)).toHaveValue('Boots chemist')
+  })
+
+  it('asks before discarding an unsaved movement edit on a tab change', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const edit = within((await screen.findByText('Boots')).closest('tr') as HTMLElement).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    await user.type(within(screen.getByRole('form', { name: 'Edit pot transaction' })).getByLabelText(/^Description/), ' x')
+    await user.click(screen.getByRole('tab', { name: 'Pots' }))
+
+    expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Edit pot transaction' })).toBeInTheDocument()
+  })
+
+  it('keeps Edit disabled and offers a retry on Transactions when the pots cannot be read', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    getPotsMock.mockRejectedValueOnce(new Error('offline'))
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
+    const edit = within(screen.getByText('Boots').closest('tr') as HTMLElement).getByRole('button', { name: 'Edit pot transaction' })
+    expect(edit).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+
+    await waitFor(() => expect(edit).toBeEnabled())
+    expect(screen.queryByText('Unable to load the pots')).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-08] deletes a legacy movement after a confirmation that counts the lines of its split', async () => {
+    const user = userEvent.setup()
+    withPotsAccount([
+      movementRow({ id: 'm-1', bucketName: 'Home' }),
+      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15 }),
+    ])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const row = (await screen.findByText('Home')).closest('tr') as HTMLElement
+    await user.click(within(row).getByRole('button', { name: 'Delete pot transaction' }))
+
+    const dialog = await findDialog('Delete pot transaction')
+    expect(dialog).toHaveTextContent('Delete this pot transaction? It is part of a split, so all 2 lines will be deleted. This cannot be undone.')
+    await user.click(await dialogButton('Delete pot transaction', 'Delete'))
+
+    await waitFor(() => expect(deleteReserveMovementMock).toHaveBeenCalledWith('m-1'))
+    expect(await screen.findByText('2 pot transaction lines deleted')).toBeInTheDocument()
+  })
+
+  it('closes the edit form of another line of the split when the split is deleted', async () => {
+    const user = userEvent.setup()
+    withPotsAccount([
+      movementRow({ id: 'm-1', bucketName: 'Home' }),
+      movementRow({ id: 'm-2', bucketId: 'pot-trips', bucketName: 'Trips', amount: 15 }),
+    ])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+
+    const tripsRow = (await screen.findByText('Trips')).closest('tr') as HTMLElement
+    const edit = within(tripsRow).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    await user.click(within(screen.getByRole('cell', { name: /Home/ }).closest('tr') as HTMLElement).getByRole('button', { name: 'Delete pot transaction' }))
+    await user.click(await dialogButton('Delete pot transaction', 'Delete'))
+
+    expect(await screen.findByText('2 pot transaction lines deleted')).toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'Edit pot transaction' })).not.toBeInTheDocument()
+  })
+
+  it('shows a failed account reload on the Pots tab instead of figures the header disagrees with', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Pots' })
+
+    getAccountMock.mockRejectedValueOnce(new Error('offline'))
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Unable to load this account')).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Pots' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
+  })
+
+  it('paints a neutral skeleton, with no Transactions heading, until the account is known', async () => {
+    withPotsAccount()
+    let finishAccount: (account: AccountDetailDto) => void = () => {}
+    getAccountMock.mockReturnValueOnce(new Promise((resolve) => { finishAccount = resolve }))
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=pots`)
+
+    expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
+
+    finishAccount({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, allowedActions: [] })
+
+    expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
+  })
+
+  it('[AC P60-F05-bank-account-screen-02] keeps the month and opens the Pots tab of the account picked', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
+
+    await user.click(await screen.findByRole('combobox', { name: 'Account' }))
+    await user.click(screen.getByRole('option', { name: 'Reserva' }))
+
+    expect(await screen.findByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-09`)).toBeInTheDocument()
+    expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
+  })
+
+  it('reads no pots on a bank', async () => {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=pots`)
+
+    expect(await screen.findByText('Tesco')).toBeInTheDocument()
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
+    expect(getPotsMock).not.toHaveBeenCalled()
+  })
 })
 
 describe('AccountScreenPage', () => {
@@ -338,7 +651,7 @@ describe('AccountScreenPage', () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
-    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
   })
 
   it('shows the empty message naming the month when it has no transactions', async () => {
@@ -543,7 +856,7 @@ describe('AccountScreenPage actions', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
-    expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))

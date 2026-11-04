@@ -16,7 +16,7 @@ Complexity: **complex**. It adds linked operations across expenses and pot movem
 
 **Why.** Today a split income writes only pot movements and the user types the "Reserva" bank expense by hand; a withdrawal's bank expenses are not tied to its movement, so edits drift. Reimbursements back into one pot have no action.
 
-**Delivery.** Eleven PRs. Server stages 1–7 each stay within the PR size rule (8 non-test code files, about 15 in total; generated `openapi.ts` excluded). Web stages 8–11 are fewer and larger; the user accepted their overage (2026-10-31), and each PR names it. Each PR leaves `main` deployable and ends with a parity run against `p60-deployed-f14`. Nothing is deployed between stages.
+**Delivery.** Thirteen PRs. Server stages 1–7 and 10b each stay within the PR size rule (8 non-test code files, about 15 in total; generated `openapi.ts` excluded). Web stages 8–11 are fewer and larger; the user accepted their overage (2026-10-31), and each PR names it. Each PR leaves `main` deployable and ends with a parity run against `p60-deployed-f14`. Nothing is deployed between stages.
 
 | Stage | Content | Web |
 |---|---|---|
@@ -31,6 +31,7 @@ Complexity: **complex**. It adds linked operations across expenses and pot movem
 | **8 — Pots screen (read)** | Tabs, Pots tab, Transactions rows with today's edit and delete on legacy rows; Accounts page Pots links | Account screen, Accounts page |
 | **9 — Manage pots dialog; Admin retired** | Dialog; Admin → Reserve buckets page, menu entry and `reserve-buckets` write endpoints removed; route redirect | Pots screen, Admin |
 | **10 — Deposit and Withdraw forms** | Both forms on the Pots screen; Withdraw from pots on banks; editing an operation from `?operation=` | Account screens |
+| **10b — Split line count (server)** | `ReserveMovementDTO` gains the number of lines a delete removes (user, 2026-11-04) | Test fixtures only, as the type generator makes the field required |
 | **11 — Income funding lines, bank links, ticks** | Funded-from section in the shared income form; bank rows link to their operation; withdrawal category list fix; PRD ticks | Income form, bank screen |
 
 **Scope.**
@@ -88,7 +89,9 @@ flowchart LR
 | **Pots read** (user, 2026-10-31) | `GET accounts/{potsId}/pots/{year}/{month}`: each pot (id, name, split %, active, balance at the end of the month from `AccountBalanceRule`'s per-pot sum) and the account total; pots by name, inactive after active. | Today's balances | Matches the header. |
 | **Account actions** | New `AccountAction` values: `Deposit` and `ManagePots` (from `HasPots`), `Withdraw` (from `CanWithdraw`) and `WithdrawFromPots` (on accounts with `CanPayBills`) (user, 2026-11-04). An inactive account has none, as today. The bank form shows "Create a Pots account first." when there is none. | — | Capability-driven, as F05. |
 | **Rows** | Pots account Transactions: one row per movement in the month (`Kind` "PotTransaction": date, pot name in Counterpart, description, amount). Bank and Pots rows of a linked record carry `Operation { OperationId, PotsAccountId, Year, Month, IncomeId? }`; such rows have `CanEdit` false. Legacy movements keep today's edit/delete (Reserva routes), so a movement row carries its record in `Movement` (`ReserveMovementDTO`), as the other kinds carry theirs. A movement of an older split income has no link and `CanEdit` false, because `reserve/movements/{id}` refuses it (edit the income). The income row itself is not a linked record: it stays editable, has no `Operation`, and its `income` carries `hasLinkedDeposit` and `fundingLines`. | — | — |
-| **Web: Pots screen** | Tabs Pots (default for Pots accounts) and Transactions, Fluent `TabList` as on cards. Pots tab: grid Pot, Split %, Balance (right-aligned), footer "Pots total <currency>". Actions in the action bar: Deposit, Withdraw, Manage pots. Accounts page: `TEMPLATE_GRIDS.Pots.linksRows` true, linking with `&tab=pots`. | — | — |
+| **Web: Pots screen** | Tabs Pots (default for Pots accounts) and Transactions, Fluent `TabList` as on cards. Pots tab: grid Pot, Split %, Balance (right-aligned), footer "Pots total <currency>". Actions in the action bar: Deposit, Withdraw, Manage pots. Accounts page: `TEMPLATE_GRIDS.Pots.linksRows` true, linking with `&tab=pots`. The screen knows a Pots account from `HasPots` in the capabilities of `GET accounts`, so an inactive one, which has no actions, still gets its tabs. `useAccountScreen` owns each account's tab list: the first tab is the default and is left out of the URL, and an unknown `tab` reads as the default, so `tab=transactions` keeps the Transactions tab and `&tab=pots` opens the default. Until the route's account has loaded, the panel shows a neutral skeleton. A failed account reload replaces every tab's content with the error and its retry, so the figures never disagree with the header. The Transactions grid shows Date, Pot, Description, Amount (PRD). The pots are read on either tab, because Edit on a legacy row needs them as its pot list; until they load Edit stays disabled, and a failed read offers a retry on both tabs. | — | — |
+| **Web: legacy movement rows** (stage 8) | Edit and delete go to `reserve/movements/{id}` from the row's `movement`, and work with no form action on the account. Edit opens the Reserva page's `EditMovementForm`, titled "Edit pot transaction" with the field "Pot", through `usePotTransactionEditForm` (fields, validation and request shared with `useReserva` in `utils/movementEdit.ts`, so they outlive the Reserva page), inline with the discard prompt and toast "Pot transaction updated". That form becomes a real `form`, focuses the first invalid field, returns focus to Save after a failed save and marks an inactive pot. Delete's confirmation states the real line count of a manual split, using, for now, a copy of the server's rule on the month's rows (`isManualSplitLine` and `linesDeletedWith` in `accountActions.ts`): "It is part of a split, so all 2 lines will be deleted."; the toast reads "2 pot transaction lines deleted", and an open edit form on any deleted line closes. A movement of an older split income stays read-only with no hint on the row. The web copy is interim (user, 2026-11-04): stage 10b adds the count to `ReserveMovementDTO`, and stage 11 uses it here and on the Reserva page and removes the copy. |
+| **Split line count** (user, 2026-11-04) | `ReserveMovementDTO.SplitLineCount` (stage 10b): how many lines `DELETE reserve/movements/{id}` removes, from `ReserveService`'s own rule (`IsLineOfSameManualSplit`), so 1 for a withdrawal, a zero line or a line outside a manual split. | Keep the web copy until F13 | One rule, so the wording on an irreversible delete can't drift from what the server deletes. | A second edit form | One form until F13 retires the Reserva page. |
 | **Web: forms** | Deposit and Withdraw are inline forms like F05's actions (discard prompt, keep-open off, toast "Deposit saved" / "Withdrawal saved"). Deposit: Source (Manual / From an income — the latter opens the shared income form with split ticked and this Pots account chosen), Into (Active pots by split / One pot + pot picker listing every pot, inactive marked), Amount, Date, Description, funding lines (Bank + Amount, "Add line" up to 5, "No bank — money from outside CashFlow"), live split preview. Withdraw: Pot, Date, Description, Amount, Through bank (optional), Category (when a bank is chosen; default the category named like the pot; list excludes inactive, investment and any account's category), overdraft dialog "This takes <pot> below zero (−£12.40). Continue?". Edit: `?operation=<id>` opens the right form filled from `GET operations/{id}`, with Delete. | Modal dialogs | Same pattern as the account screen's other actions. |
 | **Web: income funding** (user) | The shared `IncomeForm` gets a "Funded from" section when split is ticked: one read-only line (income's bank, full deposit amount) and "Split across banks", which turns it into editable lines (up to 5) with "Lines add up to £88.00; the deposit is £90.00." under them and Save disabled until they match. Used by Monthly, the bank screen and the Pots screen. Hidden for older split incomes. | Account screens only | One form everywhere until F13. |
 | **Web: bank rows** (user) | A row with `operation` is read-only; its description links to `/cashflow/accounts/<potsId>?month=<yyyy-MM>&tab=transactions&operation=<id>`; with `incomeId`, it opens the income's edit form on the bank screen instead. | Edit in place | One place to edit each operation. |
@@ -129,6 +132,7 @@ All paths are relative to the repo root. Existing patterns: entities with privat
 | `DTOs/PotsSummaryDTO.cs`, `PotBalanceDTO.cs` | New | 6 | Pots tab read |
 | `Services/AccountQueryService.cs`, `DTOs/AccountTransactionDTO.cs`, `DTOs/AccountTransactionOperationDTO.cs`, `Services/IncomeService.cs`, `Services/ReserveService.cs` | Modified/New | 7 | Movement rows; operation link on rows; income and movement mappers usable from the rows |
 | `DependencyInjection/CashFlowApplicationServiceCollectionExtensions.cs` | Modified | 2 | `IPotsService` |
+| `DTOs/ReserveMovementDTO.cs`, `Services/ReserveService.cs`, `Services/AccountQueryService.cs` | Modified | 10b | `SplitLineCount`; `ReserveService.ToDto` has no repository, so the row mapper passes the count in |
 | `Services/ReserveBucketService.cs`, `Interfaces/IReserveBucketService.cs` | Modified | 9 | Create and update removed |
 
 Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
@@ -145,14 +149,16 @@ Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
 | `Financial.Web/src/api/financialApiClient.ts`, `src/api/types.ts` | Modified | 8–11 | Pots, operations, income funding lines; reserve-bucket writes removed |
 | `src/pages/AccountScreenPage.tsx`, `src/hooks/useAccountScreen.ts` | Modified | 8, 10 | Pots tab, `tab` and `operation` query values |
 | `src/components/PotsTab.tsx`, `src/hooks/usePots.ts` | New | 8 | Pots grid |
+| `src/hooks/usePotTransactionEditForm.ts`, `src/utils/movementEdit.ts` | New | 8 | Edit a legacy movement row; movement fields, validation and request |
+| `src/hooks/useAccountActionForms.ts`, `src/hooks/useAccountRowDelete.ts`, `src/components/EditMovementForm.tsx`, `src/hooks/useReserva.ts` | Modified | 8 | Legacy row edit and delete; shared movement validation |
 | `src/components/AccountTransactionsGrid.tsx`, `src/components/accountActions.ts` | Modified | 8, 10, 11 | Movement rows; new action labels; operation links |
-| `src/utils/accountTemplateLabel.ts` | Modified | 8 | Pots rows link |
+| `src/utils/accountTemplateLabel.ts`, `src/pages/AccountsPage.tsx` | Modified | 8 | Pots rows link to the Pots tab |
 | `src/components/ManagePotsDialog.tsx`, `src/hooks/useManagePots.ts` | New | 9 | Manage pots |
 | `src/navigation/routes.tsx`, `navTree.ts`, `lazyPages.tsx` | Modified | 9 | Admin entry removed; redirect |
 | `src/pages/ReserveBucketsPage.tsx`, `src/components/ReserveBucketFormDialog.tsx`, `src/hooks/useReserveBuckets.ts` | Deleted | 9 | — |
 | `src/components/PotDepositForm.tsx`, `src/hooks/usePotDepositForm.ts`, `src/components/PotWithdrawalForm.tsx`, `src/hooks/usePotWithdrawalForm.ts`, `src/components/FundingLinesField.tsx` | New | 10 | Forms; shared funding lines |
 | `src/components/IncomeForm.tsx`, `src/hooks/useIncomeForm.ts` | Modified | 4, 11 | `useIncomeForm` sends `fundingLines: null`, the default line (4); Funded from (11) |
-| `src/utils/withdrawalExpenseCategories.ts`, `src/pages/ReservaPage.tsx` | Modified | 11 | Category exclusion as the server; real line count |
+| `src/utils/withdrawalExpenseCategories.ts`, `src/pages/ReservaPage.tsx`, `src/components/accountActions.ts` | Modified | 11 | Category exclusion as the server; both screens' line count from `splitLineCount`; web copy of the rule removed |
 
 **Scripts:** `scripts/parity/Parity.psm1`, `figure-map.json`, `Parity.test.ps1`, `README.md` (stage 6).
 
@@ -165,7 +171,9 @@ Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
 - 5: 8 (`Account`, `Pot`, `PotDeposit`, `PotsUpdateDTO`, `PotUpdateDTO`, `IPotsService`, `PotsService`, `PotsController`).
 - 6: 8 (`PotsSummaryDTO`, `PotBalanceDTO`, `IPotsService`, `PotsService`, `PotsController`, `ReserveService`, `Parity.psm1`, `figure-map.json`).
 - 7: 8 (`AccountAction`, `AccountActions`, `AccountQueryService`, `AccountTransactionDTO`, `AccountTransactionOperationDTO`, plus `IncomeService` and `ReserveService`, whose mappers the rows call, and `accountActions.ts`, whose `hasRowActions` hides the actions on `PotTransaction` rows until stage 8 wires them, as Pots accounts are already in the account screen's picker). `AccountQueryService` also fills `hasLinkedDeposit` and `fundingLines` on the income carried by a bank row; until then those read false and empty on `AccountTransactionDTO.income`, and only `incomes` routes carry them (user, 2026-11-04). The web lists only actions it knows (`formActionsOf`), so the new actions stay hidden until stages 8–10.
-- 8–11: over the limit with the user's approval (2026-10-31); each PR states its count.
+- 8: 17, 30 in total, over the limit with the user's approval (2026-10-31) (`financialApiClient`, `types`, `useAccountScreen`, `usePots`, `PotsTab`, `AccountScreenPage`, `AccountScreenPage.css`, `AccountTransactionsGrid`, `accountActions`, `accountTemplateLabel`, `AccountsPage`, `useAccountRowDelete`, `useAccountActionForms`, `usePotTransactionEditForm`, `movementEdit`, `EditMovementForm`, `useReserva`).
+- 9–11: over the limit with the user's approval (2026-10-31); each PR states its count.
+- 10b: 3 (`ReserveMovementDTO`, `ReserveService`, `AccountQueryService`), generated `openapi.ts` excluded. The generator makes the new property required in the web types, so the web test fixtures that build a `ReserveMovementDto` change with it (up to 7 files). No product web code changes.
 
 ## 5. API Contracts
 
@@ -204,6 +212,8 @@ Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
 { "potsAccountId": "…", "currency": "GBP", "total": 1524.50,
   "pots": [ { "id": "…", "name": "Ariana", "splitPercentage": 16.67, "isActive": true, "balance": 210.40 } ] }
 ```
+
+**Reserve movements** (stage 10b): `ReserveMovementDTO` gains `splitLineCount`, the number of lines `DELETE reserve/movements/{id}` removes, 1 unless the movement is a line of a manual split. Additions only.
 
 **Account rows** (stage 7): `AccountTransactionDTO.operation` = `{ "operationId": "…", "potsAccountId": "…", "year": 2026, "month": 10, "incomeId": null }`; `AccountTransactionDTO.movement` = a `ReserveMovementDTO` on `PotTransaction` rows, otherwise null.
 
@@ -253,9 +263,10 @@ Following the `testing-guide-Financial` skill: Domain and Application unit tests
 | `Domain.Tests/Rules/AccountActionsTests.cs`, `Application.Tests/Services/AccountQueryServiceTests.cs` | Unit | 7 | New actions; movement rows; operation links; `CanEdit` false |
 | `Api.Tests/Acceptance/LinkedPotOperationsAcceptanceTests.cs` | Integration (AC) | 1–7, 9 | The AC table below |
 | `scripts/parity/Parity.test.ps1` | Self-test | 6 | Pots tab figures emitted and mapped |
-| `Financial.Web` `PotsTab.test.tsx`, `AccountScreenPage.test.tsx`, `AccountsPage.test.tsx` | Unit | 8 | Tabs, grid, footer, states, links |
+| `Financial.Web` `PotsTab.test.tsx`, `AccountScreenPage.test.tsx`, `AccountsPage.test.tsx`, `EditMovementForm.test.tsx`, `usePotTransactionEditForm.test.ts`, `accountActions.test.ts` | Unit | 8 | Tabs, grid, footer, states, links; legacy row edit and delete; split line count |
 | `Financial.Web` `ManagePotsDialog.test.tsx`, `useManagePots.test.ts`, routes test | Unit | 9 | Running total, 400 shown, save all; redirect |
 | `Financial.Web` `PotDepositForm.test.tsx`, `PotWithdrawalForm.test.tsx`, `FundingLinesField.test.tsx` | Unit | 10 | Into, lines, mismatch text, preview, overdraft dialog, edit from `operation` |
+| `Application.Tests/Services/ReserveServiceTests.cs`, `AccountQueryServiceTests.cs` | Unit | 10b | `splitLineCount` for a manual split, a withdrawal, a zero line, linked and income lines; equals the lines the delete removes; on list rows and account rows |
 | `Financial.Web` `IncomeForm.test.tsx`, `useIncomeForm.test.ts`, `AccountTransactionsGrid.test.tsx`, `withdrawalExpenseCategories.test.ts` | Unit | 11 | Funded from; older incomes hide it; bank row links; category exclusion |
 
 **Acceptance criteria (PRD Section 9, F10):**

@@ -101,6 +101,7 @@ import type {
   ReserveBucketDto,
   ReserveBucketUpdateDto,
   ReserveSplitStatusDto,
+  PotsSummaryDto,
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
@@ -264,6 +265,7 @@ export interface FinancialApiClient {
   getAccount: (id: string, year: number, month: number) => Promise<AccountDetailDto>
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
   getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
+  getPots: (potsAccountId: string, year: number, month: number) => Promise<PotsSummaryDto>
   getPayableStatements: () => Promise<PayableStatementDto[]>
   getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
   getTransferSources: (accountId: string) => Promise<TransferAccountOptionDto[]>
@@ -731,6 +733,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAccountTransactions: (id, year, month) =>
       request<AccountTransactionDto[]>(`/accounts/${encodeURIComponent(id)}/transactions/${year}/${month}`),
     getAccountStatements: (id) => request<AccountStatementDto[]>(`/accounts/${encodeURIComponent(id)}/statements`),
+    getPots: (potsAccountId, year, month) =>
+      request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),
     getPayableStatements: () => request<PayableStatementDto[]>('/accounts/payable-statements'),
     getTransferDestinations: (accountId) =>
       request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),

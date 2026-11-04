@@ -8,7 +8,24 @@ import { useAsyncResource } from './useAsyncResource'
 
 export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
 
-export type AccountScreenTab = 'transactions' | 'statements'
+export type AccountScreenTab = 'transactions' | 'statements' | 'pots'
+
+export interface ScreenTab {
+  value: AccountScreenTab
+  label: string
+}
+
+const CARD_TABS: ScreenTab[] = [
+  { value: 'transactions', label: 'Transactions' },
+  { value: 'statements', label: 'Statements' },
+]
+
+const POTS_TABS: ScreenTab[] = [
+  { value: 'pots', label: 'Pots' },
+  { value: 'transactions', label: 'Transactions' },
+]
+
+const NO_TABS: ScreenTab[] = []
 
 function withParam(params: URLSearchParams, key: string, value: string | null): URLSearchParams {
   const next = new URLSearchParams(params)
@@ -30,17 +47,31 @@ type AccountScreenLoad = AccountScreenData | 'not-found'
 const NO_ACCOUNTS: AccountDto[] = []
 const NO_TRANSACTIONS: AccountTransactionDto[] = []
 
+function isPotsAccount({ accounts, account }: AccountScreenData, routeAccountId: string): boolean {
+  return (
+    account.id.toLowerCase() === routeAccountId.toLowerCase() &&
+    accounts.some((candidate) => candidate.id === account.id && candidate.capabilities.includes('HasPots'))
+  )
+}
+
+function tabsOf(data: AccountScreenData | null, hasPots: boolean): ScreenTab[] {
+  if (hasPots) return POTS_TABS
+  return data?.account.hasStatements ? CARD_TABS : NO_TABS
+}
+
 export interface AccountScreen {
   accountId: string
   year: number
   month: number
   monthInputValue: string
   setMonthInputValue: (value: string) => void
+  tabs: ScreenTab[]
   tab: AccountScreenTab
   setTab: (tab: AccountScreenTab) => void
   selectAccount: (accountId: string) => void
   accounts: AccountDto[]
   account: AccountDetailDto | null
+  hasPots: boolean
   transactions: AccountTransactionDto[]
   isLoading: boolean
   isNotFound: boolean
@@ -70,7 +101,6 @@ export function useAccountScreen(): AccountScreen {
   const parsedMonth = parseMonthInputValue(searchParams.get('month') ?? '')
   const { year, month } = parsedMonth ?? currentYearMonth()
   const monthInputValue = formatMonthInputValue(year, month)
-  const tab: AccountScreenTab = searchParams.get('tab') === 'statements' ? 'statements' : 'transactions'
   const isValidId = GUID_PATTERN.test(accountId)
   const hasValidMonth = parsedMonth !== null
 
@@ -92,18 +122,19 @@ export function useAccountScreen(): AccountScreen {
     [setSearchParams],
   )
 
-  const setTab = useCallback(
-    (nextTab: AccountScreenTab) =>
-      setSearchParams((params) => withParam(params, 'tab', nextTab === 'statements' ? nextTab : null), { replace: true }),
-    [setSearchParams],
-  )
+  const loaded = resource.data === 'not-found' ? null : resource.data
+  const hasPots = loaded !== null && isPotsAccount(loaded, accountId)
+  const tabs = tabsOf(loaded, hasPots)
+  const defaultTab: AccountScreenTab = tabs[0]?.value ?? 'transactions'
+  const tabParam = searchParams.get('tab')
+
+  const setTab = (nextTab: AccountScreenTab) =>
+    setSearchParams((params) => withParam(params, 'tab', nextTab === defaultTab ? null : nextTab), { replace: true })
 
   const selectAccount = useCallback(
     (nextAccountId: string) => navigate(`/cashflow/accounts/${nextAccountId}?month=${monthInputValue}`),
     [navigate, monthInputValue],
   )
-
-  const loaded = resource.data === 'not-found' ? null : resource.data
 
   return {
     accountId,
@@ -111,11 +142,13 @@ export function useAccountScreen(): AccountScreen {
     month,
     monthInputValue,
     setMonthInputValue,
-    tab,
+    tabs,
+    tab: tabs.find((candidate) => candidate.value === tabParam)?.value ?? defaultTab,
     setTab,
     selectAccount,
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
+    hasPots,
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',

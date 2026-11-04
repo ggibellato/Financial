@@ -2283,6 +2283,17 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/statements`)
   })
 
+  it('reads the pots of a Pots account at the end of a month', async () => {
+    const responseBody = { potsAccountId: 'p1', currency: 'GBP', total: 30, pots: [] }
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getPots('p1', 2026, 10)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/p1/pots/2026/10`)
+  })
+
   it('moves a charge to a later statement', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse({ id: 'c1' }))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
