@@ -503,6 +503,7 @@ public class AccountTests
     [InlineData(55, 40, "Active pots must total 100% (now 95%).")]
     [InlineData(59.99, 40, "Active pots must total 100% (now 99.99%).")]
     [InlineData(60, 40.5, "Active pots must total 100% (now 100.5%).")]
+    [InlineData(60.004, 40, "Active pots must total 100% (now 100.004%).")]
     public void ReplacePots_ActiveSplitNot100_ThrowsAndChangesNothing(double first, double second, string message)
     {
         var (reserva, investimento, ariana) = ReservaWithTwoPots();

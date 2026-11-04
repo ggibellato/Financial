@@ -112,7 +112,7 @@ public static class PotDeposit
             throw new ArgumentException($"{potsAccount.Name} has no active pots.");
         }
 
-        potsAccount.EnsureActivePotsTotal100();
+        Account.EnsureActiveSplitTotal(activePots.Sum(pot => pot.SplitPercentage));
 
         return Allocate(activePots, amount, date, description, income, operationId);
     }

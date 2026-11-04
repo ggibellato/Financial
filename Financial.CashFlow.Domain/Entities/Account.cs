@@ -98,7 +98,7 @@ public class Account
 
         if (_pots.Any(existing => string.Equals(existing.Name, pot.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new ArgumentException($"A pot named \"{pot.Name}\" already exists.");
+            throw new ArgumentException(DuplicatePotNameMessage(pot.Name));
         }
 
         _pots = [.. _pots, pot];
@@ -106,22 +106,50 @@ public class Account
 
     public void ReplacePots(IReadOnlyList<PotChange> changes)
     {
-        ArgumentNullException.ThrowIfNull(changes);
-        EnsureHasPots();
-        EnsureChangesCanApply(changes);
+        EnsureCanReplacePots(changes);
 
         foreach (var pot in _pots)
         {
             var change = changes.Single(candidate => candidate.Id == pot.Id);
-            pot.Update(change.Name.Trim(), change.SplitPercentage, change.IsActive);
+            pot.Update(change.Name, change.SplitPercentage, change.IsActive);
         }
 
         _pots =
         [
             .. _pots,
-            .. changes.Where(change => change.Id is null).Select(change => Pot.Create(change.Name.Trim(), change.SplitPercentage, change.IsActive))
+            .. changes.Where(change => change.Id is null).Select(change => Pot.Create(change.Name, change.SplitPercentage, change.IsActive))
         ];
     }
+
+    public void EnsureCanReplacePots(IReadOnlyList<PotChange> changes)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+        EnsureHasPots();
+
+        if (changes.Any(change => change.Id is Guid id && !OwnsPot(id)))
+        {
+            throw new ArgumentException($"That pot isn't in {Name}.");
+        }
+
+        if (_pots.Any(pot => changes.Count(change => change.Id == pot.Id) != 1))
+        {
+            throw new ArgumentException("Every pot must be in the list; pots can't be deleted.");
+        }
+
+        foreach (var change in changes)
+        {
+            Pot.Validate(change.Name, change.SplitPercentage);
+        }
+
+        if (FindDuplicatePotName(changes) is string duplicate)
+        {
+            throw new ArgumentException(DuplicatePotNameMessage(duplicate));
+        }
+
+        EnsureActiveSplitTotal(changes.Where(change => change.IsActive).Sum(change => change.SplitPercentage));
+    }
+
+    public static string DuplicatePotNameMessage(string name) => $"A pot named \"{name}\" already exists.";
 
     public static string? FindDuplicatePotName(IEnumerable<PotChange> changes) =>
         changes
@@ -130,8 +158,14 @@ public class Account
             .FirstOrDefault(sameName => sameName.Count() > 1)
             ?.Key;
 
-    internal void EnsureActivePotsTotal100() =>
-        EnsureActiveSplitTotals100(_pots.Where(pot => pot.IsActive).Sum(pot => pot.SplitPercentage));
+    internal static void EnsureActiveSplitTotal(decimal activeSplitTotal)
+    {
+        if (activeSplitTotal != RequiredActiveSplitTotal)
+        {
+            throw new ArgumentException(
+                FormattableString.Invariant($"Active pots must total {RequiredActiveSplitTotal:0}% (now {activeSplitTotal:0.####}%)."));
+        }
+    }
 
     public void SetCategory(Category category)
     {
@@ -165,39 +199,6 @@ public class Account
         if (!Has(Capability.HasPots))
         {
             throw new ArgumentException($"{Name} has no pots.");
-        }
-    }
-
-    private void EnsureChangesCanApply(IReadOnlyList<PotChange> changes)
-    {
-        if (changes.Any(change => change.Id is Guid id && !OwnsPot(id)))
-        {
-            throw new ArgumentException($"That pot isn't in {Name}.");
-        }
-
-        if (_pots.Any(pot => changes.Count(change => change.Id == pot.Id) != 1))
-        {
-            throw new ArgumentException("Every pot must be in the list; pots can't be deleted.");
-        }
-
-        foreach (var change in changes)
-        {
-            Pot.Validate(change.Name, change.SplitPercentage);
-        }
-
-        if (FindDuplicatePotName(changes) is string duplicate)
-        {
-            throw new ArgumentException($"A pot named \"{duplicate}\" already exists.");
-        }
-
-        EnsureActiveSplitTotals100(changes.Where(change => change.IsActive).Sum(change => change.SplitPercentage));
-    }
-
-    private static void EnsureActiveSplitTotals100(decimal activeSplitTotal)
-    {
-        if (activeSplitTotal != RequiredActiveSplitTotal)
-        {
-            throw new ArgumentException(FormattableString.Invariant($"Active pots must total 100% (now {activeSplitTotal:0.##}%)."));
         }
     }
 

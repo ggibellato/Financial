@@ -381,6 +381,7 @@ public class PotsServiceTests
         {
             await act.Should().ThrowAsync<DuplicateNameException>().WithMessage("A pot named \"Investimento\" already exists.");
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<DuplicateNameException>("CashFlow.PotsService.ReplacePots");
         }
     }
 
@@ -389,7 +390,11 @@ public class PotsServiceTests
     {
         var act = async () => await _sut.ReplacePotsAsync(Bank("Chase").Id, PotsUpdate());
 
-        await act.Should().ThrowAsync<KeyNotFoundException>();
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.ReplacePots");
+        }
     }
 
     [Fact]

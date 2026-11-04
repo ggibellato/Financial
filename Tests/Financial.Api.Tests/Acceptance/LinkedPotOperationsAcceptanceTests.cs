@@ -436,7 +436,6 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             PotLine(InvestimentoId, "Investimento", 60m), PotLine(HouseTreatsId, "HOLIDAYS", 40m), PotLine(HolidaysId, "Holidays", 0m, isActive: false));
         var blank = await ManagePotsAsync(
             PotLine(InvestimentoId, " ", 60m), PotLine(HouseTreatsId, "HouseTreats", 40m), PotLine(HolidaysId, "Holidays", 0m, isActive: false));
-        var unknownAccount = await Client.PutAsJsonAsync($"{Api}/accounts/{BarclaysId}/pots", new PotsUpdateDTO { Pots = [] });
 
         using (new AssertionScope())
         {
@@ -446,9 +445,16 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             (await DetailOf(duplicate)).Should().Be("A pot named \"HOLIDAYS\" already exists.");
             blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await DetailOf(blank)).Should().Be("Pot name is required.");
-            unknownAccount.StatusCode.Should().Be(HttpStatusCode.NotFound);
             Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
         }
+    }
+
+    [Fact]
+    public async Task ManagePots_AccountWithoutPots_Returns404()
+    {
+        var response = await Client.PutAsJsonAsync($"{Api}/accounts/{BarclaysId}/pots", new PotsUpdateDTO { Pots = [] });
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
     private Task<HttpResponseMessage> AddSplitIncomeAsync(decimal net, params (string BankId, decimal Amount)[] lines) =>

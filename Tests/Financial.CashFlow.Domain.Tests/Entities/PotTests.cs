@@ -122,6 +122,17 @@ public class PotTests
     }
 
     [Fact]
+    public void CreateAndUpdate_NameWithSurroundingSpaces_StoresItTrimmed()
+    {
+        var pot = Pot.Create(" Holidays ", 10m);
+        var created = pot.Name;
+
+        pot.Update(" Trips ", 10m, true);
+
+        (created, pot.Name).Should().Be(("Holidays", "Trips"));
+    }
+
+    [Fact]
     public void Update_ChangesAllFields()
     {
         var pot = Pot.Create("Investimento", 33.33m, isActive: true);

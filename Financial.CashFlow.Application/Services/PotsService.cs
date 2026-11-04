@@ -14,7 +14,7 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class PotsService : IPotsService
 {
     private const string EntityType = "PotOperation";
-    private const string PotEntityType = "Pot";
+    private const string AccountEntityType = "Account";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -167,7 +167,7 @@ public sealed class PotsService : IPotsService
 
     public async Task ReplacePotsAsync(Guid potsAccountId, PotsUpdateDTO request)
     {
-        using var span = StartSpan("ReplacePots", PotEntityType);
+        using var span = StartSpan("ReplacePots", AccountEntityType);
         span.SetAttribute(TelemetryAttributeKeys.EntityId, potsAccountId.ToString());
         try
         {
@@ -179,8 +179,10 @@ public sealed class PotsService : IPotsService
                 .ToList();
             if (Account.FindDuplicatePotName(changes) is string duplicate)
             {
-                throw new DuplicateNameException($"A pot named \"{duplicate}\" already exists.");
+                throw new DuplicateNameException(Account.DuplicatePotNameMessage(duplicate));
             }
+
+            potsAccount.EnsureCanReplacePots(changes);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
