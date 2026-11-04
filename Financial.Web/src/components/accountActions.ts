@@ -25,6 +25,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
 }
 
 const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferFrom']
+const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots']
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',
@@ -59,7 +60,7 @@ export function opensDialog(action: AccountFormAction): boolean {
 }
 
 export function needsFormOptions(action: AccountFormAction): boolean {
-  return action !== 'PayCardStatement' && !opensDialog(action)
+  return !ACTIONS_WITHOUT_FORM_OPTIONS.includes(action)
 }
 
 export function isTransferAction(action: AccountFormAction): boolean {

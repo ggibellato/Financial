@@ -352,9 +352,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     : API_BASE_URL
   const fetcher = options.fetch ?? fetch
 
+  const withJsonContentType = (init?: RequestInit): RequestInit | undefined => {
+    if (init?.body === undefined || init.body === null) return init
+    const headers = new Headers(init.headers)
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+    return { ...init, headers }
+  }
+
   const sendRequest = async (path: string, init?: RequestInit): Promise<Response> => {
     const url = `${baseUrl}${path}`
-    const response = await fetcher(url, init).catch((err: unknown) => {
+    const response = await fetcher(url, withJsonContentType(init)).catch((err: unknown) => {
       throw new ApiError(err instanceof Error ? err.message : 'Network request failed', NETWORK_FAILURE_STATUS)
     })
 
@@ -370,9 +377,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     const headers = new Headers(init?.headers)
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/json')
-    }
-    if (init?.body !== undefined && init?.body !== null && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json')
     }
 
     const response = await sendRequest(path, { ...init, headers })
@@ -727,11 +731,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getPots: (potsAccountId, year, month) =>
       request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),
     updatePots: (potsAccountId, requestBody) =>
-      requestVoid(`/accounts/${encodeURIComponent(potsAccountId)}/pots`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody),
-      }),
+      requestVoid(`/accounts/${encodeURIComponent(potsAccountId)}/pots`, { method: 'PUT', body: JSON.stringify(requestBody) }),
     getPayableStatements: () => request<PayableStatementDto[]>('/accounts/payable-statements'),
     getTransferDestinations: (accountId) =>
       request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),

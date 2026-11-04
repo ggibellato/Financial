@@ -1,7 +1,6 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -27,7 +26,7 @@ public sealed class ReserveBucketService : IReserveBucketService
         using var span = StartSpan("GetReserveBuckets");
         try
         {
-            var result = _repository.GetReservaPots().Select(b => ToDto(b, warning: null)).ToList();
+            var result = _repository.GetReservaPots().Select(ToDto).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetReserveBuckets");
@@ -45,7 +44,13 @@ public sealed class ReserveBucketService : IReserveBucketService
         using var span = StartSpan("GetSplitStatus");
         try
         {
-            var result = BuildSplitStatus();
+            var pots = _repository.GetReservaPots();
+            var total = pots.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
+            var result = new ReserveSplitStatusDTO
+            {
+                ActiveTotal = total,
+                Warning = !pots.Any() || ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total),
+            };
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetSplitStatus");
@@ -58,29 +63,17 @@ public sealed class ReserveBucketService : IReserveBucketService
         }
     }
 
-    private ReserveSplitStatusDTO BuildSplitStatus()
-    {
-        var pots = _repository.GetReservaPots();
-        var total = pots.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
-        return new ReserveSplitStatusDTO
-        {
-            ActiveTotal = total,
-            Warning = !pots.Any() || ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total),
-        };
-    }
-
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveBucketService), operationName, EntityType);
     }
 
-    private static ReserveBucketDTO ToDto(Pot pot, string? warning) => new()
+    private static ReserveBucketDTO ToDto(Pot pot) => new()
     {
         Id = pot.Id,
         Name = pot.Name,
         IsActive = pot.IsActive,
-        SplitPercentage = pot.SplitPercentage,
-        Warning = warning
+        SplitPercentage = pot.SplitPercentage
     };
 }

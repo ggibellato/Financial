@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { BrokerDto, PortfolioDto } from '../../api/types'
 import AssetFormDialog from '../AssetFormDialog'
@@ -162,7 +162,9 @@ describe('form dialog contract: server rejection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText(serverError)).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(serverError)
     expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus())
   })
 })
 

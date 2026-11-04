@@ -3,6 +3,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { PotBalanceDto, PotUpdateDto } from '../api/types'
 import { useDialogSubmit } from './useDialogSubmit'
 import { useDiscardPrompt } from './useDiscardPrompt'
+import { parseValidatedNumber } from '../utils/formatters'
 
 const MIN_SPLIT = 0
 const MAX_SPLIT = 100
@@ -10,8 +11,8 @@ const REQUIRED_ACTIVE_TOTAL = 100
 const TOTAL_ROUNDING = 10_000
 const NEW_POT_SPLIT = '0'
 
-export const POT_NAME_REQUIRED = 'Pot name is required.'
-export const POT_SPLIT_OUT_OF_RANGE = `Split percentage must be between ${MIN_SPLIT} and ${MAX_SPLIT}.`
+const POT_NAME_REQUIRED = 'Pot name is required.'
+const POT_SPLIT_OUT_OF_RANGE = `Split percentage must be between ${MIN_SPLIT} and ${MAX_SPLIT}.`
 
 export interface PotRow {
   key: string
@@ -24,11 +25,6 @@ export interface PotRow {
 
 export type PotRowChange = Partial<Pick<PotRow, 'name' | 'splitPercentage' | 'isActive'>>
 
-function parseSplit(text: string): number | null {
-  const split = text.trim() === '' ? Number.NaN : Number(text)
-  return Number.isNaN(split) ? null : split
-}
-
 function toRow(pot: PotBalanceDto): PotRow {
   return { key: pot.id, id: pot.id, label: pot.name, name: pot.name, splitPercentage: String(pot.splitPercentage), isActive: pot.isActive }
 }
@@ -38,12 +34,11 @@ export function potNameError(row: PotRow): string {
 }
 
 export function potSplitError(row: PotRow): string {
-  const split = parseSplit(row.splitPercentage)
-  return split === null || split < MIN_SPLIT || split > MAX_SPLIT ? POT_SPLIT_OUT_OF_RANGE : ''
+  return parseValidatedNumber(row.splitPercentage, { min: MIN_SPLIT, max: MAX_SPLIT }) === null ? POT_SPLIT_OUT_OF_RANGE : ''
 }
 
 function activeTotalOf(rows: readonly PotRow[]): number {
-  const total = rows.filter((row) => row.isActive).reduce((sum, row) => sum + (parseSplit(row.splitPercentage) ?? 0), 0)
+  const total = rows.filter((row) => row.isActive).reduce((sum, row) => sum + (parseValidatedNumber(row.splitPercentage) ?? 0), 0)
   return Math.round(total * TOTAL_ROUNDING) / TOTAL_ROUNDING
 }
 
@@ -51,9 +46,20 @@ function isChanged(row: PotRow, saved: PotBalanceDto | undefined): boolean {
   return (
     saved === undefined ||
     row.name.trim() !== saved.name ||
-    parseSplit(row.splitPercentage) !== saved.splitPercentage ||
+    parseValidatedNumber(row.splitPercentage) !== saved.splitPercentage ||
     row.isActive !== saved.isActive
   )
+}
+
+function totalGuidance(rows: readonly PotRow[], activeTotal: number, hasFieldErrors: boolean): string {
+  const sentences: string[] = []
+  if (activeTotal !== REQUIRED_ACTIVE_TOTAL) {
+    if (rows.length === 0) sentences.push('Add a pot.')
+    else if (!rows.some((row) => row.isActive)) sentences.push('Keep at least one pot active.')
+    sentences.push('Active pots must total exactly 100% to save.')
+  }
+  if (hasFieldErrors) sentences.push('Fix the marked pots to save.')
+  return sentences.join(' ')
 }
 
 function toRequest(row: PotRow): PotUpdateDto {
@@ -63,7 +69,6 @@ function toRequest(row: PotRow): PotUpdateDto {
 export function useManagePots(potsAccountId: string, initialPots: readonly PotBalanceDto[], onSaved: () => void) {
   const [savedPots] = useState(initialPots)
   const [rows, setRows] = useState(() => savedPots.map(toRow))
-  const [lastAddedKey, setLastAddedKey] = useState<string | null>(null)
   const addedPotCount = useRef(0)
   const { isSaving, error, submit } = useDialogSubmit('The pots could not be saved.')
 
@@ -82,7 +87,6 @@ export function useManagePots(potsAccountId: string, initialPots: readonly PotBa
       ...current,
       { key, id: null, label: `new pot ${addedPotCount.current}`, name: '', splitPercentage: NEW_POT_SPLIT, isActive: true },
     ])
-    setLastAddedKey(key)
   }
 
   const removeNewPot = (key: string) => setRows((current) => current.filter((row) => row.key !== key))
@@ -99,10 +103,8 @@ export function useManagePots(potsAccountId: string, initialPots: readonly PotBa
 
   return {
     rows,
-    lastAddedKey,
     activeTotal,
-    isTotalRight: activeTotal === REQUIRED_ACTIVE_TOTAL,
-    hasActivePots: rows.some((row) => row.isActive),
+    guidance: totalGuidance(rows, activeTotal, hasFieldErrors),
     isSaving,
     error,
     canSave,

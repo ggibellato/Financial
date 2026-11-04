@@ -46,6 +46,16 @@ describe('ReserveBucketsRedirect', () => {
     expect(await screen.findByText('Now at /cashflow/accounts/first-pots?tab=pots')).toBeInTheDocument()
   })
 
+  it('skips an inactive Pots account', async () => {
+    getAccountsMock.mockResolvedValue([
+      potsAccount({ id: 'old-pots', name: 'Old pots', isActive: false }),
+      potsAccount({ id: 'first-pots', name: 'Reserva' }),
+    ])
+    renderRedirect()
+
+    expect(await screen.findByText('Now at /cashflow/accounts/first-pots?tab=pots')).toBeInTheDocument()
+  })
+
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-13] opens the Accounts page when there is no Pots account', async () => {
     getAccountsMock.mockResolvedValue([account({ id: 'bank', name: 'Barclays' })])
     renderRedirect()

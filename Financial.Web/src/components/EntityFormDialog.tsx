@@ -1,4 +1,4 @@
-import { useLayoutEffect, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   Button,
   Dialog,
@@ -34,6 +34,8 @@ export default function EntityFormDialog({
   children,
 }: EntityFormDialogProps) {
   const styles = useFormPanelStyles()
+  const saveButton = useRef<HTMLButtonElement | null>(null)
+  const errorBar = useRef<HTMLDivElement | null>(null)
 
   useLayoutEffect(() => {
     const opener = document.activeElement as HTMLElement | null
@@ -41,6 +43,12 @@ export default function EntityFormDialog({
       if (opener?.isConnected) opener.focus()
     }
   }, [])
+
+  useEffect(() => {
+    if (!error) return
+    errorBar.current?.scrollIntoView?.({ block: 'nearest' })
+    saveButton.current?.focus()
+  }, [error])
 
   return (
     <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
@@ -51,13 +59,14 @@ export default function EntityFormDialog({
             {children}
 
             {error && (
-              <MessageBar intent="error">
+              <MessageBar ref={errorBar} role="alert" intent="error">
                 <MessageBarBody>{error}</MessageBarBody>
               </MessageBar>
             )}
           </DialogContent>
           <div className={styles.actions}>
             <Button
+              ref={saveButton}
               appearance="primary"
               onClick={onSave}
               disabled={!canSave}

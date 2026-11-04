@@ -1,17 +1,16 @@
 import { Navigate } from 'react-router-dom'
-import { apiClient } from '../api/financialApiClient'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import { useAsyncResource } from '../hooks/useAsyncResource'
-
-const LOAD_ERROR = 'Unable to load the accounts'
+import { ACCOUNTS_LOAD_ERROR } from '../hooks/useAccountTemplateGroups'
+import { useAccounts } from '../hooks/useAccounts'
+import { accountsWith } from '../utils/accountCapabilities'
 
 export default function ReserveBucketsRedirect() {
-  const accounts = useAsyncResource(() => apiClient.getAccounts(), [], LOAD_ERROR, { initialLoading: true })
+  const { accounts, status, retry } = useAccounts()
 
-  if (accounts.error) return <ErrorState message={LOAD_ERROR} onRetry={accounts.retry} />
-  if (!accounts.data) return <LoadingState />
+  if (status === 'failed') return <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
+  if (status === 'loading') return <LoadingState />
 
-  const potsAccount = accounts.data.find((account) => account.capabilities.includes('HasPots'))
+  const [potsAccount] = accountsWith(accounts, 'HasPots')
   return <Navigate to={potsAccount ? `/cashflow/accounts/${potsAccount.id}?tab=pots` : '/cashflow/accounts'} replace />
 }

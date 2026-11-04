@@ -113,6 +113,7 @@ export function useAccountActionForms(
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
+    if (isManagePotsOpen) return 'ManagePots'
     return null
   }
   const activeAction = createAction()

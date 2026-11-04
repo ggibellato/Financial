@@ -421,7 +421,7 @@ describe('AccountScreenPage on a Pots account', () => {
     const dialog = await findDialog('Manage pots')
     expect(dialog).toHaveTextContent('Reserva')
     const potsReadsBeforeSave = getPotsMock.mock.calls.length
-    const name = within(dialog).getByLabelText('Name, Home')
+    const name = within(within(dialog).getByRole('group', { name: 'Pot Home', hidden: true })).getByLabelText(/^Name/)
     await user.clear(name)
     await user.type(name, 'House')
     await user.click(await dialogButton('Manage pots', 'Save'))
@@ -439,6 +439,24 @@ describe('AccountScreenPage on a Pots account', () => {
     await waitFor(() => expect(getPotsMock.mock.calls.length).toBeGreaterThan(potsReadsBeforeSave))
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     expect(manage).toHaveFocus()
+  })
+
+  it('returns focus to Manage pots when it was opened through the discard prompt', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+    const edit = within((await screen.findByText('Boots')).closest('tr') as HTMLElement).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    await user.type(within(screen.getByRole('form', { name: 'Edit pot transaction' })).getByLabelText(/^Description/), ' x')
+    const manage = screen.getByRole('button', { name: 'Manage pots' })
+
+    await user.click(manage)
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
+    await user.click(await dialogButton('Manage pots', 'Cancel'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(manage).toHaveFocus())
   })
 
   it('closes an open Manage pots when the route moves to another account', async () => {

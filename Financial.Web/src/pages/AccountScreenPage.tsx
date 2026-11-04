@@ -36,8 +36,8 @@ export default function AccountScreenPage() {
   const navigate = useNavigate()
   const { account, hasPots } = screen
   const allowedActions = account?.allowedActions ?? []
-  const hasFormActions = formActionsOf(allowedActions).some(needsFormOptions)
-  const formOptions = useAccountFormOptions(hasFormActions, account && canTransfer(allowedActions) ? account.id : null)
+  const usesFormOptions = formActionsOf(allowedActions).some(needsFormOptions)
+  const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
   const isFocusAfterRowLeavesPending = useRef(false)
   const pots = usePots(hasPots ? screen.accountId : null, screen.year, screen.month)
@@ -147,7 +147,7 @@ export default function AccountScreenPage() {
         />
       )}
 
-      {formOptions.error && hasFormActions && (
+      {formOptions.error && usesFormOptions && (
         <ErrorState message={FORM_OPTIONS_LOAD_ERROR} onRetry={formOptions.retry} />
       )}
 
