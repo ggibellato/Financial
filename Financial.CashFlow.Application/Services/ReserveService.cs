@@ -199,15 +199,13 @@ public sealed class ReserveService : IReserveService
             EnsureNotLinkedToIncome(transaction);
             LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
 
-            var group = _repository.GetPotTransactions()
-                .Where(m => m.Date == transaction.Date && m.Description == transaction.Description && m.Income is null && m.OperationId is null)
-                .ToList();
+            var lines = LinesToDeleteWith(transaction);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                foreach (var groupTransaction in group)
+                foreach (var line in lines)
                 {
-                    _repository.DeletePotTransaction(groupTransaction.Id);
+                    _repository.DeletePotTransaction(line.Id);
                 }
 
                 return true;
@@ -231,6 +229,18 @@ public sealed class ReserveService : IReserveService
 
     private IEnumerable<PotTransaction> TransactionsOf(Guid operationId) =>
         _repository.GetPotTransactions().Where(transaction => transaction.OperationId == operationId);
+
+    private IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction) =>
+        transaction.Amount > 0m
+            ? _repository.GetPotTransactions().Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
+            : [transaction];
+
+    private static bool IsLineOfSameManualSplit(PotTransaction line, PotTransaction transaction) =>
+        line.Amount > 0m
+            && line.Income is null
+            && line.OperationId is null
+            && line.Date == transaction.Date
+            && line.Description == transaction.Description;
 
     private static void EnsureNotLinkedToIncome(PotTransaction transaction)
     {
