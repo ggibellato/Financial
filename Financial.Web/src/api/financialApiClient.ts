@@ -332,9 +332,20 @@ export interface FinancialApiClientOptions {
 interface ProblemDetailsBody {
   detail?: string
   title?: string
+  code?: unknown
+  balance?: unknown
 }
 
-async function buildErrorMessage(response: Response, method: string, url: string): Promise<string> {
+function parseProblem(body: string): ProblemDetailsBody | null {
+  if (!body) return null
+  try {
+    return JSON.parse(body) as ProblemDetailsBody | null
+  } catch {
+    return null
+  }
+}
+
+async function buildApiError(response: Response, method: string, url: string): Promise<ApiError> {
   let body = ''
   try {
     body = await response.text()
@@ -342,17 +353,13 @@ async function buildErrorMessage(response: Response, method: string, url: string
     // Ignore response body failures; fall back to the generic message below.
   }
 
-  if (body) {
-    try {
-      const problem = JSON.parse(body) as ProblemDetailsBody
-      if (problem.detail) return problem.detail
-      if (problem.title) return problem.title
-    } catch {
-      // Not a JSON problem-details body; fall through to the generic message.
-    }
-  }
-
-  return `API request failed: ${method} ${url} (${response.status} ${body || response.statusText})`
+  const problem = parseProblem(body)
+  const message =
+    problem?.detail || problem?.title || `API request failed: ${method} ${url} (${response.status} ${body || response.statusText})`
+  return new ApiError(message, response.status, {
+    code: typeof problem?.code === 'string' ? problem.code : undefined,
+    balance: typeof problem?.balance === 'number' ? problem.balance : undefined,
+  })
 }
 
 export function createFinancialApiClient(options: FinancialApiClientOptions = {}): FinancialApiClient {
@@ -376,7 +383,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
 
     if (!response.ok) {
       const method = init?.method ?? 'GET'
-      throw new ApiError(await buildErrorMessage(response, method, url), response.status)
+      throw await buildApiError(response, method, url)
     }
 
     return response

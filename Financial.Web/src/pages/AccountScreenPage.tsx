@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardStatementsTab from '../components/CardStatementsTab'
@@ -39,14 +39,13 @@ export default function AccountScreenPage() {
   const navigate = useNavigate()
   const { account, hasPots } = screen
   const allowedActions = account?.allowedActions ?? []
-  const opensOperation = hasPots && screen.operationId !== null
-  const usesFormOptions = opensOperation || formActionsOf(allowedActions).some(needsFormOptions)
+  const usesFormOptions = screen.operationId !== null || formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
-  const isFocusAfterRowLeavesPending = useRef(false)
+  const isRefreshAfterSavePending = useRef(false)
   const pots = usePots(hasPots ? screen.accountId : null, screen.year, screen.month)
   const notifySaved = (message: string) => {
-    isFocusAfterRowLeavesPending.current = true
+    isRefreshAfterSavePending.current = true
     void screen.refreshSilently()
     void pots.refresh()
     showSuccess(message)
@@ -89,27 +88,30 @@ export default function AccountScreenPage() {
     openRowMove,
     closeActiveForm,
     closeFormsOf,
+    closeFormOfRemovedRow,
     guardChange,
   } = forms
   const operationRoute = useOperationRoute(
     screen.operationId,
-    screen.accountId,
-    opensOperation && isAccountCurrent && formOptions.isReady,
+    hasPots ? screen.accountId : null,
+    isAccountCurrent && formOptions.isReady,
     forms.isOperationFormOpen,
     forms.openOperation,
     screen.clearOperation,
   )
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
-    linesDeletedWith(row, screen.transactions).forEach(closeFormsOf)
-    notifySaved(deletedMessage(row, screen.transactions))
+    closeFormsOf(row)
+    notifySaved(deletedMessage(row))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
 
   useEffect(() => {
-    if (!isFocusAfterRowLeavesPending.current) return
-    isFocusAfterRowLeavesPending.current = false
+    if (!isRefreshAfterSavePending.current) return
+    isRefreshAfterSavePending.current = false
+    closeFormOfRemovedRow(screen.transactions)
     if (document.activeElement === document.body) transactionsHeadingRef.current?.focus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when a refresh brings new rows
   }, [screen.transactions])
 
   if (screen.isNotFound) {
@@ -269,10 +271,11 @@ export default function AccountScreenPage() {
             potsAccounts={incomeForm.potsAccounts}
             potsAccountsStatus={incomeForm.potsAccountsStatus}
             onRetryPotsAccounts={incomeForm.retryPotsAccounts}
+            funding={incomeForm.incomeFunding}
             banks={formOptions.options.banks}
             incomeSources={formOptions.options.incomeSources}
             isSaving={incomeForm.isSavingIncome}
-            lockedBank={lockedBank}
+            lockedBank={incomeForm.incomeLockedBank}
             saveError={incomeForm.saveIncomeError}
             saveErrorFields={incomeForm.saveIncomeErrorFields}
             onFieldChange={incomeForm.setIncomeField}
@@ -401,6 +404,7 @@ export default function AccountScreenPage() {
             </Text>
             {pots.error && <ErrorState message={POTS_LOAD_ERROR} onRetry={pots.retry} />}
             <AccountTransactionsGrid
+              accountId={screen.accountId}
               transactions={screen.transactions}
               showsPotColumns={hasPots}
               isLoading={screen.isLoading}
@@ -412,7 +416,7 @@ export default function AccountScreenPage() {
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}
-              onOpenOperation={(operation, link) => forms.followOperationLink(operation.operationId, link, () => navigate(operationPath(operation)))}
+              onOpenOperation={(operation, link) => forms.followOperationLink(operation.operationId, link, () => navigate(operationPath(operation, screen.accountId)))}
             />
           </>
         )}
@@ -421,7 +425,7 @@ export default function AccountScreenPage() {
       <ConfirmDeleteDialog
         open={rowDelete.isOpen}
         entityLabel={recordNoun(deleteKind)}
-        message={rowDelete.row ? deleteConfirmation(rowDelete.row, screen.transactions) : ''}
+        message={rowDelete.row ? deleteConfirmation(rowDelete.row) : ''}
         isBusy={rowDelete.isDeleting}
         error={rowDelete.error}
         onConfirm={rowDelete.confirm}

@@ -539,6 +539,40 @@ describe('financialApiClient', () => {
 
     expect(error).toBeInstanceOf(ApiError)
     expect((error as ApiError).status).toBe(409)
+    expect((error as ApiError).code).toBeUndefined()
+    expect((error as ApiError).balance).toBeUndefined()
+  })
+
+  it("carries the overdraft 409's code and balance beside the message", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 409,
+      statusText: 'Conflict',
+      text: async () => JSON.stringify({ detail: 'Over the balance.', code: 'overdraftConfirmationRequired', potName: 'Ariana', balance: 25.85 }),
+    } as Response)
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const error = (await client.getReserveBalances().catch((e: unknown) => e)) as ApiError
+
+    expect(error.message).toBe('Over the balance.')
+    expect(error.code).toBe('overdraftConfirmationRequired')
+    expect(error.balance).toBe(25.85)
+  })
+
+  it('ignores a code or balance of the wrong type and a body that is not an object', async () => {
+    const respondWith = (body: string) =>
+      createFinancialApiClient({
+        baseUrl: API_BASE_URL,
+        fetch: vi.fn().mockResolvedValue({ ok: false, status: 409, statusText: 'Conflict', text: async () => body } as Response),
+      })
+
+    const wrongTypes = (await respondWith(JSON.stringify({ detail: 'x', code: 5, balance: '25.85' })).getReserveBalances().catch((e: unknown) => e)) as ApiError
+    expect(wrongTypes.code).toBeUndefined()
+    expect(wrongTypes.balance).toBeUndefined()
+
+    const nullBody = (await respondWith('null').getReserveBalances().catch((e: unknown) => e)) as ApiError
+    expect(nullBody).toBeInstanceOf(ApiError)
+    expect(nullBody.message).toContain('API request failed')
   })
 
   it('calls reserve balances endpoint', async () => {

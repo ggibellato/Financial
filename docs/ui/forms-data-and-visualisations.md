@@ -334,6 +334,12 @@ trailing-column and fixed-width parts of this rule (`.data-table__col--action-
 wide`, 200px — sized for this content instead of the icon-button `72px`
 `.data-table__col--action`), just not the icon-only visual (fixed 2026-09-05).
 
+`AccountTransactionsGrid.tsx`'s Pots rows of an older split income are a second
+exception: the row can only be changed through its income, so its Actions cell
+says "Edit from the income" instead of staying empty, and the column uses the
+same `.data-table__col--action-wide` while the month has such a row (user
+decision 2026-11-04).
+
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
 the identifying/label column does above. A narrow, fixed action column next

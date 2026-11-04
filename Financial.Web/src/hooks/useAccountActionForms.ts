@@ -22,7 +22,7 @@ export const NO_CREDIT_CARDS: CreditCardDto[] = []
 
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
-const SELECTED_TAB_SELECTOR = '[role="tab"][aria-selected="true"]'
+const RESTING_FOCUS_SELECTOR = '[role="tab"][aria-selected="true"], #account-screen-transactions'
 
 function incomeSavedMessage(potsAccountName: string | null): string {
   return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
@@ -49,7 +49,9 @@ interface OperationDeleteTarget {
   noun: PotOperationNoun
 }
 
-const operationRowKey = (operationId: string) => `operation:${operationId}`
+const OPERATION_ROW_KEY_PREFIX = 'operation:'
+const operationRowKey = (operationId: string) => `${OPERATION_ROW_KEY_PREFIX}${operationId}`
+const isOperationRowKey = (key: string) => key.startsWith(OPERATION_ROW_KEY_PREFIX)
 
 const OPERATION_TITLES: Record<PotOperationNoun, string> = { deposit: 'Deposit', withdrawal: 'Withdrawal' }
 
@@ -220,7 +222,7 @@ export function useAccountActionForms(
 
   const restoreFocus = () => {
     if (openerRef.current?.isConnected) openerRef.current.focus()
-    else formAreaRef.current?.parentElement?.querySelector<HTMLElement>(SELECTED_TAB_SELECTOR)?.focus()
+    else formAreaRef.current?.parentElement?.querySelector<HTMLElement>(RESTING_FOCUS_SELECTOR)?.focus()
   }
 
   const closeActiveForm = () => {
@@ -302,6 +304,10 @@ export function useAccountActionForms(
     if (editingRowKey === rowKey(row)) closeForms()
   }
 
+  const closeFormOfRemovedRow = (rows: readonly AccountTransactionDto[]) => {
+    if (editingRowKey && !isOperationRowKey(editingRowKey) && !rows.some((row) => rowKey(row) === editingRowKey)) closeActiveForm()
+  }
+
   const guardChange = (change: () => void) =>
     discardPrompt.confirmDiscard(() => {
       closeForms()
@@ -338,6 +344,7 @@ export function useAccountActionForms(
     closeActiveForm,
     restoreFocus,
     closeFormsOf,
+    closeFormOfRemovedRow,
     guardChange,
   }
 }

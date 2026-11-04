@@ -2,11 +2,9 @@ import { useEffect, useRef } from 'react'
 import { Button, Field, Input, Select, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { BankDto } from '../api/types'
-import { fundingLineErrorKey, MAX_FUNDING_LINES, type FundingLineValues } from '../utils/fundingLines'
+import { fundingLineErrorKey, MAX_FUNDING_LINES, type FundingLineChange, type FundingLineValues } from '../utils/fundingLines'
 import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
 import './FundingLinesField.css'
-
-export type FundingLineChange = Partial<Pick<FundingLineValues, 'bankId' | 'amount'>>
 
 interface FundingLinesFieldProps {
   lines: readonly FundingLineValues[]

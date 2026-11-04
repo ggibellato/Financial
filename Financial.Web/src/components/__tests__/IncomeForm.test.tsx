@@ -3,6 +3,7 @@ import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import IncomeForm from '../IncomeForm'
 import type { BankDto, IncomeSourceDto } from '../../api/types'
+import type { IncomeFunding } from '../../hooks/useIncomeForm'
 import { optionNames } from '../../test-utils/optionNames'
 import { potsAccount } from '../../test/account'
 
@@ -23,7 +24,24 @@ const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })
 
 const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
 
+const FUNDING: IncomeFunding = {
+  isShown: false,
+  isHandSplit: false,
+  lines: [],
+  openedBankIds: [],
+  bankName: 'Barclays',
+  depositAmount: 90,
+  currency: 'GBP',
+  mismatch: null,
+  errors: {},
+  splitAcrossBanks: vi.fn(),
+  changeLine: vi.fn(),
+  addLine: vi.fn(),
+  removeLine: vi.fn(),
+}
+
 const baseProps = {
+  funding: FUNDING,
   isEditing: false,
   date: '',
   incomeSource: '1',
@@ -45,6 +63,94 @@ const baseProps = {
   onSave: vi.fn(),
   onCancel: vi.fn(),
 }
+
+describe('IncomeForm funded from', () => {
+  it('has no section when the funding is not shown', () => {
+    render(<IncomeForm {...baseProps} />)
+
+    expect(screen.queryByRole('group', { name: 'Funded from' })).not.toBeInTheDocument()
+  })
+
+  it('shows one read-only line with the bank and the full deposit, and offers the split', () => {
+    const splitAcrossBanks = vi.fn()
+    render(<IncomeForm {...baseProps} funding={{ ...FUNDING, isShown: true, splitAcrossBanks }} />)
+
+    const section = screen.getByRole('group', { name: 'Funded from' })
+    expect(section).toHaveTextContent('Barclays: £90.00')
+    expect(screen.queryByRole('group', { name: 'Funding line 1' })).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Split across banks' }))
+    expect(splitAcrossBanks).toHaveBeenCalledOnce()
+  })
+
+  it('asks for the bank when none is chosen', () => {
+    render(<IncomeForm {...baseProps} funding={{ ...FUNDING, isShown: true, bankName: null, depositAmount: null }} />)
+
+    expect(screen.getByRole('group', { name: 'Funded from' })).toHaveTextContent('Choose the bank above')
+  })
+
+  it('moves focus to the first line when the lines replace the read-only line', () => {
+    const funding: IncomeFunding = { ...FUNDING, isShown: true }
+    const { rerender } = render(<IncomeForm {...baseProps} funding={funding} />)
+
+    rerender(<IncomeForm {...baseProps} funding={{ ...funding, isHandSplit: true, lines: [{ key: 'l1', bankId: 'bank-barclays', amount: '90.00' }] }} />)
+
+    expect(document.activeElement).toBe(screen.getByRole('group', { name: 'Funding line 1' }).querySelector('select'))
+  })
+
+  it('disables Save and shows the mismatch while the lines do not add up', () => {
+    const mismatch = 'Lines add up to £88.00; the deposit is £90.00.'
+    render(
+      <IncomeForm
+        {...baseProps}
+        funding={{ ...FUNDING, isShown: true, isHandSplit: true, lines: [{ key: 'l1', bankId: 'bank-barclays', amount: '88' }], mismatch }}
+      />,
+    )
+
+    expect(screen.getByRole('status')).toHaveTextContent(mismatch)
+    expect(screen.getByRole('button', { name: 'Add Income' })).toBeDisabled()
+  })
+
+  it('shows a bank error on the Bank field and moves focus to it', () => {
+    const { rerender } = render(<IncomeForm {...baseProps} bank="" funding={{ ...FUNDING, isShown: true, bankName: null }} />)
+
+    rerender(
+      <IncomeForm
+        {...baseProps}
+        bank=""
+        funding={{ ...FUNDING, isShown: true, bankName: null }}
+        saveError="Choose the bank this income landed in."
+        saveErrorFields={{ bank: 'Choose the bank this income landed in.' }}
+      />,
+    )
+
+    expect(screen.getByText('Choose the bank this income landed in.')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Bank' })).toHaveFocus()
+  })
+
+  it('moves focus to Save after a failed save', () => {
+    const { rerender } = render(<IncomeForm {...baseProps} />)
+
+    rerender(<IncomeForm {...baseProps} saveError="Barclays is inactive." saveErrorFields={{}} />)
+
+    expect(screen.getByRole('button', { name: 'Add Income' })).toHaveFocus()
+    expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
+  })
+
+  it('does not mark a locked bank as required', () => {
+    render(<IncomeForm {...baseProps} lockedBank={{ id: 'bank-barclays', name: 'Barclays' }} funding={{ ...FUNDING, isShown: true }} />)
+
+    expect(screen.getByText('Bank')).not.toHaveTextContent('*')
+  })
+
+  it('marks Bank as required only while the funding shows', () => {
+    const { rerender } = render(<IncomeForm {...baseProps} />)
+    expect(screen.getByRole('combobox', { name: 'Bank' })).not.toBeRequired()
+
+    rerender(<IncomeForm {...baseProps} funding={{ ...FUNDING, isShown: true }} />)
+    expect(screen.getByRole('combobox', { name: /^Bank/ })).toBeRequired()
+  })
+})
 
 describe('IncomeForm', () => {
   it('renders the create form with empty date/net-value fields', () => {

@@ -321,9 +321,10 @@ export default function ReservaPage() {
                               disabled={m.isLocked || deletingMovementId === m.id}
                               title={m.isLocked ? LOCKED_MOVEMENT_MESSAGE : undefined}
                               onClick={() => {
-                                const warning = m.isPartOfGroup
-                                  ? `Delete "${m.description}"? This is part of a split and will delete all 4 lines.`
-                                  : `Delete "${m.description}"? This removes it for good.`
+                                const warning =
+                                  m.splitLineCount > 1
+                                    ? `Delete "${m.description}"? This is part of a split and will delete all ${m.splitLineCount} lines.`
+                                    : `Delete "${m.description}"? This removes it for good.`
                                 confirmThenRun(warning, () => deleteMovement(m.id))
                               }}
                             >

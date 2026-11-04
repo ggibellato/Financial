@@ -5,7 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BankDto, CategoryDto, ReserveBucketBalanceDto, ReserveBucketDto, ReserveMovementDto } from '../../api/types'
 import { useReserva } from '../useReserva'
 import { pinDate } from '../../test-utils/pinDate'
-import { potsAccount } from '../../test/account'
+import { account, potsAccount } from '../../test/account'
 
 const {
   getReserveBalancesMock,
@@ -147,14 +147,13 @@ describe('useReserva', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.movementRows[0].groupTotal).toBeNull()
-    expect(result.current.movementRows[0].isPartOfGroup).toBe(false)
   })
 
-  it('marks every movement of a split group as part of a group, not just the last', async () => {
+  it("keeps the server's line count on every row", async () => {
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.movementRows.map((m) => m.isPartOfGroup)).toEqual([true, true, true, true])
+    expect(result.current.movementRows.map((m) => m.splitLineCount)).toEqual([4, 4, 4, 4])
   })
 
   it('marks a movement with a non-null incomeId as locked', async () => {
@@ -712,6 +711,15 @@ describe('useReserva', () => {
       await waitFor(() => expect(result.current.isLoading).toBe(false))
 
       expect(result.current.withdrawalCategoryOptions.map((c) => c.name)).toEqual(['Ariana', 'Saude'])
+    })
+
+    it("leaves out any account's category, as the server refuses them", async () => {
+      getAccountsMock.mockResolvedValue([...ACCOUNTS, account({ id: 'b1', name: 'Barclays', categoryId: 'c2' })])
+
+      const { result } = renderHook(() => useReserva())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      expect(result.current.withdrawalCategoryOptions.map((c) => c.name)).toEqual(['Ariana'])
     })
 
     it('still loads the reserve data when banks or categories fail to load', async () => {

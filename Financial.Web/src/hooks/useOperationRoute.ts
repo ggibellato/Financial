@@ -14,10 +14,11 @@ export interface OperationToOpen {
 
 type OperationLoad = OperationToOpen | 'not-found'
 
-async function loadOperation(operationId: string, potsAccountId: string): Promise<OperationLoad> {
+async function loadOperation(operationId: string, potsAccountId: string | null): Promise<OperationLoad> {
   try {
     const operation = await apiClient.getPotOperation(operationId)
-    if (operation.potsAccountId.toLowerCase() !== potsAccountId.toLowerCase()) return 'not-found'
+    const opensHere = potsAccountId ? operation.potsAccountId.toLowerCase() === potsAccountId.toLowerCase() : operation.incomeId != null
+    if (!opensHere) return 'not-found'
     if (!operation.incomeId) return { operation, income: null }
 
     const [year, month] = operation.date.split('-').map(Number)
@@ -32,7 +33,7 @@ async function loadOperation(operationId: string, potsAccountId: string): Promis
 
 export function useOperationRoute(
   operationId: string | null,
-  potsAccountId: string,
+  potsAccountId: string | null,
   isReady: boolean,
   isFormOpen: boolean,
   openForm: (toOpen: OperationToOpen) => void,
