@@ -93,7 +93,7 @@ public sealed class ReserveService : IReserveService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, transaction.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "PostWithdrawal");
-            return ToDto(transaction);
+            return ToDto(transaction, _repository.GetPotTransactions());
         }
         catch (Exception ex)
         {
@@ -136,7 +136,7 @@ public sealed class ReserveService : IReserveService
         {
             var result = _repository.GetPotTransactions()
                 .OrderByDescending(m => m.Date)
-                .Select(transaction => ToDto(transaction))
+                .Select(transaction => ToDto(transaction, _repository.GetPotTransactions()))
                 .ToList();
 
             span.MarkSuccess();
@@ -180,7 +180,7 @@ public sealed class ReserveService : IReserveService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateMovement");
-            return ToDto(transaction);
+            return ToDto(transaction, _repository.GetPotTransactions());
         }
         catch (Exception ex)
         {
@@ -231,20 +231,17 @@ public sealed class ReserveService : IReserveService
         _repository.GetPotTransactions().Where(transaction => transaction.OperationId == operationId);
 
     private static IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
-        IsLineOfSameManualSplit(transaction, transaction)
+        IsManualSplitLine(transaction)
             ? transactions.Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
             : [transaction];
 
-    internal static int SplitLineCount(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
-        LinesToDeleteWith(transaction, transactions).Count;
-
-    private ReserveMovementDTO ToDto(PotTransaction transaction) =>
-        ToDto(transaction, SplitLineCount(transaction, _repository.GetPotTransactions()));
-
-    private static bool IsLineOfSameManualSplit(PotTransaction line, PotTransaction transaction) =>
+    private static bool IsManualSplitLine(PotTransaction line) =>
         line.Amount > 0m
             && line.Income is null
-            && line.OperationId is null
+            && line.OperationId is null;
+
+    private static bool IsLineOfSameManualSplit(PotTransaction line, PotTransaction transaction) =>
+        IsManualSplitLine(line)
             && line.Date == transaction.Date
             && line.Description == transaction.Description;
 
@@ -257,7 +254,7 @@ public sealed class ReserveService : IReserveService
         }
     }
 
-    internal static ReserveMovementDTO ToDto(PotTransaction transaction, int splitLineCount) => new()
+    internal static ReserveMovementDTO ToDto(PotTransaction transaction, IEnumerable<PotTransaction> transactions) => new()
     {
         Id = transaction.Id,
         BucketId = transaction.Pot.Id,
@@ -266,6 +263,6 @@ public sealed class ReserveService : IReserveService
         Date = transaction.Date,
         Description = transaction.Description,
         IncomeId = transaction.Income?.Id,
-        SplitLineCount = splitLineCount
+        SplitLineCount = LinesToDeleteWith(transaction, transactions).Count
     };
 }

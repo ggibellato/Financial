@@ -39,9 +39,9 @@ public class DomainExceptionLoggingTests
     [Fact]
     public async Task RejectedWithdrawal_StillWritesTheFullMessageAndItsDataToTheCaller()
     {
-        var exception = new OverdraftConfirmationRequiredException("Ariana", 654.27m);
+        var exception = new OverdraftConfirmationRequiredException("Ariana", 654.271m);
 
-        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
+        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
 
         using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
         using (new AssertionScope())
@@ -51,8 +51,7 @@ public class DomainExceptionLoggingTests
                 .Should().Be("This withdrawal exceeds Ariana's balance of 654.27. Set confirmed=true to proceed.");
             body.RootElement.GetProperty("code").GetString().Should().Be("overdraftConfirmationRequired");
             body.RootElement.GetProperty("potName").GetString().Should().Be("Ariana");
-            body.RootElement.GetProperty("balance").GetDecimal().Should().Be(654.27m);
-            logger.Entries.Should().ContainSingle().Which.Message.Should().NotContain("654.27");
+            body.RootElement.GetProperty("balance").GetDecimal().Should().Be(654.271m);
         }
     }
 

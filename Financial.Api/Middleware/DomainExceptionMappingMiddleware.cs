@@ -18,6 +18,9 @@ internal sealed class DomainExceptionMappingMiddleware
 {
     private const string TransientRetryAfterSeconds = "30";
     private const string OverdraftProblemCode = "overdraftConfirmationRequired";
+    private const string ProblemCodeKey = "code";
+    private const string ProblemPotNameKey = "potName";
+    private const string ProblemBalanceKey = "balance";
 
     private readonly RequestDelegate _next;
     private readonly ILogger<DomainExceptionMappingMiddleware> _logger;
@@ -96,9 +99,9 @@ internal sealed class DomainExceptionMappingMiddleware
         exception is OverdraftConfirmationRequiredException overdraft
             ? new()
             {
-                ["code"] = OverdraftProblemCode,
-                ["potName"] = overdraft.PotName,
-                ["balance"] = overdraft.Balance
+                [ProblemCodeKey] = OverdraftProblemCode,
+                [ProblemPotNameKey] = overdraft.PotName,
+                [ProblemBalanceKey] = overdraft.Balance
             }
             : [];
 
