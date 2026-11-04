@@ -89,8 +89,9 @@ export default function AccountsPage() {
       ) : (
         groups.map((group) => {
           const grid = accountTemplateGrid(group.templateName)
+          const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
           const renderName = grid.linksRows
-            ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthParam}`}>{row.name}</Link>
+            ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthParam}${tabParam}`}>{row.name}</Link>
             : (row: AccountGroupMemberDto) => row.name
           return (
             <div key={group.templateName} className="accounts-page__section">

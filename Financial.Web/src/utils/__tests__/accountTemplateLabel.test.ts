@@ -28,8 +28,8 @@ describe('accountTemplateGrid', () => {
     expect(accountTemplateGrid('CreditCard')).toEqual({ heading: 'Credit cards', footerLabel: 'Total owed', columns: 'card', linksRows: true })
   })
 
-  it('shows Pots accounts with their balance under "Pots", totalled as "Pots total", as plain text', () => {
-    expect(accountTemplateGrid('Pots')).toEqual({ heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: false })
+  it('shows Pots accounts with their balance under "Pots", totalled as "Pots total", with rows linked to the Pots tab', () => {
+    expect(accountTemplateGrid('Pots')).toEqual({ heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: true, rowLinkTab: 'pots' })
   })
 
   it('shows any other template under its label with a "Total" footer, its balance and plain-text rows', () => {

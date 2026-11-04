@@ -158,7 +158,7 @@ describe('AccountsPage', () => {
     expect(bodyRows(screen.getByRole('table', { name: 'Credit cards' })).map((row) => within(row).getByRole('link').textContent)).toEqual(['Old Visa', 'BA Amex'])
   })
 
-  it('[AC P60-F14-accounts-page-by-template-and-card-totals-04] links bank and card rows to their account screen for the month, and leaves Pots rows as plain text', async () => {
+  it('[AC P60-F14-accounts-page-by-template-and-card-totals-04] links bank and card rows to their account screen for the month', async () => {
     renderPage()
 
     const banks = await screen.findByRole('table', { name: 'Banks' })
@@ -167,9 +167,13 @@ describe('AccountsPage', () => {
       'href',
       '/cashflow/accounts/amex?month=2026-10',
     )
-    const pots = screen.getByRole('table', { name: 'Pots' })
-    expect(within(pots).queryByRole('link')).not.toBeInTheDocument()
-    expect(within(pots).getByText('Reserva')).toBeInTheDocument()
+  })
+
+  it('links a Pots row to the Pots tab of its account screen for the month', async () => {
+    renderPage()
+
+    const pots = await screen.findByRole('table', { name: 'Pots' })
+    expect(within(pots).getByRole('link', { name: 'Reserva' })).toHaveAttribute('href', expect.stringMatching(/\?month=2026-10&tab=pots$/))
   })
 
   it('shows an unknown template under its own name with a "Total" footer and plain-text rows', async () => {
