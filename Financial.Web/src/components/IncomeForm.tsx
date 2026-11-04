@@ -14,9 +14,11 @@ import {
 import type { AccountDto, BankDto, IncomeSourceDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import type { AccountsStatus } from '../hooks/useAccounts'
-import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources } from '../hooks/useIncomeForm'
+import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources, type IncomeFunding } from '../hooks/useIncomeForm'
 import { useFieldError } from '../hooks/useFieldError'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks } from '../utils/selectableBanks'
+import FundedFromSection from './FundedFromSection'
 import { useFormPanelStyles } from './formPanelStyles'
 
 export type IncomeFormField =
@@ -42,6 +44,7 @@ interface IncomeFormProps {
   potsAccounts: AccountDto[]
   potsAccountsStatus: AccountsStatus
   onRetryPotsAccounts: () => void
+  funding: IncomeFunding
   banks: BankDto[]
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
@@ -73,6 +76,7 @@ export default function IncomeForm({
   potsAccounts,
   potsAccountsStatus,
   onRetryPotsAccounts,
+  funding,
   banks,
   incomeSources,
   isSaving,
@@ -86,6 +90,8 @@ export default function IncomeForm({
   const styles = useFormPanelStyles()
   const [openedBank] = useState(bank)
   const fieldError = useFieldError(saveErrorFields)
+  const hasFieldErrors = Object.keys(saveErrorFields).length > 0 || Object.keys(funding.errors).length > 0
+  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
@@ -97,6 +103,7 @@ export default function IncomeForm({
 
   return (
     <form
+      ref={formRef}
       className={styles.panel}
       noValidate
       onSubmit={(event) => {
@@ -108,7 +115,7 @@ export default function IncomeForm({
         <Text as="h2" weight="semibold" size={400}>
           {isEditing ? 'Edit Income' : 'New Income'}
         </Text>
-        {Object.keys(saveErrorFields).length === 0 && saveError && (
+        {!hasFieldErrors && saveError && (
           <MessageBar intent="error">
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
@@ -139,7 +146,11 @@ export default function IncomeForm({
             </Select>
           </Field>
 
-          <Field label="Bank">
+          <Field
+            label="Bank"
+            validationState={fieldError('bank') ? 'error' : 'none'}
+            validationMessage={fieldError('bank')}
+          >
             {lockedBank ? (
               <Text weight="semibold">{lockedBank.name}</Text>
             ) : (
@@ -233,8 +244,16 @@ export default function IncomeForm({
           </MessageBar>
         )}
 
+        {funding.isShown && <FundedFromSection funding={funding} banks={banks} />}
+
         <div className={styles.actions}>
-          <Button type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
+          <Button
+            ref={saveRef}
+            type="submit"
+            appearance="primary"
+            disabled={isSaving || funding.mismatch !== null}
+            icon={isSaving ? <Spinner size="tiny" /> : undefined}
+          >
             {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Income'}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>

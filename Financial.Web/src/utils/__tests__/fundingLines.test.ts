@@ -1,7 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { fundingLinesMismatch, remainingAmount, type FundingLineValues } from '../fundingLines'
+import { fundingLineErrors, fundingLinesMismatch, incomeDepositAmount, remainingAmount, type FundingLineValues } from '../fundingLines'
 
 const line = (amount: string): FundingLineValues => ({ key: amount, bankId: 'b1', amount })
+
+describe('incomeDepositAmount', () => {
+  it.each([
+    [100, 90],
+    [123.45, 111.11],
+    [0.05, 0.05],
+    [1963, 1766.7],
+    [100.005, 90],
+    [0, 0],
+  ])('takes 90%% of %d, rounding a half penny away from zero as the server does', (net, deposit) => {
+    expect(incomeDepositAmount(net)).toBe(deposit)
+  })
+})
+
+describe('fundingLineErrors', () => {
+  it('names the bank and the amount of each incomplete line', () => {
+    expect(fundingLineErrors([{ key: 'a', bankId: '', amount: '0' }, { key: 'b', bankId: 'b1', amount: '5' }])).toEqual({
+      'line:a:bankId': 'Choose a bank.',
+      'line:a:amount': 'Amount must be greater than zero.',
+    })
+  })
+})
 
 describe('fundingLinesMismatch', () => {
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-02] says how far the lines are from the deposit', () => {

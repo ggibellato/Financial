@@ -1,13 +1,22 @@
-import { useEffect, useReducer } from 'react'
+import { useEffect, useReducer, useRef } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
 import type { AccountDto, BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
+import type { FundingLineChange } from '../components/FundingLinesField'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { accountsWith } from '../utils/accountCapabilities'
+import {
+  fundingLineErrors,
+  fundingLinesMismatch,
+  incomeDepositAmount,
+  MAX_FUNDING_LINES,
+  remainingAmount,
+  type FundingLineValues,
+} from '../utils/fundingLines'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
-import { hasChangedFields, snapshotFields } from './inlineFormSlice'
+import { hasChangedFields, snapshotFields, type FieldErrors } from './inlineFormSlice'
 import { type AccountsStatus, useAccounts } from './useAccounts'
 
 export const INCOME_SOURCES_WITH_GROSS_VALUE = ['Gleison', 'Ariana']
@@ -88,12 +97,37 @@ const EDITABLE_FIELDS = [
 
 type EditableValues = Pick<IncomeFormState, (typeof EDITABLE_FIELDS)[number]>
 
-function withOpenedValues(state: IncomeFormState): IncomeFormState {
-  return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
+const NO_FUNDING_ERRORS: FieldErrors<string> = {}
+const DEFAULT_DEPOSIT_CURRENCY = 'GBP'
+
+interface FundingFields {
+  isOlderSplit: boolean
+  isHandSplit: boolean
+  fundingLines: readonly FundingLineValues[]
 }
 
-interface IncomeFormState {
+const DEFAULT_FUNDING: FundingFields = { isOlderSplit: false, isHandSplit: false, fundingLines: [] }
+
+function comparableFunding({ isHandSplit, fundingLines }: FundingFields): string {
+  return JSON.stringify({ isHandSplit, lines: fundingLines.map(({ bankId, amount }) => ({ bankId, amount })) })
+}
+
+function withOpenedValues(state: IncomeFormState): IncomeFormState {
+  return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS), openedFunding: comparableFunding(state) }
+}
+
+function isOlderSplitIncome(income: IncomeDto): boolean {
+  return income.potsAccountId != null && !income.hasLinkedDeposit
+}
+
+function isDefaultFunding(income: IncomeDto): boolean {
+  return income.fundingLines.length === 0 || (income.fundingLines.length === 1 && income.fundingLines[0].bankId === income.bankId)
+}
+
+interface IncomeFormState extends FundingFields {
   openedValues: EditableValues | null
+  openedFunding: string
+  fundingErrors: FieldErrors<string>
   isOpen: boolean
   isEditing: boolean
   editingId: string | null
@@ -113,14 +147,18 @@ interface IncomeFormState {
 
 type IncomeFormAction =
   | { type: 'SHOW_CREATE_FORM'; payload: { date: string; bank: string; source: string; split: SplitFields } }
-  | { type: 'SHOW_EDIT_FORM'; payload: IncomeDto }
+  | { type: 'SHOW_EDIT_FORM'; payload: { income: IncomeDto; funding: FundingFields } }
   | { type: 'CANCEL_FORM' }
   | { type: 'SET_FIELD'; payload: { field: IncomeFormField; value: string } }
   | { type: 'SET_SPLIT'; payload: SplitFields }
+  | { type: 'SET_FUNDING_LINES'; payload: readonly FundingLineValues[] }
   | { type: 'SAVE_START' }
   | { type: 'SAVE_SUCCESS'; payload: { splitConfirmationMessage: string | null } }
   | { type: 'SAVE_SUCCESS_KEEP_OPEN'; payload: { splitConfirmationMessage: string | null; nextSplit: SplitFields } }
-  | { type: 'SAVE_ERROR'; payload: { message: string | null; fields: Partial<Record<IncomeFormField, string>> } }
+  | {
+      type: 'SAVE_ERROR'
+      payload: { message: string | null; fields: Partial<Record<IncomeFormField, string>>; fundingErrors?: FieldErrors<string> }
+    }
   | { type: 'DISMISS_SPLIT_CONFIRMATION' }
   | { type: 'CLEAR_UNTOUCHED_POTS_ACCOUNT' }
 
@@ -128,7 +166,9 @@ const BLANK_ENTRY = {
   grossValue: '',
   netValue: '',
   description: '',
-} as const
+  ...DEFAULT_FUNDING,
+  fundingErrors: NO_FUNDING_ERRORS,
+}
 
 const BLANK_FORM = {
   ...BLANK_ENTRY,
@@ -137,10 +177,11 @@ const BLANK_FORM = {
   bank: '',
   splitToReserve: 'false',
   potsAccountId: '',
-} as const
+}
 
 const INITIAL_STATE: IncomeFormState = {
   openedValues: null,
+  openedFunding: comparableFunding(DEFAULT_FUNDING),
   isOpen: false,
   isEditing: false,
   editingId: null,
@@ -167,31 +208,37 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         incomeSource: action.payload.source,
         ...action.payload.split,
       })
-    case 'SHOW_EDIT_FORM':
+    case 'SHOW_EDIT_FORM': {
+      const { income, funding } = action.payload
       return withOpenedValues({
         ...state,
+        ...funding,
+        fundingErrors: NO_FUNDING_ERRORS,
         isOpen: true,
         isEditing: true,
-        editingId: action.payload.id,
-        date: action.payload.date,
-        incomeSource: action.payload.incomeSourceId,
-        grossValue: action.payload.grossValue != null ? String(action.payload.grossValue) : '',
-        netValue: String(action.payload.netValue),
-        bank: action.payload.bankId ?? '',
-        description: action.payload.description ?? '',
-        splitToReserve: String(action.payload.potsAccountId != null),
-        potsAccountId: action.payload.potsAccountId ?? '',
+        editingId: income.id,
+        date: income.date,
+        incomeSource: income.incomeSourceId,
+        grossValue: income.grossValue != null ? String(income.grossValue) : '',
+        netValue: String(income.netValue),
+        bank: income.bankId ?? '',
+        description: income.description ?? '',
+        splitToReserve: String(income.potsAccountId != null),
+        potsAccountId: income.potsAccountId ?? '',
         saveError: null,
         saveErrorFields: {},
       })
+    }
     case 'CANCEL_FORM':
       return { ...state, ...BLANK_FORM, isOpen: false, isEditing: false, editingId: null, saveError: null, saveErrorFields: {} }
     case 'SET_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SET_SPLIT':
       return { ...state, ...action.payload }
+    case 'SET_FUNDING_LINES':
+      return { ...state, isHandSplit: true, fundingLines: action.payload, fundingErrors: NO_FUNDING_ERRORS }
     case 'SAVE_START':
-      return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
+      return { ...state, isSaving: true, saveError: null, saveErrorFields: {}, fundingErrors: NO_FUNDING_ERRORS }
     case 'SAVE_SUCCESS':
       return {
         ...state,
@@ -211,7 +258,13 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
         splitConfirmationMessage: action.payload.splitConfirmationMessage,
       })
     case 'SAVE_ERROR':
-      return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
+      return {
+        ...state,
+        isSaving: false,
+        saveError: action.payload.message,
+        saveErrorFields: action.payload.fields,
+        fundingErrors: action.payload.fundingErrors ?? NO_FUNDING_ERRORS,
+      }
     case 'CLEAR_UNTOUCHED_POTS_ACCOUNT':
       return {
         ...state,
@@ -225,7 +278,25 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
   }
 }
 
+export interface IncomeFunding {
+  isShown: boolean
+  isHandSplit: boolean
+  lines: readonly FundingLineValues[]
+  openedBankIds: readonly string[]
+  bankName: string | null
+  depositAmount: number | null
+  currency: string
+  mismatch: string | null
+  errors: FieldErrors<string>
+  splitAcrossBanks: () => void
+  changeLine: (key: string, change: FundingLineChange) => void
+  addLine: () => void
+  removeLine: (key: string) => void
+}
+
 export interface UseIncomeFormResult {
+  incomeFunding: IncomeFunding
+  incomeLockedBank: AccountFormSettings['lockedBank']
   isIncomeFormOpen: boolean
   isIncomeEditing: boolean
   editingIncomeId: string | null
@@ -261,6 +332,21 @@ export function useIncomeForm(
 ): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const { accounts, status: potsAccountsStatus, retry: retryPotsAccounts } = useAccounts()
+  const fundingLineCount = useRef(0)
+
+  const incomeBankLock = !lockedBank || !state.isEditing || state.openedValues?.bank === lockedBank.id ? lockedBank : undefined
+  const incomeBankId = incomeBankLock?.id ?? state.bank
+  const isFundingShown = offersSplit(incomeSources, state.incomeSource) && state.splitToReserve === 'true' && !state.isOlderSplit
+  const netValueNumber = parseValidatedNumber(state.netValue, { min: 0 })
+  const depositAmount = netValueNumber === null ? null : incomeDepositAmount(netValueNumber)
+  const fundingCurrency = findAccount(accounts, state.potsAccountId)?.currency ?? DEFAULT_DEPOSIT_CURRENCY
+  const fundingMismatch =
+    isFundingShown && state.isHandSplit ? fundingLinesMismatch(state.fundingLines, depositAmount, fundingCurrency) : null
+
+  const newFundingLine = (bankId = '', amount = ''): FundingLineValues => {
+    fundingLineCount.current += 1
+    return { key: `income-line-${fundingLineCount.current}`, bankId, amount }
+  }
 
   const potsAccountName = (potsAccountId: string | null | undefined): string | null =>
     potsAccountId == null ? null : (findAccount(accounts, potsAccountId)?.name ?? UNNAMED_POTS_ACCOUNT)
@@ -311,9 +397,42 @@ export function useIncomeForm(
     dispatch({ type: 'SHOW_CREATE_FORM', payload: { date, bank, source, split: sourceSplit(incomeSources, accounts, source) } })
   }
 
-  const showEditIncomeForm = (income: IncomeDto) => dispatch({ type: 'SHOW_EDIT_FORM', payload: income })
+  const showEditIncomeForm = (income: IncomeDto) =>
+    dispatch({
+      type: 'SHOW_EDIT_FORM',
+      payload: {
+        income,
+        funding: {
+          isOlderSplit: isOlderSplitIncome(income),
+          isHandSplit: !isDefaultFunding(income),
+          fundingLines: isDefaultFunding(income) ? [] : income.fundingLines.map((line) => newFundingLine(line.bankId, String(line.amount))),
+        },
+      },
+    })
 
   const cancelIncomeForm = () => dispatch({ type: 'CANCEL_FORM' })
+
+  const setFundingLines = (lines: readonly FundingLineValues[]) => dispatch({ type: 'SET_FUNDING_LINES', payload: lines })
+
+  const splitAcrossBanks = () => setFundingLines([newFundingLine(incomeBankId, depositAmount?.toFixed(2) ?? '')])
+
+  const changeFundingLine = (key: string, change: FundingLineChange) =>
+    setFundingLines(state.fundingLines.map((line) => (line.key === key ? { ...line, ...change } : line)))
+
+  const addFundingLine = () => {
+    if (state.fundingLines.length < MAX_FUNDING_LINES) {
+      setFundingLines([...state.fundingLines, newFundingLine('', remainingAmount(state.fundingLines, depositAmount))])
+    }
+  }
+
+  const removeFundingLine = (key: string) => setFundingLines(state.fundingLines.filter((line) => line.key !== key))
+
+  function requestedFundingLines(): { bankId: string; amount: number }[] | null {
+    if (!isFundingShown) return null
+    return state.isHandSplit
+      ? state.fundingLines.map((line) => ({ bankId: line.bankId, amount: Number(line.amount) }))
+      : [{ bankId: incomeBankId, amount: depositAmount as number }]
+  }
 
   function setIncomeField(field: IncomeFormField, value: string) {
     dispatch({ type: 'SET_FIELD', payload: { field, value } })
@@ -329,7 +448,10 @@ export function useIncomeForm(
   }
 
   function submitIncome() {
+    if (fundingMismatch) return
+
     const errors: Partial<Record<IncomeFormField, string>> = {}
+    const fundingErrors = isFundingShown && state.isHandSplit ? fundingLineErrors(state.fundingLines) : NO_FUNDING_ERRORS
 
     if (!state.date.trim()) {
       errors.date = 'Date is required'
@@ -348,6 +470,10 @@ export function useIncomeForm(
       errors.potsAccountId = 'Choose a Pots account.'
     }
 
+    if (isFundingShown && !incomeBankId) {
+      errors.bank = 'Choose the bank this income landed in.'
+    }
+
     let grossValue: number | null = null
     if (state.grossValue.trim() !== '') {
       grossValue = parseValidatedNumber(state.grossValue, { min: netValue ?? 0 })
@@ -356,8 +482,9 @@ export function useIncomeForm(
       }
     }
 
-    if (Object.keys(errors).length > 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
+    if (Object.keys(errors).length > 0 || Object.keys(fundingErrors).length > 0) {
+      const message = Object.values(errors)[0] ?? Object.values(fundingErrors)[0] ?? null
+      dispatch({ type: 'SAVE_ERROR', payload: { message, fields: errors, fundingErrors } })
       return
     }
 
@@ -368,10 +495,10 @@ export function useIncomeForm(
       incomeSourceId: state.incomeSource,
       grossValue,
       netValue: netValue as number,
-      bankId: lockedBank?.id ?? (state.bank || null),
+      bankId: incomeBankId || null,
       description: state.description || null,
       potsAccountId: requestedPotsAccountId(state, incomeSources),
-      fundingLines: null,
+      fundingLines: requestedFundingLines(),
     }
 
     const request =
@@ -380,7 +507,7 @@ export function useIncomeForm(
     void request
       .then((savedIncome) => {
         setStoredDefault(DATE_KEY, state.date)
-        if (!lockedBank) setStoredDefault(BANK_KEY, state.bank)
+        if (!incomeBankLock) setStoredDefault(BANK_KEY, state.bank)
         setStoredDefault(SOURCE_KEY, state.incomeSource)
         const savedPotsAccountName = potsAccountName(savedIncome.potsAccountId)
         const splitConfirmationMessage = savedPotsAccountName ? `Income saved and split to ${savedPotsAccountName}` : null
@@ -405,7 +532,25 @@ export function useIncomeForm(
       })
   }
 
+  const incomeFunding: IncomeFunding = {
+    isShown: isFundingShown,
+    isHandSplit: state.isHandSplit,
+    lines: state.fundingLines,
+    openedBankIds: state.openedValues?.bank ? [state.openedValues.bank] : [],
+    bankName: incomeBankLock?.name ?? banks.find((bank) => bank.id === incomeBankId)?.name ?? null,
+    depositAmount,
+    currency: fundingCurrency,
+    mismatch: fundingMismatch,
+    errors: state.fundingErrors,
+    splitAcrossBanks,
+    changeLine: changeFundingLine,
+    addLine: addFundingLine,
+    removeLine: removeFundingLine,
+  }
+
   return {
+    incomeFunding,
+    incomeLockedBank: incomeBankLock,
     isIncomeFormOpen: state.isOpen,
     isIncomeEditing: state.isEditing,
     editingIncomeId: state.editingId,
@@ -421,7 +566,8 @@ export function useIncomeForm(
     potsAccountsStatus,
     retryPotsAccounts,
     isSavingIncome: state.isSaving,
-    isIncomeDirty: state.isOpen && hasChangedFields(state, state.openedValues, EDITABLE_FIELDS),
+    isIncomeDirty:
+      state.isOpen && (hasChangedFields(state, state.openedValues, EDITABLE_FIELDS) || comparableFunding(state) !== state.openedFunding),
     saveIncomeError: state.saveError,
     saveIncomeErrorFields: state.saveErrorFields,
     splitConfirmationMessage: state.splitConfirmationMessage,

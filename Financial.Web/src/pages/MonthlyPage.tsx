@@ -135,6 +135,7 @@ export default function MonthlyPage() {
     saveIncomeError,
     saveIncomeErrorFields,
     splitConfirmationMessage,
+    incomeFunding,
     showCreateIncomeForm,
     showEditIncomeForm,
     cancelIncomeForm,
@@ -337,6 +338,7 @@ export default function MonthlyPage() {
                   potsAccounts={potsAccounts}
                   potsAccountsStatus={potsAccountsStatus}
                   onRetryPotsAccounts={retryPotsAccounts}
+                  funding={incomeFunding}
                   banks={banks}
                   incomeSources={incomeSources}
                   isSaving={isSavingIncome}

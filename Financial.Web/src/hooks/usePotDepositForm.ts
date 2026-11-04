@@ -4,7 +4,7 @@ import type { PotDepositRequestDto, PotOperationDto, TransferAccountOptionDto } 
 import type { FundingLineChange } from '../components/FundingLinesField'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
-import { fundingLineErrorKey, fundingLinesMismatch, MAX_FUNDING_LINES, remainingAmount, type FundingLineValues } from '../utils/fundingLines'
+import { fundingLineErrors, fundingLinesMismatch, MAX_FUNDING_LINES, remainingAmount, type FundingLineValues } from '../utils/fundingLines'
 import type { FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
@@ -44,12 +44,7 @@ function validate(values: DepositValues): FieldErrors<string> {
   if (values.into === 'OnePot' && !values.potId) errors.potId = 'Choose a pot.'
   if (positiveAmount(values.amount) === null) errors.amount = 'Amount must be greater than zero.'
   if (!values.description.trim()) errors.description = 'Enter a description.'
-  if (values.hasNoBank) return errors
-  for (const line of values.lines) {
-    if (!line.bankId) errors[fundingLineErrorKey(line, 'bankId')] = 'Choose a bank.'
-    if (positiveAmount(line.amount) === null) errors[fundingLineErrorKey(line, 'amount')] = 'Amount must be greater than zero.'
-  }
-  return errors
+  return values.hasNoBank ? errors : { ...errors, ...fundingLineErrors(values.lines) }
 }
 
 function toRequest(values: DepositValues): PotDepositRequestDto {

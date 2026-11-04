@@ -1,4 +1,4 @@
-import { formatCurrency, parseValidatedNumber, toPence } from './formatters'
+import { formatCurrency, parseValidatedNumber, positiveAmount, toPence } from './formatters'
 
 export const MAX_FUNDING_LINES = 5
 
@@ -23,6 +23,20 @@ export function remainingAmount(lines: readonly FundingLineValues[], depositAmou
   if (depositAmount === null) return ''
   const remaining = toPence(depositAmount) - linesTotalInPence(lines)
   return remaining > 0 ? (remaining / 100).toFixed(2) : ''
+}
+
+export function incomeDepositAmount(netValue: number): number {
+  const netInTenThousandths = Math.round(netValue * 10000)
+  return Math.round((netInTenThousandths * 9) / 1000) / 100
+}
+
+export function fundingLineErrors(lines: readonly FundingLineValues[]): Partial<Record<string, string>> {
+  const errors: Partial<Record<string, string>> = {}
+  for (const line of lines) {
+    if (!line.bankId) errors[fundingLineErrorKey(line, 'bankId')] = 'Choose a bank.'
+    if (positiveAmount(line.amount) === null) errors[fundingLineErrorKey(line, 'amount')] = 'Amount must be greater than zero.'
+  }
+  return errors
 }
 
 export function fundingLineErrorKey(line: Pick<FundingLineValues, 'key'>, field: 'bankId' | 'amount'): string {

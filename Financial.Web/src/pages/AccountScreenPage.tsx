@@ -269,10 +269,11 @@ export default function AccountScreenPage() {
             potsAccounts={incomeForm.potsAccounts}
             potsAccountsStatus={incomeForm.potsAccountsStatus}
             onRetryPotsAccounts={incomeForm.retryPotsAccounts}
+            funding={incomeForm.incomeFunding}
             banks={formOptions.options.banks}
             incomeSources={formOptions.options.incomeSources}
             isSaving={incomeForm.isSavingIncome}
-            lockedBank={lockedBank}
+            lockedBank={incomeForm.incomeLockedBank}
             saveError={incomeForm.saveIncomeError}
             saveErrorFields={incomeForm.saveIncomeErrorFields}
             onFieldChange={incomeForm.setIncomeField}
