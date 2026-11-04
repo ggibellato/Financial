@@ -352,6 +352,7 @@ export function useIncomeForm(
       bankId: lockedBank?.id ?? (state.bank || null),
       description: state.description || null,
       potsAccountId: requestedPotsAccountId(state, incomeSources),
+      fundingLines: null,
     }
 
     const request =
