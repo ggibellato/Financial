@@ -135,7 +135,7 @@ All paths are relative to the repo root. Existing patterns: entities with privat
 | `DTOs/PotsSummaryDTO.cs`, `PotBalanceDTO.cs` | New | 6 | Pots tab read |
 | `Services/AccountQueryService.cs`, `DTOs/AccountTransactionDTO.cs`, `DTOs/AccountTransactionOperationDTO.cs`, `Services/IncomeService.cs`, `Services/ReserveService.cs` | Modified/New | 7 | Movement rows; operation link on rows; income and movement mappers usable from the rows |
 | `DependencyInjection/CashFlowApplicationServiceCollectionExtensions.cs` | Modified | 2 | `IPotsService` |
-| `DTOs/ReserveMovementDTO.cs`, `Services/ReserveService.cs`, `Services/AccountQueryService.cs` | Modified | 10b | `SplitLineCount`; `ReserveService.ToDto` has no repository, so the row mapper passes the count in |
+| `DTOs/ReserveMovementDTO.cs`, `Services/ReserveService.cs`, `Services/AccountQueryService.cs` | Modified | 10b | `SplitLineCount`; `ReserveService.ToDto` has no repository, so its callers pass the pot transactions in |
 | `Exceptions/OverdraftConfirmationRequiredException.cs`, `Validation/PotWithdrawalValidator.cs` | Modified | 10b | The exception takes the pot name and balance and builds the message |
 | `Services/ReserveBucketService.cs`, `Interfaces/IReserveBucketService.cs` | Modified | 9 | Create and update removed |
 
