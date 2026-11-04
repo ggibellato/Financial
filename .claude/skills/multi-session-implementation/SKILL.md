@@ -71,10 +71,18 @@ Summarize the interview answers and list every choice the spec-writer made on it
 
 Run one stage at a time: stages depend on each other, and more than two or three sessions or agents at once saturate the machine.
 
-**5.1 Open the implementer session.** Find this session's name and permission mode with `ListAgents` (a session in another permission mode holds cross-session messages for approval, so the implementer uses the same mode). Ask the user before opening it, then run from the repo folder:
+**5.1 Open the implementer session.** Find this session's name and permission mode with `ListAgents` (a session in another permission mode holds cross-session messages for approval, so the implementer uses the same mode). Ask the user before opening it.
+
+Write the brief to a file first, with the Write tool, in a temporary folder outside the repo (for example `<tmp>/brief-<prd>-f<nn>-s<N>.md`):
 ```
-claude --bg --model opus --effort medium --permission-mode <this session's mode> -n <prd>-f<nn>-s<N> -w <prd>-f<nn>-s<N> "/multi-session-implementation implement <feature folder> stage <N> (plan steps <a-b>). Branch: <feature/<PRD>-F<NN>-<short-name>>. Repo folder: <absolute path>. Controller: <this session's name>. Notes: <items earlier stages deferred to it, user decisions since the spec, which data file to use for the project checks>"
+/multi-session-implementation implement <feature folder> stage <N> (plan steps <a-b>). Branch: <feature/<PRD>-F<NN>-<short-name>>. Repo folder: <absolute path>. Controller: <this session's name>. Notes: <items earlier stages deferred to it, user decisions since the spec, which data file to use for the project checks>
 ```
+Then run from the repo folder, passing the file's text as the prompt:
+```
+claude --bg --model opus --effort medium --permission-mode <this session's mode> -n <prd>-f<nn>-s<N> -w <prd>-f<nn>-s<N> "$(cat <brief file>)"
+```
+Never type the brief inline inside double quotes: the shell runs anything in backticks or `$(...)` as a command and expands `$name`, so code names written as `` `name` `` silently vanish from the brief (this happened in P60 F10 stage 8). Text that `$(cat …)` reads from a file is passed as it is, so the brief can use backticks and dollar signs freely. In PowerShell the equivalent is `(Get-Content -Raw <brief file>)`.
+
 `--bg` starts it in the background and prints its id; `-w` gives it a worktree of its own branched from `origin/main`, so the user's checkout is never touched. Tell the user the session is running and how to talk to it: `claude attach <prd>-f<nn>-s<N>` in any terminal (or from the agents view). Record the session name in the progress file and wait.
 
 **5.2 Questions.** When the implementer needs a decision it asks in its own session and also sends this controller a one-line `QUESTIONS` notice listing them. Tell the user: they can attach and answer there, or answer here and you send the answers to the implementer with `SendMessage`. Either way, the user decides; never answer for them.
