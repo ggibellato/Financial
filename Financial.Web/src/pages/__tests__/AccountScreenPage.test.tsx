@@ -56,6 +56,7 @@ const {
   moveChargeToStatementMock,
   getPayableStatementsMock,
   getPotsMock,
+  updatePotsMock,
   updateReserveMovementMock,
   deleteReserveMovementMock,
 } = vi.hoisted(() => ({
@@ -85,6 +86,7 @@ const {
   moveChargeToStatementMock: vi.fn<FinancialApiClient['moveChargeToStatement']>(),
   getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
   getPotsMock: vi.fn<FinancialApiClient['getPots']>(),
+  updatePotsMock: vi.fn<FinancialApiClient['updatePots']>(),
   updateReserveMovementMock: vi.fn<FinancialApiClient['updateReserveMovement']>(),
   deleteReserveMovementMock: vi.fn<FinancialApiClient['deleteReserveMovement']>(),
 }))
@@ -117,6 +119,7 @@ vi.mock('../../api/financialApiClient', () => ({
     moveChargeToStatement: moveChargeToStatementMock,
     getPayableStatements: getPayableStatementsMock,
     getPots: getPotsMock,
+    updatePots: updatePotsMock,
     updateReserveMovement: updateReserveMovementMock,
     deleteReserveMovement: deleteReserveMovementMock,
   } as Partial<FinancialApiClient>,
@@ -322,6 +325,7 @@ beforeEach(() => {
   moveChargeToStatementMock.mockReset()
   getPayableStatementsMock.mockReset().mockResolvedValue(PAYABLE_STATEMENTS)
   getPotsMock.mockReset().mockResolvedValue(POTS_SUMMARY)
+  updatePotsMock.mockReset().mockResolvedValue(undefined)
   updateReserveMovementMock.mockReset()
   deleteReserveMovementMock.mockReset().mockResolvedValue(undefined)
   sessionStorage.clear()
@@ -356,6 +360,7 @@ describe('AccountScreenPage on a Pots account', () => {
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
 
     expect(await screen.findByLabelText('Loading pots')).toBeInTheDocument()
+    await waitFor(() => expect(getPotsMock).toHaveBeenCalled())
     failLoad(new Error('offline'))
 
     expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
@@ -384,13 +389,87 @@ describe('AccountScreenPage on a Pots account', () => {
     expect(await screen.findByText('Balances at end of August 2026')).toBeInTheDocument()
   })
 
-  it('shows no action the Pots screen cannot run yet', async () => {
+  it('offers only Manage pots until the deposit and withdrawal forms exist, and loads no form options for it', async () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
     await screen.findByRole('table', { name: 'Pots' })
 
-    expect(screen.queryByRole('group', { name: 'Account actions' })).not.toBeInTheDocument()
+    const actions = within(screen.getByRole('group', { name: 'Account actions' })).getAllByRole('button')
+    expect(actions.map((button) => button.textContent)).toEqual(['Manage pots'])
+    expect(actions[0]).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(actions[0]).not.toHaveAttribute('aria-expanded')
     expect(getBanksMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps Manage pots disabled while the pots cannot be read', async () => {
+    withPotsAccount()
+    getPotsMock.mockRejectedValue(new Error('offline'))
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+
+    expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Manage pots' })).toBeDisabled()
+  })
+
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-14] saves Manage pots, says so, refreshes the Pots tab and returns focus to the action', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Pots' })
+    const manage = screen.getByRole('button', { name: 'Manage pots' })
+
+    await user.click(manage)
+    const dialog = await findDialog('Manage pots')
+    expect(dialog).toHaveTextContent('Reserva')
+    const potsReadsBeforeSave = getPotsMock.mock.calls.length
+    const name = within(within(dialog).getByRole('group', { name: 'Pot Home', hidden: true })).getByLabelText(/^Name/)
+    await user.clear(name)
+    await user.type(name, 'House')
+    await user.click(await dialogButton('Manage pots', 'Save'))
+
+    await waitFor(() =>
+      expect(updatePotsMock).toHaveBeenCalledWith(RESERVA_ID, {
+        pots: [
+          { id: 'pot-home', name: 'House', splitPercentage: 60, isActive: true },
+          { id: 'pot-trips', name: 'Trips', splitPercentage: 40, isActive: true },
+          { id: 'pot-old', name: 'Old car', splitPercentage: 0, isActive: false },
+        ],
+      }),
+    )
+    expect(await screen.findByText('Pots saved')).toBeInTheDocument()
+    await waitFor(() => expect(getPotsMock.mock.calls.length).toBeGreaterThan(potsReadsBeforeSave))
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    expect(manage).toHaveFocus()
+  })
+
+  it('returns focus to Manage pots when it was opened through the discard prompt', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+    const edit = within((await screen.findByText('Boots')).closest('tr') as HTMLElement).getByRole('button', { name: 'Edit pot transaction' })
+    await waitFor(() => expect(edit).toBeEnabled())
+    await user.click(edit)
+    await user.type(within(screen.getByRole('form', { name: 'Edit pot transaction' })).getByLabelText(/^Description/), ' x')
+    const manage = screen.getByRole('button', { name: 'Manage pots' })
+
+    await user.click(manage)
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
+    await user.click(await dialogButton('Manage pots', 'Cancel'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(manage).toHaveFocus())
+  })
+
+  it('closes an open Manage pots when the route moves to another account', async () => {
+    const user = userEvent.setup()
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`, [`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`])
+    await screen.findByRole('table', { name: 'Pots' })
+    await user.click(screen.getByRole('button', { name: 'Manage pots' }))
+    await findDialog('Manage pots')
+
+    fireEvent.click(screen.getByText('Browser back'))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
   })
 
   it('switches to Transactions in the URL and lists the movements as date, pot, description and amount', async () => {

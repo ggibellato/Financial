@@ -92,6 +92,7 @@ export function useAccountActionForms(
   const payStatementForm = usePayCardStatementForm(lockedBank, () => saved('Statement paid'))
   const moveForm = useMoveChargeForm(onSaved)
   const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
+  const [isManagePotsOpen, setIsManagePotsOpen] = useState(false)
 
   const openers: Record<AccountFormAction, () => void> = {
     AddExpense: () => expenseForm.showCreateForm('bank'),
@@ -102,6 +103,7 @@ export function useAccountActionForms(
     PayRecurringBill: () => payBillForm.open(),
     PayCardStatement: () => payStatementForm.open(),
     Reconcile: () => adjustmentForm.openCreateForm(),
+    ManagePots: () => setIsManagePotsOpen(true),
   }
 
   const createAction = (): AccountFormAction | null => {
@@ -111,6 +113,7 @@ export function useAccountActionForms(
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
+    if (isManagePotsOpen) return 'ManagePots'
     return null
   }
   const activeAction = createAction()
@@ -143,6 +146,7 @@ export function useAccountActionForms(
     if (payStatementForm.isOpen) payStatementForm.cancel()
     if (moveForm.isOpen) moveForm.cancel()
     if (potTransactionForm.isOpen) potTransactionForm.cancel()
+    setIsManagePotsOpen(false)
     screenForm.close()
   }
 
@@ -224,6 +228,8 @@ export function useAccountActionForms(
     payStatementForm,
     moveForm,
     potTransactionForm,
+    isManagePotsOpen,
+    closeManagePots: () => setIsManagePotsOpen(false),
     lockedBank,
     lockedCard,
     isAccountCurrent,

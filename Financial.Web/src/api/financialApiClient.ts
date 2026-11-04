@@ -97,11 +97,10 @@ import type {
   SetCostBasisMethodRequestDto,
   SetReportingCurrencyEnabledRequestDto,
   ReserveBucketBalanceDto,
-  ReserveBucketCreateDto,
   ReserveBucketDto,
-  ReserveBucketUpdateDto,
   ReserveSplitStatusDto,
   PotsSummaryDto,
+  PotsUpdateDto,
   ReserveMovementDto,
   SetAssetPriceDto,
   SyncStatusResponseDto,
@@ -211,8 +210,6 @@ export interface FinancialApiClient {
   getReserveMovements: () => Promise<ReserveMovementDto[]>
   getReserveBuckets: () => Promise<ReserveBucketDto[]>
   getReserveSplitStatus: () => Promise<ReserveSplitStatusDto>
-  createReserveBucket: (request: ReserveBucketCreateDto) => Promise<ReserveBucketDto>
-  updateReserveBucket: (id: string, request: ReserveBucketUpdateDto) => Promise<ReserveBucketDto>
   postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
   postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   updateReserveMovement: (id: string, request: ReserveMovementUpdateDto) => Promise<ReserveMovementDto>
@@ -266,6 +263,7 @@ export interface FinancialApiClient {
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
   getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
   getPots: (potsAccountId: string, year: number, month: number) => Promise<PotsSummaryDto>
+  updatePots: (potsAccountId: string, request: PotsUpdateDto) => Promise<void>
   getPayableStatements: () => Promise<PayableStatementDto[]>
   getTransferDestinations: (accountId: string) => Promise<TransferAccountOptionDto[]>
   getTransferSources: (accountId: string) => Promise<TransferAccountOptionDto[]>
@@ -354,9 +352,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     : API_BASE_URL
   const fetcher = options.fetch ?? fetch
 
+  const withJsonContentType = (init?: RequestInit): RequestInit | undefined => {
+    if (init?.body === undefined || init.body === null) return init
+    const headers = new Headers(init.headers)
+    if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json')
+    return { ...init, headers }
+  }
+
   const sendRequest = async (path: string, init?: RequestInit): Promise<Response> => {
     const url = `${baseUrl}${path}`
-    const response = await fetcher(url, init).catch((err: unknown) => {
+    const response = await fetcher(url, withJsonContentType(init)).catch((err: unknown) => {
       throw new ApiError(err instanceof Error ? err.message : 'Network request failed', NETWORK_FAILURE_STATUS)
     })
 
@@ -372,9 +377,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     const headers = new Headers(init?.headers)
     if (!headers.has('Accept')) {
       headers.set('Accept', 'application/json')
-    }
-    if (init?.body !== undefined && init?.body !== null && !headers.has('Content-Type')) {
-      headers.set('Content-Type', 'application/json')
     }
 
     const response = await sendRequest(path, { ...init, headers })
@@ -595,13 +597,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
     getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
     getReserveSplitStatus: () => request<ReserveSplitStatusDto>('/reserve-buckets/split-status'),
-    createReserveBucket: (requestBody) =>
-      request<ReserveBucketDto>('/reserve-buckets', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateReserveBucket: (id, requestBody) =>
-      request<ReserveBucketDto>(`/reserve-buckets/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
     postIncomeSplit: (requestBody) =>
       request<IncomeSplitResultDto>('/reserve/income-split', {
         method: 'POST',
@@ -735,6 +730,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAccountStatements: (id) => request<AccountStatementDto[]>(`/accounts/${encodeURIComponent(id)}/statements`),
     getPots: (potsAccountId, year, month) =>
       request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),
+    updatePots: (potsAccountId, requestBody) =>
+      requestVoid(`/accounts/${encodeURIComponent(potsAccountId)}/pots`, { method: 'PUT', body: JSON.stringify(requestBody) }),
     getPayableStatements: () => request<PayableStatementDto[]>('/accounts/payable-statements'),
     getTransferDestinations: (accountId) =>
       request<TransferAccountOptionDto[]>(`/accounts/${encodeURIComponent(accountId)}/transfer-destinations`),

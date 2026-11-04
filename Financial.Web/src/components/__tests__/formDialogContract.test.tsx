@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { BrokerDto, PortfolioDto } from '../../api/types'
 import AssetFormDialog from '../AssetFormDialog'
@@ -10,7 +10,6 @@ import IncomeSourceFormDialog from '../IncomeSourceFormDialog'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import PortfolioFormDialog from '../PortfolioFormDialog'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
-import ReserveBucketFormDialog from '../ReserveBucketFormDialog'
 import TaxRuleFormDialog from '../TaxRuleFormDialog'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
@@ -126,17 +125,6 @@ const CASES: FormDialogCase[] = [
     serverError: 'Due day must be between 1 and 31.',
   },
   {
-    name: 'ReserveBucketFormDialog',
-    renderDialog: (h) => render(<ReserveBucketFormDialog reserveBucket={null} {...h} />),
-    makeInvalid: () => change(/^Split Percentage/, '50'),
-    validationMessage: 'Name is required.',
-    fillValid: () => {
-      change(/^Name/, 'Ferias')
-      change(/^Split Percentage/, '20')
-    },
-    serverError: 'A reserve bucket named "Ferias" already exists.',
-  },
-  {
     name: 'TaxRuleFormDialog',
     renderDialog: (h) => render(<TaxRuleFormDialog taxRule={null} {...h} />),
     makeInvalid: () => change(/^Effective From/, '2026-01-01'),
@@ -174,7 +162,9 @@ describe('form dialog contract: server rejection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText(serverError)).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent(serverError)
     expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus())
   })
 })
 

@@ -1,5 +1,3 @@
-using Financial.CashFlow.Application.DTOs;
-using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Services;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
@@ -88,18 +86,6 @@ public class ReserveBucketServiceTests
     }
 
     [Fact]
-    public async Task CreateReserveBucketAsync_Warning_IsTheSameTextAsTheSplitStatus()
-    {
-        var repository = new StubCashFlowRepository();
-        repository.AddPot(Pot.Create("A", 60m));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-
-        var created = await service.CreateReserveBucketAsync(new ReserveBucketCreateDTO { Name = "B", SplitPercentage = 10m, IsActive = true });
-
-        created.Warning.Should().Be(service.GetSplitStatus().Warning).And.NotBeNull();
-    }
-
-    [Fact]
     public void GetReserveBuckets_DoesNotFilterByIsActive()
     {
         var repository = new StubCashFlowRepository();
@@ -122,44 +108,6 @@ public class ReserveBucketServiceTests
     }
 
     [Fact]
-    public async Task CreateReserveBucketAsync_WithValidRequest_AddsItToReservaAndSaves()
-    {
-        var repository = new StubCashFlowRepository();
-        var reserva = repository.EnsureReserva();
-        repository.Accounts.Add(TestAccounts.Pots("Holiday"));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = true };
-
-        var result = await service.CreateReserveBucketAsync(request);
-
-        using (new AssertionScope())
-        {
-            result.Name.Should().Be("Ferias");
-            result.SplitPercentage.Should().Be(100m);
-            result.Warning.Should().BeNull();
-            reserva.Pots.Should().ContainSingle(b => b.Name == "Ferias" && b.Id == result.Id);
-            repository.Accounts.Single(a => a.Name == "Holiday").Pots.Should().BeEmpty();
-            repository.SaveChangesCallCount.Should().Be(1);
-        }
-    }
-
-    [Fact]
-    public async Task CreateReserveBucketAsync_WithNoPotsAccount_ThrowsAndWritesNothing()
-    {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true);
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-
-        var act = async () => await service.CreateReserveBucketAsync(new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = true });
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Pots account first.");
-            repository.SaveChangesCallCount.Should().Be(0);
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveBucketService.CreateReserveBucket");
-        }
-    }
-
-    [Fact]
     public void GetReserveBuckets_SecondPotsAccount_ListsOnlyReservasPots()
     {
         var repository = new StubCashFlowRepository();
@@ -172,171 +120,6 @@ public class ReserveBucketServiceTests
         service.GetReserveBuckets().Select(b => b.Name).Should().Equal("Investimento");
     }
 
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task CreateReserveBucketAsync_WithoutAName_ThrowsAndWritesNothing(string? name)
-    {
-        var repository = new StubCashFlowRepository();
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = name!, SplitPercentage = 50m, IsActive = true };
-
-        var act = async () => await service.CreateReserveBucketAsync(request);
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>();
-            repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Theory]
-    [InlineData("Investimento")]
-    [InlineData("investimento")]
-    public async Task CreateReserveBucketAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
-    {
-        var repository = new StubCashFlowRepository();
-        repository.AddPot(Pot.Create("Investimento", 33.33m));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = name, SplitPercentage = 50m, IsActive = true };
-
-        var act = async () => await service.CreateReserveBucketAsync(request);
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<DuplicateNameException>();
-            repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Fact]
-    public async Task CreateReserveBucketAsync_WithSplitPercentageOutOfRange_ThrowsAndWritesNothing()
-    {
-        var repository = new StubCashFlowRepository();
-        repository.EnsureReserva();
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100.01m, IsActive = true };
-
-        var act = async () => await service.CreateReserveBucketAsync(request);
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>();
-            repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Fact]
-    public async Task CreateReserveBucketAsync_WhenActiveSplitsDoNotSumTo100_ReturnsDtoWithWarning()
-    {
-        var repository = new StubCashFlowRepository();
-        repository.AddPot(Pot.Create("Investimento", 50m));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 20m, IsActive = true };
-
-        var result = await service.CreateReserveBucketAsync(request);
-
-        result.Warning.Should().Contain("70").And.Contain("review your split percentages");
-    }
-
-    [Fact]
-    public async Task CreateReserveBucketAsync_WhenActiveSplitsSumTo100_ReturnsDtoWithNullWarning()
-    {
-        var repository = new StubCashFlowRepository();
-        repository.AddPot(Pot.Create("Investimento", 60m));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 40m, IsActive = true };
-
-        var result = await service.CreateReserveBucketAsync(request);
-
-        result.Warning.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task CreateReserveBucketAsync_IgnoresInactiveBucketsInTheSplitTotal()
-    {
-        var repository = new StubCashFlowRepository();
-        repository.AddPot(Pot.Create("Retired", 50m, isActive: false));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketCreateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = true };
-
-        var result = await service.CreateReserveBucketAsync(request);
-
-        result.Warning.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task UpdateReserveBucketAsync_WithValidRequest_UpdatesAndSaves()
-    {
-        var repository = new StubCashFlowRepository();
-        var pot = Pot.Create("Investimento", 33.33m, isActive: true);
-        repository.AddPot(pot);
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketUpdateDTO { Name = "Ferias", SplitPercentage = 100m, IsActive = false };
-
-        var result = await service.UpdateReserveBucketAsync(pot.Id, request);
-
-        using (new AssertionScope())
-        {
-            result.Name.Should().Be("Ferias");
-            result.SplitPercentage.Should().Be(100m);
-            result.IsActive.Should().BeFalse();
-            repository.SaveChangesCallCount.Should().Be(1);
-        }
-    }
-
-    [Fact]
-    public async Task UpdateReserveBucketAsync_WithUnknownId_ThrowsKeyNotFoundException()
-    {
-        var repository = new StubCashFlowRepository();
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketUpdateDTO { Name = "Ferias", SplitPercentage = 50m, IsActive = true };
-
-        var act = async () => await service.UpdateReserveBucketAsync(Guid.NewGuid(), request);
-
-        await act.Should().ThrowAsync<KeyNotFoundException>();
-    }
-
-    [Fact]
-    public async Task UpdateReserveBucketAsync_WithDuplicateName_ThrowsAndWritesNothing()
-    {
-        var repository = new StubCashFlowRepository();
-        var investimento = Pot.Create("Investimento", 33.33m);
-        var ferias = Pot.Create("Ferias", 16.67m);
-        repository.AddPot(investimento);
-        repository.AddPot(ferias);
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketUpdateDTO { Name = "Ferias", SplitPercentage = 50m, IsActive = true };
-
-        var act = async () => await service.UpdateReserveBucketAsync(investimento.Id, request);
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<DuplicateNameException>();
-            repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Fact]
-    public async Task UpdateReserveBucketAsync_DeactivatingTheBucket_ExcludesItFromTheSplitTotal()
-    {
-        var repository = new StubCashFlowRepository();
-        var toDeactivate = Pot.Create("Investimento", 50m, isActive: true);
-        repository.AddPot(toDeactivate);
-        repository.AddPot(Pot.Create("Ferias", 50m, isActive: true));
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketUpdateDTO { Name = "Investimento", SplitPercentage = 50m, IsActive = false };
-
-        var result = await service.UpdateReserveBucketAsync(toDeactivate.Id, request);
-
-        using (new AssertionScope())
-        {
-            result.IsActive.Should().BeFalse();
-            result.Warning.Should().Contain("50");
-        }
-    }
-
     [Fact]
     public void GetReserveBuckets_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
@@ -347,19 +130,5 @@ public class ReserveBucketServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.ReserveBucketService.GetReserveBuckets");
-    }
-
-    [Fact]
-    public async Task UpdateReserveBucketAsync_WithBlankName_ThrowsArgumentException()
-    {
-        var repository = new StubCashFlowRepository();
-        var pot = Pot.Create("Investimento", 50m, isActive: true);
-        repository.AddPot(pot);
-        var service = new ReserveBucketService(repository, _tracer, Logger);
-        var request = new ReserveBucketUpdateDTO { Name = "   ", SplitPercentage = 50m, IsActive = true };
-
-        var act = async () => await service.UpdateReserveBucketAsync(pot.Id, request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
     }
 }

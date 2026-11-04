@@ -1,0 +1,47 @@
+.manage-pots {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacingVerticalM);
+  margin-bottom: var(--spacingVerticalM);
+}
+
+.manage-pots__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 8rem max-content 2rem;
+  gap: var(--spacingHorizontalM);
+  align-items: start;
+  padding-bottom: var(--spacingVerticalM);
+  border-bottom: var(--strokeWidthThin) solid var(--colorNeutralStroke2);
+}
+
+.manage-pots__input {
+  width: 100%;
+  min-width: 0;
+}
+
+.manage-pots__split input {
+  min-width: 0;
+  text-align: right;
+}
+
+.manage-pots__active {
+  justify-self: start;
+}
+
+.manage-pots__remove {
+  align-self: center;
+}
+
+.manage-pots__total {
+  margin: 0;
+}
+
+@media (max-width: 599px) {
+  .manage-pots__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .manage-pots__remove {
+    justify-self: start;
+  }
+}

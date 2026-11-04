@@ -26,7 +26,7 @@ internally consistent button/form implementation on both platforms.
 
 Admin lookup-entity CRUD — flat reference-data lists with no associated chart:
 Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio,
-RecurringBill, ReserveBucket, Asset, Account — is **exempt** from the "New X create
+RecurringBill, Pots (Manage pots), Asset, Account — is **exempt** from the "New X create
 actions are inline forms" rule and may use a modal `Dialog` (Web) / popup
 `Window` (WPF) for create and edit instead of an inline panel.
 
@@ -65,6 +65,10 @@ move to inline instead of being grandfathered into this exception.
 Account (P60 F06, Admin → CashFlow → Accounts) joined the list later: it has
 the same shape, a flat list with a short per-template form (at most seven
 fields) and no chart.
+
+ReserveBucket became Manage pots (P60 F10), opened from a Pots account's screen:
+the same reference data edited as one list saved together, because the active
+splits must total 100%. The balances it doesn't change stay on the tab behind it.
 
 ## Consequences
 

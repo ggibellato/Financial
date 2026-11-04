@@ -5,6 +5,7 @@ export function pad(value: number): string {
 }
 
 const n2Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+const n2To4Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })
 const n8Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigits: 8, maximumFractionDigits: 8 })
 const percentFractionFormatter = new Intl.NumberFormat(undefined, {
   style: 'percent',
@@ -20,6 +21,10 @@ const percent1Formatter = new Intl.NumberFormat(undefined, { minimumFractionDigi
 
 export function formatN2(value: number): string {
   return n2Formatter.format(value)
+}
+
+export function formatN2To4(value: number): string {
+  return n2To4Formatter.format(value)
 }
 
 export function formatSignedN2(value: number): string {
