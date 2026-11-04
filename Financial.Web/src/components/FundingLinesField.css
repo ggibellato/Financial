@@ -37,10 +37,6 @@
   color: var(--colorPaletteRedForeground1);
 }
 
-.funding-lines__mismatch:empty {
-  display: none;
-}
-
 @media (max-width: 599px) {
   .funding-lines__line {
     grid-template-columns: minmax(0, 1fr);

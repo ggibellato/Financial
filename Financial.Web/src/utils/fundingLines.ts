@@ -1,4 +1,4 @@
-import { formatCurrency, parseValidatedNumber } from './formatters'
+import { formatCurrency, parseValidatedNumber, toPence } from './formatters'
 
 export const MAX_FUNDING_LINES = 5
 
@@ -6,15 +6,6 @@ export interface FundingLineValues {
   key: string
   bankId: string
   amount: string
-}
-
-export function positiveAmount(value: string): number | null {
-  const amount = parseValidatedNumber(value)
-  return amount !== null && amount > 0 ? amount : null
-}
-
-export function toPence(value: number): number {
-  return Math.round(value * 100)
 }
 
 function linesTotalInPence(lines: readonly FundingLineValues[]): number {

@@ -14,6 +14,10 @@ export function isNetworkFailure(err: unknown): boolean {
   return err instanceof ApiError && err.status === NETWORK_FAILURE_STATUS
 }
 
+export function isNotFound(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404
+}
+
 export function isConflict(err: unknown): err is ApiError {
   return err instanceof ApiError && err.status === 409
 }

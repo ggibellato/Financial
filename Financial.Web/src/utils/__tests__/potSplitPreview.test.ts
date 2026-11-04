@@ -34,4 +34,8 @@ describe('potSplitPreview', () => {
     const residual = previewPotSplit([pot('a', 50), pot('b', 50)], 0.01)
     expect(residual.map((line) => line.amount)).toEqual([0, 0.01])
   })
+
+  it('rounds a half penny as the server does, without floating-point drift', () => {
+    expect(previewPotSplit([pot('a', 50), pot('b', 50)], 1.15).map((line) => line.amount)).toEqual([0.57, 0.58])
+  })
 })

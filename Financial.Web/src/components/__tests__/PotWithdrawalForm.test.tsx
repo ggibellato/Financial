@@ -129,7 +129,7 @@ const setValue = (label: RegExp, value: string) => fireEvent.change(screen.getBy
 const throughBank = () => screen.getByRole('combobox', { name: /Through bank/ })
 const setThroughBank = (value: string) => fireEvent.change(throughBank(), { target: { value } })
 const potSelect = () => screen.getByLabelText(/^Pot\b/)
-const potsLoaded = () => waitFor(() => expect(screen.getByRole('button', { name: /^(Add withdrawal|Save)$/ })).toBeEnabled())
+const potsLoaded = () => waitFor(() => expect(screen.getByRole('button', { name: /^(Add withdrawal|Withdraw from pots|Save)$/ })).toBeEnabled())
 const save = (name = 'Add withdrawal') => fireEvent.click(screen.getByRole('button', { name }))
 
 function fillWithdrawal() {
@@ -253,6 +253,7 @@ describe('PotWithdrawalForm from the Pots account', () => {
     save()
 
     expect(await screen.findByText('Choose a pot.')).toBeInTheDocument()
+    expect(screen.getByText('This account has no pots. Add one with Manage pots.')).toBeInTheDocument()
     expect(screen.getByText('Date must not be in the future.')).toBeInTheDocument()
     expect(screen.getByText('Enter a description.')).toBeInTheDocument()
     expect(screen.getByText('Amount must be greater than zero.')).toBeInTheDocument()
@@ -353,7 +354,7 @@ describe('PotWithdrawalForm from a bank', () => {
     await waitFor(() => expect(potSelect()).toHaveValue('pot-a'))
     expect(screen.getByLabelText(/^Category/)).toHaveValue('cat-ariana')
     fillWithdrawal()
-    save()
+    save('Withdraw from pots')
 
     await waitFor(() => expect(onSaved).toHaveBeenCalledOnce())
     expect(createPotWithdrawalMock).toHaveBeenCalledWith('reserva', {
@@ -397,7 +398,7 @@ describe('PotWithdrawalForm editing an operation', () => {
     expect(screen.getByLabelText(/^Category/)).toHaveValue('cat-saude')
     expect(screen.getByText('clean')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete withdrawal' }))
     expect(onDelete).toHaveBeenCalledOnce()
 
     setValue(/^Amount/, '40')

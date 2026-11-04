@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, recordNoun } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardStatementsTab from '../components/CardStatementsTab'
@@ -167,14 +167,24 @@ export default function AccountScreenPage() {
         <ErrorState message={FORM_OPTIONS_LOAD_ERROR} onRetry={formOptions.retry} />
       )}
 
-      <div id={FORM_AREA_ID} ref={formAreaRef} tabIndex={-1} className="account-screen__form-area">
-        {operationRoute.isLoading && <Spinner size="tiny" labelPosition="after" label="Loading the deposit or withdrawal…" />}
+      <div id={FORM_AREA_ID} ref={formAreaRef} className="account-screen__form-area">
+        {operationRoute.isLoading && (
+          <div role="status">
+            <Spinner size="tiny" labelPosition="after" label="Loading the deposit or withdrawal…" />
+          </div>
+        )}
         {operationRoute.error && <ErrorState message={OPERATION_LOAD_ERROR} onRetry={operationRoute.retry} />}
         {operationRoute.isNotFound && (
           <MessageBar role="alert" intent="error">
             <MessageBarBody>{OPERATION_NOT_FOUND}</MessageBarBody>
             <MessageBarActions>
-              <Button appearance="primary" onClick={screen.clearOperation}>
+              <Button
+                appearance="primary"
+                onClick={() => {
+                  screen.clearOperation()
+                  forms.restoreFocus()
+                }}
+              >
                 Dismiss
               </Button>
             </MessageBarActions>
@@ -186,7 +196,7 @@ export default function AccountScreenPage() {
             banks={formOptions.options.banks}
             incomeSources={formOptions.options.incomeSources}
             onFromIncome={forms.openDepositFromIncome}
-            onDelete={() => depositForm.operationId && operationDelete.request(depositForm.operationId, 'deposit')}
+            onDelete={() => depositForm.operationId && operationDelete.request({ operationId: depositForm.operationId, noun: 'deposit' })}
             onCancel={closeActiveForm}
           />
         )}
@@ -195,7 +205,7 @@ export default function AccountScreenPage() {
             form={withdrawalForm}
             banks={formOptions.options.banks}
             lockedBank={lockedBank}
-            onDelete={() => withdrawalForm.operationId && operationDelete.request(withdrawalForm.operationId, 'withdrawal')}
+            onDelete={() => withdrawalForm.operationId && operationDelete.request({ operationId: withdrawalForm.operationId, noun: 'withdrawal' })}
             onCancel={closeActiveForm}
           />
         )}
@@ -402,7 +412,7 @@ export default function AccountScreenPage() {
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}
-              onOpenOperation={(path, link) => forms.followOperationLink(link, () => navigate(path))}
+              onOpenOperation={(operation, link) => forms.followOperationLink(operation.operationId, link, () => navigate(operationPath(operation)))}
             />
           </>
         )}
@@ -420,8 +430,8 @@ export default function AccountScreenPage() {
 
       <ConfirmDeleteDialog
         open={operationDelete.isOpen}
-        entityLabel={operationDelete.noun}
-        message={`Delete this ${operationDelete.noun}? Its pot lines and bank expenses are deleted with it. This cannot be undone.`}
+        entityLabel={operationDelete.target?.noun ?? ''}
+        message={`Delete this ${operationDelete.target?.noun ?? ''}? Its pot lines and any bank expenses are deleted with it. This cannot be undone.`}
         isBusy={operationDelete.isDeleting}
         error={operationDelete.error}
         onConfirm={operationDelete.confirm}

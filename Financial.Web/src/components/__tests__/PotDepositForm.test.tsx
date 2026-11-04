@@ -122,7 +122,7 @@ describe('PotDepositForm', () => {
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-15')
     expect(firstLine().getByLabelText(/^Bank/)).toHaveValue('')
     expect(screen.getByRole('button', { name: 'Add deposit' })).toBeEnabled()
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete deposit' })).not.toBeInTheDocument()
     expect(screen.getByText('clean')).toBeInTheDocument()
   })
 
@@ -314,7 +314,7 @@ describe('PotDepositForm', () => {
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-10')
     expect(screen.getByText('clean')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete deposit' }))
     expect(onDelete).toHaveBeenCalledOnce()
 
     setValue(/^Description/, 'Bonus')

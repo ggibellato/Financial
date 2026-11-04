@@ -1,24 +1,18 @@
 import { useRef, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { PotDepositRequestDto, PotOperationDto, TransferAccountOptionDto } from '../api/types'
+import type { FundingLineChange } from '../components/FundingLinesField'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
-import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
-import {
-  fundingLineErrorKey,
-  fundingLinesMismatch,
-  MAX_FUNDING_LINES,
-  positiveAmount,
-  remainingAmount,
-  type FundingLineValues,
-} from '../utils/fundingLines'
+import { getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
+import { fundingLineErrorKey, fundingLinesMismatch, MAX_FUNDING_LINES, remainingAmount, type FundingLineValues } from '../utils/fundingLines'
+import type { FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
 
 const DATE_KEY = 'potDeposit.date'
-const NO_ERRORS: Partial<Record<string, string>> = {}
+const NO_ERRORS: FieldErrors<string> = {}
 
 export type DepositInto = 'ActivePots' | 'OnePot'
-export type PotDepositField = 'potId' | 'amount' | 'date' | 'description'
 
 interface DepositValues {
   into: DepositInto
@@ -36,19 +30,19 @@ interface DepositFormState {
   values: DepositValues
   isSaving: boolean
   error: string | null
-  errorFields: Partial<Record<string, string>>
+  errorFields: FieldErrors<string>
 }
 
 function comparableValues({ lines, ...values }: DepositValues): string {
   return JSON.stringify({ ...values, lines: lines.map(({ bankId, amount }) => ({ bankId, amount })) })
 }
 
-function validate(values: DepositValues, amount: number | null): Partial<Record<string, string>> {
-  const errors: Partial<Record<string, string>> = {}
+function validate(values: DepositValues): FieldErrors<string> {
+  const errors: FieldErrors<string> = {}
   if (!values.date.trim()) errors.date = 'Enter the deposit date.'
   else if (values.date > todayIsoDate()) errors.date = 'Date must not be in the future.'
   if (values.into === 'OnePot' && !values.potId) errors.potId = 'Choose a pot.'
-  if (amount === null) errors.amount = 'Amount must be greater than zero.'
+  if (positiveAmount(values.amount) === null) errors.amount = 'Amount must be greater than zero.'
   if (!values.description.trim()) errors.description = 'Enter a description.'
   if (values.hasNoBank) return errors
   for (const line of values.lines) {
@@ -58,9 +52,9 @@ function validate(values: DepositValues, amount: number | null): Partial<Record<
   return errors
 }
 
-function toRequest(values: DepositValues, amount: number): PotDepositRequestDto {
+function toRequest(values: DepositValues): PotDepositRequestDto {
   return {
-    amount,
+    amount: Number(values.amount),
     date: values.date,
     description: values.description.trim(),
     potId: values.into === 'OnePot' ? values.potId : null,
@@ -110,44 +104,49 @@ export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefi
 
   const cancel = () => setForm(null)
 
-  const update = (change: (values: DepositValues) => DepositValues) =>
-    setForm((current) => current && { ...current, values: change(current.values), error: null, errorFields: {} })
-
-  const setField = <F extends 'into' | PotDepositField>(field: F, value: DepositValues[F]) =>
-    update((values) => {
-      const onlyLine = values.lines.length === 1 ? values.lines[0] : null
-      const lineFollowsAmount = field === 'amount' && onlyLine?.amount === values.amount
-      return {
-        ...values,
-        [field]: value,
-        lines: lineFollowsAmount && onlyLine ? [{ ...onlyLine, amount: value as string }] : values.lines,
-      }
-    })
-
-  const setHasNoBank = (hasNoBank: boolean) => update((values) => ({ ...values, hasNoBank }))
-
-  const changeLine = (key: string, change: Partial<Pick<FundingLineValues, 'bankId' | 'amount'>>) =>
-    update((values) => ({ ...values, lines: values.lines.map((line) => (line.key === key ? { ...line, ...change } : line)) }))
-
-  const addLine = () =>
-    update((values) =>
-      values.lines.length >= MAX_FUNDING_LINES
-        ? values
-        : { ...values, lines: [...values.lines, newLine('', remainingAmount(values.lines, positiveAmount(values.amount)))] },
+  const update = (change: Partial<DepositValues> | ((values: DepositValues) => Partial<DepositValues>)) =>
+    setForm(
+      (current) =>
+        current && {
+          ...current,
+          values: { ...current.values, ...(typeof change === 'function' ? change(current.values) : change) },
+          error: null,
+          errorFields: {},
+        },
     )
 
-  const removeLine = (key: string) => update((values) => ({ ...values, lines: values.lines.filter((line) => line.key !== key) }))
+  const setField = (field: 'potId' | 'date' | 'description', value: string) => update({ [field]: value })
+
+  const setInto = (into: DepositInto) => update({ into })
+
+  const setAmount = (amount: string) =>
+    update(({ lines, amount: previous }) => ({
+      amount,
+      lines: lines.length === 1 && lines[0].amount === previous ? [{ ...lines[0], amount }] : lines,
+    }))
+
+  const setHasNoBank = (hasNoBank: boolean) => update({ hasNoBank })
+
+  const changeLine = (key: string, change: FundingLineChange) =>
+    update(({ lines }) => ({ lines: lines.map((line) => (line.key === key ? { ...line, ...change } : line)) }))
+
+  const addLine = () =>
+    update(({ lines, amount }) =>
+      lines.length >= MAX_FUNDING_LINES ? {} : { lines: [...lines, newLine('', remainingAmount(lines, positiveAmount(amount)))] },
+    )
+
+  const removeLine = (key: string) => update(({ lines }) => ({ lines: lines.filter((line) => line.key !== key) }))
 
   const submit = () => {
     if (!form || form.isSaving || !potsAccount || mismatch) return
-    const errorFields = validate(form.values, depositAmount)
-    if (Object.keys(errorFields).length > 0 || depositAmount === null) {
+    const errorFields = validate(form.values)
+    if (Object.keys(errorFields).length > 0) {
       setForm({ ...form, error: null, errorFields })
       return
     }
 
     setForm({ ...form, isSaving: true, error: null, errorFields: {} })
-    const request = toRequest(form.values, depositAmount)
+    const request = toRequest(form.values)
     const saving = form.operationId
       ? apiClient.updatePotDeposit(potsAccount.id, form.operationId, request)
       : apiClient.createPotDeposit(potsAccount.id, request)
@@ -182,6 +181,8 @@ export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefi
     openEdit,
     cancel,
     setField,
+    setInto,
+    setAmount,
     setHasNoBank,
     changeLine,
     addLine,

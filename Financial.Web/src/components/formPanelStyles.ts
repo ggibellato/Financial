@@ -45,6 +45,9 @@ export const useFormPanelStyles = makeStyles({
     gap: tokens.spacingHorizontalS,
     alignItems: 'center',
   },
+  radioRow: {
+    flexWrap: 'wrap',
+  },
   deleteAction: {
     marginLeft: tokens.spacingHorizontalXXL,
   },

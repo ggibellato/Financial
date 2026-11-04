@@ -65,10 +65,6 @@
   flex-shrink: 0;
 }
 
-.account-screen__form-area:focus {
-  outline: none;
-}
-
 .account-screen__form-area:empty {
   display: none;
 }

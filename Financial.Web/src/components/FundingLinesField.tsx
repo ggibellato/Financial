@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react'
 import { Button, Field, Input, Select, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { BankDto } from '../api/types'
-import { fundingLineErrorKey, fundingLinesMismatch, MAX_FUNDING_LINES, type FundingLineValues } from '../utils/fundingLines'
-import { selectableBanks } from '../utils/selectableBanks'
+import { fundingLineErrorKey, MAX_FUNDING_LINES, type FundingLineValues } from '../utils/fundingLines'
+import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
 import './FundingLinesField.css'
 
 export type FundingLineChange = Partial<Pick<FundingLineValues, 'bankId' | 'amount'>>
@@ -12,7 +12,7 @@ interface FundingLinesFieldProps {
   lines: readonly FundingLineValues[]
   banks: BankDto[]
   keptBankIds?: readonly string[]
-  depositAmount: number | null
+  mismatch: string | null
   currency: string
   errors: Partial<Record<string, string>>
   onChange: (key: string, change: FundingLineChange) => void
@@ -24,7 +24,7 @@ export default function FundingLinesField({
   lines,
   banks,
   keptBankIds = [],
-  depositAmount,
+  mismatch,
   currency,
   errors,
   onChange,
@@ -34,7 +34,6 @@ export default function FundingLinesField({
   const containerRef = useRef<HTMLDivElement | null>(null)
   const addLineRef = useRef<HTMLButtonElement | null>(null)
   const previousLineCount = useRef(lines.length)
-  const mismatch = fundingLinesMismatch(lines, depositAmount, currency)
   const isAtLimit = lines.length >= MAX_FUNDING_LINES
 
   useEffect(() => {
@@ -59,7 +58,7 @@ export default function FundingLinesField({
                 <option value="">Select a bank</option>
                 {selectableBanks(banks, line.bankId, ...keptBankIds).map((bank) => (
                   <option key={bank.id} value={bank.id}>
-                    {bank.isActive === false ? `${bank.name} (inactive)` : bank.name}
+                    {inactiveMarked(bank)}
                   </option>
                 ))}
               </Select>

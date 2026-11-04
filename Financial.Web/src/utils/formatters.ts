@@ -158,6 +158,15 @@ export function formatCurrency(value: number, currency: string): string {
   return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value)
 }
 
+export function toPence(value: number): number {
+  return Math.round(value * 100)
+}
+
+export function positiveAmount(value: string): number | null {
+  const amount = parseValidatedNumber(value)
+  return amount !== null && amount > 0 ? amount : null
+}
+
 export function parseValidatedNumber(value: string, options: { min?: number; max?: number } = {}): number | null {
   const parsed = Number(value)
   if (!value.trim() || !isFinite(parsed)) return null

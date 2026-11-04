@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto, CreditCardDto } from '../api/types'
 import { rowKey, type AccountFormAction } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
 import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
+import { useConfirmedDelete } from './useConfirmedDelete'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
 import { useIncomeForm } from './useIncomeForm'
@@ -12,7 +14,6 @@ import { usePayCardStatementForm } from './usePayCardStatementForm'
 import { usePayRecurringBill } from './usePayRecurringBill'
 import type { OperationToOpen } from './useOperationRoute'
 import { usePotDepositForm } from './usePotDepositForm'
-import { usePotOperationDelete, type PotOperationNoun } from './usePotOperationDelete'
 import { usePotTransactionEditForm } from './usePotTransactionEditForm'
 import { usePotWithdrawalForm } from './usePotWithdrawalForm'
 import type { YearMonth } from './useMonthSelection'
@@ -21,6 +22,7 @@ export const NO_CREDIT_CARDS: CreditCardDto[] = []
 
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
+const SELECTED_TAB_SELECTOR = '[role="tab"][aria-selected="true"]'
 
 function incomeSavedMessage(potsAccountName: string | null): string {
   return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
@@ -39,6 +41,15 @@ export interface PotsContext {
 }
 
 const NO_POTS: PotsContext = { accounts: [], hasPots: false }
+
+type PotOperationNoun = 'deposit' | 'withdrawal'
+
+interface OperationDeleteTarget {
+  operationId: string
+  noun: PotOperationNoun
+}
+
+const operationRowKey = (operationId: string) => `operation:${operationId}`
 
 const OPERATION_TITLES: Record<PotOperationNoun, string> = { deposit: 'Deposit', withdrawal: 'Withdrawal' }
 
@@ -207,16 +218,24 @@ export function useAccountActionForms(
     nextField?.focus()
   })
 
-  const closeActiveForm = () => {
-    closeForms()
+  const restoreFocus = () => {
     if (openerRef.current?.isConnected) openerRef.current.focus()
-    else formAreaRef.current?.focus()
+    else formAreaRef.current?.parentElement?.querySelector<HTMLElement>(SELECTED_TAB_SELECTOR)?.focus()
   }
 
-  const operationDelete = usePotOperationDelete((noun) => {
+  const closeActiveForm = () => {
     closeForms()
-    saved(`${OPERATION_TITLES[noun]} deleted`)
-  })
+    restoreFocus()
+  }
+
+  const operationDelete = useConfirmedDelete<OperationDeleteTarget>(
+    ({ operationId }) => apiClient.deletePotOperation(operationId),
+    ({ noun }) => `Failed to delete the ${noun}`,
+    ({ noun }) => {
+      closeForms()
+      saved(`${OPERATION_TITLES[noun]} deleted`)
+    },
+  )
 
   const openAction = (action: AccountFormAction, button: HTMLButtonElement) => {
     discardPrompt.confirmDiscard(() => {
@@ -252,24 +271,32 @@ export function useAccountActionForms(
   const openDepositFromIncome = () => {
     discardPrompt.confirmDiscard(() => {
       closeForms()
-      incomeForm.showDepositIncomeForm(routeAccountId)
+      incomeForm.showDepositIncomeForm(accountId ?? routeAccountId)
     })
   }
 
-  const openOperation = ({ operation, income }: OperationToOpen) => {
-    closeForms()
-    setEditedRowKey(`operation:${operation.operationId}`)
-    if (income) incomeForm.showEditIncomeForm(income)
-    else if (operation.kind === 'Deposit') depositForm.openEdit(operation)
-    else withdrawalForm.openEdit(operation)
-  }
+  const isOperationFormOpen = depositForm.isEditing || withdrawalForm.isEditing || incomeForm.isIncomeEditing
 
-  const followOperationLink = (link: HTMLAnchorElement, navigate: () => void) =>
+  const openOperation = ({ operation, income }: OperationToOpen) =>
+    discardPrompt.confirmDiscard(() => {
+      closeForms()
+      setEditedRowKey(operationRowKey(operation.operationId))
+      if (income) incomeForm.showEditIncomeForm(income)
+      else if (operation.kind === 'Deposit') depositForm.openEdit(operation)
+      else withdrawalForm.openEdit(operation)
+    })
+
+  const followOperationLink = (operationId: string, link: HTMLAnchorElement, navigate: () => void) => {
+    if (isOperationFormOpen && editedRowKey === operationRowKey(operationId)) {
+      formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD_SELECTOR)?.focus()
+      return
+    }
     discardPrompt.confirmDiscard(() => {
       closeForms()
       openerRef.current = link
       navigate()
     })
+  }
 
   const closeFormsOf = (row: AccountTransactionDto) => {
     if (editingRowKey === rowKey(row)) closeForms()
@@ -293,7 +320,7 @@ export function useAccountActionForms(
     depositForm,
     withdrawalForm,
     operationDelete,
-    isOperationFormOpen: depositForm.isEditing || withdrawalForm.isEditing || incomeForm.isIncomeEditing,
+    isOperationFormOpen,
     isManagePotsOpen,
     closeManagePots: () => setIsManagePotsOpen(false),
     lockedBank,
@@ -309,6 +336,7 @@ export function useAccountActionForms(
     openOperation,
     followOperationLink,
     closeActiveForm,
+    restoreFocus,
     closeFormsOf,
     guardChange,
   }

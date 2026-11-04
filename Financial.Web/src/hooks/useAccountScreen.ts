@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../api/financialApiClient'
-import { ApiError } from '../api/apiError'
+import { isNotFound } from '../api/apiError'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
@@ -90,7 +90,7 @@ function loadAccountScreen(accountId: string, year: number, month: number): Prom
   ])
     .then(([accounts, account, transactions]): AccountScreenLoad => ({ accounts, account, transactions }))
     .catch((err: unknown) => {
-      if (err instanceof ApiError && err.status === 404) return 'not-found'
+      if (isNotFound(err)) return 'not-found'
       throw err
     })
 }

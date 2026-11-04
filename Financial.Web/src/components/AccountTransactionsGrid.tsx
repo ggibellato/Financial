@@ -12,7 +12,7 @@ import {
   Tooltip,
 } from '@fluentui/react-components'
 import { CalendarArrowRightRegular } from '@fluentui/react-icons'
-import type { AccountTransactionDto } from '../api/types'
+import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import DataTableCell from './grid/DataTableCell'
@@ -85,7 +85,7 @@ interface AccountTransactionsGridProps {
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
   onOpenStatement?: (path: string) => void
-  onOpenOperation?: (path: string, link: HTMLAnchorElement) => void
+  onOpenOperation?: (operation: AccountTransactionOperationDto, link: HTMLAnchorElement) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -111,22 +111,26 @@ export default function AccountTransactionsGrid({
     if (column.key !== 'description') return column.render(row)
     if (row.statement) {
       const path = statementPath(row.statement)
-      return <TruncatedText text={row.description} to={path} onClick={(event) => followLink(event, () => onOpenStatement?.(path), onOpenStatement)} />
+      const open = onOpenStatement && (() => onOpenStatement(path))
+      return <TruncatedText text={row.description} to={path} onClick={(event) => followLink(event, open)} />
     }
     if (row.operation && showsPotColumns) {
-      const path = operationPath(row.operation)
+      const { operation } = row
       return (
         <TruncatedText
           text={row.description}
-          to={path}
-          onClick={(event) => followLink(event, () => onOpenOperation?.(path, event.currentTarget), onOpenOperation)}
+          to={operationPath(operation)}
+          onClick={(event) => {
+            const link = event.currentTarget
+            followLink(event, onOpenOperation && (() => onOpenOperation(operation, link)))
+          }}
         />
       )
     }
     return column.render(row)
   }
-  const followLink = (event: MouseEvent<HTMLAnchorElement>, open: () => void, handler: unknown) => {
-    if (!handler || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+  const followLink = (event: MouseEvent<HTMLAnchorElement>, open: (() => void) | undefined) => {
+    if (!open || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
     event.preventDefault()
     open()
   }

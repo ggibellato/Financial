@@ -21,7 +21,7 @@ const line = (key: string, bankId = '', amount = ''): FundingLineValues => ({ ke
 
 function renderField(lines: FundingLineValues[], props: Partial<Parameters<typeof FundingLinesField>[0]> = {}) {
   const handlers = { onChange: vi.fn(), onAdd: vi.fn(), onRemove: vi.fn() }
-  render(<FundingLinesField lines={lines} banks={BANKS} depositAmount={90} currency="GBP" errors={{}} {...handlers} {...props} />)
+  render(<FundingLinesField lines={lines} banks={BANKS} mismatch={null} currency="GBP" errors={{}} {...handlers} {...props} />)
   return handlers
 }
 
@@ -31,7 +31,7 @@ function Stateful() {
     <FundingLinesField
       lines={lines}
       banks={BANKS}
-      depositAmount={90}
+      mismatch={null}
       currency="GBP"
       errors={{}}
       onChange={() => undefined}
@@ -42,22 +42,26 @@ function Stateful() {
 }
 
 describe('FundingLinesField', () => {
-  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-02] says how far the lines are from the deposit', () => {
-    renderField([line('a', 'b1', '85'), line('b', 'b2', '3')])
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-02] shows the mismatch in a status that stays mounted', () => {
+    const { rerender } = render(
+      <FundingLinesField lines={[line('a', 'b1', '85')]} banks={BANKS} mismatch={null} currency="GBP" errors={{}} onChange={vi.fn()} onAdd={vi.fn()} onRemove={vi.fn()} />,
+    )
+    const status = screen.getByRole('status')
+    expect(status).toBeEmptyDOMElement()
 
-    expect(screen.getByRole('status')).toHaveTextContent('Lines add up to £88.00; the deposit is £90.00.')
-  })
-
-  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-02] says nothing when the lines add up exactly', () => {
-    renderField([line('a', 'b1', '85.10'), line('b', 'b2', '4.90')])
-
-    expect(screen.getByRole('status')).toBeEmptyDOMElement()
-  })
-
-  it('says nothing until the deposit has an amount', () => {
-    renderField([line('a', 'b1', '85')], { depositAmount: null })
-
-    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+    rerender(
+      <FundingLinesField
+        lines={[line('a', 'b1', '85')]}
+        banks={BANKS}
+        mismatch="Lines add up to £85.00; the deposit is £90.00."
+        currency="GBP"
+        errors={{}}
+        onChange={vi.fn()}
+        onAdd={vi.fn()}
+        onRemove={vi.fn()}
+      />,
+    )
+    expect(status).toHaveTextContent('Lines add up to £85.00; the deposit is £90.00.')
   })
 
   it('names each line, lists active banks and keeps a bank this deposit already uses, marked inactive', () => {

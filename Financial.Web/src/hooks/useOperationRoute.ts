@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { ApiError } from '../api/apiError'
+import { isNotFound } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeDto, PotOperationDto } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
@@ -25,7 +25,7 @@ async function loadOperation(operationId: string, potsAccountId: string): Promis
     const income = incomes.find((candidate) => candidate.id === operation.incomeId)
     return income ? { operation, income } : 'not-found'
   } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return 'not-found'
+    if (isNotFound(err)) return 'not-found'
     throw err
   }
 }

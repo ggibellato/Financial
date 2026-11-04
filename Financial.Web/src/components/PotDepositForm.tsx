@@ -1,13 +1,9 @@
 import {
-  Button,
   Checkbox,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Radio,
   RadioGroup,
-  Select,
   Spinner,
   Table,
   TableBody,
@@ -16,7 +12,6 @@ import {
   TableRow,
   Text,
 } from '@fluentui/react-components'
-import { DeleteRegular } from '@fluentui/react-icons'
 import type { BankDto, IncomeSourceDto, PotBalanceDto } from '../api/types'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
@@ -28,6 +23,8 @@ import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
 import FundingLinesField from './FundingLinesField'
 import { useFormPanelStyles } from './formPanelStyles'
+import PotField from './PotField'
+import PotFormFooter from './PotFormFooter'
 import './PotDepositForm.css'
 
 const MANUAL_SOURCE = 'Manual'
@@ -89,8 +86,7 @@ interface PotDepositFormProps {
 export default function PotDepositForm({ form, banks, incomeSources, onFromIncome, onDelete, onCancel }: PotDepositFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
-  const generalError = Object.keys(form.errorFields).length === 0 ? form.error : null
-  const { formRef, saveRef } = useFormErrorFocus(form.errorFields, generalError)
+  const { formRef, saveRef } = useFormErrorFocus(form.errorFields, form.error)
   const { values } = form
   if (!values) return null
   const canSplitFromIncome = incomeSources.some((source) => source.isActive && source.potsAccountId != null)
@@ -114,13 +110,16 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
         {form.hasPotsError && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
 
         <div className={styles.grid}>
-          {!form.isEditing && (
+          {form.isEditing ? (
+            <div className={styles.spanTwo} />
+          ) : (
             <Field
               className={styles.spanTwo}
               label="Source"
               hint={canSplitFromIncome ? undefined : 'No active income source names a Pots account, so a deposit can only be manual.'}
             >
               <RadioGroup
+                className={styles.radioRow}
                 layout="horizontal"
                 value={MANUAL_SOURCE}
                 onChange={(_, data) => {
@@ -134,29 +133,20 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
           )}
 
           <Field className={styles.spanTwo} label="Into">
-            <RadioGroup layout="horizontal" value={values.into} onChange={(_, data) => form.setField('into', data.value as DepositInto)}>
+            <RadioGroup className={styles.radioRow} layout="horizontal" value={values.into} onChange={(_, data) => form.setInto(data.value as DepositInto)}>
               <Radio value="ActivePots" label="Active pots by split" />
               <Radio value="OnePot" label="One pot" />
             </RadioGroup>
           </Field>
 
           {values.into === 'OnePot' && (
-            <Field
-              label="Pot"
-              required
-              hint={form.pots === null && !form.hasPotsError ? 'Loading pots…' : undefined}
-              validationState={fieldError('potId') ? 'error' : 'none'}
-              validationMessage={fieldError('potId')}
-            >
-              <Select value={values.potId} disabled={form.pots === null} onChange={(event) => form.setField('potId', event.target.value)}>
-                <option value="">Select a pot</option>
-                {(form.pots ?? []).map((pot) => (
-                  <option key={pot.id} value={pot.id}>
-                    {pot.isActive ? pot.name : `${pot.name} (inactive)`}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            <PotField
+              value={values.potId}
+              pots={form.pots}
+              hasLoadError={form.hasPotsError}
+              error={fieldError('potId')}
+              onChange={(potId) => form.setField('potId', potId)}
+            />
           )}
 
           <Field
@@ -165,7 +155,7 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
             validationState={fieldError('amount') ? 'error' : 'none'}
             validationMessage={fieldError('amount')}
           >
-            <Input type="number" step="0.01" min="0" value={values.amount} onChange={(event) => form.setField('amount', event.target.value)} />
+            <Input type="number" step="0.01" min="0" value={values.amount} onChange={(event) => form.setAmount(event.target.value)} />
           </Field>
 
           <Field label="Date" required validationState={fieldError('date') ? 'error' : 'none'} validationMessage={fieldError('date')}>
@@ -196,7 +186,7 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
             lines={values.lines}
             banks={banks}
             keptBankIds={form.openedBankIds}
-            depositAmount={form.depositAmount}
+            mismatch={form.mismatch}
             currency={form.currency}
             errors={form.errorFields}
             onChange={form.changeLine}
@@ -218,31 +208,16 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
           </>
         )}
 
-        <div className={styles.actions}>
-          <Button
-            ref={saveRef}
-            type="submit"
-            appearance="primary"
-            disabled={form.isSaving || form.mismatch !== null || form.pots === null}
-            icon={form.isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {form.isSaving ? 'Saving...' : form.isEditing ? 'Save' : 'Add deposit'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-          {form.isEditing && (
-            <Button className={styles.deleteAction} appearance="primary" icon={<DeleteRegular />} onClick={onDelete}>
-              Delete
-            </Button>
-          )}
-        </div>
-
-        {generalError && (
-          <MessageBar role="alert" intent="error">
-            <MessageBarBody>{generalError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <PotFormFooter
+          saveRef={saveRef}
+          saveLabel={form.isEditing ? 'Save' : 'Add deposit'}
+          deleteLabel={form.isEditing ? 'Delete deposit' : null}
+          isSaving={form.isSaving}
+          isSaveDisabled={form.mismatch !== null || form.pots === null}
+          error={form.error}
+          onDelete={onDelete}
+          onCancel={onCancel}
+        />
       </fieldset>
     </form>
   )

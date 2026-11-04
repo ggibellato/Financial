@@ -4,10 +4,9 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDto, CategoryDto, PotOperationDto, PotWithdrawalRequestDto } from '../api/types'
 import { accountsWith } from '../utils/accountCapabilities'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
-import { formatCurrency, getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
-import { positiveAmount, toPence } from '../utils/fundingLines'
+import { formatCurrency, getSaveErrorMessage, positiveAmount, todayIsoDate, toPence } from '../utils/formatters'
 import { accountCategoryIds, defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
-import type { FieldErrors } from './inlineFormSlice'
+import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
 
@@ -15,7 +14,9 @@ const DATE_KEY = 'potWithdrawal.date'
 const OVERDRAFT_BALANCE = /balance of (-?\d+(?:\.\d+)?)\. Set confirmed/
 const MINUS_SIGN = '−'
 
-export type PotWithdrawalField = 'potsAccountId' | 'potId' | 'date' | 'description' | 'amount' | 'bankId' | 'categoryId'
+const FIELDS = ['potsAccountId', 'potId', 'date', 'description', 'amount', 'bankId', 'categoryId'] as const
+
+export type PotWithdrawalField = (typeof FIELDS)[number]
 
 type WithdrawalValues = Record<PotWithdrawalField, string>
 
@@ -30,7 +31,6 @@ interface WithdrawalFormState {
   overdraftMessage: string | null
 }
 
-const FIELDS: readonly PotWithdrawalField[] = ['potsAccountId', 'potId', 'date', 'description', 'amount', 'bankId', 'categoryId']
 const NO_ERRORS: FieldErrors<PotWithdrawalField> = {}
 
 function validate(values: WithdrawalValues): FieldErrors<PotWithdrawalField> {
@@ -192,7 +192,7 @@ export function usePotWithdrawalForm(
     hasPotsError: potsRead.error !== null,
     retryPots: potsRead.retry,
     isSaving: form?.isSaving ?? false,
-    isDirty: form !== null && FIELDS.some((field) => form.values[field] !== form.opened[field]),
+    isDirty: form !== null && hasChangedFields(form.values, form.opened, FIELDS),
     error: form?.error ?? null,
     errorFields: form?.errorFields ?? NO_ERRORS,
     overdraftMessage: form?.overdraftMessage ?? null,

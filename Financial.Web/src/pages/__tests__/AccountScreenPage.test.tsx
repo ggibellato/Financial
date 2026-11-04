@@ -430,8 +430,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     expect(deposit).toHaveAttribute('aria-expanded', 'true')
     await within(form).findByRole('table', { name: 'Split preview' })
     expect(within(form).getByRole('radio', { name: 'Manual' })).toHaveFocus()
-    await user.type(within(form).getAllByLabelText(/^Amount \(GBP\)/)[0], '90')
-    await user.type(within(form).getByLabelText(/^Description/), 'Ramsay bonus')
+    fireEvent.change(within(form).getAllByLabelText(/^Amount \(GBP\)/)[0], { target: { value: '90' } })
+    fireEvent.change(within(form).getByLabelText(/^Description/), { target: { value: 'Ramsay bonus' } })
     await user.click(within(form).getByRole('checkbox', { name: /No bank/ }))
     const potsReadsBeforeSave = getPotsMock.mock.calls.length
     await user.click(within(form).getByRole('button', { name: 'Add deposit' }))
@@ -506,10 +506,10 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     expect(action).toHaveAttribute('aria-expanded', 'true')
     await waitFor(() => expect(within(form).getByLabelText(/^Pot\b/)).toHaveValue('pot-home'))
     expect(getPotsMock).toHaveBeenCalledWith(RESERVA_ID, 2026, 10)
-    await user.type(within(form).getByLabelText(/^Description/), 'Boots')
-    await user.type(within(form).getByLabelText(/^Amount/), '20')
+    fireEvent.change(within(form).getByLabelText(/^Description/), { target: { value: 'Boots' } })
+    fireEvent.change(within(form).getByLabelText(/^Amount/), { target: { value: '20' } })
     await waitFor(() => expect(within(form).getByLabelText(/^Category/)).toHaveValue('category-home'))
-    await user.click(within(form).getByRole('button', { name: 'Add withdrawal' }))
+    await user.click(within(form).getByRole('button', { name: 'Withdraw from pots' }))
 
     await waitFor(() =>
       expect(createPotWithdrawalMock).toHaveBeenCalledWith(RESERVA_ID, {
@@ -536,8 +536,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await user.click(screen.getByRole('button', { name: 'Withdraw' }))
     const form = await operationForm('New withdrawal')
     await waitFor(() => expect(within(form).getByLabelText(/^Pot\b/)).toHaveValue('pot-home'))
-    await user.type(within(form).getByLabelText(/^Description/), 'Boots')
-    await user.type(within(form).getByLabelText(/^Amount/), '20')
+    fireEvent.change(within(form).getByLabelText(/^Description/), { target: { value: 'Boots' } })
+    fireEvent.change(within(form).getByLabelText(/^Amount/), { target: { value: '20' } })
     fireEvent.change(within(form).getByRole('combobox', { name: /Through bank/ }), { target: { value: BARCLAYS_ID } })
     await user.click(within(form).getByRole('button', { name: 'Add withdrawal' }))
 
@@ -590,6 +590,55 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)).toBeInTheDocument())
   })
 
+  it('keeps the form open when its own row link is followed again', async () => {
+    const user = userEvent.setup()
+    getPotOperationMock.mockResolvedValue(DEPOSIT)
+    withPotsAccount([linkedRow()])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+    await user.click(await screen.findByRole('link', { name: 'Ramsay bonus' }))
+    await operationForm('Edit deposit')
+
+    await user.click(screen.getByRole('link', { name: 'Ramsay bonus' }))
+
+    expect(screen.getByRole('form', { name: 'Edit deposit' })).toBeInTheDocument()
+    expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions&operation=op1`)).toBeInTheDocument()
+    expect(getPotOperationMock).toHaveBeenCalledOnce()
+  })
+
+  it('asks before an opening operation replaces a changed form', async () => {
+    const user = userEvent.setup()
+    let finishLoad: (operation: PotOperationDto) => void = () => undefined
+    getPotOperationMock.mockReturnValue(new Promise((resolve) => { finishLoad = resolve }))
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
+    const deposit = await screen.findByRole('button', { name: 'Deposit' })
+    await waitFor(() => expect(deposit).toBeEnabled())
+    await waitFor(() => expect(getPotOperationMock).toHaveBeenCalled())
+    await user.click(deposit)
+    await user.type(within(await operationForm('New deposit')).getByLabelText(/^Description/), 'typed')
+
+    finishLoad(DEPOSIT)
+
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
+    const form = await operationForm('Edit deposit')
+    await user.click(within(form).getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Edit deposit' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)).toBeInTheDocument())
+  })
+
+  it('returns focus to the selected tab when a form opened from the address closes', async () => {
+    const user = userEvent.setup()
+    getPotOperationMock.mockResolvedValue(DEPOSIT)
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
+
+    const form = await operationForm('Edit deposit')
+    await user.click(within(form).getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.getByRole('tab', { name: 'Pots', selected: true })).toHaveFocus())
+  })
+
   it('opens the income form for a deposit that belongs to an income', async () => {
     getPotOperationMock.mockResolvedValue({ ...DEPOSIT, incomeId: 'i1' })
     getIncomesByMonthMock.mockResolvedValue([
@@ -601,7 +650,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     expect(await screen.findByRole('heading', { name: 'Edit Income' })).toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledWith(2026, 10)
     expect(screen.getByLabelText(/^Net Value/)).toHaveValue(100)
-    expect(screen.queryByRole('button', { name: 'Delete' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Delete (deposit|withdrawal)$/ })).not.toBeInTheDocument()
   })
 
   it('opens the form on an inactive Pots account, which has no actions to load its options', async () => {
@@ -633,6 +682,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
 
     await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)).toBeInTheDocument())
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Pots', selected: true })).toHaveFocus()
   })
 
   it('offers a retry when the operation cannot be read', async () => {
@@ -655,8 +705,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions&operation=op2`)
     const form = await operationForm('Edit withdrawal')
 
-    await user.click(within(form).getByRole('button', { name: 'Delete' }))
-    expect(await findDialog('Delete withdrawal')).toHaveTextContent('Its pot lines and bank expenses are deleted with it.')
+    await user.click(within(form).getByRole('button', { name: 'Delete withdrawal' }))
+    expect(await findDialog('Delete withdrawal')).toHaveTextContent('Its pot lines and any bank expenses are deleted with it.')
     await user.click(await dialogButton('Delete withdrawal', 'Delete'))
 
     await waitFor(() => expect(deletePotOperationMock).toHaveBeenCalledWith('op2'))
@@ -673,7 +723,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
     const form = await operationForm('Edit deposit')
 
-    await user.click(within(form).getByRole('button', { name: 'Delete' }))
+    await user.click(within(form).getByRole('button', { name: 'Delete deposit' }))
     await user.click(await dialogButton('Delete deposit', 'Delete'))
 
     expect(await findDialog('Delete deposit')).toHaveTextContent('This deposit belongs to an income; edit the income.')

@@ -1,17 +1,18 @@
 import { useEffect, useRef } from 'react'
-import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
-import { DeleteRegular } from '@fluentui/react-icons'
 import type { BankDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { PotWithdrawalFormModel } from '../hooks/usePotWithdrawalForm'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
-import { selectableBanks } from '../utils/selectableBanks'
+import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
+import PotField from './PotField'
+import PotFormFooter from './PotFormFooter'
 
 interface PotWithdrawalFormProps {
   form: PotWithdrawalFormModel
@@ -26,11 +27,15 @@ function formTitle(form: PotWithdrawalFormModel): string {
   return form.isBankLocked ? 'Withdraw from pots' : 'New withdrawal'
 }
 
+function saveLabel(form: PotWithdrawalFormModel): string {
+  if (form.isEditing) return 'Save'
+  return form.isBankLocked ? 'Withdraw from pots' : 'Add withdrawal'
+}
+
 export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, onCancel }: PotWithdrawalFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
-  const generalError = Object.keys(form.errorFields).length === 0 ? form.error : null
-  const { formRef, saveRef } = useFormErrorFocus(form.errorFields, generalError)
+  const { formRef, saveRef } = useFormErrorFocus(form.errorFields, form.error)
   const wasOverdraftOpen = useRef(false)
 
   useEffect(() => {
@@ -92,22 +97,13 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
               </Field>
             )}
 
-            <Field
-              label="Pot"
-              required
-              hint={form.pots === null && !form.hasPotsError ? 'Loading pots…' : undefined}
-              validationState={fieldError('potId') ? 'error' : 'none'}
-              validationMessage={fieldError('potId')}
-            >
-              <Select value={values.potId} onChange={(event) => form.setField('potId', event.target.value)}>
-                {values.potId === '' && <option value="">{form.pots === null ? 'Loading pots…' : 'Select a pot'}</option>}
-                {(form.pots ?? []).map((pot) => (
-                  <option key={pot.id} value={pot.id}>
-                    {pot.isActive ? pot.name : `${pot.name} (inactive)`}
-                  </option>
-                ))}
-              </Select>
-            </Field>
+            <PotField
+              value={values.potId}
+              pots={form.pots}
+              hasLoadError={form.hasPotsError}
+              error={fieldError('potId')}
+              onChange={(potId) => form.setField('potId', potId)}
+            />
 
             <Field label="Date" required validationState={fieldError('date') ? 'error' : 'none'} validationMessage={fieldError('date')}>
               <Input type="date" value={values.date} onChange={(event) => form.setField('date', event.target.value)} />
@@ -153,7 +149,7 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
                   <option value="">No bank (direct)</option>
                   {selectableBanks(banks, values.bankId, form.openedBankId).map((bank) => (
                     <option key={bank.id} value={bank.id}>
-                      {bank.isActive === false ? `${bank.name} (inactive)` : bank.name}
+                      {inactiveMarked(bank)}
                     </option>
                   ))}
                 </Select>
@@ -180,31 +176,16 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
             )}
           </div>
 
-          <div className={styles.actions}>
-            <Button
-              ref={saveRef}
-              type="submit"
-              appearance="primary"
-              disabled={form.isSaving || form.pots === null}
-              icon={form.isSaving ? <Spinner size="tiny" /> : undefined}
-            >
-              {form.isSaving ? 'Saving...' : form.isEditing ? 'Save' : 'Add withdrawal'}
-            </Button>
-            <Button appearance="secondary" onClick={onCancel}>
-              Cancel
-            </Button>
-            {form.isEditing && (
-              <Button className={styles.deleteAction} appearance="primary" icon={<DeleteRegular />} onClick={onDelete}>
-                Delete
-              </Button>
-            )}
-          </div>
-
-          {generalError && (
-            <MessageBar role="alert" intent="error">
-              <MessageBarBody>{generalError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <PotFormFooter
+            saveRef={saveRef}
+            saveLabel={saveLabel(form)}
+            deleteLabel={form.isEditing ? 'Delete withdrawal' : null}
+            isSaving={form.isSaving}
+            isSaveDisabled={form.pots === null}
+            error={form.error}
+            onDelete={onDelete}
+            onCancel={onCancel}
+          />
         </fieldset>
       </form>
 

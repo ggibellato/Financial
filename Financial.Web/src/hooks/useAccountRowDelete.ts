@@ -1,7 +1,6 @@
-import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountTransactionDto } from '../api/types'
-import { getDeleteErrorMessage } from '../utils/formatters'
+import { useConfirmedDelete } from './useConfirmedDelete'
 
 function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
   if (row.expense) return apiClient.deleteExpense(row.expense.id)
@@ -13,36 +12,6 @@ function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
 }
 
 export function useAccountRowDelete(onDeleted: (row: AccountTransactionDto) => void) {
-  const [row, setRow] = useState<AccountTransactionDto | null>(null)
-  const [isOpen, setIsOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const requestDelete = (requested: AccountTransactionDto) => {
-    setRow(requested)
-    setIsOpen(true)
-    setError(null)
-  }
-
-  const cancel = () => {
-    if (!isDeleting) setIsOpen(false)
-  }
-
-  const confirm = () => {
-    if (!row || !isOpen) return
-    const deleted = row
-    setIsDeleting(true)
-    setError(null)
-    void deleteSourceRecord(deleted)
-      .then(() => {
-        setIsOpen(false)
-        onDeleted(deleted)
-      })
-      .catch((err: unknown) => {
-        setError(getDeleteErrorMessage(err, 'Failed to delete'))
-      })
-      .finally(() => setIsDeleting(false))
-  }
-
-  return { row, isOpen, isDeleting, error, requestDelete, cancel, confirm }
+  const { target, request, ...rowDelete } = useConfirmedDelete(deleteSourceRecord, () => 'Failed to delete', onDeleted)
+  return { ...rowDelete, row: target, requestDelete: request }
 }
