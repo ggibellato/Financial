@@ -1,17 +1,21 @@
-import { useEffect, useReducer, useRef } from 'react'
+import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
 import type { AccountDto, BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
-import type { FundingLineChange } from '../components/FundingLinesField'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { accountsWith } from '../utils/accountCapabilities'
 import {
+  comparableLines,
   fundingLineErrors,
   fundingLinesMismatch,
   incomeDepositAmount,
-  MAX_FUNDING_LINES,
-  remainingAmount,
+  newFundingLine,
+  toFundingLineRequests,
+  withAddedLine,
+  withChangedLine,
+  withoutLine,
+  type FundingLineChange,
   type FundingLineValues,
 } from '../utils/fundingLines'
 import { selectableBanks } from '../utils/selectableBanks'
@@ -102,14 +106,13 @@ const DEFAULT_DEPOSIT_CURRENCY = 'GBP'
 
 interface FundingFields {
   isOlderSplit: boolean
-  isHandSplit: boolean
   fundingLines: readonly FundingLineValues[]
 }
 
-const DEFAULT_FUNDING: FundingFields = { isOlderSplit: false, isHandSplit: false, fundingLines: [] }
+const DEFAULT_FUNDING: FundingFields = { isOlderSplit: false, fundingLines: [] }
 
-function comparableFunding({ isHandSplit, fundingLines }: FundingFields): string {
-  return JSON.stringify({ isHandSplit, lines: fundingLines.map(({ bankId, amount }) => ({ bankId, amount })) })
+function comparableFunding({ fundingLines }: FundingFields): string {
+  return JSON.stringify(comparableLines(fundingLines))
 }
 
 function withOpenedValues(state: IncomeFormState): IncomeFormState {
@@ -236,7 +239,7 @@ function reducer(state: IncomeFormState, action: IncomeFormAction): IncomeFormSt
     case 'SET_SPLIT':
       return { ...state, ...action.payload }
     case 'SET_FUNDING_LINES':
-      return { ...state, isHandSplit: true, fundingLines: action.payload, fundingErrors: NO_FUNDING_ERRORS }
+      return { ...state, fundingLines: action.payload, fundingErrors: NO_FUNDING_ERRORS }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {}, fundingErrors: NO_FUNDING_ERRORS }
     case 'SAVE_SUCCESS':
@@ -332,21 +335,16 @@ export function useIncomeForm(
 ): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const { accounts, status: potsAccountsStatus, retry: retryPotsAccounts } = useAccounts()
-  const fundingLineCount = useRef(0)
 
-  const incomeBankLock = !lockedBank || !state.isEditing || state.openedValues?.bank === lockedBank.id ? lockedBank : undefined
+  const incomeBankLock = !state.isEditing || state.openedValues?.bank === lockedBank?.id ? lockedBank : undefined
   const incomeBankId = incomeBankLock?.id ?? state.bank
   const isFundingShown = offersSplit(incomeSources, state.incomeSource) && state.splitToReserve === 'true' && !state.isOlderSplit
-  const netValueNumber = parseValidatedNumber(state.netValue, { min: 0 })
-  const depositAmount = netValueNumber === null ? null : incomeDepositAmount(netValueNumber)
+  const netValue = parseValidatedNumber(state.netValue, { min: 0 })
+  const depositAmount = netValue === null ? null : incomeDepositAmount(netValue)
   const fundingCurrency = findAccount(accounts, state.potsAccountId)?.currency ?? DEFAULT_DEPOSIT_CURRENCY
-  const fundingMismatch =
-    isFundingShown && state.isHandSplit ? fundingLinesMismatch(state.fundingLines, depositAmount, fundingCurrency) : null
-
-  const newFundingLine = (bankId = '', amount = ''): FundingLineValues => {
-    fundingLineCount.current += 1
-    return { key: `income-line-${fundingLineCount.current}`, bankId, amount }
-  }
+  const isHandSplit = state.fundingLines.length > 0
+  const editsFundingLines = isFundingShown && isHandSplit
+  const fundingMismatch = editsFundingLines ? fundingLinesMismatch(state.fundingLines, depositAmount, fundingCurrency) : null
 
   const potsAccountName = (potsAccountId: string | null | undefined): string | null =>
     potsAccountId == null ? null : (findAccount(accounts, potsAccountId)?.name ?? UNNAMED_POTS_ACCOUNT)
@@ -404,7 +402,6 @@ export function useIncomeForm(
         income,
         funding: {
           isOlderSplit: isOlderSplitIncome(income),
-          isHandSplit: !isDefaultFunding(income),
           fundingLines: isDefaultFunding(income) ? [] : income.fundingLines.map((line) => newFundingLine(line.bankId, String(line.amount))),
         },
       },
@@ -416,22 +413,15 @@ export function useIncomeForm(
 
   const splitAcrossBanks = () => setFundingLines([newFundingLine(incomeBankId, depositAmount?.toFixed(2) ?? '')])
 
-  const changeFundingLine = (key: string, change: FundingLineChange) =>
-    setFundingLines(state.fundingLines.map((line) => (line.key === key ? { ...line, ...change } : line)))
+  const changeFundingLine = (key: string, change: FundingLineChange) => setFundingLines(withChangedLine(state.fundingLines, key, change))
 
-  const addFundingLine = () => {
-    if (state.fundingLines.length < MAX_FUNDING_LINES) {
-      setFundingLines([...state.fundingLines, newFundingLine('', remainingAmount(state.fundingLines, depositAmount))])
-    }
-  }
+  const addFundingLine = () => setFundingLines(withAddedLine(state.fundingLines, depositAmount))
 
-  const removeFundingLine = (key: string) => setFundingLines(state.fundingLines.filter((line) => line.key !== key))
+  const removeFundingLine = (key: string) => setFundingLines(withoutLine(state.fundingLines, key))
 
   function requestedFundingLines(): { bankId: string; amount: number }[] | null {
     if (!isFundingShown) return null
-    return state.isHandSplit
-      ? state.fundingLines.map((line) => ({ bankId: line.bankId, amount: Number(line.amount) }))
-      : [{ bankId: incomeBankId, amount: depositAmount as number }]
+    return isHandSplit ? toFundingLineRequests(state.fundingLines) : [{ bankId: incomeBankId, amount: depositAmount as number }]
   }
 
   function setIncomeField(field: IncomeFormField, value: string) {
@@ -451,7 +441,7 @@ export function useIncomeForm(
     if (fundingMismatch) return
 
     const errors: Partial<Record<IncomeFormField, string>> = {}
-    const fundingErrors = isFundingShown && state.isHandSplit ? fundingLineErrors(state.fundingLines) : NO_FUNDING_ERRORS
+    const fundingErrors = editsFundingLines ? fundingLineErrors(state.fundingLines) : NO_FUNDING_ERRORS
 
     if (!state.date.trim()) {
       errors.date = 'Date is required'
@@ -461,7 +451,6 @@ export function useIncomeForm(
       errors.incomeSource = 'Income source is required'
     }
 
-    const netValue = parseValidatedNumber(state.netValue, { min: 0 })
     if (netValue === null) {
       errors.netValue = 'Net value must be a non-negative number'
     }
@@ -534,7 +523,7 @@ export function useIncomeForm(
 
   const incomeFunding: IncomeFunding = {
     isShown: isFundingShown,
-    isHandSplit: state.isHandSplit,
+    isHandSplit,
     lines: state.fundingLines,
     openedBankIds: state.openedValues?.bank ? [state.openedValues.bank] : [],
     bankName: incomeBankLock?.name ?? banks.find((bank) => bank.id === incomeBankId)?.name ?? null,

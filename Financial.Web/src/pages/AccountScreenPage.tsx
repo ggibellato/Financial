@@ -39,8 +39,7 @@ export default function AccountScreenPage() {
   const navigate = useNavigate()
   const { account, hasPots } = screen
   const allowedActions = account?.allowedActions ?? []
-  const opensOperation = screen.operationId !== null
-  const usesFormOptions = opensOperation || formActionsOf(allowedActions).some(needsFormOptions)
+  const usesFormOptions = screen.operationId !== null || formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
   const isRefreshAfterSavePending = useRef(false)
@@ -96,7 +95,7 @@ export default function AccountScreenPage() {
     screen.operationId,
     screen.accountId,
     hasPots,
-    opensOperation && isAccountCurrent && formOptions.isReady,
+    isAccountCurrent && formOptions.isReady,
     forms.isOperationFormOpen,
     forms.openOperation,
     screen.clearOperation,

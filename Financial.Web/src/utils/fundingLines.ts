@@ -8,6 +8,35 @@ export interface FundingLineValues {
   amount: string
 }
 
+export type FundingLineChange = Partial<Pick<FundingLineValues, 'bankId' | 'amount'>>
+
+let fundingLineCount = 0
+
+export function newFundingLine(bankId = '', amount = ''): FundingLineValues {
+  fundingLineCount += 1
+  return { key: `line-${fundingLineCount}`, bankId, amount }
+}
+
+export function withChangedLine(lines: readonly FundingLineValues[], key: string, change: FundingLineChange): FundingLineValues[] {
+  return lines.map((line) => (line.key === key ? { ...line, ...change } : line))
+}
+
+export function withAddedLine(lines: readonly FundingLineValues[], depositAmount: number | null): FundingLineValues[] {
+  return lines.length >= MAX_FUNDING_LINES ? [...lines] : [...lines, newFundingLine('', remainingAmount(lines, depositAmount))]
+}
+
+export function withoutLine(lines: readonly FundingLineValues[], key: string): FundingLineValues[] {
+  return lines.filter((line) => line.key !== key)
+}
+
+export function comparableLines(lines: readonly FundingLineValues[]): { bankId: string; amount: string }[] {
+  return lines.map(({ bankId, amount }) => ({ bankId, amount }))
+}
+
+export function toFundingLineRequests(lines: readonly FundingLineValues[]): { bankId: string; amount: number }[] {
+  return lines.map(({ bankId, amount }) => ({ bankId, amount: Number(amount) }))
+}
+
 function linesTotalInPence(lines: readonly FundingLineValues[]): number {
   return lines.reduce((total, line) => total + toPence(parseValidatedNumber(line.amount) ?? 0), 0)
 }

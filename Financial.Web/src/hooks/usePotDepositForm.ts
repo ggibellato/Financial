@@ -1,10 +1,20 @@
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { PotDepositRequestDto, PotOperationDto, TransferAccountOptionDto } from '../api/types'
-import type { FundingLineChange } from '../components/FundingLinesField'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
 import { getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
-import { fundingLineErrors, fundingLinesMismatch, MAX_FUNDING_LINES, remainingAmount, type FundingLineValues } from '../utils/fundingLines'
+import {
+  comparableLines,
+  fundingLineErrors,
+  fundingLinesMismatch,
+  newFundingLine,
+  toFundingLineRequests,
+  withAddedLine,
+  withChangedLine,
+  withoutLine,
+  type FundingLineChange,
+  type FundingLineValues,
+} from '../utils/fundingLines'
 import type { FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
@@ -34,7 +44,7 @@ interface DepositFormState {
 }
 
 function comparableValues({ lines, ...values }: DepositValues): string {
-  return JSON.stringify({ ...values, lines: lines.map(({ bankId, amount }) => ({ bankId, amount })) })
+  return JSON.stringify({ ...values, lines: comparableLines(lines) })
 }
 
 function validate(values: DepositValues): FieldErrors<string> {
@@ -53,22 +63,16 @@ function toRequest(values: DepositValues): PotDepositRequestDto {
     date: values.date,
     description: values.description.trim(),
     potId: values.into === 'OnePot' ? values.potId : null,
-    fundingLines: values.hasNoBank ? [] : values.lines.map((line) => ({ bankId: line.bankId, amount: Number(line.amount) })),
+    fundingLines: values.hasNoBank ? [] : toFundingLineRequests(values.lines),
   }
 }
 
 export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefined, viewedMonth: YearMonth, onSaved: () => void) {
   const [form, setForm] = useState<DepositFormState | null>(null)
-  const lineCount = useRef(0)
   const pots = usePots(form && potsAccount ? potsAccount.id : null, viewedMonth.year, viewedMonth.month)
   const currency = potsAccount?.currency ?? ''
   const depositAmount = form ? positiveAmount(form.values.amount) : null
   const mismatch = form && potsAccount && !form.values.hasNoBank ? fundingLinesMismatch(form.values.lines, depositAmount, currency) : null
-
-  const newLine = (bankId = '', amount = ''): FundingLineValues => {
-    lineCount.current += 1
-    return { key: `line-${lineCount.current}`, bankId, amount }
-  }
 
   const show = (operationId: string | null, values: DepositValues) =>
     setForm({ operationId, opened: values, values, isSaving: false, error: null, errorFields: {} })
@@ -81,7 +85,7 @@ export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefi
       date: getCreateFormDate(DATE_KEY, viewedMonth),
       description: '',
       hasNoBank: false,
-      lines: [newLine()],
+      lines: [newFundingLine()],
     })
 
   const openEdit = (operation: PotOperationDto) => {
@@ -93,7 +97,7 @@ export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefi
       date: operation.date,
       description: operation.description,
       hasNoBank: fundingLines.length === 0,
-      lines: fundingLines.length > 0 ? fundingLines.map((line) => newLine(line.bankId, String(line.amount))) : [newLine()],
+      lines: fundingLines.length > 0 ? fundingLines.map((line) => newFundingLine(line.bankId, String(line.amount))) : [newFundingLine()],
     })
   }
 
@@ -123,14 +127,11 @@ export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefi
   const setHasNoBank = (hasNoBank: boolean) => update({ hasNoBank })
 
   const changeLine = (key: string, change: FundingLineChange) =>
-    update(({ lines }) => ({ lines: lines.map((line) => (line.key === key ? { ...line, ...change } : line)) }))
+    update(({ lines }) => ({ lines: withChangedLine(lines, key, change) }))
 
-  const addLine = () =>
-    update(({ lines, amount }) =>
-      lines.length >= MAX_FUNDING_LINES ? {} : { lines: [...lines, newLine('', remainingAmount(lines, positiveAmount(amount)))] },
-    )
+  const addLine = () => update(({ lines, amount }) => ({ lines: withAddedLine(lines, positiveAmount(amount)) }))
 
-  const removeLine = (key: string) => update(({ lines }) => ({ lines: lines.filter((line) => line.key !== key) }))
+  const removeLine = (key: string) => update(({ lines }) => ({ lines: withoutLine(lines, key) }))
 
   const submit = () => {
     if (!form || form.isSaving || !potsAccount || mismatch) return
