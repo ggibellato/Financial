@@ -317,7 +317,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Amount = transaction.Amount,
         CanEdit = account.IsActive && transaction.OperationId is null && transaction.Income is null,
         Operation = OperationLink(transaction.OperationId),
-        Movement = ReserveService.ToDto(transaction)
+        Movement = ReserveService.ToDto(transaction, ReserveService.SplitLineCount(transaction, _repository.GetPotTransactions()))
     };
 
     private AccountTransactionDTO ToRow(Income income, Account account) => new()

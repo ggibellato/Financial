@@ -437,6 +437,86 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task GetMovementHistory_LineOfAManualSplit_CountsTheLinesItsDeleteRemoves()
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var otherLine = PotTransaction.Create(_repository.ReservaPots.Last(), 10m, date, "Ramsay");
+        var withdrawal = PotTransaction.Create(_repository.ReservaPots.First(), -5m, date, "Ramsay");
+        var otherDate = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date.AddDays(1), "Ramsay");
+        var otherDescription = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Bonus");
+        _repository.PotTransactions.AddRange([line, otherLine, withdrawal, otherDate, otherDescription]);
+
+        var history = _sut.GetMovementHistory();
+
+        history.Single(m => m.Id == line.Id).SplitLineCount.Should().Be(2);
+        await _sut.DeleteMovementAsync(line.Id);
+        _repository.PotTransactions.Should().Equal(withdrawal, otherDate, otherDescription);
+    }
+
+    [Fact]
+    public void GetMovementHistory_LineOutsideAManualSplit_CountsOne()
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var otherLine = PotTransaction.Create(_repository.ReservaPots.Last(), 10m, date, "Ramsay");
+        var withdrawal = PotTransaction.Create(_repository.ReservaPots.First(), -5m, date, "Ramsay");
+        var zeroLine = PotTransaction.Create(_repository.ReservaPots.First(), 0m, date, "Ramsay");
+        var otherDate = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date.AddDays(1), "Ramsay");
+        var otherDescription = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Bonus");
+        _repository.PotTransactions.AddRange([line, otherLine, withdrawal, zeroLine, otherDate, otherDescription]);
+
+        var history = _sut.GetMovementHistory();
+
+        using (new AssertionScope())
+        {
+            history.Single(m => m.Id == withdrawal.Id).SplitLineCount.Should().Be(1);
+            history.Single(m => m.Id == zeroLine.Id).SplitLineCount.Should().Be(1);
+            history.Single(m => m.Id == otherDate.Id).SplitLineCount.Should().Be(1);
+            history.Single(m => m.Id == otherDescription.Id).SplitLineCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public void GetMovementHistory_LinkedLinesSharingDateAndDescription_CountOneAndStayOutOfTheManualSplit()
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var manual = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var otherManual = PotTransaction.Create(_repository.ReservaPots.Last(), 10m, date, "Ramsay");
+        var incomeLine = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay", LinkedIncome());
+        var operationLine = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay", operationId: Guid.NewGuid());
+        _repository.PotTransactions.AddRange([manual, otherManual, incomeLine, operationLine]);
+
+        var history = _sut.GetMovementHistory();
+
+        using (new AssertionScope())
+        {
+            history.Single(m => m.Id == manual.Id).SplitLineCount.Should().Be(2);
+            history.Single(m => m.Id == incomeLine.Id).SplitLineCount.Should().Be(1);
+            history.Single(m => m.Id == operationLine.Id).SplitLineCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateMovementAsync_LineMovedOutOfItsManualSplit_CountsOne()
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var otherLine = PotTransaction.Create(_repository.ReservaPots.Last(), 10m, date, "Ramsay");
+        _repository.PotTransactions.AddRange([line, otherLine]);
+
+        var result = await _sut.UpdateMovementAsync(line.Id, new ReserveMovementUpdateDTO
+        {
+            BucketId = line.Pot.Id,
+            Amount = 10m,
+            Date = date,
+            Description = "Corrected"
+        });
+
+        result.SplitLineCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task UpdateMovementAsync_ExistingId_UpdatesFieldsAndSaves()
     {
         _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));

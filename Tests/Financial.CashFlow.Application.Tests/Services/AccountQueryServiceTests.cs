@@ -312,6 +312,24 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetTransactions_PotsAccount_MovementCarriesTheLinesItsDeleteRemoves()
+    {
+        var (pots, pot) = AddPotsAccount();
+        var date = new DateOnly(2026, 10, 5);
+        var line = PotTransaction.Create(pot, 10m, date, "Bonus");
+        var withdrawal = PotTransaction.Create(pot, -5m, date, "Bonus");
+        _repository.PotTransactions.AddRange([line, PotTransaction.Create(pot, 20m, date, "Bonus"), withdrawal]);
+
+        var rows = _sut.GetTransactions(pots.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            rows.Single(row => row.Id == line.Id).Movement!.SplitLineCount.Should().Be(2);
+            rows.Single(row => row.Id == withdrawal.Id).Movement!.SplitLineCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
     public void GetTransactions_InactivePotsAccount_MovementCannotBeEdited()
     {
         var (pots, pot) = AddPotsAccount(isActive: false);

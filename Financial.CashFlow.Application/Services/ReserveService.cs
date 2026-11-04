@@ -136,7 +136,7 @@ public sealed class ReserveService : IReserveService
         {
             var result = _repository.GetPotTransactions()
                 .OrderByDescending(m => m.Date)
-                .Select(ToDto)
+                .Select(transaction => ToDto(transaction))
                 .ToList();
 
             span.MarkSuccess();
@@ -199,7 +199,7 @@ public sealed class ReserveService : IReserveService
             EnsureNotLinkedToIncome(transaction);
             LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
 
-            var lines = LinesToDeleteWith(transaction);
+            var lines = LinesToDeleteWith(transaction, _repository.GetPotTransactions());
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -230,10 +230,16 @@ public sealed class ReserveService : IReserveService
     private IEnumerable<PotTransaction> TransactionsOf(Guid operationId) =>
         _repository.GetPotTransactions().Where(transaction => transaction.OperationId == operationId);
 
-    private IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction) =>
-        transaction.Amount > 0m
-            ? _repository.GetPotTransactions().Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
+    private static IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
+        IsLineOfSameManualSplit(transaction, transaction)
+            ? transactions.Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
             : [transaction];
+
+    internal static int SplitLineCount(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
+        LinesToDeleteWith(transaction, transactions).Count;
+
+    private ReserveMovementDTO ToDto(PotTransaction transaction) =>
+        ToDto(transaction, SplitLineCount(transaction, _repository.GetPotTransactions()));
 
     private static bool IsLineOfSameManualSplit(PotTransaction line, PotTransaction transaction) =>
         line.Amount > 0m
@@ -251,7 +257,7 @@ public sealed class ReserveService : IReserveService
         }
     }
 
-    internal static ReserveMovementDTO ToDto(PotTransaction transaction) => new()
+    internal static ReserveMovementDTO ToDto(PotTransaction transaction, int splitLineCount) => new()
     {
         Id = transaction.Id,
         BucketId = transaction.Pot.Id,
@@ -259,6 +265,7 @@ public sealed class ReserveService : IReserveService
         Amount = transaction.Amount,
         Date = transaction.Date,
         Description = transaction.Description,
-        IncomeId = transaction.Income?.Id
+        IncomeId = transaction.Income?.Id,
+        SplitLineCount = splitLineCount
     };
 }

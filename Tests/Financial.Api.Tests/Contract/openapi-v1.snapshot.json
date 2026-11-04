@@ -5836,6 +5836,10 @@
               "null",
               "string"
             ]
+          },
+          "splitLineCount": {
+            "format": "int32",
+            "type": "integer"
           }
         },
         "required": [
@@ -5844,7 +5848,8 @@
           "bucketName",
           "amount",
           "date",
-          "description"
+          "description",
+          "splitLineCount"
         ],
         "type": "object"
       },
