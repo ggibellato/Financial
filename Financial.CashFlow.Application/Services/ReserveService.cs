@@ -93,7 +93,7 @@ public sealed class ReserveService : IReserveService
             span.SetAttribute(TelemetryAttributeKeys.EntityId, transaction.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "PostWithdrawal");
-            return ToDto(transaction);
+            return ToDto(transaction, _repository.GetPotTransactions());
         }
         catch (Exception ex)
         {
@@ -136,7 +136,7 @@ public sealed class ReserveService : IReserveService
         {
             var result = _repository.GetPotTransactions()
                 .OrderByDescending(m => m.Date)
-                .Select(ToDto)
+                .Select(transaction => ToDto(transaction, _repository.GetPotTransactions()))
                 .ToList();
 
             span.MarkSuccess();
@@ -180,7 +180,7 @@ public sealed class ReserveService : IReserveService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateMovement");
-            return ToDto(transaction);
+            return ToDto(transaction, _repository.GetPotTransactions());
         }
         catch (Exception ex)
         {
@@ -199,7 +199,7 @@ public sealed class ReserveService : IReserveService
             EnsureNotLinkedToIncome(transaction);
             LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
 
-            var lines = LinesToDeleteWith(transaction);
+            var lines = LinesToDeleteWith(transaction, _repository.GetPotTransactions());
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -230,15 +230,18 @@ public sealed class ReserveService : IReserveService
     private IEnumerable<PotTransaction> TransactionsOf(Guid operationId) =>
         _repository.GetPotTransactions().Where(transaction => transaction.OperationId == operationId);
 
-    private IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction) =>
-        transaction.Amount > 0m
-            ? _repository.GetPotTransactions().Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
+    private static IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
+        IsManualSplitLine(transaction)
+            ? transactions.Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
             : [transaction];
 
-    private static bool IsLineOfSameManualSplit(PotTransaction line, PotTransaction transaction) =>
+    private static bool IsManualSplitLine(PotTransaction line) =>
         line.Amount > 0m
             && line.Income is null
-            && line.OperationId is null
+            && line.OperationId is null;
+
+    private static bool IsLineOfSameManualSplit(PotTransaction line, PotTransaction transaction) =>
+        IsManualSplitLine(line)
             && line.Date == transaction.Date
             && line.Description == transaction.Description;
 
@@ -251,7 +254,7 @@ public sealed class ReserveService : IReserveService
         }
     }
 
-    internal static ReserveMovementDTO ToDto(PotTransaction transaction) => new()
+    internal static ReserveMovementDTO ToDto(PotTransaction transaction, IEnumerable<PotTransaction> transactions) => new()
     {
         Id = transaction.Id,
         BucketId = transaction.Pot.Id,
@@ -259,6 +262,7 @@ public sealed class ReserveService : IReserveService
         Amount = transaction.Amount,
         Date = transaction.Date,
         Description = transaction.Description,
-        IncomeId = transaction.Income?.Id
+        IncomeId = transaction.Income?.Id,
+        SplitLineCount = LinesToDeleteWith(transaction, transactions).Count
     };
 }

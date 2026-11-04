@@ -17,6 +17,10 @@ namespace Financial.Api.Middleware;
 internal sealed class DomainExceptionMappingMiddleware
 {
     private const string TransientRetryAfterSeconds = "30";
+    private const string OverdraftProblemCode = "overdraftConfirmationRequired";
+    private const string ProblemCodeKey = "code";
+    private const string ProblemPotNameKey = "potName";
+    private const string ProblemBalanceKey = "balance";
 
     private readonly RequestDelegate _next;
     private readonly ILogger<DomainExceptionMappingMiddleware> _logger;
@@ -88,10 +92,20 @@ internal sealed class DomainExceptionMappingMiddleware
             statusCode,
             exception.GetType().Name);
 
-        await WriteProblemAsync(context, statusCode, exception.Message);
+        await WriteProblemAsync(context, statusCode, exception.Message, ProblemExtensionsOf(exception));
     }
 
-    private static async Task WriteProblemAsync(HttpContext context, int statusCode, string detail)
+    private static Dictionary<string, object?> ProblemExtensionsOf(Exception exception) =>
+        exception is OverdraftConfirmationRequiredException overdraft
+            ? new()
+            {
+                [ProblemCodeKey] = OverdraftProblemCode,
+                [ProblemPotNameKey] = overdraft.PotName,
+                [ProblemBalanceKey] = overdraft.Balance
+            }
+            : [];
+
+    private static async Task WriteProblemAsync(HttpContext context, int statusCode, string detail, Dictionary<string, object?> extensions)
     {
         context.Response.StatusCode = statusCode;
 
@@ -99,7 +113,7 @@ internal sealed class DomainExceptionMappingMiddleware
         await problemDetailsService.WriteAsync(new ProblemDetailsContext
         {
             HttpContext = context,
-            ProblemDetails = { Status = statusCode, Detail = detail }
+            ProblemDetails = { Status = statusCode, Detail = detail, Extensions = extensions }
         });
     }
 }

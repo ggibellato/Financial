@@ -39,8 +39,7 @@ internal static class PotWithdrawalValidator
         var balance = AccountBalanceRule.PotBalance(pot, DateOnly.MaxValue, movements);
         if (amount > balance && !confirmed)
         {
-            throw new OverdraftConfirmationRequiredException(
-                FormattableString.Invariant($"This withdrawal exceeds {pot.Name}'s balance of {balance:F2}. Set confirmed=true to proceed."));
+            throw new OverdraftConfirmationRequiredException(pot.Name, balance);
         }
     }
 }

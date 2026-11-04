@@ -1,12 +1,14 @@
 namespace Financial.CashFlow.Application.Exceptions;
 
-/// <summary>
-/// Thrown when a withdrawal would take a reserve bucket's balance negative and the caller
-/// hasn't confirmed it should proceed anyway.
-/// </summary>
 public sealed class OverdraftConfirmationRequiredException : Exception
 {
-    public OverdraftConfirmationRequiredException(string message) : base(message)
+    public OverdraftConfirmationRequiredException(string potName, decimal balance)
+        : base(FormattableString.Invariant($"This withdrawal exceeds {potName}'s balance of {balance:F2}. Set confirmed=true to proceed."))
     {
+        PotName = potName;
+        Balance = balance;
     }
+
+    public string PotName { get; }
+    public decimal Balance { get; }
 }
