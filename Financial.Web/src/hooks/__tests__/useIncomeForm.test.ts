@@ -588,7 +588,7 @@ describe('useIncomeForm funding lines', () => {
     act(() => result.current.setIncomeField('netValue', '100'))
   }
 
-  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-01] sends the default line from the bank for the whole deposit', async () => {
+  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-01] shows the default line from the bank for the whole deposit, and leaves it to the server', async () => {
     createIncomeMock.mockResolvedValue(LINKED_INCOME)
     const { result } = await renderIncomeForm(onSaved)
     openNewSplitIncome(result)
@@ -601,7 +601,7 @@ describe('useIncomeForm funding lines', () => {
 
     await act(async () => result.current.submitIncome())
 
-    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ fundingLines: [{ bankId: 'bank-barclays', amount: 90 }] }))
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: 'bank-barclays', potsAccountId: 'p1', fundingLines: null }))
   })
 
   it('needs a bank before it can save a split, and says so on the Bank field', async () => {
@@ -668,12 +668,16 @@ describe('useIncomeForm funding lines', () => {
     expect(result.current.incomeFunding.isHandSplit).toBe(false)
   })
 
-  it('reopens a single line on the income bank as the default line', async () => {
+  it('reopens a single line on the income bank as the default line and sends no lines for it', async () => {
     const { result } = await renderIncomeForm(onSaved)
     act(() => result.current.showEditIncomeForm(LINKED_INCOME))
 
     expect(result.current.incomeFunding.isHandSplit).toBe(false)
     expect(result.current.isIncomeDirty).toBe(false)
+
+    await act(async () => result.current.submitIncome())
+
+    expect(updateIncomeMock).toHaveBeenCalledWith('i1', expect.objectContaining({ fundingLines: null }))
   })
 
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-02] reopens hand-split lines and sends them on every save, so a save does not reset them', async () => {

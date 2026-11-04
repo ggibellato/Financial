@@ -419,11 +419,6 @@ export function useIncomeForm(
 
   const removeFundingLine = (key: string) => setFundingLines(withoutLine(state.fundingLines, key))
 
-  function requestedFundingLines(): { bankId: string; amount: number }[] | null {
-    if (!isFundingShown) return null
-    return isHandSplit ? toFundingLineRequests(state.fundingLines) : [{ bankId: incomeBankId, amount: depositAmount as number }]
-  }
-
   function setIncomeField(field: IncomeFormField, value: string) {
     dispatch({ type: 'SET_FIELD', payload: { field, value } })
     if (field === 'incomeSource') {
@@ -489,7 +484,7 @@ export function useIncomeForm(
       bankId: incomeBankId || null,
       description: state.description || null,
       potsAccountId: requestedPotsAccountId(state, incomeSources),
-      fundingLines: requestedFundingLines(),
+      fundingLines: editsFundingLines ? toFundingLineRequests(state.fundingLines) : null,
     }
 
     const request =
