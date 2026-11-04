@@ -148,7 +148,7 @@ export default function IncomeForm({
 
           <Field
             label="Bank"
-            required={funding.isShown}
+            required={funding.isShown && !lockedBank}
             validationState={fieldError('bank') ? 'error' : 'none'}
             validationMessage={fieldError('bank')}
           >

@@ -137,6 +137,12 @@ describe('IncomeForm funded from', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
   })
 
+  it('does not mark a locked bank as required', () => {
+    render(<IncomeForm {...baseProps} lockedBank={{ id: 'bank-barclays', name: 'Barclays' }} funding={{ ...FUNDING, isShown: true }} />)
+
+    expect(screen.getByText('Bank')).not.toHaveTextContent('*')
+  })
+
   it('marks Bank as required only while the funding shows', () => {
     const { rerender } = render(<IncomeForm {...baseProps} />)
     expect(screen.getByRole('combobox', { name: 'Bank' })).not.toBeRequired()
