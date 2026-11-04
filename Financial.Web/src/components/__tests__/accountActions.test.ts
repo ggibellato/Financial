@@ -6,7 +6,7 @@ import { deleteConfirmation, deletedMessage, kindLabel, linesDeletedWith, operat
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
 function movementRow(id: string, fields: Partial<ReserveMovementDto> = {}, row: Partial<AccountTransactionDto> = {}): AccountTransactionDto {
-  const movement: ReserveMovementDto = { id, bucketId: 'p1', bucketName: 'Home', amount: 25, date: '2026-10-05', description: 'Bonus', incomeId: null, ...fields }
+  const movement: ReserveMovementDto = { id, bucketId: 'p1', bucketName: 'Home', amount: 25, date: '2026-10-05', description: 'Bonus', incomeId: null, splitLineCount: 1, ...fields }
   return accountTransactionRow({
     id,
     kind: 'PotTransaction',

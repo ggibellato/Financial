@@ -58,7 +58,7 @@ describe('useAccountRowDelete on a pot movement', () => {
       kind: 'PotTransaction',
       date: '2026-10-05',
       amount: -20,
-      movement: { id: 'm1', bucketId: 'p1', bucketName: 'Trips', amount: -20, date: '2026-10-05', description: 'Boots', incomeId: null },
+      movement: { id: 'm1', bucketId: 'p1', bucketName: 'Trips', amount: -20, date: '2026-10-05', description: 'Boots', incomeId: null, splitLineCount: 1 },
     })
     const { result } = renderHook(() => useAccountRowDelete(onDeleted))
 

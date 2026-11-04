@@ -9623,6 +9623,8 @@ export interface components {
             id: string;
             /** Format: uuid */
             incomeId?: null | string;
+            /** Format: int32 */
+            splitLineCount: number;
         };
         ReserveMovementUpdateDTO: {
             /** Format: double */

@@ -57,10 +57,10 @@ const BALANCES: ReserveBucketBalanceDto[] = [
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null },
-  { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null },
-  { id: 'm3', bucketId: 'b3', bucketName: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null },
-  { id: 'm4', bucketId: 'b4', bucketName: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null },
+  { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
+  { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
+  { id: 'm3', bucketId: 'b3', bucketName: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
+  { id: 'm4', bucketId: 'b4', bucketName: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
 ]
 
 const BUCKETS: ReserveBucketDto[] = [
@@ -587,7 +587,7 @@ describe('ReservaPage', () => {
 
   it('shows a lock icon and disables Edit/Delete for a movement linked to an income', async () => {
     getReserveMovementsMock.mockResolvedValue([
-      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 200, date: '2026-07-25', description: 'Salary', incomeId: 'income-1' },
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 200, date: '2026-07-25', description: 'Salary', incomeId: 'income-1', splitLineCount: 1 },
     ])
     render(<ReservaPage />)
 
@@ -632,8 +632,8 @@ describe('ReservaPage', () => {
 
   it('defaults the Movements grid to date descending, with the header showing the active sort, and supports clicking to re-sort', async () => {
     getReserveMovementsMock.mockResolvedValue([
-      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-06-01', description: 'Older', incomeId: null },
-      { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 200, date: '2026-07-17', description: 'Newer', incomeId: null },
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-06-01', description: 'Older', incomeId: null, splitLineCount: 1 },
+      { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 200, date: '2026-07-17', description: 'Newer', incomeId: null, splitLineCount: 1 },
     ])
 
     render(<ReservaPage />)

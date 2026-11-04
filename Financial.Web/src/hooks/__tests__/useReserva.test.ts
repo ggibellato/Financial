@@ -57,10 +57,10 @@ const BALANCES: ReserveBucketBalanceDto[] = [
 ]
 
 const MOVEMENTS: ReserveMovementDto[] = [
-  { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null },
-  { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null },
-  { id: 'm3', bucketId: 'b3', bucketName: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null },
-  { id: 'm4', bucketId: 'b4', bucketName: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null },
+  { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
+  { id: 'm2', bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
+  { id: 'm3', bucketId: 'b3', bucketName: 'Ariana', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
+  { id: 'm4', bucketId: 'b4', bucketName: 'Gleison', amount: 327.17, date: '2026-07-17', description: 'Ramsay', incomeId: null, splitLineCount: 4 },
 ]
 
 const BUCKETS: ReserveBucketDto[] = [
@@ -141,7 +141,7 @@ describe('useReserva', () => {
 
   it('does not attach a group total to a lone movement', async () => {
     getReserveMovementsMock.mockResolvedValue([
-      { id: 'm5', bucketId: 'b1', bucketName: 'Investimento', amount: -30, date: '2026-07-18', description: 'Groceries top-up', incomeId: null },
+      { id: 'm5', bucketId: 'b1', bucketName: 'Investimento', amount: -30, date: '2026-07-18', description: 'Groceries top-up', incomeId: null, splitLineCount: 1 },
     ])
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -159,7 +159,7 @@ describe('useReserva', () => {
 
   it('marks a movement with a non-null incomeId as locked', async () => {
     getReserveMovementsMock.mockResolvedValue([
-      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-07-25', description: 'Salary', incomeId: 'income-1' },
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 100, date: '2026-07-25', description: 'Salary', incomeId: 'income-1', splitLineCount: 1 },
     ])
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -288,7 +288,7 @@ describe('useReserva', () => {
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
-      incomeId: null,
+      incomeId: null, splitLineCount: 1,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -315,7 +315,7 @@ describe('useReserva', () => {
         amount: -100,
         date: '2026-07-01',
         description: 'Big purchase',
-        incomeId: null,
+        incomeId: null, splitLineCount: 1,
       })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -359,7 +359,7 @@ describe('useReserva', () => {
   it('persists the withdrawal date and bucket after a successful submit, for the next withdrawal form', async () => {
     postWithdrawalMock.mockResolvedValue({
       id: 'm3', bucketId: 'b3', bucketName: 'Ariana',
-      amount: -100, date: '2026-07-01', description: 'Big purchase', incomeId: null,
+      amount: -100, date: '2026-07-01', description: 'Big purchase', incomeId: null, splitLineCount: 1,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -467,7 +467,7 @@ describe('useReserva', () => {
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
-      incomeId: null,
+      incomeId: null, splitLineCount: 1,
     })
     const { result } = renderHook(() => useReserva())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

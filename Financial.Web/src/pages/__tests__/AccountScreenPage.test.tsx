@@ -230,7 +230,7 @@ const POTS_SUMMARY: PotsSummaryDto = {
 }
 
 function movementRow(movement: Partial<ReserveMovementDto> & { id: string }, row: Partial<AccountTransactionDto> = {}): AccountTransactionDto {
-  const fields: ReserveMovementDto = { bucketId: 'pot-home', bucketName: 'Home', amount: 25, date: '2026-10-05', description: 'Bonus', incomeId: null, ...movement }
+  const fields: ReserveMovementDto = { bucketId: 'pot-home', bucketName: 'Home', amount: 25, date: '2026-10-05', description: 'Bonus', incomeId: null, splitLineCount: 1, ...movement }
   return accountTransactionRow({
     id: fields.id,
     kind: 'PotTransaction',

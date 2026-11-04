@@ -554,7 +554,7 @@ describe('financialApiClient', () => {
 
   it('calls reserve movements endpoint', async () => {
     const responseBody: ReserveMovementDto[] = [
-      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 10, date: '2026-07-01', description: 'Test', incomeId: null },
+      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 10, date: '2026-07-01', description: 'Test', incomeId: null, splitLineCount: 1 },
     ]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -632,7 +632,7 @@ describe('financialApiClient', () => {
       amount: -30,
       date: '2026-07-01',
       description: 'Groceries top-up',
-      incomeId: null,
+      incomeId: null, splitLineCount: 1,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -659,7 +659,7 @@ describe('financialApiClient', () => {
       amount: -45,
       date: '2026-07-03',
       description: 'Groceries (corrected)',
-      incomeId: null,
+      incomeId: null, splitLineCount: 1,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
