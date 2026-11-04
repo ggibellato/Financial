@@ -223,7 +223,7 @@ describe('AccountFormDialog', () => {
 
     expect(await screen.findByText(message)).toBeInTheDocument()
     expect(screen.getByLabelText(/Name/)).toHaveAttribute('aria-invalid', 'true')
-    expect(screen.getByLabelText(/Name/)).toHaveFocus()
+    await waitFor(() => expect(screen.getByLabelText(/Name/)).toHaveFocus())
     expect(screen.getAllByText(message)).toHaveLength(1)
     expect(screen.getByLabelText(/Name/)).toHaveValue('barclays')
 
