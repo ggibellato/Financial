@@ -122,7 +122,7 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task PostAccount_EmptyPots_IsListedWithNoActionsAndStaysOutOfTheDefaultGroup()
+    public async Task PostAccount_EmptyPots_IsListedWithThePotActionsAndStaysOutOfTheDefaultGroup()
     {
         var response = await Client.PostAsJsonAsync(AccountsUrl, new AccountCreateDTO
         {
@@ -152,7 +152,7 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
                     Capabilities = new[] { "HasPots", "ReceivesIncomeSplit", "CanWithdraw" }
                 });
             detail!.Balance.Should().Be(0m);
-            detail.AllowedActions.Should().BeEmpty();
+            detail.AllowedActions.Should().Equal("Deposit", "Withdraw", "ManagePots");
             summary!.Members.Should().NotContain(member => member.AccountId == created.Id);
         }
     }
