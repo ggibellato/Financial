@@ -111,7 +111,7 @@ public class Account
         foreach (var pot in _pots)
         {
             var change = changes.Single(candidate => candidate.Id == pot.Id);
-            pot.Update(change.Name, change.SplitPercentage, change.IsActive);
+            pot.Update(change.Name.Trim(), change.SplitPercentage, change.IsActive);
         }
 
         _pots =

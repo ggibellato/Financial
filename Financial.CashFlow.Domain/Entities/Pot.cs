@@ -30,7 +30,7 @@ public class Pot
     {
         Validate(name, splitPercentage);
 
-        Name = name.Trim();
+        Name = name;
         SplitPercentage = splitPercentage;
         IsActive = isActive;
     }

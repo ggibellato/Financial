@@ -475,7 +475,7 @@ public class AccountTests
         reserva.ReplacePots(
         [
             new PotChange(null, " Holidays ", 16.67m, true),
-            new PotChange(ariana.Id, "Ari", 33.33m, true),
+            new PotChange(ariana.Id, " Ari ", 33.33m, true),
             new PotChange(investimento.Id, "Investimento", 50m, true),
             new PotChange(null, "Old", 10m, false)
         ]);

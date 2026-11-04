@@ -122,14 +122,21 @@ public class PotTests
     }
 
     [Fact]
-    public void CreateAndUpdate_NameWithSurroundingSpaces_StoresItTrimmed()
+    public void Create_NameWithSurroundingSpaces_StoresItTrimmed()
     {
         var pot = Pot.Create(" Holidays ", 10m);
-        var created = pot.Name;
+
+        pot.Name.Should().Be("Holidays");
+    }
+
+    [Fact]
+    public void Update_NameWithSurroundingSpaces_StoresItAsGiven()
+    {
+        var pot = Pot.Create("Holidays", 10m);
 
         pot.Update(" Trips ", 10m, true);
 
-        (created, pot.Name).Should().Be(("Holidays", "Trips"));
+        pot.Name.Should().Be(" Trips ");
     }
 
     [Fact]
