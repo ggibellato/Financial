@@ -18,6 +18,8 @@
     { "after": "{month}/templateGroups/Bank/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F14 Banks grid member" },
     { "after": "{month}/templateGroups/Bank/totals/GBP", "before": "{month}/monthly/bankTotalsSum", "negate": false, "reason": "F14 Banks grid total" },
     { "after": "{month}/templateGroups/CreditCard/members/*/totalOwed", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": false, "reason": "F14 Credit cards grid member" },
-    { "after": "{month}/templateGroups/Pots/totals/GBP", "before": "{month}/pots/total", "negate": false, "reason": "F14 Pots grid total" }
+    { "after": "{month}/templateGroups/Pots/totals/GBP", "before": "{month}/pots/total", "negate": false, "reason": "F14 Pots grid total" },
+    { "after": "{month}/potsTab/*/balance", "before": "{month}/pots/*/balance", "negate": false, "reason": "F10 Pots tab balance" },
+    { "after": "{month}/potsTab/total", "before": "{month}/pots/total", "negate": false, "reason": "F10 Pots tab total" }
   ]
 }

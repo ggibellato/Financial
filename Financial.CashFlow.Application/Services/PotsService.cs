@@ -200,6 +200,45 @@ public sealed class PotsService : IPotsService
         }
     }
 
+    public PotsSummaryDTO GetPots(Guid potsAccountId, int year, int month)
+    {
+        using var span = StartSpan("GetPots", AccountEntityType);
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, potsAccountId.ToString());
+        try
+        {
+            var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
+            var potsAccount = FindPotsAccount(_repository.GetAccounts(), potsAccountId);
+            var transactions = _repository.GetPotTransactions().ToList();
+            var pots = potsAccount.Pots!
+                .OrderByDescending(pot => pot.IsActive)
+                .ThenBy(pot => pot.Name, StringComparer.OrdinalIgnoreCase)
+                .Select(pot => new PotBalanceDTO
+                {
+                    Id = pot.Id,
+                    Name = pot.Name,
+                    SplitPercentage = pot.SplitPercentage,
+                    IsActive = pot.IsActive,
+                    Balance = AccountBalanceRule.PotBalance(pot, endOfMonth, transactions)
+                })
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetPots");
+            return new PotsSummaryDTO
+            {
+                PotsAccountId = potsAccount.Id,
+                Currency = potsAccount.Currency.ToString(),
+                Total = pots.Sum(pot => pot.Balance),
+                Pots = pots
+            };
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     private PotOperation BuildWithdrawal(
         Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotTransaction> balanceTransactions)
     {

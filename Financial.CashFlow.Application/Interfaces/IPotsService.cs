@@ -11,4 +11,5 @@ public interface IPotsService
     PotOperationDTO GetOperation(Guid operationId);
     Task DeleteOperationAsync(Guid operationId);
     Task ReplacePotsAsync(Guid potsAccountId, PotsUpdateDTO request);
+    PotsSummaryDTO GetPots(Guid potsAccountId, int year, int month);
 }

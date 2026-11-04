@@ -90,6 +90,13 @@ public sealed class PotsController : ControllerBase
         return NoContent();
     }
 
+    [HttpGet("{potsId:guid}/pots/{year:int}/{month:int}")]
+    [ProducesResponseType(typeof(PotsSummaryDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public ActionResult<PotsSummaryDTO> GetPots(Guid potsId, int year, int month) =>
+        Ok(_potsService.GetPots(potsId, year, month));
+
     [HttpPut("{potsId:guid}/pots")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

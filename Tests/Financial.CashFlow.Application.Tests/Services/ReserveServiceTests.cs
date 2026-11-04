@@ -518,6 +518,50 @@ public class ReserveServiceTests
     }
 
     [Fact]
+    public async Task DeleteMovementAsync_LineOfAManualSplit_LeavesAWithdrawalWithTheSameDateAndDescription()
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var otherLine = PotTransaction.Create(_repository.ReservaPots.Last(), 10m, date, "Ramsay");
+        var withdrawal = PotTransaction.Create(_repository.ReservaPots.First(), -5m, date, "Ramsay");
+        _repository.PotTransactions.AddRange([line, otherLine, withdrawal]);
+
+        await _sut.DeleteMovementAsync(line.Id);
+
+        _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(withdrawal);
+    }
+
+    [Theory]
+    [InlineData(-5)]
+    [InlineData(0)]
+    public async Task DeleteMovementAsync_NotPositiveMovement_DeletesItAlone(decimal amount)
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var notPositive = PotTransaction.Create(_repository.ReservaPots.First(), amount, date, "Ramsay");
+        var otherWithdrawal = PotTransaction.Create(_repository.ReservaPots.Last(), -5m, date, "Ramsay");
+        _repository.PotTransactions.AddRange([line, notPositive, otherWithdrawal]);
+
+        await _sut.DeleteMovementAsync(notPositive.Id);
+
+        _repository.PotTransactions.Should().Equal(line, otherWithdrawal);
+    }
+
+    [Fact]
+    public async Task DeleteMovementAsync_LineOfAManualSplit_LeavesLinesWithAnotherDateOrDescription()
+    {
+        var date = new DateOnly(2026, 7, 1);
+        var line = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Ramsay");
+        var otherDate = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date.AddDays(1), "Ramsay");
+        var otherDescription = PotTransaction.Create(_repository.ReservaPots.First(), 10m, date, "Bonus");
+        _repository.PotTransactions.AddRange([line, otherDate, otherDescription]);
+
+        await _sut.DeleteMovementAsync(line.Id);
+
+        _repository.PotTransactions.Should().BeEquivalentTo([otherDate, otherDescription]);
+    }
+
+    [Fact]
     public async Task DeleteMovementAsync_LineOfASplitPostedThroughTheReservaRoute_ThrowsLinkedOperationConflictAndKeepsAll()
     {
         await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());

@@ -384,6 +384,72 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         }
     }
 
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-11")]
+    public async Task LegacyManualSplit_Delete_RemovesOnlyItsLines()
+    {
+        var sameSplitLine = "9a1d0000-0000-0000-0000-000000000601";
+        var withdrawalSharingTheText = "9a1d0000-0000-0000-0000-000000000602";
+        var splitOfAnotherDay = "9a1d0000-0000-0000-0000-000000000603";
+        ReplaceCashFlowDataBeforeStart(SeededData.Replace("\"ReserveMovements\": [", $$"""
+            "ReserveMovements": [
+              { "Id": "{{sameSplitLine}}", "BucketId": "{{HouseTreatsId}}", "Amount": 300, "Date": "2026-09-01", "Description": "Split", "IncomeId": null },
+              { "Id": "{{withdrawalSharingTheText}}", "BucketId": "{{InvestimentoId}}", "Amount": -40, "Date": "2026-09-01", "Description": "Split", "IncomeId": null },
+              { "Id": "{{splitOfAnotherDay}}", "BucketId": "{{InvestimentoId}}", "Amount": 70, "Date": "2026-09-02", "Description": "Split", "IncomeId": null },
+            """));
+
+        var deleteSplit = await Client.DeleteAsync($"{Api}/reserve/movements/{LegacyDepositId}");
+        var remainingAfterSplit = Repository.GetPotTransactions().Select(m => m.Id).ToList();
+        var deleteWithdrawal = await Client.DeleteAsync($"{Api}/reserve/movements/{withdrawalSharingTheText}");
+
+        using (new AssertionScope())
+        {
+            deleteSplit.StatusCode.Should().Be(HttpStatusCode.OK);
+            remainingAfterSplit.Should().BeEquivalentTo(
+                [Guid.Parse(withdrawalSharingTheText), Guid.Parse(splitOfAnotherDay), Guid.Parse(LegacyWithdrawalId)]);
+            deleteWithdrawal.StatusCode.Should().Be(HttpStatusCode.OK);
+            Repository.GetPotTransactions().Select(m => m.Id).Should().BeEquivalentTo(
+                [Guid.Parse(splitOfAnotherDay), Guid.Parse(LegacyWithdrawalId)]);
+        }
+    }
+
+    [Fact]
+    public async Task PotsRead_MonthEnd_ReturnsEachPotAndATotalMatchingTheHeader()
+    {
+        var september = await Client.GetFromJsonAsync<PotsSummaryDTO>($"{Api}/accounts/{ReservaId}/pots/2026/9");
+        var august = await Client.GetFromJsonAsync<PotsSummaryDTO>($"{Api}/accounts/{ReservaId}/pots/2026/8");
+        var header = await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{ReservaId}/2026/9");
+
+        using (new AssertionScope())
+        {
+            september!.PotsAccountId.Should().Be(Guid.Parse(ReservaId));
+            september.Currency.Should().Be("GBP");
+            september.Total.Should().Be(480m);
+            header!.Balance.Should().Be(480m);
+            september.Pots.Select(pot => (pot.Name, pot.SplitPercentage, pot.IsActive, pot.Balance)).Should().Equal(
+                ("HouseTreats", 40m, true, -20m),
+                ("Investimento", 60m, true, 500m),
+                ("Holidays", 0m, false, 0m));
+            august!.Total.Should().Be(0m);
+            august.Pots.Should().OnlyContain(pot => pot.Balance == 0m);
+        }
+    }
+
+    [Fact]
+    public async Task PotsRead_UnknownAccountOrInvalidMonth_IsRejected()
+    {
+        var notAPotsAccount = await Client.GetAsync($"{Api}/accounts/{BarclaysId}/pots/2026/9");
+        var unknown = await Client.GetAsync($"{Api}/accounts/{Guid.NewGuid()}/pots/2026/9");
+        var invalidMonth = await Client.GetAsync($"{Api}/accounts/{ReservaId}/pots/2026/13");
+
+        using (new AssertionScope())
+        {
+            notAPotsAccount.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            invalidMonth.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        }
+    }
+
     private static PotUpdateDTO PotLine(string? id, string name, decimal split, bool isActive = true) => new()
     {
         Id = id is null ? null : Guid.Parse(id),

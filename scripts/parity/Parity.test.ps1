@@ -27,14 +27,15 @@ function Get-Error([scriptblock]$action) {
     try { $null = & $action; return '' } catch { return $_.Exception.Message }
 }
 
-$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'summary', 'templateGroups', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
+$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'potsTab', 'summary', 'templateGroups', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
 $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
+$reservaId = '44444444-4444-4444-4444-444444444444'
 $responses = @{
     'banks'                                       = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`"},{`"id`":`"$chaseId`",`"name`":`"Chase`"}]"
     'reserve/movements'                           = '[{"bucketName":"Casa","amount":100.00,"date":"2026-08-31T00:00:00"},{"bucketName":"Casa","amount":50.00,"date":"2026-09-01T00:00:00"},{"bucketName":"Viagem","amount":25.50,"date":"2026-09-15T00:00:00"}]'
-    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"44444444-4444-4444-4444-444444444444`",`"name`":`"Reserva`",`"templateName`":`"Pots`"}]"
+    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$reservaId`",`"name`":`"Reserva`",`"templateName`":`"Pots`"}]"
     'reserve/balances'                            = '[{"bucketName":"Casa","balance":150.00},{"bucketName":"Viagem","balance":25.50}]'
     'controle-mae/entries/totals'                 = '{"totalBrlValue":167.88,"totalGbpValue":7.94}'
     'annual-summary/2026/category-totals'         = '{"categoryTotals":[{"category":"Mercado","annualTotal":1200.00,"average":100.00,"monthlyTotals":[100.00,100.00]}],"incomeSummary":{"salaryAnnualTotal":5000.00,"salaryMonthly":[2500.00,2500.00]},"resultadoAnnualTotal":3800.00,"resultadoMonthly":[1900.00,1900.00]}'
@@ -53,6 +54,9 @@ foreach ($month in 8, 9) {
     $responses["accounts/groups/default/summary/$route"] = "{`"members`":[{`"accountId`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":130.83,`"roundUpTotal`":0.17},{`"accountId`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":10.00,`"roundUpTotal`":0.50},{`"accountId`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"currency`":`"GBP`",`"balance`":-40.10,`"roundUpTotal`":null,`"statement`":{`"outstandingTotal`":40.10,`"isPaid`":false}}],`"totals`":[{`"currency`":`"GBP`",`"balance`":140.83,`"roundUpTotal`":0.67,`"cardOutstandingTotal`":40.10}],`"categoryTotalsSum`":0.3,`"incomeTotals`":[{`"name`":`"Salary`",`"netValue`":2100.00,`"grossValue`":2500.00},{`"name`":`"Dividends`",`"netValue`":12.34,`"grossValue`":null}],`"totalIncoming`":2112.34}"
     $potsTotal = if ($month -eq 8) { '100.00' } else { '175.50' }
     $responses["accounts/groups/by-template/$route"] = "[{`"templateName`":`"Bank`",`"members`":[{`"name`":`"Barclays`",`"balance`":130.83,`"totalOwed`":null},{`"name`":`"Chase`",`"balance`":10.00,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":140.83},{`"currency`":`"BRL`",`"total`":500.00}]},{`"templateName`":`"CreditCard`",`"members`":[{`"name`":`"Amex`",`"balance`":-40.10,`"totalOwed`":40.10}],`"totals`":[{`"currency`":`"GBP`",`"total`":40.10}]},{`"templateName`":`"Pots`",`"members`":[{`"name`":`"Reserva`",`"balance`":$potsTotal,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":$potsTotal}]}]"
+    $casaBalance = if ($month -eq 8) { '100.00' } else { '150.00' }
+    $viagemBalance = if ($month -eq 8) { '0' } else { '25.50' }
+    $responses["accounts/$reservaId/pots/$route"] = "{`"potsAccountId`":`"$reservaId`",`"currency`":`"GBP`",`"total`":$potsTotal,`"pots`":[{`"id`":`"55555555-5555-5555-5555-555555555555`",`"name`":`"Casa`",`"splitPercentage`":60,`"isActive`":true,`"balance`":$casaBalance},{`"id`":`"66666666-6666-6666-6666-666666666666`",`"name`":`"Viagem`",`"splitPercentage`":40,`"isActive`":true,`"balance`":$viagemBalance},{`"id`":`"77777777-7777-7777-7777-777777777777`",`"name`":`"Novo`",`"splitPercentage`":0,`"isActive`":false,`"balance`":0}]}"
     $responses["accounts/$barclaysId/$route"] = '{"balance":130.83}'
     $responses["accounts/$chaseId/$route"] = '{"balance":10.00}'
     $responses["accounts/$amexId/$route"] = '{"balance":-40.10,"totalOwed":40.10}'
@@ -72,6 +76,7 @@ try {
         snapshots  = '{0}/snapshots/Amex card/suggestedValue'
         monthly    = '{0}/monthly/bankTotalsSum'
         pots       = '{0}/pots/total'
+        potsTab    = '{0}/potsTab/total'
         summary    = '{0}/summary/members/Barclays/balance'
         templateGroups = '{0}/templateGroups/Pots/totals/GBP'
         account    = '{0}/account/Chase/balance'
@@ -156,13 +161,30 @@ try {
 
     Check 'card members are built under cardMembers, with their balance only in the current month' ($report['2026-08/summary/cardMembers/Amex/outstandingTotal'] -eq [decimal]'40.10' -and $report['2026-08/summary/cardMembers/Amex/isPaid'] -eq $false -and $report['2026-09/summary/cardMembers/Amex/balance'] -eq [decimal]'-40.10' -and -not $report.ContainsKey('2026-08/summary/cardMembers/Amex/balance') -and -not ($report.Keys | Where-Object { $_ -like '*/summary/members/Amex/*' }) -and $report['2026-09/summary/totals/GBP/cardOutstandingTotal'] -eq [decimal]'40.10') ''
 
+    Check 'pots tab figures are built only with IncludeAccounts, from the first Pots account' ($report['2026-08/potsTab/Casa/balance'] -eq [decimal]'100.00' -and $report['2026-08/potsTab/Viagem/balance'] -eq 0 -and $report['2026-09/potsTab/Viagem/balance'] -eq [decimal]'25.50' -and $report['2026-09/potsTab/total'] -eq [decimal]'175.50' -and -not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'potsTab' })) ''
+
+    Check 'no pots tab figures without a Pots account' (-not ($filled.Keys | Where-Object { $_.Split('/')[1] -eq 'potsTab' })) ''
+
+    $shippedMappings = Read-ParityFigureMap (Join-Path $here 'figure-map.json')
+    $wrongPots = New-Report $report
+    $wrongPots['2026-09/potsTab/Casa/balance'] = [decimal]'150.01'
+    $wrongTotal = New-Report $report
+    $wrongTotal['2026-09/potsTab/total'] = [decimal]'175.51'
+    Check 'shipped figure map compares the pots tab balance and total with the pots figures' ((Compare-ParityReport $reportWithoutSummary $wrongPots $shippedMappings).Count -eq 1 -and (Compare-ParityReport $reportWithoutSummary $wrongTotal $shippedMappings).Count -eq 1) ''
+
+    $unusedPot = $responses.Clone()
+    $unusedPot["accounts/$reservaId/pots/2026/9"] = $responses["accounts/$reservaId/pots/2026/9"].Replace('"name":"Novo","splitPercentage":0,"isActive":false,"balance":0', '"name":"Novo","splitPercentage":0,"isActive":false,"balance":5')
+    $unusedPotFetch = { param($path) ConvertFrom-ParityJson $unusedPot[$path] }
+    $unusedPotReport = Get-ParityReport -Fetch $unusedPotFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
+    $unusedPotDifferences = @(Compare-ParityReport $reportWithoutSummary $unusedPotReport $shippedMappings)
+    Check 'a pot with no movements is skipped at zero and reported when it has a balance' (-not ($report.Keys | Where-Object { $_ -like '*/potsTab/Novo/*' }) -and $unusedPotDifferences.Count -eq 1 -and $unusedPotDifferences[0].Key -eq '2026-09/potsTab/Novo/balance') (($unusedPotDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
     Check 'account figures skip accounts that are neither banks nor cards' (-not ($report.Keys | Where-Object { $_ -like '*/Reserva/*' })) ''
 
     Check 'card account balance is built only in the current month' ($report['2026-09/cardAccount/Amex/balance'] -eq [decimal]'-40.10' -and -not $report.ContainsKey('2026-08/cardAccount/Amex/balance') -and -not ($report.Keys | Where-Object { $_ -like '*/account/Amex/*' })) ''
 
     Check 'card total owed is built in every month for each active card' ($report['2026-08/cardAccount/Amex/totalOwed'] -eq [decimal]'40.10' -and $report['2026-09/cardAccount/Amex/totalOwed'] -eq [decimal]'40.10' -and $filled['2026-08/cardAccount/Visa/totalOwed'] -eq 0 -and -not ($filled.Keys | Where-Object { $_ -like '*/cardAccount/Closed/totalOwed' }) -and $filled.ContainsKey('2026-09/cardAccount/Closed/balance')) ''
 
-    $shippedMappings = Read-ParityFigureMap (Join-Path $here 'figure-map.json')
     $summaryDifferences = Compare-ParityReport $reportWithoutSummary $report $shippedMappings
     Check 'shipped figure map resolves every summary, account and card account key to its before key' ($summaryDifferences.Count -eq 0) (($summaryDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
