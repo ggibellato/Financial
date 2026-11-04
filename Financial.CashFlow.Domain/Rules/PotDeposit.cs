@@ -20,7 +20,34 @@ public static class PotDeposit
         string description,
         Pot? pot,
         IReadOnlyList<PotFundingLine> fundingLines,
-        Guid operationId)
+        Guid operationId) =>
+        Build(potsAccount, amount, date, description, pot, fundingLines, operationId, income: null, $"Deposit to {potsAccount.Name}");
+
+    public static PotOperation BuildFromIncome(
+        Income income, Account potsAccount, IReadOnlyList<PotFundingLine> handSplitLines, Guid operationId)
+    {
+        var bank = income.Account ?? throw new ArgumentException("Choose the bank this income landed in.");
+        var amount = IncomeAmount(income.NetValue);
+        IReadOnlyList<PotFundingLine> fundingLines = handSplitLines.Count > 0 ? handSplitLines : [new(bank, amount)];
+
+        return Build(
+            potsAccount, amount, income.Date, income.Description ?? string.Empty, pot: null, fundingLines, operationId,
+            income, $"Deposit to {potsAccount.Name} – {income.IncomeSource.Name}");
+    }
+
+    public static decimal IncomeAmount(decimal netValue) =>
+        Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
+
+    private static PotOperation Build(
+        Account potsAccount,
+        decimal amount,
+        DateOnly date,
+        string description,
+        Pot? pot,
+        IReadOnlyList<PotFundingLine> fundingLines,
+        Guid operationId,
+        Income? income,
+        string expenseDescription)
     {
         if (amount <= 0)
         {
@@ -34,13 +61,13 @@ public static class PotDeposit
 
         EnsureFundingLinesAddUp(potsAccount, amount, fundingLines);
 
-        var movements = pot is null
-            ? SplitAcrossActivePots(potsAccount, amount, date, description, operationId)
-            : [PotTransaction.Create(pot, amount, date, description, operationId: operationId)];
+        var transactions = pot is null
+            ? SplitAcrossActivePots(potsAccount, amount, date, description, operationId, income)
+            : [PotTransaction.Create(pot, amount, date, description, income, operationId)];
 
         if (fundingLines.Count == 0)
         {
-            return new(operationId, potsAccount, movements, []);
+            return new(operationId, potsAccount, transactions, []);
         }
 
         var potsCategory = potsAccount.Category
@@ -48,11 +75,11 @@ public static class PotDeposit
 
         var expenses = fundingLines
             .Select(line => Expense.Create(
-                date, $"Deposit to {potsAccount.Name}", line.Amount, potsCategory, line.Bank, creditCard: null,
+                date, expenseDescription, line.Amount, potsCategory, line.Bank, creditCard: null,
                 countsAsTithe: false, operationId: operationId))
             .ToList();
 
-        return new(operationId, potsAccount, movements, expenses);
+        return new(operationId, potsAccount, transactions, expenses);
     }
 
     private static void EnsureFundingLinesAddUp(Account potsAccount, decimal amount, IReadOnlyList<PotFundingLine> fundingLines)
@@ -74,7 +101,7 @@ public static class PotDeposit
     }
 
     private static List<PotTransaction> SplitAcrossActivePots(
-        Account potsAccount, decimal amount, DateOnly date, string description, Guid operationId)
+        Account potsAccount, decimal amount, DateOnly date, string description, Guid operationId, Income? income)
     {
         var activePots = (potsAccount.Pots ?? []).Where(pot => pot.IsActive).ToList();
         if (activePots.Count == 0)
@@ -90,7 +117,7 @@ public static class PotDeposit
 
         var amounts = PotSplitAllocator.Allocate(activePots, amount);
         return activePots
-            .Select((pot, index) => PotTransaction.Create(pot, amounts[index], date, description, operationId: operationId))
+            .Select((pot, index) => PotTransaction.Create(pot, amounts[index], date, description, income, operationId))
             .ToList();
     }
 

@@ -21,4 +21,6 @@ public sealed class IncomeUpdateDTO
     public string? Description { get; init; }
 
     public Guid? PotsAccountId { get; init; }
+
+    public IReadOnlyList<FundingLineDTO>? FundingLines { get; init; }
 }

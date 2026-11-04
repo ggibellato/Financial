@@ -19,19 +19,19 @@ public enum PotDepositTarget
 }
 
 public sealed record PotOperation(
-    Guid OperationId, Account PotsAccount, IReadOnlyList<PotTransaction> Movements, IReadOnlyList<Expense> Expenses)
+    Guid OperationId, Account PotsAccount, IReadOnlyList<PotTransaction> Transactions, IReadOnlyList<Expense> Expenses)
 {
-    public PotOperationKind Kind => Movements.Any(movement => movement.Amount < 0) ? PotOperationKind.Withdrawal : PotOperationKind.Deposit;
-    public DateOnly Date => Movements[0].Date;
-    public string Description => Movements[0].Description;
-    public decimal Amount => Movements.Sum(movement => Math.Abs(movement.Amount));
-    public PotDepositTarget? Into => (Kind, Movements.Count) switch
+    public PotOperationKind Kind => Transactions.Any(transaction => transaction.Amount < 0) ? PotOperationKind.Withdrawal : PotOperationKind.Deposit;
+    public DateOnly Date => Transactions[0].Date;
+    public string Description => Transactions[0].Description;
+    public decimal Amount => Transactions.Sum(transaction => Math.Abs(transaction.Amount));
+    public PotDepositTarget? Into => (Kind, Transactions.Count) switch
     {
         (PotOperationKind.Withdrawal, _) => null,
         (_, 1) => PotDepositTarget.OnePot,
         _ => PotDepositTarget.ActivePots
     };
-    public Pot? Pot => Into == PotDepositTarget.ActivePots ? null : Movements[0].Pot;
+    public Pot? Pot => Into == PotDepositTarget.ActivePots ? null : Transactions[0].Pot;
     public IReadOnlyList<PotFundingLine> FundingLines => Kind == PotOperationKind.Deposit
         ? Expenses
             .Where(expense => expense.Category.Id == PotsAccount.Category?.Id)
@@ -40,24 +40,24 @@ public sealed record PotOperation(
         : [];
     public Account? Bank => ChosenExpense?.PaymentSourceAccount;
     public Category? Category => ChosenExpense?.Category;
-    public Guid? IncomeId => Movements.Select(movement => movement.Income?.Id).FirstOrDefault(id => id is not null);
+    public Guid? IncomeId => Transactions.Select(transaction => transaction.Income?.Id).FirstOrDefault(id => id is not null);
 
     private Expense? ChosenExpense =>
         Kind == PotOperationKind.Withdrawal ? Expenses.FirstOrDefault(expense => expense.Value > 0) : null;
 
     public static PotOperation? Read(
-        Guid operationId, IEnumerable<PotTransaction> movements, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)
+        Guid operationId, IEnumerable<PotTransaction> transactions, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)
     {
-        var operationMovements = movements.Where(movement => movement.OperationId == operationId).ToList();
-        var potsAccount = operationMovements.Count == 0
+        var operationTransactions = transactions.Where(transaction => transaction.OperationId == operationId).ToList();
+        var potsAccount = operationTransactions.Count == 0
             ? null
-            : accounts.FirstOrDefault(account => account.OwnsPot(operationMovements[0].Pot.Id));
+            : accounts.FirstOrDefault(account => account.OwnsPot(operationTransactions[0].Pot.Id));
         if (potsAccount is null)
         {
             return null;
         }
 
         return new PotOperation(
-            operationId, potsAccount, operationMovements, expenses.Where(expense => expense.OperationId == operationId).ToList());
+            operationId, potsAccount, operationTransactions, expenses.Where(expense => expense.OperationId == operationId).ToList());
     }
 }

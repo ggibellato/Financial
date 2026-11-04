@@ -24,6 +24,10 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     private const string MercadoId = "9a1d0000-0000-0000-0000-000000000302";
     private const string LegacyDepositId = "9a1d0000-0000-0000-0000-000000000201";
     private const string LegacyWithdrawalId = "9a1d0000-0000-0000-0000-000000000202";
+    private const string RamsayId = "9a1d0000-0000-0000-0000-000000000401";
+    private const string OlderIncomeId = "9a1d0000-0000-0000-0000-000000000501";
+    private const string IncomeDepositMessage = "This deposit belongs to an income; edit the income.";
+    private static readonly DateOnly IncomeDate = new(2026, 10, 1);
     private const string ExpenseMessage = "This expense belongs to a pot deposit or withdrawal; edit it from the Pots account.";
     private const string MovementMessage = "This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.";
 
@@ -42,12 +46,28 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             { "Id": "{{ReservaCategoryId}}", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false },
             { "Id": "{{MercadoId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
+          "IncomeSources": [
+            { "Id": "{{RamsayId}}", "Name": "Ramsay", "IsActive": true, "Group": "Salary", "PotsAccountId": "{{ReservaId}}" }
+          ],
+          "Incomes": [],
           "ReserveMovements": [
             { "Id": "{{LegacyDepositId}}", "BucketId": "{{InvestimentoId}}", "Amount": 500, "Date": "2026-09-01", "Description": "Split", "IncomeId": null },
             { "Id": "{{LegacyWithdrawalId}}", "BucketId": "{{HouseTreatsId}}", "Amount": -20, "Date": "2026-09-15", "Description": "Cinema", "IncomeId": null }
           ],
           "Version": 4
         }
+        """;
+
+    private const string OlderIncomeJson = $$"""
+        "Incomes": [
+          { "Id": "{{OlderIncomeId}}", "Date": "2026-10-01", "IncomeSourceId": "{{RamsayId}}", "GrossValue": null, "NetValue": 100, "AccountId": "{{BarclaysId}}", "Description": "Salary", "PotsAccountId": "{{ReservaId}}" }
+        ],
+        """;
+
+    private const string OlderMovementJson = $$"""
+        "ReserveMovements": [
+          { "Id": "9a1d0000-0000-0000-0000-000000000502", "BucketId": "{{InvestimentoId}}", "Amount": 54, "Date": "2026-10-01", "Description": "Salary", "IncomeId": "{{OlderIncomeId}}" },
+          { "Id": "9a1d0000-0000-0000-0000-000000000503", "BucketId": "{{HouseTreatsId}}", "Amount": 36, "Date": "2026-10-01", "Description": "Salary", "IncomeId": "{{OlderIncomeId}}" },
         """;
 
     public LinkedPotOperationsAcceptanceTests()
@@ -361,6 +381,169 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             delete.StatusCode.Should().Be(HttpStatusCode.OK);
             Repository.GetPotTransactions().Select(m => (m.Id, m.Amount, m.Description))
                 .Should().Equal((Guid.Parse(LegacyDepositId), 450m, "Split corrected"));
+        }
+    }
+
+    private Task<HttpResponseMessage> AddSplitIncomeAsync(decimal net, params (string BankId, decimal Amount)[] lines) =>
+        Client.PostAsJsonAsync($"{Api}/incomes", new IncomeCreateDTO
+        {
+            Date = IncomeDate,
+            IncomeSourceId = Guid.Parse(RamsayId),
+            NetValue = net,
+            BankId = Guid.Parse(BarclaysId),
+            Description = "Salary",
+            PotsAccountId = Guid.Parse(ReservaId),
+            FundingLines = ToFundingLines(lines)
+        });
+
+    private Task<HttpResponseMessage> UpdateSplitIncomeAsync(Guid id, decimal net, string? potsAccountId = ReservaId, params (string BankId, decimal Amount)[] lines) =>
+        Client.PutAsJsonAsync($"{Api}/incomes/{id}", new IncomeUpdateDTO
+        {
+            Date = IncomeDate,
+            IncomeSourceId = Guid.Parse(RamsayId),
+            NetValue = net,
+            BankId = Guid.Parse(BarclaysId),
+            Description = "Salary",
+            PotsAccountId = potsAccountId is null ? null : Guid.Parse(potsAccountId),
+            FundingLines = ToFundingLines(lines)
+        });
+
+    private static List<FundingLineDTO> ToFundingLines((string BankId, decimal Amount)[] lines) =>
+        lines.Select(line => new FundingLineDTO { BankId = Guid.Parse(line.BankId), Amount = line.Amount }).ToList();
+
+    private List<Expense> ExpensesOfIncome(Guid incomeId) =>
+        ExpensesOf(Repository.GetPotTransactions().First(m => m.Income?.Id == incomeId).OperationId);
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-01")]
+    public async Task Income_WithSplit_WritesLinkedDeposit()
+    {
+        var response = await AddSplitIncomeAsync(100m);
+        var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+            income!.HasLinkedDeposit.Should().BeTrue();
+            income.FundingLines.Select(line => (line.BankId, line.Amount)).Should().Equal((Guid.Parse(BarclaysId), 90m));
+            var expense = ExpensesOfIncome(income.Id).Should().ContainSingle().Which;
+            (expense.Category.Id, expense.Value, expense.PaymentSourceAccount!.Id, expense.Description, expense.Date, expense.CountsAsTithe)
+                .Should().Be((Guid.Parse(ReservaCategoryId), 90m, Guid.Parse(BarclaysId), "Deposit to Reserva \u2013 Ramsay", IncomeDate, false));
+            MovementsOf(expense.OperationId!.Value).Should().Equal((Guid.Parse(InvestimentoId), 54m), (Guid.Parse(HouseTreatsId), 36m));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-02")]
+    public async Task Income_HandSplitLines_OneExpensePerBankOrRejected()
+    {
+        var split = await AddSplitIncomeAsync(100m, (BarclaysId, 85m), (ChaseId, 5m));
+        var mismatch = await AddSplitIncomeAsync(100m, (BarclaysId, 88m));
+        var income = await split.Content.ReadFromJsonAsync<IncomeDTO>();
+
+        using (new AssertionScope())
+        {
+            ExpensesOfIncome(income!.Id).Select(e => (e.PaymentSourceAccount!.Id, e.Value))
+                .Should().Equal((Guid.Parse(BarclaysId), 85m), (Guid.Parse(ChaseId), 5m));
+            mismatch.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(mismatch)).Should().Be("Funding lines must add up to \u00a390.00.");
+            Repository.GetIncomes().Should().ContainSingle();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-04")]
+    public async Task Income_EditAndDelete_RebuildAndRemoveDeposit()
+    {
+        var created = await (await AddSplitIncomeAsync(100m)).Content.ReadFromJsonAsync<IncomeDTO>();
+        var operationId = ExpensesOfIncome(created!.Id).Single().OperationId!.Value;
+
+        var edit = await UpdateSplitIncomeAsync(created.Id, 200m);
+        var editedExpense = Repository.GetExpenses().Single();
+        var editedMovements = MovementsOf(operationId);
+        var rejected = await UpdateSplitIncomeAsync(created.Id, 300m, ReservaId, (BarclaysId, 180m));
+        var incomeAfterRejection = Repository.GetIncomes().Single().NetValue;
+        var expensesAfterRejection = Repository.GetExpenses().Select(e => e.Value).ToList();
+        var delete = await Client.DeleteAsync($"{Api}/incomes/{created.Id}");
+
+        using (new AssertionScope())
+        {
+            edit.StatusCode.Should().Be(HttpStatusCode.OK);
+            (editedExpense.Value, editedExpense.OperationId).Should().Be((180m, (Guid?)operationId));
+            editedMovements.Should().Equal((Guid.Parse(InvestimentoId), 108m), (Guid.Parse(HouseTreatsId), 72m));
+            rejected.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(rejected)).Should().Be("Funding lines must add up to \u00a3270.00.");
+            incomeAfterRejection.Should().Be(200m);
+            expensesAfterRejection.Should().Equal(180m);
+            delete.IsSuccessStatusCode.Should().BeTrue();
+            Repository.GetExpenses().Should().BeEmpty();
+            MovementsOf(operationId).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-04")]
+    public async Task Income_SplitUnticked_RemovesTheDeposit()
+    {
+        var created = await (await AddSplitIncomeAsync(100m)).Content.ReadFromJsonAsync<IncomeDTO>();
+        var operationId = ExpensesOfIncome(created!.Id).Single().OperationId!.Value;
+
+        var edit = await UpdateSplitIncomeAsync(created.Id, 100m, potsAccountId: null);
+
+        using (new AssertionScope())
+        {
+            edit.StatusCode.Should().Be(HttpStatusCode.OK);
+            Repository.GetExpenses().Should().BeEmpty();
+            MovementsOf(operationId).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task IncomeDeposit_ThroughTheOperationAndOldRoutes_Returns409AndStays()
+    {
+        var created = await (await AddSplitIncomeAsync(100m)).Content.ReadFromJsonAsync<IncomeDTO>();
+        var expense = ExpensesOfIncome(created!.Id).Single();
+        var operationId = expense.OperationId!.Value;
+
+        var read = await Client.GetFromJsonAsync<PotOperationDTO>($"{Api}/accounts/operations/{operationId}");
+        var update = await Client.PutAsJsonAsync($"{Api}/accounts/{ReservaId}/deposits/{operationId}", DepositRequest(90m, null, []));
+        var delete = await Client.DeleteAsync($"{Api}/accounts/operations/{operationId}");
+        var expenseDelete = await Client.DeleteAsync($"{Api}/expenses/{expense.Id}");
+
+        using (new AssertionScope())
+        {
+            read!.IncomeId.Should().Be(created.Id);
+            read.FundingLines.Select(line => line.Amount).Should().Equal(90m);
+            update.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await DetailOf(update)).Should().Be(IncomeDepositMessage);
+            delete.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await DetailOf(delete)).Should().Be(IncomeDepositMessage);
+            expenseDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await DetailOf(expenseDelete)).Should().Be(ExpenseMessage);
+            Repository.GetExpenses().Should().ContainSingle();
+            MovementsOf(operationId).Should().HaveCount(2);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-10")]
+    public async Task OlderSplitIncome_Edit_AddsNoExpense()
+    {
+        ReplaceCashFlowDataBeforeStart(SeededData
+            .Replace("\"Incomes\": [],", OlderIncomeJson)
+            .Replace("\"ReserveMovements\": [", OlderMovementJson));
+
+        var edit = await UpdateSplitIncomeAsync(Guid.Parse(OlderIncomeId), 200m, ReservaId, (ChaseId, 180m));
+        var incomes = await Client.GetFromJsonAsync<List<IncomeDTO>>($"{Api}/incomes/month/{IncomeDate.Year}/{IncomeDate.Month}");
+
+        using (new AssertionScope())
+        {
+            edit.StatusCode.Should().Be(HttpStatusCode.OK);
+            Repository.GetExpenses().Should().BeEmpty();
+            Repository.GetPotTransactions().Where(m => m.Income?.Id == Guid.Parse(OlderIncomeId))
+                .Select(m => (m.Pot.Id, m.Amount, m.OperationId))
+                .Should().Equal((Guid.Parse(InvestimentoId), 108m, (Guid?)null), (Guid.Parse(HouseTreatsId), 72m, (Guid?)null));
+            incomes!.Single().HasLinkedDeposit.Should().BeFalse();
         }
     }
 }

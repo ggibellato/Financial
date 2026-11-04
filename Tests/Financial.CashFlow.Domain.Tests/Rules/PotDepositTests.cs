@@ -1,4 +1,6 @@
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.TestUtilities;
 using FluentAssertions;
@@ -37,10 +39,10 @@ public class PotDepositTests
 
         using (new AssertionScope())
         {
-            records.Movements.Select(movement => (movement.Pot, movement.Amount))
+            records.Transactions.Select(transaction => (transaction.Pot, transaction.Amount))
                 .Should().Equal((_investimento, 16.66m), (_houseTreats, 10.00m), (_ariana, 6.67m));
-            records.Movements.Should().OnlyContain(movement =>
-                movement.Date == Date && movement.Description == "Ramsay bonus" && movement.OperationId == OperationId && movement.Income == null);
+            records.Transactions.Should().OnlyContain(transaction =>
+                transaction.Date == Date && transaction.Description == "Ramsay bonus" && transaction.OperationId == OperationId && transaction.Income == null);
             records.Expenses.Should().BeEmpty();
         }
     }
@@ -50,7 +52,7 @@ public class PotDepositTests
     {
         var records = PotDeposit.Build(_reserva, 40m, Date, "Trip fund", _holidays, [], OperationId);
 
-        records.Movements.Select(movement => (movement.Pot, movement.Amount)).Should().Equal((_holidays, 40m));
+        records.Transactions.Select(transaction => (transaction.Pot, transaction.Amount)).Should().Equal((_holidays, 40m));
     }
 
     [Fact]
@@ -157,4 +159,76 @@ public class PotDepositTests
 
         act.Should().Throw<ArgumentException>().WithMessage("Amount must be greater than zero.");
     }
+
+    [Fact]
+    public void BuildFromIncome_WithDefaultFunding_LinksEveryRecordToTheIncome()
+    {
+        var income = IncomeOf(net: 100.01m);
+
+        var operation = PotDeposit.BuildFromIncome(income, _reserva, [], OperationId);
+
+        using (new AssertionScope())
+        {
+            operation.Amount.Should().Be(90.01m);
+            operation.Date.Should().Be(Date);
+            operation.Description.Should().Be("Bonus");
+            operation.IncomeId.Should().Be(income.Id);
+            operation.Transactions.Should().OnlyContain(transaction => transaction.Income == income && transaction.OperationId == OperationId);
+            var expense = operation.Expenses.Should().ContainSingle().Which;
+            expense.Description.Should().Be("Deposit to Reserva \u2013 Ramsay");
+            expense.Value.Should().Be(90.01m);
+            expense.Date.Should().Be(Date);
+            expense.Category.Should().Be(_reservaCategory);
+            expense.PaymentSourceAccount.Should().Be(_chase);
+            expense.CountsAsTithe.Should().BeFalse();
+            expense.RoundUpAmount.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void BuildFromIncome_WithoutADescription_LeavesTheTransactionsDescriptionEmpty()
+    {
+        var operation = PotDeposit.BuildFromIncome(IncomeOf(net: 100m, description: null), _reserva, [], OperationId);
+
+        operation.Transactions.Should().OnlyContain(transaction => transaction.Description == string.Empty);
+    }
+
+    [Fact]
+    public void BuildFromIncome_WithHandSplitLines_WritesThemInsteadOfTheDefault()
+    {
+        var operation = PotDeposit.BuildFromIncome(IncomeOf(net: 100m), _reserva, [new(_barclays, 85m), new(_chase, 5m)], OperationId);
+
+        operation.FundingLines.Select(line => (line.Bank, line.Amount)).Should().Equal((_barclays, 85m), (_chase, 5m));
+    }
+
+    [Fact]
+    public void BuildFromIncome_WithLinesThatDoNotAddUp_IsRejected()
+    {
+        var act = () => PotDeposit.BuildFromIncome(IncomeOf(net: 100m), _reserva, [new(_chase, 80m)], OperationId);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Funding lines must add up to \u00a390.00.");
+    }
+
+    [Fact]
+    public void BuildFromIncome_WithoutABank_IsRejected()
+    {
+        var income = Income.Create(Date, IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: _reserva), null, 100m, account: null);
+
+        var act = () => PotDeposit.BuildFromIncome(income, _reserva, [], OperationId);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Choose the bank this income landed in.");
+    }
+
+    [Theory]
+    [InlineData(100, 90)]
+    [InlineData(2450, 2205)]
+    [InlineData(100.05, 90.05)]
+    [InlineData(0.05, 0.05)]
+    public void IncomeAmount_IsNinetyPercentOfNetRoundedAwayFromZero(double net, double expected)
+    {
+        PotDeposit.IncomeAmount((decimal)net).Should().Be((decimal)expected);
+    }
+
+    private Income IncomeOf(decimal net, string? description = "Bonus") =>
+        Income.Create(Date, IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: _reserva), null, net, _chase, description);
 }

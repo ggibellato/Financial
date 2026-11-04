@@ -34,23 +34,19 @@ public sealed class IncomeService : IIncomeService
             var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.PotsAccountId);
 
             var income = Income.Create(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, potsAccount);
-            var movements = BuildSplitMovements(income, potsAccount, request.NetValue, request.Date, request.Description);
+            var deposit = BuildDeposit(income, request.FundingLines, Guid.NewGuid());
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddIncome(income);
-                foreach (var movement in movements)
-                {
-                    _repository.AddPotTransaction(movement);
-                }
-
+                AddRecords(deposit);
                 return true;
             }).ConfigureAwait(false);
 
             span.SetAttribute(TelemetryAttributeKeys.EntityId, income.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddIncome");
-            return ToDto(income);
+            return ToDtoWithDeposit(income);
         }
         catch (Exception ex)
         {
@@ -71,29 +67,20 @@ public sealed class IncomeService : IIncomeService
 
             var (incomeSource, bank, potsAccount) = ValidateFields(request.IncomeSourceId, request.BankId, request.Description, request.PotsAccountId);
 
-            var oldLinkedMovements = GetLinkedMovements(income.Id);
-
-            var newMovements = BuildSplitMovements(income, potsAccount, request.NetValue, request.Date, request.Description);
+            var oldRecords = RecordsOf(income.Id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
                 income.UpdateDetails(request.Date, incomeSource, request.GrossValue, request.NetValue, bank, request.Description, potsAccount);
-                foreach (var movement in oldLinkedMovements)
-                {
-                    _repository.DeletePotTransaction(movement.Id);
-                }
-
-                foreach (var movement in newMovements)
-                {
-                    _repository.AddPotTransaction(movement);
-                }
-
+                var newRecords = Rebuild(income, oldRecords, request.FundingLines);
+                RemoveRecords(oldRecords);
+                AddRecords(newRecords);
                 return true;
             }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateIncome");
-            return ToDto(income);
+            return ToDtoWithDeposit(income);
         }
         catch (Exception ex)
         {
@@ -110,15 +97,11 @@ public sealed class IncomeService : IIncomeService
         {
             FindIncomeOrThrow(id);
 
-            var linkedMovements = GetLinkedMovements(id);
+            var records = RecordsOf(id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                foreach (var movement in linkedMovements)
-                {
-                    _repository.DeletePotTransaction(movement.Id);
-                }
-
+                RemoveRecords(records);
                 _repository.DeleteIncome(id);
                 return true;
             }).ConfigureAwait(false);
@@ -140,7 +123,7 @@ public sealed class IncomeService : IIncomeService
         {
             var result = _repository.GetIncomes()
                 .Where(i => i.Date.Year == year && i.Date.Month == month)
-                .Select(ToDto)
+                .Select(ToDtoWithDeposit)
                 .ToList();
 
             span.MarkSuccess();
@@ -163,8 +146,75 @@ public sealed class IncomeService : IIncomeService
     private Income FindIncomeOrThrow(Guid id) =>
         _repository.GetIncomes().FirstOrThrow(i => i.Id == id, "Income", id);
 
-    private List<PotTransaction> GetLinkedMovements(Guid incomeId) =>
-        _repository.GetPotTransactions().Where(m => m.Income?.Id == incomeId).ToList();
+    private SplitRecords RecordsOf(Guid incomeId)
+    {
+        var transactions = _repository.GetPotTransactions().Where(transaction => transaction.Income?.Id == incomeId).ToList();
+        var expenses = transactions.FirstOrDefault()?.OperationId is Guid operationId
+            ? _repository.GetExpenses().Where(expense => expense.OperationId == operationId).ToList()
+            : [];
+
+        return new(transactions, expenses);
+    }
+
+    private SplitRecords Rebuild(Income income, SplitRecords oldRecords, IReadOnlyList<FundingLineDTO>? fundingLines)
+    {
+        var firstOld = oldRecords.Transactions.FirstOrDefault();
+        return firstOld is { OperationId: null }
+            ? new(OlderSplitTransactions(income), [])
+            : BuildDeposit(income, fundingLines, firstOld?.OperationId ?? Guid.NewGuid());
+    }
+
+    private SplitRecords BuildDeposit(Income income, IReadOnlyList<FundingLineDTO>? fundingLines, Guid operationId)
+    {
+        if (income.PotsAccount is not { } potsAccount)
+        {
+            return new([], []);
+        }
+
+        var accounts = _repository.GetAccounts();
+        var handSplitLines = (fundingLines ?? [])
+            .Select(line => new PotFundingLine(CashFlowReferenceResolver.ResolvePaymentSource(accounts, line.BankId), line.Amount))
+            .ToList();
+        var deposit = PotDeposit.BuildFromIncome(income, potsAccount, handSplitLines, operationId);
+
+        return new(deposit.Transactions, deposit.Expenses);
+    }
+
+    private static List<PotTransaction> OlderSplitTransactions(Income income)
+    {
+        var activePots = (income.PotsAccount?.Pots ?? []).Where(pot => pot.IsActive).ToList();
+        var amounts = PotSplitAllocator.Allocate(activePots, PotDeposit.IncomeAmount(income.NetValue));
+
+        return activePots
+            .Select((pot, index) => PotTransaction.Create(pot, amounts[index], income.Date, income.Description ?? string.Empty, income))
+            .ToList();
+    }
+
+    private void AddRecords(SplitRecords records)
+    {
+        foreach (var transaction in records.Transactions)
+        {
+            _repository.AddPotTransaction(transaction);
+        }
+
+        foreach (var expense in records.Expenses)
+        {
+            _repository.AddExpense(expense);
+        }
+    }
+
+    private void RemoveRecords(SplitRecords records)
+    {
+        foreach (var transaction in records.Transactions)
+        {
+            _repository.DeletePotTransaction(transaction.Id);
+        }
+
+        foreach (var expense in records.Expenses)
+        {
+            _repository.DeleteExpense(expense.Id);
+        }
+    }
 
     private (IncomeSource IncomeSource, Account? Account, Account? PotsAccount) ValidateFields(Guid incomeSourceId, Guid? bankId, string? description, Guid? potsAccountId)
     {
@@ -189,20 +239,11 @@ public sealed class IncomeService : IIncomeService
         return (resolvedIncomeSource!, resolvedBank, CashFlowReferenceResolver.ResolvePotsAccount(_repository.GetAccounts(), potsAccountId));
     }
 
-    private static List<PotTransaction> BuildSplitMovements(Income linkedIncome, Account? potsAccount, decimal netValue, DateOnly date, string? description) =>
-        potsAccount is null
-            ? []
-            : ReserveService.CreateSplitMovements(
-                (potsAccount.Pots ?? []).Where(pot => pot.IsActive),
-                ComputeSplitBase(netValue),
-                date,
-                description ?? string.Empty,
-                linkedIncome);
+    private IncomeDTO ToDtoWithDeposit(Income income) => ToDto(income, RecordsOf(income.Id).Expenses);
 
-    private static decimal ComputeSplitBase(decimal netValue) =>
-        Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
+    internal static IncomeDTO ToDto(Income income) => ToDto(income, []);
 
-    internal static IncomeDTO ToDto(Income income) => new()
+    private static IncomeDTO ToDto(Income income, IReadOnlyList<Expense> depositExpenses) => new()
     {
         Id = income.Id,
         Date = income.Date,
@@ -213,6 +254,12 @@ public sealed class IncomeService : IIncomeService
         BankId = income.Account?.Id,
         BankName = income.Account?.Name,
         Description = income.Description,
-        PotsAccountId = income.PotsAccount?.Id
+        PotsAccountId = income.PotsAccount?.Id,
+        HasLinkedDeposit = depositExpenses.Count > 0,
+        FundingLines = depositExpenses
+            .Select(expense => new FundingLineDTO { BankId = expense.PaymentSourceAccount!.Id, Amount = expense.Value })
+            .ToList()
     };
+
+    private sealed record SplitRecords(IReadOnlyList<PotTransaction> Transactions, IReadOnlyList<Expense> Expenses);
 }

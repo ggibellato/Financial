@@ -105,8 +105,8 @@ public sealed class PotsService : IPotsService
             ArgumentNullException.ThrowIfNull(request);
 
             var existing = FindOperationOfKind(operationId, PotOperationKind.Withdrawal, potsAccountId);
-            var otherMovements = _repository.GetPotTransactions().Where(movement => movement.OperationId != operationId);
-            var operation = BuildWithdrawal(potsAccountId, request, operationId, otherMovements);
+            var otherTransactions = _repository.GetPotTransactions().Where(transaction => transaction.OperationId != operationId);
+            var operation = BuildWithdrawal(potsAccountId, request, operationId, otherTransactions);
             await SaveAsync(operation, existing).ConfigureAwait(false);
 
             span.MarkSuccess();
@@ -165,7 +165,7 @@ public sealed class PotsService : IPotsService
     }
 
     private PotOperation BuildWithdrawal(
-        Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotTransaction> balanceMovements)
+        Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotTransaction> balanceTransactions)
     {
         EnsureDescriptionAndDate(request.Description, request.Date);
 
@@ -175,7 +175,7 @@ public sealed class PotsService : IPotsService
         var (bank, category) = PotWithdrawalValidator.ResolveBankAndCategory(
             request.BankId, request.CategoryId, request.Description, accounts, _repository.GetCategories());
         var operation = PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId);
-        PotWithdrawalValidator.EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceMovements);
+        PotWithdrawalValidator.EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceTransactions);
 
         return operation;
     }
@@ -248,9 +248,9 @@ public sealed class PotsService : IPotsService
 
     private void AddRecords(PotOperation operation)
     {
-        foreach (var movement in operation.Movements)
+        foreach (var transaction in operation.Transactions)
         {
-            _repository.AddPotTransaction(movement);
+            _repository.AddPotTransaction(transaction);
         }
 
         foreach (var expense in operation.Expenses)
@@ -261,9 +261,9 @@ public sealed class PotsService : IPotsService
 
     private void RemoveRecords(PotOperation operation)
     {
-        foreach (var movement in operation.Movements)
+        foreach (var transaction in operation.Transactions)
         {
-            _repository.DeletePotTransaction(movement.Id);
+            _repository.DeletePotTransaction(transaction.Id);
         }
 
         foreach (var expense in operation.Expenses)
