@@ -61,7 +61,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddIncomeSource(IncomeSource incomeSource) => _data.AddIncomeSource(incomeSource);
     public void DeleteIncomeSource(Guid id) => _data.RemoveIncomeSource(id);
 
-    public IEnumerable<Pot> GetPots() => ReservaAccount.Find(_data.Accounts)?.Pots ?? [];
+    public IEnumerable<Pot> GetReservaPots() => ReservaAccount.Find(_data.Accounts)?.Pots ?? [];
 
     public IEnumerable<Category> GetCategories() => _data.Categories;
     public void AddCategory(Category category) => _data.AddCategory(category);

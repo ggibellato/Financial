@@ -110,7 +110,7 @@ public sealed class ReserveService : IReserveService
         {
             var movements = _repository.GetPotMovements().ToList();
 
-            var result = _repository.GetPots()
+            var result = _repository.GetReservaPots()
                 .Select(pot => new ReserveBucketBalanceDTO
                 {
                     BucketId = pot.Id,
@@ -164,7 +164,7 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("Description is required.");
             }
 
-            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetPots(), b => b.Id, out var pot))
+            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReservaPots(), b => b.Id, out var pot))
             {
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }

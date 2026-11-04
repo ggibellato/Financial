@@ -30,7 +30,7 @@ public class PotsServiceTests
 
     private Account Reserva => _repository.EnsureReserva();
 
-    private Pot PotNamed(string name) => _repository.Pots.First(pot => pot.Name == name);
+    private Pot PotNamed(string name) => _repository.ReservaPots.First(pot => pot.Name == name);
 
     private Category CategoryNamed(string name) => _repository.Categories.First(category => category.Name == name);
 

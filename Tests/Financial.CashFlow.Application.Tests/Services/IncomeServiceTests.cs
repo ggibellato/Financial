@@ -413,7 +413,7 @@ public class IncomeServiceTests
         {
             result.PotsAccountId.Should().Be(AccountId(repository, "Reserva"));
             repository.PotMovements.Should().HaveCount(4);
-            repository.PotMovements.Should().OnlyContain(m => repository.Pots.Contains(m.Pot));
+            repository.PotMovements.Should().OnlyContain(m => repository.ReservaPots.Contains(m.Pot));
         }
     }
 
@@ -585,7 +585,7 @@ public class IncomeServiceTests
             result.NetValue.Should().Be(1000.00m);
             repository.PotMovements.Should().HaveCount(4);
             repository.PotMovements.Select(m => m.Id).Should().NotIntersectWith(originalMovementIds);
-            var investimento = repository.Pots.Single(b => b.Name == "Investimento");
+            var investimento = repository.ReservaPots.Single(b => b.Name == "Investimento");
             repository.PotMovements.Should().ContainSingle(m => m.Pot == investimento)
                 .Which.Amount.Should().Be(299.97m);
         }
@@ -623,7 +623,7 @@ public class IncomeServiceTests
     {
         var repository = CreateSplitCapableRepository();
         var service = CreateService(repository);
-        var unrelatedMovement = PotMovement.Create(repository.Pots[0], 10m, new DateOnly(2026, 7, 1), "Manual entry");
+        var unrelatedMovement = PotMovement.Create(repository.ReservaPots[0], 10m, new DateOnly(2026, 7, 1), "Manual entry");
         repository.PotMovements.Add(unrelatedMovement);
         var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
 

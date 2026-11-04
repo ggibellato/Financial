@@ -141,7 +141,7 @@ public class FailedSaveRollbackTests
     [Fact]
     public async Task PostWithdrawalAsync_ThroughABank_WhenTheWriteFails_LeavesNoMovementAndNoExpense()
     {
-        var investimento = _repository.GetPots().Single(b => b.Name == "Investimento");
+        var investimento = _repository.GetReservaPots().Single(b => b.Name == "Investimento");
         await _repository.ApplyAndSaveAsync(() =>
         {
             _repository.AddPotMovement(PotMovement.Create(investimento, 100m, July1, "Seed"));

@@ -243,8 +243,8 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSuggestionsForMonth_PotsAccountTotal_UsesLastDayOfPriorMonthAndNamesTheAccount()
     {
         var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
-        var investimento = repository.Pots.First(b => b.Name == "Investimento");
-        var houseTreats = repository.Pots.First(b => b.Name == "HouseTreats");
+        var investimento = repository.ReservaPots.First(b => b.Name == "Investimento");
+        var houseTreats = repository.ReservaPots.First(b => b.Name == "HouseTreats");
         repository.PotMovements.Add(PotMovement.Create(investimento, 100m, new DateOnly(2026, 7, 31), "Contribution"));
         repository.PotMovements.Add(PotMovement.Create(houseTreats, 50m, new DateOnly(2026, 7, 15), "Contribution"));
         repository.PotMovements.Add(PotMovement.Create(investimento, 30m, new DateOnly(2026, 8, 1), "Too late"));
@@ -264,7 +264,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSuggestionsForMonth_PotsAccountTotal_IsTheNamedAccountsBalanceAndIgnoresASecondPotsAccount()
     {
         var (repository, service, _, _, reserveAccount, _) = CreateSuggestionsFixture();
-        var investimento = repository.Pots.First(b => b.Name == "Investimento");
+        var investimento = repository.ReservaPots.First(b => b.Name == "Investimento");
         investimento.Update(investimento.Name, investimento.SplitPercentage, isActive: false);
         var holidays = TestAccounts.Pots("Holidays");
         var flights = Pot.Create("Flights", 100m);
@@ -283,7 +283,7 @@ public class InvestmentSnapshotServiceTests
     public async Task GetSuggestionsForMonth_PotsAccountTotal_NamesASecondPotsAccountAndUsesItsBalance()
     {
         var repository = new StubCashFlowRepository(seedDefaultPots: true);
-        var investimento = repository.Pots.First(b => b.Name == "Investimento");
+        var investimento = repository.ReservaPots.First(b => b.Name == "Investimento");
         var holidays = TestAccounts.Pots("Holidays");
         var flights = Pot.Create("Flights", 100m);
         holidays.AddPot(flights);

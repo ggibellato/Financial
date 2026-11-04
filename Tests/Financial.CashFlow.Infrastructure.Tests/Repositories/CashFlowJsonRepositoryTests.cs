@@ -502,7 +502,7 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void GetPots_ReturnsPotsFromTheUnderlyingData()
+    public void GetReservaPots_ReturnsPotsFromTheUnderlyingData()
     {
         var path = Path.GetTempFileName();
         try
@@ -511,7 +511,7 @@ public class CashFlowJsonRepositoryTests
             TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 33.33m));
             var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
 
-            repository.GetPots().Should().ContainSingle().Which.Name.Should().Be("Investimento");
+            repository.GetReservaPots().Should().ContainSingle().Which.Name.Should().Be("Investimento");
         }
         finally
         {

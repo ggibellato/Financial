@@ -28,7 +28,7 @@ public sealed class ReserveBucketService : IReserveBucketService
         using var span = StartSpan("GetReserveBuckets");
         try
         {
-            var result = _repository.GetPots().Select(b => ToDto(b, warning: null)).ToList();
+            var result = _repository.GetReservaPots().Select(b => ToDto(b, warning: null)).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetReserveBuckets");
@@ -109,9 +109,9 @@ public sealed class ReserveBucketService : IReserveBucketService
                 throw new ArgumentException("Reserve bucket name is required.", nameof(request));
             }
 
-            var pot = _repository.GetPots().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
+            var pot = _repository.GetReservaPots().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
 
-            _repository.GetPots().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
+            _repository.GetReservaPots().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -132,7 +132,7 @@ public sealed class ReserveBucketService : IReserveBucketService
 
     private ReserveSplitStatusDTO BuildSplitStatus()
     {
-        var pots = _repository.GetPots();
+        var pots = _repository.GetReservaPots();
         var total = pots.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
         return new ReserveSplitStatusDTO
         {

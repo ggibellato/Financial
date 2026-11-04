@@ -37,7 +37,7 @@ public class ReserveServiceTests
 
     /// <summary>The seeded bucket's id. The stub repository generates a fresh Guid per test run,
     /// so a test names the bucket it means and lets this resolve the id it must send.</summary>
-    private Guid BucketId(string name) => _repository.Pots.First(b => b.Name == name).Id;
+    private Guid BucketId(string name) => _repository.ReservaPots.First(b => b.Name == name).Id;
 
     [Fact]
     public async Task PostIncomeSplitAsync_WithValidRequest_PostsOneMovementPerActiveBucketAndReturnsAmounts()
@@ -85,8 +85,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostIncomeSplitAsync_WithInactiveBucket_ExcludesItFromMovementsAndResult()
     {
-        _repository.Pots.Single(b => b.Name == "Gleison").Update("Gleison", 16.67m, isActive: false);
-        _repository.Pots.Single(b => b.Name == "Ariana").Update("Ariana", 33.34m, isActive: true);
+        _repository.ReservaPots.Single(b => b.Name == "Gleison").Update("Gleison", 16.67m, isActive: false);
+        _repository.ReservaPots.Single(b => b.Name == "Ariana").Update("Ariana", 33.34m, isActive: true);
 
         var result = await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
@@ -185,7 +185,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task PostIncomeSplitAsync_ActivePotsNotTotalling100_ThrowsAndSavesNothing()
     {
-        _repository.Pots.Single(b => b.Name == "Gleison").Update("Gleison", 16.67m, isActive: false);
+        _repository.ReservaPots.Single(b => b.Name == "Gleison").Update("Gleison", 16.67m, isActive: false);
 
         var act = async () => await _sut.PostIncomeSplitAsync(ValidIncomeSplitRequest());
 
@@ -404,7 +404,7 @@ public class ReserveServiceTests
     [Fact]
     public void GetBucketBalances_IncludesInactiveBucketsWithTheirBalance()
     {
-        var retiredGleison = _repository.Pots.Single(b => b.Name == "Gleison");
+        var retiredGleison = _repository.ReservaPots.Single(b => b.Name == "Gleison");
         retiredGleison.Update("Gleison", 16.67m, isActive: false);
         _repository.PotMovements.Add(PotMovement.Create(retiredGleison, 75m, new DateOnly(2026, 7, 1), "Before retirement"));
 
@@ -507,7 +507,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task DeleteMovementAsync_MovementFromALegacySplit_DeletesAllFourSiblingMovements()
     {
-        foreach (var pot in _repository.Pots)
+        foreach (var pot in _repository.ReservaPots)
         {
             _repository.PotMovements.Add(PotMovement.Create(pot, 10m, new DateOnly(2026, 7, 1), "Ramsay"));
         }
@@ -556,7 +556,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task UpdateMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
     {
-        var pot = _repository.Pots.First(b => b.Name == "Investimento");
+        var pot = _repository.ReservaPots.First(b => b.Name == "Investimento");
         var linked = PotMovement.Create(pot, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
         _repository.PotMovements.Add(linked);
 
@@ -575,7 +575,7 @@ public class ReserveServiceTests
     [Fact]
     public async Task DeleteMovementAsync_OnLinkedMovement_ThrowsReserveMovementLinkedToIncomeException()
     {
-        var pot = _repository.Pots.First(b => b.Name == "Investimento");
+        var pot = _repository.ReservaPots.First(b => b.Name == "Investimento");
         var linked = PotMovement.Create(pot, 100m, new DateOnly(2026, 7, 1), "August salary", LinkedIncome());
         _repository.PotMovements.Add(linked);
 
@@ -588,8 +588,8 @@ public class ReserveServiceTests
     [Fact]
     public async Task DeleteMovementAsync_OnUnlinkedMovementSharingDateAndDescriptionWithALinkedOne_DeletesOnlyTheUnlinkedGroup()
     {
-        var investimento = _repository.Pots.First(b => b.Name == "Investimento");
-        var houseTreats = _repository.Pots.First(b => b.Name == "HouseTreats");
+        var investimento = _repository.ReservaPots.First(b => b.Name == "Investimento");
+        var houseTreats = _repository.ReservaPots.First(b => b.Name == "HouseTreats");
         var sameDate = new DateOnly(2026, 7, 1);
         var manual1 = PotMovement.Create(investimento, 50m, sameDate, "August salary");
         var manual2 = PotMovement.Create(houseTreats, 50m, sameDate, "August salary");
@@ -752,7 +752,7 @@ public class ReserveServiceTests
     public async Task DeleteMovementAsync_LegacyMovementSharingDateAndDescriptionWithAnOperationMovement_LeavesTheOperationMovement()
     {
         var linked = AddOperationMovement();
-        var legacy = PotMovement.Create(_repository.Pots.First(b => b.Name == "HouseTreats"), 30m, linked.Date, linked.Description);
+        var legacy = PotMovement.Create(_repository.ReservaPots.First(b => b.Name == "HouseTreats"), 30m, linked.Date, linked.Description);
         _repository.PotMovements.Add(legacy);
 
         await _sut.DeleteMovementAsync(legacy.Id);
@@ -763,7 +763,7 @@ public class ReserveServiceTests
     private PotMovement AddOperationMovement()
     {
         var linked = PotMovement.Create(
-            _repository.Pots.First(b => b.Name == "Investimento"), -30m, new DateOnly(2026, 7, 1), "Boots", operationId: Guid.NewGuid());
+            _repository.ReservaPots.First(b => b.Name == "Investimento"), -30m, new DateOnly(2026, 7, 1), "Boots", operationId: Guid.NewGuid());
         _repository.PotMovements.Add(linked);
         return linked;
     }
@@ -959,7 +959,7 @@ public class ReserveServiceTests
         string description = "Dentist") =>
         new()
         {
-            BucketId = repository.Pots.First(b => b.Name == "Investimento").Id,
+            BucketId = repository.ReservaPots.First(b => b.Name == "Investimento").Id,
             Amount = amount,
             Date = new DateOnly(2026, 7, 1),
             Description = description,
@@ -1021,7 +1021,7 @@ internal static class ReserveServiceTestsStubExtensions
 {
     public static void Seed(this StubCashFlowRepository repository, string bucketName, decimal amount, DateOnly? date = null)
     {
-        var pot = repository.Pots.First(b => b.Name == bucketName);
+        var pot = repository.ReservaPots.First(b => b.Name == bucketName);
         repository.PotMovements.Add(PotMovement.Create(pot, amount, date ?? new DateOnly(2026, 1, 1), "Seed"));
     }
 

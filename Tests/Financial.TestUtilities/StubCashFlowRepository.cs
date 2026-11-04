@@ -23,7 +23,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Account> Accounts { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
-    public IReadOnlyList<Pot> Pots => ReservaAccount.Find(Accounts)?.Pots ?? [];
+    public IReadOnlyList<Pot> ReservaPots => ReservaAccount.Find(Accounts)?.Pots ?? [];
     public IReadOnlyList<Account> CardAccounts => Accounts.Where(account => account.Has(Capability.HasStatements)).ToList();
     public List<Category> Categories { get; } = new();
     public List<Income> Incomes { get; } = new();
@@ -213,7 +213,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddIncomeSource(IncomeSource incomeSource) => IncomeSources.Add(incomeSource);
     public void DeleteIncomeSource(Guid id) => IncomeSources.RemoveAll(s => s.Id == id);
 
-    public IEnumerable<Pot> GetPots() => CheckThrow(Pots);
+    public IEnumerable<Pot> GetReservaPots() => CheckThrow(ReservaPots);
 
     public void AddPot(Pot pot) => EnsureReserva().AddPot(pot);
 
