@@ -14,6 +14,7 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class PotsService : IPotsService
 {
     private const string EntityType = "PotOperation";
+    private const string PotEntityType = "Pot";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -164,6 +165,39 @@ public sealed class PotsService : IPotsService
         }
     }
 
+    public async Task ReplacePotsAsync(Guid potsAccountId, PotsUpdateDTO request)
+    {
+        using var span = StartSpan("ReplacePots", PotEntityType);
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, potsAccountId.ToString());
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var potsAccount = FindPotsAccount(_repository.GetAccounts(), potsAccountId);
+            var changes = request.Pots
+                .Select(pot => new PotChange(pot.Id, pot.Name, pot.SplitPercentage, pot.IsActive))
+                .ToList();
+            if (Account.FindDuplicatePotName(changes) is string duplicate)
+            {
+                throw new DuplicateNameException($"A pot named \"{duplicate}\" already exists.");
+            }
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                potsAccount.ReplacePots(changes);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "ReplacePots");
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     private PotOperation BuildWithdrawal(
         Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotTransaction> balanceTransactions)
     {
@@ -272,10 +306,10 @@ public sealed class PotsService : IPotsService
         }
     }
 
-    private ITelemetrySpan StartSpan(string operationName)
+    private ITelemetrySpan StartSpan(string operationName, string entityType = EntityType)
     {
         _logger.LogInformation("{Operation} started", operationName);
-        return _tracer.StartServiceSpan("CashFlow", nameof(PotsService), operationName, EntityType);
+        return _tracer.StartServiceSpan("CashFlow", nameof(PotsService), operationName, entityType);
     }
 
     private static PotOperationDTO ToDto(PotOperation operation) => new()

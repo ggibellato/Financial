@@ -89,4 +89,20 @@ public sealed class PotsController : ControllerBase
         await _potsService.DeleteOperationAsync(operationId);
         return NoContent();
     }
+
+    [HttpPut("{potsId:guid}/pots")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> ReplacePots(Guid potsId, [FromBody] PotsUpdateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        await _potsService.ReplacePotsAsync(potsId, request);
+        return NoContent();
+    }
 }

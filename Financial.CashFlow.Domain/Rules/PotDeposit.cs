@@ -112,11 +112,7 @@ public static class PotDeposit
             throw new ArgumentException($"{potsAccount.Name} has no active pots.");
         }
 
-        var splitTotal = activePots.Sum(pot => pot.SplitPercentage);
-        if (splitTotal != 100m)
-        {
-            throw new ArgumentException(FormattableString.Invariant($"Active pots must total 100% (now {splitTotal:0.##}%)."));
-        }
+        potsAccount.EnsureActivePotsTotal100();
 
         return Allocate(activePots, amount, date, description, income, operationId);
     }

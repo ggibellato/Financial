@@ -11,6 +11,7 @@ namespace Financial.CashFlow.Domain.Entities;
 public class Account
 {
     public const int MaxNameLength = 60;
+    public const decimal RequiredActiveSplitTotal = 100m;
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
     private IReadOnlyList<Pot> _pots = [];
@@ -93,19 +94,44 @@ public class Account
     public void AddPot(Pot pot)
     {
         ArgumentNullException.ThrowIfNull(pot);
-
-        if (!Has(Capability.HasPots))
-        {
-            throw new ArgumentException($"{Name} has no pots.");
-        }
+        EnsureHasPots();
 
         if (_pots.Any(existing => string.Equals(existing.Name, pot.Name, StringComparison.OrdinalIgnoreCase)))
         {
-            throw new ArgumentException($"A reserve bucket named \"{pot.Name}\" already exists.");
+            throw new ArgumentException($"A pot named \"{pot.Name}\" already exists.");
         }
 
         _pots = [.. _pots, pot];
     }
+
+    public void ReplacePots(IReadOnlyList<PotChange> changes)
+    {
+        ArgumentNullException.ThrowIfNull(changes);
+        EnsureHasPots();
+        EnsureChangesCanApply(changes);
+
+        foreach (var pot in _pots)
+        {
+            var change = changes.Single(candidate => candidate.Id == pot.Id);
+            pot.Update(change.Name.Trim(), change.SplitPercentage, change.IsActive);
+        }
+
+        _pots =
+        [
+            .. _pots,
+            .. changes.Where(change => change.Id is null).Select(change => Pot.Create(change.Name.Trim(), change.SplitPercentage, change.IsActive))
+        ];
+    }
+
+    public static string? FindDuplicatePotName(IEnumerable<PotChange> changes) =>
+        changes
+            .Where(change => !string.IsNullOrWhiteSpace(change.Name))
+            .GroupBy(change => change.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(sameName => sameName.Count() > 1)
+            ?.Key;
+
+    internal void EnsureActivePotsTotal100() =>
+        EnsureActiveSplitTotals100(_pots.Where(pot => pot.IsActive).Sum(pot => pot.SplitPercentage));
 
     public void SetCategory(Category category)
     {
@@ -131,6 +157,47 @@ public class Account
         if (!Has(Capability.HasCategories))
         {
             throw new ArgumentException($"Account '{Name}' cannot be a payment source.");
+        }
+    }
+
+    private void EnsureHasPots()
+    {
+        if (!Has(Capability.HasPots))
+        {
+            throw new ArgumentException($"{Name} has no pots.");
+        }
+    }
+
+    private void EnsureChangesCanApply(IReadOnlyList<PotChange> changes)
+    {
+        if (changes.Any(change => change.Id is Guid id && !OwnsPot(id)))
+        {
+            throw new ArgumentException($"That pot isn't in {Name}.");
+        }
+
+        if (_pots.Any(pot => changes.Count(change => change.Id == pot.Id) != 1))
+        {
+            throw new ArgumentException("Every pot must be in the list; pots can't be deleted.");
+        }
+
+        foreach (var change in changes)
+        {
+            Pot.Validate(change.Name, change.SplitPercentage);
+        }
+
+        if (FindDuplicatePotName(changes) is string duplicate)
+        {
+            throw new ArgumentException($"A pot named \"{duplicate}\" already exists.");
+        }
+
+        EnsureActiveSplitTotals100(changes.Where(change => change.IsActive).Sum(change => change.SplitPercentage));
+    }
+
+    private static void EnsureActiveSplitTotals100(decimal activeSplitTotal)
+    {
+        if (activeSplitTotal != RequiredActiveSplitTotal)
+        {
+            throw new ArgumentException(FormattableString.Invariant($"Active pots must total 100% (now {activeSplitTotal:0.##}%)."));
         }
     }
 

@@ -445,9 +445,193 @@ public class AccountTests
 
         using (new AssertionScope())
         {
-            act.Should().Throw<ArgumentException>().WithMessage("A reserve bucket named \"INVESTIMENTO\" already exists.");
+            act.Should().Throw<ArgumentException>().WithMessage("A pot named \"INVESTIMENTO\" already exists.");
             reserva.Pots.Should().ContainSingle();
         }
+    }
+
+    private static (Account Reserva, Pot Investimento, Pot Ariana) ReservaWithTwoPots()
+    {
+        var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
+        var investimento = Pot.Create("Investimento", 60m);
+        var ariana = Pot.Create("Ariana", 40m);
+        reserva.AddPot(investimento);
+        reserva.AddPot(ariana);
+        return (reserva, investimento, ariana);
+    }
+
+    private static void ShouldKeepThePots(Account reserva, Pot investimento, Pot ariana)
+    {
+        reserva.Pots.Should().Equal(investimento, ariana);
+        (investimento.Name, investimento.SplitPercentage, investimento.IsActive).Should().Be(("Investimento", 60m, true));
+        (ariana.Name, ariana.SplitPercentage, ariana.IsActive).Should().Be(("Ariana", 40m, true));
+    }
+
+    [Fact]
+    public void ReplacePots_RenameSplitDeactivateAndAdd_AppliesAllAndKeepsExistingOrder()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        reserva.ReplacePots(
+        [
+            new PotChange(null, " Holidays ", 16.67m, true),
+            new PotChange(ariana.Id, "Ari", 33.33m, true),
+            new PotChange(investimento.Id, "Investimento", 50m, true),
+            new PotChange(null, "Old", 10m, false)
+        ]);
+
+        using (new AssertionScope())
+        {
+            reserva.Pots!.Select(pot => (pot.Name, pot.SplitPercentage, pot.IsActive)).Should().Equal(
+                ("Investimento", 50m, true), ("Ari", 33.33m, true), ("Holidays", 16.67m, true), ("Old", 10m, false));
+            reserva.Pots![0].Should().BeSameAs(investimento);
+            reserva.Pots![1].Should().BeSameAs(ariana);
+        }
+    }
+
+    [Fact]
+    public void ReplacePots_SwappingTwoNames_IsAllowed()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        reserva.ReplacePots([new PotChange(investimento.Id, "Ariana", 60m, true), new PotChange(ariana.Id, "Investimento", 40m, true)]);
+
+        reserva.Pots!.Select(pot => pot.Name).Should().Equal("Ariana", "Investimento");
+    }
+
+    [Theory]
+    [InlineData(55, 40, "Active pots must total 100% (now 95%).")]
+    [InlineData(59.99, 40, "Active pots must total 100% (now 99.99%).")]
+    [InlineData(60, 40.5, "Active pots must total 100% (now 100.5%).")]
+    public void ReplacePots_ActiveSplitNot100_ThrowsAndChangesNothing(double first, double second, string message)
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots(
+        [
+            new PotChange(investimento.Id, "Renamed", (decimal)first, true),
+            new PotChange(ariana.Id, "Ariana", (decimal)second, true)
+        ]);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage(message);
+            ShouldKeepThePots(reserva, investimento, ariana);
+        }
+    }
+
+    [Fact]
+    public void ReplacePots_EveryPotInactive_Throws()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots([new PotChange(investimento.Id, "Investimento", 60m, false), new PotChange(ariana.Id, "Ariana", 40m, false)]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Active pots must total 100% (now 0%).");
+    }
+
+    [Fact]
+    public void ReplacePots_InactivePotsSplit_DoesNotCountTowardTheTotal()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        reserva.ReplacePots([new PotChange(investimento.Id, "Investimento", 100m, true), new PotChange(ariana.Id, "Ariana", 40m, false)]);
+
+        ariana.IsActive.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ReplacePots_PotMissingFromTheList_ThrowsAndChangesNothing()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots([new PotChange(investimento.Id, "Renamed", 100m, true)]);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Every pot must be in the list; pots can't be deleted.");
+            ShouldKeepThePots(reserva, investimento, ariana);
+        }
+    }
+
+    [Fact]
+    public void ReplacePots_PotListedTwice_Throws()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots(
+        [
+            new PotChange(investimento.Id, "One", 30m, true),
+            new PotChange(investimento.Id, "Two", 30m, true),
+            new PotChange(ariana.Id, "Ariana", 40m, true)
+        ]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Every pot must be in the list; pots can't be deleted.");
+    }
+
+    [Fact]
+    public void ReplacePots_PotOfAnotherAccount_Throws()
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots(
+        [
+            new PotChange(investimento.Id, "Investimento", 60m, true),
+            new PotChange(ariana.Id, "Ariana", 40m, true),
+            new PotChange(Guid.NewGuid(), "Foreign", 0m, false)
+        ]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+    }
+
+    [Theory]
+    [InlineData("ARIANA")]
+    [InlineData(" ariana ")]
+    public void ReplacePots_DuplicateNameInAnyCase_ThrowsAndChangesNothing(string newName)
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots(
+        [
+            new PotChange(investimento.Id, "Investimento", 60m, true),
+            new PotChange(ariana.Id, "Ariana", 40m, true),
+            new PotChange(null, newName, 0m, false)
+        ]);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("A pot named \"Ariana\" already exists.");
+            ShouldKeepThePots(reserva, investimento, ariana);
+        }
+    }
+
+    [Theory]
+    [InlineData("  ", 40, "Pot name is required.")]
+    [InlineData("Ariana", 101, "Split percentage must be between 0 and 100.")]
+    [InlineData("Ariana", -1, "Split percentage must be between 0 and 100.")]
+    public void ReplacePots_InvalidPotAfterAValidOne_ThrowsAndChangesNothing(string name, double split, string message)
+    {
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+
+        var act = () => reserva.ReplacePots(
+        [
+            new PotChange(investimento.Id, "Renamed", 60m, true),
+            new PotChange(ariana.Id, name, (decimal)split, true)
+        ]);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage(message);
+            ShouldKeepThePots(reserva, investimento, ariana);
+        }
+    }
+
+    [Fact]
+    public void ReplacePots_AccountWithoutPots_Throws()
+    {
+        var act = () => CreateBank().ReplacePots([]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase has no pots.");
     }
 
     [Fact]

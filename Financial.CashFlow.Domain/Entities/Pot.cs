@@ -2,6 +2,8 @@ using System;
 
 namespace Financial.CashFlow.Domain.Entities;
 
+public sealed record PotChange(Guid? Id, string Name, decimal SplitPercentage, bool IsActive);
+
 public class Pot
 {
     public Guid Id { get; private set; }
@@ -40,11 +42,11 @@ public class Pot
     public decimal CalculateSplitAmount(decimal totalAmount) =>
         Math.Round(totalAmount * SplitPercentage / 100m, 2, MidpointRounding.AwayFromZero);
 
-    private static void Validate(string name, decimal splitPercentage)
+    internal static void Validate(string name, decimal splitPercentage)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
-            throw new ArgumentException("Reserve bucket name is required.");
+            throw new ArgumentException("Pot name is required.");
         }
 
         if (splitPercentage < 0 || splitPercentage > 100)

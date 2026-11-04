@@ -384,6 +384,73 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         }
     }
 
+    private static PotUpdateDTO PotLine(string? id, string name, decimal split, bool isActive = true) => new()
+    {
+        Id = id is null ? null : Guid.Parse(id),
+        Name = name,
+        SplitPercentage = split,
+        IsActive = isActive
+    };
+
+    private Task<HttpResponseMessage> ManagePotsAsync(params PotUpdateDTO[] pots) =>
+        Client.PutAsJsonAsync($"{Api}/accounts/{ReservaId}/pots", new PotsUpdateDTO { Pots = pots });
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-14")]
+    public async Task ManagePots_TotalNot100_Returns400()
+    {
+        var response = await ManagePotsAsync(
+            PotLine(InvestimentoId, "Renamed", 55m), PotLine(HouseTreatsId, "HouseTreats", 40m), PotLine(HolidaysId, "Holidays", 0m, isActive: false));
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(response)).Should().Be("Active pots must total 100% (now 95%).");
+            Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-14")]
+    public async Task ManagePots_ValidList_SavesAllTogether()
+    {
+        var response = await ManagePotsAsync(
+            PotLine(InvestimentoId, "Long term", 50m),
+            PotLine(HouseTreatsId, "HouseTreats", 25m),
+            PotLine(HolidaysId, "Holidays", 25m),
+            PotLine(null, "Car", 0m, isActive: false));
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            Repository.GetReservaPots().Select(pot => (pot.Name, pot.SplitPercentage, pot.IsActive)).Should().Equal(
+                ("Long term", 50m, true), ("HouseTreats", 25m, true), ("Holidays", 25m, true), ("Car", 0m, false));
+        }
+    }
+
+    [Fact]
+    public async Task ManagePots_MissingPotOrDuplicateNameOrBlankName_IsRejected()
+    {
+        var missing = await ManagePotsAsync(PotLine(InvestimentoId, "Investimento", 60m), PotLine(HouseTreatsId, "HouseTreats", 40m));
+        var duplicate = await ManagePotsAsync(
+            PotLine(InvestimentoId, "Investimento", 60m), PotLine(HouseTreatsId, "HOLIDAYS", 40m), PotLine(HolidaysId, "Holidays", 0m, isActive: false));
+        var blank = await ManagePotsAsync(
+            PotLine(InvestimentoId, " ", 60m), PotLine(HouseTreatsId, "HouseTreats", 40m), PotLine(HolidaysId, "Holidays", 0m, isActive: false));
+        var unknownAccount = await Client.PutAsJsonAsync($"{Api}/accounts/{BarclaysId}/pots", new PotsUpdateDTO { Pots = [] });
+
+        using (new AssertionScope())
+        {
+            missing.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(missing)).Should().Be("Every pot must be in the list; pots can't be deleted.");
+            duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            (await DetailOf(duplicate)).Should().Be("A pot named \"HOLIDAYS\" already exists.");
+            blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(blank)).Should().Be("Pot name is required.");
+            unknownAccount.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
+        }
+    }
+
     private Task<HttpResponseMessage> AddSplitIncomeAsync(decimal net, params (string BankId, decimal Amount)[] lines) =>
         Client.PostAsJsonAsync($"{Api}/incomes", new IncomeCreateDTO
         {

@@ -5313,6 +5313,33 @@
         ],
         "type": "object"
       },
+      "PotUpdateDTO": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "splitPercentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "name",
+          "splitPercentage",
+          "isActive"
+        ],
+        "type": "object"
+      },
       "PotWithdrawalRequestDTO": {
         "properties": {
           "amount": {
@@ -5353,6 +5380,20 @@
           "amount",
           "date",
           "description"
+        ],
+        "type": "object"
+      },
+      "PotsUpdateDTO": {
+        "properties": {
+          "pots": {
+            "items": {
+              "$ref": "#/components/schemas/PotUpdateDTO"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "pots"
         ],
         "type": "object"
       },
@@ -7996,6 +8037,101 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
+        ]
+      }
+    },
+    "/accounts/{potsId}/pots": {
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "potsId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotsUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotsUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PotsUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "No Content"
           },
           "400": {
             "content": {
