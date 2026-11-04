@@ -79,7 +79,7 @@ claude --bg --model opus --effort medium --permission-mode <this session's mode>
 
 **5.2 Questions.** When the implementer needs a decision it asks in its own session and also sends this controller a one-line `QUESTIONS` notice listing them. Tell the user: they can attach and answer there, or answer here and you send the answers to the implementer with `SendMessage`. Either way, the user decides; never answer for them.
 
-**5.3 The report arrives.** With the PR open and CI green, the implementer sends a `REPORT` message (PR, head commit, files, deviations, deferred items, checks). If no message arrives, the user saying "PR up" starts the same step; find the PR with `gh pr list`. Then verify.
+**5.3 The report arrives.** As soon as it has pushed and opened the PR, the implementer sends a `REPORT` message (PR, head commit, files, deviations, deferred items, checks). It does not wait for CI: the verifier checks CI as its last item, so review and CI run at the same time and a problem can go back to the implementer before CI finishes. If no message arrives, the user saying "PR up" starts the same step; find the PR with `gh pr list`. Then verify.
 
 **5.4 Verify.** Start a fresh verifier with the Agent tool: `subagent_type: "general-purpose"`, `model: "opus"`, `effort: "high"`, `isolation: "worktree"`, prompt:
 ```
@@ -91,8 +91,10 @@ Give it the PR and the documents, not the implementer's report or your own concl
 
 **5.5 Act on the verdict.**
 - `READY`: tell the user the PR is ready to merge, with the verifier's checklist, the deviations it accepted and anything deferred. Wait for "merged".
-- `CHANGES NEEDED`: ask the user about findings that are a choice (a deviation they might accept, a size overage). Send the fix requests to the implementer session by name with `SendMessage`; if that fails, give the user the text to paste there. When the implementer reports the new head commit, send "verify the new head <sha>" to the same verifier and repeat 5.5.
-- `BLOCKED` (red CI the implementer can't fix, a wrong base, already merged): explain to the user and agree the next step.
+- `CHANGES NEEDED` (findings, or red CI with the failing job): ask the user about findings that are a choice (a deviation they might accept, a size overage). Send the fix requests to the implementer session by name with `SendMessage`; if that fails, give the user the text to paste there. When the implementer reports the new head commit, send "verify the new head <sha>" to the same verifier and repeat 5.5.
+- `BLOCKED` (a failure outside the PR, a wrong base, already merged): explain to the user and agree the next step.
+
+If the implementer goes quiet (no report, no questions), look before waiting longer: `claude logs <name>` shows its last output, and `gh pr list` shows whether it pushed.
 
 **Other ways to run a stage.**
 - *The user opens the session themselves:* give them `git switch main && git pull --ff-only && git switch -c <branch>` and the same `/multi-session-implementation implement …` text to run in a new Opus, medium-effort session. It reports back the same way.

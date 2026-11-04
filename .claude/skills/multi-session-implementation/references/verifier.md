@@ -14,7 +14,7 @@ You run in your own worktree. `git fetch origin`, then check out the PR head det
    - The PR is open and based on `main`. If it was already merged, say so and check it after the merge, against its merge commit.
    - `git log origin/main..HEAD` shows only this stage's commits.
    - The files changed match the stage's files in the spec; list any extra or missing file.
-2. **CI.** `gh pr checks <n>` is green, and the run is on the PR's head commit (`gh pr view <n> --json headRefOid`).
+2. **CI.** The implementer reports as soon as it pushes, so CI is usually still running when you start. Do every other item first, then check CI last: run `gh pr checks <n> --watch` in the foreground (not as a background command) with a long enough timeout, and confirm the run is on the PR's head commit (`gh pr view <n> --json headRefOid`). If CI is red, read the failing job's log (`gh run view <run> --log-failed`) and turn it into a fix request with the failing test or step. If the head commit changed while you worked, say so and verify the new head instead.
 3. **Size.** Count non-test code files and total files, generated files excluded. Over 8 code files or about 15 in total is a finding unless the user already approved it (it will be in the decisions you were given).
 4. **Comments.** Grep the added lines of the diff for new `//`, `///`, `/*` and `#` comments, excluding generated files. Every one is a finding unless it explains a non-obvious why (`CLAUDE.md` comments policy).
 5. **Spec match.** Read the code diff against the spec's rules for this stage: routes, messages (exact text), status codes, rules and edge cases. Cite `file:line` for each mismatch.
@@ -40,4 +40,4 @@ Needs a user decision: findings the user should decide (an overage, a deviation 
 Fix requests: the exact text to send to the implementer, one block per fix, or "none"
 ```
 
-`READY` means nothing must change before the merge. Use `BLOCKED` for something neither a fix request nor a user decision on this PR can solve, such as a wrong base branch or a PR already merged with a problem. If you're later asked to verify a new head commit, recheck the items the fix touched plus CI, size and comments, and give a new verdict.
+`READY` means nothing must change before the merge, which includes CI green on the head commit; never give `READY` while CI is still running. Red CI is `CHANGES NEEDED` with the fix request, not `BLOCKED`, unless the failure is outside the PR (for example an outage). Use `BLOCKED` for something neither a fix request nor a user decision on this PR can solve, such as a wrong base branch or a PR already merged with a problem. If you're later asked to verify a new head commit, recheck the items the fix touched plus CI, size and comments, and give a new verdict.
