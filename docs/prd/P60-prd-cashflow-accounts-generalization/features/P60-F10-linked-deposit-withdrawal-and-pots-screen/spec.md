@@ -45,7 +45,7 @@ Complexity: **complex**. It adds linked operations across expenses and pot movem
 
 **Layers** (design.md's four questions):
 1. **Where it belongs:** the CashFlow bounded context.
-   - **Domain:** `OperationId` on `Expense` and `ReserveMovement`; `PotDeposit` and `PotWithdrawal` rules that build an operation's records; the 100% rule on the account's pots.
+   - **Domain:** `OperationId` on `Expense` and `PotMovement`; `PotDeposit` and `PotWithdrawal` rules that build an operation's records; the 100% rule on the account's pots.
    - **Application:** `PotsService` (operations and pots), `IncomeService` (income deposit), `ReserveService` (Reserva routes delegate), guards in `ExpenseService`.
    - **Infrastructure:** `OperationId` left out of the JSON when null.
    - **Presentation:** `PotsController`; the Pots screen, forms and dialog.
@@ -65,7 +65,7 @@ flowchart LR
   PotsSvc --> Deposit[PotDeposit]
   PotsSvc --> Withdrawal[PotWithdrawal]
   IncomeSvc --> Deposit
-  Deposit --> Records[(Expense + ReserveMovement with OperationId)]
+  Deposit --> Records[(Expense + PotMovement with OperationId)]
   Withdrawal --> Records
 ```
 
@@ -73,10 +73,10 @@ flowchart LR
 
 | Decision | Chosen approach | Alternative considered | Trade-off |
 |---|---|---|---|
-| **Link** (user, 2026-10-31) | `Guid? OperationId` on `Expense` and `ReserveMovement`, set at creation by the operation rules and never changed. An operation = all records with that id. No stored operation. | A stored "pot operation" record | Derive, don't store; the file gains no collection. |
+| **Link** (user, 2026-10-31) | `Guid? OperationId` on `Expense` and `PotMovement`, set at creation by the operation rules and never changed. An operation = all records with that id. No stored operation. | A stored "pot operation" record | Derive, don't store; the file gains no collection. |
 | **Reading an operation** | `GET accounts/operations/{id}` rebuilds it: kind (withdrawal when a movement is negative), Pots account (the movements' pots' account), date and description (the movements'), amount (sum of movement magnitudes), into (`OnePot` with that pot when exactly one movement, otherwise `ActivePots`; a split while only one pot is active reads back as that one pot, and saving it again writes the same records), funding lines (the bank expenses in the Pots account's category), withdrawal bank and category (the +X expense), income id (the movements' `IncomeId`). | Store the form input | Reconstruction is exact for every shape the forms can save. |
 | **Routes** (user) | `PotsController` under `accounts`: `POST {potsId:guid}/deposits`, `POST {potsId:guid}/withdrawals`, `PUT {potsId:guid}/deposits/{operationId:guid}`, `PUT {potsId:guid}/withdrawals/{operationId:guid}`, `GET`/`DELETE operations/{operationId:guid}`, `GET {potsId:guid}/pots/{year:int}/{month:int}`, `PUT {potsId:guid}/pots`. Income routes gain `fundingLines`. | One generic operations route with a kind | One request shape per route, so later stages only add to the snapshot. |
-| **Deposit rule** | `Domain/Rules/PotDeposit.Build(potsAccount, amount, date, description, target, fundingLines, operationId, income?)` returns the `PotOperation`. Target `ActivePots` splits once with `ReserveSplitAllocator` (residual to the largest %) and needs the active pots to total exactly 100.00 (else 400 "Active pots must total 100% (now 99.99%).", so the pots always receive the full amount); `OnePot(potId)` credits that pot only, any pot of the account, inactive included. Funding lines 0–5, each bank `CanPay` and active, amounts > 0, sum = amount exactly. Each line → one expense in the Pots account's category, description "Deposit to <account>" (from an income: "Deposit to <account> – <income source>"), `countsAsTithe` false, no round-up. Movements use the deposit's description (from an income: today's income movement description). | Split per funding line | Splitting once avoids per-pot rounding drift (PRD). |
+| **Deposit rule** | `Domain/Rules/PotDeposit.Build(potsAccount, amount, date, description, target, fundingLines, operationId, income?)` returns the `PotOperation`. Target `ActivePots` splits once with `PotSplitAllocator` (residual to the largest %) and needs the active pots to total exactly 100.00 (else 400 "Active pots must total 100% (now 99.99%).", so the pots always receive the full amount); `OnePot(potId)` credits that pot only, any pot of the account, inactive included. Funding lines 0–5, each bank `CanPay` and active, amounts > 0, sum = amount exactly. Each line → one expense in the Pots account's category, description "Deposit to <account>" (from an income: "Deposit to <account> – <income source>"), `countsAsTithe` false, no round-up. Movements use the deposit's description (from an income: today's income movement description). | Split per funding line | Splitting once avoids per-pot rounding drift (PRD). |
 | **Withdrawal rule** | `Domain/Rules/PotWithdrawal.Build(potsAccount, pot, amount, date, description, bank?, category?, operationId)`: movement −X; with a bank, expense −X in the Pots account's category and +X in the chosen category, both with the request description and today's flags; returns the `PotOperation`. Category must be active, not investment and not any account's category (today's server rule). Overdraft: amount > pot balance without `confirmed` → `OverdraftConfirmationRequiredException` (409), checked after the rule so an invalid amount is always the 400. | — | Same records as today, now linked. |
 | **Deposit from an income** | Only when the income has a Pots account. Amount = `round(net − 10%, 2)` as today, date = the income's. A bank is required ("Choose the bank this income landed in."). Default funding: one line from the income's bank for the full amount; `fundingLines` on create or update replaces it. Edit rebuilds the whole deposit in the same save (new records, same `OperationId`); hand-split lines that no longer add up → 400. Unticking the split or deleting the income deletes every record of the deposit. | — | PRD. |
 | **Older split incomes** (user) | An income whose movements have no `OperationId` keeps today's path: edit rebuilds movements only, delete removes them; no expense, no link. `fundingLines` sent for such an income are ignored. | Convert on edit | No double counting with the hand-typed lines; parity unchanged. |
@@ -93,6 +93,7 @@ flowchart LR
 | **Web: income funding** (user) | The shared `IncomeForm` gets a "Funded from" section when split is ticked: one read-only line (income's bank, full deposit amount) and "Split across banks", which turns it into editable lines (up to 5) with "Lines add up to £88.00; the deposit is £90.00." under them and Save disabled until they match. Used by Monthly, the bank screen and the Pots screen. Hidden for older split incomes. | Account screens only | One form everywhere until F13. |
 | **Web: bank rows** (user) | A row with `operation` is read-only; its description links to `/cashflow/accounts/<potsId>?month=<yyyy-MM>&tab=transactions&operation=<id>`; with `incomeId`, it opens the income's edit form on the bank screen instead. | Edit in place | One place to edit each operation. |
 | **Admin retirement** (user) | Stage 9 removes `ReserveBucketsPage`, `ReserveBucketFormDialog`, `useReserveBuckets`, the nav entry and lazy import; `admin/cashflow/reserve-buckets` redirects to the first Pots account's screen with `tab=pots` (Accounts page when none). Server: `POST`/`PUT reserve-buckets` and their service methods go; `GET reserve-buckets` and `split-status` stay for the Reserva page. | Keep until F13 | One place edits pots, so the 100% rule holds. |
+| **Code names** (user, 2026-11-04) | The domain type is `Pot` (was `ReserveBucket`) and a movement is `PotMovement` (was `ReserveMovement`), with `PotMovement.Pot`, `PotSplitAllocator`, `PotAsOfDateResolver`, `PotReferenceConverter` and the matching repository and `CashFlowData` members. The JSON keys (`ReserveMovements`, `BucketId`), every `Reserve*DTO`, `ReserveService`, `ReserveBucketService`, `ReserveSplitRule`, `ReservaAccount`, `ReserveMovementLinkedToIncomeException`, the `reserve` and `reserve-buckets` routes and all web code keep their names; F13 removes those that go. | Keep the old names until F13 | New pot code reads as pots; the data file and the API do not change. |
 | **Parity** | Stage 6 emits `{month}/potsTab/<pot>/balance` and `{month}/potsTab/total` from `GET accounts/{potsId}/pots/{y}/{m}` for the first Pots account, mapped to `{month}/pots/*/balance` and `{month}/pots/total`. Legacy data is unchanged, so every stage expects 0 differences. | — | The new read is checked every month. |
 | **PR size** | Server stages ≤ 8 code files. Web stages 8–11 exceed it with the user's approval; each PR names its count. | — | — |
 
@@ -105,7 +106,7 @@ All paths are relative to the repo root. Existing patterns: entities with privat
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
 | `Entities/Transactions/Expense.cs` | Modified | 1 | `OperationId`; `Create(..., operationId: null)` |
-| `Entities/Transactions/ReserveMovement.cs` | Modified | 1 | `OperationId`; `Create(..., operationId: null)` |
+| `Entities/Transactions/PotMovement.cs` | Modified | 1 | `OperationId`; `Create(..., operationId: null)` |
 | `Rules/PotWithdrawal.cs` | New | 1 | Builds a withdrawal's records; category rule |
 | `Rules/PotDeposit.cs` | New | 3, 4 | Builds a deposit's records; target; funding-line rules; income amount |
 | `Rules/PotOperation.cs` | New | 2, 3 | Reads an operation back from its records |
@@ -131,7 +132,7 @@ All paths are relative to the repo root. Existing patterns: entities with privat
 
 Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
 
-**Infrastructure:** `Financial.CashFlow.Infrastructure/Persistence/CashFlowTypeInfoResolver.cs` (stage 1): `Expense.OperationId` and `ReserveMovement.OperationId` join the omitted-when-null list.
+**Infrastructure:** `Financial.CashFlow.Infrastructure/Persistence/CashFlowTypeInfoResolver.cs` (stage 1): `Expense.OperationId` and `PotMovement.OperationId` join the omitted-when-null list.
 
 **Presentation**
 
@@ -155,7 +156,7 @@ Domain `Enums/AccountAction.cs` and `Rules/AccountActions.cs` change in stage 7.
 **Scripts:** `scripts/parity/Parity.psm1`, `figure-map.json`, `Parity.test.ps1`, `README.md` (stage 6).
 
 **Files per stage (non-test code, generated `openapi.ts` excluded):**
-- 1: 8 (`Expense`, `ReserveMovement`, `PotWithdrawal`, `CashFlowTypeInfoResolver`, `LinkedOperationConflictException`, `ExpenseService`, `ReserveService`, `DomainExceptionMappingMiddleware`).
+- 1: 8 (`Expense`, `PotMovement`, `PotWithdrawal`, `CashFlowTypeInfoResolver`, `LinkedOperationConflictException`, `ExpenseService`, `ReserveService`, `DomainExceptionMappingMiddleware`).
 - 2: 8 (`PotOperation`, `IPotsService`, `PotsService`, `PotWithdrawalRequestDTO`, `PotOperationDTO`, `PotsController`, DI extensions, `ReserveService`).
 - 3a: 8 (`PotDeposit`, `PotOperation`, `PotDepositRequestDTO`, `FundingLineDTO`, `PotOperationDTO`, `IPotsService`, `PotsService`, `PotsController`).
 - 3b: 5 (`ReserveService`, `PotsService`, the new `Application/Validation` file for the bank and overdraft checks, `PotDeposit` and `PotWithdrawal`, which both return `PotOperation` as the one records type). `IncomeService` keeps calling `ReserveService.CreateSplitMovements` until stage 4.
