@@ -291,7 +291,8 @@ public class IncomeServiceTests
         NetValue = r.NetValue,
         BankId = ResolveBankId(repository, r.Bank),
         Description = r.Description,
-        PotsAccountId = ResolveAccountId(repository, r.PotsAccount)
+        PotsAccountId = ResolveAccountId(repository, r.PotsAccount),
+        FundingLines = r.FundingLines
     };
 
     private static IncomeUpdateDTO ToUpdateDto(StubCashFlowRepository repository, IncomeCreateRequest r) => new()
@@ -302,7 +303,8 @@ public class IncomeServiceTests
         NetValue = r.NetValue,
         BankId = ResolveBankId(repository, r.Bank),
         Description = r.Description,
-        PotsAccountId = ResolveAccountId(repository, r.PotsAccount)
+        PotsAccountId = ResolveAccountId(repository, r.PotsAccount),
+        FundingLines = r.FundingLines
     };
 
     /// <summary>An unresolvable name maps to a random, never-seeded Guid so tests exercising an unrecognized reference still hit the "not found" path.</summary>
@@ -320,15 +322,43 @@ public class IncomeServiceTests
         repository.Accounts.Single(a => a.Name == accountName).Id;
 
     private sealed record IncomeCreateRequest(
-        DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description, string? PotsAccount = null);
+        DateOnly Date, string IncomeSource, decimal? GrossValue, decimal NetValue, string? Bank, string? Description, string? PotsAccount = null,
+        IReadOnlyList<FundingLineDTO>? FundingLines = null);
 
-    private static StubCashFlowRepository CreateSplitCapableRepository() =>
-        new(seedDefaultBanks: true, seedDefaultIncomeSources: true, seedDefaultPots: true);
+    private static StubCashFlowRepository CreateSplitCapableRepository()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true, seedDefaultPots: true);
+        repository.Accounts.Single(a => a.Name == "Reserva").SetCategory(Category.Create("Reserva"));
+        return repository;
+    }
+
+    private static IReadOnlyList<FundingLineDTO> FundingLines(StubCashFlowRepository repository, params (string Bank, decimal Amount)[] lines) =>
+        lines.Select(line => new FundingLineDTO { BankId = AccountId(repository, line.Bank), Amount = line.Amount }).ToList();
+
+    private static Expense HandTypedExpense(StubCashFlowRepository repository)
+    {
+        var expense = Expense.Create(
+            new DateOnly(2026, 7, 25), "Reserva", 500m, Category.Create("Reserva"), repository.Accounts.Single(a => a.Name == "Barclays"), creditCard: null);
+        repository.Expenses.Add(expense);
+        return expense;
+    }
+
+    private static (StubCashFlowRepository Repository, Income Older) RepositoryWithOlderSplitIncome()
+    {
+        var repository = CreateSplitCapableRepository();
+        var reserva = repository.Accounts.Single(a => a.Name == "Reserva");
+        var older = Income.Create(
+            new DateOnly(2026, 7, 25), repository.IncomeSources.Single(s => s.Name == "Ariana"), null, 2450m,
+            repository.Accounts.Single(a => a.Name == "Barclays"), potsAccount: reserva);
+        repository.Incomes.Add(older);
+        repository.PotTransactions.Add(PotTransaction.Create(repository.ReservaPots[0], 2205m, older.Date, string.Empty, older));
+        return (repository, older);
+    }
 
     private static (StubCashFlowRepository Repository, Account Holidays) RepositoryWithArianaSplittingToHolidays()
     {
         var repository = CreateSplitCapableRepository();
-        var holidays = TestAccounts.Pots("Holidays");
+        var holidays = TestAccounts.Pots("Holidays", category: Category.Create("Holidays"));
         holidays.AddPot(Pot.Create("Flights", 50m));
         holidays.AddPot(Pot.Create("Hotels", 50m));
         holidays.AddPot(Pot.Create("Retired", 0m, isActive: false));
@@ -507,18 +537,17 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WithSplitAndZeroActivePots_SucceedsWithNoMovements()
+    public async Task AddIncomeAsync_WithSplitAndZeroActivePots_ThrowsAndPersistsNothing()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
         var service = CreateService(repository);
 
-        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
 
         using (new AssertionScope())
         {
-            result.PotsAccountId.Should().Be(AccountId(repository, "Reserva"));
-            repository.Incomes.Should().ContainSingle();
-            repository.PotTransactions.Should().BeEmpty();
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Reserva has no active pots.");
+            repository.Incomes.Should().BeEmpty();
         }
     }
 
@@ -644,6 +673,283 @@ public class IncomeServiceTests
         var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
 
         result.PotsAccountId.Should().Be(arianaSource.PotsAccount!.Id);
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-01")]
+    public async Task AddIncomeAsync_WithSplit_WritesTheLinkedDepositInOneSave()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+
+        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+
+        using (new AssertionScope())
+        {
+            repository.SaveChangesCallCount.Should().Be(1);
+            var expense = repository.Expenses.Should().ContainSingle().Which;
+            expense.Date.Should().Be(new DateOnly(2026, 7, 25));
+            expense.Description.Should().Be("Deposit to Reserva \u2013 Ariana");
+            expense.Value.Should().Be(2205.00m);
+            expense.Category.Name.Should().Be("Reserva");
+            expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
+            expense.CountsAsTithe.Should().BeFalse();
+            expense.OperationId.Should().NotBeNull();
+            repository.PotTransactions.Should().OnlyContain(m => m.OperationId == expense.OperationId && m.Income!.Id == result.Id);
+            result.HasLinkedDeposit.Should().BeTrue();
+            result.FundingLines.Select(line => (line.BankId, line.Amount)).Should().Equal((AccountId(repository, "Barclays"), 2205.00m));
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithoutASplit_WritesNoDeposit()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = new[] { new FundingLineDTO { BankId = Guid.NewGuid(), Amount = 1m } };
+
+        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null, FundingLines = lines }));
+
+        using (new AssertionScope())
+        {
+            repository.Expenses.Should().BeEmpty();
+            repository.PotTransactions.Should().BeEmpty();
+            result.HasLinkedDeposit.Should().BeFalse();
+            result.FundingLines.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithSplitAndNoBank_ThrowsAndPersistsNothing()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+
+        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { Bank = null }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the bank this income landed in.");
+            repository.Incomes.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-02")]
+    public async Task AddIncomeAsync_WithHandSplitLines_WritesOneExpensePerBank()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = FundingLines(repository, ("Barclays", 2200m), ("Chase", 5m));
+
+        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+
+        using (new AssertionScope())
+        {
+            repository.Expenses.Select(e => (e.PaymentSourceAccount!.Name, e.Value)).Should().Equal(("Barclays", 2200m), ("Chase", 5m));
+            result.FundingLines.Select(line => line.Amount).Should().Equal(2200m, 5m);
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithLinesThatDoNotAddUp_ThrowsAndPersistsNothing()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = FundingLines(repository, ("Barclays", 2200m));
+
+        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Funding lines must add up to \u00a32205.00.");
+            repository.Incomes.Should().BeEmpty();
+            repository.Expenses.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task AddIncomeAsync_WithAnUnknownFundingBank_Throws()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = new[] { new FundingLineDTO { BankId = Guid.NewGuid(), Amount = 2205m } };
+
+        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Payment source '*' is not recognized.");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-04")]
+    public async Task UpdateIncomeAsync_WithALinkedDeposit_RebuildsEveryRecordKeepingTheOperationId()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        var operationId = repository.Expenses.Single().OperationId;
+        var oldIds = repository.Expenses.Select(e => e.Id).Concat(repository.PotTransactions.Select(m => m.Id)).ToList();
+
+        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m, Bank = "Chase" }));
+
+        using (new AssertionScope())
+        {
+            var expense = repository.Expenses.Should().ContainSingle().Which;
+            (expense.Value, expense.PaymentSourceAccount!.Name, expense.OperationId).Should().Be((900m, "Chase", operationId));
+            repository.PotTransactions.Should().HaveCount(4).And.OnlyContain(m => m.OperationId == operationId);
+            repository.PotTransactions.Sum(m => m.Amount).Should().Be(900m);
+            repository.Expenses.Select(e => e.Id).Concat(repository.PotTransactions.Select(m => m.Id)).Should().NotIntersectWith(oldIds);
+            result.FundingLines.Select(line => line.Amount).Should().Equal(900m);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_WithHandSplitLinesThatNoLongerAddUp_ThrowsAndKeepsTheDeposit()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = FundingLines(repository, ("Barclays", 2200m), ("Chase", 5m));
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+
+        var act = async () => await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m, FundingLines = lines }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Funding lines must add up to \u00a3900.00.");
+            repository.Expenses.Select(e => e.Value).Should().Equal(2200m, 5m);
+            repository.PotTransactions.Sum(m => m.Amount).Should().Be(2205m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.UpdateIncome");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_OmittingTheLinesOfAHandSplitDeposit_GoesBackToTheDefaultLine()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = FundingLines(repository, ("Barclays", 2200m), ("Chase", 5m));
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+
+        await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest()));
+
+        repository.Expenses.Select(e => (e.PaymentSourceAccount!.Name, e.Value)).Should().Equal(("Barclays", 2205m));
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-04")]
+    public async Task UpdateIncomeAsync_TogglingSplitOff_RemovesEveryRecordOfTheDeposit()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+
+        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
+
+        using (new AssertionScope())
+        {
+            repository.Expenses.Should().BeEmpty();
+            repository.PotTransactions.Should().BeEmpty();
+            result.HasLinkedDeposit.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-04")]
+    public async Task DeleteIncomeAsync_WithALinkedDeposit_RemovesOnlyItsRecords()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        var otherExpense = HandTypedExpense(repository);
+
+        await service.DeleteIncomeAsync(added.Id);
+
+        using (new AssertionScope())
+        {
+            repository.Incomes.Should().BeEmpty();
+            repository.PotTransactions.Should().BeEmpty();
+            repository.Expenses.Should().ContainSingle().Which.Should().BeSameAs(otherExpense);
+        }
+    }
+
+    [Fact]
+    public async Task GetIncomesByMonth_ReturnsEachIncomesFundingLines()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
+        await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
+
+        var incomes = service.GetIncomesByMonth(2026, 7);
+
+        incomes.Select(income => (income.HasLinkedDeposit, income.FundingLines.Count)).Should().Equal((true, 1), (false, 0));
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-10")]
+    public async Task UpdateIncomeAsync_ForAnOlderSplit_RebuildsTheMovementsAndAddsNoExpense()
+    {
+        var (repository, older) = RepositoryWithOlderSplitIncome();
+        var service = CreateService(repository);
+        var handTyped = HandTypedExpense(repository);
+        var lines = FundingLines(repository, ("Chase", 900m));
+
+        var result = await service.UpdateIncomeAsync(older.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m, Bank = null, FundingLines = lines }));
+
+        using (new AssertionScope())
+        {
+            repository.Expenses.Should().ContainSingle().Which.Should().BeSameAs(handTyped);
+            repository.PotTransactions.Should().HaveCount(4).And.OnlyContain(m => m.OperationId == null && m.Income!.Id == older.Id);
+            repository.PotTransactions.Sum(m => m.Amount).Should().Be(900m);
+            result.HasLinkedDeposit.Should().BeFalse();
+            result.FundingLines.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_ForAnOlderSplitWhoseActivePotsDoNotTotal100_KeepsRebuildingWithoutTheRule()
+    {
+        var (repository, older) = RepositoryWithOlderSplitIncome();
+        repository.ReservaPots.Single(p => p.Name == "Gleison").Update("Gleison", 0m, isActive: false);
+        var service = CreateService(repository);
+
+        await service.UpdateIncomeAsync(older.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m }));
+
+        repository.PotTransactions.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task UpdateIncomeAsync_TogglingAnOlderSplitOff_RemovesItsMovements()
+    {
+        var (repository, older) = RepositoryWithOlderSplitIncome();
+        var service = CreateService(repository);
+        var handTyped = HandTypedExpense(repository);
+
+        await service.UpdateIncomeAsync(older.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
+
+        using (new AssertionScope())
+        {
+            repository.PotTransactions.Should().BeEmpty();
+            repository.Expenses.Should().ContainSingle().Which.Should().BeSameAs(handTyped);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteIncomeAsync_ForAnOlderSplit_RemovesItsMovementsAndKeepsTheHandTypedExpense()
+    {
+        var (repository, older) = RepositoryWithOlderSplitIncome();
+        var service = CreateService(repository);
+        var handTyped = HandTypedExpense(repository);
+
+        await service.DeleteIncomeAsync(older.Id);
+
+        using (new AssertionScope())
+        {
+            repository.Incomes.Should().BeEmpty();
+            repository.PotTransactions.Should().BeEmpty();
+            repository.Expenses.Should().ContainSingle().Which.Should().BeSameAs(handTyped);
+        }
     }
 
     [Fact]

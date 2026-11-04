@@ -8998,6 +8998,7 @@ export interface components {
             /** Format: date */
             date: string;
             description?: null | string;
+            fundingLines?: null | components["schemas"]["FundingLineDTO"][];
             /** Format: double */
             grossValue?: null | number;
             /** Format: uuid */
@@ -9014,8 +9015,10 @@ export interface components {
             /** Format: date */
             date: string;
             description?: null | string;
+            fundingLines?: components["schemas"]["FundingLineDTO"][];
             /** Format: double */
             grossValue?: null | number;
+            hasLinkedDeposit?: boolean;
             /** Format: uuid */
             id: string;
             /** Format: uuid */
@@ -9079,6 +9082,7 @@ export interface components {
             /** Format: date */
             date: string;
             description?: null | string;
+            fundingLines?: null | components["schemas"]["FundingLineDTO"][];
             /** Format: double */
             grossValue?: null | number;
             /** Format: uuid */

@@ -203,6 +203,8 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Barclays',
     description: null,
     potsAccountId: null,
+    hasLinkedDeposit: false,
+    fundingLines: [],
   },
 ]
 
@@ -453,6 +455,8 @@ describe('MonthlyPage', () => {
         bankName: 'Barclays',
         description: null,
         potsAccountId: null,
+        hasLinkedDeposit: false,
+        fundingLines: [],
       },
     ])
 
@@ -1152,6 +1156,8 @@ describe('MonthlyPage', () => {
         bankName: 'Barclays',
         description: null,
         potsAccountId: null,
+        hasLinkedDeposit: false,
+        fundingLines: [],
       },
     ])
 
@@ -1285,6 +1291,8 @@ describe('MonthlyPage', () => {
       bankName: 'Chase',
       description: null,
       potsAccountId: null,
+      hasLinkedDeposit: false,
+      fundingLines: [],
     })
     render(<MonthlyPage />)
     fireEvent.click(screen.getByRole('tab', { name: 'Income' }))
@@ -1306,6 +1314,8 @@ describe('MonthlyPage', () => {
       bankName: 'Chase',
       description: null,
       potsAccountId: null,
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }])
     getDefaultGroupSummaryMock.mockResolvedValue({
       ...SUMMARY,

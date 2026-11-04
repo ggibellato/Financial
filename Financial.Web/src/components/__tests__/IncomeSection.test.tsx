@@ -16,6 +16,8 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Barclays',
     description: 'Salary',
     potsAccountId: null,
+    hasLinkedDeposit: false,
+    fundingLines: [],
   },
   {
     id: 'i2',
@@ -28,6 +30,8 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Chase',
     description: null,
     potsAccountId: null,
+    hasLinkedDeposit: false,
+    fundingLines: [],
   },
 ]
 
@@ -56,6 +60,8 @@ describe('IncomeSection', () => {
       bankName: null,
       description: null,
       potsAccountId: null,
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
     render(<IncomeSection incomes={[bankLessIncome]} onEdit={vi.fn()} onDelete={vi.fn()} onNewIncome={vi.fn()} />)
 

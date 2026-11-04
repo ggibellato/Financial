@@ -86,6 +86,8 @@ const INCOME: IncomeDto = {
   bankName: 'Barclays',
   description: null,
   potsAccountId: null,
+  hasLinkedDeposit: false,
+  fundingLines: [],
 }
 
 const EXPENSE_ROW = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-05', amount: -42.5, expense: EXPENSE })

@@ -2,7 +2,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
-using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
@@ -48,12 +47,12 @@ public sealed class ReserveService : IReserveService
             _logger.LogInformation("{Operation} completed", "PostIncomeSplit");
             return new IncomeSplitResultDTO
             {
-                Buckets = MovementsOf(operation.OperationId)
-                    .Select(movement => new BucketSplitAmountDTO
+                Buckets = TransactionsOf(operation.OperationId)
+                    .Select(transaction => new BucketSplitAmountDTO
                     {
-                        BucketId = movement.Pot.Id,
-                        BucketName = movement.Pot.Name,
-                        Amount = movement.Amount
+                        BucketId = transaction.Pot.Id,
+                        BucketName = transaction.Pot.Name,
+                        Amount = transaction.Amount
                     })
                     .ToList(),
                 Total = operation.Amount
@@ -89,12 +88,12 @@ public sealed class ReserveService : IReserveService
                 Confirmed = request.Confirmed
             }).ConfigureAwait(false);
 
-            var movement = MovementsOf(operation.OperationId).Single();
+            var transaction = TransactionsOf(operation.OperationId).Single();
 
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, movement.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, transaction.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "PostWithdrawal");
-            return ToDto(movement);
+            return ToDto(transaction);
         }
         catch (Exception ex)
         {
@@ -108,14 +107,14 @@ public sealed class ReserveService : IReserveService
         using var span = StartSpan("GetBucketBalances");
         try
         {
-            var movements = _repository.GetPotTransactions().ToList();
+            var transactions = _repository.GetPotTransactions().ToList();
 
             var result = _repository.GetReservaPots()
                 .Select(pot => new ReserveBucketBalanceDTO
                 {
                     BucketId = pot.Id,
                     BucketName = pot.Name,
-                    Balance = AccountBalanceRule.PotBalance(pot, DateOnly.MaxValue, movements)
+                    Balance = AccountBalanceRule.PotBalance(pot, DateOnly.MaxValue, transactions)
                 })
                 .ToList();
 
@@ -169,19 +168,19 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
             }
 
-            var movement = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
-            EnsureNotLinkedToIncome(movement);
-            LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
+            var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            EnsureNotLinkedToIncome(transaction);
+            LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                movement.Update(pot!, request.Amount, request.Date, request.Description);
+                transaction.Update(pot!, request.Amount, request.Date, request.Description);
                 return true;
             }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateMovement");
-            return ToDto(movement);
+            return ToDto(transaction);
         }
         catch (Exception ex)
         {
@@ -196,19 +195,19 @@ public sealed class ReserveService : IReserveService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            var movement = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
-            EnsureNotLinkedToIncome(movement);
-            LinkedOperationConflictException.ThrowIfLinked(movement.OperationId, "movement");
+            var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            EnsureNotLinkedToIncome(transaction);
+            LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
 
             var group = _repository.GetPotTransactions()
-                .Where(m => m.Date == movement.Date && m.Description == movement.Description && m.Income is null && m.OperationId is null)
+                .Where(m => m.Date == transaction.Date && m.Description == transaction.Description && m.Income is null && m.OperationId is null)
                 .ToList();
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                foreach (var groupMovement in group)
+                foreach (var groupTransaction in group)
                 {
-                    _repository.DeletePotTransaction(groupMovement.Id);
+                    _repository.DeletePotTransaction(groupTransaction.Id);
                 }
 
                 return true;
@@ -230,37 +229,26 @@ public sealed class ReserveService : IReserveService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
 
-    internal static List<PotTransaction> CreateSplitMovements(
-        IEnumerable<Pot> activePots, decimal amount, DateOnly date, string description, Income? income = null)
+    private IEnumerable<PotTransaction> TransactionsOf(Guid operationId) =>
+        _repository.GetPotTransactions().Where(transaction => transaction.OperationId == operationId);
+
+    private static void EnsureNotLinkedToIncome(PotTransaction transaction)
     {
-        var pots = activePots.ToList();
-        var amounts = PotSplitAllocator.Allocate(pots, amount);
-
-        return pots
-            .Select((pot, i) => PotTransaction.Create(pot, amounts[i], date, description, income))
-            .ToList();
-    }
-
-    private IEnumerable<PotTransaction> MovementsOf(Guid operationId) =>
-        _repository.GetPotTransactions().Where(movement => movement.OperationId == operationId);
-
-    private static void EnsureNotLinkedToIncome(PotTransaction movement)
-    {
-        if (movement.Income is not null)
+        if (transaction.Income is not null)
         {
             throw new ReserveMovementLinkedToIncomeException(
                 "This reserve movement is linked to an income and can only be changed by editing that income.");
         }
     }
 
-    private static ReserveMovementDTO ToDto(PotTransaction movement) => new()
+    private static ReserveMovementDTO ToDto(PotTransaction transaction) => new()
     {
-        Id = movement.Id,
-        BucketId = movement.Pot.Id,
-        BucketName = movement.Pot.Name,
-        Amount = movement.Amount,
-        Date = movement.Date,
-        Description = movement.Description,
-        IncomeId = movement.Income?.Id
+        Id = transaction.Id,
+        BucketId = transaction.Pot.Id,
+        BucketName = transaction.Pot.Name,
+        Amount = transaction.Amount,
+        Date = transaction.Date,
+        Description = transaction.Description,
+        IncomeId = transaction.Income?.Id
     };
 }

@@ -3837,6 +3837,15 @@
               "string"
             ]
           },
+          "fundingLines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingLineDTO"
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
           "grossValue": {
             "format": "double",
             "type": [
@@ -3892,12 +3901,21 @@
               "string"
             ]
           },
+          "fundingLines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingLineDTO"
+            },
+            "type": "array"
+          },
           "grossValue": {
             "format": "double",
             "type": [
               "null",
               "number"
             ]
+          },
+          "hasLinkedDeposit": {
+            "type": "boolean"
           },
           "id": {
             "format": "uuid",
@@ -4110,6 +4128,15 @@
             "type": [
               "null",
               "string"
+            ]
+          },
+          "fundingLines": {
+            "items": {
+              "$ref": "#/components/schemas/FundingLineDTO"
+            },
+            "type": [
+              "null",
+              "array"
             ]
           },
           "grossValue": {

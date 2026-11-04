@@ -24,4 +24,8 @@ public sealed class IncomeDTO
     public string? Description { get; init; }
 
     public Guid? PotsAccountId { get; init; }
+
+    public bool HasLinkedDeposit { get; init; }
+
+    public IReadOnlyList<FundingLineDTO> FundingLines { get; init; } = [];
 }

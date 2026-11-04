@@ -135,6 +135,8 @@ const INCOMES: IncomeDto[] = [
     bankName: 'Barclays',
     description: null,
     potsAccountId: null,
+    hasLinkedDeposit: false,
+    fundingLines: [],
   },
 ]
 

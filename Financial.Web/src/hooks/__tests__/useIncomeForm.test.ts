@@ -146,6 +146,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: 'p3',
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
 
     act(() => result.current.showEditIncomeForm(income))
@@ -174,6 +176,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: 'p1',
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
     act(() => result.current.showEditIncomeForm(income))
     expect(result.current.isIncomeDirty).toBe(false)
@@ -219,6 +223,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '1', incomeSourceName: 'Gleison',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: 'p1',
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
     act(() => result.current.showEditIncomeForm(income))
 
@@ -286,6 +292,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: 'p1',
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
 
     act(() => result.current.showEditIncomeForm(income))
@@ -299,6 +307,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: null,
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
 
     act(() => result.current.showEditIncomeForm(income))
@@ -340,6 +350,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: 'p9',
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
     act(() => result.current.showEditIncomeForm(income))
     act(() => result.current.setIncomeField('netValue', '1000'))
@@ -356,6 +368,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: 'p9',
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
     act(() => result.current.showEditIncomeForm(income))
     act(() => result.current.setIncomeField('splitToReserve', 'false'))
@@ -372,6 +386,8 @@ describe('useIncomeForm', () => {
       id: 'i1', date: '2026-07-25', incomeSourceId: '2', incomeSourceName: 'Ariana',
       grossValue: null, netValue: 2450, bankId: null, bankName: null, description: null,
       potsAccountId: null,
+      hasLinkedDeposit: false,
+      fundingLines: [],
     }
     act(() => result.current.showEditIncomeForm(income))
     act(() => result.current.setIncomeField('splitToReserve', 'true'))
@@ -544,6 +560,8 @@ describe('useIncomeForm account settings', () => {
     id: 'i9', date: '2026-10-14', incomeSourceId: '1', incomeSourceName: 'Gleison',
     grossValue: null, netValue: 100, bankId: 'bank-chase', bankName: 'Chase', description: 'Bonus',
     potsAccountId: null,
+    hasLinkedDeposit: false,
+    fundingLines: [],
   }
   let onSaved: () => void
 

@@ -29,7 +29,7 @@ public class PotOperationTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId);
 
-        var operation = PotOperation.Read(OperationId, records.Movements, records.Expenses, [_bank, _reserva]);
+        var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, _reserva]);
 
         using (new AssertionScope())
         {
@@ -42,7 +42,7 @@ public class PotOperationTests
             operation.Bank.Should().BeSameAs(_bank);
             operation.Category.Should().BeSameAs(_health);
             operation.IncomeId.Should().BeNull();
-            operation.Movements.Should().Equal(records.Movements);
+            operation.Transactions.Should().Equal(records.Transactions);
             operation.Expenses.Should().Equal(records.Expenses);
         }
     }
@@ -52,7 +52,7 @@ public class PotOperationTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId);
 
-        var operation = PotOperation.Read(OperationId, records.Movements, [], [_reserva]);
+        var operation = PotOperation.Read(OperationId, records.Transactions, [], [_reserva]);
 
         using (new AssertionScope())
         {
@@ -72,12 +72,12 @@ public class PotOperationTests
         var legacy = PotTransaction.Create(_pot, -7m, Date, "Cash");
 
         var operation = PotOperation.Read(
-            OperationId, [.. mine.Movements, .. other.Movements, legacy], [.. mine.Expenses, .. other.Expenses], [_reserva]);
+            OperationId, [.. mine.Transactions, .. other.Transactions, legacy], [.. mine.Expenses, .. other.Expenses], [_reserva]);
 
         using (new AssertionScope())
         {
             operation!.Amount.Should().Be(20m);
-            operation.Movements.Should().Equal(mine.Movements);
+            operation.Transactions.Should().Equal(mine.Transactions);
             operation.Expenses.Should().Equal(mine.Expenses);
         }
     }
@@ -101,18 +101,18 @@ public class PotOperationTests
     }
 
     [Fact]
-    public void Read_PositiveMovementsOfAnIncome_ReadAsADepositWithTheirIncome()
+    public void Read_PositiveTransactionsOfAnIncome_ReadAsADepositWithTheirIncome()
     {
         var second = Pot.Create("HouseTreats", 0m);
         _reserva.AddPot(second);
         var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva), null, 100m, _bank, potsAccount: _reserva);
-        PotTransaction[] movements =
+        PotTransaction[] transactions =
         [
             PotTransaction.Create(_pot, 60m, Date, "Split", income, OperationId),
             PotTransaction.Create(second, 30m, Date, "Split", income, OperationId)
         ];
 
-        var operation = PotOperation.Read(OperationId, movements, [], [_reserva]);
+        var operation = PotOperation.Read(OperationId, transactions, [], [_reserva]);
 
         using (new AssertionScope())
         {
@@ -131,7 +131,7 @@ public class PotOperationTests
         var barclays = TestAccounts.Bank("Barclays");
         var records = PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_bank, 85m), new(barclays, 5m)], OperationId);
 
-        var operation = PotOperation.Read(OperationId, records.Movements, records.Expenses, [_bank, barclays, _reserva]);
+        var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, barclays, _reserva]);
 
         using (new AssertionScope())
         {
@@ -151,7 +151,7 @@ public class PotOperationTests
     {
         var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", _pot, [], OperationId);
 
-        var operation = PotOperation.Read(OperationId, records.Movements, records.Expenses, [_reserva]);
+        var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_reserva]);
 
         using (new AssertionScope())
         {
@@ -167,7 +167,7 @@ public class PotOperationTests
     {
         var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", pot: null, [], OperationId);
 
-        var operation = PotOperation.Read(OperationId, records.Movements, records.Expenses, [_reserva]);
+        var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_reserva]);
 
         (operation!.Into, operation.Pot).Should().Be((PotDepositTarget.OnePot, _pot));
     }
@@ -177,7 +177,7 @@ public class PotOperationTests
     {
         var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);
 
-        var operation = PotOperation.Read(OperationId, records.Movements, records.Expenses, [_bank, _reserva]);
+        var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, _reserva]);
 
         using (new AssertionScope())
         {
