@@ -13,7 +13,7 @@ public class Account
     public const int MaxNameLength = 60;
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
-    private IReadOnlyList<ReserveBucket> _pots = [];
+    private IReadOnlyList<Pot> _pots = [];
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
@@ -22,7 +22,7 @@ public class Account
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
-    public IReadOnlyList<ReserveBucket>? Pots => Has(Capability.HasPots) ? _pots : null;
+    public IReadOnlyList<Pot>? Pots => Has(Capability.HasPots) ? _pots : null;
     public Category? Category { get; private set; }
     public bool RoundsUp => RoundUp?.Enabled == true;
     public string TemplateName => Template.ToString();
@@ -90,7 +90,7 @@ public class Account
         RoundUp = new RoundUpSetting(enabled);
     }
 
-    public void AddPot(ReserveBucket pot)
+    public void AddPot(Pot pot)
     {
         ArgumentNullException.ThrowIfNull(pot);
 

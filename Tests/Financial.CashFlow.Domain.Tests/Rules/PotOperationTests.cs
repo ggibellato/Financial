@@ -17,7 +17,7 @@ public class PotOperationTests
     private readonly Category _health = Category.Create("Saude");
     private readonly Account _bank = TestAccounts.Bank("Chase");
     private readonly Account _reserva = TestAccounts.Pots("Reserva", category: Category.Create("Reserva"));
-    private readonly ReserveBucket _pot = ReserveBucket.Create("Investimento", 100m);
+    private readonly Pot _pot = Pot.Create("Investimento", 100m);
 
     public PotOperationTests()
     {
@@ -69,7 +69,7 @@ public class PotOperationTests
     {
         var mine = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);
         var other = PotWithdrawal.Build(_reserva, _pot, 5m, Date, "Cash", _bank, _health, Guid.NewGuid());
-        var legacy = ReserveMovement.Create(_pot, -7m, Date, "Cash");
+        var legacy = PotMovement.Create(_pot, -7m, Date, "Cash");
 
         var operation = PotOperation.Read(
             OperationId, [.. mine.Movements, .. other.Movements, legacy], [.. mine.Expenses, .. other.Expenses], [_reserva]);
@@ -85,7 +85,7 @@ public class PotOperationTests
     [Fact]
     public void Read_UnknownOperation_ReturnsNull()
     {
-        var operation = PotOperation.Read(OperationId, [ReserveMovement.Create(_pot, -7m, Date, "Cash")], [], [_reserva]);
+        var operation = PotOperation.Read(OperationId, [PotMovement.Create(_pot, -7m, Date, "Cash")], [], [_reserva]);
 
         operation.Should().BeNull();
     }
@@ -93,9 +93,9 @@ public class PotOperationTests
     [Fact]
     public void Read_PotThatNoAccountOwns_ReturnsNull()
     {
-        var orphan = ReserveBucket.Create("Orphan", 0m);
+        var orphan = Pot.Create("Orphan", 0m);
 
-        var operation = PotOperation.Read(OperationId, [ReserveMovement.Create(orphan, -7m, Date, "Cash", operationId: OperationId)], [], [_reserva]);
+        var operation = PotOperation.Read(OperationId, [PotMovement.Create(orphan, -7m, Date, "Cash", operationId: OperationId)], [], [_reserva]);
 
         operation.Should().BeNull();
     }
@@ -103,13 +103,13 @@ public class PotOperationTests
     [Fact]
     public void Read_PositiveMovementsOfAnIncome_ReadAsADepositWithTheirIncome()
     {
-        var second = ReserveBucket.Create("HouseTreats", 0m);
+        var second = Pot.Create("HouseTreats", 0m);
         _reserva.AddPot(second);
         var income = Income.Create(Date, IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva), null, 100m, _bank, potsAccount: _reserva);
-        ReserveMovement[] movements =
+        PotMovement[] movements =
         [
-            ReserveMovement.Create(_pot, 60m, Date, "Split", income, OperationId),
-            ReserveMovement.Create(second, 30m, Date, "Split", income, OperationId)
+            PotMovement.Create(_pot, 60m, Date, "Split", income, OperationId),
+            PotMovement.Create(second, 30m, Date, "Split", income, OperationId)
         ];
 
         var operation = PotOperation.Read(OperationId, movements, [], [_reserva]);
@@ -126,7 +126,7 @@ public class PotOperationTests
     [Fact]
     public void Read_DepositIntoActivePotsWithFundingLines_RebuildsTheFormValues()
     {
-        var second = ReserveBucket.Create("HouseTreats", 0m);
+        var second = Pot.Create("HouseTreats", 0m);
         _reserva.AddPot(second);
         var barclays = TestAccounts.Bank("Barclays");
         var records = PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_bank, 85m), new(barclays, 5m)], OperationId);

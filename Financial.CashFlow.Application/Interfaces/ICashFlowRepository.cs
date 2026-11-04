@@ -9,9 +9,9 @@ public interface ICashFlowRepository
     void AddExpense(Expense expense);
     void DeleteExpense(Guid id);
 
-    IEnumerable<ReserveMovement> GetReserveMovements();
-    void AddReserveMovement(ReserveMovement movement);
-    void DeleteReserveMovement(Guid id);
+    IEnumerable<PotMovement> GetPotMovements();
+    void AddPotMovement(PotMovement movement);
+    void DeletePotMovement(Guid id);
 
     IEnumerable<CardStatement> GetCardStatements();
     void AddCardStatement(CardStatement statement);
@@ -39,7 +39,7 @@ public interface ICashFlowRepository
     void AddIncomeSource(IncomeSource incomeSource);
     void DeleteIncomeSource(Guid id);
 
-    IEnumerable<ReserveBucket> GetReserveBuckets();
+    IEnumerable<Pot> GetPots();
 
     IEnumerable<Category> GetCategories();
     void AddCategory(Category category);

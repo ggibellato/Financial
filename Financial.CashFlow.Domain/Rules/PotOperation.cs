@@ -19,7 +19,7 @@ public enum PotDepositTarget
 }
 
 public sealed record PotOperation(
-    Guid OperationId, Account PotsAccount, IReadOnlyList<ReserveMovement> Movements, IReadOnlyList<Expense> Expenses)
+    Guid OperationId, Account PotsAccount, IReadOnlyList<PotMovement> Movements, IReadOnlyList<Expense> Expenses)
 {
     public PotOperationKind Kind => Movements.Any(movement => movement.Amount < 0) ? PotOperationKind.Withdrawal : PotOperationKind.Deposit;
     public DateOnly Date => Movements[0].Date;
@@ -31,7 +31,7 @@ public sealed record PotOperation(
         (_, 1) => PotDepositTarget.OnePot,
         _ => PotDepositTarget.ActivePots
     };
-    public ReserveBucket? Pot => Into == PotDepositTarget.ActivePots ? null : Movements[0].Bucket;
+    public Pot? Pot => Into == PotDepositTarget.ActivePots ? null : Movements[0].Pot;
     public IReadOnlyList<PotFundingLine> FundingLines => Kind == PotOperationKind.Deposit
         ? Expenses
             .Where(expense => expense.Category.Id == PotsAccount.Category?.Id)
@@ -46,12 +46,12 @@ public sealed record PotOperation(
         Kind == PotOperationKind.Withdrawal ? Expenses.FirstOrDefault(expense => expense.Value > 0) : null;
 
     public static PotOperation? Read(
-        Guid operationId, IEnumerable<ReserveMovement> movements, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)
+        Guid operationId, IEnumerable<PotMovement> movements, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)
     {
         var operationMovements = movements.Where(movement => movement.OperationId == operationId).ToList();
         var potsAccount = operationMovements.Count == 0
             ? null
-            : accounts.FirstOrDefault(account => account.OwnsPot(operationMovements[0].Bucket.Id));
+            : accounts.FirstOrDefault(account => account.OwnsPot(operationMovements[0].Pot.Id));
         if (potsAccount is null)
         {
             return null;

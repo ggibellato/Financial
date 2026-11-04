@@ -5,7 +5,7 @@ using FluentAssertions;
 namespace Financial.CashFlow.Domain.Tests.Rules;
 
 [Trait("Category", "Unit")]
-public class ReserveSplitAllocatorTests
+public class PotSplitAllocatorTests
 {
     private static readonly decimal[] ThirdsSplit = [33.33m, 33.33m, 33.34m];
     private static readonly decimal[] FortyThirtyTwentyTen = [40m, 30m, 20m, 10m];
@@ -18,11 +18,11 @@ public class ReserveSplitAllocatorTests
     }
 
     [Fact]
-    public void Allocate_ThreeBucketsSummingTo100_AssignsResidualToLargest()
+    public void Allocate_ThreePotsSummingTo100_AssignsResidualToLargest()
     {
-        var buckets = CreateBuckets(ThirdsSplit);
+        var pots = CreatePots(ThirdsSplit);
 
-        var amounts = ReserveSplitAllocator.Allocate(buckets, 100.01m);
+        var amounts = PotSplitAllocator.Allocate(pots, 100.01m);
 
         amounts.Should().Equal(33.33m, 33.33m, 33.35m);
     }
@@ -30,9 +30,9 @@ public class ReserveSplitAllocatorTests
     [Fact]
     public void Allocate_TiedLargestPercentage_AssignsResidualToFirstInOrder()
     {
-        var buckets = CreateBuckets([50m, 50m]);
+        var pots = CreatePots([50m, 50m]);
 
-        var amounts = ReserveSplitAllocator.Allocate(buckets, 0.03m);
+        var amounts = PotSplitAllocator.Allocate(pots, 0.03m);
 
         amounts.Should().Equal(0.01m, 0.02m);
     }
@@ -40,19 +40,19 @@ public class ReserveSplitAllocatorTests
     [Fact]
     public void Allocate_PercentagesSumTo99_TargetsNinetyNinePercent()
     {
-        var buckets = CreateBuckets([50m, 49m]);
+        var pots = CreatePots([50m, 49m]);
 
-        var amounts = ReserveSplitAllocator.Allocate(buckets, 100.00m);
+        var amounts = PotSplitAllocator.Allocate(pots, 100.00m);
 
         amounts.Should().Equal(50.00m, 49.00m);
     }
 
     [Fact]
-    public void Allocate_WhenPerBucketRoundingAlreadySumsToTarget_LeavesAmountsUntouched()
+    public void Allocate_WhenPerPotRoundingAlreadySumsToTarget_LeavesAmountsUntouched()
     {
-        var buckets = CreateBuckets([33.33m, 33.33m, 16.67m, 16.67m]);
+        var pots = CreatePots([33.33m, 33.33m, 16.67m, 16.67m]);
 
-        var amounts = ReserveSplitAllocator.Allocate(buckets, 1963m);
+        var amounts = PotSplitAllocator.Allocate(pots, 1963m);
 
         amounts.Should().Equal(654.27m, 654.27m, 327.23m, 327.23m);
     }
@@ -60,39 +60,39 @@ public class ReserveSplitAllocatorTests
     [Fact]
     public void Allocate_ZeroBase_ReturnsZeroAmounts()
     {
-        var buckets = CreateBuckets(ThirdsSplit);
+        var pots = CreatePots(ThirdsSplit);
 
-        var amounts = ReserveSplitAllocator.Allocate(buckets, 0m);
+        var amounts = PotSplitAllocator.Allocate(pots, 0m);
 
         amounts.Should().Equal(0m, 0m, 0m);
     }
 
     [Fact]
-    public void Allocate_NoBuckets_ReturnsEmpty()
+    public void Allocate_NoPots_ReturnsEmpty()
     {
-        var amounts = ReserveSplitAllocator.Allocate([], 100m);
+        var amounts = PotSplitAllocator.Allocate([], 100m);
 
         amounts.Should().BeEmpty();
     }
 
     [Theory]
     [MemberData(nameof(Amounts))]
-    public void Allocate_ThreeBucketsSummingTo100_ConservesTheBaseToThePenny(decimal baseAmount)
+    public void Allocate_ThreePotsSummingTo100_ConservesTheBaseToThePenny(decimal baseAmount)
     {
-        var amounts = ReserveSplitAllocator.Allocate(CreateBuckets(ThirdsSplit), baseAmount);
+        var amounts = PotSplitAllocator.Allocate(CreatePots(ThirdsSplit), baseAmount);
 
         amounts.Sum().Should().Be(baseAmount);
     }
 
     [Theory]
     [MemberData(nameof(Amounts))]
-    public void Allocate_FourBucketsSummingTo100_ConservesTheBaseToThePenny(decimal baseAmount)
+    public void Allocate_FourPotsSummingTo100_ConservesTheBaseToThePenny(decimal baseAmount)
     {
-        var amounts = ReserveSplitAllocator.Allocate(CreateBuckets(FortyThirtyTwentyTen), baseAmount);
+        var amounts = PotSplitAllocator.Allocate(CreatePots(FortyThirtyTwentyTen), baseAmount);
 
         amounts.Sum().Should().Be(baseAmount);
     }
 
-    private static List<ReserveBucket> CreateBuckets(decimal[] percentages) =>
-        percentages.Select((p, i) => ReserveBucket.Create($"Bucket {i + 1}", p)).ToList();
+    private static List<Pot> CreatePots(decimal[] percentages) =>
+        percentages.Select((p, i) => Pot.Create($"Pot {i + 1}", p)).ToList();
 }

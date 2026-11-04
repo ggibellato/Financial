@@ -10,7 +10,7 @@ public static class PotWithdrawal
 {
     public static PotOperation Build(
         Account potsAccount,
-        ReserveBucket pot,
+        Pot pot,
         decimal amount,
         DateOnly date,
         string description,
@@ -28,7 +28,7 @@ public static class PotWithdrawal
             throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
         }
 
-        var movement = ReserveMovement.Create(pot, -amount, date, description, operationId: operationId);
+        var movement = PotMovement.Create(pot, -amount, date, description, operationId: operationId);
         if (bank is null)
         {
             return new(operationId, potsAccount, [movement], []);

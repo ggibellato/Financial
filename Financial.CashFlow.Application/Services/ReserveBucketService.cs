@@ -28,7 +28,7 @@ public sealed class ReserveBucketService : IReserveBucketService
         using var span = StartSpan("GetReserveBuckets");
         try
         {
-            var result = _repository.GetReserveBuckets().Select(b => ToDto(b, warning: null)).ToList();
+            var result = _repository.GetPots().Select(b => ToDto(b, warning: null)).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetReserveBuckets");
@@ -76,18 +76,18 @@ public sealed class ReserveBucketService : IReserveBucketService
 
             reserva.Pots!.EnsureNameIsUnique(request.Name, null, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
 
-            var bucket = ReserveBucket.Create(request.Name, request.SplitPercentage, request.IsActive);
+            var pot = Pot.Create(request.Name, request.SplitPercentage, request.IsActive);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                reserva.AddPot(bucket);
+                reserva.AddPot(pot);
                 return true;
             }).ConfigureAwait(false);
 
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, bucket.Id.ToString());
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, pot.Id.ToString());
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "CreateReserveBucket");
-            return ToDto(bucket, BuildSplitStatus().Warning);
+            return ToDto(pot, BuildSplitStatus().Warning);
         }
         catch (Exception ex)
         {
@@ -109,19 +109,19 @@ public sealed class ReserveBucketService : IReserveBucketService
                 throw new ArgumentException("Reserve bucket name is required.", nameof(request));
             }
 
-            var bucket = _repository.GetReserveBuckets().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
+            var pot = _repository.GetPots().FirstOrThrow(b => b.Id == id, "Reserve bucket", id);
 
-            _repository.GetReserveBuckets().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
+            _repository.GetPots().EnsureNameIsUnique(request.Name, id, b => b.Name, b => b.Id, "A reserve bucket", StringComparer.OrdinalIgnoreCase);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                bucket.Update(request.Name, request.SplitPercentage, request.IsActive);
+                pot.Update(request.Name, request.SplitPercentage, request.IsActive);
                 return true;
             }).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateReserveBucket");
-            return ToDto(bucket, BuildSplitStatus().Warning);
+            return ToDto(pot, BuildSplitStatus().Warning);
         }
         catch (Exception ex)
         {
@@ -132,12 +132,12 @@ public sealed class ReserveBucketService : IReserveBucketService
 
     private ReserveSplitStatusDTO BuildSplitStatus()
     {
-        var buckets = _repository.GetReserveBuckets();
-        var total = buckets.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
+        var pots = _repository.GetPots();
+        var total = pots.Where(b => b.IsActive).Sum(b => b.SplitPercentage);
         return new ReserveSplitStatusDTO
         {
             ActiveTotal = total,
-            Warning = !buckets.Any() || ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total),
+            Warning = !pots.Any() || ReserveSplitRule.IsBalanced(total) ? null : ReserveSplitRule.BuildWarning(total),
         };
     }
 
@@ -147,12 +147,12 @@ public sealed class ReserveBucketService : IReserveBucketService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveBucketService), operationName, EntityType);
     }
 
-    private static ReserveBucketDTO ToDto(ReserveBucket bucket, string? warning) => new()
+    private static ReserveBucketDTO ToDto(Pot pot, string? warning) => new()
     {
-        Id = bucket.Id,
-        Name = bucket.Name,
-        IsActive = bucket.IsActive,
-        SplitPercentage = bucket.SplitPercentage,
+        Id = pot.Id,
+        Name = pot.Name,
+        IsActive = pot.IsActive,
+        SplitPercentage = pot.SplitPercentage,
         Warning = warning
     };
 }

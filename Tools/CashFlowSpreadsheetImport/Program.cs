@@ -258,7 +258,7 @@ static void ImportReservasSheet(XLWorkbook workbook, CashFlowData data, ImportRe
 
     foreach (var movement in ReservasSheetImporter.Import(sheet, ReservaAccount.Find(data.Accounts)?.Pots ?? [], report))
     {
-        data.AddReserveMovement(movement);
+        data.AddPotMovement(movement);
     }
 
     report.SheetImported(sheet.Name);

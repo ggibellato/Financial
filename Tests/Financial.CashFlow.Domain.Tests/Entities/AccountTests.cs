@@ -413,8 +413,8 @@ public class AccountTests
     public void AddPot_PotsAccount_KeepsThePotsInOrderAndOwnsThem()
     {
         var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
-        var investimento = ReserveBucket.Create("Investimento", 50m);
-        var ariana = ReserveBucket.Create("Ariana", 50m);
+        var investimento = Pot.Create("Investimento", 50m);
+        var ariana = Pot.Create("Ariana", 50m);
 
         reserva.AddPot(investimento);
         reserva.AddPot(ariana);
@@ -430,7 +430,7 @@ public class AccountTests
     [Fact]
     public void AddPot_AccountWithoutPots_Throws()
     {
-        var act = () => CreateBank().AddPot(ReserveBucket.Create("Investimento", 50m));
+        var act = () => CreateBank().AddPot(Pot.Create("Investimento", 50m));
 
         act.Should().Throw<ArgumentException>().WithMessage("Chase has no pots.");
     }
@@ -439,9 +439,9 @@ public class AccountTests
     public void AddPot_NameAlreadyUsedInAnyCase_ThrowsAndKeepsThePots()
     {
         var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);
-        reserva.AddPot(ReserveBucket.Create("Investimento", 50m));
+        reserva.AddPot(Pot.Create("Investimento", 50m));
 
-        var act = () => reserva.AddPot(ReserveBucket.Create("INVESTIMENTO", 10m));
+        var act = () => reserva.AddPot(Pot.Create("INVESTIMENTO", 10m));
 
         using (new AssertionScope())
         {
@@ -454,7 +454,7 @@ public class AccountTests
     public void ChangeTemplate_AwayFromPots_DropsThePots()
     {
         var account = Account.Create("Holiday", AccountTemplate.Pots, Currency.GBP);
-        account.AddPot(ReserveBucket.Create("Trip", 100m));
+        account.AddPot(Pot.Create("Trip", 100m));
 
         account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
 

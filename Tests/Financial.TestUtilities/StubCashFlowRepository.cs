@@ -15,7 +15,7 @@ namespace Financial.TestUtilities;
 public sealed class StubCashFlowRepository : ICashFlowRepository
 {
     public List<Expense> Expenses { get; } = new();
-    public List<ReserveMovement> ReserveMovements { get; } = new();
+    public List<PotMovement> PotMovements { get; } = new();
     public List<CardStatement> CardStatements { get; } = new();
     public List<RecurringBill> RecurringBills { get; } = new();
     public List<MaeLedgerEntry> MaeLedgerEntries { get; } = new();
@@ -23,7 +23,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Account> Accounts { get; } = new();
     public List<IncomeSource> IncomeSources { get; } = new();
-    public IReadOnlyList<ReserveBucket> ReserveBuckets => ReservaAccount.Find(Accounts)?.Pots ?? [];
+    public IReadOnlyList<Pot> Pots => ReservaAccount.Find(Accounts)?.Pots ?? [];
     public IReadOnlyList<Account> CardAccounts => Accounts.Where(account => account.Has(Capability.HasStatements)).ToList();
     public List<Category> Categories { get; } = new();
     public List<Income> Incomes { get; } = new();
@@ -62,7 +62,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     }
 
     public StubCashFlowRepository(
-        bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultReserveBuckets = false,
+        bool seedDefaultBanks = false, bool seedDefaultIncomeSources = false, bool seedDefaultPots = false,
         bool seedDefaultCreditCards = false, bool seedDefaultCategories = false)
     {
         if (seedDefaultBanks)
@@ -75,11 +75,11 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
             IncomeSources.AddRange(DefaultIncomeSources(EnsureReserva()));
         }
 
-        if (seedDefaultReserveBuckets)
+        if (seedDefaultPots)
         {
-            foreach (var bucket in DefaultReserveBuckets())
+            foreach (var pot in DefaultPots())
             {
-                AddPot(bucket);
+                AddPot(pot);
             }
         }
 
@@ -111,12 +111,12 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
         IncomeSource.Create("DividendoJuros", IncomeGroup.DividendoJuros)
     ];
 
-    public static IEnumerable<ReserveBucket> DefaultReserveBuckets() =>
+    public static IEnumerable<Pot> DefaultPots() =>
     [
-        ReserveBucket.Create("Investimento", 33.33m),
-        ReserveBucket.Create("HouseTreats", 33.33m),
-        ReserveBucket.Create("Ariana", 16.67m),
-        ReserveBucket.Create("Gleison", 16.67m)
+        Pot.Create("Investimento", 33.33m),
+        Pot.Create("HouseTreats", 33.33m),
+        Pot.Create("Ariana", 16.67m),
+        Pot.Create("Gleison", 16.67m)
     ];
 
     public static IEnumerable<Account> DefaultCreditCards() =>
@@ -173,9 +173,9 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddExpense(Expense expense) => Expenses.Add(expense);
     public void DeleteExpense(Guid id) => Expenses.RemoveAll(e => e.Id == id);
 
-    public IEnumerable<ReserveMovement> GetReserveMovements() => CheckThrow(ReserveMovements);
-    public void AddReserveMovement(ReserveMovement movement) => ReserveMovements.Add(movement);
-    public void DeleteReserveMovement(Guid id) => ReserveMovements.RemoveAll(m => m.Id == id);
+    public IEnumerable<PotMovement> GetPotMovements() => CheckThrow(PotMovements);
+    public void AddPotMovement(PotMovement movement) => PotMovements.Add(movement);
+    public void DeletePotMovement(Guid id) => PotMovements.RemoveAll(m => m.Id == id);
 
     public IEnumerable<CardStatement> GetCardStatements() => CheckThrow(CardStatements);
     public void AddCardStatement(CardStatement statement) => CardStatements.Add(statement);
@@ -213,9 +213,9 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddIncomeSource(IncomeSource incomeSource) => IncomeSources.Add(incomeSource);
     public void DeleteIncomeSource(Guid id) => IncomeSources.RemoveAll(s => s.Id == id);
 
-    public IEnumerable<ReserveBucket> GetReserveBuckets() => CheckThrow(ReserveBuckets);
+    public IEnumerable<Pot> GetPots() => CheckThrow(Pots);
 
-    public void AddPot(ReserveBucket pot) => EnsureReserva().AddPot(pot);
+    public void AddPot(Pot pot) => EnsureReserva().AddPot(pot);
 
     public Account EnsureReserva()
     {

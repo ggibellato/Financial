@@ -109,7 +109,7 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithSomeBucketsAlreadySeeded_OnlySeedsTheMissingOnes()
     {
         var data = CashFlowData.Create();
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 20m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 20m));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
@@ -122,10 +122,10 @@ public class ReserveBucketMigratorTests
     public void Migrate_MovementReferencingASeededBucket_CountsAsResolved()
     {
         var data = CashFlowData.Create();
-        var bucket = ReserveBucket.Create("Investimento", 33.33m);
+        var bucket = Pot.Create("Investimento", 33.33m);
         TestAccounts.ReservaIn(data).AddPot(bucket);
-        var movement = ReserveMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Split");
-        data.AddReserveMovement(movement);
+        var movement = PotMovement.Create(bucket, 100m, new DateOnly(2026, 7, 1), "Split");
+        data.AddPotMovement(movement);
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
@@ -137,9 +137,9 @@ public class ReserveBucketMigratorTests
     public void Migrate_MovementReferencingAnUnseededBucketInstance_IsFlaggedUnresolved()
     {
         var data = CashFlowData.Create();
-        var orphanBucket = ReserveBucket.Create("RetiredBucket", 10m);
-        var movement = ReserveMovement.Create(orphanBucket, 100m, new DateOnly(2026, 7, 1), "Orphaned");
-        data.AddReserveMovement(movement);
+        var orphanBucket = Pot.Create("RetiredBucket", 10m);
+        var movement = PotMovement.Create(orphanBucket, 100m, new DateOnly(2026, 7, 1), "Orphaned");
+        data.AddPotMovement(movement);
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
@@ -162,8 +162,8 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithActivePercentagesNotSummingToOneHundred_FlagsImbalanceWithoutFailing()
     {
         var data = CashFlowData.Create();
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 50m));
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("HouseTreats", 30m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 50m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("HouseTreats", 30m));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 
@@ -175,12 +175,12 @@ public class ReserveBucketMigratorTests
     public void Migrate_WithInactiveBucketExcludedFromSum_StillReportsBalanced()
     {
         var data = CashFlowData.Create();
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Investimento", 20m));
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("HouseTreats", 20m));
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Ariana", 20m));
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Gleison", 20m));
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Samuel", 20m));
-        TestAccounts.ReservaIn(data).AddPot(ReserveBucket.Create("Retired", 50m, isActive: false));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 20m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("HouseTreats", 20m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Ariana", 20m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Gleison", 20m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Samuel", 20m));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Retired", 50m, isActive: false));
 
         var summary = ReserveBucketMigrator.Migrate(data);
 

@@ -12,7 +12,7 @@ namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migr
 /// </summary>
 public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 {
-    private readonly List<ReserveMovement> _unresolvedMovements = new();
+    private readonly List<PotMovement> _unresolvedMovements = new();
 
     public int BucketsSeededCount => SeededCount;
     public int BucketsAlreadyPresentCount => AlreadyPresentCount;
@@ -21,13 +21,13 @@ public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 
     public bool ActiveSplitPercentageIsBalanced => ReserveSplitRule.IsBalanced(ActiveSplitPercentageSum);
 
-    public IReadOnlyList<ReserveMovement> UnresolvedMovements => _unresolvedMovements;
+    public IReadOnlyList<PotMovement> UnresolvedMovements => _unresolvedMovements;
 
     public void CountBucketSeeded() => CountSeeded();
     public void CountBucketAlreadyPresent() => CountAlreadyPresent();
     public void CountMovementResolved() => MovementsResolvedCount++;
 
-    public void FlagUnresolvedMovement(ReserveMovement movement) => _unresolvedMovements.Add(movement);
+    public void FlagUnresolvedMovement(PotMovement movement) => _unresolvedMovements.Add(movement);
 
     public void SetActiveSplitPercentageSum(decimal sum) => ActiveSplitPercentageSum = sum;
 
@@ -45,7 +45,7 @@ public sealed class ReserveBucketMigrationSummary : MigrationSummaryBase
 
         AppendUnresolvedSection(builder,
             "Reserve movements whose bucket name does not match any seeded bucket (review manually):",
-            _unresolvedMovements, movement => $"{movement.Id} {movement.Date:yyyy-MM-dd} [{movement.Bucket}]");
+            _unresolvedMovements, movement => $"{movement.Id} {movement.Date:yyyy-MM-dd} [{movement.Pot}]");
 
         return builder.ToString();
     }

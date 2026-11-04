@@ -12,7 +12,7 @@ public sealed class ReferenceResolutionContext
     public Dictionary<Guid, Account> Accounts { get; } = new();
     public Dictionary<Guid, IncomeSource> IncomeSources { get; } = new();
     public Dictionary<Guid, InvestmentAccount> InvestmentAccounts { get; } = new();
-    public Dictionary<Guid, ReserveBucket> ReserveBuckets { get; } = new();
+    public Dictionary<Guid, Pot> Pots { get; } = new();
     public Dictionary<Guid, Category> Categories { get; } = new();
     public Dictionary<Guid, Income> Incomes { get; } = new();
 }

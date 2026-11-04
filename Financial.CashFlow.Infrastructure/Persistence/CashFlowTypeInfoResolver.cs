@@ -13,7 +13,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     [
         typeof(CashFlowData),
         typeof(Expense),
-        typeof(ReserveMovement),
+        typeof(PotMovement),
         typeof(CardStatement),
         typeof(RecurringBill),
         typeof(MaeLedgerEntry),
@@ -21,7 +21,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(InvestmentAccount),
         typeof(Account),
         typeof(IncomeSource),
-        typeof(ReserveBucket),
+        typeof(Pot),
         typeof(Category),
         typeof(Income),
         typeof(Transfer),
@@ -33,7 +33,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     // JSON; the reference converter itself is resolved separately per-property since it needs the
     // resolver's own context instance. IsRequired is true for every property that was already
     // present (even if null-valued) in every pre-existing record the day it was introduced -
-    // ReserveMovement.Income is the first exception: a brand-new key with zero prior occurrences,
+    // PotMovement.Income is the first exception: a brand-new key with zero prior occurrences,
     // so an absent key must be tolerated (it just means "not linked") rather than rejected.
     private static readonly Dictionary<(Type OwningType, string PropertyName), (string WireName, bool IsRequired)> ReferenceProperties = new()
     {
@@ -44,11 +44,11 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         [(typeof(Transfer), nameof(Transfer.DestinationAccount))] = ("DestinationAccountId", true),
         [(typeof(BalanceAdjustment), nameof(BalanceAdjustment.Account))] = ("AccountId", true),
         [(typeof(InvestmentSnapshot), nameof(InvestmentSnapshot.Account))] = ("InvestmentAccountId", true),
-        [(typeof(ReserveMovement), nameof(ReserveMovement.Bucket))] = ("BucketId", true),
+        [(typeof(PotMovement), nameof(PotMovement.Pot))] = ("BucketId", true),
         [(typeof(Expense), nameof(Expense.CreditCard))] = ("CreditCardId", true),
         [(typeof(CardStatement), nameof(CardStatement.CreditCard))] = ("CreditCardId", true),
         [(typeof(Expense), nameof(Expense.Category))] = ("CategoryId", true),
-        [(typeof(ReserveMovement), nameof(ReserveMovement.Income))] = ("IncomeId", false),
+        [(typeof(PotMovement), nameof(PotMovement.Income))] = ("IncomeId", false),
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.CreditCard))] = ("CreditCardId", false),
         [(typeof(InvestmentAccount), nameof(InvestmentAccount.PotsAccount))] = ("PotsAccountId", false),
         [(typeof(IncomeSource), nameof(IncomeSource.PotsAccount))] = ("PotsAccountId", false),
@@ -60,7 +60,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         (typeof(Transfer), nameof(Transfer.DestinationAmount)),
         (typeof(CardStatement), nameof(CardStatement.PaymentTransferId)),
         (typeof(Expense), nameof(Expense.OperationId)),
-        (typeof(ReserveMovement), nameof(ReserveMovement.OperationId))
+        (typeof(PotMovement), nameof(PotMovement.OperationId))
     ];
 
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesNeverWritten =
@@ -133,8 +133,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         if (propertyType == typeof(InvestmentAccount))
             return new InvestmentAccountReferenceConverter(_context?.InvestmentAccounts);
 
-        if (propertyType == typeof(ReserveBucket))
-            return new ReserveBucketReferenceConverter(_context?.ReserveBuckets);
+        if (propertyType == typeof(Pot))
+            return new PotReferenceConverter(_context?.Pots);
 
         if (propertyType == typeof(Category))
             return new CategoryReferenceConverter(_context?.Categories);

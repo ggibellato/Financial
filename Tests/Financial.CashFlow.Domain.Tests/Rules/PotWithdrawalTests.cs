@@ -16,7 +16,7 @@ public class PotWithdrawalTests
     private readonly Category _health = Category.Create("Saude");
     private readonly Account _bank = TestAccounts.Bank("Chase");
     private readonly Account _reserva;
-    private readonly ReserveBucket _pot = ReserveBucket.Create("Investimento", 100m);
+    private readonly Pot _pot = Pot.Create("Investimento", 100m);
 
     public PotWithdrawalTests()
     {
@@ -32,7 +32,7 @@ public class PotWithdrawalTests
         var movement = records.Movements.Single();
         using (new AssertionScope())
         {
-            movement.Bucket.Should().BeSameAs(_pot);
+            movement.Pot.Should().BeSameAs(_pot);
             movement.Amount.Should().Be(-38.25m);
             movement.Date.Should().Be(Date);
             movement.Description.Should().Be("Boots");

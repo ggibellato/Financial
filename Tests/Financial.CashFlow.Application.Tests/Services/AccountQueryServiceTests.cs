@@ -674,12 +674,12 @@ public class AccountQueryServiceTests
     public void GetAccount_PotsAccount_BalanceIsItsPotsMovementsAndItOffersNoActions()
     {
         var reserva = _repository.EnsureReserva();
-        var pot = ReserveBucket.Create("Investimento", 100m);
+        var pot = Pot.Create("Investimento", 100m);
         reserva.AddPot(pot);
-        _repository.ReserveMovements.AddRange([
-            ReserveMovement.Create(pot, 300m, new DateOnly(2025, 6, 1), "Split"),
-            ReserveMovement.Create(pot, -50m, new DateOnly(2026, 9, 30), "Withdrawal"),
-            ReserveMovement.Create(pot, 80m, new DateOnly(2026, 10, 1), "Next month")
+        _repository.PotMovements.AddRange([
+            PotMovement.Create(pot, 300m, new DateOnly(2025, 6, 1), "Split"),
+            PotMovement.Create(pot, -50m, new DateOnly(2026, 9, 30), "Withdrawal"),
+            PotMovement.Create(pot, 80m, new DateOnly(2026, 10, 1), "Next month")
         ]);
 
         var detail = _sut.GetAccount(reserva.Id, 2026, 9);
@@ -700,9 +700,9 @@ public class AccountQueryServiceTests
     public void GetTransactions_PotsAccountWithMovementsInTheMonth_ListsNoRowsAndBanksListNone()
     {
         var reserva = _repository.EnsureReserva();
-        var pot = ReserveBucket.Create("Investimento", 100m);
+        var pot = Pot.Create("Investimento", 100m);
         reserva.AddPot(pot);
-        _repository.ReserveMovements.Add(ReserveMovement.Create(pot, 300m, new DateOnly(2026, 9, 5), "Split"));
+        _repository.PotMovements.Add(PotMovement.Create(pot, 300m, new DateOnly(2026, 9, 5), "Split"));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 5), _salary, null, 300m, _barclays));
 
         using (new AssertionScope())
@@ -716,7 +716,7 @@ public class AccountQueryServiceTests
     public void GetAccounts_PotsAccount_HasRecordsOnlyWhenItOwnsPots()
     {
         var reserva = _repository.EnsureReserva();
-        reserva.AddPot(ReserveBucket.Create("Investimento", 100m));
+        reserva.AddPot(Pot.Create("Investimento", 100m));
         _repository.Accounts.Add(TestAccounts.Pots("Holidays"));
 
         var accounts = _sut.GetAccounts().ToDictionary(account => account.Name);

@@ -22,13 +22,13 @@ public static class AccountBalanceRule
                 .Sum(record => record.ContributionTo(account));
     }
 
-    public static decimal PotBalance(ReserveBucket pot, DateOnly asOf, IEnumerable<ReserveMovement> movements)
+    public static decimal PotBalance(Pot pot, DateOnly asOf, IEnumerable<PotMovement> movements)
     {
         ArgumentNullException.ThrowIfNull(pot);
         ArgumentNullException.ThrowIfNull(movements);
 
         return movements
-            .Where(movement => movement.Bucket.Id == pot.Id && movement.Date <= asOf)
+            .Where(movement => movement.Pot.Id == pot.Id && movement.Date <= asOf)
             .Sum(movement => movement.Amount);
     }
 }

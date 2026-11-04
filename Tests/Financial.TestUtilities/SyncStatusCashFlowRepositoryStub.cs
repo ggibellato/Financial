@@ -30,9 +30,9 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public IEnumerable<Expense> GetExpenses() => throw new NotImplementedException();
     public void AddExpense(Expense expense) => throw new NotImplementedException();
     public void DeleteExpense(Guid id) => throw new NotImplementedException();
-    public IEnumerable<ReserveMovement> GetReserveMovements() => throw new NotImplementedException();
-    public void AddReserveMovement(ReserveMovement movement) => throw new NotImplementedException();
-    public void DeleteReserveMovement(Guid id) => throw new NotImplementedException();
+    public IEnumerable<PotMovement> GetPotMovements() => throw new NotImplementedException();
+    public void AddPotMovement(PotMovement movement) => throw new NotImplementedException();
+    public void DeletePotMovement(Guid id) => throw new NotImplementedException();
     public IEnumerable<CardStatement> GetCardStatements() => throw new NotImplementedException();
     public void AddCardStatement(CardStatement statement) => throw new NotImplementedException();
     public IEnumerable<RecurringBill> GetRecurringBills() => throw new NotImplementedException();
@@ -52,7 +52,7 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public IEnumerable<IncomeSource> GetIncomeSources() => throw new NotImplementedException();
     public void AddIncomeSource(IncomeSource incomeSource) => throw new NotImplementedException();
     public void DeleteIncomeSource(Guid id) => throw new NotImplementedException();
-    public IEnumerable<ReserveBucket> GetReserveBuckets() => throw new NotImplementedException();
+    public IEnumerable<Pot> GetPots() => throw new NotImplementedException();
     public IEnumerable<Category> GetCategories() => throw new NotImplementedException();
     public void AddCategory(Category category) => throw new NotImplementedException();
     public void DeleteCategory(Guid id) => throw new NotImplementedException();

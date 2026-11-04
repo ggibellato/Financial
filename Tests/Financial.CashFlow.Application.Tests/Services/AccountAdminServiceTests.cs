@@ -710,7 +710,7 @@ public class AccountAdminServiceTests
     public async Task DeleteAsync_PotsAccountThatOwnsPots_ThrowsTheDeactivateMessageAndKeepsIt()
     {
         var reserva = _repository.EnsureReserva();
-        reserva.AddPot(ReserveBucket.Create("Investimento", 100m));
+        reserva.AddPot(Pot.Create("Investimento", 100m));
 
         var act = () => _sut.DeleteAsync(reserva.Id);
 
@@ -727,7 +727,7 @@ public class AccountAdminServiceTests
     public async Task UpdateAsync_TemplateChangeOfAPotsAccountThatOwnsPots_ThrowsAndKeepsItsPots()
     {
         var reserva = _repository.EnsureReserva();
-        reserva.AddPot(ReserveBucket.Create("Investimento", 100m));
+        reserva.AddPot(Pot.Create("Investimento", 100m));
 
         var act = () => _sut.UpdateAsync(reserva.Id, Edit(reserva));
 

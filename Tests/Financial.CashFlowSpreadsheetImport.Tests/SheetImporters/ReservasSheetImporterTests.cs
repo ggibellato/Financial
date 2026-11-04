@@ -24,12 +24,12 @@ public class ReservasSheetImporterTests : IDisposable
 
     public void Dispose() => _workbook.Dispose();
 
-    private static readonly ReserveBucket Investimento = ReserveBucket.Create("Investimento", 33.33m);
-    private static readonly ReserveBucket HouseTreats = ReserveBucket.Create("HouseTreats", 33.33m);
-    private static readonly ReserveBucket Ariana = ReserveBucket.Create("Ariana", 16.67m);
-    private static readonly ReserveBucket Gleison = ReserveBucket.Create("Gleison", 16.67m);
+    private static readonly Pot Investimento = Pot.Create("Investimento", 33.33m);
+    private static readonly Pot HouseTreats = Pot.Create("HouseTreats", 33.33m);
+    private static readonly Pot Ariana = Pot.Create("Ariana", 16.67m);
+    private static readonly Pot Gleison = Pot.Create("Gleison", 16.67m);
 
-    private static IReadOnlyCollection<ReserveBucket> FourBuckets => [Investimento, HouseTreats, Ariana, Gleison];
+    private static IReadOnlyCollection<Pot> FourBuckets => [Investimento, HouseTreats, Ariana, Gleison];
 
     [Fact]
     public void Import_RowWithAllFourBucketsPopulated_CreatesOneMovementPerBucket()
@@ -48,10 +48,10 @@ public class ReservasSheetImporterTests : IDisposable
         var movements = ReservasSheetImporter.Import(_sheet, FourBuckets, _report);
 
         movements.Should().HaveCount(4);
-        movements.Should().Contain(m => m.Bucket == Investimento && m.Amount == 100.0m);
-        movements.Should().Contain(m => m.Bucket == HouseTreats && m.Amount == 30.0m);
-        movements.Should().Contain(m => m.Bucket == Ariana && m.Amount == 20.0m);
-        movements.Should().Contain(m => m.Bucket == Gleison && m.Amount == 20.0m);
+        movements.Should().Contain(m => m.Pot == Investimento && m.Amount == 100.0m);
+        movements.Should().Contain(m => m.Pot == HouseTreats && m.Amount == 30.0m);
+        movements.Should().Contain(m => m.Pot == Ariana && m.Amount == 20.0m);
+        movements.Should().Contain(m => m.Pot == Gleison && m.Amount == 20.0m);
         movements.Should().OnlyContain(m => m.Date == new DateOnly(2020, 3, 15) && m.Description == "Ramsay");
     }
 
@@ -66,8 +66,8 @@ public class ReservasSheetImporterTests : IDisposable
 
         var movements = ReservasSheetImporter.Import(_sheet, FourBuckets, _report);
 
-        movements.Should().Contain(m => m.Bucket == Investimento && m.Amount == 28.42m);
-        movements.Should().Contain(m => m.Bucket == HouseTreats && m.Amount == 28.43m);
+        movements.Should().Contain(m => m.Pot == Investimento && m.Amount == 28.42m);
+        movements.Should().Contain(m => m.Pot == HouseTreats && m.Amount == 28.43m);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class ReservasSheetImporterTests : IDisposable
         var movements = ReservasSheetImporter.Import(_sheet, FourBuckets, _report);
 
         movements.Should().ContainSingle();
-        movements[0].Bucket.Should().Be(Ariana);
+        movements[0].Pot.Should().Be(Ariana);
         movements[0].Amount.Should().Be(75.5m);
     }
 
@@ -141,7 +141,7 @@ public class ReservasSheetImporterTests : IDisposable
         var movements = ReservasSheetImporter.Import(_sheet, incompleteBuckets, _report);
 
         movements.Should().ContainSingle();
-        movements[0].Bucket.Should().Be(HouseTreats);
+        movements[0].Pot.Should().Be(HouseTreats);
         movements[0].Amount.Should().Be(30.0m);
         _report.ValidationWarnings.Should().ContainSingle(w => w.Contains("Investimento") && w.Contains("not seeded"));
     }

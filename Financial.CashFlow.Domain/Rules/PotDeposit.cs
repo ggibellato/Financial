@@ -18,7 +18,7 @@ public static class PotDeposit
         decimal amount,
         DateOnly date,
         string description,
-        ReserveBucket? pot,
+        Pot? pot,
         IReadOnlyList<PotFundingLine> fundingLines,
         Guid operationId)
     {
@@ -36,7 +36,7 @@ public static class PotDeposit
 
         var movements = pot is null
             ? SplitAcrossActivePots(potsAccount, amount, date, description, operationId)
-            : [ReserveMovement.Create(pot, amount, date, description, operationId: operationId)];
+            : [PotMovement.Create(pot, amount, date, description, operationId: operationId)];
 
         if (fundingLines.Count == 0)
         {
@@ -73,7 +73,7 @@ public static class PotDeposit
         }
     }
 
-    private static List<ReserveMovement> SplitAcrossActivePots(
+    private static List<PotMovement> SplitAcrossActivePots(
         Account potsAccount, decimal amount, DateOnly date, string description, Guid operationId)
     {
         var activePots = (potsAccount.Pots ?? []).Where(pot => pot.IsActive).ToList();
@@ -88,9 +88,9 @@ public static class PotDeposit
             throw new ArgumentException(FormattableString.Invariant($"Active pots must total 100% (now {splitTotal:0.##}%)."));
         }
 
-        var amounts = ReserveSplitAllocator.Allocate(activePots, amount);
+        var amounts = PotSplitAllocator.Allocate(activePots, amount);
         return activePots
-            .Select((pot, index) => ReserveMovement.Create(pot, amounts[index], date, description, operationId: operationId))
+            .Select((pot, index) => PotMovement.Create(pot, amounts[index], date, description, operationId: operationId))
             .ToList();
     }
 
