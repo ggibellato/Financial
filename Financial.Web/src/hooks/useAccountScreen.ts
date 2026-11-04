@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { apiClient } from '../api/financialApiClient'
-import { ApiError } from '../api/apiError'
+import { isNotFound } from '../api/apiError'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api/types'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
@@ -68,6 +68,8 @@ export interface AccountScreen {
   tabs: ScreenTab[]
   tab: AccountScreenTab
   setTab: (tab: AccountScreenTab) => void
+  operationId: string | null
+  clearOperation: () => void
   selectAccount: (accountId: string) => void
   accounts: AccountDto[]
   account: AccountDetailDto | null
@@ -88,7 +90,7 @@ function loadAccountScreen(accountId: string, year: number, month: number): Prom
   ])
     .then(([accounts, account, transactions]): AccountScreenLoad => ({ accounts, account, transactions }))
     .catch((err: unknown) => {
-      if (err instanceof ApiError && err.status === 404) return 'not-found'
+      if (isNotFound(err)) return 'not-found'
       throw err
     })
 }
@@ -131,6 +133,11 @@ export function useAccountScreen(): AccountScreen {
   const setTab = (nextTab: AccountScreenTab) =>
     setSearchParams((params) => withParam(params, 'tab', nextTab === defaultTab ? null : nextTab), { replace: true })
 
+  const clearOperation = useCallback(
+    () => setSearchParams((params) => withParam(params, 'operation', null), { replace: true }),
+    [setSearchParams],
+  )
+
   const selectAccount = useCallback(
     (nextAccountId: string) => navigate(`/cashflow/accounts/${nextAccountId}?month=${monthInputValue}`),
     [navigate, monthInputValue],
@@ -145,6 +152,8 @@ export function useAccountScreen(): AccountScreen {
     tabs,
     tab: tabs.find((candidate) => candidate.value === tabParam)?.value ?? defaultTab,
     setTab,
+    operationId: searchParams.get('operation'),
+    clearOperation,
     selectAccount,
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,

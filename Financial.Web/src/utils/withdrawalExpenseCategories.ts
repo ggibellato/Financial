@@ -8,6 +8,10 @@ export function potsAccountCategoryIds(accounts: AccountDto[]): string[] {
   )
 }
 
+export function accountCategoryIds(accounts: AccountDto[]): string[] {
+  return accounts.flatMap((account) => (account.categoryId ? [account.categoryId] : []))
+}
+
 export function eligibleWithdrawalCategories(categories: CategoryDto[], excludedCategoryIds: string[]): CategoryDto[] {
   return categories.filter((c) => c.active && !c.isInvestment && !excludedCategoryIds.includes(c.id))
 }

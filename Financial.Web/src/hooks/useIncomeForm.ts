@@ -246,6 +246,7 @@ export interface UseIncomeFormResult {
   saveIncomeErrorFields: Partial<Record<IncomeFormField, string>>
   splitConfirmationMessage: string | null
   showCreateIncomeForm: () => void
+  showDepositIncomeForm: (potsAccountId: string) => void
   showEditIncomeForm: (income: IncomeDto) => void
   cancelIncomeForm: () => void
   setIncomeField: (field: IncomeFormField, value: string) => void
@@ -281,10 +282,28 @@ export function useIncomeForm(
     return () => clearTimeout(timeoutId)
   }, [state.splitConfirmationMessage])
 
+  function defaultBank(): string {
+    const storedBank = getStoredDefault(BANK_KEY)
+    return lockedBank?.id ?? (storedBank && selectableBanks(banks).some((b) => b.id === storedBank) ? storedBank : '')
+  }
+
+  function showDepositIncomeForm(potsAccountId: string) {
+    const activeSources = selectActiveIncomeSources(incomeSources)
+    const source = activeSources.find((s) => s.potsAccountId === potsAccountId) ?? activeSources.find((s) => s.potsAccountId != null)
+    dispatch({
+      type: 'SHOW_CREATE_FORM',
+      payload: {
+        date: getCreateFormDate(DATE_KEY, viewedMonth),
+        bank: defaultBank(),
+        source: source?.id ?? '',
+        split: { splitToReserve: 'true', potsAccountId },
+      },
+    })
+  }
+
   function showCreateIncomeForm() {
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
-    const storedBank = getStoredDefault(BANK_KEY)
-    const bank = lockedBank?.id ?? (storedBank && selectableBanks(banks).some((b) => b.id === storedBank) ? storedBank : '')
+    const bank = defaultBank()
     const storedSource = getStoredDefault(SOURCE_KEY)
     const source =
       state.incomeSource ||
@@ -407,6 +426,7 @@ export function useIncomeForm(
     saveIncomeErrorFields: state.saveErrorFields,
     splitConfirmationMessage: state.splitConfirmationMessage,
     showCreateIncomeForm,
+    showDepositIncomeForm,
     showEditIncomeForm,
     cancelIncomeForm,
     setIncomeField,

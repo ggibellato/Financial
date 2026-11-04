@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Skeleton, SkeletonItem, Tab, TabList, Text } from '@fluentui/react-components'
+import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, recordNoun } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, linesDeletedWith, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardStatementsTab from '../components/CardStatementsTab'
@@ -17,6 +17,8 @@ import ManagePotsDialog from '../components/ManagePotsDialog'
 import MoveChargeForm from '../components/MoveChargeForm'
 import PayCardStatementForm from '../components/PayCardStatementForm'
 import PayRecurringBillForm from '../components/PayRecurringBillForm'
+import PotDepositForm from '../components/PotDepositForm'
+import PotWithdrawalForm from '../components/PotWithdrawalForm'
 import PotsTab from '../components/PotsTab'
 import TransferForm from '../components/TransferForm'
 import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
@@ -24,6 +26,7 @@ import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAcco
 import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../hooks/useAccountScreen'
 import { useCardStatements } from '../hooks/useCardStatements'
+import { OPERATION_LOAD_ERROR, OPERATION_NOT_FOUND, useOperationRoute } from '../hooks/useOperationRoute'
 import { POTS_LOAD_ERROR, usePots } from '../hooks/usePots'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import { formatLongMonthYear } from '../utils/formatters'
@@ -36,7 +39,8 @@ export default function AccountScreenPage() {
   const navigate = useNavigate()
   const { account, hasPots } = screen
   const allowedActions = account?.allowedActions ?? []
-  const usesFormOptions = formActionsOf(allowedActions).some(needsFormOptions)
+  const opensOperation = hasPots && screen.operationId !== null
+  const usesFormOptions = opensOperation || formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
   const { showSuccess } = useSuccessToast()
   const isFocusAfterRowLeavesPending = useRef(false)
@@ -58,6 +62,7 @@ export default function AccountScreenPage() {
     { year: screen.year, month: screen.month },
     notifySaved,
     { isDirty: cardStatements.isPayFormDirty, close: cardStatements.closePayForm },
+    { accounts: screen.accounts, hasPots },
   )
   const {
     expenseForm,
@@ -68,6 +73,9 @@ export default function AccountScreenPage() {
     payStatementForm,
     moveForm,
     potTransactionForm,
+    depositForm,
+    withdrawalForm,
+    operationDelete,
     isManagePotsOpen,
     closeManagePots,
     discardPrompt,
@@ -83,6 +91,14 @@ export default function AccountScreenPage() {
     closeFormsOf,
     guardChange,
   } = forms
+  const operationRoute = useOperationRoute(
+    screen.operationId,
+    screen.accountId,
+    opensOperation && isAccountCurrent && formOptions.isReady,
+    forms.isOperationFormOpen,
+    forms.openOperation,
+    screen.clearOperation,
+  )
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
     linesDeletedWith(row, screen.transactions).forEach(closeFormsOf)
@@ -152,6 +168,47 @@ export default function AccountScreenPage() {
       )}
 
       <div id={FORM_AREA_ID} ref={formAreaRef} className="account-screen__form-area">
+        {operationRoute.isLoading && (
+          <div role="status">
+            <Spinner size="tiny" labelPosition="after" label="Loading the deposit or withdrawal…" />
+          </div>
+        )}
+        {operationRoute.error && <ErrorState message={OPERATION_LOAD_ERROR} onRetry={operationRoute.retry} />}
+        {operationRoute.isNotFound && (
+          <MessageBar role="alert" intent="error">
+            <MessageBarBody>{OPERATION_NOT_FOUND}</MessageBarBody>
+            <MessageBarActions>
+              <Button
+                appearance="primary"
+                onClick={() => {
+                  screen.clearOperation()
+                  forms.restoreFocus()
+                }}
+              >
+                Dismiss
+              </Button>
+            </MessageBarActions>
+          </MessageBar>
+        )}
+        {depositForm.isOpen && (
+          <PotDepositForm
+            form={depositForm}
+            banks={formOptions.options.banks}
+            incomeSources={formOptions.options.incomeSources}
+            onFromIncome={forms.openDepositFromIncome}
+            onDelete={() => depositForm.operationId && operationDelete.request({ operationId: depositForm.operationId, noun: 'deposit' })}
+            onCancel={closeActiveForm}
+          />
+        )}
+        {withdrawalForm.isOpen && (
+          <PotWithdrawalForm
+            form={withdrawalForm}
+            banks={formOptions.options.banks}
+            lockedBank={lockedBank}
+            onDelete={() => withdrawalForm.operationId && operationDelete.request({ operationId: withdrawalForm.operationId, noun: 'withdrawal' })}
+            onCancel={closeActiveForm}
+          />
+        )}
         {expenseForm.isOpen && (
           <ExpenseForm
             isEditing={expenseForm.isEditing}
@@ -355,6 +412,7 @@ export default function AccountScreenPage() {
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}
+              onOpenOperation={(operation, link) => forms.followOperationLink(operation.operationId, link, () => navigate(operationPath(operation)))}
             />
           </>
         )}
@@ -368,6 +426,16 @@ export default function AccountScreenPage() {
         error={rowDelete.error}
         onConfirm={rowDelete.confirm}
         onCancel={rowDelete.cancel}
+      />
+
+      <ConfirmDeleteDialog
+        open={operationDelete.isOpen}
+        entityLabel={operationDelete.target?.noun ?? ''}
+        message={`Delete this ${operationDelete.target?.noun ?? ''}? Its pot lines and any bank expenses are deleted with it. This cannot be undone.`}
+        isBusy={operationDelete.isDeleting}
+        error={operationDelete.error}
+        onConfirm={operationDelete.confirm}
+        onCancel={operationDelete.cancel}
       />
 
       {isManagePotsOpen && account && (

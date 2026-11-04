@@ -3,6 +3,10 @@ export interface SelectableBank {
   isActive?: boolean
 }
 
+export function inactiveMarked({ name, isActive }: { name: string; isActive?: boolean }): string {
+  return isActive === false ? `${name} (inactive)` : name
+}
+
 export function selectableBanks<T extends SelectableBank>(banks: T[], ...keptIds: (string | undefined)[]): T[] {
   return banks.filter((bank) => bank.isActive !== false || keptIds.includes(bank.id))
 }

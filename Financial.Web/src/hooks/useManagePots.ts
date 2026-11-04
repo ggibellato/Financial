@@ -4,11 +4,10 @@ import type { PotBalanceDto, PotUpdateDto } from '../api/types'
 import { useDialogSubmit } from './useDialogSubmit'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { parseValidatedNumber } from '../utils/formatters'
+import { REQUIRED_ACTIVE_TOTAL, roundSplitTotal } from '../utils/potSplitPreview'
 
 const MIN_SPLIT = 0
 const MAX_SPLIT = 100
-const REQUIRED_ACTIVE_TOTAL = 100
-const TOTAL_ROUNDING = 10_000
 const NEW_POT_SPLIT = '0'
 
 const POT_NAME_REQUIRED = 'Pot name is required.'
@@ -38,8 +37,7 @@ export function potSplitError(row: PotRow): string {
 }
 
 function activeTotalOf(rows: readonly PotRow[]): number {
-  const total = rows.filter((row) => row.isActive).reduce((sum, row) => sum + (parseValidatedNumber(row.splitPercentage) ?? 0), 0)
-  return Math.round(total * TOTAL_ROUNDING) / TOTAL_ROUNDING
+  return roundSplitTotal(rows.filter((row) => row.isActive).reduce((sum, row) => sum + (parseValidatedNumber(row.splitPercentage) ?? 0), 0))
 }
 
 function isChanged(row: PotRow, saved: PotBalanceDto | undefined): boolean {
