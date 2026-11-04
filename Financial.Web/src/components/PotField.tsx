@@ -19,7 +19,7 @@ export default function PotField({ value, pots, hasLoadError, error, onChange }:
   return (
     <Field label="Pot" required hint={potHint(pots, hasLoadError)} validationState={error ? 'error' : 'none'} validationMessage={error}>
       <Select value={value} onChange={(event) => onChange(event.target.value)}>
-        {value === '' && <option value="">{pots === null ? 'Loading pots…' : 'Select a pot'}</option>}
+        {value === '' && <option value="">{pots === null && !hasLoadError ? 'Loading pots…' : 'Select a pot'}</option>}
         {(pots ?? []).map((pot) => (
           <option key={pot.id} value={pot.id}>
             {inactiveMarked(pot)}

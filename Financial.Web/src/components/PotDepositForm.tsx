@@ -89,7 +89,7 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
   const fieldError = useFieldError(form.errorFields)
   const { formRef, saveRef } = useFormErrorFocus(form.errorFields, form.error)
   const [source, setSource] = useState(MANUAL_SOURCE)
-  const isFromIncome = source === INCOME_SOURCE
+  const isFromIncome = !form.isEditing && source === INCOME_SOURCE
   const { values } = form
   if (!values) return null
   const canSplitFromIncome = incomeSources.some((source) => source.isActive && source.potsAccountId != null)

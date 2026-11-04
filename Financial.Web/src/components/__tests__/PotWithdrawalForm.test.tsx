@@ -331,6 +331,8 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load the pots')
     expect(screen.getByRole('button', { name: 'Add withdrawal' })).toBeDisabled()
+    expect(within(potSelect()).getByRole('option')).toHaveTextContent('Select a pot')
+    expect(screen.queryByText('Loading pots…')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     await potsLoaded()

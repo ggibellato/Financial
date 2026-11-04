@@ -84,6 +84,9 @@ function Harness({ edit, incomeSources = SOURCES, onSaved = vi.fn(), onFromIncom
     <>
       {form.isOpen && <PotDepositForm form={form} banks={BANKS} incomeSources={incomeSources} onFromIncome={onFromIncome} onDelete={onDelete} onCancel={onCancel} />}
       <p>{form.isDirty ? 'dirty' : 'clean'}</p>
+      <button type="button" onClick={() => openEdit(SAVED_OPERATION)}>
+        Open the saved deposit
+      </button>
     </>
   )
 }
@@ -305,6 +308,19 @@ describe('PotDepositForm', () => {
     fireEvent.click(screen.getByRole('radio', { name: 'Manual' }))
     expect(depositAmount()).toHaveValue(90)
     expect(screen.getByRole('button', { name: 'Add deposit' })).toBeEnabled()
+  })
+
+  it('shows the edit fields when an operation opens over a form on From an income', async () => {
+    render(<Harness />)
+    await screen.findByRole('table', { name: 'Split preview' })
+    fireEvent.click(screen.getByRole('radio', { name: 'From an income' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open the saved deposit' }))
+
+    expect(screen.getByRole('heading', { name: 'Edit deposit' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Ramsay bonus')
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Continue to the income form' })).not.toBeInTheDocument()
   })
 
   it('offers no income source when none names a Pots account', async () => {
