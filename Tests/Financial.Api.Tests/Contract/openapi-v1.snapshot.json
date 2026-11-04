@@ -5204,6 +5204,36 @@
           "Short"
         ]
       },
+      "PotBalanceDTO": {
+        "properties": {
+          "balance": {
+            "format": "double",
+            "type": "number"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          },
+          "splitPercentage": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "splitPercentage",
+          "isActive",
+          "balance"
+        ],
+        "type": "object"
+      },
       "PotDepositRequestDTO": {
         "properties": {
           "amount": {
@@ -5380,6 +5410,34 @@
           "amount",
           "date",
           "description"
+        ],
+        "type": "object"
+      },
+      "PotsSummaryDTO": {
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "pots": {
+            "items": {
+              "$ref": "#/components/schemas/PotBalanceDTO"
+            },
+            "type": "array"
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "total": {
+            "format": "double",
+            "type": "number"
+          }
+        },
+        "required": [
+          "potsAccountId",
+          "currency",
+          "total",
+          "pots"
         ],
         "type": "object"
       },
@@ -8162,6 +8220,80 @@
               }
             },
             "description": "Conflict"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Pots"
+        ]
+      }
+    },
+    "/accounts/{potsId}/pots/{year}/{month}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "potsId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PotsSummaryDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
           }
         },
         "summary": "",

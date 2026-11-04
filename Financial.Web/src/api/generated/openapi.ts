@@ -1054,6 +1054,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{potsId}/pots/{year}/{month}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    potsId: string;
+                    year: number;
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["PotsSummaryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{potsId}/withdrawals": {
         parameters: {
             query?: never;
@@ -9482,6 +9539,16 @@ export interface components {
         };
         /** @enum {unknown} */
         PositionType: "Long" | "Flat" | "Short";
+        PotBalanceDTO: {
+            /** Format: double */
+            balance: number;
+            /** Format: uuid */
+            id: string;
+            isActive: boolean;
+            name: string;
+            /** Format: double */
+            splitPercentage: number;
+        };
         PotDepositRequestDTO: {
             /** Format: double */
             amount: number;
@@ -9535,6 +9602,14 @@ export interface components {
             description: string;
             /** Format: uuid */
             potId: string;
+        };
+        PotsSummaryDTO: {
+            currency: string;
+            pots: components["schemas"]["PotBalanceDTO"][];
+            /** Format: uuid */
+            potsAccountId: string;
+            /** Format: double */
+            total: number;
         };
         PotsUpdateDTO: {
             pots: components["schemas"]["PotUpdateDTO"][];

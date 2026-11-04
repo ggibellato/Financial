@@ -637,4 +637,80 @@ public class PotsServiceTests
             _repository.SaveChangesCallCount.Should().Be(2);
         }
     }
+
+    [Fact]
+    public void GetPots_BalanceAtMonthEnd_CountsMovementsUpToTheLastDayOnly()
+    {
+        var investimento = PotNamed("Investimento");
+        _repository.PotTransactions.Add(PotTransaction.Create(investimento, 50m, new DateOnly(2026, 2, 28), "Last day"));
+        _repository.PotTransactions.Add(PotTransaction.Create(investimento, -30m, new DateOnly(2026, 2, 1), "Withdrawal"));
+        _repository.PotTransactions.Add(PotTransaction.Create(investimento, 1000m, new DateOnly(2026, 3, 1), "Next month"));
+        _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("HouseTreats"), 10m, new DateOnly(2026, 1, 15), "Other pot"));
+
+        var result = _sut.GetPots(Reserva.Id, 2026, 2);
+
+        using (new AssertionScope())
+        {
+            result.PotsAccountId.Should().Be(Reserva.Id);
+            result.Currency.Should().Be("GBP");
+            result.Total.Should().Be(130m);
+            result.Pots.Single(pot => pot.Id == investimento.Id).Balance.Should().Be(120m);
+            result.Pots.Single(pot => pot.Name == "HouseTreats").Balance.Should().Be(10m);
+            result.Pots.Single(pot => pot.Name == "Ariana").Balance.Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public void GetPots_MixedActivity_OrdersByNameWithInactiveAfterActive()
+    {
+        Reserva.AddPot(Pot.Create("Aardvark", 0m, isActive: false));
+        Reserva.AddPot(Pot.Create("zebra", 0m));
+        Reserva.AddPot(Pot.Create("beta", 0m));
+
+        var names = _sut.GetPots(Reserva.Id, 2026, 2).Pots.Select(pot => pot.Name).ToList();
+
+        using (new AssertionScope())
+        {
+            names.Last().Should().Be("Aardvark");
+            names.SkipLast(1).Should().BeInAscendingOrder(StringComparer.OrdinalIgnoreCase);
+            names.Should().ContainInOrder("beta", "zebra");
+        }
+    }
+
+    [Fact]
+    public void GetPots_InactivePot_KeepsItsSplitAndBalance()
+    {
+        var holidays = Pot.Create("Holidays", 0m, isActive: false);
+        Reserva.AddPot(holidays);
+        _repository.PotTransactions.Add(PotTransaction.Create(holidays, 75m, new DateOnly(2026, 1, 1), "Old"));
+
+        var row = _sut.GetPots(Reserva.Id, 2026, 2).Pots.Single(pot => pot.Id == holidays.Id);
+
+        using (new AssertionScope())
+        {
+            row.IsActive.Should().BeFalse();
+            row.SplitPercentage.Should().Be(0m);
+            row.Balance.Should().Be(75m);
+        }
+    }
+
+    [Fact]
+    public void GetPots_AccountWithoutPots_ThrowsNotFoundAndRecordsFailedSpan()
+    {
+        var act = () => _sut.GetPots(Bank("Chase").Id, 2026, 2);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.GetPots");
+        }
+    }
+
+    [Fact]
+    public void GetPots_InvalidMonth_ThrowsArgumentOutOfRange()
+    {
+        var act = () => _sut.GetPots(Reserva.Id, 2026, 13);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
 }
