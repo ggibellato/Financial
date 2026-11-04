@@ -528,6 +528,16 @@
           "kind": {
             "type": "string"
           },
+          "operation": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccountTransactionOperationDTO"
+              }
+            ]
+          },
           "roundUp": {
             "format": "double",
             "type": [
@@ -562,6 +572,40 @@
           "date",
           "amount",
           "canEdit"
+        ],
+        "type": "object"
+      },
+      "AccountTransactionOperationDTO": {
+        "properties": {
+          "incomeId": {
+            "format": "uuid",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "operationId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "potsAccountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "operationId",
+          "potsAccountId",
+          "year",
+          "month"
         ],
         "type": "object"
       },

@@ -241,11 +241,11 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task ReservaTransactions_MonthWithMovements_ListsNoRows()
+    public async Task ReservaTransactions_MonthWithMovements_ListsOnlyItsOwnPots()
     {
         var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{ReservaId}/transactions/2026/10");
 
-        rows.Should().BeEmpty();
+        rows!.Select(row => (row.Kind, row.Counterpart, row.Amount)).Should().Equal(("PotTransaction", "Investimento", -75.5m));
     }
 
     [Fact]

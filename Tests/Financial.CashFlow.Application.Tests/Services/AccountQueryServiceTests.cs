@@ -91,7 +91,7 @@ public class AccountQueryServiceTests
             detail.BalanceIsOwed.Should().BeFalse();
             detail.HasStatements.Should().BeFalse();
             detail.TotalOwed.Should().BeNull();
-            detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile");
+            detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile", "WithdrawFromPots");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccount")
                 .Which.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_barclays.Id.ToString());
         }
@@ -262,6 +262,119 @@ public class AccountQueryServiceTests
             Row(chaseRows, "TransferIn", 8).Amount.Should().Be(200m);
             Row(chaseRows, "TransferIn", 8).Counterpart.Should().Be("Barclays");
             Row(chaseRows, "TransferOut", 14).Amount.Should().Be(-40m);
+        }
+    }
+
+    private (Account Pots, Pot Pot) AddPotsAccount(bool isActive = true)
+    {
+        var pots = TestAccounts.Pots("Holiday pots", isActive);
+        var pot = Pot.Create("Trips", 100m);
+        pots.AddPot(pot);
+        _repository.Accounts.Add(pots);
+        return (pots, pot);
+    }
+
+    [Fact]
+    public void GetTransactions_PotsAccount_ListsOnlyItsOwnMovementsInTheMonth()
+    {
+        var (pots, pot) = AddPotsAccount();
+        var (_, otherPot) = AddPotsAccount();
+        var legacy = PotTransaction.Create(pot, -12.40m, new DateOnly(2026, 10, 5), "Boots");
+        _repository.PotTransactions.AddRange([
+            legacy,
+            PotTransaction.Create(pot, 50m, new DateOnly(2026, 9, 30), "Earlier"),
+            PotTransaction.Create(otherPot, 7m, new DateOnly(2026, 10, 6), "Other account")]);
+
+        var row = _sut.GetTransactions(pots.Id, 2026, 10).Should().ContainSingle().Which;
+
+        using (new AssertionScope())
+        {
+            row.Id.Should().Be(legacy.Id);
+            row.Kind.Should().Be("PotTransaction");
+            row.Date.Should().Be(new DateOnly(2026, 10, 5));
+            row.Counterpart.Should().Be("Trips");
+            row.Description.Should().Be("Boots");
+            row.Amount.Should().Be(-12.40m);
+            row.CanEdit.Should().BeTrue();
+            row.Operation.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_InactivePotsAccount_MovementCannotBeEdited()
+    {
+        var (pots, pot) = AddPotsAccount(isActive: false);
+        _repository.PotTransactions.Add(PotTransaction.Create(pot, 10m, new DateOnly(2026, 10, 5), "Boots"));
+
+        _sut.GetTransactions(pots.Id, 2026, 10).Should().ContainSingle().Which.CanEdit.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetTransactions_LinkedRecords_CarryTheOperationAndCannotBeEdited()
+    {
+        var (pots, pot) = AddPotsAccount();
+        var operationId = Guid.NewGuid();
+        _repository.PotTransactions.Add(PotTransaction.Create(pot, -30m, new DateOnly(2026, 10, 5), "Boots", operationId: operationId));
+        _repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 10, 5), "Boots", 30m, _groceries, _barclays, creditCard: null, operationId: operationId));
+
+        var rows = _sut.GetTransactions(pots.Id, 2026, 10).Concat(_sut.GetTransactions(_barclays.Id, 2026, 10)).ToList();
+
+        using (new AssertionScope())
+        {
+            rows.Should().HaveCount(2);
+            rows.Should().OnlyContain(row => !row.CanEdit);
+            rows.Select(row => row.Operation).Should().AllSatisfy(link =>
+            {
+                link!.OperationId.Should().Be(operationId);
+                link.PotsAccountId.Should().Be(pots.Id);
+                link.Year.Should().Be(2026);
+                link.Month.Should().Be(10);
+                link.IncomeId.Should().BeNull();
+            });
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_IncomeWithLinkedDeposit_RowCarriesItsFundingLines()
+    {
+        var (pots, pot) = AddPotsAccount();
+        var income = Income.Create(new DateOnly(2026, 10, 14), IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: pots), null, 100m, _barclays, null, pots);
+        var operationId = Guid.NewGuid();
+        _repository.Incomes.Add(income);
+        _repository.PotTransactions.Add(PotTransaction.Create(pot, 90m, income.Date, "Pay", income, operationId));
+        _repository.Expenses.Add(Expense.Create(income.Date, "Deposit", 90m, _groceries, _barclays, creditCard: null, operationId: operationId));
+
+        var bankRows = _sut.GetTransactions(_barclays.Id, 2026, 10);
+        var incomeRow = Row(bankRows, "Income", 14);
+
+        using (new AssertionScope())
+        {
+            incomeRow.CanEdit.Should().BeTrue();
+            incomeRow.Income!.HasLinkedDeposit.Should().BeTrue();
+            incomeRow.Income.FundingLines.Select(line => (line.BankId, line.Amount)).Should().Equal((_barclays.Id, 90m));
+            Row(bankRows, "Expense", 14).Operation!.IncomeId.Should().Be(income.Id);
+            _sut.GetTransactions(pots.Id, 2026, 10).Single().Operation!.IncomeId.Should().Be(income.Id);
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_OlderSplitIncome_MovementCannotBeEditedAndIncomeHasNoDeposit()
+    {
+        var (pots, pot) = AddPotsAccount();
+        var income = Income.Create(new DateOnly(2026, 10, 14), IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: pots), null, 100m, _barclays, null, pots);
+        _repository.Incomes.Add(income);
+        _repository.PotTransactions.Add(PotTransaction.Create(pot, 90m, income.Date, "Pay", income));
+
+        var movementRow = _sut.GetTransactions(pots.Id, 2026, 10).Single();
+        var incomeRow = _sut.GetTransactions(_barclays.Id, 2026, 10).Single();
+
+        using (new AssertionScope())
+        {
+            movementRow.CanEdit.Should().BeFalse();
+            movementRow.Operation.Should().BeNull();
+            incomeRow.Income!.HasLinkedDeposit.Should().BeFalse();
+            incomeRow.Income.FundingLines.Should().BeEmpty();
         }
     }
 
@@ -671,7 +784,7 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetAccount_PotsAccount_BalanceIsItsPotsMovementsAndItOffersNoActions()
+    public void GetAccount_PotsAccount_BalanceIsItsPotsMovementsAndItOffersThePotActions()
     {
         var reserva = _repository.EnsureReserva();
         var pot = Pot.Create("Investimento", 100m);
@@ -691,13 +804,13 @@ public class AccountQueryServiceTests
             detail.BalanceIsOwed.Should().BeFalse();
             detail.HasStatements.Should().BeFalse();
             detail.TotalOwed.Should().BeNull();
-            detail.AllowedActions.Should().BeEmpty();
+            detail.AllowedActions.Should().Equal("Deposit", "Withdraw", "ManagePots");
             _sut.GetAccount(_barclays.Id, 2026, 9).Balance.Should().Be(1000m);
         }
     }
 
     [Fact]
-    public void GetTransactions_PotsAccountWithMovementsInTheMonth_ListsNoRowsAndBanksListNone()
+    public void GetTransactions_PotsAccountWithMovementsInTheMonth_ListsThemAndBanksListNone()
     {
         var reserva = _repository.EnsureReserva();
         var pot = Pot.Create("Investimento", 100m);
@@ -707,7 +820,7 @@ public class AccountQueryServiceTests
 
         using (new AssertionScope())
         {
-            _sut.GetTransactions(reserva.Id, 2026, 9).Should().BeEmpty();
+            _sut.GetTransactions(reserva.Id, 2026, 9).Should().ContainSingle().Which.Kind.Should().Be("PotTransaction");
             _sut.GetTransactions(_barclays.Id, 2026, 9).Should().ContainSingle().Which.Kind.Should().Be("Income");
         }
     }
