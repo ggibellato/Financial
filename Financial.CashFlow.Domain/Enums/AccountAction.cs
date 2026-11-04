@@ -9,5 +9,9 @@ public enum AccountAction
     TransferFrom,
     PayRecurringBill,
     PayCardStatement,
-    Reconcile
+    Reconcile,
+    Deposit,
+    Withdraw,
+    ManagePots,
+    WithdrawFromPots
 }

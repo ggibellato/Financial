@@ -136,11 +136,11 @@ public class AccountEndpointsAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F05-bank-account-screen-05")]
-    public async Task GetAccount_Bank_ReturnsSixAllowedActions()
+    public async Task GetAccount_Bank_ReturnsEveryAllowedAction()
     {
         var detail = await AccountAsync(BarclaysId, 10);
 
-        detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile");
+        detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile", "WithdrawFromPots");
     }
 
     [Fact]

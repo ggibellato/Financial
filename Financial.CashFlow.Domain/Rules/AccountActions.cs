@@ -17,7 +17,11 @@ public static class AccountActions
         (AccountAction.TransferFrom, account => account.Has(Capability.CanReceiveTransfers)),
         (AccountAction.PayRecurringBill, account => account.Has(Capability.CanPayBills)),
         (AccountAction.PayCardStatement, account => account.Has(Capability.CanPayBills)),
-        (AccountAction.Reconcile, account => account.Has(Capability.CanReconcile))
+        (AccountAction.Reconcile, account => account.Has(Capability.CanReconcile)),
+        (AccountAction.Deposit, account => account.Has(Capability.HasPots)),
+        (AccountAction.Withdraw, account => account.Has(Capability.CanWithdraw)),
+        (AccountAction.ManagePots, account => account.Has(Capability.HasPots)),
+        (AccountAction.WithdrawFromPots, account => account.Has(Capability.CanPayBills))
     ];
 
     public static IReadOnlyList<AccountAction> AllowedFor(Account account)

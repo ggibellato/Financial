@@ -8133,10 +8133,24 @@ export interface components {
             id: string;
             income?: null | components["schemas"]["IncomeDTO"];
             kind: string;
+            movement?: null | components["schemas"]["ReserveMovementDTO"];
+            operation?: null | components["schemas"]["AccountTransactionOperationDTO"];
             /** Format: double */
             roundUp?: null | number;
             statement?: null | components["schemas"]["AccountTransactionStatementDTO"];
             transfer?: null | components["schemas"]["AccountTransferDTO"];
+        };
+        AccountTransactionOperationDTO: {
+            /** Format: uuid */
+            incomeId?: null | string;
+            /** Format: int32 */
+            month: number;
+            /** Format: uuid */
+            operationId: string;
+            /** Format: uuid */
+            potsAccountId: string;
+            /** Format: int32 */
+            year: number;
         };
         AccountTransactionStatementDTO: {
             /** Format: uuid */

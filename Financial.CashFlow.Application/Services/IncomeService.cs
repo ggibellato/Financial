@@ -146,15 +146,20 @@ public sealed class IncomeService : IIncomeService
     private Income FindIncomeOrThrow(Guid id) =>
         _repository.GetIncomes().FirstOrThrow(i => i.Id == id, "Income", id);
 
-    private SplitRecords RecordsOf(Guid incomeId)
+    private SplitRecords RecordsOf(Guid incomeId) => RecordsOf(incomeId, _repository);
+
+    private static SplitRecords RecordsOf(Guid incomeId, ICashFlowRepository repository)
     {
-        var transactions = _repository.GetPotTransactions().Where(transaction => transaction.Income?.Id == incomeId).ToList();
+        var transactions = repository.GetPotTransactions().Where(transaction => transaction.Income?.Id == incomeId).ToList();
         var expenses = transactions.FirstOrDefault()?.OperationId is Guid operationId
-            ? _repository.GetExpenses().Where(expense => expense.OperationId == operationId).ToList()
+            ? repository.GetExpenses().Where(expense => expense.OperationId == operationId).ToList()
             : [];
 
         return new(transactions, expenses);
     }
+
+    internal static IReadOnlyList<Expense> DepositExpensesOf(Guid incomeId, ICashFlowRepository repository) =>
+        RecordsOf(incomeId, repository).Expenses;
 
     private SplitRecords Rebuild(Income income, SplitRecords oldRecords, IReadOnlyList<FundingLineDTO>? fundingLines)
     {
@@ -231,9 +236,7 @@ public sealed class IncomeService : IIncomeService
 
     private IncomeDTO ToDtoWithDeposit(Income income) => ToDto(income, RecordsOf(income.Id).Expenses);
 
-    internal static IncomeDTO ToDto(Income income) => ToDto(income, []);
-
-    private static IncomeDTO ToDto(Income income, IReadOnlyList<Expense> depositExpenses) => new()
+    internal static IncomeDTO ToDto(Income income, IReadOnlyList<Expense> depositExpenses) => new()
     {
         Id = income.Id,
         Date = income.Date,

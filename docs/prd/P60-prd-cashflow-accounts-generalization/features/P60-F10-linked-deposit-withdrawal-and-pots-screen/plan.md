@@ -76,7 +76,7 @@
 
 **22. Tabs and Pots tab** - Show the Pots and Transactions tabs on a Pots account, with the pots grid and its states. See spec §3 "Web: Pots screen".
 
-**23. Movement rows and Accounts links** - Show the movement rows and make the Accounts page Pots rows open the Pots tab.
+**23. Movement rows and Accounts links** - Show the movement rows and make the Accounts page Pots rows open the Pots tab. Legacy rows keep today's edit and delete (PRD): wire them to `reserve/movements/{id}` from the row's `movement`, add the `PotTransaction` entries to `KIND_LABELS` and `RECORD_NOUNS`, and remove the `PotTransaction` guard stage 7 put in `hasRowActions`.
 
 **24. Stage 8 verification** - Run the web suites and build, parity, `/simplify`, the architecture-reviewer and the ui-reviewer with `docs/ui/review-checklist.md`, then push and open the PR stating its size.
 

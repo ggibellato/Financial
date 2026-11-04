@@ -14,7 +14,7 @@ public class AccountActionsTests
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
     [Fact]
-    public void AllowedFor_Bank_ReturnsAllSevenActionsInOrder()
+    public void AllowedFor_Bank_ReturnsEveryActionInOrder()
     {
         AccountActions.AllowedFor(TestAccounts.Bank("Barclays")).Should().Equal(
             AccountAction.AddExpense,
@@ -23,7 +23,8 @@ public class AccountActionsTests
             AccountAction.TransferFrom,
             AccountAction.PayRecurringBill,
             AccountAction.PayCardStatement,
-            AccountAction.Reconcile);
+            AccountAction.Reconcile,
+            AccountAction.WithdrawFromPots);
     }
 
     [Theory]
@@ -39,9 +40,22 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_CanPayBills_ReturnsPayRecurringBillAndPayCardStatement()
+    public void AllowedFor_CanPayBills_ReturnsThePaymentsAndWithdrawFromPots()
     {
-        AccountActions.AllowedFor(Minimal(Capability.CanPayBills)).Should().Equal(AccountAction.PayRecurringBill, AccountAction.PayCardStatement);
+        AccountActions.AllowedFor(Minimal(Capability.CanPayBills)).Should().Equal(
+            AccountAction.PayRecurringBill, AccountAction.PayCardStatement, AccountAction.WithdrawFromPots);
+    }
+
+    [Fact]
+    public void AllowedFor_HasPots_ReturnsDepositAndManagePots()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.HasPots)).Should().Equal(AccountAction.Deposit, AccountAction.ManagePots);
+    }
+
+    [Fact]
+    public void AllowedFor_CanWithdraw_ReturnsWithdraw()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.CanWithdraw)).Should().Equal(AccountAction.Withdraw);
     }
 
     [Fact]
@@ -74,11 +88,17 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_PotsAccount_ReturnsNone()
+    public void AllowedFor_PotsAccount_ReturnsDepositWithdrawAndManagePots()
     {
         var pots = Account.Create("Holiday pots", AccountTemplate.Pots, Currency.GBP);
 
-        AccountActions.AllowedFor(pots).Should().BeEmpty();
+        AccountActions.AllowedFor(pots).Should().Equal(AccountAction.Deposit, AccountAction.Withdraw, AccountAction.ManagePots);
+    }
+
+    [Fact]
+    public void AllowedFor_InactivePotsAccount_ReturnsNone()
+    {
+        AccountActions.AllowedFor(TestAccounts.Pots("Holiday pots", isActive: false)).Should().BeEmpty();
     }
 
     [Fact]

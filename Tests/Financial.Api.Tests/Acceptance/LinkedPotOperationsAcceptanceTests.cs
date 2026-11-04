@@ -668,9 +668,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-10")]
     public async Task OlderSplitIncome_Edit_AddsNoExpense()
     {
-        ReplaceCashFlowDataBeforeStart(SeededData
-            .Replace("\"Incomes\": [],", OlderIncomeJson)
-            .Replace("\"ReserveMovements\": [", OlderMovementJson));
+        SeedOlderSplitIncome();
 
         var edit = await UpdateSplitIncomeAsync(Guid.Parse(OlderIncomeId), 200m, ReservaId, (ChaseId, 180m));
         var incomes = await Client.GetFromJsonAsync<List<IncomeDTO>>($"{Api}/incomes/month/{IncomeDate.Year}/{IncomeDate.Month}");
@@ -683,6 +681,101 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
                 .Select(m => (m.Pot.Id, m.Amount, m.OperationId))
                 .Should().Equal((Guid.Parse(InvestimentoId), 108m, (Guid?)null), (Guid.Parse(HouseTreatsId), 72m, (Guid?)null));
             incomes!.Single().HasLinkedDeposit.Should().BeFalse();
+        }
+    }
+
+    private async Task<AccountDetailDTO> AccountDetailAsync(string accountId) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/10"))!;
+
+    private async Task<List<AccountTransactionDTO>> RowsAsync(string accountId, int month = 10) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/{month}"))!;
+
+    private void SeedOlderSplitIncome() =>
+        ReplaceCashFlowDataBeforeStart(SeededData
+            .Replace("\"Incomes\": [],", OlderIncomeJson)
+            .Replace("\"ReserveMovements\": [", OlderMovementJson));
+
+    [Fact]
+    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-07")]
+    public async Task Withdrawal_FromBankOrPotsAccount_SameRecords()
+    {
+        var bank = await AccountDetailAsync(BarclaysId);
+        var pots = await AccountDetailAsync(ReservaId);
+
+        var response = await WithdrawFromPotsAccountAsync(38.25m, withBank: true);
+        var operation = await response.Content.ReadFromJsonAsync<PotOperationDTO>();
+
+        var bankRows = await RowsAsync(BarclaysId);
+        var potRows = await RowsAsync(ReservaId);
+
+        using (new AssertionScope())
+        {
+            bank.AllowedActions.Should().Contain("WithdrawFromPots").And.NotContain("Withdraw");
+            pots.AllowedActions.Should().Equal("Deposit", "Withdraw", "ManagePots");
+            bankRows.Select(row => (row.Kind, row.Amount)).Should().BeEquivalentTo([("Expense", 38.25m), ("Expense", -38.25m)]);
+            potRows.Select(row => (row.Kind, row.Counterpart, row.Description, row.Amount))
+                .Should().Equal(("PotTransaction", "Investimento", "Boots", -38.25m));
+            bankRows.Concat(potRows).Should().OnlyContain(row =>
+                !row.CanEdit
+                && row.Operation!.OperationId == operation!.OperationId
+                && row.Operation.PotsAccountId == Guid.Parse(ReservaId)
+                && row.Operation.Year == 2026
+                && row.Operation.Month == 10
+                && row.Operation.IncomeId == null);
+        }
+    }
+
+    [Fact]
+    public async Task IncomeDeposit_AccountRows_CarryTheIncomeAndItsFundingLines()
+    {
+        var response = await AddSplitIncomeAsync(100m);
+        var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
+
+        var bankRows = await RowsAsync(BarclaysId);
+        var potRows = await RowsAsync(ReservaId);
+        var incomeRow = bankRows.Single(row => row.Kind == "Income");
+        var depositRow = bankRows.Single(row => row.Kind == "Expense");
+
+        using (new AssertionScope())
+        {
+            incomeRow.CanEdit.Should().BeTrue();
+            incomeRow.Operation.Should().BeNull();
+            incomeRow.Income!.HasLinkedDeposit.Should().BeTrue();
+            incomeRow.Income.FundingLines.Select(line => (line.BankId, line.Amount)).Should().Equal((Guid.Parse(BarclaysId), 90m));
+            depositRow.CanEdit.Should().BeFalse();
+            depositRow.Operation!.IncomeId.Should().Be(income!.Id);
+            potRows.Select(row => (row.Counterpart, row.Amount)).Should().BeEquivalentTo([("Investimento", 54m), ("HouseTreats", 36m)]);
+            potRows.Should().OnlyContain(row => !row.CanEdit && row.Operation!.IncomeId == income.Id);
+        }
+    }
+
+    [Fact]
+    public async Task OlderSplitIncome_AccountRows_HaveNoLinkAndCannotBeEdited()
+    {
+        SeedOlderSplitIncome();
+
+        var incomeRow = (await RowsAsync(BarclaysId)).Single();
+        var potRows = await RowsAsync(ReservaId);
+
+        using (new AssertionScope())
+        {
+            incomeRow.Income!.HasLinkedDeposit.Should().BeFalse();
+            incomeRow.Income.FundingLines.Should().BeEmpty();
+            potRows.Should().HaveCount(2).And.OnlyContain(row => !row.CanEdit && row.Operation == null);
+        }
+    }
+
+    [Fact]
+    public async Task LegacyMovement_PotsAccountRow_HasNoLinkAndCanBeEdited()
+    {
+        var rows = await RowsAsync(ReservaId, month: 9);
+
+        using (new AssertionScope())
+        {
+            rows.Select(row => (row.Id, row.Date, row.Counterpart, row.Description, row.Amount)).Should().Equal(
+                (Guid.Parse(LegacyWithdrawalId), new DateOnly(2026, 9, 15), "HouseTreats", "Cinema", -20m),
+                (Guid.Parse(LegacyDepositId), new DateOnly(2026, 9, 1), "Investimento", "Split", 500m));
+            rows.Should().OnlyContain(row => row.Kind == "PotTransaction" && row.CanEdit && row.Operation == null && row.Movement!.Id == row.Id);
         }
     }
 }

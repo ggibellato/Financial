@@ -251,7 +251,7 @@ public sealed class ReserveService : IReserveService
         }
     }
 
-    private static ReserveMovementDTO ToDto(PotTransaction transaction) => new()
+    internal static ReserveMovementDTO ToDto(PotTransaction transaction) => new()
     {
         Id = transaction.Id,
         BucketId = transaction.Pot.Id,
