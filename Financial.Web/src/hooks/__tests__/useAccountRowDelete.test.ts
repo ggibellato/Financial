@@ -1,4 +1,4 @@
-import { act, renderHook } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -7,7 +7,8 @@ import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { NETWORK_DELETE_ERROR } from '../../utils/formatters'
 import { useAccountRowDelete } from '../useAccountRowDelete'
 
-const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteBalanceAdjustmentMock } = vi.hoisted(() => ({
+const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteBalanceAdjustmentMock, deleteReserveMovementMock } = vi.hoisted(() => ({
+  deleteReserveMovementMock: vi.fn<FinancialApiClient['deleteReserveMovement']>(),
   deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
   deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
@@ -20,6 +21,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteIncome: deleteIncomeMock,
     deleteAccountTransfer: deleteAccountTransferMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
+    deleteReserveMovement: deleteReserveMovementMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -46,6 +48,27 @@ async function confirmDelete(row: AccountTransactionDto, onDeleted = vi.fn()) {
   await act(async () => result.current.confirm())
   return { result, onDeleted }
 }
+
+describe('useAccountRowDelete on a pot movement', () => {
+  it('deletes the movement through the reserve route', async () => {
+    deleteReserveMovementMock.mockResolvedValue(undefined)
+    const onDeleted = vi.fn()
+    const row = accountTransactionRow({
+      id: 'm1',
+      kind: 'PotTransaction',
+      date: '2026-10-05',
+      amount: -20,
+      movement: { id: 'm1', bucketId: 'p1', bucketName: 'Trips', amount: -20, date: '2026-10-05', description: 'Boots', incomeId: null },
+    })
+    const { result } = renderHook(() => useAccountRowDelete(onDeleted))
+
+    act(() => result.current.requestDelete(row))
+    act(() => result.current.confirm())
+
+    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith(row))
+    expect(deleteReserveMovementMock).toHaveBeenCalledWith('m1')
+  })
+})
 
 describe('useAccountRowDelete', () => {
   beforeEach(() => {

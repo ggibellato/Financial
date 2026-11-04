@@ -8,7 +8,7 @@ import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../../
 import { pinDate } from '../../test-utils/pinDate'
 import { useAccountScreen } from '../useAccountScreen'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { account } from '../../test/account'
+import { account, potsAccount } from '../../test/account'
 
 const { getAccountsMock, getAccountMock, getAccountTransactionsMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -178,6 +178,45 @@ describe('useAccountScreen', () => {
     const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=other`)
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
 
+    expect(result.current.screen.tab).toBe('transactions')
+  })
+
+  describe('on a Pots account', () => {
+    beforeEach(() => {
+      getAccountsMock.mockResolvedValue([potsAccount({ id: BARCLAYS_ID, name: 'Reserva' })])
+    })
+
+    it('opens on the Pots tab and keeps the Transactions tab in the URL', async () => {
+      const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+      await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+      expect(result.current.screen.hasPots).toBe(true)
+      expect(result.current.screen.tab).toBe('pots')
+
+      act(() => result.current.screen.setTab('transactions'))
+
+      expect(result.current.screen.tab).toBe('transactions')
+      expect(result.current.location.search).toBe('?month=2026-10&tab=transactions')
+
+      act(() => result.current.screen.setTab('pots'))
+
+      expect(result.current.screen.tab).toBe('pots')
+      expect(result.current.location.search).toBe('?month=2026-10')
+    })
+
+    it('reads a Statements tab as Pots', async () => {
+      const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=statements`)
+      await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+      expect(result.current.screen.tab).toBe('pots')
+    })
+  })
+
+  it('reads a Pots tab on a bank as Transactions', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=pots`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+    expect(result.current.screen.hasPots).toBe(false)
     expect(result.current.screen.tab).toBe('transactions')
   })
 

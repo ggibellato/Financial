@@ -8,7 +8,7 @@ import { useAsyncResource } from './useAsyncResource'
 
 export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
 
-export type AccountScreenTab = 'transactions' | 'statements'
+export type AccountScreenTab = 'transactions' | 'statements' | 'pots'
 
 function withParam(params: URLSearchParams, key: string, value: string | null): URLSearchParams {
   const next = new URLSearchParams(params)
@@ -30,6 +30,18 @@ type AccountScreenLoad = AccountScreenData | 'not-found'
 const NO_ACCOUNTS: AccountDto[] = []
 const NO_TRANSACTIONS: AccountTransactionDto[] = []
 
+function isPotsAccount({ accounts, account }: AccountScreenData, routeAccountId: string): boolean {
+  return (
+    account.id.toLowerCase() === routeAccountId.toLowerCase() &&
+    accounts.some((candidate) => candidate.id === account.id && candidate.capabilities.includes('HasPots'))
+  )
+}
+
+function tabFromParam(param: string | null, hasPots: boolean): AccountScreenTab {
+  if (hasPots) return param === 'transactions' ? 'transactions' : 'pots'
+  return param === 'statements' ? 'statements' : 'transactions'
+}
+
 export interface AccountScreen {
   accountId: string
   year: number
@@ -41,6 +53,7 @@ export interface AccountScreen {
   selectAccount: (accountId: string) => void
   accounts: AccountDto[]
   account: AccountDetailDto | null
+  hasPots: boolean
   transactions: AccountTransactionDto[]
   isLoading: boolean
   isNotFound: boolean
@@ -70,7 +83,6 @@ export function useAccountScreen(): AccountScreen {
   const parsedMonth = parseMonthInputValue(searchParams.get('month') ?? '')
   const { year, month } = parsedMonth ?? currentYearMonth()
   const monthInputValue = formatMonthInputValue(year, month)
-  const tab: AccountScreenTab = searchParams.get('tab') === 'statements' ? 'statements' : 'transactions'
   const isValidId = GUID_PATTERN.test(accountId)
   const hasValidMonth = parsedMonth !== null
 
@@ -92,10 +104,14 @@ export function useAccountScreen(): AccountScreen {
     [setSearchParams],
   )
 
+  const loaded = resource.data === 'not-found' ? null : resource.data
+  const hasPots = loaded !== null && isPotsAccount(loaded, accountId)
+  const defaultTab: AccountScreenTab = hasPots ? 'pots' : 'transactions'
+
   const setTab = useCallback(
     (nextTab: AccountScreenTab) =>
-      setSearchParams((params) => withParam(params, 'tab', nextTab === 'statements' ? nextTab : null), { replace: true }),
-    [setSearchParams],
+      setSearchParams((params) => withParam(params, 'tab', nextTab === defaultTab ? null : nextTab), { replace: true }),
+    [setSearchParams, defaultTab],
   )
 
   const selectAccount = useCallback(
@@ -103,19 +119,18 @@ export function useAccountScreen(): AccountScreen {
     [navigate, monthInputValue],
   )
 
-  const loaded = resource.data === 'not-found' ? null : resource.data
-
   return {
     accountId,
     year,
     month,
     monthInputValue,
     setMonthInputValue,
-    tab,
+    tab: tabFromParam(searchParams.get('tab'), hasPots),
     setTab,
     selectAccount,
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
+    hasPots,
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',

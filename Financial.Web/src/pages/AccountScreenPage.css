@@ -109,6 +109,7 @@
   background-color: var(--colorBrandBackground2);
 }
 
+.pots-tab__name,
 .card-statements__month {
   display: inline-flex;
   align-items: center;

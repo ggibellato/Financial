@@ -19,7 +19,7 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { canMoveToStatement, hasRowActions, kindLabel, recordNoun, rowKey, statementPath } from './accountActions'
+import { canMoveToStatement, kindLabel, recordNoun, rowKey, statementPath } from './accountActions'
 
 interface TransactionColumn {
   key: string
@@ -29,24 +29,37 @@ interface TransactionColumn {
   render: (row: AccountTransactionDto) => ReactNode
 }
 
-const COLUMNS: TransactionColumn[] = [
-  { key: 'date', header: 'Date', accessor: (row) => row.date, render: (row) => formatShortDateUtc(row.date) },
-  {
-    key: 'description',
-    header: 'Description',
-    accessor: (row) => row.description,
-    render: (row) => <TruncatedText text={row.description} />,
-  },
+const DATE_COLUMN: TransactionColumn = { key: 'date', header: 'Date', accessor: (row) => row.date, render: (row) => formatShortDateUtc(row.date) }
+
+const DESCRIPTION_COLUMN: TransactionColumn = {
+  key: 'description',
+  header: 'Description',
+  accessor: (row) => row.description,
+  render: (row) => <TruncatedText text={row.description} />,
+}
+
+const COUNTERPART_COLUMN: TransactionColumn = {
+  key: 'counterpart',
+  header: 'Counterpart',
+  accessor: (row) => row.counterpart,
+  render: (row) => <TruncatedText text={row.counterpart} />,
+}
+
+const AMOUNT_COLUMN: TransactionColumn = {
+  key: 'amount',
+  header: 'Amount',
+  numeric: true,
+  accessor: (row) => row.amount,
+  render: (row) => formatSignedN2(row.amount),
+}
+
+const ACCOUNT_COLUMNS: TransactionColumn[] = [
+  DATE_COLUMN,
+  DESCRIPTION_COLUMN,
   { key: 'kind', header: 'Type', accessor: (row) => kindLabel(row.kind), render: (row) => kindLabel(row.kind) },
   { key: 'category', header: 'Category', accessor: (row) => row.categoryName, render: (row) => <TruncatedText text={row.categoryName} /> },
-  { key: 'counterpart', header: 'Counterpart', accessor: (row) => row.counterpart, render: (row) => <TruncatedText text={row.counterpart} /> },
-  {
-    key: 'amount',
-    header: 'Amount',
-    numeric: true,
-    accessor: (row) => row.amount,
-    render: (row) => formatSignedN2(row.amount),
-  },
+  COUNTERPART_COLUMN,
+  AMOUNT_COLUMN,
   {
     key: 'roundUp',
     header: 'Round-up',
@@ -56,12 +69,13 @@ const COLUMNS: TransactionColumn[] = [
   },
 ]
 
-const ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, column.accessor]))
+const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
-const COLUMN_COUNT = COLUMNS.length + 1
+const ACCESSORS = Object.fromEntries(ACCOUNT_COLUMNS.map((column) => [column.key, column.accessor]))
 
 interface AccountTransactionsGridProps {
   transactions: AccountTransactionDto[]
+  showsPotColumns?: boolean
   isLoading?: boolean
   emptyMessage: string
   dateHeader?: string
@@ -75,6 +89,7 @@ interface AccountTransactionsGridProps {
 
 export default function AccountTransactionsGrid({
   transactions,
+  showsPotColumns = false,
   isLoading = false,
   emptyMessage,
   dateHeader = 'Date',
@@ -85,6 +100,8 @@ export default function AccountTransactionsGrid({
   isMoveDisabled = false,
   onOpenStatement,
 }: AccountTransactionsGridProps) {
+  const columns = showsPotColumns ? POT_COLUMNS : ACCOUNT_COLUMNS
+  const columnCount = columns.length + 1
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = onMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
@@ -104,7 +121,7 @@ export default function AccountTransactionsGrid({
       <Table className="data-table" aria-label="Transactions">
         <TableHeader>
           <TableRow>
-            {COLUMNS.map((column) => (
+            {columns.map((column) => (
               <SortableColumnHeader
                 key={column.key}
                 label={headerOf(column)}
@@ -120,7 +137,7 @@ export default function AccountTransactionsGrid({
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={COLUMN_COUNT}>
+              <TableCell colSpan={columnCount}>
                 <Skeleton aria-label="Loading transactions" className="account-screen__grid-skeleton">
                   <SkeletonItem />
                   <SkeletonItem />
@@ -130,14 +147,14 @@ export default function AccountTransactionsGrid({
             </TableRow>
           ) : sortedRows.length === 0 ? (
             <TableRow>
-              <TableCell className="data-table__cell--message" colSpan={COLUMN_COUNT}>
+              <TableCell className="data-table__cell--message" colSpan={columnCount}>
                 {emptyMessage}
               </TableCell>
             </TableRow>
           ) : (
             sortedRows.map((row) => (
               <TableRow key={rowKey(row)}>
-                {COLUMNS.map((column) => (
+                {columns.map((column) => (
                   <DataTableCell
                     key={column.key}
                     label={headerOf(column)}
@@ -146,7 +163,7 @@ export default function AccountTransactionsGrid({
                     {renderCell(column, row)}
                   </DataTableCell>
                 ))}
-                {hasRowActions(row) ? (
+                {row.canEdit ? (
                   <RowActionsCell
                     className={actionClassName}
                     itemName={recordNoun(row.kind)}

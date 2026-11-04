@@ -30,6 +30,7 @@ const KIND_LABELS: Record<string, string> = {
   TransferIn: 'Transfer in',
   TransferOut: 'Transfer out',
   Adjustment: 'Balance adjustment',
+  PotTransaction: 'Pot transaction',
 }
 
 const RECORD_NOUNS: Record<string, string> = {
@@ -40,6 +41,7 @@ const RECORD_NOUNS: Record<string, string> = {
   TransferIn: 'transfer',
   TransferOut: 'transfer',
   Adjustment: 'balance adjustment',
+  PotTransaction: 'pot transaction',
 }
 
 export function isFormAction(action: string): action is AccountFormAction {
@@ -75,8 +77,23 @@ export function recordTitle(kind: string): string {
   return noun.charAt(0).toUpperCase() + noun.slice(1)
 }
 
-export function hasRowActions(row: AccountTransactionDto): boolean {
-  return row.canEdit && row.kind !== 'PotTransaction'
+function isLineOfSameManualSplit(line: AccountTransactionDto, row: AccountTransactionDto): boolean {
+  return (
+    line.kind === 'PotTransaction' &&
+    line.amount > 0 &&
+    line.operation === null &&
+    line.movement?.incomeId == null &&
+    line.date === row.date &&
+    line.description === row.description
+  )
+}
+
+export function deleteConfirmation(row: AccountTransactionDto, rows: readonly AccountTransactionDto[]): string {
+  const question = `Delete this ${recordNoun(row.kind)}?`
+  const lines = isLineOfSameManualSplit(row, row) ? rows.filter((line) => isLineOfSameManualSplit(line, row)).length : 1
+  return lines > 1
+    ? `${question} It is part of a split, so all ${lines} lines will be deleted. This cannot be undone.`
+    : `${question} This cannot be undone.`
 }
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {

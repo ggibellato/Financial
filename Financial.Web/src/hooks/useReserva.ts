@@ -396,6 +396,29 @@ function buildMovementRows(movements: ReserveMovementDto[]): ReserveMovementRow[
   })
 }
 
+export function validateEditMovement(values: Record<EditMovementField, string>): Partial<Record<EditMovementField, string>> {
+  const errors: Partial<Record<EditMovementField, string>> = {}
+
+  if (!values.editMovementDate.trim()) {
+    errors.editMovementDate = 'Date is required'
+  }
+
+  if (!values.editMovementBucketId.trim()) {
+    errors.editMovementBucketId = BUCKET_REQUIRED_ERROR
+  }
+
+  if (!values.editMovementDescription.trim()) {
+    errors.editMovementDescription = 'Description is required'
+  }
+
+  const amount = Number(values.editMovementAmount)
+  if (!values.editMovementAmount.trim() || !isFinite(amount)) {
+    errors.editMovementAmount = 'Amount must be a number'
+  }
+
+  return errors
+}
+
 function defaultBucketId(buckets: ReserveBucketDto[]): string {
   const stored = getStoredDefault(WITHDRAWAL_BUCKET_KEY)
   if (stored && buckets.some((b) => b.id === stored)) {
@@ -606,24 +629,7 @@ export function useReserva(): ReservaData {
     const { editingMovementId, editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription } = state
     if (!editingMovementId) return
 
-    const errors: Partial<Record<EditMovementField, string>> = {}
-
-    if (!editMovementDate.trim()) {
-      errors.editMovementDate = 'Date is required'
-    }
-
-    if (!editMovementBucketId.trim()) {
-      errors.editMovementBucketId = BUCKET_REQUIRED_ERROR
-    }
-
-    if (!editMovementDescription.trim()) {
-      errors.editMovementDescription = 'Description is required'
-    }
-
-    const amount = Number(editMovementAmount)
-    if (!editMovementAmount.trim() || !isFinite(amount)) {
-      errors.editMovementAmount = 'Amount must be a number'
-    }
+    const errors = validateEditMovement({ editMovementBucketId, editMovementAmount, editMovementDate, editMovementDescription })
 
     if (Object.keys(errors).length > 0) {
       dispatch({ type: 'SAVE_MOVEMENT_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
@@ -635,7 +641,7 @@ export function useReserva(): ReservaData {
     void apiClient
       .updateReserveMovement(editingMovementId, {
         bucketId: editMovementBucketId,
-        amount,
+        amount: Number(editMovementAmount),
         date: editMovementDate,
         description: editMovementDescription,
       })
