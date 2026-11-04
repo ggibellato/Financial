@@ -16,7 +16,7 @@ The core value is one place per account, a new account from an existing template
 | 2 — Credit cards | F02 | F07 Credit card template and migration, F08 Statement payment and card screen, F15 Card refunds and credit (added 2026-11-04) |
 | 3 — Pots | F03 | F09 Pots template and Reserva migration, F14 Accounts page by template and card totals (added 2026-10-30), F10 Linked deposit, withdrawal and Pots screen |
 | 4 — Settlement | F04 | F11 Settlement template and Mãe migration, F12 Settlement screen |
-| 5 — Consolidation | F05 | F13 Consolidated navigation and retirement |
+| 5 — Consolidation | F05 | F16 Month transactions view (added 2026-11-04, built before F11), F13 Consolidated navigation and retirement |
 
 ## 2. Problem and Opportunity
 
@@ -174,6 +174,10 @@ The core value is one place per account, a new account from an existing template
 - As the user, I want a credit left by refunds to lower the next statement, as the card issuer does, so that the amount to pay matches the real card
 - As the user, I want to record the card issuer paying a credit back to my bank, so that both balances match the real accounts
 - As the user, I want a statement for every month, and a month with nothing to pay to count as settled, so that no empty statement stays unpaid or reminds me to pay
+
+### F16. Month Transactions View
+- As the user, I want to see every transaction of a month, whatever the account, in one grid, so that I can review the month without opening each account
+- As the user, I want to filter that grid by category, account and type, so that I can see where the money for one category went
 
 ## 6. Functionalities
 
@@ -606,7 +610,7 @@ Rules that apply to every feature:
 
 **Capabilities:**
 - **Navigation:** CashFlow menu = Accounts (the CashFlow entry point), Monthly, Annual summary, Mensais, Investment snapshots. Admin CashFlow menu = Accounts, Categories, Income sources, Investment accounts, Recurring bills.
-- **Monthly becomes an overview:** month picker, default group summary (F04), category totals, income totals per source, tithe — all read-only. All entry (expense, income, transfer, reconcile, card statements) lives on the account screen.
+- **Monthly becomes an overview:** month picker, default group summary (F04), category totals, income totals per source, tithe and F16's All transactions grid — all read-only. All entry (expense, income, transfer, reconcile, card statements) lives on the account screen.
 - **Retired:** Reserva page, Controle Mãe page, Monthly's entry and bank/card sections, Admin Banks, Admin Credit cards (Admin Reserve buckets already went in F10), and the API endpoints only they used (exact list fixed by grep in the spec; the OpenAPI snapshot and generated types updated). Balance adjustments move from `/banks/{id}/adjustments` to an account route first, since the account screen's Reconcile and adjustment edits use them. Due-date editing moves onto the card's Statements tab before Admin Credit cards and Monthly's Card tab retire, and the F07 rule that clearing a card's due date clears every statement's date is revisited then. Old routes redirect: `/cashflow/reserva` → the Reserva account screen, `/cashflow/controle-mae` → the Mãe account screen, admin routes → Admin → Accounts.
 - **Removed code (design doc's list):** the 4 old balance calculations (already replaced), name-string joins, the fixed-name Reserva lookups, the duplicated card filter, client-side summary maths, single-instance Mãe/Reserva code, and the per-type pages.
 - **E2E journeys** (Playwright, `Financial.Web/tests/e2e`): add-expense moves to the account screen; new smoke journeys: pay a card statement, deposit into pots from a manual deposit, settle a Settlement account. Test seed data contains one account per template.
@@ -686,6 +690,36 @@ Added 2026-11-04 at the user's request, after F10's deploy, from cases met on re
 - Editing or deleting a credit refund transfer through `/transfers` or `/accounts/transfers`: 409 (message fixed in the spec), as for payment transfers.
 - Paying a statement that is settled: F08's 400 "There is nothing to pay on this statement."
 
+### F16. Month Transactions View
+
+Added 2026-11-04 at the user's request: a view of every transaction in a month across all accounts, filtered by category, which F13's read-only Monthly would otherwise lose with Monthly's Expenses section. Built after F15 and before F11.
+
+**Consumes:**
+- F05: the account-transactions reader behind every account screen's Transactions grid, and the account screen links
+- F08: card charges by statement month and statement payment rows
+- F10: pot transaction rows and operation links
+- F15: refund rows on cards
+
+**Provides:**
+- The All transactions grid on Monthly (kept by F13 when Monthly becomes an overview)
+
+**Capabilities:**
+- **All transactions grid:** Monthly gains an "All transactions" grid for the picked month: every record that touched an account that month, from every account (any template, active or inactive), one row per account it touched, as the account screens show them. It reads F05's account-transactions reader for each account, so Settlement rows join when F11 and F12 ship with no change here (user decision 2026-11-04).
+- **Which month:** a row belongs to the month the category totals use: card charges and refunds by statement month, with the purchase date shown; every other record by its own date. Filtered to one category, the grid's total equals that category's line in Category totals (user decision 2026-11-04).
+- **Columns:** Date, Account, Type, Description, Category, Amount (signed for that account, right-aligned); newest first; sortable.
+- **Filters:** Category (the main one), Account and Type, as the column filters Monthly's Expenses section uses today; a footer shows the number of rows and the total of the filtered rows.
+- **Read-only:** a row links to its account screen at that month, and a linked deposit or withdrawal row opens its operation there. Entry stays where it is today: Monthly's Expenses section and forms stay until F13 retires them, and from F13 the account screen is the only place to enter or edit.
+- **Parity:** the spec decides whether the grid's per-category totals are added to the figures report and checked against Category totals.
+
+**Experience:**
+- Monthly → October 2026 → All transactions: "28 Oct · Barclays · Expense · Tesco · Groceries · −£45.20", "15 Oct · BA Amex · Card charge (statement Oct 2026, bought 2 Oct) · Amazon · Clothing · −£39.99", "10 Oct · Reserva · Pot transaction · Deposit to Reserva · — · +£90.00" …
+- Filter Category = Groceries → only Groceries rows, footer "12 rows · £412.37", the same figure as Groceries in Category totals.
+- States: loading, empty month ("No transactions in October 2026."), load error with Try again; a filter with no match says so and offers to clear the filters.
+
+**Error Handling:**
+- Load failure: the grid's error with Try again; the rest of Monthly still shows.
+- A row whose account was deleted cannot occur (accounts in use cannot be deleted); an inactive account's rows still show, with the account marked Inactive.
+
 ## 7. Out of Scope
 
 - **Card features:** partial payments, interest, fees, carry-over between statements and proper instalment purchases (Pay in 4 stays as 4 charges moved to their months).
@@ -718,9 +752,10 @@ Added 2026-11-04 at the user's request, after F10's deploy, from cases met on re
 | F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F09, F14 |
 | F11 | Settlement Template and Mãe Migration | 1 | F02, F06, F09, F14 |
 | F12 | Settlement Screen | 1 | F05, F11 |
-| F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12, F15 |
+| F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12, F15, F16 |
 | F14 | Accounts Page by Template and Card Totals | 2 | F08, F09 |
 | F15 | Card Refunds and Credit | 2 | F08, F14 |
+| F16 | Month Transactions View | 2 | F05, F08, F10, F15 |
 
 F07 → F09 → F11 is a real ordering: their migration steps are sequential versions (V3, V4, V5) of one chain.
 
@@ -741,7 +776,7 @@ Features within the same wave can be built in parallel. A wave starts only after
 - **Wave 5**: F08, F09
 - **Wave 6**: F14
 - **Wave 7**: F10, F11, F15 (F15 is built before F11, at the user's request)
-- **Wave 8**: F12
+- **Wave 8**: F12, F16 (F16 is built before F11, at the user's request)
 - **Wave 9**: F13
 
 ### Part 4: Priority levels
@@ -782,6 +817,11 @@ graph TD
   F08 --> F15[F15 Card refunds]
   F14 --> F15
   F15 --> F13
+  F05 --> F16[F16 Month transactions]
+  F08 --> F16
+  F10 --> F16
+  F15 --> F16
+  F16 --> F13
   F08 --> F13[F13 Consolidation]
   F10 --> F13
   F12 --> F13
@@ -944,7 +984,7 @@ graph TD
 
 ### F13. Consolidated Navigation and Retirement
 - [ ] Opening CashFlow lands on Accounts; the menus match the F13 lists
-- [ ] Monthly shows only the overview (group summary, category totals, income totals, tithe) with no entry forms
+- [ ] Monthly shows only the overview (group summary, category totals, income totals, tithe, All transactions) with no entry forms
 - [ ] Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are removed (Admin Reserve buckets in F10); their old routes redirect as specified
 - [ ] The API endpoints only those pages used are removed; the OpenAPI snapshot and generated types are updated
 - [ ] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins
@@ -967,6 +1007,13 @@ graph TD
 - [ ] A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger
 - [ ] Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes
 - [ ] F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x"
+- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+
+### F16. Month Transactions View
+- [ ] Monthly's All transactions grid lists, for the picked month, every record of every account (one row per account it touched), card charges and refunds by statement month and every other record by its own date
+- [ ] Filtering by category, account or type narrows the rows; filtered to one category, the footer total equals that category's Category totals figure
+- [ ] Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation
+- [ ] Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### Cross-Feature Integration
