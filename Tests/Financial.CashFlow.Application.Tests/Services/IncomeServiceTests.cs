@@ -824,6 +824,26 @@ public class IncomeServiceTests
     }
 
     [Fact]
+    public async Task UpdateIncomeAsync_RebuildingADepositOnABankNowInactive_ThrowsAndKeepsTheDeposit()
+    {
+        var repository = CreateSplitCapableRepository();
+        var service = CreateService(repository);
+        var lines = FundingLines(repository, ("Barclays", 2200m), ("Chase", 5m));
+        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+        repository.Accounts.Single(a => a.Name == "Chase").SetActive(false);
+
+        var act = async () => await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Chase is inactive.");
+            repository.Expenses.Select(e => e.Value).Should().Equal(2200m, 5m);
+            repository.PotTransactions.Sum(m => m.Amount).Should().Be(2205m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.UpdateIncome");
+        }
+    }
+
+    [Fact]
     public async Task UpdateIncomeAsync_OmittingTheLinesOfAHandSplitDeposit_GoesBackToTheDefaultLine()
     {
         var repository = CreateSplitCapableRepository();

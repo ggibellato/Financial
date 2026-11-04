@@ -329,6 +329,74 @@ public class PotsServiceTests
         }
     }
 
+    private PotsUpdateDTO PotsUpdate(params PotUpdateDTO[] added) => new()
+    {
+        Pots =
+        [
+            .. Reserva.Pots!.Select(pot => new PotUpdateDTO
+            {
+                Id = pot.Id,
+                Name = pot.Name,
+                SplitPercentage = pot.SplitPercentage,
+                IsActive = pot.IsActive
+            }),
+            .. added
+        ]
+    };
+
+    [Fact]
+    public async Task ReplacePotsAsync_ValidList_SavesOnceWithANewPot()
+    {
+        var existingCount = Reserva.Pots!.Count;
+
+        await _sut.ReplacePotsAsync(Reserva.Id, PotsUpdate(new PotUpdateDTO { Name = "Holidays", SplitPercentage = 0m, IsActive = false }));
+
+        using (new AssertionScope())
+        {
+            Reserva.Pots!.Should().HaveCount(existingCount + 1);
+            PotNamed("Holidays").IsActive.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task ReplacePotsAsync_TotalNot100_ThrowsAndSavesNothing()
+    {
+        var act = async () => await _sut.ReplacePotsAsync(Reserva.Id, PotsUpdate(new PotUpdateDTO { Name = "Holidays", SplitPercentage = 5m, IsActive = true }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Active pots must total 100% (now 105%).");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.ReplacePots");
+        }
+    }
+
+    [Fact]
+    public async Task ReplacePotsAsync_DuplicateName_ThrowsConflictAndSavesNothing()
+    {
+        var act = async () => await _sut.ReplacePotsAsync(Reserva.Id, PotsUpdate(new PotUpdateDTO { Name = "INVESTIMENTO", SplitPercentage = 0m, IsActive = false }));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<DuplicateNameException>().WithMessage("A pot named \"Investimento\" already exists.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<DuplicateNameException>("CashFlow.PotsService.ReplacePots");
+        }
+    }
+
+    [Fact]
+    public async Task ReplacePotsAsync_AccountWithoutPots_ThrowsNotFound()
+    {
+        var act = async () => await _sut.ReplacePotsAsync(Bank("Chase").Id, PotsUpdate());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<KeyNotFoundException>();
+            _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.PotsService.ReplacePots");
+        }
+    }
+
     [Fact]
     public async Task DeleteOperationAsync_UnknownId_ThrowsNotFound()
     {

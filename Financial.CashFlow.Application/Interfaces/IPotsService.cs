@@ -10,4 +10,5 @@ public interface IPotsService
     Task<PotOperationDTO> UpdateWithdrawalAsync(Guid potsAccountId, Guid operationId, PotWithdrawalRequestDTO request);
     PotOperationDTO GetOperation(Guid operationId);
     Task DeleteOperationAsync(Guid operationId);
+    Task ReplacePotsAsync(Guid potsAccountId, PotsUpdateDTO request);
 }

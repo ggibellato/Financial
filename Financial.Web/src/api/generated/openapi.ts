@@ -986,6 +986,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{potsId}/pots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    potsId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["PotsUpdateDTO"];
+                    "application/json": null | components["schemas"]["PotsUpdateDTO"];
+                    "text/json": null | components["schemas"]["PotsUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Conflict */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{potsId}/withdrawals": {
         parameters: {
             query?: never;
@@ -9446,6 +9514,14 @@ export interface components {
             /** Format: uuid */
             potsAccountId: string;
         };
+        PotUpdateDTO: {
+            /** Format: uuid */
+            id?: null | string;
+            isActive: boolean;
+            name: string;
+            /** Format: double */
+            splitPercentage: number;
+        };
         PotWithdrawalRequestDTO: {
             /** Format: double */
             amount: number;
@@ -9459,6 +9535,9 @@ export interface components {
             description: string;
             /** Format: uuid */
             potId: string;
+        };
+        PotsUpdateDTO: {
+            pots: components["schemas"]["PotUpdateDTO"][];
         };
         /** @enum {unknown} */
         PriceSource: "Unknown" | "Manual" | "ProviderValuation" | "Google" | "Yahoo" | "StatusInvest" | "DicionarioDoInvestidor" | "Redentia" | "TesouroTransparente";
