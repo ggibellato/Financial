@@ -33,6 +33,7 @@ import type {
   CalendarConnectionStatusDto,
   Currency,
   CalendarDisconnectResultDto,
+  CardCreditDto,
   CardStatementDto,
   CreditCardCalendarSyncStatusDto,
   CategoryAnnualAverageDto,
@@ -281,6 +282,7 @@ export interface FinancialApiClient {
   deleteAccountTransfer: (id: string) => Promise<void>
   createCardCreditRefund: (request: AccountTransferCreateDto) => Promise<AccountTransferDto>
   deleteCardCreditRefund: (id: string) => Promise<void>
+  getCardsInCredit: () => Promise<CardCreditDto[]>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
@@ -788,6 +790,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteCardCreditRefund: (id) => requestVoid(`/accounts/credit-refunds/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    getCardsInCredit: () => request<CardCreditDto[]>('/accounts/cards-in-credit'),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
         method: 'POST',

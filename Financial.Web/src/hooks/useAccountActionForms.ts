@@ -121,8 +121,11 @@ export function useAccountActionForms(
 
   const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
   const payStatementForm = usePayCardStatementForm(lockedBank, () => saved('Statement paid'))
-  const creditRefundForm = useCardCreditRefundForm(isCard ? currentAccountOption : undefined, Math.max(0, -(currentAccount?.totalOwed ?? 0)), () =>
-    saved('Credit refunded'),
+  const creditRefundForm = useCardCreditRefundForm(
+    isCard ? 'card' : 'bank',
+    currentAccountOption,
+    Math.max(0, -(currentAccount?.totalOwed ?? 0)),
+    () => saved(isCard ? 'Credit refunded' : 'Card credit received'),
   )
   const moveForm = useMoveChargeForm(onSaved)
   const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
@@ -135,6 +138,7 @@ export function useAccountActionForms(
     AddCharge: () => expenseForm.showCreateForm('card'),
     AddRefund: () => expenseForm.showCreateRefundForm(),
     RefundCreditToBank: () => creditRefundForm.open(),
+    ReceiveCardCredit: () => creditRefundForm.open(),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
@@ -156,7 +160,7 @@ export function useAccountActionForms(
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
-    if (creditRefundForm.isOpen) return 'RefundCreditToBank'
+    if (creditRefundForm.isOpen) return creditRefundForm.mode === 'card' ? 'RefundCreditToBank' : 'ReceiveCardCredit'
     if (isManagePotsOpen) return 'ManagePots'
     return null
   }

@@ -1,21 +1,20 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { CardCreditRefundForm as CardCreditRefundFormState } from '../../hooks/useCardCreditRefundForm'
-import { account } from '../../test/account'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import CardCreditRefundForm from '../CardCreditRefundForm'
-
-const AMEX = { id: 'amex', name: 'BA Amex' }
 
 function formState(overrides: Partial<CardCreditRefundFormState> = {}): CardCreditRefundFormState {
   return {
     isOpen: true,
-    banks: [account({ id: 'barclays', name: 'Barclays' })],
+    mode: 'card',
+    accountName: 'BA Amex',
+    counterparts: [{ id: 'barclays', label: 'Barclays', credit: 35 }],
     currency: 'GBP',
-    values: { destinationAccountId: '', amount: '35.00', date: '2026-11-05' },
+    values: { counterpartId: '', amount: '35.00', date: '2026-11-05' },
     isLoading: false,
     loadError: null,
     retry: vi.fn(),
-    hasNoBanks: false,
+    hasNoCounterparts: false,
     isSaving: false,
     saveError: null,
     fieldErrors: {},
@@ -29,7 +28,7 @@ function formState(overrides: Partial<CardCreditRefundFormState> = {}): CardCred
 }
 
 function renderForm(overrides: Partial<CardCreditRefundFormState> = {}) {
-  return render(<CardCreditRefundForm refundForm={formState(overrides)} lockedCard={AMEX} onCancel={vi.fn()} />)
+  return render(<CardCreditRefundForm refundForm={formState(overrides)} onCancel={vi.fn()} />)
 }
 
 describe('CardCreditRefundForm', () => {
@@ -45,7 +44,7 @@ describe('CardCreditRefundForm', () => {
   })
 
   it('keeps the bank picker focusable and busy while the banks load', () => {
-    renderForm({ isLoading: true, banks: [] })
+    renderForm({ isLoading: true, counterparts: [] })
 
     const bank = screen.getByRole('combobox', { name: /^To bank/ })
     expect(bank).toBeEnabled()
@@ -66,7 +65,7 @@ describe('CardCreditRefundForm', () => {
   })
 
   it('shows a hint and disables the submit when no bank can receive the refund', () => {
-    renderForm({ hasNoBanks: true, banks: [] })
+    renderForm({ hasNoCounterparts: true, counterparts: [] })
 
     expect(screen.getByText('No active bank in GBP can receive this refund.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toBeDisabled()
@@ -80,7 +79,7 @@ describe('CardCreditRefundForm', () => {
   })
 
   it.each([
-    ['destinationAccountId', /^To bank/],
+    ['counterpartId', /^To bank/],
     ['amount', /^Amount/],
     ['date', /^Date/],
   ] as const)('focuses %s when the submit reports it invalid', (field, label) => {
@@ -107,7 +106,7 @@ describe('CardCreditRefundForm', () => {
   it('reports each field change and cancels', () => {
     const setField = vi.fn()
     const onCancel = vi.fn()
-    render(<CardCreditRefundForm refundForm={formState({ setField })} lockedCard={AMEX} onCancel={onCancel} />)
+    render(<CardCreditRefundForm refundForm={formState({ setField })} onCancel={onCancel} />)
 
     fireEvent.change(screen.getByRole('combobox', { name: /^To bank/ }), { target: { value: 'barclays' } })
     fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '12' } })
@@ -115,10 +114,55 @@ describe('CardCreditRefundForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(setField.mock.calls).toEqual([
-      ['destinationAccountId', 'barclays'],
+      ['counterpartId', 'barclays'],
       ['amount', '12'],
       ['date', '2026-11-01'],
     ])
     expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('CardCreditRefundForm in bank mode', () => {
+  const bankState = (overrides: Partial<CardCreditRefundFormState> = {}) =>
+    formState({
+      mode: 'bank',
+      accountName: 'Barclays',
+      counterparts: [{ id: 'visa', label: 'Platinum Visa · Credit 12.50 (inactive)', credit: 12.5 }],
+      values: { counterpartId: '', amount: '', date: '2026-11-05' },
+      ...overrides,
+    })
+
+  it('[AC P60-F15-card-refunds-and-credit-05] picks the card first and shows the bank locked, under Receive card credit', () => {
+    render(<CardCreditRefundForm refundForm={bankState()} onCancel={vi.fn()} />)
+
+    expect(screen.getByRole('heading', { name: 'Receive card credit' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Receive card credit' })).toBeEnabled()
+    expect(screen.getByRole('combobox', { name: /^From/ })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^To bank/ })).not.toBeInTheDocument()
+    expect(screen.getByText('Barclays')).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Platinum Visa · Credit 12.50 (inactive)' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Amount \(GBP\)/)).toHaveAttribute('placeholder', '—')
+  })
+
+  it('shows the loading text for cards', () => {
+    render(<CardCreditRefundForm refundForm={bankState({ isLoading: true, counterparts: [] })} onCancel={vi.fn()} />)
+
+    expect(screen.getByRole('combobox', { name: /^From/ })).toHaveAttribute('aria-busy', 'true')
+    expect(screen.getByRole('option', { name: 'Loading cards…' })).toBeInTheDocument()
+  })
+
+  it('shows a hint and disables the submit when no card in the currency has credit', () => {
+    render(<CardCreditRefundForm refundForm={bankState({ hasNoCounterparts: true, counterparts: [] })} onCancel={vi.fn()} />)
+
+    expect(screen.getByText('No card in GBP has credit to refund.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Receive card credit' })).toBeDisabled()
+  })
+
+  it('focuses the card picker when it is the first invalid field', () => {
+    render(<CardCreditRefundForm refundForm={bankState({ submit: vi.fn(() => 'counterpartId' as const) })} onCancel={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Receive card credit' }))
+
+    expect(screen.getByRole('combobox', { name: /^From/ })).toHaveFocus()
   })
 })

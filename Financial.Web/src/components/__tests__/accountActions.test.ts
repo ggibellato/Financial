@@ -49,6 +49,12 @@ describe('credit refund wording', () => {
     expect(needsFormOptions('RefundCreditToBank')).toBe(false)
   })
 
+  it('offers Receive card credit on a bank as a form action that needs no shared form options', () => {
+    expect(formActionsOf(['ReceiveCardCredit'])).toEqual(['ReceiveCardCredit'])
+    expect(ACTION_LABELS.ReceiveCardCredit).toBe('Receive card credit')
+    expect(needsFormOptions('ReceiveCardCredit')).toBe(false)
+  })
+
   it('labels a credit refund row Card credit refund', () => {
     expect(kindLabel('CardCreditRefund')).toBe('Card credit refund')
     expect(recordNoun('CardCreditRefund')).toBe('credit refund')
