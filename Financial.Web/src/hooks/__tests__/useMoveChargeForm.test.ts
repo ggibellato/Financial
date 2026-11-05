@@ -19,7 +19,7 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 function statement(year: number, month: number, isPaid: boolean): AccountStatementDto {
-  return { id: `s-${year}-${month}`, year, month, total: 10, outstandingTotal: isPaid ? 0 : 10, isPaid, dueDate: null, paidOn: null, paidFromAccountName: null }
+  return { id: `s-${year}-${month}`, year, month, total: 10, creditIn: 0, outstandingTotal: isPaid ? 0 : 10, creditCarried: 0, status: isPaid ? 'Paid' : 'Unpaid', isPaid, dueDate: null, paidOn: null, paidAmount: isPaid ? 10 : null, paidFromAccountName: null }
 }
 
 const CHARGE: ExpenseDto = {

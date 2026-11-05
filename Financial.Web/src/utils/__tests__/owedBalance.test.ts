@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { balanceLabel, formatLabelledBalance, formatShownBalance } from '../owedBalance'
+import { balanceLabel, formatLabelledBalance, formatOwedOrCredit, formatShownBalance, nothingDueText } from '../owedBalance'
 
 describe('owedBalance', () => {
   it('labels an owed balance "Owed" and any other "Balance"', () => {
@@ -20,5 +20,30 @@ describe('owedBalance', () => {
   it('keeps a balance that is not owed as it is, with no label', () => {
     expect(formatShownBalance(-50, false)).toBe('-50.00')
     expect(formatLabelledBalance(2800.25, false)).toBe('2,800.25')
+  })
+})
+
+describe('formatOwedOrCredit', () => {
+  it('shows an amount owed as a plain figure', () => {
+    expect(formatOwedOrCredit(3394.25)).toBe('3,394.25')
+  })
+
+  it('shows a negative total owed as credit', () => {
+    expect(formatOwedOrCredit(-35)).toBe('Credit 35.00')
+  })
+
+  it('shows nothing owed as 0.00, never -0.00', () => {
+    expect(formatOwedOrCredit(0)).toBe('0.00')
+    expect(formatOwedOrCredit(-0)).toBe('0.00')
+  })
+})
+
+describe('nothingDueText', () => {
+  it('says only Nothing due with no credit', () => {
+    expect(nothingDueText(0)).toBe('Nothing due')
+  })
+
+  it('names the credit carried', () => {
+    expect(nothingDueText(35)).toBe('Nothing due · 35.00 credit carried')
   })
 })

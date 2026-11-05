@@ -17,10 +17,9 @@ import {
   TableHeaderCell,
   TableRow,
   Text,
-  Tooltip,
 } from '@fluentui/react-components'
 import type { AccountStatementDto } from '../api/types'
-import type { CardStatements, PayForm } from '../hooks/useCardStatements'
+import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
 import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
@@ -29,6 +28,7 @@ import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
+import { nothingDueText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
 
 interface StatementColumn {
@@ -57,6 +57,20 @@ const COLUMNS: StatementColumn[] = [
   },
   { key: 'total', header: 'Total', numeric: true, accessor: (statement) => statement.total, render: (statement) => formatN2(statement.total) },
   {
+    key: 'creditIn',
+    header: 'Credit in',
+    numeric: true,
+    accessor: (statement) => statement.creditIn,
+    render: (statement) => (statement.creditIn === 0 ? '—' : formatN2(statement.creditIn)),
+  },
+  {
+    key: 'toPay',
+    header: 'To pay',
+    numeric: true,
+    accessor: (statement) => statement.outstandingTotal,
+    render: (statement) => formatN2(statement.outstandingTotal),
+  },
+  {
     key: 'dueDate',
     header: 'Due date',
     accessor: (statement) => statement.dueDate,
@@ -65,7 +79,7 @@ const COLUMNS: StatementColumn[] = [
   {
     key: 'status',
     header: 'Status',
-    accessor: (statement) => (statement.isPaid ? (statement.paidOn ?? '') : null),
+    accessor: (statement) => `${statement.status} ${statement.paidOn ?? ''}`,
     render: (statement) => <TruncatedText text={statusOf(statement)} />,
   },
 ]
@@ -90,7 +104,8 @@ function monthOf(statement: AccountStatementDto): string {
 }
 
 function statusOf(statement: AccountStatementDto): string {
-  if (!statement.isPaid) return 'Unpaid'
+  if (statement.status === UNPAID_STATEMENT_STATUS) return UNPAID_STATEMENT_STATUS
+  if (!statement.isPaid) return nothingDueText(statement.creditCarried)
   if (!statement.paidOn) return 'Paid'
   const paidOn = formatDayMonthYearUtc(statement.paidOn)
   return statement.paidFromAccountName ? `Paid ${paidOn} from ${statement.paidFromAccountName}` : `Paid ${paidOn}`
@@ -280,7 +295,7 @@ export default function CardStatementsTab({
                     const month = monthOf(statement)
                     return (
                       <TableRow
-                        key={statement.id}
+                        key={`${statement.year}-${statement.month}`}
                         ref={viewed ? viewedRowRef : undefined}
                         aria-current={viewed ? 'true' : undefined}
                         className={viewed ? 'card-statements__row--viewed' : undefined}
@@ -295,23 +310,26 @@ export default function CardStatementsTab({
                           </DataTableCell>
                         ))}
                         <DataTableCell label="Actions" className="data-table__col--action-wide">
-                          {canAct &&
-                            (statement.isPaid ? (
-                              <Button aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
-                                Unmark
-                              </Button>
-                            ) : (
-                              <PayButton
-                                month={month}
-                                nothingToPay={statement.outstandingTotal <= 0}
-                                onPay={(button) =>
-                                  guardChange(() => {
-                                    payOpenerRef.current = button
-                                    openPayForm(statement)
-                                  })
-                                }
-                              />
-                            ))}
+                          {canAct && isStoredStatement(statement) && statement.isPaid && (
+                            <Button aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
+                              Unmark
+                            </Button>
+                          )}
+                          {canAct && isStoredStatement(statement) && statement.status === UNPAID_STATEMENT_STATUS && (
+                            <Button
+                              appearance="primary"
+                              aria-label={`Pay ${month} statement`}
+                              onClick={(event) => {
+                                const button = event.currentTarget
+                                guardChange(() => {
+                                  payOpenerRef.current = button
+                                  openPayForm(statement)
+                                })
+                              }}
+                            >
+                              Pay
+                            </Button>
+                          )}
                         </DataTableCell>
                       </TableRow>
                     )
@@ -334,31 +352,5 @@ export default function CardStatementsTab({
         onCancel={cancelUnmark}
       />
     </>
-  )
-}
-
-interface PayButtonProps {
-  month: string
-  nothingToPay: boolean
-  onPay: (button: HTMLButtonElement) => void
-}
-
-function PayButton({ month, nothingToPay, onPay }: PayButtonProps) {
-  const button = (
-    <Button
-      appearance="primary"
-      aria-label={`Pay ${month} statement`}
-      disabledFocusable={nothingToPay}
-      onClick={(event) => onPay(event.currentTarget)}
-    >
-      Pay
-    </Button>
-  )
-  return nothingToPay ? (
-    <Tooltip content="Nothing to pay" relationship="description">
-      {button}
-    </Tooltip>
-  ) : (
-    button
   )
 }

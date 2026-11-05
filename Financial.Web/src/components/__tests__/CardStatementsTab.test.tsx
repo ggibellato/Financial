@@ -1,18 +1,21 @@
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { AccountStatementDto } from '../../api/types'
-import type { CardStatements } from '../../hooks/useCardStatements'
+import type { CardStatements, StoredStatement } from '../../hooks/useCardStatements'
 import { render, screen, within } from '../../test/renderWithFluent'
 import CardStatementsTab from '../CardStatementsTab'
 
 const NOVEMBER: AccountStatementDto = {
-  id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null,
+  id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null,
 }
-const OCTOBER: AccountStatementDto = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
+const OCTOBER: StoredStatement = {
+  id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-11-03', paidOn: null, paidAmount: null, paidFromAccountName: null,
 }
-const SEPTEMBER: AccountStatementDto = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
+const SEPTEMBER: StoredStatement = {
+  id: 's-sep', year: 2026, month: 9, total: 512.3, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'Paid', isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidAmount: 512.3, paidFromAccountName: 'Barclays',
+}
+const CARRYING: AccountStatementDto = {
+  id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null,
 }
 
 function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements {
@@ -73,9 +76,9 @@ describe('CardStatementsTab', () => {
   it('[AC P60-F08-statement-payment-and-card-screen-11] lists each month with its total, due date and status, highlighting the viewed month', () => {
     renderTab()
 
-    expect(within(rowOf('October 2026')).getByText('210.45')).toBeInTheDocument()
+    expect(within(rowOf('October 2026')).getAllByText('210.45')).toHaveLength(2)
     expect(within(rowOf('October 2026')).getByText('03/11/2026')).toBeInTheDocument()
-    expect(within(rowOf('November 2026')).getByText('—')).toBeInTheDocument()
+    expect(within(rowOf('November 2026')).getAllByText('—')).toHaveLength(2)
     expect(within(rowOf('September 2026')).getByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
     expect(within(rowOf('October 2026')).getByText('Unpaid')).toBeInTheDocument()
     expect(screen.getByRole('row', { current: true })).toBe(rowOf('October 2026'))
@@ -95,7 +98,44 @@ describe('CardStatementsTab', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
 
-    expect(months()).toEqual([expect.stringContaining('September'), expect.stringContaining('November'), expect.stringContaining('October')])
+    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('September'), expect.stringContaining('October')])
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-03] shows Total, Credit in and To pay in that order, and an empty month as Nothing due', () => {
+    renderTab({ statements: [NOVEMBER, CARRYING] })
+
+    expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Month', 'Total', 'Credit in', 'To pay', 'Due date', 'Status', ''])
+    const cells = within(rowOf('August 2026')).getAllByRole('cell').map((cell) => cell.textContent)
+    expect(cells.slice(1, 4)).toEqual(['Total:-35.00', 'Credit in:12.50', 'To pay:0.00'])
+    expect(within(rowOf('November 2026')).getByText('Nothing due')).toBeInTheDocument()
+    expect(within(rowOf('November 2026')).getAllByRole('cell')[2]).toHaveTextContent('—')
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-02] shows no Pay on a Nothing due row, stored or not, and names the credit it carries', () => {
+    renderTab({ statements: [NOVEMBER, CARRYING] })
+
+    expect(within(rowOf('August 2026')).getByText('Nothing due · 47.50 credit carried')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Pay / })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Unmark / })).not.toBeInTheDocument()
+  })
+
+  it('offers no Pay on an unpaid row with no stored statement', () => {
+    renderTab({ statements: [{ ...OCTOBER, id: null }] })
+
+    expect(within(rowOf('October 2026')).getByText('Unpaid')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Pay / })).not.toBeInTheDocument()
+  })
+
+  it('shows Paid without a date when the payment date is unknown', () => {
+    renderTab({ statements: [{ ...SEPTEMBER, paidOn: null, paidFromAccountName: null }] })
+
+    expect(within(rowOf('September 2026')).getByText('Paid')).toBeInTheDocument()
+  })
+
+  it('shows Paid with the date alone when the bank is unknown', () => {
+    renderTab({ statements: [{ ...SEPTEMBER, paidFromAccountName: null }] })
+
+    expect(within(rowOf('September 2026')).getByText('Paid 12 Oct 2026')).toBeInTheDocument()
   })
 
   it('shows a skeleton while loading', () => {
@@ -128,17 +168,6 @@ describe('CardStatementsTab', () => {
     expect(statements.openPayForm).toHaveBeenCalledWith(OCTOBER)
     expect(statements.requestUnmark).toHaveBeenCalledWith(SEPTEMBER)
     expect(within(rowOf('September 2026')).queryByRole('button', { name: /^Pay/ })).not.toBeInTheDocument()
-  })
-
-  it('keeps Pay focusable but inert with Nothing to pay when the total is zero', async () => {
-    const statements = renderTab()
-    const pay = screen.getByRole('button', { name: 'Pay November 2026 statement' })
-
-    await userEvent.click(pay)
-
-    expect(pay).toHaveAttribute('aria-disabled', 'true')
-    expect(pay).toHaveAccessibleDescription('Nothing to pay')
-    expect(statements.openPayForm).not.toHaveBeenCalled()
   })
 
   it('says why an inactive card offers no Pay or Unmark', () => {
@@ -203,13 +232,14 @@ describe('CardStatementsTab', () => {
     expect(screen.queryByRole('option', { name: 'Closed' })).not.toBeInTheDocument()
   })
 
-  it('uses the outstanding amount for Pay and the form, not the gross total', () => {
+  it('uses the amount to pay in the form and its column, not the gross total', () => {
+    const creditLowered = { ...OCTOBER, creditIn: 60.45, outstandingTotal: 150 }
     renderTab({
-      statements: [{ ...OCTOBER, outstandingTotal: 0 }],
-      payForm: { statement: { ...OCTOBER, outstandingTotal: 150 }, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+      statements: [creditLowered],
+      payForm: { statement: creditLowered, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
     })
 
-    expect(screen.getByRole('button', { name: 'Pay October 2026 statement' })).toHaveAttribute('aria-disabled', 'true')
+    expect(within(rowOf('October 2026')).getByText('150.00')).toBeInTheDocument()
     expect(screen.getByLabelText('Amount')).toHaveValue('£150.00')
   })
 

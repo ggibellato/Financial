@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import type { AccountDetailDto, AccountDto } from '../../api/types'
+import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountHeader from '../AccountHeader'
 import { account } from '../../test/account'
@@ -12,6 +12,22 @@ const ACCOUNTS: AccountDto[] = [
   account({ id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL' }),
   account({ id: 'amex', name: 'BA Amex', templateName: 'CreditCard' }),
 ]
+
+const OCTOBER_UNPAID: AccountStatementDto = {
+  id: 's-oct',
+  year: 2026,
+  month: 10,
+  total: 650.1,
+  creditIn: 0,
+  outstandingTotal: 650.1,
+  creditCarried: 0,
+  status: 'Unpaid',
+  isPaid: false,
+  dueDate: '2026-11-03',
+  paidOn: null,
+  paidAmount: null,
+  paidFromAccountName: null,
+}
 
 const AMEX: AccountDetailDto = {
   id: 'amex',
@@ -25,6 +41,7 @@ const AMEX: AccountDetailDto = {
   balanceIsOwed: true,
   hasStatements: true,
   totalOwed: 740.12,
+  viewedStatement: OCTOBER_UNPAID,
   allowedActions: [],
 }
 
@@ -40,6 +57,7 @@ const BARCLAYS: AccountDetailDto = {
   balanceIsOwed: false,
   hasStatements: false,
   totalOwed: null,
+  viewedStatement: null,
   allowedActions: [],
 }
 
@@ -72,16 +90,57 @@ describe('AccountHeader', () => {
     expect(screen.getByText('1,234.56 GBP')).toBeInTheDocument()
   })
 
-  it('[AC P60-F07-credit-card-template-and-card-migration-08] shows a card\'s month-end balance as owed, under its template\'s display name', () => {
+  it('[AC P60-F07-credit-card-template-and-card-migration-08] shows a card under its template\'s display name, with no bank balance label', () => {
     renderHeader(AMEX)
 
     expect(screen.getByText('Credit card · GBP')).toBeInTheDocument()
-    expect(screen.getByText('Owed at end of October 2026')).toBeInTheDocument()
-    expect(screen.getByText('812.33 GBP')).toBeInTheDocument()
-    expect(screen.queryByText(/^Balance at end of/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/at end of/)).not.toBeInTheDocument()
   })
 
-  it("[AC P60-F14-accounts-page-by-template-and-card-totals-03] shows a card's month-end owed balance and its total owed now, and a month change changes only the first", () => {
+  it("[AC P60-F15-card-refunds-and-credit-07] shows a card's viewed statement as unpaid with its amount to pay, not its month-end balance, and the total owed", () => {
+    renderHeader(AMEX)
+
+    const statementFigure = screen.getByText('October 2026 statement').parentElement as HTMLElement
+    expect(within(statementFigure).getByText('650.10 GBP')).toBeInTheDocument()
+    expect(within(statementFigure).getByText('Unpaid')).toBeInTheDocument()
+    expect(screen.getByText('Total owed')).toBeInTheDocument()
+    expect(screen.getByText('740.12 GBP')).toBeInTheDocument()
+    expect(screen.queryByText('812.33 GBP')).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-07] shows a paid statement with the amount paid and its date', () => {
+    renderHeader({
+      ...AMEX,
+      viewedStatement: { ...OCTOBER_UNPAID, outstandingTotal: 0, status: 'Paid', isPaid: true, paidOn: '2026-11-12', paidAmount: 650.1, paidFromAccountName: 'Barclays' },
+    })
+
+    expect(screen.getByText('650.10 GBP')).toBeInTheDocument()
+    expect(screen.getByText('Paid 12 Nov 2026')).toBeInTheDocument()
+  })
+
+  it('shows Paid alone when the payment date is unknown, with a missing amount as 0.00', () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, outstandingTotal: 0, status: 'Paid', isPaid: true } })
+
+    expect(screen.getByText('0.00 GBP')).toBeInTheDocument()
+    expect(screen.getByText('Paid')).toBeInTheDocument()
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-07] shows a Nothing due statement with the credit it carries', () => {
+    renderHeader({ ...AMEX, viewedStatement: { ...OCTOBER_UNPAID, total: -35, outstandingTotal: 0, creditCarried: 35, status: 'NothingDue' } })
+
+    expect(screen.getByText('0.00 GBP')).toBeInTheDocument()
+    expect(screen.getByText('Nothing due · 35.00 credit carried')).toBeInTheDocument()
+  })
+
+  it('shows a month before the card\'s first statement as 0.00 Nothing due', () => {
+    renderHeader({ ...AMEX, viewedStatement: null })
+
+    expect(screen.getByText('October 2026 statement')).toBeInTheDocument()
+    expect(screen.getByText('0.00 GBP')).toBeInTheDocument()
+    expect(screen.getByText('Nothing due')).toBeInTheDocument()
+  })
+
+  it("[AC P60-F14-accounts-page-by-template-and-card-totals-03] a month change changes the statement figure but not the total owed", () => {
     const header = (detail: AccountDetailDto) => (
       <AccountHeader
         account={detail}
@@ -93,43 +152,38 @@ describe('AccountHeader', () => {
         onAccountSelect={vi.fn()}
       />
     )
-    const { rerender } = render(header({ ...AMEX, month: 9, balance: -154.04 }))
+    const { rerender } = render(header({ ...AMEX, month: 9, viewedStatement: { ...OCTOBER_UNPAID, month: 9, outstandingTotal: 154.04 } }))
 
-    expect(screen.getByText('Owed at end of September 2026')).toBeInTheDocument()
+    expect(screen.getByText('September 2026 statement')).toBeInTheDocument()
     expect(screen.getByText('154.04 GBP')).toBeInTheDocument()
-    expect(screen.getByText('Total owed now')).toBeInTheDocument()
     expect(screen.getByText('740.12 GBP')).toBeInTheDocument()
 
-    rerender(header({ ...AMEX, balance: -740.12 }))
+    rerender(header(AMEX))
 
-    expect(screen.getByText('Owed at end of October 2026')).toBeInTheDocument()
-    expect(screen.getAllByText('740.12 GBP')).toHaveLength(2)
-    expect(screen.getByText('Total owed now')).toBeInTheDocument()
+    expect(screen.getByText('October 2026 statement')).toBeInTheDocument()
+    expect(screen.getByText('650.10 GBP')).toBeInTheDocument()
+    expect(screen.getByText('740.12 GBP')).toBeInTheDocument()
   })
 
   it('shows a total owed of nothing as 0.00, not -0.00', () => {
-    renderHeader({ ...AMEX, balance: 0, totalOwed: -0 })
+    renderHeader({ ...AMEX, viewedStatement: null, totalOwed: -0 })
 
     expect(screen.getAllByText('0.00 GBP')).toHaveLength(2)
   })
 
-  it('shows a card in credit with a negative total owed', () => {
-    renderHeader({ ...AMEX, balance: 12, totalOwed: -12 })
+  it('[AC P60-F15-card-refunds-and-credit-07] shows a card in credit as Credit instead of a negative total owed', () => {
+    renderHeader({ ...AMEX, totalOwed: -35 })
 
-    expect(screen.getByText('Total owed now')).toBeInTheDocument()
-    expect(screen.getAllByText('-12.00 GBP')).toHaveLength(2)
+    expect(screen.getByText('Total owed')).toBeInTheDocument()
+    expect(screen.getByText('Credit 35.00 GBP')).toBeInTheDocument()
   })
 
-  it('shows no total owed for an account without statements', () => {
+  it('[AC P60-F15-card-refunds-and-credit-07] leaves a bank header on its month-end balance, with no statement or total owed', () => {
     renderHeader()
 
-    expect(screen.queryByText('Total owed now')).not.toBeInTheDocument()
-  })
-
-  it('shows a card that owes nothing as 0.00, not -0.00', () => {
-    renderHeader({ ...AMEX, balance: 0 })
-
-    expect(screen.getByText('0.00 GBP')).toBeInTheDocument()
+    expect(screen.getByText('Balance at end of October 2026')).toBeInTheDocument()
+    expect(screen.queryByText(/ statement$/)).not.toBeInTheDocument()
+    expect(screen.queryByText('Total owed')).not.toBeInTheDocument()
   })
 
   it('shows no Inactive badge for an active account', () => {

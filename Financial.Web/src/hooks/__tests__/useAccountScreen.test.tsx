@@ -40,6 +40,7 @@ const DETAIL: AccountDetailDto = {
   balanceIsOwed: false,
   hasStatements: false,
   totalOwed: null,
+  viewedStatement: null,
   allowedActions: [],
 }
 

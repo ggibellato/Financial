@@ -7937,6 +7937,7 @@ export interface components {
             templateName: string;
             /** Format: double */
             totalOwed: null | number;
+            viewedStatement: null | components["schemas"]["AccountStatementDTO"];
             /** Format: int32 */
             year: number;
         };
@@ -7984,18 +7985,25 @@ export interface components {
             year: number;
         };
         AccountStatementDTO: {
+            /** Format: double */
+            creditCarried: number;
+            /** Format: double */
+            creditIn: number;
             /** Format: date */
             dueDate?: null | string;
             /** Format: uuid */
-            id: string;
+            id: null | string;
             isPaid: boolean;
             /** Format: int32 */
             month: number;
             /** Format: double */
             outstandingTotal: number;
+            /** Format: double */
+            paidAmount?: null | number;
             paidFromAccountName?: null | string;
             /** Format: date */
             paidOn?: null | string;
+            status: string;
             /** Format: double */
             total: number;
             /** Format: int32 */

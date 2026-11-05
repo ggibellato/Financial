@@ -12,8 +12,14 @@ const NO_PAYERS: BankDto[] = []
 
 export type PayStatementField = 'bankId' | 'date'
 
+export type StoredStatement = AccountStatementDto & { id: string }
+
+export function isStoredStatement(statement: AccountStatementDto): statement is StoredStatement {
+  return statement.id !== null
+}
+
 export interface PayForm {
-  statement: AccountStatementDto
+  statement: StoredStatement
   bankId: string
   date: string
   isSaving: boolean
@@ -22,7 +28,7 @@ export interface PayForm {
 }
 
 interface UnmarkRequest {
-  statement: AccountStatementDto
+  statement: StoredStatement
   isBusy: boolean
   error: string | null
 }
@@ -61,7 +67,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     setUnmark(null)
   }
 
-  const openPayForm = (statement: AccountStatementDto) => {
+  const openPayForm = (statement: StoredStatement) => {
     if (payForm?.isSaving) return
     setPayForm({ statement, bankId: '', date: todayIsoDate(), isSaving: false, error: null, fieldErrors: {} })
   }
@@ -105,7 +111,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       })
   }
 
-  const requestUnmark = (statement: AccountStatementDto) => setUnmark({ statement, isBusy: false, error: null })
+  const requestUnmark = (statement: StoredStatement) => setUnmark({ statement, isBusy: false, error: null })
 
   const cancelUnmark = () => setUnmark((current) => (current?.isBusy ? current : null))
 

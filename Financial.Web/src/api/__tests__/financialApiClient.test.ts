@@ -2263,6 +2263,7 @@ describe('financialApiClient', () => {
       balanceIsOwed: false,
       hasStatements: false,
       totalOwed: null,
+      viewedStatement: null,
       allowedActions: ['AddExpense'],
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
