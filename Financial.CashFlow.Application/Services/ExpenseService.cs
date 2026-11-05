@@ -8,6 +8,7 @@ using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Shared.Abstractions.Time;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.CashFlow.Application.Services;
@@ -18,15 +19,18 @@ public sealed class ExpenseService : IExpenseService
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
     private const string InvalidStatementMonthMessage = "The statement month is not a valid month.";
+    private const string FutureRefundDateMessage = "Date must not be in the future.";
 
     private readonly ICashFlowRepository _repository;
+    private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<ExpenseService> _logger;
     private readonly ICreditCardCalendarSyncService _calendarSync;
 
-    public ExpenseService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ExpenseService> logger, ICreditCardCalendarSyncService calendarSync)
+    public ExpenseService(ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<ExpenseService> logger, ICreditCardCalendarSyncService calendarSync)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+        _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _calendarSync = calendarSync ?? throw new ArgumentNullException(nameof(calendarSync));
@@ -41,6 +45,7 @@ public sealed class ExpenseService : IExpenseService
 
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
+            EnsureRefundIsNotFutureDated(request.Value, creditCard, request.Date);
 
             var expense = Expense.Create(request.Date, request.Description, request.Value, category, paymentSource, creditCard, request.InvoiceDate, request.CountsAsTithe);
             expense.SetRoundUpAmount(request.RoundUpAmount);
@@ -83,6 +88,7 @@ public sealed class ExpenseService : IExpenseService
             var (category, paymentSource, creditCard) = ValidateFields(
                 request.Description, request.CategoryId, request.PaymentSourceBankId, request.CreditCardId);
             EnsurePaidStatementLocksHold(expense, request, paymentSource, creditCard);
+            EnsureRefundIsNotFutureDated(request.Value, creditCard, request.Date);
             var previousCardId = expense.CreditCard?.Id;
             var previousInvoiceDate = expense.InvoiceDate;
 
@@ -278,6 +284,14 @@ public sealed class ExpenseService : IExpenseService
 
     private Expense FindExpenseOrThrow(Guid id) =>
         _repository.GetExpenses().FirstOrThrow(e => e.Id == id, "Expense", id);
+
+    private void EnsureRefundIsNotFutureDated(decimal value, Account? creditCard, DateOnly date)
+    {
+        if (creditCard is not null && value < 0 && date > _timeProvider.GetLocalToday())
+        {
+            throw new ArgumentException(FutureRefundDateMessage);
+        }
+    }
 
     private void EnsurePaidStatementLocksHold(Expense expense, ExpenseUpdateDTO request, Account? paymentSource, Account? creditCard)
     {

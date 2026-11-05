@@ -35,7 +35,7 @@
 
 **11. Refund action and server checks** - Add the Add refund action for active cards, refuse a future-dated negative card charge, and give negative card charges their own row kind. See spec §3 "Add refund", "Refund validation" and "Refund rows".
 
-**12. Refund mode** - Open the expense form in refund mode from Add refund and from Edit on a refund row, entering a positive amount saved as a negative charge, with the refund title, validation, default date and toasts, and label refund rows "Refund".
+**12. Refund mode** - Open the expense form in refund mode from Add refund and from Edit on a refund row, entering a positive amount saved as a negative charge, with the refund title, validation, default date and toasts, label refund rows "Refund", and make the Move form say "refund" with the amount positive.
 
 **13. Stage 3 verification** - Run the suites and the parity run, `/simplify`, the architecture-reviewer and the ui-reviewer, then push and open the PR.
 

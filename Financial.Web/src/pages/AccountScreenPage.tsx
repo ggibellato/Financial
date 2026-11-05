@@ -228,6 +228,7 @@ export default function AccountScreenPage() {
             banks={formOptions.options.banks}
             categories={formOptions.options.categories}
             creditCards={NO_CREDIT_CARDS}
+            isRefund={expenseForm.isRefund}
             isSettled={expenseForm.isSettled}
             isSaving={expenseForm.isSaving}
             lockedBank={lockedBank}

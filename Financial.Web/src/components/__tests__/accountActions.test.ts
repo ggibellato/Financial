@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AccountTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { deleteConfirmation, deletedMessage, isOlderIncomeLine, kindLabel, operationPath, recordNoun, recordTitle } from '../accountActions'
+import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, operationPath, recordNoun, recordTitle } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -39,6 +39,31 @@ describe('pot transaction wording', () => {
     expect(kindLabel('PotTransaction')).toBe('Pot transaction')
     expect(recordNoun('PotTransaction')).toBe('pot transaction')
     expect(recordTitle('PotTransaction')).toBe('Pot transaction')
+  })
+})
+
+describe('refund wording', () => {
+  const REFUND = accountTransactionRow({ id: 'r1', kind: 'CardRefund', date: '2026-10-08', description: 'Shoes returned', amount: 40, canEdit: true })
+
+  it('offers Add refund as a form action', () => {
+    expect(formActionsOf(['AddCharge', 'AddRefund'])).toEqual(['AddCharge', 'AddRefund'])
+    expect(ACTION_LABELS.AddRefund).toBe('Add refund')
+  })
+
+  it('labels a refund row Refund', () => {
+    expect(kindLabel('CardRefund')).toBe('Refund')
+    expect(recordNoun('CardRefund')).toBe('refund')
+  })
+
+  it('names the refund in the delete confirmation and message', () => {
+    expect(deleteConfirmation(REFUND)).toBe('Delete this refund? This cannot be undone.')
+    expect(deletedMessage(REFUND)).toBe('Refund deleted')
+  })
+
+  it('lets a refund move to a later statement like a charge', () => {
+    expect(canMoveToStatement(REFUND)).toBe(true)
+    expect(canMoveToStatement({ ...REFUND, kind: 'CardCharge' })).toBe(true)
+    expect(canMoveToStatement({ ...REFUND, kind: 'Expense' })).toBe(false)
   })
 })
 

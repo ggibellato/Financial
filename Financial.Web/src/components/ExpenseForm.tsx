@@ -4,7 +4,9 @@ import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
+import { todayIsoDate } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -37,6 +39,7 @@ interface ExpenseFormProps {
   banks: BankDto[]
   categories: CategoryDto[]
   creditCards: CreditCardDto[]
+  isRefund?: boolean
   isSettled: boolean
   isSaving: boolean
   lockedBank?: LockedBank
@@ -64,6 +67,7 @@ export default function ExpenseForm({
   banks,
   categories,
   creditCards,
+  isRefund = false,
   isSettled,
   isSaving,
   lockedBank,
@@ -77,16 +81,19 @@ export default function ExpenseForm({
   const styles = useFormPanelStyles()
   const [openedPaymentSource] = useState(paymentSource)
   const fieldError = useFieldError(saveErrorFields)
+  const hasFieldErrors = Object.keys(saveErrorFields).length > 0
+  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
   const settledCardName = creditCardName || creditCards.find((card) => card.id === creditCardId)?.name || creditCardId
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
-  const noun = lockedCard ? 'Charge' : 'Expense'
+  const noun = isRefund ? 'Refund' : lockedCard ? 'Charge' : 'Expense'
 
   return (
     <form
+      ref={formRef}
       className={styles.panel}
       noValidate
       onSubmit={(event) => {
@@ -98,8 +105,8 @@ export default function ExpenseForm({
         <Text as="h2" weight="semibold" size={400}>
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
-        {Object.keys(saveErrorFields).length === 0 && saveError && (
-          <MessageBar intent="error">
+        {!hasFieldErrors && saveError && (
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -112,7 +119,13 @@ export default function ExpenseForm({
             validationState={fieldError('date') ? 'error' : 'none'}
             validationMessage={fieldError('date')}
           >
-            <Input type="date" value={date} readOnly={isSettled} onChange={(e) => onFieldChange('date', e.target.value)} />
+            <Input
+              type="date"
+              value={date}
+              max={isRefund ? todayIsoDate() : undefined}
+              readOnly={isSettled}
+              onChange={(e) => onFieldChange('date', e.target.value)}
+            />
           </Field>
 
           <Field
@@ -175,7 +188,7 @@ export default function ExpenseForm({
           )}
 
           <Field
-            label="Value"
+            label={isRefund ? 'Amount' : 'Value'}
             required={!isSettled}
             hint={isSettled ? SETTLED_FIELD_HINT : undefined}
             validationState={fieldError('value') ? 'error' : 'none'}
@@ -184,6 +197,7 @@ export default function ExpenseForm({
             <Input
               type="number"
               step="0.01"
+              min={isRefund ? 0.01 : undefined}
               value={value}
               readOnly={isSettled}
               onChange={(e) => onFieldChange('value', e.target.value)}
@@ -238,7 +252,7 @@ export default function ExpenseForm({
         </div>
 
         <div className={styles.actions}>
-          <Button type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
+          <Button ref={saveRef} type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
             {isSaving ? 'Saving...' : isEditing ? 'Save' : `Add ${noun}`}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>

@@ -24,6 +24,7 @@ public class ExpenseServiceTests
 
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
+    private readonly TimeProvider _clock = TestClock.At(new DateTimeOffset(2026, 11, 5, 12, 0, 0, TimeSpan.Zero));
     private readonly FakeCreditCardCalendarSyncService _calendarSyncTrigger = new();
     private readonly ExpenseService _sut;
 
@@ -41,7 +42,76 @@ public class ExpenseServiceTests
     private ExpenseService CreateService(
         StubCashFlowRepository? repository = null,
         Microsoft.Extensions.Logging.ILogger<ExpenseService>? logger = null) =>
-        new(repository ?? _repository, _tracer, logger ?? Logger, _calendarSyncTrigger);
+        new(repository ?? _repository, _clock, _tracer, logger ?? Logger, _calendarSyncTrigger);
+
+    [Fact]
+    public async Task AddExpenseAsync_NegativeCardChargeDatedAfterToday_ThrowsWithoutSaving()
+    {
+        var act = () => _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 11, 1)) with { Date = new DateOnly(2026, 11, 6), Value = -40m }));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.AddExpense");
+        }
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_NegativeCardChargeDatedToday_IsSaved()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 11, 1)) with { Date = new DateOnly(2026, 11, 5), Value = -40m }));
+
+        added.Value.Should().Be(-40m);
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_PositiveCardChargeDatedAfterToday_IsSaved()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 11, 1)) with { Date = new DateOnly(2026, 11, 6), Value = 40m }));
+
+        added.Value.Should().Be(40m);
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_NegativeCardChargeMovedAfterToday_ThrowsAndKeepsItsDate()
+    {
+        var request = CardExpenseRequest(new DateOnly(2026, 11, 1)) with { Date = new DateOnly(2026, 11, 3), Value = -40m };
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, request));
+
+        var act = () => _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request with { Date = new DateOnly(2026, 11, 6) }));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Single(e => e.Id == added.Id).Date.Should().Be(new DateOnly(2026, 11, 3));
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.UpdateExpense");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateExpenseAsync_FutureCardChargeTurnedNegative_Throws()
+    {
+        var request = CardExpenseRequest(new DateOnly(2026, 11, 1)) with { Date = new DateOnly(2026, 11, 6), Value = 40m };
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, request));
+
+        var act = () => _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request with { Value = -40m }));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Single(e => e.Id == added.Id).Value.Should().Be(40m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.UpdateExpense");
+        }
+    }
+
+    [Fact]
+    public async Task AddExpenseAsync_NegativeBankExpenseDatedAfterToday_IsNotRefusedAsARefund()
+    {
+        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { Date = new DateOnly(2026, 11, 6), Value = -40m }));
+
+        added.Value.Should().Be(-40m);
+    }
 
     [Fact]
     public async Task AddExpenseAsync_CardExpense_ChecksItsInvoiceForCalendarSync()

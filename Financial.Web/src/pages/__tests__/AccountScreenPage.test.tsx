@@ -2095,6 +2095,142 @@ describe('AccountScreenPage card screen', () => {
     expect(await screen.findByText('Charge updated')).toBeInTheDocument()
   })
 
+  describe('refunds', () => {
+    const SHOES = { ...TAXI, id: 'r1', description: 'Shoes returned', value: -40, date: '2026-10-08', chargeDate: '2026-10-08' }
+    const REFUND_ROWS = [
+      ...CARD_ROWS,
+      accountTransactionRow({ id: 'r1', kind: 'CardRefund', date: '2026-10-08', description: 'Shoes returned', amount: 40, canEdit: true, expense: SHOES }),
+    ]
+
+    it('[AC P60-F15-card-refunds-and-credit-01] adds a refund from a positive amount, saved negative, and stays open for the next one', async () => {
+      const user = userEvent.setup()
+      withActions(['AddCharge', 'AddRefund'])
+      createExpenseMock.mockResolvedValue({ ...SHOES, id: 'r2' })
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      await user.click(await screen.findByRole('button', { name: 'Add refund' }))
+      const form = screen.getByRole('heading', { name: 'New Refund' }).closest('form') as HTMLElement
+      expect(within(form).getByText('BA Amex')).toBeInTheDocument()
+      expect(within(form).getByLabelText(/^Date/)).toHaveValue('2026-10-15')
+      expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
+      await user.type(within(form).getByLabelText(/^Description/), 'Shoes returned')
+      await user.type(within(form).getByLabelText(/^Amount/), '40')
+      await user.click(within(form).getByRole('button', { name: 'Add Refund' }))
+
+      await waitFor(() =>
+        expect(createExpenseMock).toHaveBeenCalledWith(
+          expect.objectContaining({ date: '2026-10-15', description: 'Shoes returned', value: -40, creditCardId: AMEX_ID, paymentSourceBankId: null, invoiceDate: '2026-10-01' }),
+        ),
+      )
+      expect(await screen.findByText('Refund added')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'New Refund' })).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
+    })
+
+    it('blocks a refund with no amount, showing the message on the focused field', async () => {
+      const user = userEvent.setup()
+      withActions(['AddRefund'])
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      await user.click(await screen.findByRole('button', { name: 'Add refund' }))
+      const form = screen.getByRole('heading', { name: 'New Refund' }).closest('form') as HTMLElement
+      await user.type(within(form).getByLabelText(/^Description/), 'Shoes returned')
+      await user.click(within(form).getByRole('button', { name: 'Add Refund' }))
+
+      expect(await within(form).findByText('Amount must be greater than zero.')).toBeInTheDocument()
+      expect(within(form).getByLabelText(/^Amount/)).toHaveFocus()
+      expect(createExpenseMock).not.toHaveBeenCalled()
+    })
+
+    it('labels a refund row Refund with a positive amount and opens Edit in refund mode', async () => {
+      const user = userEvent.setup()
+      getAccountTransactionsMock.mockResolvedValue(REFUND_ROWS)
+      updateExpenseMock.mockResolvedValue({ ...SHOES, value: -55 })
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      const row = (await screen.findByText('Shoes returned')).closest('tr') as HTMLElement
+      expect(within(row).getByText('Refund')).toBeInTheDocument()
+      expect(within(row).getByText('+40.00')).toBeInTheDocument()
+      expect(within(row).getByRole('button', { name: 'Move refund to a later statement' })).toBeInTheDocument()
+
+      await user.click(within(row).getByRole('button', { name: 'Edit refund' }))
+      const form = screen.getByRole('heading', { name: 'Edit Refund' }).closest('form') as HTMLElement
+      expect(within(form).getByLabelText(/^Amount/)).toHaveValue(40)
+      await user.clear(within(form).getByLabelText(/^Amount/))
+      await user.type(within(form).getByLabelText(/^Amount/), '55')
+      await user.click(within(form).getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(updateExpenseMock).toHaveBeenCalledWith('r1', expect.objectContaining({ value: -55, creditCardId: AMEX_ID })))
+      expect(await screen.findByText('Refund updated')).toBeInTheDocument()
+    })
+
+    const openMoveRefund = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(await screen.findByRole('button', { name: 'Move refund to a later statement' }))
+      return screen.getByRole('heading', { name: 'Move refund to a later statement' }).closest('form') as HTMLElement
+    }
+
+    const moveToDecember = async (user: ReturnType<typeof userEvent.setup>, form: HTMLElement) => {
+      const statement = within(form).getByLabelText(/^Statement/)
+      await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
+      await user.selectOptions(statement, '2026-12')
+      await user.click(within(form).getByRole('button', { name: 'Move refund' }))
+    }
+
+    it('moves a refund with refund wording and the positive amount the grid shows', async () => {
+      const user = userEvent.setup()
+      getAccountTransactionsMock.mockResolvedValue(REFUND_ROWS)
+      moveChargeToStatementMock.mockResolvedValue({ ...SHOES, invoiceDate: '2026-12-01' })
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      const form = await openMoveRefund(user)
+      expect(within(form).getByText('Shoes returned (08/10/2026, 40.00) is on the October 2026 statement.')).toBeInTheDocument()
+      await moveToDecember(user, form)
+
+      expect(moveChargeToStatementMock).toHaveBeenCalledWith('r1', { year: 2026, month: 12 })
+      expect(await screen.findByText('Refund moved')).toBeInTheDocument()
+    })
+
+    it('says the refund failed to move when the failure has no server message', async () => {
+      const user = userEvent.setup()
+      getAccountTransactionsMock.mockResolvedValue(REFUND_ROWS)
+      moveChargeToStatementMock.mockRejectedValue('no message')
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      const form = await openMoveRefund(user)
+      await moveToDecember(user, form)
+
+      expect(await within(form).findByText('Failed to move the refund')).toBeInTheDocument()
+      expect(screen.queryByText('Refund moved')).not.toBeInTheDocument()
+    })
+
+    it('asks before discarding a typed refund when another action opens', async () => {
+      const user = userEvent.setup()
+      withActions(['AddCharge', 'AddRefund'])
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      await user.click(await screen.findByRole('button', { name: 'Add refund' }))
+      await user.type(screen.getByLabelText(/^Amount/), '40')
+      await user.click(screen.getByRole('button', { name: 'Add charge' }))
+
+      await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
+      expect(screen.getByRole('heading', { name: 'New Refund' })).toBeInTheDocument()
+      expect(screen.getByLabelText(/^Amount/)).toHaveValue(40)
+    })
+
+    it('deletes a refund after confirming with its own wording', async () => {
+      const user = userEvent.setup()
+      getAccountTransactionsMock.mockResolvedValue(REFUND_ROWS)
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      await user.click(await screen.findByRole('button', { name: 'Delete refund' }))
+      getAccountTransactionsMock.mockResolvedValue(CARD_ROWS)
+      await user.click(await dialogButton('Delete refund', 'Delete'))
+
+      expect(deleteExpenseMock).toHaveBeenCalledWith('r1')
+      expect(await screen.findByText('Refund deleted')).toBeInTheDocument()
+    })
+  })
+
   it('[AC P60-F08-statement-payment-and-card-screen-07] moves a charge to a later unpaid statement and focuses the Transactions heading', async () => {
     const user = userEvent.setup()
     moveChargeToStatementMock.mockResolvedValue({ ...TAXI, invoiceDate: '2026-12-01' })

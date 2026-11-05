@@ -1,6 +1,6 @@
 import { useRef } from 'react'
 import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
-import { currentStatementLabel, type MoveChargeFormState } from '../hooks/useMoveChargeForm'
+import { currentStatementLabel, moveRecordNoun, type MoveChargeFormState } from '../hooks/useMoveChargeForm'
 import { formatN2, formatShortDateUtc } from '../utils/formatters'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -20,6 +20,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
 
   if (!form) return null
   const { charge } = form
+  const noun = moveRecordNoun(charge)
 
   return (
     <form
@@ -33,10 +34,10 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
     >
       <fieldset disabled={form.isSaving} className={styles.savingFieldset}>
         <Text as="h2" id="move-charge-title" weight="semibold" size={400}>
-          Move charge to a later statement
+          {`Move ${noun} to a later statement`}
         </Text>
         <Text as="p">
-          {`${charge.description} (${formatShortDateUtc(charge.chargeDate ?? charge.date)}, ${formatN2(charge.value)}) is on the ${currentStatementLabel(charge.invoiceDate)} statement.`}
+          {`${charge.description} (${formatShortDateUtc(charge.chargeDate ?? charge.date)}, ${formatN2(Math.abs(charge.value))}) is on the ${currentStatementLabel(charge.invoiceDate)} statement.`}
         </Text>
         {form.error && (
           <MessageBar intent="error">
@@ -75,7 +76,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
             disabled={form.isSaving || hasNoTargets}
             icon={form.isSaving ? <Spinner size="tiny" /> : undefined}
           >
-            {form.isSaving ? 'Saving...' : 'Move charge'}
+            {form.isSaving ? 'Saving...' : `Move ${noun}`}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>
             Cancel

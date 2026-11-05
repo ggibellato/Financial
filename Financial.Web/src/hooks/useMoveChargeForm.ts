@@ -45,6 +45,10 @@ export function currentStatementLabel(invoiceDate: string | null | undefined): s
   return current ? formatLongMonthYear(current.year, current.month) : ''
 }
 
+export function moveRecordNoun(charge: ExpenseDto): 'charge' | 'refund' {
+  return charge.value < 0 ? 'refund' : 'charge'
+}
+
 export function useMoveChargeForm(onMoved: (message: string) => void) {
   const [form, setForm] = useState<MoveForm | null>(null)
   const cardId = form?.charge.creditCardId ?? null
@@ -66,15 +70,16 @@ export function useMoveChargeForm(onMoved: (message: string) => void) {
       return false
     }
 
+    const noun = moveRecordNoun(form.charge)
     setForm({ ...form, isSaving: true, error: null })
     apiClient
       .moveChargeToStatement(form.charge.id, target)
       .then(() => {
         setForm(null)
-        onMoved('Charge moved')
+        onMoved(noun === 'refund' ? 'Refund moved' : 'Charge moved')
       })
       .catch((err: unknown) => {
-        setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to move the charge') })
+        setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, `Failed to move the ${noun}`) })
         void statements.refresh()
       })
     return true

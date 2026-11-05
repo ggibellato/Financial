@@ -4,6 +4,7 @@ public enum AccountAction
 {
     AddExpense,
     AddCharge,
+    AddRefund,
     AddIncome,
     TransferTo,
     TransferFrom,

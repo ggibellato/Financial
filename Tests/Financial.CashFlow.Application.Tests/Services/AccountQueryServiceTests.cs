@@ -499,6 +499,66 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetTransactions_NegativeCardCharge_IsACardRefundWithAPositiveAmount()
+    {
+        _repository.Accounts.Add(_amex);
+        var charge = Expense.Create(new DateOnly(2026, 10, 3), "Shoes", 70m, _groceries, null, _amex);
+        var refund = Expense.Create(new DateOnly(2026, 10, 8), "Shoes returned", -40m, _groceries, null, _amex);
+        _repository.Expenses.AddRange([charge, refund]);
+
+        var rows = _sut.GetTransactions(_amex.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            var refundRow = rows.Single(row => row.Id == refund.Id);
+            refundRow.Kind.Should().Be("CardRefund");
+            refundRow.Amount.Should().Be(40m);
+            refundRow.CanEdit.Should().BeTrue();
+            refundRow.Expense!.Value.Should().Be(-40m);
+            rows.Single(row => row.Id == charge.Id).Kind.Should().Be("CardCharge");
+        }
+    }
+
+    private void AddSettledRefund()
+    {
+        _repository.Accounts.Add(_amex);
+        var refund = Expense.Create(new DateOnly(2026, 10, 8), "Shoes returned", -40m, _groceries, null, _amex);
+        _repository.Expenses.Add(refund);
+        refund.Settle(_barclays, new DateOnly(2026, 10, 20));
+    }
+
+    [Fact]
+    public void GetTransactions_RefundOnAPaidStatement_IsACardRefundThatCannotBeEdited()
+    {
+        AddSettledRefund();
+
+        var row = _sut.GetTransactions(_amex.Id, 2026, 10).Single();
+
+        using (new AssertionScope())
+        {
+            row.Kind.Should().Be("CardRefund");
+            row.Amount.Should().Be(40m);
+            row.CanEdit.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_SettledRefundOnItsBank_IsACardRefundNamingTheCard()
+    {
+        AddSettledRefund();
+
+        var row = _sut.GetTransactions(_barclays.Id, 2026, 10).Single();
+
+        using (new AssertionScope())
+        {
+            row.Kind.Should().Be("CardRefund");
+            row.Amount.Should().Be(40m);
+            row.Counterpart.Should().Be("Amex");
+            row.CanEdit.Should().BeFalse();
+        }
+    }
+
+    [Fact]
     public void GetTransactions_CardStatementPaid_ChargesAreReadOnly()
     {
         _repository.Accounts.Add(_amex);
@@ -699,7 +759,7 @@ public class AccountQueryServiceTests
 
         using (new AssertionScope())
         {
-            detail.AllowedActions.Should().Equal("AddCharge");
+            detail.AllowedActions.Should().Equal("AddCharge", "AddRefund");
             detail.Balance.Should().Be(-39m);
             detail.BalanceIsOwed.Should().BeTrue();
             detail.HasStatements.Should().BeTrue();
