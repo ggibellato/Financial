@@ -21,14 +21,14 @@ import {
 import type { AccountStatementDto } from '../api/types'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
-import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
+import { formatCurrency, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { nothingDueText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
+import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
 
 interface StatementColumn {
@@ -104,11 +104,8 @@ function monthOf(statement: AccountStatementDto): string {
 }
 
 function statusOf(statement: AccountStatementDto): string {
-  if (statement.status === UNPAID_STATEMENT_STATUS) return UNPAID_STATEMENT_STATUS
-  if (!statement.isPaid) return nothingDueText(statement.creditCarried)
-  if (!statement.paidOn) return 'Paid'
-  const paidOn = formatDayMonthYearUtc(statement.paidOn)
-  return statement.paidFromAccountName ? `Paid ${paidOn} from ${statement.paidFromAccountName}` : `Paid ${paidOn}`
+  const status = statementStatusText(statement)
+  return statement.isPaid && statement.paidOn && statement.paidFromAccountName ? `${status} from ${statement.paidFromAccountName}` : status
 }
 
 interface PayStatementFormProps {
@@ -254,7 +251,7 @@ export default function CardStatementsTab({
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <>
-          {payForm && <PayStatementForm payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelPayForm} />}
+          {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelPayForm} />}
           <div className="account-screen__grid-scroll">
             <Table className="data-table" aria-label="Statements">
               <TableHeader>
@@ -309,28 +306,31 @@ export default function CardStatementsTab({
                             {column.render(statement, viewed)}
                           </DataTableCell>
                         ))}
-                        <DataTableCell label="Actions" className="data-table__col--action-wide">
-                          {canAct && isStoredStatement(statement) && statement.isPaid && (
-                            <Button aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
-                              Unmark
-                            </Button>
-                          )}
-                          {canAct && isStoredStatement(statement) && statement.status === UNPAID_STATEMENT_STATUS && (
-                            <Button
-                              appearance="primary"
-                              aria-label={`Pay ${month} statement`}
-                              onClick={(event) => {
-                                const button = event.currentTarget
-                                guardChange(() => {
-                                  payOpenerRef.current = button
-                                  openPayForm(statement)
-                                })
-                              }}
-                            >
-                              Pay
-                            </Button>
-                          )}
-                        </DataTableCell>
+                        <TableCell className="data-table__col--action-wide">
+                          {canAct &&
+                            isStoredStatement(statement) &&
+                            (statement.isPaid ? (
+                              <Button appearance="primary" aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
+                                Unmark
+                              </Button>
+                            ) : (
+                              statement.status === UNPAID_STATEMENT_STATUS && (
+                                <Button
+                                  appearance="primary"
+                                  aria-label={`Pay ${month} statement`}
+                                  onClick={(event) => {
+                                    const button = event.currentTarget
+                                    guardChange(() => {
+                                      payOpenerRef.current = button
+                                      openPayForm(statement)
+                                    })
+                                  }}
+                                >
+                                  Pay
+                                </Button>
+                              )
+                            ))}
+                        </TableCell>
                       </TableRow>
                     )
                   })

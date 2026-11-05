@@ -382,6 +382,7 @@ public class CardStatementServiceTests
             statement.IsPaid.Should().BeFalse();
             _repository.Transfers.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
         }
     }
 

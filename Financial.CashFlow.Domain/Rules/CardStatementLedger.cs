@@ -31,6 +31,7 @@ public sealed record CardStatementLedgerMonth(
 public static class CardStatementLedger
 {
     private const int MonthsPerYear = 12;
+    private const int NoThroughMonth = int.MinValue;
 
     public static IReadOnlyList<CardStatementLedgerMonth> For(
         Account card,
@@ -52,7 +53,7 @@ public static class CardStatementLedger
 
     public static CardStatementLedgerMonth? NextToPay(
         Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers) =>
-        Walk(card, expenses, statements, transfers, throughIndex: int.MinValue).FirstOrDefault(row => row.IsUnpaid);
+        Walk(card, expenses, statements, transfers, NoThroughMonth).FirstOrDefault(row => row.IsUnpaid);
 
     private static List<CardStatementLedgerMonth> Walk(
         Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers, int throughIndex)
@@ -64,14 +65,14 @@ public static class CardStatementLedger
         if (chargesByMonth.Count == 0)
             return rows;
 
-        var cardStatements = statements.Where(statement => statement.CreditCard.Id == card.Id).ToList();
+        var statementList = statements.ToList();
         var transferList = transfers.ToList();
         var lastIndex = Math.Max(chargesByMonth.Max(group => group.Key), throughIndex);
         var creditIn = 0m;
 
         for (var index = chargesByMonth.Min(group => group.Key); index <= lastIndex; index++)
         {
-            var row = MonthRow(index / MonthsPerYear, index % MonthsPerYear + 1, cardStatements, chargesByMonth[index].ToList(), transferList, creditIn);
+            var row = MonthRow(card, index / MonthsPerYear, index % MonthsPerYear + 1, statementList, chargesByMonth[index], transferList, creditIn);
             rows.Add(row);
             creditIn = row.CreditCarried;
         }
@@ -80,9 +81,9 @@ public static class CardStatementLedger
     }
 
     private static CardStatementLedgerMonth MonthRow(
-        int year, int month, List<CardStatement> statements, List<Expense> charges, List<Transfer> transfers, decimal creditIn)
+        Account card, int year, int month, List<CardStatement> statements, IEnumerable<Expense> charges, List<Transfer> transfers, decimal creditIn)
     {
-        var statement = statements.FirstOrDefault(candidate => candidate.Year == year && candidate.Month == month);
+        var statement = statements.FirstOrDefault(candidate => candidate.IsFor(card.Id, year, month));
         var total = charges.Sum(charge => charge.Value);
         var counted = SumWithStatus(charges, ExpensePaymentStatus.CreditCardCharge);
 

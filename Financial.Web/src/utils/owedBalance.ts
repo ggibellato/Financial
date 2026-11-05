@@ -1,8 +1,10 @@
-import { formatN2 } from './formatters'
+import type { AccountStatementDto } from '../api/types'
+import { formatDayMonthYearUtc, formatN2 } from './formatters'
 
 const OWED_LABEL = 'Owed'
 
 export const UNPAID_STATEMENT_STATUS = 'Unpaid'
+const NOTHING_DUE_STATEMENT_STATUS = 'NothingDue'
 
 export function balanceLabel(balanceIsOwed: boolean): string {
   return balanceIsOwed ? OWED_LABEL : 'Balance'
@@ -24,4 +26,10 @@ export function formatOwedOrCredit(totalOwed: number): string {
 
 export function nothingDueText(creditCarried: number): string {
   return creditCarried > 0 ? `Nothing due · ${formatN2(creditCarried)} credit carried` : 'Nothing due'
+}
+
+export function statementStatusText(statement: AccountStatementDto): string {
+  if (statement.status === UNPAID_STATEMENT_STATUS) return 'Unpaid'
+  if (statement.status === NOTHING_DUE_STATEMENT_STATUS) return nothingDueText(statement.creditCarried)
+  return statement.paidOn ? `Paid ${formatDayMonthYearUtc(statement.paidOn)}` : 'Paid'
 }

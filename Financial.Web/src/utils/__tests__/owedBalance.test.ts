@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { balanceLabel, formatLabelledBalance, formatOwedOrCredit, formatShownBalance, nothingDueText } from '../owedBalance'
+import type { AccountStatementDto } from '../../api/types'
+import { balanceLabel, formatLabelledBalance, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText } from '../owedBalance'
 
 describe('owedBalance', () => {
   it('labels an owed balance "Owed" and any other "Balance"', () => {
@@ -35,6 +36,19 @@ describe('formatOwedOrCredit', () => {
   it('shows nothing owed as 0.00, never -0.00', () => {
     expect(formatOwedOrCredit(0)).toBe('0.00')
     expect(formatOwedOrCredit(-0)).toBe('0.00')
+  })
+})
+
+describe('statementStatusText', () => {
+  const statement = (overrides: Partial<AccountStatementDto>): AccountStatementDto => ({
+    id: 's1', year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, ...overrides,
+  })
+
+  it('names each status', () => {
+    expect(statementStatusText(statement({ status: 'Unpaid' }))).toBe('Unpaid')
+    expect(statementStatusText(statement({ creditCarried: 35 }))).toBe('Nothing due · 35.00 credit carried')
+    expect(statementStatusText(statement({ status: 'Paid', isPaid: true, paidOn: '2026-11-12' }))).toBe('Paid 12 Nov 2026')
+    expect(statementStatusText(statement({ status: 'Paid', isPaid: true }))).toBe('Paid')
   })
 })
 

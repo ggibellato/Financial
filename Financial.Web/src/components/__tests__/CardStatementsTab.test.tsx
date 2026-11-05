@@ -119,6 +119,22 @@ describe('CardStatementsTab', () => {
     expect(screen.queryByRole('button', { name: /^Unmark / })).not.toBeInTheDocument()
   })
 
+  it('shows no empty Actions label on a row with no action', () => {
+    renderTab({ statements: [NOVEMBER] })
+
+    expect(screen.queryByText(/^Actions/)).not.toBeInTheDocument()
+  })
+
+  it('moves focus to the Bank field when Pay opens on another statement', () => {
+    const payFormFor = (statement: StoredStatement) => ({ statement, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} })
+    const statements = renderTab({ payForm: payFormFor(OCTOBER) })
+    screen.getByLabelText(/^Date/).focus()
+
+    statements.rerenderWith({ payForm: payFormFor({ ...OCTOBER, id: 's-dec', month: 12 }) })
+
+    expect(screen.getByLabelText(/^Bank/)).toHaveFocus()
+  })
+
   it('offers no Pay on an unpaid row with no stored statement', () => {
     renderTab({ statements: [{ ...OCTOBER, id: null }] })
 

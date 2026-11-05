@@ -2,8 +2,8 @@ import { useMemo } from 'react'
 import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../api/types'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
-import { formatDayMonthYearUtc, formatLongMonthYear, formatN2 } from '../utils/formatters'
-import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
+import { formatLongMonthYear, formatN2 } from '../utils/formatters'
+import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
@@ -26,11 +26,26 @@ function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][]
   return [...groups.entries()]
 }
 
-function viewedStatementFigure(statement: AccountStatementDto | null): { amount: number; status: string } {
-  if (!statement) return { amount: 0, status: nothingDueText(0) }
-  if (statement.status === UNPAID_STATEMENT_STATUS) return { amount: statement.outstandingTotal, status: UNPAID_STATEMENT_STATUS }
-  if (!statement.isPaid) return { amount: 0, status: nothingDueText(statement.creditCarried) }
-  return { amount: statement.paidAmount ?? 0, status: statement.paidOn ? `Paid ${formatDayMonthYearUtc(statement.paidOn)}` : 'Paid' }
+function viewedStatementAmount(statement: AccountStatementDto | null): number {
+  if (statement?.status === UNPAID_STATEMENT_STATUS) return statement.outstandingTotal
+  return statement?.paidAmount ?? 0
+}
+
+function firstFigure(account: AccountDetailDto): { label: string; amount: string; status: string | null } {
+  const viewedMonth = formatLongMonthYear(account.year, account.month)
+  if (!account.hasStatements) {
+    return {
+      label: `${balanceLabel(account.balanceIsOwed)} at end of ${viewedMonth}`,
+      amount: formatShownBalance(account.balance, account.balanceIsOwed),
+      status: null,
+    }
+  }
+  const statement = account.viewedStatement
+  return {
+    label: `${viewedMonth} statement`,
+    amount: formatN2(viewedStatementAmount(statement)),
+    status: statement ? statementStatusText(statement) : nothingDueText(0),
+  }
 }
 
 export default function AccountHeader({
@@ -45,8 +60,7 @@ export default function AccountHeader({
   const pickerGroups = useMemo(() => groupActiveByTemplate(accounts), [accounts])
   const selectedName =
     accounts.find((candidate) => candidate.id.toLowerCase() === selectedAccountId.toLowerCase())?.name ?? account.name
-  const viewedMonth = formatLongMonthYear(account.year, account.month)
-  const statementFigure = viewedStatementFigure(account.viewedStatement)
+  const figure = firstFigure(account)
 
   return (
     <header className="account-screen__header" aria-busy={isBusy}>
@@ -67,24 +81,13 @@ export default function AccountHeader({
           </Text>
         </div>
 
-        {account.hasStatements ? (
-          <div className="account-screen__balance">
-            <Text size={200}>{viewedMonth} statement</Text>
-            <Text size={500} weight="semibold">
-              {formatN2(statementFigure.amount)} {account.currency}
-            </Text>
-            <Text size={200}>{statementFigure.status}</Text>
-          </div>
-        ) : (
-          <div className="account-screen__balance">
-            <Text size={200}>
-              {balanceLabel(account.balanceIsOwed)} at end of {viewedMonth}
-            </Text>
-            <Text size={500} weight="semibold">
-              {formatShownBalance(account.balance, account.balanceIsOwed)} {account.currency}
-            </Text>
-          </div>
-        )}
+        <div className="account-screen__balance">
+          <Text size={200}>{figure.label}</Text>
+          <Text size={500} weight="semibold">
+            {figure.amount} {account.currency}
+          </Text>
+          {figure.status && <Text size={300}>{figure.status}</Text>}
+        </div>
 
         {account.totalOwed !== null && (
           <div className="account-screen__balance">

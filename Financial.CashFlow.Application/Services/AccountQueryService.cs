@@ -165,8 +165,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var transfers = _repository.GetTransfers().ToList();
             var today = _timeProvider.GetLocalToday();
 
-            var result = _repository.GetAccounts()
-                .Where(account => account.Has(Capability.HasStatements))
+            var result = _repository.GetCreditCardAccounts()
                 .SelectMany(card => CardStatementLedger.For(card, expenses, statements, transfers, today.Year, today.Month))
                 .Where(row => row is { IsUnpaid: true, Statement: not null })
                 .Select(row => ToPayableDto(row.Statement!, row.AmountToPay))
