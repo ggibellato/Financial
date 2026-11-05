@@ -602,67 +602,120 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public void GetOutstandingTotalForPeriod_WithMatchingCharges_SumsThemAndReportsChargesPosted()
+    public void GetStatementsForMonth_StatementWithCreditFromAnEarlierMonth_OutstandingIsTheAmountToPay()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 3), new DateOnly(2026, 8, 1), -35m, card);
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 50m, card);
+        SeedStatement(card, 2026, 9);
+
+        var result = _sut.GetStatementsForMonth(2026, 9);
+
+        result.Should().ContainSingle(s => s.OutstandingTotal == 15m && !s.IsPaid);
+    }
+
+    [Fact]
+    public void GetStatementsForMonth_RefundLargerThanTheCharges_OutstandingIsZero()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 25m, card);
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 8), new DateOnly(2026, 9, 1), -60m, card);
+        SeedStatement(card, 2026, 9);
+
+        var result = _sut.GetStatementsForMonth(2026, 9);
+
+        using (new AssertionScope())
+        {
+            result.Should().ContainSingle(s => s.OutstandingTotal == 0m && !s.IsPaid);
+            result[0].AccumulatedOutstandingTotal.Should().Be(-35m);
+        }
+    }
+
+    [Fact]
+    public void GetStatementsForMonth_StoredStatementBeforeTheFirstCharge_OutstandingIsZero()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 25m, card);
+        SeedStatement(card, 2026, 7);
+
+        var result = _sut.GetStatementsForMonth(2026, 7);
+
+        result.Should().ContainSingle(s => s.OutstandingTotal == 0m);
+    }
+
+    [Fact]
+    public void GetAmountDueForPeriod_UnpaidMonth_IsTheAmountToPayAfterCredit()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 3), new DateOnly(2026, 8, 1), -35m, card);
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 40m, card);
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 2), new DateOnly(2026, 9, 10), 15.5m, card);
 
-        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
-
-        total.Should().Be(55.5m);
-        hasChargesPosted.Should().BeTrue();
+        _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().Be(20.5m);
     }
 
     [Fact]
-    public void GetOutstandingTotalForPeriod_WithNoMatchingCharges_ReturnsZeroAndNoChargesPosted()
-    {
-        var card = Card(_repository, "BarclaysPlatinumVisa8003");
-
-        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
-
-        total.Should().Be(0m);
-        hasChargesPosted.Should().BeFalse();
-    }
-
-    [Fact]
-    public void GetOutstandingTotalForPeriod_DoesNotRequireAnExistingCardStatementRow()
+    public void GetAmountDueForPeriod_NoStoredStatement_StillComesFromTheCharges()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 20m, card);
+
+        _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().Be(20m);
         _repository.CardStatements.Should().BeEmpty();
-
-        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
-
-        total.Should().Be(20m);
-        hasChargesPosted.Should().BeTrue();
     }
 
     [Fact]
-    public void GetOutstandingTotalForPeriod_PaidStatement_ReturnsZeroAndNoChargesPosted()
+    public void GetAmountDueForPeriod_PaidStatement_IsZero()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 20m, card);
         SeedStatement(card, 2026, 9).MarkLegacyPaid();
 
-        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
-
-        total.Should().Be(0m);
-        hasChargesPosted.Should().BeFalse();
+        _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().Be(0m);
     }
 
     [Fact]
-    public void GetOutstandingTotalForPeriod_IgnoresChargesFromOtherPeriodsOrOtherCards()
+    public void GetAmountDueForPeriod_NothingDueMonths_AreNull()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 3), new DateOnly(2026, 8, 1), -35m, card);
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 20m, card);
+
+        using (new AssertionScope())
+        {
+            _sut.GetAmountDueForPeriod(card.Id, 2026, 7).Should().BeNull("July is before the card's first charge");
+            _sut.GetAmountDueForPeriod(card.Id, 2026, 8).Should().BeNull("the refund leaves August below zero");
+            _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().BeNull("the carried credit covers September");
+            _sut.GetAmountDueForPeriod(card.Id, 2026, 10).Should().BeNull("October has no charges");
+        }
+    }
+
+    [Fact]
+    public void GetAmountDueForPeriod_LeavesOutOtherCardsCharges()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
         var otherCard = Card(_repository, "BarclaysPlatinumVisa6007");
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 1), new DateOnly(2026, 8, 10), 99m, card);
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 99m, otherCard);
 
-        var (total, hasChargesPosted) = _sut.GetOutstandingTotalForPeriod(card.Id, 2026, 9);
+        _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().BeNull();
+    }
 
-        total.Should().Be(0m);
-        hasChargesPosted.Should().BeFalse();
+    [Fact]
+    public void GetAmountDueForPeriod_UnknownCard_IsNull()
+    {
+        _sut.GetAmountDueForPeriod(Guid.NewGuid(), 2026, 9).Should().BeNull();
+    }
+
+    [Fact]
+    public void GetAmountDueForPeriod_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
+    {
+        var card = Card(_repository, "BarclaysPlatinumVisa8003");
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = () => _sut.GetAmountDueForPeriod(card.Id, 2026, 9);
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.GetAmountDueForPeriod");
     }
 
     [Fact]

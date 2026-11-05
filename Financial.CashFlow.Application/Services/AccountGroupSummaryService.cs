@@ -89,13 +89,14 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
         var listedExpenses = expenses.Where(e => IsInMonth(e.ListingDate, year, month)).ToList();
         var statements = _repository.GetCardStatements().ToList();
+        var transfers = _repository.GetTransfers().ToList();
         return account => ToGroupMemberDto(
             account,
             endOfMonth,
             records,
             listedExpenses,
-            StatementFor(account, year, month, expenses, statements),
-            NextStatementFor(account, expenses, statements));
+            StatementFor(account, year, month, expenses, statements, transfers),
+            NextStatementFor(account, expenses, statements, transfers));
     }
 
     private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members) => new()
@@ -136,17 +137,22 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         };
 
     private static AccountNextStatementDTO? NextStatementFor(
-        Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>
-        account.Has(Capability.HasStatements) && CardChargeFilter.NextStatementToPay(expenses, statements, account) is { } next
-            ? new AccountNextStatementDTO { Year = next.Year, Month = next.Month, OutstandingTotal = next.OutstandingTotal }
+        Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements, IReadOnlyCollection<Transfer> transfers) =>
+        account.Has(Capability.HasStatements) && CardStatementLedger.NextToPay(account, expenses, statements, transfers) is { } next
+            ? new AccountNextStatementDTO { Year = next.Year, Month = next.Month, OutstandingTotal = next.AmountToPay }
             : null;
 
     private static AccountGroupStatementDTO? StatementFor(
-        Account account, int year, int month, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements) =>
+        Account account,
+        int year,
+        int month,
+        IReadOnlyCollection<Expense> expenses,
+        IReadOnlyCollection<CardStatement> statements,
+        IReadOnlyCollection<Transfer> transfers) =>
         account.Has(Capability.HasStatements)
             ? new AccountGroupStatementDTO
             {
-                OutstandingTotal = CardChargeFilter.OutstandingTotal(expenses, statements, account, year, month),
+                OutstandingTotal = CardStatementLedger.MonthOf(account, expenses, statements, transfers, year, month)?.AmountToPay ?? 0m,
                 IsPaid = CardChargeFilter.IsStatementPaid(statements, account, year, month)
             }
             : null;

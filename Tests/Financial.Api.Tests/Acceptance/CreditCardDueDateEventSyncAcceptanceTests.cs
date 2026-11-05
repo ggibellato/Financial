@@ -103,6 +103,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     {
         Connect();
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
+        await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
         await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(cardId);
 
@@ -125,6 +126,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         foreach (var (id, name) in new[] { (clearedCardId, "BaAmex"), (deactivatedCardId, "ChaseMaster4023"), (datedCardId, "PaypalCredit") })
         {
             await SetDueDateAsync(id, name, isActive: true, new DateOnly(2026, 9, 10));
+            await AddChargeAsync(id, new DateOnly(2026, 9, 10), 55.5m);
             await WaitForResolvedSyncStatusAsync(id);
         }
 
@@ -143,8 +145,8 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    [Trait("AC", "P45-F02-credit-card-due-date-event-sync-05")]
-    public async Task ACardWithNoPostedChargesForThePeriod_ShowsZeroBalanceWithTheNote()
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
+    public async Task ACardWithNoPostedChargesForThePeriod_IsNothingDueAndHasNoEvent()
     {
         Connect();
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000002"); // BarclaysPlatinumVisa6007, no charges added
@@ -152,9 +154,24 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         await SetDueDateAsync(cardId, "BarclaysPlatinumVisa6007", isActive: true, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(cardId);
 
+        _provider.CreatedEvents.Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
+    public async Task ARefundInAnEarlierMonthThatCoversTheDueMonth_RemovesTheEvent()
+    {
+        Connect();
+        var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
+        await AddChargeAsync(cardId, new DateOnly(2026, 9, 5), 55.5m);
+        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await WaitForResolvedSyncStatusAsync(cardId);
         _provider.CreatedEvents.Should().ContainSingle();
-        _provider.CreatedEvents[0].Title.Should().Contain("0.00");
-        _provider.CreatedEvents[0].Description.Should().Contain("(no charges posted to this invoice yet)");
+
+        await AddChargeAsync(cardId, new DateOnly(2026, 8, 20), -60m);
+        await WaitForResolvedSyncStatusAsync(cardId);
+
+        _provider.DeletedEvents.Should().ContainSingle(e => e.EventId == _provider.CreatedEventId);
     }
 
     [Fact]
@@ -163,6 +180,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     {
         Connect();
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
+        await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
         _provider.CreateEventThrows = true;
 
         var response = await Client.PutAsJsonAsync($"{CreditCardsRoute}/{cardId}",
@@ -187,6 +205,8 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         Connect("old-cal");
         var card1 = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
         var card2 = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001"); // BarclaysPlatinumVisa8003
+        await AddChargeAsync(card1, new DateOnly(2026, 9, 10), 55.5m);
+        await AddChargeAsync(card2, new DateOnly(2026, 9, 12), 20m);
         await SetDueDateAsync(card1, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(card1);
         await SetDueDateAsync(card2, "BarclaysPlatinumVisa8003", isActive: true, new DateOnly(2026, 9, 12));
@@ -208,6 +228,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     public async Task ConnectingViaTheOAuthCallback_SyncsEveryPreExistingQualifyingCardImmediately()
     {
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
+        await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
         await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
         // Not connected yet at save time, so this save alone never triggered a sync.
 

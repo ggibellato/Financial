@@ -71,6 +71,9 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     private async Task<AccountDetailDTO> AmexDetailAsync(int month) =>
         (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{AmexId}/2026/{month}"))!;
 
+    private static AccountGroupMemberDTO AmexMember(IEnumerable<AccountTemplateGroupDTO>? groups) =>
+        groups!.SelectMany(group => group.Members).Single(member => member.Name == "BA Amex");
+
     private static AccountStatementDTO Month(IEnumerable<AccountStatementDTO> rows, int month) => rows.Single(row => row.Month == month);
 
     [Fact]
@@ -161,6 +164,61 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         var payable = await Client.GetFromJsonAsync<List<PayableStatementDTO>>($"{Api}/accounts/payable-statements");
 
         payable.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 11, Total = 15m, CreditCardName = "BA Amex" });
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-06")]
+    public async Task TemplateGroups_Card_NextStatementSkipsNothingDue_TotalOwedNetsCredit()
+    {
+        await AddCardChargeAsync(10, 8, -35m);
+        var inCredit = AmexMember(await Client.GetFromJsonAsync<List<AccountTemplateGroupDTO>>($"{Api}/accounts/groups/by-template/2026/11"));
+
+        await AddCardChargeAsync(11, 2, 50m);
+        var owing = AmexMember(await Client.GetFromJsonAsync<List<AccountTemplateGroupDTO>>($"{Api}/accounts/groups/by-template/2026/11"));
+
+        using (new AssertionScope())
+        {
+            inCredit.NextStatement.Should().BeNull();
+            inCredit.TotalOwed.Should().Be(-35m);
+            owing.NextStatement.Should().BeEquivalentTo(new { Year = 2026, Month = 11, OutstandingTotal = 15m });
+            owing.TotalOwed.Should().Be(15m);
+            owing.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 15m, IsPaid = false });
+        }
+    }
+
+    [Fact]
+    public async Task MonthlyCardStatements_OutstandingIsTheAmountToPay_ZeroWhileCreditCoversIt()
+    {
+        await AddCardChargeAsync(10, 3, 25m);
+        await AddCardChargeAsync(10, 8, -60m);
+        await AddCardChargeAsync(11, 2, 20m);
+
+        var october = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
+        var november = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/11");
+
+        using (new AssertionScope())
+        {
+            october.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OutstandingTotal = 0m, AccumulatedOutstandingTotal = -15m, IsPaid = false });
+            november.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OutstandingTotal = 0m, AccumulatedOutstandingTotal = -15m, IsPaid = false });
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
+    public async Task PaymentsDue_NothingDueMonthHasNoReminder_UntilAChargeRaisesIt()
+    {
+        var update = await Client.PutAsJsonAsync($"{Api}/credit-cards/{AmexId}", new CreditCardUpdateDTO { Name = "BA Amex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 11, 18) });
+        update.EnsureSuccessStatusCode();
+
+        var nothingDue = await Client.GetFromJsonAsync<List<PaymentDueDTO>>($"{Api}/payments-due");
+        await AddCardChargeAsync(11, 2, 20m);
+        var unpaid = await Client.GetFromJsonAsync<List<PaymentDueDTO>>($"{Api}/payments-due");
+
+        using (new AssertionScope())
+        {
+            nothingDue.Should().NotContain(payment => payment.Name == "BA Amex");
+            unpaid.Should().ContainSingle(payment => payment.Name == "BA Amex");
+        }
     }
 
     [Fact]

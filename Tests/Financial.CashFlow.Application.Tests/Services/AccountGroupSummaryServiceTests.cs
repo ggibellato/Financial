@@ -262,6 +262,53 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
+    public void GetDefaultGroupSummary_CardMemberWithCreditFromAnEarlierMonth_StatementIsTheAmountToPay()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 8, 8), -35m, new DateOnly(2026, 8, 1));
+        AddCharge(new DateOnly(2026, 9, 3), 50m, new DateOnly(2026, 9, 1));
+
+        var summary = _sut.GetDefaultGroupSummary(2026, 9);
+        var amex = summary.Members.Single(member => member.Name == "Amex");
+
+        using (new AssertionScope())
+        {
+            amex.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 15m, IsPaid = false });
+            summary.Totals.Single(total => total.Currency == "GBP").CardOutstandingTotal.Should().Be(15m);
+        }
+    }
+
+    [Fact]
+    public void GetDefaultGroupSummary_CardMemberWithRefundLargerThanTheCharges_HasNothingOutstanding()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 25m, new DateOnly(2026, 9, 1));
+        AddCharge(new DateOnly(2026, 9, 8), -60m, new DateOnly(2026, 9, 1));
+
+        var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
+
+        using (new AssertionScope())
+        {
+            amex.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
+            amex.TotalOwed.Should().Be(-35m);
+            amex.NextStatement.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_NextStatement_SkipsNothingDueMonthsAndUsesTheCarriedCredit()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 8, 8), -35m, new DateOnly(2026, 8, 1));
+        AddCharge(new DateOnly(2026, 9, 3), 20m, new DateOnly(2026, 9, 1));
+        AddCharge(new DateOnly(2026, 10, 3), 40m, new DateOnly(2026, 10, 1));
+
+        var amex = _sut.GetTemplateGroups(2026, 8).SelectMany(group => group.Members).Single(member => member.Name == "Amex");
+
+        amex.NextStatement.Should().BeEquivalentTo(new AccountNextStatementDTO { Year = 2026, Month = 10, OutstandingTotal = 25m });
+    }
+
+    [Fact]
     public void GetTemplateGroups_Month_GroupsAccountsInTemplateOrderWithMembersByName()
     {
         var reserva = TestAccounts.Pots("Reserva");
