@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCreditRefund, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardCreditRefundForm from '../components/CardCreditRefundForm'
@@ -108,6 +108,7 @@ export default function AccountScreenPage() {
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
+    if (isCreditRefund(row)) payStatementForm.retry()
     notifySaved(deletedMessage(row))
   })
   const deleteKind = rowDelete.row?.kind ?? ''

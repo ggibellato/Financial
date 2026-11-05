@@ -2615,6 +2615,24 @@ describe('AccountScreenPage bank side card payments', () => {
     return screen.getByRole('heading', { name: 'Pay card statement' }).closest('form') as HTMLElement
   }
 
+  it('reloads an open Pay card statement form after a credit refund is deleted, because its amounts can change', async () => {
+    const user = userEvent.setup()
+    deleteCardCreditRefundMock.mockResolvedValue(undefined)
+    getAccountTransactionsMock.mockResolvedValue([
+      accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', counterpart: 'BA Amex', amount: 35, canEdit: false, transfer: { id: 'cr1' } as AccountTransactionDto['transfer'] }),
+    ])
+    await openBank()
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Delete credit refund' }))
+    const dialog = await findDialog('Delete credit refund')
+    await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+    await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(2))
+    expect(payForm()).toBeInTheDocument()
+  })
+
   it('[AC P60-F08-statement-payment-and-card-screen-04] Pay card statement chooses a card and statement and pays it with this bank', async () => {
     const user = userEvent.setup()
     markCardStatementPaidMock.mockResolvedValue({
