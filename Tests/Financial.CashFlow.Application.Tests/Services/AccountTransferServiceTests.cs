@@ -25,6 +25,7 @@ public class AccountTransferServiceTests
     private readonly FakeTimeProvider _clock;
     private readonly RecordingTelemetryTracer _tracer;
     private readonly RecordingLogger<AccountTransferService> _logger;
+    private readonly FakeCreditCardCalendarSyncService _calendarSync;
     private readonly AccountTransferService _sut;
     private readonly Account _itau = TestAccounts.Bank("Itaú", currency: Currency.BRL);
 
@@ -35,7 +36,8 @@ public class AccountTransferServiceTests
         _clock = TestClock.At();
         _tracer = new RecordingTelemetryTracer();
         _logger = new RecordingLogger<AccountTransferService>();
-        _sut = new AccountTransferService(_repository, _clock, _tracer, _logger);
+        _calendarSync = new FakeCreditCardCalendarSyncService();
+        _sut = new AccountTransferService(_repository, _clock, _tracer, _logger, _calendarSync);
     }
 
     private Account Named(string name) => _repository.Accounts.First(a => a.Name == name);
@@ -572,5 +574,96 @@ public class AccountTransferServiceTests
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.DeleteTransfer");
         }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task DeleteCreditRefundAsync_CreditRefund_RestoresTheCreditKeepsTheStatementAndTriggersTheCardSync()
+    {
+        var card = SeedCardWithCredit(60m);
+        await AddCreditRefund(35m);
+        var saveCountBefore = _repository.SaveChangesCallCount;
+
+        await _sut.DeleteCreditRefundAsync(_repository.Transfers.Single().Id);
+
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().BeEmpty();
+            _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
+            _repository.SaveChangesCallCount.Should().Be(saveCountBefore + 1);
+            _calendarSync.TriggeredCreditCardIds.Should().Equal(card.Id);
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.DeleteCreditRefund")
+                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        }
+
+        var refundOfTheWholeCredit = await AddCreditRefund(60m);
+        refundOfTheWholeCredit.Amount.Should().Be(60m);
+    }
+
+    [Fact]
+    public async Task DeleteCreditRefundAsync_InactiveCard_IsAllowed()
+    {
+        var card = SeedCardWithCredit(60m);
+        await AddCreditRefund(35m);
+        card.SetActive(false);
+
+        await _sut.DeleteCreditRefundAsync(_repository.Transfers.Single().Id);
+
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().BeEmpty();
+            _calendarSync.TriggeredCreditCardIds.Should().Equal(card.Id);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteCreditRefundAsync_OrdinaryTransfer_ThrowsAndKeepsIt()
+    {
+        var transfer = SeedTransfer(Named("Barclays"), Named("Chase"), 50m);
+
+        var act = () => _sut.DeleteCreditRefundAsync(transfer.Id);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("This transfer is not a card credit refund.");
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _calendarSync.TriggeredCreditCardIds.Should().BeEmpty();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountTransferService.DeleteCreditRefund");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteCreditRefundAsync_StatementPayment_ThrowsAndKeepsIt()
+    {
+        var payment = SeedStatementPayment();
+
+        var act = () => _sut.DeleteCreditRefundAsync(payment.Id);
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("This transfer is not a card credit refund.");
+        _repository.Transfers.Should().ContainSingle().Which.Should().BeSameAs(payment);
+    }
+
+    [Fact]
+    public async Task DeleteCreditRefundAsync_UnknownId_ThrowsKeyNotFound()
+    {
+        var act = () => _sut.DeleteCreditRefundAsync(Guid.NewGuid());
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _calendarSync.TriggeredCreditCardIds.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.AccountTransferService.DeleteCreditRefund");
+    }
+
+    [Fact]
+    public async Task DeleteCreditRefundAsync_WhenSaveFails_DoesNotTriggerTheCardSync()
+    {
+        var refund = TestTransfers.SeedCreditRefund(_repository, Named("Barclays"), Date);
+        _repository.ThrowOnNextSave = true;
+
+        var act = () => _sut.DeleteCreditRefundAsync(refund.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _calendarSync.TriggeredCreditCardIds.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountTransferService.DeleteCreditRefund");
     }
 }

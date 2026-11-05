@@ -8,6 +8,7 @@ public interface IAccountTransferService
     Task<AccountTransferDTO> AddCreditRefundAsync(AccountTransferCreateDTO request);
     Task<AccountTransferDTO> UpdateAsync(Guid id, AccountTransferUpdateDTO request);
     Task DeleteAsync(Guid id);
+    Task DeleteCreditRefundAsync(Guid id);
     IReadOnlyList<TransferAccountOptionDTO> GetDestinations(Guid accountId);
     IReadOnlyList<TransferAccountOptionDTO> GetSources(Guid accountId);
 }
