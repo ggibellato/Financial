@@ -125,4 +125,33 @@ public class TransferPairRulesTests
             TransferPairRules.StatementPayment.Allows(receiver, payer).Should().BeFalse();
         }
     }
+
+    [Fact]
+    public void Allows_CreditRefundTable_OnlyPaymentReceiverToTransferReceiver()
+    {
+        var amex = TestAccounts.CreditCard("Amex");
+        var paymentReceiver = Minimal("Payment receiver", Capability.ReceivesPayments);
+        var transferReceiver = Minimal("Transfer receiver", Capability.CanReceiveTransfers);
+
+        using (new AssertionScope())
+        {
+            TransferPairRules.CreditRefund.Allows(amex, _barclays).Should().BeTrue();
+            TransferPairRules.CreditRefund.Allows(paymentReceiver, transferReceiver).Should().BeTrue();
+            TransferPairRules.CreditRefund.Allows(_barclays, _chase).Should().BeFalse();
+            TransferPairRules.CreditRefund.Allows(_barclays, amex).Should().BeFalse();
+            TransferPairRules.CreditRefund.Allows(amex, TestAccounts.CreditCard("Visa")).Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void Allows_DefaultAndStatementPaymentTables_RefuseCardToBank()
+    {
+        var amex = TestAccounts.CreditCard("Amex");
+
+        using (new AssertionScope())
+        {
+            TransferPairRules.Default.Allows(amex, _barclays).Should().BeFalse();
+            TransferPairRules.StatementPayment.Allows(amex, _barclays).Should().BeFalse();
+        }
+    }
 }

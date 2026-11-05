@@ -431,6 +431,58 @@ public class TransferServiceTests
         }
     }
 
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public void GetTransfersByMonthAndBank_LeaveOutCreditRefunds()
+    {
+        var refund = SeedCreditRefund(new DateOnly(2026, 7, 12));
+
+        using (new AssertionScope())
+        {
+            _sut.GetTransfersByMonth(2026, 7).Should().BeEmpty();
+            _sut.GetTransfersByBank(refund.DestinationAccount.Id).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task UpdateTransferAsync_CreditRefund_ThrowsConflictAndChangesNothing()
+    {
+        var refund = SeedCreditRefund(new DateOnly(2026, 7, 12));
+
+        var act = async () => await _sut.UpdateTransferAsync(refund.Id, ToUpdateDto(_repository, ValidCreateRequest()));
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer refunds card credit; delete it from the card or bank screen instead.");
+        using (new AssertionScope())
+        {
+            refund.Amount.Should().Be(40m);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.TransferService.UpdateTransfer");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task DeleteTransferAsync_CreditRefund_ThrowsConflictAndKeepsIt()
+    {
+        var refund = SeedCreditRefund(new DateOnly(2026, 7, 12));
+
+        var act = async () => await _sut.DeleteTransferAsync(refund.Id);
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer refunds card credit; delete it from the card or bank screen instead.");
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle().Which.Should().BeSameAs(refund);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.TransferService.DeleteTransfer");
+        }
+    }
+
     private Transfer SeedStatementPayment(DateOnly date) =>
         TestTransfers.SeedStatementPayment(_repository, _repository.Accounts.First(a => a.Name == "Barclays"), date);
+
+    private Transfer SeedCreditRefund(DateOnly date) =>
+        TestTransfers.SeedCreditRefund(_repository, _repository.Accounts.First(a => a.Name == "Barclays"), date);
 }

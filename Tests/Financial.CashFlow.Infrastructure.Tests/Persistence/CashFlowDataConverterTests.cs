@@ -51,6 +51,10 @@ public class CashFlowDataConverterTests
             "\"Transfers\":[]",
             "\"Transfers\":[{\"Id\":\"" + PaymentId + "\",\"Date\":\"2026-11-12\",\"SourceAccountId\":\"" + BarclaysId + "\",\"DestinationAccountId\":\"" + AmexId + "\",\"Amount\":30.5,\"Note\":null}]");
 
+    private static readonly string V4FileWithCreditRefund = V4File.Replace(
+        "\"Transfers\":[]",
+        "\"Transfers\":[{\"Id\":\"" + PaymentId + "\",\"Date\":\"2026-11-12\",\"SourceAccountId\":\"" + AmexId + "\",\"DestinationAccountId\":\"" + BarclaysId + "\",\"Amount\":35,\"Note\":null}]");
+
     private const string OperationId = "5db5c88d-0000-0000-0000-000000000a01";
 
     private static readonly string V4FileWithOperation = V4File
@@ -76,6 +80,19 @@ public class CashFlowDataConverterTests
         {
             V4FileWithPayment.Should().Contain("\"PaymentTransferId\"");
             saved.Should().Be(V4FileWithPayment);
+        }
+    }
+
+    [Fact]
+    public void LoadAndSave_CreditRefund_IsRecognisedAndByteIdentical()
+    {
+        var data = _serializer.Deserialize(V4FileWithCreditRefund);
+        var saved = _serializer.Serialize(data);
+
+        using (new AssertionScope())
+        {
+            data.Transfers.Single().IsCreditRefund.Should().BeTrue();
+            saved.Should().Be(V4FileWithCreditRefund);
         }
     }
 

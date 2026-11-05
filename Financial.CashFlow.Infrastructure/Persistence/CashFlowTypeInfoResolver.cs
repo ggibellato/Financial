@@ -66,7 +66,8 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
     private static readonly HashSet<(Type OwningType, string PropertyName)> PropertiesNeverWritten =
     [
         (typeof(CardStatement), nameof(CardStatement.IsPaidByTransfer)),
-        (typeof(Transfer), nameof(Transfer.IsStatementPayment))
+        (typeof(Transfer), nameof(Transfer.IsStatementPayment)),
+        (typeof(Transfer), nameof(Transfer.IsCreditRefund))
     ];
 
     private readonly ReferenceResolutionContext? _context;

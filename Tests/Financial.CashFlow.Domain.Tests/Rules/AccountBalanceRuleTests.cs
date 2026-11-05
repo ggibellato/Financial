@@ -158,6 +158,23 @@ public class AccountBalanceRuleTests
     }
 
     [Fact]
+    public void Balance_CreditRefund_LowersTheCardAndRaisesTheBank()
+    {
+        var card = TestAccounts.CreditCard("BA Amex");
+        var records = new IAccountTransaction[]
+        {
+            Expense.Create(new DateOnly(2026, 9, 12), "Refund", -60m, _groceries, null, card),
+            Transfer.CreateCreditRefund(new DateOnly(2026, 9, 20), card, _barclays, 35m, null, new DateOnly(2026, 9, 30))
+        };
+
+        using (new AssertionScope())
+        {
+            AccountBalanceRule.Balance(card, new DateOnly(2026, 9, 30), records).Should().Be(25m);
+            AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(1035m);
+        }
+    }
+
+    [Fact]
     public void Balance_SettledCharge_CountsOnItsBankOnlyAndNotOnTheCard()
     {
         var card = TestAccounts.CreditCard("BA Amex");

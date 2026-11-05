@@ -28,6 +28,19 @@ public sealed class AccountTransfersController : ControllerBase
         return Ok(await _accountTransferService.AddAsync(request));
     }
 
+    [HttpPost("credit-refunds")]
+    [ProducesResponseType(typeof(AccountTransferDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<AccountTransferDTO>> AddCreditRefund([FromBody] AccountTransferCreateDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        return Ok(await _accountTransferService.AddCreditRefundAsync(request));
+    }
+
     [HttpPut("transfers/{id:guid}")]
     [ProducesResponseType(typeof(AccountTransferDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

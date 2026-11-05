@@ -8,11 +8,16 @@ public sealed class StatementPaymentConflictException : Exception
     {
     }
 
-    public static void ThrowIfStatementPayment(Transfer transfer)
+    public static void ThrowIfLinkedToCard(Transfer transfer)
     {
         if (transfer.IsStatementPayment)
         {
             throw new StatementPaymentConflictException("This transfer pays a card statement; unmark the statement instead.");
+        }
+
+        if (transfer.IsCreditRefund)
+        {
+            throw new StatementPaymentConflictException("This transfer refunds card credit; delete it from the card or bank screen instead.");
         }
     }
 }

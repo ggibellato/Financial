@@ -267,4 +267,126 @@ public class CardStatementLedgerTests
 
         CardStatementLedger.NextToPay(_amex, _expenses, _statements, _transfers).Should().BeNull();
     }
+
+    private Transfer CreditRefund(int month, decimal amount, Account? card = null) =>
+        Transfer.CreateCreditRefund(new DateOnly(2026, month, 15), card ?? _amex, _barclays, amount, null, Today);
+
+    private bool RefundKeepsAmounts(int month, decimal amount) =>
+        CardStatementLedger.RefundKeepsAmountsToPay(CreditRefund(month, amount), _expenses, _statements, _transfers);
+
+    [Fact]
+    public void For_CreditRefund_CountsInItsDatesMonthAndLowersTheCreditCarried()
+    {
+        Charge(9, -100m);
+        _transfers.Add(CreditRefund(10, 60m));
+
+        var rows = Walk(11);
+
+        using (new AssertionScope())
+        {
+            rows.Select(row => row.Month).Should().Equal(9, 10, 11);
+            rows[1].Should().BeEquivalentTo(new { Total = 60m, CreditIn = 100m, AmountToPay = 0m, CreditCarried = 40m, Status = CardStatementLedgerStatus.NothingDue });
+            rows[1].Statement.Should().BeNull();
+            rows[2].Should().BeEquivalentTo(new { Total = 0m, CreditIn = 40m, CreditCarried = 40m });
+        }
+    }
+
+    [Fact]
+    public void For_CreditRefundAfterTheLastCharge_ExtendsTheWalkToItsMonth()
+    {
+        Charge(8, -50m);
+        _transfers.Add(CreditRefund(11, 20m));
+
+        Walk(9).Select(row => row.Month).Should().Equal(8, 9, 10, 11);
+    }
+
+    [Fact]
+    public void For_CreditRefundOnly_StartsAtItsMonth()
+    {
+        _transfers.Add(CreditRefund(10, 20m));
+
+        Walk(10).Single().Should().BeEquivalentTo(new { Month = 10, Total = 20m, AmountToPay = 20m, Status = CardStatementLedgerStatus.Unpaid });
+    }
+
+    [Fact]
+    public void For_AnotherCardsCreditRefund_IsIgnored()
+    {
+        Charge(9, -100m);
+        _transfers.Add(CreditRefund(10, 60m, _visa));
+
+        Walk(10)[^1].CreditCarried.Should().Be(100m);
+    }
+
+    [Fact]
+    public void For_StatementPaymentOutOfABank_IsNotACreditRefund()
+    {
+        Charge(10, 30m);
+        PaidByTransfer(10, 30m);
+
+        Walk(10).Single().Should().BeEquivalentTo(new { Total = 30m, CreditCarried = 0m, Status = CardStatementLedgerStatus.Paid });
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_RefundWithinTheCarriedCredit_IsTrue()
+    {
+        Charge(9, -100m);
+
+        using (new AssertionScope())
+        {
+            RefundKeepsAmounts(10, 60m).Should().BeTrue();
+            RefundKeepsAmounts(9, 100m).Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_RefundThatLeavesAMonthOwing_IsFalse()
+    {
+        Charge(9, -30m);
+
+        RefundKeepsAmounts(10, 40m).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_DatedBeforeTheCreditArose_IsFalse()
+    {
+        Charge(10, -50m);
+
+        RefundKeepsAmounts(9, 50m).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_RefundRaisingALaterUnpaidMonth_IsFalse()
+    {
+        Charge(9, -50m);
+        Charge(10, 70m);
+        StoredStatement(10);
+
+        RefundKeepsAmounts(9, 10m).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_MonthPaidByTransferAbsorbsIt_IsFalse()
+    {
+        Charge(9, 40m);
+        PaidByTransfer(9, 40m);
+        Charge(10, -30m);
+
+        RefundKeepsAmounts(9, 30m).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_LegacyPaidMonthAbsorbsIt_IsFalse()
+    {
+        Charge(8, -30m);
+        Charge(9, 40m).Settle(_barclays, new DateOnly(2026, 9, 25));
+        StoredStatement(9).MarkLegacyPaid();
+
+        RefundKeepsAmounts(9, 20m).Should().BeFalse();
+    }
+
+    [Fact]
+    public void RefundKeepsAmountsToPay_CardWithNoRecords_IsFalse()
+    {
+        RefundKeepsAmounts(10, 20m).Should().BeFalse();
+    }
 }

@@ -170,11 +170,11 @@ public sealed class TransferService : ITransferService
     private Transfer FindEditableTransferOrThrow(Guid id)
     {
         var transfer = _repository.GetTransfers().FirstOrThrow(t => t.Id == id, "Transfer", id);
-        StatementPaymentConflictException.ThrowIfStatementPayment(transfer);
+        StatementPaymentConflictException.ThrowIfLinkedToCard(transfer);
         return transfer;
     }
 
-    private IEnumerable<Transfer> ListedTransfers() => _repository.GetTransfers().Where(t => !t.IsStatementPayment);
+    private IEnumerable<Transfer> ListedTransfers() => _repository.GetTransfers().Where(t => !t.IsStatementPayment && !t.IsCreditRefund);
 
     private static bool KeepsBothAccounts(Transfer transfer, Account sourceAccount, Account destinationAccount) =>
         transfer.SourceAccount.Id == sourceAccount.Id && transfer.DestinationAccount.Id == destinationAccount.Id;

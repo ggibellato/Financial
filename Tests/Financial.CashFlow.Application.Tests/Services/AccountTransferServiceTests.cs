@@ -7,6 +7,7 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
+using Financial.Tests;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -398,4 +399,178 @@ public class AccountTransferServiceTests
     }
 
     private Transfer SeedStatementPayment() => TestTransfers.SeedStatementPayment(_repository, Named("Barclays"), Date);
+
+    private Account SeedCardWithCredit(decimal credit)
+    {
+        var card = TestAccounts.CreditCard("Amex");
+        _repository.Accounts.Add(card);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 5), "Refund", -credit, Category.Create("Mercado"), null, card));
+        return card;
+    }
+
+    private Task<AccountTransferDTO> AddCreditRefund(decimal amount, decimal? destinationAmount = null, string destination = "Barclays", DateOnly? date = null) =>
+        _sut.AddCreditRefundAsync(new AccountTransferCreateDTO
+        {
+            Date = date ?? Date,
+            SourceAccountId = IdOf("Amex"),
+            DestinationAccountId = IdOf(destination),
+            Amount = amount,
+            DestinationAmount = destinationAmount,
+            Note = "Issuer refund"
+        });
+
+    private async Task ShouldRefuseCreditRefund(Func<Task> act, string message)
+    {
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(message);
+        ShouldHaveRejected("AddCreditRefund");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task AddCreditRefundAsync_WithinCredit_WritesOneTransferOnOneSave()
+    {
+        SeedCardWithCredit(60m);
+
+        var result = await AddCreditRefund(35m);
+
+        using (new AssertionScope())
+        {
+            result.SourceAccountName.Should().Be("Amex");
+            result.DestinationAccountName.Should().Be("Barclays");
+            result.Amount.Should().Be(35m);
+            result.DestinationAmount.Should().Be(35m);
+            result.Note.Should().Be("Issuer refund");
+            _repository.Transfers.Should().ContainSingle().Which.IsCreditRefund.Should().BeTrue();
+            _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
+            _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.AddCreditRefund")
+                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        }
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_MonthAlreadyHasAStatement_KeepsIt()
+    {
+        var card = SeedCardWithCredit(60m);
+        var september = CardStatement.Create(card, 2026, 9);
+        _repository.CardStatements.Add(september);
+
+        await AddCreditRefund(35m);
+
+        _repository.CardStatements.Should().ContainSingle().Which.Should().BeSameAs(september);
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_InactiveCard_IsAllowed()
+    {
+        SeedCardWithCredit(60m).SetActive(false);
+
+        await AddCreditRefund(60m);
+
+        _repository.Transfers.Should().ContainSingle();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task AddCreditRefundAsync_AboveTheCredit_ThrowsWithTheFigure()
+    {
+        SeedCardWithCredit(35m);
+
+        await ShouldRefuseCreditRefund(() => AddCreditRefund(35.01m), "The card's credit is 35.00 GBP.");
+    }
+
+    [Fact]
+    [UseCulture("pt-BR")]
+    public async Task AddCreditRefundAsync_AboveTheCredit_FormatsTheFigureWithInvariantCulture()
+    {
+        SeedCardWithCredit(1234.5m);
+
+        await ShouldRefuseCreditRefund(() => AddCreditRefund(2000m), "The card's credit is 1,234.50 GBP.");
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_CardOwingMoney_ReportsNoCredit()
+    {
+        SeedCardWithCredit(-50m);
+
+        await ShouldRefuseCreditRefund(() => AddCreditRefund(10m), "The card's credit is 0.00 GBP.");
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_DatedBeforeTheCreditArose_IsRefusedByTheLedgerGuard()
+    {
+        SeedCardWithCredit(60m);
+
+        await ShouldRefuseCreditRefund(
+            () => AddCreditRefund(35m, date: new DateOnly(2026, 7, 15)),
+            "On that date the card had less credit than this refund; choose a later date.");
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_WithADestinationAmount_Throws()
+    {
+        SeedCardWithCredit(60m);
+
+        await ShouldRefuseCreditRefund(() => AddCreditRefund(35m, destinationAmount: 35m), "A card credit refund has no destination amount.");
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_BankInAnotherCurrency_Throws()
+    {
+        SeedCardWithCredit(60m);
+
+        await ShouldRefuseCreditRefund(() => AddCreditRefund(35m, destination: "Itaú"), "The receiving account must be in the card's currency (GBP).");
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_UnknownAccount_Throws()
+    {
+        var unknown = Guid.NewGuid();
+
+        var act = () => _sut.AddCreditRefundAsync(new AccountTransferCreateDTO
+        {
+            Date = Date,
+            SourceAccountId = unknown,
+            DestinationAccountId = IdOf("Barclays"),
+            Amount = 10m
+        });
+
+        await ShouldRefuseCreditRefund(act, $"Account '{unknown}' was not found.");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task UpdateAsync_CreditRefund_ThrowsConflictAndChangesNothing()
+    {
+        var refund = TestTransfers.SeedCreditRefund(_repository, Named("Barclays"), Date);
+
+        var act = () => _sut.UpdateAsync(refund.Id, UpdateRequest("Barclays", "Chase", 10m));
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer refunds card credit; delete it from the card or bank screen instead.");
+        using (new AssertionScope())
+        {
+            refund.Amount.Should().Be(40m);
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.UpdateTransfer");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task DeleteAsync_CreditRefund_ThrowsConflictAndKeepsIt()
+    {
+        var refund = TestTransfers.SeedCreditRefund(_repository, Named("Barclays"), Date);
+
+        var act = () => _sut.DeleteAsync(refund.Id);
+
+        await act.Should().ThrowAsync<StatementPaymentConflictException>()
+            .WithMessage("This transfer refunds card credit; delete it from the card or bank screen instead.");
+        using (new AssertionScope())
+        {
+            _repository.Transfers.Should().ContainSingle();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.DeleteTransfer");
+        }
+    }
 }

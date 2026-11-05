@@ -81,6 +81,15 @@ public class CardChargeFilterTests
     }
 
     [Fact]
+    public void TotalOwed_CreditRefund_LowersTheCredit()
+    {
+        var refund = Expense.Create(new DateOnly(2026, 10, 8), "Refund", -60m, _groceries, null, _amex);
+        var creditRefund = Transfer.CreateCreditRefund(new DateOnly(2026, 10, 20), _amex, TestAccounts.Bank("Barclays"), 25m, null, new DateOnly(2026, 12, 31));
+
+        CardChargeFilter.TotalOwed(_amex, [refund, creditRefund]).Should().Be(-35m);
+    }
+
+    [Fact]
     public void TotalOwed_CardInCredit_IsNegative()
     {
         var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 2), _barclays, _amex, 50m, new DateOnly(2026, 10, 30));
