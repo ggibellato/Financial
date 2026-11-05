@@ -1,10 +1,12 @@
 import { apiClient } from '../api/financialApiClient'
 import type { AccountTransactionDto } from '../api/types'
+import { isCreditRefund } from '../components/accountActions'
 import { useConfirmedDelete } from './useConfirmedDelete'
 
 function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
   if (row.expense) return apiClient.deleteExpense(row.expense.id)
   if (row.income) return apiClient.deleteIncome(row.income.id)
+  if (row.transfer && isCreditRefund(row)) return apiClient.deleteCardCreditRefund(row.transfer.id)
   if (row.transfer) return apiClient.deleteAccountTransfer(row.transfer.id)
   if (row.adjustment) return apiClient.deleteBalanceAdjustment(row.adjustment.bankId, row.adjustment.id)
   if (row.movement) return apiClient.deleteReserveMovement(row.movement.id)

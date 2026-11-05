@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, TabList, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCreditRefund, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardCreditRefundForm from '../components/CardCreditRefundForm'
@@ -52,6 +52,7 @@ export default function AccountScreenPage() {
     showSuccess(message)
   }
   const isCard = account?.hasStatements ?? false
+  const isAccountActive = account?.isActive ?? false
   const hasTabs = screen.tabs.length > 0
   const activeTab = screen.tab
   const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
@@ -107,6 +108,7 @@ export default function AccountScreenPage() {
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
+    if (isCreditRefund(row)) payStatementForm.retry()
     notifySaved(deletedMessage(row))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
@@ -397,7 +399,7 @@ export default function AccountScreenPage() {
             viewedYear={screen.year}
             viewedMonth={screen.month}
             currency={account?.currency ?? 'GBP'}
-            canAct={account?.isActive ?? false}
+            canAct={isAccountActive}
             guardChange={guardChange}
           />
         ) : activeTab === 'pots' ? (
@@ -424,6 +426,7 @@ export default function AccountScreenPage() {
               isEditDisabled={(row) => !isAccountCurrent || (row.movement ? pots.data === null : !formOptions.isReady)}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
+              canDeleteCreditRefunds={isAccountActive}
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}

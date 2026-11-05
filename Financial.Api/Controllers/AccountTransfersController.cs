@@ -41,6 +41,16 @@ public sealed class AccountTransfersController : ControllerBase
         return Ok(await _accountTransferService.AddCreditRefundAsync(request));
     }
 
+    [HttpDelete("credit-refunds/{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteCreditRefund(Guid id)
+    {
+        await _accountTransferService.DeleteCreditRefundAsync(id);
+        return NoContent();
+    }
+
     [HttpPut("transfers/{id:guid}")]
     [ProducesResponseType(typeof(AccountTransferDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

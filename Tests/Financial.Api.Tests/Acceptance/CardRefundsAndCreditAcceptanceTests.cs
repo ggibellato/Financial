@@ -349,6 +349,43 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task DeleteCreditRefund_RestoresCredit()
+    {
+        await AddCardChargeAsync(10, 8, -60m);
+        var bankBefore = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!.Balance;
+        var created = await PostCreditRefundAsync(35m);
+        created.EnsureSuccessStatusCode();
+        var refund = (await created.Content.ReadFromJsonAsync<AccountTransferDTO>())!;
+
+        var deleted = await Client.DeleteAsync($"{Api}/accounts/credit-refunds/{refund.Id}");
+
+        var card = await AmexDetailAsync(11);
+        var bankAfter = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!.Balance;
+        var november = Month(await StatementsAsync(), 11);
+        var bankRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{BarclaysId}/transactions/2026/11");
+        using (new AssertionScope())
+        {
+            deleted.StatusCode.Should().Be(HttpStatusCode.NoContent);
+            card.TotalOwed.Should().Be(-60m);
+            bankAfter.Should().Be(bankBefore);
+            november.Id.Should().NotBeNull();
+            november.Should().BeEquivalentTo(new { Total = 0m, CreditIn = 60m, OutstandingTotal = 0m, CreditCarried = 60m, Status = "NothingDue" });
+            bankRows.Should().NotContain(row => row.Id == refund.Id);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteCreditRefund_NotACreditRefund_Returns400_UnknownId_Returns404()
+    {
+        var refused = await Client.DeleteAsync($"{Api}/accounts/credit-refunds/{SeptemberPaymentId}");
+        var unknown = await Client.DeleteAsync($"{Api}/accounts/credit-refunds/{Guid.NewGuid()}");
+
+        await ShouldBeRefusedAsync(refused, HttpStatusCode.BadRequest, "This transfer is not a card credit refund.");
+        unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
     public async Task CreditRefund_ShowsOnCardAndBankAsReadOnlyRows()
     {
         await AddCardChargeAsync(10, 8, -60m);

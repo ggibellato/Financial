@@ -21,14 +21,20 @@ public sealed class AccountTransferService : IAccountTransferService
     private readonly TimeProvider _timeProvider;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<AccountTransferService> _logger;
+    private readonly ICreditCardCalendarSyncService _calendarSync;
 
     public AccountTransferService(
-        ICashFlowRepository repository, TimeProvider timeProvider, ITelemetryTracer tracer, ILogger<AccountTransferService> logger)
+        ICashFlowRepository repository,
+        TimeProvider timeProvider,
+        ITelemetryTracer tracer,
+        ILogger<AccountTransferService> logger,
+        ICreditCardCalendarSyncService calendarSync)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         _timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _calendarSync = calendarSync ?? throw new ArgumentNullException(nameof(calendarSync));
     }
 
     public async Task<AccountTransferDTO> AddAsync(AccountTransferCreateDTO request)
@@ -142,6 +148,36 @@ public sealed class AccountTransferService : IAccountTransferService
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransfer");
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task DeleteCreditRefundAsync(Guid id)
+    {
+        using var span = StartSpan("DeleteCreditRefund");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
+        try
+        {
+            var transfer = _repository.GetTransfers().FirstOrThrow(t => t.Id == id, EntityType, id);
+            if (!transfer.IsCreditRefund)
+            {
+                throw new ArgumentException("This transfer is not a card credit refund.");
+            }
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.DeleteTransfer(id);
+                return true;
+            }).ConfigureAwait(false);
+
+            _calendarSync.TriggerSync(transfer.SourceAccount.Id);
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "DeleteCreditRefund");
         }
         catch (Exception ex)
         {

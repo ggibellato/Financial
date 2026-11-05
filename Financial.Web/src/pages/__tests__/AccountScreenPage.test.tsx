@@ -1,3 +1,4 @@
+import { act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -48,6 +49,7 @@ const {
   updateAccountTransferMock,
   deleteAccountTransferMock,
   createCardCreditRefundMock,
+  deleteCardCreditRefundMock,
   createBalanceAdjustmentMock,
   deleteBalanceAdjustmentMock,
   getMensaisBillsMock,
@@ -85,6 +87,7 @@ const {
   updateAccountTransferMock: vi.fn<FinancialApiClient['updateAccountTransfer']>(),
   deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
   createCardCreditRefundMock: vi.fn<FinancialApiClient['createCardCreditRefund']>(),
+  deleteCardCreditRefundMock: vi.fn<FinancialApiClient['deleteCardCreditRefund']>(),
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
   deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -125,6 +128,7 @@ vi.mock('../../api/financialApiClient', () => ({
     updateAccountTransfer: updateAccountTransferMock,
     deleteAccountTransfer: deleteAccountTransferMock,
     createCardCreditRefund: createCardCreditRefundMock,
+    deleteCardCreditRefund: deleteCardCreditRefundMock,
     createBalanceAdjustment: createBalanceAdjustmentMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
     getMensaisBills: getMensaisBillsMock,
@@ -337,6 +341,7 @@ beforeEach(() => {
   getAccountMock.mockReset().mockImplementation((id, year, month) => Promise.resolve(detailFor(id, year, month)))
   getAccountTransactionsMock.mockReset().mockResolvedValue(TRANSACTIONS)
   createCardCreditRefundMock.mockReset()
+  deleteCardCreditRefundMock.mockReset()
   getBanksMock.mockReset().mockResolvedValue(BANKS)
   getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
   getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
@@ -2244,16 +2249,82 @@ describe('AccountScreenPage card screen', () => {
       expect(screen.queryByRole('button', { name: 'Refund credit to bank' })).not.toBeInTheDocument()
     })
 
-    it('[AC P60-F15-card-refunds-and-credit-05] labels a credit refund row with no edit or delete', async () => {
-      getAccountTransactionsMock.mockResolvedValue([
-        accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', counterpart: 'Barclays', amount: -35, canEdit: false, transfer: REFUND_TRANSFER }),
-      ])
-      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+    const CREDIT_REFUND_ROW = accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', counterpart: 'Barclays', amount: -35, canEdit: false, transfer: REFUND_TRANSFER })
 
-      const row = (await screen.findByText('BA Amex credit refund')).closest('tr') as HTMLElement
+    async function findCreditRefundRow(accountId: string) {
+      getAccountTransactionsMock.mockResolvedValue([CREDIT_REFUND_ROW])
+      renderScreen(`/cashflow/accounts/${accountId}?month=2026-10`)
+      return (await screen.findByText('BA Amex credit refund')).closest('tr') as HTMLElement
+    }
+
+    it('[AC P60-F15-card-refunds-and-credit-05] labels a credit refund row with Delete as its only action', async () => {
+      const row = await findCreditRefundRow(AMEX_ID)
+
       expect(within(row).getByText('Card credit refund')).toBeInTheDocument()
       expect(within(row).getByText('-35.00')).toBeInTheDocument()
+      expect(within(row).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Delete credit refund'])
+    })
+
+    it.each([
+      ['card', AMEX_ID],
+      ['bank', BARCLAYS_ID],
+    ])('[AC P60-F15-card-refunds-and-credit-05] deletes a credit refund from the %s screen after the confirmation, then reloads', async (_, accountId) => {
+      const user = userEvent.setup()
+      deleteCardCreditRefundMock.mockResolvedValue(undefined)
+      const row = await findCreditRefundRow(accountId)
+      const loadsBefore = getAccountMock.mock.calls.length
+
+      await user.click(within(row).getByRole('button', { name: 'Delete credit refund' }))
+      const dialog = await findDialog('Delete credit refund')
+      expect(dialog).toHaveTextContent("Delete this credit refund? The card's credit returns.")
+      let finishReload: (rows: AccountTransactionDto[]) => void = () => {}
+      getAccountTransactionsMock.mockImplementation(() => new Promise((resolve) => { finishReload = resolve }))
+      await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+      await waitFor(() => expect(deleteCardCreditRefundMock).toHaveBeenCalledWith('cr1'))
+      expect(deleteAccountTransferMock).not.toHaveBeenCalled()
+      expect(await screen.findByText('Credit refund deleted')).toBeInTheDocument()
+      await waitFor(() => expect(getAccountMock.mock.calls.length).toBeGreaterThan(loadsBefore))
+      act(() => finishReload([]))
+      await waitFor(() => expect(screen.queryByText('BA Amex credit refund')).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
+    })
+
+    it('keeps the dialog and shows the message when the delete fails', async () => {
+      const user = userEvent.setup()
+      deleteCardCreditRefundMock.mockRejectedValue(new ApiError('Transfer not found.', 404))
+      const row = await findCreditRefundRow(AMEX_ID)
+
+      await user.click(within(row).getByRole('button', { name: 'Delete credit refund' }))
+      const dialog = await findDialog('Delete credit refund')
+      await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+      expect(await within(dialog).findByText('Transfer not found.')).toBeInTheDocument()
+      expect(screen.queryByText('Credit refund deleted')).not.toBeInTheDocument()
+    })
+
+    it('offers no Delete on the row when the screen account is inactive', async () => {
+      getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), isActive: false, allowedActions: [] }))
+
+      const row = await findCreditRefundRow(AMEX_ID)
+
       expect(within(row).queryByRole('button')).not.toBeInTheDocument()
+    })
+
+    it('shows the fresh statements on opening the Statements tab after a delete', async () => {
+      const user = userEvent.setup()
+      deleteCardCreditRefundMock.mockResolvedValue(undefined)
+      getAccountStatementsMock.mockResolvedValue(CARD_STATEMENTS)
+      const row = await findCreditRefundRow(AMEX_ID)
+      await user.click(within(row).getByRole('button', { name: 'Delete credit refund' }))
+      const dialog = await findDialog('Delete credit refund')
+      await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+      await screen.findByText('Credit refund deleted')
+      expect(getAccountStatementsMock).not.toHaveBeenCalled()
+
+      await user.click(screen.getByRole('tab', { name: 'Statements' }))
+
+      await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(1))
     })
   })
 
@@ -2543,6 +2614,24 @@ describe('AccountScreenPage bank side card payments', () => {
   function payForm() {
     return screen.getByRole('heading', { name: 'Pay card statement' }).closest('form') as HTMLElement
   }
+
+  it('reloads an open Pay card statement form after a credit refund is deleted, because its amounts can change', async () => {
+    const user = userEvent.setup()
+    deleteCardCreditRefundMock.mockResolvedValue(undefined)
+    getAccountTransactionsMock.mockResolvedValue([
+      accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', counterpart: 'BA Amex', amount: 35, canEdit: false, transfer: { id: 'cr1' } as AccountTransactionDto['transfer'] }),
+    ])
+    await openBank()
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(1))
+
+    await user.click(await screen.findByRole('button', { name: 'Delete credit refund' }))
+    const dialog = await findDialog('Delete credit refund')
+    await user.click(within(dialog).getByText('Delete', { selector: 'button' }))
+
+    await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(2))
+    expect(payForm()).toBeInTheDocument()
+  })
 
   it('[AC P60-F08-statement-payment-and-card-screen-04] Pay card statement chooses a card and statement and pays it with this bank', async () => {
     const user = userEvent.setup()

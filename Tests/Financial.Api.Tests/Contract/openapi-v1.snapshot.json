@@ -7155,6 +7155,51 @@
         ]
       }
     },
+    "/accounts/credit-refunds/{id}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
+        ]
+      }
+    },
     "/accounts/groups/by-template/{year}/{month}": {
       "get": {
         "parameters": [

@@ -112,6 +112,15 @@ describe('deleteConfirmation', () => {
   })
 })
 
+describe('a credit refund delete', () => {
+  const CREDIT_REFUND = accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', amount: -35 })
+
+  it('says the credit returns in the confirmation and names it in the toast', () => {
+    expect(deleteConfirmation(CREDIT_REFUND)).toBe("Delete this credit refund? The card's credit returns.")
+    expect(deletedMessage(CREDIT_REFUND)).toBe('Credit refund deleted')
+  })
+})
+
 describe('deletedMessage', () => {
   it('reports the lines a split delete removed and a single record by its title', () => {
     expect(deletedMessage(movementRow('m1', { splitLineCount: 2 }))).toBe('2 pot transaction lines deleted')

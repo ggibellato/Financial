@@ -102,8 +102,13 @@ function linesDeletedWith(row: AccountTransactionDto): number {
   return row.movement?.splitLineCount ?? 1
 }
 
+export function isCreditRefund(row: AccountTransactionDto): boolean {
+  return row.kind === 'CardCreditRefund'
+}
+
 export function deleteConfirmation(row: AccountTransactionDto): string {
   const question = `Delete this ${recordNoun(row.kind)}?`
+  if (isCreditRefund(row)) return `${question} The card's credit returns.`
   const lines = linesDeletedWith(row)
   return lines > 1
     ? `${question} It is part of a split, so all ${lines} lines will be deleted. This cannot be undone.`
