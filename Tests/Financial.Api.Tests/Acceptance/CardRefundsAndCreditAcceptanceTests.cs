@@ -76,6 +76,107 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
 
     private static AccountStatementDTO Month(IEnumerable<AccountStatementDTO> rows, int month) => rows.Single(row => row.Month == month);
 
+    private async Task<decimal> MercadoSpendAsync(int month)
+    {
+        var totals = await Client.GetFromJsonAsync<List<CategoryTotalDTO>>($"{Api}/expenses/month/2026/{month}/category-totals");
+        return totals!.Single(total => total.Category == "Mercado").TotalValue;
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
+    public async Task AddRefund_SavesNegativeCharge_LowersOwedAndCategorySpendInStatementMonth()
+    {
+        await AddCardChargeAsync(11, 2, 100m);
+
+        var refund = await AddCardChargeAsync(11, 3, -40m);
+
+        var detail = await AmexDetailAsync(11);
+        var row = (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{AmexId}/transactions/2026/11"))!.Single(r => r.Id == refund.Id);
+        using (new AssertionScope())
+        {
+            refund.Value.Should().Be(-40m);
+            refund.InvoiceDate.Should().Be(new DateOnly(2026, 11, 1));
+            detail.AllowedActions.Should().Contain("AddRefund");
+            detail.TotalOwed.Should().Be(60m);
+            detail.ViewedStatement!.OutstandingTotal.Should().Be(60m);
+            (await MercadoSpendAsync(11)).Should().Be(60m);
+            row.Kind.Should().Be("CardRefund");
+            row.Amount.Should().Be(40m);
+            row.CanEdit.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
+    public async Task AddRefund_DatedAfterToday_Returns400()
+    {
+        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 11, 16),
+            Description = "Refund",
+            Value = -40m,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(AmexId),
+            CountsAsTithe = true
+        });
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            problem!.Detail.Should().Be("Date must not be in the future.");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
+    public async Task AddRefund_IntoAPaidStatement_Returns400()
+    {
+        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 9, 20),
+            Description = "Refund",
+            Value = -40m,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(AmexId),
+            CountsAsTithe = true
+        });
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            problem!.Detail.Should().Be("This charge's statement is paid; unmark it first.");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
+    public async Task AddRefund_ForAPaidMonthsPurchaseOnAnOpenStatement_IsSavedThere()
+    {
+        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
+        {
+            Date = new DateOnly(2026, 9, 20),
+            Description = "Refund",
+            Value = -40m,
+            CategoryId = Guid.Parse(MercadoId),
+            CreditCardId = Guid.Parse(AmexId),
+            InvoiceDate = new DateOnly(2026, 11, 1),
+            CountsAsTithe = true
+        });
+        response.EnsureSuccessStatusCode();
+
+        var refund = (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!;
+        var november = Month(await StatementsAsync(), 11);
+
+        using (new AssertionScope())
+        {
+            refund.InvoiceDate.Should().Be(new DateOnly(2026, 11, 1));
+            november.Status.Should().Be("NothingDue");
+            november.CreditCarried.Should().Be(40m);
+        }
+    }
+
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
     public async Task StatementAtOrBelowZero_IsNothingDueAndNotPayable_UntilAChargeRaisesIt()

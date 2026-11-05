@@ -29,7 +29,6 @@ public class AccountActionsTests
 
     [Theory]
     [InlineData(Capability.HasCategories, AccountAction.AddExpense)]
-    [InlineData(Capability.HasStatements, AccountAction.AddCharge)]
     [InlineData(Capability.ReceivesIncome, AccountAction.AddIncome)]
     [InlineData(Capability.CanSendTransfers, AccountAction.TransferTo)]
     [InlineData(Capability.CanReceiveTransfers, AccountAction.TransferFrom)]
@@ -37,6 +36,12 @@ public class AccountActionsTests
     public void AllowedFor_SingleCapability_ReturnsOnlyItsAction(Capability capability, AccountAction expected)
     {
         AccountActions.AllowedFor(Minimal(capability)).Should().Equal(expected);
+    }
+
+    [Fact]
+    public void AllowedFor_HasStatements_ReturnsAddChargeAndAddRefund()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.HasStatements)).Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund);
     }
 
     [Fact]
@@ -82,9 +87,9 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_CreditCardAccount_ReturnsOnlyAddCharge()
+    public void AllowedFor_CreditCardAccount_ReturnsOnlyAddChargeAndAddRefund()
     {
-        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().Equal(AccountAction.AddCharge);
+        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex")).Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund);
     }
 
     [Fact]
@@ -114,6 +119,6 @@ public class AccountActionsTests
     public void AllowedFor_AccountWithCategoriesAndStatements_HasAddChargeInsteadOfAddExpense()
     {
         AccountActions.AllowedFor(Minimal(Capability.HasCategories, Capability.HasStatements, Capability.ReceivesIncome))
-            .Should().Equal(AccountAction.AddCharge, AccountAction.AddIncome);
+            .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.AddIncome);
     }
 }

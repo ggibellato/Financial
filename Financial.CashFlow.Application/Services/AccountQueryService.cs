@@ -20,6 +20,7 @@ public sealed class AccountQueryService : IAccountQueryService
     {
         Expense,
         CardCharge,
+        CardRefund,
         CardPayment,
         Income,
         TransferIn,
@@ -262,12 +263,15 @@ public sealed class AccountQueryService : IAccountQueryService
         CardChargeFilter.ChargesFor(_repository.GetExpenses(), card, year, month)
             .Select(charge => ToRow(
                 charge,
-                TransactionKind.CardCharge,
+                CardRowKind(charge),
                 charge.ChargeDate ?? charge.Date,
                 charge.PaymentSourceAccount?.Name,
                 roundUp: null,
                 canEdit: card.IsActive && !CardChargeFilter.IsPaid(charge, statements),
                 statements));
+
+    private static TransactionKind CardRowKind(Expense charge) =>
+        charge.Value < 0 ? TransactionKind.CardRefund : TransactionKind.CardCharge;
 
     private IEnumerable<AccountTransactionDTO> ToRows(IAccountTransaction record, Account account, IReadOnlyList<CardStatement> statements) =>
         record switch
@@ -282,7 +286,7 @@ public sealed class AccountQueryService : IAccountQueryService
 
     private AccountTransactionDTO ToRow(Expense expense, Account account, IReadOnlyList<CardStatement> statements)
     {
-        var kind = expense.CreditCard is null ? TransactionKind.Expense : TransactionKind.CardCharge;
+        var kind = expense.CreditCard is null ? TransactionKind.Expense : CardRowKind(expense);
         return ToRow(
             expense,
             kind,

@@ -12,6 +12,7 @@ public static class AccountActions
     [
         (AccountAction.AddExpense, account => account.CanPay),
         (AccountAction.AddCharge, account => account.Has(Capability.HasStatements)),
+        (AccountAction.AddRefund, account => account.Has(Capability.HasStatements)),
         (AccountAction.AddIncome, account => account.Has(Capability.ReceivesIncome)),
         (AccountAction.TransferTo, account => account.Has(Capability.CanSendTransfers)),
         (AccountAction.TransferFrom, account => account.Has(Capability.CanReceiveTransfers)),
