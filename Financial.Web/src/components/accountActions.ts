@@ -107,8 +107,8 @@ export function isCreditRefund(row: AccountTransactionDto): boolean {
 }
 
 export function deleteConfirmation(row: AccountTransactionDto): string {
-  if (isCreditRefund(row)) return "Delete this credit refund? The card's credit returns."
   const question = `Delete this ${recordNoun(row.kind)}?`
+  if (isCreditRefund(row)) return `${question} The card's credit returns.`
   const lines = linesDeletedWith(row)
   return lines > 1
     ? `${question} It is part of a split, so all ${lines} lines will be deleted. This cannot be undone.`

@@ -52,19 +52,19 @@ export default function AccountScreenPage() {
     showSuccess(message)
   }
   const isCard = account?.hasStatements ?? false
+  const isAccountActive = account?.isActive ?? false
   const hasTabs = screen.tabs.length > 0
   const activeTab = screen.tab
   const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
-  const notifyActionSaved = (message: string) => {
-    notifySaved(message)
-    cardStatements.retry()
-  }
   const forms = useAccountActionForms(
     screen.accountId,
     account,
     formOptions.options,
     { year: screen.year, month: screen.month },
-    notifyActionSaved,
+    (message) => {
+      notifySaved(message)
+      cardStatements.retry()
+    },
     { isDirty: cardStatements.isPayFormDirty, close: cardStatements.closePayForm },
     { accounts: screen.accounts, hasPots },
   )
@@ -108,7 +108,7 @@ export default function AccountScreenPage() {
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
-    notifyActionSaved(deletedMessage(row))
+    notifySaved(deletedMessage(row))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
 
@@ -398,7 +398,7 @@ export default function AccountScreenPage() {
             viewedYear={screen.year}
             viewedMonth={screen.month}
             currency={account?.currency ?? 'GBP'}
-            canAct={account?.isActive ?? false}
+            canAct={isAccountActive}
             guardChange={guardChange}
           />
         ) : activeTab === 'pots' ? (
@@ -425,7 +425,7 @@ export default function AccountScreenPage() {
               isEditDisabled={(row) => !isAccountCurrent || (row.movement ? pots.data === null : !formOptions.isReady)}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
-              canDeleteCreditRefunds={account?.isActive ?? false}
+              canDeleteCreditRefunds={isAccountActive}
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}

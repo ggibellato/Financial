@@ -146,6 +146,42 @@ export default function AccountTransactionsGrid({
     event.preventDefault()
     open()
   }
+  const renderActions = (row: AccountTransactionDto) => {
+    if (row.canEdit) {
+      return (
+        <RowActionsCell
+          className={actionClassName}
+          itemName={recordNoun(row.kind)}
+          editDisabled={isEditDisabled?.(row) ?? false}
+          onEdit={(button) => onEdit(row, button)}
+          onDelete={() => onDelete(row)}
+        >
+          {onMove && canMoveToStatement(row) && (
+            <Tooltip content="Move to a later statement" relationship="inaccessible">
+              <Button
+                appearance="subtle"
+                size="small"
+                icon={<CalendarArrowRightRegular />}
+                aria-label={`Move ${recordNoun(row.kind)} to a later statement`}
+                disabled={isMoveDisabled}
+                onClick={(event) => onMove(row, event.currentTarget)}
+              />
+            </Tooltip>
+          )}
+        </RowActionsCell>
+      )
+    }
+    if (isCreditRefund(row) && canDeleteCreditRefunds) {
+      return (
+        <TableCell className={actionClassName}>
+          <div className="data-table__actions-cell">
+            <Button appearance="subtle" size="small" icon={<DeleteRegular />} aria-label={`Delete ${recordNoun(row.kind)}`} onClick={() => onDelete(row)} />
+          </div>
+        </TableCell>
+      )
+    }
+    return <TableCell className={actionClassName}>{isOlderIncomeLine(row) && <Text size={200}>Edit from the income</Text>}</TableCell>
+  }
 
   return (
     <div className="account-screen__grid-scroll">
@@ -194,36 +230,7 @@ export default function AccountTransactionsGrid({
                     {renderCell(column, row)}
                   </DataTableCell>
                 ))}
-                {row.canEdit ? (
-                  <RowActionsCell
-                    className={actionClassName}
-                    itemName={recordNoun(row.kind)}
-                    editDisabled={isEditDisabled?.(row) ?? false}
-                    onEdit={(button) => onEdit(row, button)}
-                    onDelete={() => onDelete(row)}
-                  >
-                    {onMove && canMoveToStatement(row) && (
-                      <Tooltip content="Move to a later statement" relationship="inaccessible">
-                        <Button
-                          appearance="subtle"
-                          size="small"
-                          icon={<CalendarArrowRightRegular />}
-                          aria-label={`Move ${recordNoun(row.kind)} to a later statement`}
-                          disabled={isMoveDisabled}
-                          onClick={(event) => onMove(row, event.currentTarget)}
-                        />
-                      </Tooltip>
-                    )}
-                  </RowActionsCell>
-                ) : isCreditRefund(row) && canDeleteCreditRefunds ? (
-                  <TableCell className={actionClassName}>
-                    <div className="data-table__actions-cell">
-                      <Button appearance="subtle" size="small" icon={<DeleteRegular />} aria-label="Delete credit refund" onClick={() => onDelete(row)} />
-                    </div>
-                  </TableCell>
-                ) : (
-                  <TableCell className={actionClassName}>{isOlderIncomeLine(row) && <Text size={200}>Edit from the income</Text>}</TableCell>
-                )}
+                {renderActions(row)}
               </TableRow>
             ))
           )}
