@@ -2364,7 +2364,7 @@ describe('AccountScreenPage card screen', () => {
       expect(card).toHaveFocus()
       expect(within(form).getByText('Barclays')).toBeInTheDocument()
 
-      await user.selectOptions(card, await within(form).findByRole('option', { name: 'BA Amex · Credit 35.00 (inactive)' }))
+      await user.selectOptions(card, await within(form).findByRole('option', { name: 'BA Amex (inactive) · Credit 35.00' }))
       expect(within(form).getByLabelText(/^Amount \(GBP\)/)).toHaveValue(35)
       await user.click(within(form).getByRole('button', { name: 'Receive card credit' }))
 

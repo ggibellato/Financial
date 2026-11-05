@@ -8,7 +8,7 @@ function formState(overrides: Partial<CardCreditRefundFormState> = {}): CardCred
     isOpen: true,
     mode: 'card',
     accountName: 'BA Amex',
-    counterparts: [{ id: 'barclays', label: 'Barclays', credit: 35 }],
+    counterparts: [{ id: 'barclays', label: 'Barclays', currency: 'GBP' }],
     currency: 'GBP',
     values: { counterpartId: '', amount: '35.00', date: '2026-11-05' },
     isLoading: false,
@@ -127,7 +127,7 @@ describe('CardCreditRefundForm in bank mode', () => {
     formState({
       mode: 'bank',
       accountName: 'Barclays',
-      counterparts: [{ id: 'visa', label: 'Platinum Visa · Credit 12.50 (inactive)', credit: 12.5 }],
+      counterparts: [{ id: 'visa', label: 'Platinum Visa (inactive) · Credit 12.50', currency: 'GBP', credit: 12.5 }],
       values: { counterpartId: '', amount: '', date: '2026-11-05' },
       ...overrides,
     })
@@ -140,7 +140,7 @@ describe('CardCreditRefundForm in bank mode', () => {
     expect(screen.getByRole('combobox', { name: /^From/ })).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: /^To bank/ })).not.toBeInTheDocument()
     expect(screen.getByText('Barclays')).toBeInTheDocument()
-    expect(screen.getByRole('option', { name: 'Platinum Visa · Credit 12.50 (inactive)' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Platinum Visa (inactive) · Credit 12.50' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Amount \(GBP\)/)).toHaveAttribute('placeholder', '—')
   })
 

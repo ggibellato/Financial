@@ -264,8 +264,8 @@ describe('useCardCreditRefundForm in bank mode', () => {
 
     expect(getAccountsMock).not.toHaveBeenCalled()
     expect(result.current.counterparts).toEqual([
-      { id: 'amex', label: 'BA Amex · Credit 35.00', credit: 35 },
-      { id: 'visa', label: 'Platinum Visa · Credit 12.50 (inactive)', credit: 12.5 },
+      { id: 'amex', label: 'BA Amex · Credit 35.00', currency: 'GBP', credit: 35 },
+      { id: 'visa', label: 'Platinum Visa (inactive) · Credit 12.50', currency: 'GBP', credit: 12.5 },
     ])
     expect(result.current.values).toEqual({ counterpartId: '', amount: '', date: '2026-11-05' })
     expect(result.current.isDirty).toBe(false)

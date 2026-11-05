@@ -3,6 +3,8 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDto, CardCreditDto } from '../api/types'
 import { accountsWith } from '../utils/accountCapabilities'
 import { formatN2, getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
+import { formatOwedOrCredit } from '../utils/owedBalance'
+import { inactiveMarked } from '../utils/selectableBanks'
 import { useAsyncResource } from './useAsyncResource'
 import { paymentDateError } from './useCardStatements'
 
@@ -27,7 +29,8 @@ export interface CreditRefundAccount {
 interface Counterpart {
   id: string
   label: string
-  credit: number
+  currency: string
+  credit?: number
 }
 
 const MODE_TEXT = {
@@ -45,19 +48,21 @@ function amountError(amount: string, credit: number | undefined, currency: strin
   return credit !== undefined && parsed > credit ? `The card's credit is ${formatN2(credit)} ${currency}.` : undefined
 }
 
-function cardLabel(name: string, credit: number, isActive: boolean): string {
-  return `${name} · Credit ${formatN2(credit)}${isActive ? '' : ' (inactive)'}`
+function bankCounterparts(accounts: AccountDto[]): Counterpart[] {
+  return accountsWith(accounts, RECEIVES_TRANSFERS_CAPABILITY).map((bank) => ({ id: bank.id, label: bank.name, currency: bank.currency }))
 }
 
-interface CounterpartLists {
-  banks: AccountDto[] | null
-  cards: CardCreditDto[] | null
+function cardCounterparts(cards: CardCreditDto[]): Counterpart[] {
+  return cards.map((card) => ({
+    id: card.accountId,
+    label: `${inactiveMarked(card)} · ${formatOwedOrCredit(-card.credit)}`,
+    currency: card.currency,
+    credit: card.credit,
+  }))
 }
 
-function loadCounterparts(mode: CreditRefundMode): Promise<CounterpartLists> {
-  return mode === 'card'
-    ? apiClient.getAccounts().then((accounts) => ({ banks: accounts, cards: null }))
-    : apiClient.getCardsInCredit().then((cards) => ({ banks: null, cards }))
+function loadCounterparts(mode: CreditRefundMode): Promise<Counterpart[]> {
+  return mode === 'card' ? apiClient.getAccounts().then(bankCounterparts) : apiClient.getCardsInCredit().then(cardCounterparts)
 }
 
 export function useCardCreditRefundForm(
@@ -74,14 +79,7 @@ export function useCardCreditRefundForm(
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<CardCreditRefundField, string>>>({})
   const lists = useAsyncResource(() => (isOpen ? loadCounterparts(mode) : null), [isOpen, mode], text.loadError)
   const currency = account?.currency ?? ''
-  const counterparts: Counterpart[] =
-    mode === 'card'
-      ? accountsWith(lists.data?.banks ?? [], RECEIVES_TRANSFERS_CAPABILITY)
-          .filter((bank) => bank.currency === currency)
-          .map((bank) => ({ id: bank.id, label: bank.name, credit: cardCredit }))
-      : (lists.data?.cards ?? [])
-          .filter((card) => card.currency === currency)
-          .map((card) => ({ id: card.accountId, label: cardLabel(card.name, card.credit, card.isActive), credit: card.credit }))
+  const counterparts = (lists.data ?? []).filter((counterpart) => counterpart.currency === currency)
   const chosen = counterparts.find((counterpart) => counterpart.id === values.counterpartId)
   const credit = mode === 'card' ? cardCredit : chosen?.credit
   const current = { ...values, counterpartId: chosen?.id ?? '' }
@@ -98,14 +96,14 @@ export function useCardCreditRefundForm(
   const cancel = () => setIsOpen(false)
 
   const setField = (field: CardCreditRefundField, value: string) => {
+    const changed: Partial<CardCreditRefundValues> = { [field]: value }
     const isAmountUntouched = values.amount === '' || values.amount === amountFor(chosen?.credit)
-    const defaultAmount =
-      mode === 'bank' && field === 'counterpartId' && isAmountUntouched
-        ? amountFor(counterparts.find((counterpart) => counterpart.id === value)?.credit)
-        : null
-    setValues((previous) => ({ ...previous, [field]: value, ...(defaultAmount === null ? {} : { amount: defaultAmount }) }))
+    if (mode === 'bank' && field === 'counterpartId' && isAmountUntouched) {
+      changed.amount = amountFor(counterparts.find((counterpart) => counterpart.id === value)?.credit)
+    }
+    setValues((previous) => ({ ...previous, ...changed }))
     setSaveError(null)
-    setFieldErrors((previous) => ({ ...previous, [field]: undefined, ...(defaultAmount === null ? {} : { amount: undefined }) }))
+    setFieldErrors((previous) => ({ ...previous, ...Object.fromEntries(Object.keys(changed).map((key) => [key, undefined])) }))
   }
 
   const submit = (): CardCreditRefundField | null => {

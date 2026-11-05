@@ -44,27 +44,29 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
     if (saveError && !isSaving) submitRef.current?.focus()
   }, [saveError, isSaving])
 
-  const lockedAccount = <Text weight="semibold">{accountName}</Text>
-  const picker = (
-    <Select
-      ref={counterpartRef}
-      value={values.counterpartId}
-      aria-busy={isLoading}
-      onChange={(event) => setField('counterpartId', event.target.value)}
-    >
-      <option value="">{isLoading ? text.loading : text.placeholder}</option>
-      {counterparts.map((counterpart) => (
-        <option key={counterpart.id} value={counterpart.id}>
-          {counterpart.label}
-        </option>
-      ))}
-    </Select>
+  const lockedField = (label: string) => (
+    <Field label={label}>
+      <Text weight="semibold">{accountName}</Text>
+    </Field>
   )
   const pickerField = (label: string) => (
     <Field label={label} required hint={hasNoCounterparts ? text.empty(currency) : undefined} {...validation('counterpartId')}>
-      {picker}
+      <Select
+        ref={counterpartRef}
+        value={values.counterpartId}
+        aria-busy={isLoading}
+        onChange={(event) => setField('counterpartId', event.target.value)}
+      >
+        <option value="">{isLoading ? text.loading : text.placeholder}</option>
+        {counterparts.map((counterpart) => (
+          <option key={counterpart.id} value={counterpart.id}>
+            {counterpart.label}
+          </option>
+        ))}
+      </Select>
     </Field>
   )
+  const [fromField, toField] = mode === 'card' ? [lockedField('From'), pickerField('To bank')] : [pickerField('From'), lockedField('To bank')]
 
   return (
     <form
@@ -96,8 +98,8 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
           />
         )}
         <div className={styles.grid}>
-          {mode === 'card' ? <Field label="From">{lockedAccount}</Field> : pickerField('From')}
-          {mode === 'card' ? pickerField('To bank') : <Field label="To bank">{lockedAccount}</Field>}
+          {fromField}
+          {toField}
           <Field label={`Amount (${currency})`} required {...validation('amount')}>
             <Input
               ref={amountRef}
