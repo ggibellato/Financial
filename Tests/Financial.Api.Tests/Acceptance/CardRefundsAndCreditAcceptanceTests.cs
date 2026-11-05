@@ -324,6 +324,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         var november = Month(await StatementsAsync(), 11);
         var byMonth = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/month/2026/11");
         var byBank = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/bank/{BarclaysId}");
+        var bankRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{BarclaysId}/transactions/2026/11");
 
         var update = new TransferUpdateDTO { Date = refund.Date, SourceBankId = Guid.Parse(BarclaysId), DestinationBankId = Guid.Parse(BarclaysId), Amount = 1m };
         var accountUpdate = new AccountTransferUpdateDTO { Date = refund.Date, SourceAccountId = Guid.Parse(BarclaysId), DestinationAccountId = Guid.Parse(BarclaysId), Amount = 1m };
@@ -341,6 +342,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
             november.Should().BeEquivalentTo(new { Id = (Guid?)null, Total = 35m, CreditIn = 60m, OutstandingTotal = 0m, CreditCarried = 25m, Status = "NothingDue" });
             byMonth.Should().BeEmpty();
             byBank.Should().NotContain(transfer => transfer.Id == refund.Id);
+            bankRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Amount.Should().Be(35m);
         }
     }
 

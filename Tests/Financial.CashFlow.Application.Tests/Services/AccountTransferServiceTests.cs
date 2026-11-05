@@ -415,7 +415,8 @@ public class AccountTransferServiceTests
             SourceAccountId = IdOf("Amex"),
             DestinationAccountId = IdOf(destination),
             Amount = amount,
-            DestinationAmount = destinationAmount
+            DestinationAmount = destinationAmount,
+            Note = "Issuer refund"
         });
 
     private async Task ShouldRefuseCreditRefund(Func<Task> act, string message)
@@ -438,6 +439,7 @@ public class AccountTransferServiceTests
             result.DestinationAccountName.Should().Be("Barclays");
             result.Amount.Should().Be(35m);
             result.DestinationAmount.Should().Be(35m);
+            result.Note.Should().Be("Issuer refund");
             _repository.Transfers.Should().ContainSingle().Which.IsCreditRefund.Should().BeTrue();
             _repository.SaveChangesCallCount.Should().Be(1);
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.AddCreditRefund")

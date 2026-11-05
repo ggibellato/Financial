@@ -74,8 +74,8 @@ public sealed class AccountTransferService : IAccountTransferService
                 throw new ArgumentException("A card credit refund has no destination amount.");
             }
 
-            EnsureWithinCredit(card, refund);
-            EnsureKeepsAmountsToPay(card, refund);
+            EnsureWithinCredit(refund);
+            EnsureKeepsAmountsToPay(refund);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -190,8 +190,9 @@ public sealed class AccountTransferService : IAccountTransferService
         return transfer;
     }
 
-    private void EnsureWithinCredit(Account card, Transfer refund)
+    private void EnsureWithinCredit(Transfer refund)
     {
+        var card = refund.SourceAccount;
         var credit = Math.Max(0m, -CardChargeFilter.TotalOwed(card, AccountTransactionReader.Read(_repository)));
         if (refund.Amount > credit)
         {
@@ -199,10 +200,9 @@ public sealed class AccountTransferService : IAccountTransferService
         }
     }
 
-    private void EnsureKeepsAmountsToPay(Account card, Transfer refund)
+    private void EnsureKeepsAmountsToPay(Transfer refund)
     {
-        if (!CardStatementLedger.RefundKeepsAmountsToPay(
-            card, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), refund))
+        if (!CardStatementLedger.RefundKeepsAmountsToPay(refund, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers()))
         {
             throw new ArgumentException("On that date the card had less credit than this refund; choose a later date.");
         }

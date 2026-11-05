@@ -272,7 +272,7 @@ public class CardStatementLedgerTests
         Transfer.CreateCreditRefund(new DateOnly(2026, month, 15), card ?? _amex, _barclays, amount, null, Today);
 
     private bool RefundKeepsAmounts(int month, decimal amount) =>
-        CardStatementLedger.RefundKeepsAmountsToPay(_amex, _expenses, _statements, _transfers, CreditRefund(month, amount));
+        CardStatementLedger.RefundKeepsAmountsToPay(CreditRefund(month, amount), _expenses, _statements, _transfers);
 
     [Fact]
     public void For_CreditRefund_CountsInItsDatesMonthAndLowersTheCreditCarried()

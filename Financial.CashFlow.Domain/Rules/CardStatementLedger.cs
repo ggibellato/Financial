@@ -56,11 +56,11 @@ public static class CardStatementLedger
         Walk(card, expenses, statements, transfers, NoThroughMonth).FirstOrDefault(row => row.IsUnpaid);
 
     public static bool RefundKeepsAmountsToPay(
-        Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers, Transfer refund)
+        Transfer refund, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers)
     {
         var throughIndex = MonthIndex(refund.Date.Year, refund.Date.Month);
-        var before = Walk(card, expenses, statements, transfers, throughIndex);
-        var after = Walk(card, expenses, statements, transfers.Append(refund), throughIndex);
+        var before = Walk(refund.SourceAccount, expenses, statements, transfers, throughIndex);
+        var after = Walk(refund.SourceAccount, expenses, statements, transfers.Append(refund), throughIndex);
 
         var amountsBefore = before.ToDictionary(row => MonthIndex(row.Year, row.Month), row => row.AmountToPay);
         var raisesAnAmount = after.Any(row => row.AmountToPay > amountsBefore.GetValueOrDefault(MonthIndex(row.Year, row.Month)));
