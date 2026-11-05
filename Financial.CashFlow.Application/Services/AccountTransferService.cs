@@ -80,6 +80,7 @@ public sealed class AccountTransferService : IAccountTransferService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddTransfer(refund);
+                CardStatementCreation.EnsureFor(_repository, card, refund.Date.Year, refund.Date.Month);
                 return true;
             }).ConfigureAwait(false);
 

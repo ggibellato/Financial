@@ -339,11 +339,44 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
             refund.Should().BeEquivalentTo(new { SourceAccountName = "BA Amex", DestinationAccountName = "Barclays", Amount = 35m, DestinationAmount = 35m });
             card.TotalOwed.Should().Be(-25m);
             bankAfter.Should().Be(bankBefore + 35m);
-            november.Should().BeEquivalentTo(new { Id = (Guid?)null, Total = 35m, CreditIn = 60m, OutstandingTotal = 0m, CreditCarried = 25m, Status = "NothingDue" });
+            november.Id.Should().NotBeNull();
+            november.Should().BeEquivalentTo(new { Total = 35m, CreditIn = 60m, OutstandingTotal = 0m, CreditCarried = 25m, Status = "NothingDue" });
             byMonth.Should().BeEmpty();
             byBank.Should().NotContain(transfer => transfer.Id == refund.Id);
             bankRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Amount.Should().Be(35m);
         }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task CreditRefund_LaterChargeUsesTheCredit_ItsMonthCanStillBePaid()
+    {
+        await AddCardChargeAsync(10, 8, -60m);
+        (await PostCreditRefundAsync(35m)).EnsureSuccessStatusCode();
+
+        await AddCardChargeAsync(10, 9, 50m);
+        var november = Month(await StatementsAsync(), 11);
+        var paid = await MarkPaidAsync(november.Id!.Value);
+        var monthly = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/11");
+
+        using (new AssertionScope())
+        {
+            november.Should().BeEquivalentTo(new { CreditIn = 10m, OutstandingTotal = 25m, Status = "Unpaid" });
+            paid.StatusCode.Should().Be(HttpStatusCode.OK);
+            monthly.Should().ContainSingle().Which.IsPaid.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task CreditRefund_MonthWithNoCharges_ShowsOnMonthlyAsNothingToPay()
+    {
+        await AddCardChargeAsync(10, 8, -60m);
+        (await PostCreditRefundAsync(35m)).EnsureSuccessStatusCode();
+
+        var monthly = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/11");
+
+        monthly.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
     }
 
     [Fact]

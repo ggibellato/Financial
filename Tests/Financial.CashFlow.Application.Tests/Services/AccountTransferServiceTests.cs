@@ -441,10 +441,23 @@ public class AccountTransferServiceTests
             result.DestinationAmount.Should().Be(35m);
             result.Note.Should().Be("Issuer refund");
             _repository.Transfers.Should().ContainSingle().Which.IsCreditRefund.Should().BeTrue();
+            _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
             _repository.SaveChangesCallCount.Should().Be(1);
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.AddCreditRefund")
                 .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
         }
+    }
+
+    [Fact]
+    public async Task AddCreditRefundAsync_MonthAlreadyHasAStatement_KeepsIt()
+    {
+        var card = SeedCardWithCredit(60m);
+        var september = CardStatement.Create(card, 2026, 9);
+        _repository.CardStatements.Add(september);
+
+        await AddCreditRefund(35m);
+
+        _repository.CardStatements.Should().ContainSingle().Which.Should().BeSameAs(september);
     }
 
     [Fact]
