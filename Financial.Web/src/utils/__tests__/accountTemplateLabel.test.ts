@@ -24,8 +24,8 @@ describe('accountTemplateGrid', () => {
     expect(accountTemplateGrid('Bank')).toEqual({ heading: 'Banks', footerLabel: 'Bank total', columns: 'balance', linksRows: true })
   })
 
-  it('shows cards with their next statement and total owed under "Credit cards", totalled as "Total owed", with linked rows', () => {
-    expect(accountTemplateGrid('CreditCard')).toEqual({ heading: 'Credit cards', footerLabel: 'Total owed', columns: 'card', linksRows: true })
+  it('shows cards with their next statement and total owed under "Credit cards", totalled as "Net owed", with linked rows', () => {
+    expect(accountTemplateGrid('CreditCard')).toEqual({ heading: 'Credit cards', footerLabel: 'Net owed', columns: 'card', linksRows: true })
   })
 
   it('shows Pots accounts with their balance under "Pots", totalled as "Pots total", with rows linked to the Pots tab', () => {

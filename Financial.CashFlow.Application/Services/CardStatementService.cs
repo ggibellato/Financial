@@ -41,6 +41,7 @@ public sealed class CardStatementService : ICardStatementService
                 .ToList();
 
             var expenses = _repository.GetExpenses().ToList();
+            var transfers = _repository.GetTransfers().ToList();
             var records = AccountTransactionReader.Read(_repository);
             var accumulatedByCard = existingStatements
                 .Select(s => s.CreditCard)
@@ -50,7 +51,7 @@ public sealed class CardStatementService : ICardStatementService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
             return existingStatements
-                .Select(s => ToDto(s, CardChargeFilter.OutstandingTotal(expenses, statements, s), accumulatedByCard[s.CreditCard.Id]))
+                .Select(s => ToDto(s, AmountToPay(s, expenses, statements, transfers), accumulatedByCard[s.CreditCard.Id]))
                 .ToList();
         }
         catch (Exception ex)
@@ -137,16 +138,26 @@ public sealed class CardStatementService : ICardStatementService
         }
     }
 
-    public (decimal Total, bool HasChargesPosted) GetOutstandingTotalForPeriod(Guid creditCardId, int year, int month)
+    public decimal? GetAmountDueForPeriod(Guid creditCardId, int year, int month)
     {
-        var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
-        if (card is null)
+        using var span = StartSpan("GetAmountDueForPeriod");
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, creditCardId.ToString());
+        try
         {
-            return (0m, false);
-        }
+            var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
+            var ledgerMonth = card is null
+                ? null
+                : CardStatementLedger.MonthOf(card, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), year, month);
 
-        var charges = CardChargeFilter.UnpaidChargesFor(_repository.GetExpenses(), _repository.GetCardStatements(), card, year, month).ToList();
-        return (charges.Sum(e => e.Value), charges.Count > 0);
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetAmountDueForPeriod");
+            return ledgerMonth is null or { Status: CardStatementLedgerStatus.NothingDue } ? null : ledgerMonth.AmountToPay;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
     }
 
     private ITelemetrySpan StartSpan(string operationName)
@@ -194,8 +205,12 @@ public sealed class CardStatementService : ICardStatementService
     private CardStatementDTO ToDto(CardStatement statement) =>
         ToDto(
             statement,
-            CardChargeFilter.OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement),
+            AmountToPay(statement, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers()),
             CardChargeFilter.TotalOwed(statement.CreditCard, AccountTransactionReader.Read(_repository)));
+
+    private static decimal AmountToPay(
+        CardStatement statement, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers) =>
+        CardStatementLedger.MonthOf(statement.CreditCard, expenses, statements, transfers, statement.Year, statement.Month)?.AmountToPay ?? 0m;
 
     private static CardStatementDTO ToDto(CardStatement statement, decimal outstandingTotal, decimal accumulatedOutstandingTotal) => new()
     {

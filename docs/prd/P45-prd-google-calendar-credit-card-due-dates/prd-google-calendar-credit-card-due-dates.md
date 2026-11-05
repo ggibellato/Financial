@@ -232,7 +232,7 @@ graph TD
 - [x] **P45-F02-credit-card-due-date-event-sync-02** Changing that card's due date updates the same event (same event ID) rather than creating a second one.
 - [x] **P45-F02-credit-card-due-date-event-sync-03** Clearing the due date, deactivating the card, or deleting the card removes its calendar event.
 - [x] **P45-F02-credit-card-due-date-event-sync-04** The created event has exactly one popup reminder set 1440 minutes before its start.
-- [x] **P45-F02-credit-card-due-date-event-sync-05** A card with a due date but no posted charges for that invoice period shows a balance of 0 with the "no charges posted yet" note.
+- [x] **P45-F02-credit-card-due-date-event-sync-05** A card with a due date but no posted charges for that invoice period shows a balance of 0 with the "no charges posted yet" note. Superseded by P60 F15: such a month is Nothing due and has no event (`P60-F15-card-refunds-and-credit-02`).
 - [x] **P45-F02-credit-card-due-date-event-sync-06** A simulated Calendar API failure during sync leaves the triggering credit-card save unaffected (it still returns success) and marks that card's sync status as `error` with a retry available.
 - [x] **P45-F02-credit-card-due-date-event-sync-07** Manually deleting the dedicated calendar in Google Calendar, then triggering any sync, results in the calendar being recreated and every active card's event being re-created in it.
 

@@ -83,7 +83,8 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
     {
         var card = _repository.GetCreditCardAccounts().FirstOrDefault(c => c.Id == creditCardId);
         var dueDate = card is null ? null : _repository.GetCardDueDate(card);
-        if (dueDate is not null && dueDate.Value.Year == invoiceDate.Year && dueDate.Value.Month == invoiceDate.Month)
+        var invoiceMonthStart = new DateOnly(invoiceDate.Year, invoiceDate.Month, 1);
+        if (invoiceMonthStart <= dueDate)
         {
             TriggerSync(creditCardId);
         }
@@ -121,8 +122,10 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
     public IReadOnlyList<CreditCardCalendarSyncStatusDTO> GetSyncStatuses()
     {
         var recorded = _statusStore.GetAllStatuses();
-        var cardEventIds = TryLoadCardEventIds();
-        var derivedSyncedIds = cardEventIds.Keys.Where(id => !recorded.ContainsKey(id));
+        var connection = TryLoadConnection();
+        var cardEventIds = connection?.CardEventIds.Keys ?? Enumerable.Empty<Guid>();
+        var nothingDueIds = connection is { RevokedReason: null } ? CardIdsWithNothingDue() : [];
+        var derivedSyncedIds = cardEventIds.Union(nothingDueIds).Where(id => !recorded.ContainsKey(id));
 
         return recorded.Select(kvp => ToDto(kvp.Key, kvp.Value))
             .Concat(derivedSyncedIds.Select(id => ToDto(id, new CreditCardCalendarSyncStatus(CreditCardCalendarSyncState.Synced, null, null))))
@@ -133,17 +136,25 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
     /// a backup or sync tool) can still hold the file and make a read throw <see cref="IOException"/> -
     /// this method is called on every status poll, so treat that as "no derived data this call"
     /// rather than failing the whole status list; the next call sees the settled file.</summary>
-    private IReadOnlyDictionary<Guid, string> TryLoadCardEventIds()
+    private CalendarConnection? TryLoadConnection()
     {
         try
         {
-            return _connectionStore.Load()?.CardEventIds ?? new Dictionary<Guid, string>();
+            return _connectionStore.Load();
         }
         catch (IOException)
         {
-            return new Dictionary<Guid, string>();
+            return null;
         }
     }
+
+    private List<Guid> CardIdsWithNothingDue() =>
+        _repository.GetCreditCardAccounts()
+            .Where(card => card.IsActive
+                && _repository.GetCardDueDate(card) is { } due
+                && _cardStatementService.GetAmountDueForPeriod(card.Id, due.Year, due.Month) is null)
+            .Select(card => card.Id)
+            .ToList();
 
     private async Task SyncCoreAsync(Guid creditCardId, CancellationToken cancellationToken)
     {
@@ -193,14 +204,16 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
             var hasEventMapping = connection.CardEventIds.TryGetValue(creditCardId, out var existingEventId);
             var dueDate = card is null ? null : _repository.GetCardDueDate(card);
 
-            if (card is null || !card.IsActive || dueDate is null)
+            if (card is { IsActive: true }
+                && dueDate is { } due
+                && _cardStatementService.GetAmountDueForPeriod(creditCardId, due.Year, due.Month) is { } amountDue)
             {
-                await SyncRemovalAsync(creditCardId, connection, accessToken, hasEventMapping, existingEventId, cancellationToken).ConfigureAwait(false);
+                await SyncUpsertAsync(creditCardId, connection, accessToken, card.Name, due, amountDue, hasEventMapping, existingEventId, cancellationToken)
+                    .ConfigureAwait(false);
             }
             else
             {
-                await SyncUpsertAsync(creditCardId, connection, accessToken, card.Name, dueDate.Value, hasEventMapping, existingEventId, cancellationToken)
-                    .ConfigureAwait(false);
+                await SyncRemovalAsync(creditCardId, connection, accessToken, hasEventMapping, existingEventId, cancellationToken).ConfigureAwait(false);
             }
 
             span.MarkSuccess();
@@ -239,12 +252,11 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
     }
 
     private async Task SyncUpsertAsync(
-        Guid creditCardId, CalendarConnection connection, string accessToken, string cardName, DateOnly dueDate,
+        Guid creditCardId, CalendarConnection connection, string accessToken, string cardName, DateOnly dueDate, decimal amountDue,
         bool hasEventMapping, string? existingEventId, CancellationToken cancellationToken)
     {
-        var (total, hasChargesPosted) = _cardStatementService.GetOutstandingTotalForPeriod(creditCardId, dueDate.Year, dueDate.Month);
-        var title = BuildTitle(cardName, total);
-        var description = BuildDescription(cardName, dueDate, total, hasChargesPosted);
+        var title = BuildTitle(cardName, amountDue);
+        var description = BuildDescription(cardName, dueDate, amountDue);
 
         try
         {
@@ -342,18 +354,17 @@ public sealed class CreditCardCalendarSyncService : ICreditCardCalendarSyncServi
         _connectionStore.Save(connection with { CardEventIds = updated });
     }
 
-    private static string BuildTitle(string cardName, decimal total) =>
-        $"{cardName} — Due {total.ToString("N2", CultureInfo.InvariantCulture)}";
+    private static string BuildTitle(string cardName, decimal amountDue) =>
+        $"{cardName} — Due {amountDue.ToString("N2", CultureInfo.InvariantCulture)}";
 
     private static string TitlePrefix(string cardName) => $"{cardName} — Due ";
 
-    private static string BuildDescription(string cardName, DateOnly dueDate, decimal total, bool hasChargesPosted)
+    private static string BuildDescription(string cardName, DateOnly dueDate, decimal amountDue)
     {
-        var formattedBalance = total.ToString("N2", CultureInfo.InvariantCulture);
+        var formattedAmount = amountDue.ToString("N2", CultureInfo.InvariantCulture);
         var formattedDate = dueDate.ToString("d MMMM yyyy", CultureInfo.InvariantCulture);
-        var balanceLine = hasChargesPosted ? formattedBalance : $"{formattedBalance} (no charges posted to this invoice yet)";
 
-        return string.Join('\n', cardName, $"Due {formattedDate}", balanceLine, string.Empty, "Generated automatically by the Financial app.");
+        return string.Join('\n', cardName, $"Due {formattedDate}", formattedAmount, string.Empty, "Generated automatically by the Financial app.");
     }
 
     private static CreditCardCalendarSyncStatusDTO ToDto(Guid creditCardId, CreditCardCalendarSyncStatus? status) => new()

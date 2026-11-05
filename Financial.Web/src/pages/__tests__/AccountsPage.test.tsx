@@ -146,7 +146,33 @@ describe('AccountsPage', () => {
     expect(within(visa).getByText('—')).toBeInTheDocument()
     expect(within(visa).getByText('0.00')).toBeInTheDocument()
     expect(within(visa).getByText('Inactive')).toBeInTheDocument()
-    expect(footer(cards)).toBe('Total owed GBP: 740.12')
+    expect(footer(cards)).toBe('Net owed GBP: 740.12')
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-06] shows a card in credit as Credit x in its Total owed cell and the footer, with no next statement', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([
+      {
+        templateName: 'CreditCard',
+        members: [member('amex', 'BA Amex', 'CreditCard', { balance: 35, balanceIsOwed: true, totalOwed: -35, nextStatement: null })],
+        totals: [{ currency: 'GBP', total: -35 }],
+      },
+    ])
+
+    renderPage()
+
+    const cards = await screen.findByRole('table', { name: 'Credit cards' })
+    const [amex] = bodyRows(cards)
+    expect(within(amex).getByText('Credit 35.00')).toBeInTheDocument()
+    expect(within(amex).getByText('—')).toBeInTheDocument()
+    expect(footer(cards)).toBe('Net owed GBP: Credit 35.00')
+  })
+
+  it('keeps a negative balance total as a plain figure on a bank grid', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([{ ...BANKS, totals: [{ currency: 'GBP', total: -20 }] }])
+
+    renderPage()
+
+    expect(footer(await screen.findByRole('table', { name: 'Banks' }))).toBe('Bank total GBP: -20.00')
   })
 
   it('sorts the cards by total owed', async () => {

@@ -15,32 +15,8 @@ public static class CardChargeFilter
             && invoiceDate.Year == year
             && invoiceDate.Month == month);
 
-    public static IEnumerable<Expense> UnpaidChargesFor(
-        IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card, int year, int month) =>
-        IsStatementPaid(statements, card, year, month)
-            ? []
-            : ChargesFor(expenses, card, year, month).Where(expense => expense.PaymentStatus == ExpensePaymentStatus.CreditCardCharge);
-
     public static IEnumerable<Expense> SettledChargesFor(IEnumerable<Expense> expenses, Account card, int year, int month) =>
         ChargesFor(expenses, card, year, month).Where(expense => expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled);
-
-    public static decimal OutstandingTotal(
-        IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card, int year, int month) =>
-        UnpaidChargesFor(expenses, statements, card, year, month).Sum(expense => expense.Value);
-
-    public static decimal OutstandingTotal(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, CardStatement statement) =>
-        OutstandingTotal(expenses, statements, statement.CreditCard, statement.Year, statement.Month);
-
-    public static CardStatementMonth? NextStatementToPay(IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, Account card)
-    {
-        var oldest = expenses
-            .Where(expense => expense.IsUnpaidChargeOn(card) && !IsOnPaidStatement(expense, statements))
-            .Min(expense => expense.InvoiceDate);
-
-        return oldest is { } invoiceDate
-            ? new CardStatementMonth(invoiceDate.Year, invoiceDate.Month, OutstandingTotal(expenses, statements, card, invoiceDate.Year, invoiceDate.Month))
-            : null;
-    }
 
     public static bool IsPaid(Expense expense, IEnumerable<CardStatement> statements) =>
         expense.PaymentStatus == ExpensePaymentStatus.CreditCardSettled || IsOnPaidStatement(expense, statements);

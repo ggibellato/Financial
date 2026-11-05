@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
@@ -46,8 +47,16 @@ public class PaymentsDueServiceTests
     {
         var card = TestAccounts.CreditCard(name);
         _repository.SetCardDueDate(card, nextInvoiceDueDate);
+        if (nextInvoiceDueDate is { } dueDate)
+        {
+            AddCharge(card, dueDate, 100m);
+        }
+
         return card;
     }
+
+    private void AddCharge(Account card, DateOnly invoiceDate, decimal value) =>
+        _repository.Expenses.Add(Expense.Create(invoiceDate, "Charge", value, Category.Create("Mercado"), null, card, invoiceDate));
 
     private void AddStatement(Account card, DateOnly period, bool paid = false)
     {
@@ -148,6 +157,52 @@ public class PaymentsDueServiceTests
         var result = _sut.GetPaymentsDue();
 
         result.Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
+    public void GetPaymentsDue_CreditCardWithNoChargesInTheDueMonth_IsExcluded()
+    {
+        var card = TestAccounts.CreditCard("Nubank");
+        _repository.SetCardDueDate(card, PinnedToday.AddDays(3));
+        _repository.AddAccount(card);
+
+        _sut.GetPaymentsDue().Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
+    public void GetPaymentsDue_CreditCardWithRefundLargerThanTheDueMonthsCharges_IsExcluded()
+    {
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
+        _repository.AddAccount(card);
+        AddCharge(card, dueDate, -100m);
+
+        _sut.GetPaymentsDue().Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
+    public void GetPaymentsDue_CreditFromAnEarlierMonthCoversTheDueMonth_IsExcluded()
+    {
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
+        _repository.AddAccount(card);
+        AddCharge(card, dueDate.AddMonths(-1), -150m);
+
+        _sut.GetPaymentsDue().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetPaymentsDue_CreditFromAnEarlierMonthCoversOnlyPartOfTheDueMonth_IsIncluded()
+    {
+        var dueDate = PinnedToday.AddDays(3);
+        var card = CreateCard("Nubank", dueDate);
+        _repository.AddAccount(card);
+        AddCharge(card, dueDate.AddMonths(-1), -40m);
+
+        _sut.GetPaymentsDue().Should().ContainSingle().Which.Name.Should().Be("Nubank");
     }
 
     [Fact]

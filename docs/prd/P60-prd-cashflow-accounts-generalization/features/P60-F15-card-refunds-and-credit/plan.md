@@ -2,7 +2,7 @@
 
 **Prerequisites:**
 - .NET 10 SDK, Node as for `Financial.Web`, PowerShell 7. No new packages.
-- The live file for parity is the 2026-11-05 download at `E:\dev\projetos\financial\data\data-cashflow.json` (SHA-256 starts `d83852d4`). Every PR runs `scripts/parity/Invoke-Parity.ps1 -Step All -LiveCopy "E:\dev\projetos\financial\data\data-cashflow.json"` against `p60-deployed-f10` and expects 0 differences with the SHA-256 unchanged. Parity reads that file and never writes it; local runs use `data/dev/data-cashflow.json`.
+- The live file for parity is the 2026-11-05 download at `E:\dev\projetos\financial\data\data-cashflow.json` (SHA-256 starts `d83852d4`). Every PR runs `scripts/parity/Invoke-Parity.ps1 -Step All -LiveCopy "E:\dev\projetos\financial\data\data-cashflow.json"` against `p60-deployed-f10` and expects only the differences spec §7 lists (0 in stage 1, the same 4 from stage 2) with the SHA-256 unchanged. Parity reads that file and never writes it; local runs use `data/dev/data-cashflow.json`.
 - Implement each PR on its own branch off an up-to-date `main`, starting only after the previous PR is merged. Count the files before pushing: at most 8 non-test code files and about 15 in total (generated `openapi.ts` excluded), except the overages the spec names (stages 1, 2, 3 and 4b). Propose a split instead of pushing anything larger.
 - Strict no-comments policy in all code, XML docs included.
 - Deploy only after stage 6.
