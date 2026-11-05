@@ -39,7 +39,7 @@ public class AccountQueryServiceTests
         _repository.Accounts.AddRange([_closed, _chase, _barclays]);
         _tracer = new RecordingTelemetryTracer();
         _logger = new RecordingLogger<AccountQueryService>();
-        _sut = new AccountQueryService(_repository, _tracer, _logger);
+        _sut = new AccountQueryService(_repository, TestClock.At(new DateTimeOffset(2026, 11, 15, 12, 0, 0, TimeSpan.Zero)), _tracer, _logger);
     }
 
     [Fact]
@@ -561,18 +561,16 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetStatements_Card_ListsStatementsWithChargesOrPaidNewestFirst()
+    public void GetStatements_Card_ListsEveryLedgerMonthNewestFirst_WithIdsOnlyOnStoredStatements()
     {
         _repository.Accounts.Add(_amex);
         var august = CardStatement.Create(_amex, 2026, 8);
         var september = CardStatement.Create(_amex, 2026, 9);
         september.SetDueDate(new DateOnly(2026, 10, 3));
-        var october = CardStatement.Create(_amex, 2026, 10);
         var november = CardStatement.Create(_amex, 2026, 11);
-        _repository.CardStatements.AddRange([august, september, october, november, CardStatement.Create(TestAccounts.CreditCard("Visa"), 2026, 10)]);
-        var septemberCharge = Expense.Create(new DateOnly(2026, 9, 2), "Shop", 50m, _groceries, null, _amex);
+        _repository.CardStatements.AddRange([august, september, november, CardStatement.Create(TestAccounts.CreditCard("Visa"), 2026, 10)]);
         _repository.Expenses.AddRange([
-            septemberCharge,
+            Expense.Create(new DateOnly(2026, 9, 2), "Shop", 50m, _groceries, null, _amex),
             Expense.Create(new DateOnly(2026, 9, 9), "Fuel", 25m, _groceries, null, _amex),
             Expense.Create(new DateOnly(2026, 11, 3), "Taxi", 12m, _groceries, null, _amex)]);
         var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 12), _barclays, _amex, 75m, Today);
@@ -584,12 +582,85 @@ public class AccountQueryServiceTests
 
         using (new AssertionScope())
         {
-            rows.Select(row => (row.Year, row.Month)).Should().Equal((2026, 11), (2026, 9), (2026, 8));
-            rows[0].Should().BeEquivalentTo(new { Id = november.Id, Total = 12m, OutstandingTotal = 12m, IsPaid = false, DueDate = (DateOnly?)null, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
-            rows[1].Should().BeEquivalentTo(new { Id = september.Id, Total = 75m, OutstandingTotal = 0m, IsPaid = true, DueDate = new DateOnly(2026, 10, 3), PaidOn = new DateOnly(2026, 10, 12), PaidFromAccountName = "Barclays" });
-            rows[2].Should().BeEquivalentTo(new { Total = 0m, IsPaid = true, PaidOn = (DateOnly?)null, PaidFromAccountName = (string?)null });
+            rows.Select(row => (row.Year, row.Month)).Should().Equal((2026, 11), (2026, 10), (2026, 9));
+            rows[0].Should().BeEquivalentTo(new { Id = (Guid?)november.Id, Total = 12m, CreditIn = 0m, OutstandingTotal = 12m, CreditCarried = 0m, Status = "Unpaid", IsPaid = false, DueDate = (DateOnly?)null, PaidOn = (DateOnly?)null, PaidAmount = (decimal?)null, PaidFromAccountName = (string?)null });
+            rows[1].Should().BeEquivalentTo(new { Id = (Guid?)null, Total = 0m, OutstandingTotal = 0m, CreditCarried = 0m, Status = "NothingDue", IsPaid = false, DueDate = (DateOnly?)null, PaidOn = (DateOnly?)null });
+            rows[2].Should().BeEquivalentTo(new { Id = (Guid?)september.Id, Total = 75m, OutstandingTotal = 0m, Status = "Paid", IsPaid = true, DueDate = new DateOnly(2026, 10, 3), PaidOn = new DateOnly(2026, 10, 12), PaidAmount = 75m, PaidFromAccountName = "Barclays" });
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccountStatements");
         }
+    }
+
+    [Fact]
+    public void GetStatements_CardWithoutCharges_IsEmpty()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10));
+
+        _sut.GetStatements(_amex.Id).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetStatements_RefundAboveItsCharges_CarriesCreditIntoTheNextMonth()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 10, 2), "Shop", 25m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 10, 9), "Shop refund", -60m, _groceries, null, _amex)]);
+
+        var rows = _sut.GetStatements(_amex.Id);
+
+        using (new AssertionScope())
+        {
+            rows[0].Should().BeEquivalentTo(new { Month = 11, Total = 0m, CreditIn = 35m, OutstandingTotal = 0m, CreditCarried = 35m, Status = "NothingDue" });
+            rows[1].Should().BeEquivalentTo(new { Month = 10, Total = -35m, CreditIn = 0m, OutstandingTotal = 0m, CreditCarried = 35m, Status = "NothingDue" });
+        }
+    }
+
+    [Fact]
+    public void GetAccount_Card_ViewedStatementIsTheViewedMonthsLedgerRow_AndBalanceAndTotalOwedAreUnchanged()
+    {
+        _repository.Accounts.Add(_amex);
+        var november = CardStatement.Create(_amex, 2026, 11);
+        november.SetDueDate(new DateOnly(2026, 11, 28));
+        _repository.CardStatements.Add(november);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 11, 2), "Bought in November", 300m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 12, 2), "Next statement", 80m, _groceries, null, _amex)]);
+
+        var detail = _sut.GetAccount(_amex.Id, 2026, 11);
+
+        using (new AssertionScope())
+        {
+            detail.ViewedStatement.Should().BeEquivalentTo(new { Id = (Guid?)november.Id, Year = 2026, Month = 11, Total = 300m, OutstandingTotal = 300m, Status = "Unpaid", DueDate = new DateOnly(2026, 11, 28) });
+            detail.Balance.Should().Be(-300m);
+            detail.TotalOwed.Should().Be(380m);
+        }
+    }
+
+    [Fact]
+    public void GetAccount_CardFutureMonth_ViewedStatementReachesThatMonthWithTheCarriedCredit()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 2), "Refund", -35m, _groceries, null, _amex));
+
+        var detail = _sut.GetAccount(_amex.Id, 2027, 3);
+
+        detail.ViewedStatement.Should().BeEquivalentTo(new { Id = (Guid?)null, Year = 2027, Month = 3, CreditIn = 35m, CreditCarried = 35m, Status = "NothingDue" });
+    }
+
+    [Fact]
+    public void GetAccount_CardMonthBeforeItsFirstCharge_HasNoViewedStatement()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 2), "Taxi", 30m, _groceries, null, _amex));
+
+        _sut.GetAccount(_amex.Id, 2026, 9).ViewedStatement.Should().BeNull();
+    }
+
+    [Fact]
+    public void GetAccount_Bank_HasNoViewedStatement()
+    {
+        _sut.GetAccount(_barclays.Id, 2026, 10).ViewedStatement.Should().BeNull();
     }
 
     [Fact]
@@ -603,12 +674,13 @@ public class AccountQueryServiceTests
         _repository.Expenses.AddRange([early, late]);
         _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10).MarkLegacyPaid());
 
-        var row = _sut.GetStatements(_amex.Id).Should().ContainSingle().Which;
+        var row = _sut.GetStatements(_amex.Id).Single(statement => statement.Month == 10);
 
         using (new AssertionScope())
         {
             row.Total.Should().Be(75m);
             row.OutstandingTotal.Should().Be(0m);
+            row.PaidAmount.Should().Be(75m);
             row.PaidOn.Should().Be(new DateOnly(2026, 11, 4));
             row.PaidFromAccountName.Should().Be("Barclays");
         }
@@ -765,6 +837,31 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetPayableStatements_CarriedCredit_LowersTheAmountAndNothingDueMonthsAreLeftOut()
+    {
+        _repository.Accounts.Add(_amex);
+        var october = CardStatement.Create(_amex, 2026, 10);
+        var november = CardStatement.Create(_amex, 2026, 11);
+        _repository.CardStatements.AddRange([october, november]);
+        _repository.Expenses.AddRange([
+            Expense.Create(new DateOnly(2026, 10, 9), "Refund", -35m, _groceries, null, _amex),
+            Expense.Create(new DateOnly(2026, 11, 2), "Taxi", 50m, _groceries, null, _amex)]);
+
+        var row = _sut.GetPayableStatements().Should().ContainSingle().Subject;
+
+        row.Should().BeEquivalentTo(new { Id = november.Id, Year = 2026, Month = 11, Total = 15m });
+    }
+
+    [Fact]
+    public void GetPayableStatements_UnpaidMonthWithoutAStoredStatement_IsLeftOut()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 11, 2), "Taxi", 50m, _groceries, null, _amex));
+
+        _sut.GetPayableStatements().Should().BeEmpty();
+    }
+
+    [Fact]
     public void GetPayableStatements_RepositoryReadFails_FailsTheSpan()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
@@ -801,7 +898,7 @@ public class AccountQueryServiceTests
         _repository.Expenses.AddRange([settled, Expense.Create(new DateOnly(2026, 10, 9), "Fuel", 25m, _groceries, null, _amex)]);
         _repository.CardStatements.Add(CardStatement.Create(_amex, 2026, 10));
 
-        var row = _sut.GetStatements(_amex.Id).Should().ContainSingle().Which;
+        var row = _sut.GetStatements(_amex.Id).Single(statement => statement.Month == 10);
 
         using (new AssertionScope())
         {

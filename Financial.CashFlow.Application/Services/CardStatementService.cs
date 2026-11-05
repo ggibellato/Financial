@@ -82,14 +82,15 @@ public sealed class CardStatementService : ICardStatementService
 
             bank!.EnsureCanPay();
 
-            var total = CardChargeFilter.OutstandingTotal(_repository.GetExpenses(), _repository.GetCardStatements(), statement);
-            if (total <= 0)
+            var ledgerMonth = CardStatementLedger.MonthOf(
+                statement.CreditCard, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), statement.Year, statement.Month);
+            if (ledgerMonth is not { IsUnpaid: true })
             {
                 throw new ArgumentException("There is nothing to pay on this statement.");
             }
 
             var today = _timeProvider.GetLocalToday();
-            var payment = Transfer.CreateStatementPayment(request.Date ?? today, bank!, statement.CreditCard, total, today);
+            var payment = Transfer.CreateStatementPayment(request.Date ?? today, bank!, statement.CreditCard, ledgerMonth.AmountToPay, today);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
