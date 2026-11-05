@@ -47,6 +47,7 @@ const {
   createAccountTransferMock,
   updateAccountTransferMock,
   deleteAccountTransferMock,
+  createCardCreditRefundMock,
   createBalanceAdjustmentMock,
   deleteBalanceAdjustmentMock,
   getMensaisBillsMock,
@@ -83,6 +84,7 @@ const {
   createAccountTransferMock: vi.fn<FinancialApiClient['createAccountTransfer']>(),
   updateAccountTransferMock: vi.fn<FinancialApiClient['updateAccountTransfer']>(),
   deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
+  createCardCreditRefundMock: vi.fn<FinancialApiClient['createCardCreditRefund']>(),
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
   deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -122,6 +124,7 @@ vi.mock('../../api/financialApiClient', () => ({
     createAccountTransfer: createAccountTransferMock,
     updateAccountTransfer: updateAccountTransferMock,
     deleteAccountTransfer: deleteAccountTransferMock,
+    createCardCreditRefund: createCardCreditRefundMock,
     createBalanceAdjustment: createBalanceAdjustmentMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
     getMensaisBills: getMensaisBillsMock,
@@ -333,6 +336,7 @@ beforeEach(() => {
   getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
   getAccountMock.mockReset().mockImplementation((id, year, month) => Promise.resolve(detailFor(id, year, month)))
   getAccountTransactionsMock.mockReset().mockResolvedValue(TRANSACTIONS)
+  createCardCreditRefundMock.mockReset()
   getBanksMock.mockReset().mockResolvedValue(BANKS)
   getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
   getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
@@ -2093,6 +2097,164 @@ describe('AccountScreenPage card screen', () => {
       ),
     )
     expect(await screen.findByText('Charge updated')).toBeInTheDocument()
+  })
+
+  describe('credit refund to a bank', () => {
+    const REFUND_TRANSFER: AccountTransferDto = {
+      id: 'cr1',
+      date: '2026-10-15',
+      sourceAccountId: AMEX_ID,
+      sourceAccountName: 'BA Amex',
+      sourceCurrency: 'GBP',
+      destinationAccountId: BARCLAYS_ID,
+      destinationAccountName: 'Barclays',
+      destinationCurrency: 'GBP',
+      amount: 35,
+      destinationAmount: 35,
+      note: null,
+    }
+
+    function cardInCredit(credit: number) {
+      getAccountMock.mockImplementation((id, year, month) =>
+        Promise.resolve({ ...detailFor(id, year, month), totalOwed: -credit, allowedActions: ['AddCharge', 'AddRefund', 'RefundCreditToBank'] }),
+      )
+    }
+
+    async function openRefundForm(user: ReturnType<typeof userEvent.setup>) {
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+      await user.click(await screen.findByRole('button', { name: 'Refund credit to bank' }))
+      return screen.getByRole('heading', { name: 'Refund credit to bank' }).closest('form') as HTMLElement
+    }
+
+    it('[AC P60-F15-card-refunds-and-credit-05] refunds the credit to the chosen bank, closes, reloads and returns focus to the action', async () => {
+      const user = userEvent.setup()
+      cardInCredit(35)
+      createCardCreditRefundMock.mockResolvedValue(REFUND_TRANSFER)
+      const form = await openRefundForm(user)
+      const bank = within(form).getByRole('combobox', { name: /^To bank/ })
+      expect(bank).toHaveFocus()
+      expect(within(form).getByText('BA Amex')).toBeInTheDocument()
+      expect(within(form).getByLabelText(/^Amount \(GBP\)/)).toHaveValue(35)
+      expect(within(form).getByLabelText(/^Date/)).toHaveValue('2026-10-15')
+      await within(form).findByRole('option', { name: 'Barclays' })
+      expect(within(form).queryByRole('option', { name: 'BA Amex' })).not.toBeInTheDocument()
+      const loadsBefore = getAccountMock.mock.calls.length
+
+      await user.selectOptions(bank, BARCLAYS_ID)
+      await user.click(within(form).getByRole('button', { name: 'Refund credit to bank' }))
+
+      await waitFor(() =>
+        expect(createCardCreditRefundMock).toHaveBeenCalledWith({
+          date: '2026-10-15',
+          sourceAccountId: AMEX_ID,
+          destinationAccountId: BARCLAYS_ID,
+          amount: 35,
+          destinationAmount: null,
+          note: null,
+        }),
+      )
+      expect(await screen.findByText('Credit refunded')).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Refund credit to bank' })).not.toBeInTheDocument()
+      await waitFor(() => expect(getAccountMock.mock.calls.length).toBeGreaterThan(loadsBefore))
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toHaveFocus())
+    })
+
+    it('[AC P60-F15-card-refunds-and-credit-05] blocks an amount above the credit on the focused field', async () => {
+      const user = userEvent.setup()
+      cardInCredit(35)
+      const form = await openRefundForm(user)
+      await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
+      const amount = within(form).getByLabelText(/^Amount/)
+
+      await user.clear(amount)
+      await user.type(amount, '35.01')
+      await user.click(within(form).getByRole('button', { name: 'Refund credit to bank' }))
+
+      expect(await within(form).findByText("The card's credit is 35.00 GBP.")).toBeInTheDocument()
+      expect(amount).toHaveFocus()
+      expect(createCardCreditRefundMock).not.toHaveBeenCalled()
+    })
+
+    it('keeps the form and shows the message when the server refuses', async () => {
+      const user = userEvent.setup()
+      cardInCredit(35)
+      createCardCreditRefundMock.mockRejectedValue(new ApiError('On that date the card had less credit than this refund; choose a later date.', 400))
+      const form = await openRefundForm(user)
+      await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
+
+      await user.click(within(form).getByRole('button', { name: 'Refund credit to bank' }))
+
+      expect(await within(form).findByText('On that date the card had less credit than this refund; choose a later date.')).toBeInTheDocument()
+      expect(within(form).getByRole('combobox', { name: /^To bank/ })).toHaveValue(BARCLAYS_ID)
+    })
+
+    it('prompts before discarding a changed form', async () => {
+      const user = userEvent.setup()
+      cardInCredit(35)
+      const form = await openRefundForm(user)
+      await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
+
+      await user.click(screen.getByRole('button', { name: 'Add charge' }))
+
+      expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Refund credit to bank' })).toBeInTheDocument()
+    })
+
+    it('moves focus to the Transactions heading when the whole credit is refunded and the action goes', async () => {
+      const user = userEvent.setup()
+      cardInCredit(35)
+      createCardCreditRefundMock.mockResolvedValue(REFUND_TRANSFER)
+      const form = await openRefundForm(user)
+      await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
+      withActions(['AddCharge', 'AddRefund'])
+      getAccountTransactionsMock.mockImplementation(() => Promise.resolve([...TRANSACTIONS]))
+
+      await user.click(within(form).getByRole('button', { name: 'Refund credit to bank' }))
+
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Refund credit to bank' })).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.getByRole('tab', { name: 'Transactions' })).toHaveAttribute('aria-selected', 'true'))
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
+    })
+
+    it('reloads the Statements tab after a refund made from it, and moves focus to the tab when the action goes', async () => {
+      const user = userEvent.setup()
+      cardInCredit(35)
+      getAccountStatementsMock.mockResolvedValue(CARD_STATEMENTS)
+      createCardCreditRefundMock.mockResolvedValue(REFUND_TRANSFER)
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+      await user.click(await screen.findByRole('button', { name: 'Refund credit to bank' }))
+      const form = screen.getByRole('heading', { name: 'Refund credit to bank' }).closest('form') as HTMLElement
+      await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
+      await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(1))
+      withActions(['AddCharge', 'AddRefund'])
+      getAccountTransactionsMock.mockImplementation(() => Promise.resolve([...TRANSACTIONS]))
+
+      await user.click(within(form).getByRole('button', { name: 'Refund credit to bank' }))
+
+      await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+      await waitFor(() => expect(screen.queryByRole('button', { name: 'Refund credit to bank' })).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.getByRole('tab', { name: 'Statements' })).toHaveFocus())
+    })
+
+    it('does not offer the action unless the server allows it', async () => {
+      withActions(['AddCharge', 'AddRefund'])
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      expect(await screen.findByRole('button', { name: 'Add refund' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Refund credit to bank' })).not.toBeInTheDocument()
+    })
+
+    it('[AC P60-F15-card-refunds-and-credit-05] labels a credit refund row with no edit or delete', async () => {
+      getAccountTransactionsMock.mockResolvedValue([
+        accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', counterpart: 'Barclays', amount: -35, canEdit: false, transfer: REFUND_TRANSFER }),
+      ])
+      renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
+
+      const row = (await screen.findByText('BA Amex credit refund')).closest('tr') as HTMLElement
+      expect(within(row).getByText('Card credit refund')).toBeInTheDocument()
+      expect(within(row).getByText('-35.00')).toBeInTheDocument()
+      expect(within(row).queryByRole('button')).not.toBeInTheDocument()
+    })
   })
 
   describe('refunds', () => {

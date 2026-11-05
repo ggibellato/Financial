@@ -22,6 +22,7 @@ public sealed class AccountQueryService : IAccountQueryService
         CardCharge,
         CardRefund,
         CardPayment,
+        CardCreditRefund,
         Income,
         TransferIn,
         TransferOut,
@@ -74,6 +75,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var account = FindAccountOrThrow(id);
             var records = AccountTransactionReader.Read(_repository);
             var hasStatements = account.Has(Capability.HasStatements);
+            decimal? totalOwed = hasStatements ? CardChargeFilter.TotalOwed(account, records) : null;
 
             var result = new AccountDetailDTO
             {
@@ -87,9 +89,9 @@ public sealed class AccountQueryService : IAccountQueryService
                 Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
                 BalanceIsOwed = account.BalanceIsOwed,
                 HasStatements = hasStatements,
-                TotalOwed = hasStatements ? CardChargeFilter.TotalOwed(account, records) : null,
+                TotalOwed = totalOwed,
                 ViewedStatement = hasStatements ? ViewedStatementOf(account, year, month) : null,
-                AllowedActions = AccountActions.AllowedFor(account).Select(action => action.ToString()).ToList()
+                AllowedActions = AccountActions.AllowedFor(account, isInCredit: totalOwed < 0).Select(action => action.ToString()).ToList()
             };
 
             span.MarkSuccess();
@@ -355,13 +357,20 @@ public sealed class AccountQueryService : IAccountQueryService
     private static IEnumerable<AccountTransactionDTO> ToRows(Transfer transfer, Account account, IReadOnlyList<CardStatement> statements)
     {
         var paidStatement = statements.FirstOrDefault(statement => statement.PaymentTransferId == transfer.Id);
-        var isPayment = transfer.IsStatementPayment;
 
         if (transfer.SourceAccount.Id == account.Id)
-            yield return ToRow(transfer, account, isPayment ? TransactionKind.CardPayment : TransactionKind.TransferOut, transfer.DestinationAccount, -transfer.Amount, paidStatement);
+            yield return ToRow(transfer, account, TransferRowKind(transfer, TransactionKind.TransferOut), transfer.DestinationAccount, -transfer.Amount, paidStatement);
 
         if (transfer.DestinationAccount.Id == account.Id)
-            yield return ToRow(transfer, account, isPayment ? TransactionKind.CardPayment : TransactionKind.TransferIn, transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
+            yield return ToRow(transfer, account, TransferRowKind(transfer, TransactionKind.TransferIn), transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
+    }
+
+    private static TransactionKind TransferRowKind(Transfer transfer, TransactionKind ordinaryKind)
+    {
+        if (transfer.IsCreditRefund)
+            return TransactionKind.CardCreditRefund;
+
+        return transfer.IsStatementPayment ? TransactionKind.CardPayment : ordinaryKind;
     }
 
     private static AccountTransactionDTO ToRow(
@@ -370,13 +379,16 @@ public sealed class AccountQueryService : IAccountQueryService
         Id = transfer.Id,
         Kind = kind.ToString(),
         Date = transfer.Date,
-        Description = paidStatement is null ? transfer.Note : PaymentDescription(paidStatement),
+        Description = paidStatement is null ? TransferDescription(transfer) : PaymentDescription(paidStatement),
         Counterpart = counterpart.Name,
         Amount = amount,
-        CanEdit = account.IsActive && !transfer.IsStatementPayment,
+        CanEdit = account.IsActive && !transfer.IsStatementPayment && !transfer.IsCreditRefund,
         Statement = paidStatement is null ? null : ToStatementLink(paidStatement),
         Transfer = AccountTransferService.ToDto(transfer)
     };
+
+    private static string? TransferDescription(Transfer transfer) =>
+        transfer.IsCreditRefund ? transfer.Note ?? $"{transfer.SourceAccount.Name} credit refund" : transfer.Note;
 
     private static string PaymentDescription(CardStatement statement) =>
         $"{statement.CreditCard.Name} payment – {new DateOnly(statement.Year, statement.Month, 1).ToString("MMM yyyy", CultureInfo.InvariantCulture)} statement";

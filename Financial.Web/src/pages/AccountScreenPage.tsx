@@ -5,6 +5,7 @@ import AccountActionBar from '../components/AccountActionBar'
 import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
+import CardCreditRefundForm from '../components/CardCreditRefundForm'
 import CardStatementsTab from '../components/CardStatementsTab'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
@@ -59,7 +60,10 @@ export default function AccountScreenPage() {
     account,
     formOptions.options,
     { year: screen.year, month: screen.month },
-    notifySaved,
+    (message) => {
+      notifySaved(message)
+      cardStatements.retry()
+    },
     { isDirty: cardStatements.isPayFormDirty, close: cardStatements.closePayForm },
     { accounts: screen.accounts, hasPots },
   )
@@ -70,6 +74,7 @@ export default function AccountScreenPage() {
     transferForm,
     payBillForm,
     payStatementForm,
+    creditRefundForm,
     moveForm,
     potTransactionForm,
     depositForm,
@@ -110,7 +115,9 @@ export default function AccountScreenPage() {
     if (!isRefreshAfterSavePending.current) return
     isRefreshAfterSavePending.current = false
     closeFormOfRemovedRow(screen.transactions)
-    if (document.activeElement === document.body) transactionsHeadingRef.current?.focus()
+    if (document.activeElement !== document.body) return
+    if (transactionsHeadingRef.current) transactionsHeadingRef.current.focus()
+    else forms.restoreFocus()
     // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when a refresh brings new rows
   }, [screen.transactions])
 
@@ -327,6 +334,9 @@ export default function AccountScreenPage() {
         )}
         {payStatementForm.isOpen && lockedBank && (
           <PayCardStatementForm payForm={payStatementForm} lockedBank={lockedBank} onCancel={closeActiveForm} />
+        )}
+        {creditRefundForm.isOpen && lockedCard && (
+          <CardCreditRefundForm refundForm={creditRefundForm} lockedCard={lockedCard} onCancel={closeActiveForm} />
         )}
         {adjustmentForm.isOpen && (
           <BalanceAdjustmentForm

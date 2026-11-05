@@ -815,6 +815,65 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetTransactions_CreditRefund_IsAReadOnlyRowOnBothAccountsWithTheSignOfEachSide()
+    {
+        _repository.Accounts.Add(_amex);
+        var refund = Transfer.CreateCreditRefund(new DateOnly(2026, 10, 20), _amex, _barclays, 35m, null, Today);
+        _repository.Transfers.Add(refund);
+
+        var bankRow = _sut.GetTransactions(_barclays.Id, 2026, 10).Should().ContainSingle().Subject;
+        var cardRow = _sut.GetTransactions(_amex.Id, 2026, 10).Should().ContainSingle().Subject;
+
+        using (new AssertionScope())
+        {
+            bankRow.Should().BeEquivalentTo(new { refund.Id, Kind = "CardCreditRefund", Description = "Amex credit refund", Counterpart = "Amex", Amount = 35m, CanEdit = false });
+            bankRow.Transfer!.Id.Should().Be(refund.Id);
+            cardRow.Should().BeEquivalentTo(new { refund.Id, Kind = "CardCreditRefund", Description = "Amex credit refund", Counterpart = "Barclays", Amount = -35m, CanEdit = false });
+            cardRow.Transfer!.Id.Should().Be(refund.Id);
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_CreditRefundWithANote_ShowsTheNote()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Transfers.Add(Transfer.CreateCreditRefund(new DateOnly(2026, 10, 20), _amex, _barclays, 35m, "Issuer cheque", Today));
+
+        _sut.GetTransactions(_barclays.Id, 2026, 10).Should().ContainSingle().Which.Description.Should().Be("Issuer cheque");
+    }
+
+    [Theory]
+    [InlineData(-60, true)]
+    [InlineData(0, false)]
+    [InlineData(25, false)]
+    public void GetAccount_Card_OffersRefundCreditToBankOnlyWhenTotalOwedIsBelowZero(int chargeValue, bool isOffered)
+    {
+        _repository.Accounts.Add(_amex);
+        if (chargeValue != 0)
+            _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 12), "Charge", chargeValue, _groceries, null, _amex));
+
+        var actions = _sut.GetAccount(_amex.Id, 2026, 10).AllowedActions;
+
+        actions.Contains("RefundCreditToBank").Should().Be(isOffered);
+    }
+
+    [Fact]
+    public void GetAccount_InactiveCardInCredit_OffersNoActions()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 12), "Refund", -60m, _groceries, null, _amex));
+        _amex.SetActive(false);
+
+        _sut.GetAccount(_amex.Id, 2026, 10).AllowedActions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetAccount_Bank_DoesNotOfferRefundCreditToBank()
+    {
+        _sut.GetAccount(_barclays.Id, 2026, 10).AllowedActions.Should().NotContain("RefundCreditToBank");
+    }
+
+    [Fact]
     public void GetTransactions_StatementPaymentNoStatementLinks_FallsBackToTheTransferNoteWithNoStatementOnEitherSide()
     {
         _repository.Accounts.Add(_amex);

@@ -5,6 +5,7 @@ import { rowKey, type AccountFormAction } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
 import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
+import { useCardCreditRefundForm } from './useCardCreditRefundForm'
 import { useConfirmedDelete } from './useConfirmedDelete'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
@@ -120,6 +121,9 @@ export function useAccountActionForms(
 
   const payBillForm = usePayRecurringBill(lockedBank, () => saved('Bill paid'), settings)
   const payStatementForm = usePayCardStatementForm(lockedBank, () => saved('Statement paid'))
+  const creditRefundForm = useCardCreditRefundForm(isCard ? currentAccountOption : undefined, Math.max(0, -(currentAccount?.totalOwed ?? 0)), () =>
+    saved('Credit refunded'),
+  )
   const moveForm = useMoveChargeForm(onSaved)
   const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
   const depositForm = usePotDepositForm(hasPots ? currentAccountOption : undefined, viewedMonth, () => saved('Deposit saved'))
@@ -130,6 +134,7 @@ export function useAccountActionForms(
     AddExpense: () => expenseForm.showCreateForm('bank'),
     AddCharge: () => expenseForm.showCreateForm('card'),
     AddRefund: () => expenseForm.showCreateRefundForm(),
+    RefundCreditToBank: () => creditRefundForm.open(),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
@@ -151,6 +156,7 @@ export function useAccountActionForms(
     if (adjustmentForm.isOpen && !adjustmentForm.isEditing) return 'Reconcile'
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
+    if (creditRefundForm.isOpen) return 'RefundCreditToBank'
     if (isManagePotsOpen) return 'ManagePots'
     return null
   }
@@ -177,6 +183,7 @@ export function useAccountActionForms(
     adjustmentForm.isDirty ||
     payBillForm.isDirty ||
     payStatementForm.isDirty ||
+    creditRefundForm.isDirty ||
     moveForm.isDirty ||
     potTransactionForm.isDirty ||
     depositForm.isDirty ||
@@ -193,6 +200,7 @@ export function useAccountActionForms(
     if (adjustmentForm.isOpen) adjustmentForm.cancel()
     if (payBillForm.isOpen) payBillForm.cancel()
     if (payStatementForm.isOpen) payStatementForm.cancel()
+    if (creditRefundForm.isOpen) creditRefundForm.cancel()
     if (moveForm.isOpen) moveForm.cancel()
     if (potTransactionForm.isOpen) potTransactionForm.cancel()
     if (depositForm.isOpen) depositForm.cancel()
@@ -325,6 +333,7 @@ export function useAccountActionForms(
     transferForm,
     payBillForm,
     payStatementForm,
+    creditRefundForm,
     moveForm,
     potTransactionForm,
     depositForm,

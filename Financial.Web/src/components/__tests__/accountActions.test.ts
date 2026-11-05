@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AccountTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, operationPath, recordNoun, recordTitle } from '../accountActions'
+import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, needsFormOptions, operationPath, recordNoun, recordTitle } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -39,6 +39,19 @@ describe('pot transaction wording', () => {
     expect(kindLabel('PotTransaction')).toBe('Pot transaction')
     expect(recordNoun('PotTransaction')).toBe('pot transaction')
     expect(recordTitle('PotTransaction')).toBe('Pot transaction')
+  })
+})
+
+describe('credit refund wording', () => {
+  it('offers Refund credit to bank as a form action that needs no shared form options', () => {
+    expect(formActionsOf(['RefundCreditToBank'])).toEqual(['RefundCreditToBank'])
+    expect(ACTION_LABELS.RefundCreditToBank).toBe('Refund credit to bank')
+    expect(needsFormOptions('RefundCreditToBank')).toBe(false)
+  })
+
+  it('labels a credit refund row Card credit refund', () => {
+    expect(kindLabel('CardCreditRefund')).toBe('Card credit refund')
+    expect(recordNoun('CardCreditRefund')).toBe('credit refund')
   })
 })
 

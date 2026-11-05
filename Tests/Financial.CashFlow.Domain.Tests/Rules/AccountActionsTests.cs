@@ -116,6 +116,28 @@ public class AccountActionsTests
     }
 
     [Fact]
+    public void AllowedFor_CreditCardInCredit_AddsRefundCreditToBankAfterAddRefund()
+    {
+        AccountActions.AllowedFor(TestAccounts.CreditCard("BA Amex"), isInCredit: true)
+            .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.RefundCreditToBank);
+    }
+
+    [Fact]
+    public void AllowedFor_InactiveCreditCardInCredit_ReturnsNone()
+    {
+        var inactive = Account.CreateWithCapabilities(
+            "Closed card", Currency.GBP, AccountTemplates.CapabilitiesOf(AccountTemplate.CreditCard), isActive: false);
+
+        AccountActions.AllowedFor(inactive, isInCredit: true).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AllowedFor_BankFlaggedInCredit_DoesNotOfferRefundCreditToBank()
+    {
+        AccountActions.AllowedFor(TestAccounts.Bank("Barclays"), isInCredit: true).Should().NotContain(AccountAction.RefundCreditToBank);
+    }
+
+    [Fact]
     public void AllowedFor_AccountWithCategoriesAndStatements_HasAddChargeInsteadOfAddExpense()
     {
         AccountActions.AllowedFor(Minimal(Capability.HasCategories, Capability.HasStatements, Capability.ReceivesIncome))
