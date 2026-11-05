@@ -2164,19 +2164,27 @@ describe('AccountScreenPage card screen', () => {
       expect(await screen.findByText('Refund updated')).toBeInTheDocument()
     })
 
+    const openMoveRefund = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(await screen.findByRole('button', { name: 'Move refund to a later statement' }))
+      return screen.getByRole('heading', { name: 'Move refund to a later statement' }).closest('form') as HTMLElement
+    }
+
+    const moveToDecember = async (user: ReturnType<typeof userEvent.setup>, form: HTMLElement) => {
+      const statement = within(form).getByLabelText(/^Statement/)
+      await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
+      await user.selectOptions(statement, '2026-12')
+      await user.click(within(form).getByRole('button', { name: 'Move refund' }))
+    }
+
     it('moves a refund with refund wording and the positive amount the grid shows', async () => {
       const user = userEvent.setup()
       getAccountTransactionsMock.mockResolvedValue(REFUND_ROWS)
       moveChargeToStatementMock.mockResolvedValue({ ...SHOES, invoiceDate: '2026-12-01' })
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: 'Move refund to a later statement' }))
-      const form = screen.getByRole('heading', { name: 'Move refund to a later statement' }).closest('form') as HTMLElement
+      const form = await openMoveRefund(user)
       expect(within(form).getByText('Shoes returned (08/10/2026, 40.00) is on the October 2026 statement.')).toBeInTheDocument()
-      const statement = within(form).getByLabelText(/^Statement/)
-      await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
-      await user.selectOptions(statement, '2026-12')
-      await user.click(within(form).getByRole('button', { name: 'Move refund' }))
+      await moveToDecember(user, form)
 
       expect(moveChargeToStatementMock).toHaveBeenCalledWith('r1', { year: 2026, month: 12 })
       expect(await screen.findByText('Refund moved')).toBeInTheDocument()
@@ -2188,12 +2196,8 @@ describe('AccountScreenPage card screen', () => {
       moveChargeToStatementMock.mockRejectedValue('no message')
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: 'Move refund to a later statement' }))
-      const form = screen.getByRole('heading', { name: 'Move refund to a later statement' }).closest('form') as HTMLElement
-      const statement = within(form).getByLabelText(/^Statement/)
-      await waitFor(() => expect(within(statement).getAllByRole('option')).toHaveLength(13))
-      await user.selectOptions(statement, '2026-12')
-      await user.click(within(form).getByRole('button', { name: 'Move refund' }))
+      const form = await openMoveRefund(user)
+      await moveToDecember(user, form)
 
       expect(await within(form).findByText('Failed to move the refund')).toBeInTheDocument()
       expect(screen.queryByText('Refund moved')).not.toBeInTheDocument()

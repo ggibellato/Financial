@@ -47,17 +47,21 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         ReplaceCashFlowDataBeforeStart(SeededData);
     }
 
-    private async Task<ExpenseDTO> AddCardChargeAsync(int month, int day, decimal value)
-    {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
+    private Task<HttpResponseMessage> PostCardChargeAsync(DateOnly date, decimal value, DateOnly? invoiceDate = null) =>
+        Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
         {
-            Date = new DateOnly(2026, month, day),
+            Date = date,
             Description = value < 0 ? "Refund" : "Charge",
             Value = value,
             CategoryId = Guid.Parse(MercadoId),
             CreditCardId = Guid.Parse(AmexId),
+            InvoiceDate = invoiceDate,
             CountsAsTithe = true
         });
+
+    private async Task<ExpenseDTO> AddCardChargeAsync(int month, int day, decimal value)
+    {
+        var response = await PostCardChargeAsync(new DateOnly(2026, month, day), value);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!;
     }
@@ -110,15 +114,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_DatedAfterToday_Returns400()
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 11, 16),
-            Description = "Refund",
-            Value = -40m,
-            CategoryId = Guid.Parse(MercadoId),
-            CreditCardId = Guid.Parse(AmexId),
-            CountsAsTithe = true
-        });
+        var response = await PostCardChargeAsync(new DateOnly(2026, 11, 16), -40m);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         using (new AssertionScope())
@@ -132,15 +128,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_IntoAPaidStatement_Returns400()
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 9, 20),
-            Description = "Refund",
-            Value = -40m,
-            CategoryId = Guid.Parse(MercadoId),
-            CreditCardId = Guid.Parse(AmexId),
-            CountsAsTithe = true
-        });
+        var response = await PostCardChargeAsync(new DateOnly(2026, 9, 20), -40m);
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
         using (new AssertionScope())
@@ -154,16 +142,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_ForAPaidMonthsPurchaseOnAnOpenStatement_IsSavedThere()
     {
-        var response = await Client.PostAsJsonAsync($"{Api}/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 9, 20),
-            Description = "Refund",
-            Value = -40m,
-            CategoryId = Guid.Parse(MercadoId),
-            CreditCardId = Guid.Parse(AmexId),
-            InvoiceDate = new DateOnly(2026, 11, 1),
-            CountsAsTithe = true
-        });
+        var response = await PostCardChargeAsync(new DateOnly(2026, 9, 20), -40m, new DateOnly(2026, 11, 1));
         response.EnsureSuccessStatusCode();
 
         var refund = (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!;

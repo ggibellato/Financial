@@ -857,8 +857,15 @@ describe('useExpenseForm with a locked card', () => {
     const REFUND = { ...EXPENSE, id: 'r1', value: -40, date: '2026-10-08', creditCardId: 'card-baamex', paymentSourceBankId: null, invoiceDate: '2026-11-01', paymentStatus: 'CreditCardCharge' }
     const lockedCardForm = () => renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX, keepOpenAfterSave: true }))
 
-    it('[AC P60-F15-card-refunds-and-credit-01] saves the positive amount as a negative charge on the statement of its date', async () => {
+    beforeEach(() => {
       pinDate('2026-10-15T12:00:00+01:00')
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('[AC P60-F15-card-refunds-and-credit-01] saves the positive amount as a negative charge on the statement of its date', async () => {
       createExpenseMock.mockResolvedValue({ ...REFUND, id: 'r2' })
       const { result } = lockedCardForm()
 
@@ -888,7 +895,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('refuses a date after today and a missing date without saving', async () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       const { result } = lockedCardForm()
       act(() => result.current.showCreateRefundForm())
       act(() => result.current.setField('description', 'Shoes returned'))
@@ -905,7 +911,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('accepts today as the date', async () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       createExpenseMock.mockResolvedValue({ ...REFUND, id: 'r2' })
       const { result } = lockedCardForm()
       act(() => result.current.showCreateRefundForm())
@@ -925,7 +930,6 @@ describe('useExpenseForm with a locked card', () => {
       ['a last-used date after today in the viewed month', 10, '2026-10-20', '2026-10-15'],
       ['a last-used past date in the viewed month', 10, '2026-10-03', '2026-10-03'],
     ])('opens on the viewed-month date capped at today for %s', (_, month, lastUsed, expected) => {
-      pinDate('2026-10-15T12:00:00+01:00')
       if (lastUsed) setStoredDefault('expense.date', lastUsed)
       const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX, viewedMonth: { year: 2026, month } }))
 
@@ -935,7 +939,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('leaves a charge opened on a later last-used date uncapped', () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       setStoredDefault('expense.date', '2026-10-20')
       const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX, viewedMonth: { year: 2026, month: 10 } }))
 
@@ -946,7 +949,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('opens a negative charge in refund mode showing the amount positive, and saves it negative', async () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       updateExpenseMock.mockResolvedValue({ ...REFUND, value: -55 })
       const { result } = lockedCardForm()
 
@@ -964,7 +966,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('refuses an edit with the description cleared without saving', async () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       const { result } = lockedCardForm()
       act(() => result.current.showEditForm(REFUND))
       act(() => result.current.setField('description', ' '))
@@ -994,7 +995,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('stays in refund mode after a keep-open save and leaves it on cancel', async () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       createExpenseMock.mockResolvedValue({ ...REFUND, id: 'r2' })
       const { result } = lockedCardForm()
       act(() => result.current.showCreateRefundForm())
@@ -1011,7 +1011,6 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('keeps the form and shows the server message when the statement is paid', async () => {
-      pinDate('2026-10-15T12:00:00+01:00')
       createExpenseMock.mockRejectedValue(new ApiError("This charge's statement is paid; unmark it first.", 400))
       const { result } = lockedCardForm()
       act(() => result.current.showCreateRefundForm())

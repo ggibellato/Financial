@@ -2,7 +2,7 @@ import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
-import { getSaveErrorMessage, parseValidatedNumber, todayIsoDate } from '../utils/formatters'
+import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { selectableBanks } from '../utils/selectableBanks'
@@ -299,21 +299,20 @@ export function useExpenseForm(
   function submit() {
     const errors: Partial<Record<ExpenseFormField, string>> = {}
 
-    if ((!state.isEditing || state.isRefund) && !state.date.trim()) {
+    const requiresDateAndDescription = !state.isEditing || state.isRefund
+    if (requiresDateAndDescription && !state.date.trim()) {
       errors.date = 'Date is required'
     } else if (state.isRefund && state.date > todayIsoDate()) {
       errors.date = 'Date must not be in the future.'
     }
 
-    if ((!state.isEditing || state.isRefund) && !state.description.trim()) {
+    if (requiresDateAndDescription && !state.description.trim()) {
       errors.description = 'Description is required'
     }
 
-    const value = parseValidatedNumber(state.value)
-    if (state.isRefund) {
-      if (value === null || value <= 0) errors.value = 'Amount must be greater than zero.'
-    } else if (value === null || value === 0) {
-      errors.value = 'Value must be a non-zero number'
+    const value = state.isRefund ? positiveAmount(state.value) : parseValidatedNumber(state.value)
+    if (value === null || value === 0) {
+      errors.value = state.isRefund ? 'Amount must be greater than zero.' : 'Value must be a non-zero number'
     }
 
     if (!state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === '') {

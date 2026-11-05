@@ -519,13 +519,18 @@ public class AccountQueryServiceTests
         }
     }
 
-    [Fact]
-    public void GetTransactions_RefundOnAPaidStatement_IsACardRefundThatCannotBeEdited()
+    private void AddSettledRefund()
     {
         _repository.Accounts.Add(_amex);
         var refund = Expense.Create(new DateOnly(2026, 10, 8), "Shoes returned", -40m, _groceries, null, _amex);
         _repository.Expenses.Add(refund);
         refund.Settle(_barclays, new DateOnly(2026, 10, 20));
+    }
+
+    [Fact]
+    public void GetTransactions_RefundOnAPaidStatement_IsACardRefundThatCannotBeEdited()
+    {
+        AddSettledRefund();
 
         var row = _sut.GetTransactions(_amex.Id, 2026, 10).Single();
 
@@ -540,10 +545,7 @@ public class AccountQueryServiceTests
     [Fact]
     public void GetTransactions_SettledRefundOnItsBank_IsACardRefundNamingTheCard()
     {
-        _repository.Accounts.Add(_amex);
-        var refund = Expense.Create(new DateOnly(2026, 10, 8), "Shoes returned", -40m, _groceries, null, _amex);
-        _repository.Expenses.Add(refund);
-        refund.Settle(_barclays, new DateOnly(2026, 10, 20));
+        AddSettledRefund();
 
         var row = _sut.GetTransactions(_barclays.Id, 2026, 10).Single();
 
