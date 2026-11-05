@@ -81,7 +81,7 @@ export default function AccountHeader({
           </Text>
         </div>
 
-        <div className="account-screen__balance">
+        <div className={`account-screen__balance${account.hasStatements ? ' account-screen__balance--top-aligned' : ''}`}>
           <Text size={200}>{figure.label}</Text>
           <Text size={500} weight="semibold">
             {figure.amount} {account.currency}
@@ -90,7 +90,7 @@ export default function AccountHeader({
         </div>
 
         {account.totalOwed !== null && (
-          <div className="account-screen__balance">
+          <div className="account-screen__balance account-screen__balance--top-aligned">
             <Text size={200}>Total owed</Text>
             <Text size={500} weight="semibold">
               {formatOwedOrCredit(account.totalOwed)} {account.currency}

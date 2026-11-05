@@ -36,6 +36,10 @@
   min-width: 0;
 }
 
+.account-screen__balance--top-aligned {
+  align-self: flex-start;
+}
+
 .account-screen__title {
   display: flex;
   align-items: center;
