@@ -4,6 +4,7 @@ import { formatMonthInputValue } from '../utils/formatters'
 export type AccountFormAction =
   | 'AddExpense'
   | 'AddCharge'
+  | 'AddRefund'
   | 'AddIncome'
   | 'TransferTo'
   | 'TransferFrom'
@@ -18,6 +19,7 @@ export type AccountFormAction =
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'Add expense',
   AddCharge: 'Add charge',
+  AddRefund: 'Add refund',
   AddIncome: 'Add income',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
@@ -35,6 +37,7 @@ const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStat
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',
+  CardRefund: 'Refund',
   CardPayment: 'Card payment',
   TransferIn: 'Transfer in',
   TransferOut: 'Transfer out',
@@ -45,6 +48,7 @@ const KIND_LABELS: Record<string, string> = {
 const RECORD_NOUNS: Record<string, string> = {
   Expense: 'expense',
   CardCharge: 'card charge',
+  CardRefund: 'refund',
   CardPayment: 'card payment',
   Income: 'income',
   TransferIn: 'transfer',
@@ -112,7 +116,7 @@ export function isOlderIncomeLine(row: AccountTransactionDto): boolean {
 }
 
 export function canMoveToStatement(row: AccountTransactionDto): boolean {
-  return row.kind === 'CardCharge'
+  return row.kind === 'CardCharge' || row.kind === 'CardRefund'
 }
 
 export function statementPath(statement: AccountTransactionStatementDto): string {

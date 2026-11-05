@@ -93,7 +93,10 @@ export function useAccountActionForms(
     options.banks,
     options.categories,
     NO_CREDIT_CARDS,
-    (isEdit) => saved(isEdit ? `${expenseNoun} updated` : `${expenseNoun} added`),
+    (isEdit, isRefund) => {
+      const noun = isRefund ? 'Refund' : expenseNoun
+      saved(isEdit ? `${noun} updated` : `${noun} added`)
+    },
     { ...settings, lockedCard },
   )
   const incomeForm = useIncomeForm(
@@ -126,6 +129,7 @@ export function useAccountActionForms(
   const openers: Record<AccountFormAction, () => void> = {
     AddExpense: () => expenseForm.showCreateForm('bank'),
     AddCharge: () => expenseForm.showCreateForm('card'),
+    AddRefund: () => expenseForm.showCreateRefundForm(),
     AddIncome: () => incomeForm.showCreateIncomeForm(),
     TransferTo: () => transferForm.openCreateForm('to'),
     TransferFrom: () => transferForm.openCreateForm('from'),
@@ -139,7 +143,7 @@ export function useAccountActionForms(
   }
 
   const createAction = (): AccountFormAction | null => {
-    if (expenseForm.isOpen && !expenseForm.isEditing) return isCard ? 'AddCharge' : 'AddExpense'
+    if (expenseForm.isOpen && !expenseForm.isEditing) return expenseForm.isRefund ? 'AddRefund' : isCard ? 'AddCharge' : 'AddExpense'
     if (incomeForm.isIncomeFormOpen && !incomeForm.isIncomeEditing) return hasPots ? 'Deposit' : 'AddIncome'
     if (depositForm.isOpen && !depositForm.isEditing) return 'Deposit'
     if (withdrawalForm.isOpen && !withdrawalForm.isEditing) return withdrawalForm.isBankLocked ? 'WithdrawFromPots' : 'Withdraw'

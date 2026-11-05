@@ -4,6 +4,7 @@ import { render } from '../../test/renderWithFluent'
 import ExpenseForm from '../ExpenseForm'
 import type { BankDto, CategoryDto, CreditCardDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
+import { todayIsoDate } from '../../utils/formatters'
 
 const BANKS: BankDto[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
@@ -444,5 +445,53 @@ describe('ExpenseForm with a locked card', () => {
 
     expect(screen.getByRole('heading', { name: 'Edit Charge' })).toBeInTheDocument()
     expect(screen.getByLabelText('Statement month')).toBeEnabled()
+  })
+
+  describe('in refund mode', () => {
+    const refundProps = { ...cardProps, isRefund: true, lockedCard: { id: 'card-baamex', name: 'BaAmex' } }
+
+    it('titles the form New Refund, labels the amount and limits the date to today', () => {
+      render(<ExpenseForm {...refundProps} date="2026-10-14" />)
+
+      expect(screen.getByRole('heading', { name: 'New Refund' })).toBeInTheDocument()
+      expect(screen.getByLabelText(/^Amount/)).toBeInTheDocument()
+      expect(screen.queryByLabelText(/^Value/)).not.toBeInTheDocument()
+      expect(screen.getByLabelText(/^Date/)).toHaveAttribute('max', todayIsoDate())
+      expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
+      expect(screen.getByRole('button', { name: 'Add Refund' })).toBeInTheDocument()
+    })
+
+    it('titles an edit Edit Refund and saves with Save', () => {
+      render(<ExpenseForm {...refundProps} isEditing value="40" invoiceDate="2026-11" />)
+
+      expect(screen.getByRole('heading', { name: 'Edit Refund' })).toBeInTheDocument()
+      expect(screen.getByLabelText(/^Amount/)).toHaveValue(40)
+      expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
+    })
+
+    it('focuses the first invalid field with its message', () => {
+      const { rerender } = render(<ExpenseForm {...refundProps} />)
+
+      rerender(<ExpenseForm {...refundProps} saveError="Date must not be in the future." saveErrorFields={{ date: 'Date must not be in the future.', value: 'Amount must be greater than zero.' }} />)
+
+      expect(screen.getByText('Date must not be in the future.')).toBeInTheDocument()
+      expect(screen.getByText('Amount must be greater than zero.')).toBeInTheDocument()
+      expect(screen.getByLabelText(/^Date/)).toHaveFocus()
+    })
+
+    it('shows a server error in the message bar and moves focus to the save button', () => {
+      const { rerender } = render(<ExpenseForm {...refundProps} />)
+
+      rerender(<ExpenseForm {...refundProps} saveError="This charge's statement is paid; unmark it first." />)
+
+      expect(screen.getByText("This charge's statement is paid; unmark it first.")).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Add Refund' })).toHaveFocus()
+    })
+  })
+
+  it('leaves a charge date unlimited', () => {
+    render(<ExpenseForm {...cardProps} date="2026-10-14" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
+
+    expect(screen.getByLabelText(/^Date/)).not.toHaveAttribute('max')
   })
 })
