@@ -61,6 +61,7 @@ describe('CardCreditRefundForm', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(retry).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('combobox', { name: /^To bank/ })).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toBeDisabled()
   })
 
@@ -90,11 +91,17 @@ describe('CardCreditRefundForm', () => {
     expect(screen.getByLabelText(label)).toHaveFocus()
   })
 
-  it('shows the field message and the server message', () => {
-    renderForm({ fieldErrors: { amount: "The card's credit is 35.00 GBP." }, saveError: 'The server refused.' })
+  it('shows the field message', () => {
+    renderForm({ fieldErrors: { amount: "The card's credit is 35.00 GBP." } })
 
     expect(screen.getByText("The card's credit is 35.00 GBP.")).toBeInTheDocument()
-    expect(screen.getByText('The server refused.')).toBeInTheDocument()
+  })
+
+  it('announces the server message with focus on the submit', () => {
+    renderForm({ saveError: 'The server refused.' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('The server refused.')
+    expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toHaveFocus()
   })
 
   it('reports each field change and cancels', () => {

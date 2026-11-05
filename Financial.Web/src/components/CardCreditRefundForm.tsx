@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { LockedCard } from '../hooks/formSettings'
 import type { CardCreditRefundField, CardCreditRefundForm as CardCreditRefundFormState } from '../hooks/useCardCreditRefundForm'
@@ -17,12 +17,17 @@ export default function CardCreditRefundForm({ refundForm, lockedCard, onCancel 
   const bankRef = useRef<HTMLSelectElement | null>(null)
   const amountRef = useRef<HTMLInputElement | null>(null)
   const dateRef = useRef<HTMLInputElement | null>(null)
+  const submitRef = useRef<HTMLButtonElement | null>(null)
   const { banks, currency, values, isLoading, loadError, retry, hasNoBanks, isSaving, saveError, fieldErrors, setField, submit } = refundForm
   const fieldRefs: Record<CardCreditRefundField, { current: HTMLElement | null }> = { destinationAccountId: bankRef, amount: amountRef, date: dateRef }
   const validation = (field: CardCreditRefundField) => ({
     validationState: fieldErrors[field] ? ('error' as const) : ('none' as const),
     validationMessage: fieldErrors[field],
   })
+
+  useEffect(() => {
+    if (saveError && !isSaving) submitRef.current?.focus()
+  }, [saveError, isSaving])
 
   return (
     <form
@@ -40,11 +45,19 @@ export default function CardCreditRefundForm({ refundForm, lockedCard, onCancel 
           Refund credit to bank
         </Text>
         {saveError && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
-        {loadError && <ErrorState message={loadError} onRetry={retry} />}
+        {loadError && (
+          <ErrorState
+            message={loadError}
+            onRetry={() => {
+              retry()
+              bankRef.current?.focus()
+            }}
+          />
+        )}
         <div className={styles.grid}>
           <Field label="From">
             <Text weight="semibold">{lockedCard.name}</Text>
@@ -78,6 +91,7 @@ export default function CardCreditRefundForm({ refundForm, lockedCard, onCancel 
         </div>
         <div className={styles.actions}>
           <Button
+            ref={submitRef}
             type="submit"
             appearance="primary"
             disabled={isSaving || isLoading || loadError !== null || hasNoBanks}

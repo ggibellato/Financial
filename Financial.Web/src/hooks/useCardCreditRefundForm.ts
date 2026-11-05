@@ -3,8 +3,9 @@ import { apiClient } from '../api/financialApiClient'
 import { accountsWith } from '../utils/accountCapabilities'
 import { formatN2, getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
-import { paymentDateError, PAYERS_LOAD_ERROR } from './useCardStatements'
+import { paymentDateError } from './useCardStatements'
 
+const BANKS_LOAD_ERROR = 'Unable to load the banks'
 const RECEIVES_TRANSFERS_CAPABILITY = 'CanReceiveTransfers'
 
 export type CardCreditRefundField = 'destinationAccountId' | 'amount' | 'date'
@@ -44,7 +45,7 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<CardCreditRefundField, string>>>({})
-  const accounts = useAsyncResource(() => (isOpen ? apiClient.getAccounts() : null), [isOpen], PAYERS_LOAD_ERROR)
+  const accounts = useAsyncResource(() => (isOpen ? apiClient.getAccounts() : null), [isOpen], BANKS_LOAD_ERROR)
   const currency = card?.currency ?? ''
   const banks = accountsWith(accounts.data ?? [], RECEIVES_TRANSFERS_CAPABILITY).filter((bank) => bank.currency === currency)
   const destinationAccountId = banks.some((bank) => bank.id === values.destinationAccountId) ? values.destinationAccountId : ''
