@@ -327,6 +327,29 @@ public class CardStatementLedgerTests
     }
 
     [Fact]
+    public void For_CreditRefundRemovedFromAPaidMonth_KeepsItPaidAndCarriesTheAmount()
+    {
+        Charge(9, -100m);
+        var refund = CreditRefund(10, 60m);
+        _transfers.Add(refund);
+        Charge(10, 70m);
+        PaidByTransfer(10, 30m);
+        Charge(11, 20m);
+        var before = Walk(11);
+
+        _transfers.Remove(refund);
+        var after = Walk(11);
+
+        using (new AssertionScope())
+        {
+            before[1].Should().BeEquivalentTo(new { PaidAmount = 30m, CreditCarried = 0m, Status = CardStatementLedgerStatus.Paid });
+            after[1].Should().BeEquivalentTo(new { PaidAmount = 30m, CreditCarried = 60m, Status = CardStatementLedgerStatus.Paid });
+            after.Zip(before, (removed, kept) => removed.AmountToPay <= kept.AmountToPay).Should().OnlyContain(lowerOrEqual => lowerOrEqual);
+            after[2].Should().BeEquivalentTo(new { CreditIn = 60m, AmountToPay = 0m, Status = CardStatementLedgerStatus.NothingDue });
+        }
+    }
+
+    [Fact]
     public void RefundKeepsAmountsToPay_RefundWithinTheCarriedCredit_IsTrue()
     {
         Charge(9, -100m);
