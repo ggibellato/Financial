@@ -706,16 +706,17 @@ Added 2026-11-04 at the user's request: a view of every transaction in a month a
 - The All transactions grid on Monthly (kept by F13 when Monthly becomes an overview)
 
 **Capabilities:**
-- **All transactions grid:** Monthly gains an "All transactions" grid for the picked month: every record that touched an account that month, from every account (any template, active or inactive), one row per account it touched, as the account screens show them. It reads F05's account-transactions reader for each account, so Settlement rows join when F11 and F12 ship with no change here (user decision 2026-11-04).
-- **Which month:** a row belongs to the month the category totals use: card charges and refunds by statement month, with the purchase date shown; every other record by its own date. Filtered to one category, the grid's total equals that category's line in Category totals (user decision 2026-11-04).
+- **All transactions grid:** Monthly gains an "All transactions" tab, second after Summary, using Monthly's month picker and loading only when opened (user decision 2026-11-05). It lists the picked month's rows from every account (any template, active or inactive, an inactive one marked Inactive), as the account screens show them: a transfer, card payment or credit refund shows once on each side; a pot deposit shows its funding banks' expense rows and one pot transaction row per pot on the Pots account. One route returns the rows of all accounts, each with its account's id, name and currency, built from F05's account-transactions rows, so Settlement rows join when F11 and F12 ship with no change here (user decision 2026-11-04; one route, spec decision).
+- **Old settled card charges:** a card charge settled the pre-F08 way (moved to a bank) shows on both the bank and the card screens; the grid lists it once, on the card in its statement month, so category totals still match (user decision 2026-11-05).
+- **Which month:** a row belongs to the month the category totals use: card charges and refunds by statement month, with the purchase date shown; every other record by its own date. Only expense-type rows (expenses, card charges and refunds, pot operations' bank expenses) carry a category, so a Category filter shows only those; filtered to one category, the grid's spend equals that category's line in Category totals (user decision 2026-11-04).
 - **Columns:** Date, Account, Type, Description, Category, Amount (signed for that account, right-aligned); newest first; sortable.
-- **Filters:** Category (the main one), Account and Type, as the column filters Monthly's Expenses section uses today; a footer shows the number of rows and the total of the filtered rows.
-- **Read-only:** a row links to its account screen at that month, and a linked deposit or withdrawal row opens its operation there. Entry stays where it is today: Monthly's Expenses section and forms stay until F13 retires them, and from F13 the account screen is the only place to enter or edit.
-- **Parity:** the spec decides whether the grid's per-category totals are added to the figures report and checked against Category totals.
+- **Filters:** Category (the main one), Account and Type, with the column filter menus Monthly's Bank expenses and Credit Card expenses tabs use today. A footer shows the number of filtered rows and their total per currency (the sum of the Amount column, spending negative), and, when a Category filter is on, "Spend" with that total as a positive figure, the one Category totals shows (user decision 2026-11-05).
+- **Read-only:** a row links to its account screen at that month (a Pots account on its Transactions tab), and a linked deposit or withdrawal row opens its operation there, which is its edit form as on the account screen (F10). Entry stays where it is today: Monthly's expense tabs and forms stay until F13 retires them, and from F13 the account screen is the only place to enter or edit.
+- **Parity:** a new figure family reports, for every month, the grid's spend per category, mapped to the existing Category totals figure; parity expects 0 differences (user decision 2026-11-05).
 
 **Experience:**
-- Monthly → October 2026 → All transactions: "28 Oct · Barclays · Expense · Tesco · Groceries · −£45.20", "15 Oct · BA Amex · Card charge (statement Oct 2026, bought 2 Oct) · Amazon · Clothing · −£39.99", "10 Oct · Reserva · Pot transaction · Deposit to Reserva · — · +£90.00" …
-- Filter Category = Groceries → only Groceries rows, footer "12 rows · £412.37", the same figure as Groceries in Category totals.
+- Monthly → October 2026 → All transactions: "28 Oct · Barclays · Expense · Tesco · Groceries · −45.20 GBP", "2 Oct · BA Amex · Card charge · Amazon · Clothing · −39.99 GBP" (a charge on the October statement, dated by its purchase), "10 Oct · Barclays · Expense · Deposit to Reserva · Reserva · −90.00 GBP" and "10 Oct · Reserva · Pot transaction · October savings · — · +90.00 GBP" …
+- Filter Category = Groceries → only Groceries rows, footer "12 rows · Total −412.37 GBP · Spend 412.37 GBP"; Spend is the same figure as Groceries in Category totals.
 - States: loading, empty month ("No transactions in October 2026."), load error with Try again; a filter with no match says so and offers to clear the filters.
 
 **Error Handling:**
@@ -1013,11 +1014,11 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F16. Month Transactions View
-- [ ] Monthly's All transactions grid lists, for the picked month, every record of every account (one row per account it touched), card charges and refunds by statement month and every other record by its own date
-- [ ] Filtering by category, account or type narrows the rows; filtered to one category, the footer total equals that category's Category totals figure
+- [ ] Monthly's All transactions tab lists, for the picked month, the rows of every account as the account screens show them, card charges and refunds by statement month and every other record by its own date; an old settled card charge appears once, on its card
+- [ ] Filtering by category, account or type narrows the rows; the footer shows the row count and total per currency, and filtered to one category its Spend equals that category's Category totals figure
 - [ ] Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation
 - [ ] Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too
-- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [ ] Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
