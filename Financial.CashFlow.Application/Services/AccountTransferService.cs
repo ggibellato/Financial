@@ -1,3 +1,4 @@
+using System.Globalization;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
@@ -51,6 +52,41 @@ public sealed class AccountTransferService : IAccountTransferService
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "AddTransfer");
             return ToDto(transfer);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public async Task<AccountTransferDTO> AddCreditRefundAsync(AccountTransferCreateDTO request)
+    {
+        using var span = StartSpan("AddCreditRefund");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var (card, bank) = ResolveAccounts(request.SourceAccountId, request.DestinationAccountId);
+            var refund = Transfer.CreateCreditRefund(request.Date, card, bank, request.Amount, request.Note, _timeProvider.GetLocalToday());
+            if (request.DestinationAmount is not null)
+            {
+                throw new ArgumentException("A card credit refund has no destination amount.");
+            }
+
+            EnsureWithinCredit(card, refund);
+            EnsureKeepsAmountsToPay(card, refund);
+
+            await _repository.ApplyAndSaveAsync(() =>
+            {
+                _repository.AddTransfer(refund);
+                return true;
+            }).ConfigureAwait(false);
+
+            span.SetAttribute(TelemetryAttributeKeys.EntityId, refund.Id.ToString());
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "AddCreditRefund");
+            return ToDto(refund);
         }
         catch (Exception ex)
         {
@@ -150,8 +186,26 @@ public sealed class AccountTransferService : IAccountTransferService
     private Transfer FindEditableTransferOrThrow(Guid id)
     {
         var transfer = _repository.GetTransfers().FirstOrThrow(t => t.Id == id, EntityType, id);
-        StatementPaymentConflictException.ThrowIfStatementPayment(transfer);
+        StatementPaymentConflictException.ThrowIfLinkedToCard(transfer);
         return transfer;
+    }
+
+    private void EnsureWithinCredit(Account card, Transfer refund)
+    {
+        var credit = Math.Max(0m, -CardChargeFilter.TotalOwed(card, AccountTransactionReader.Read(_repository)));
+        if (refund.Amount > credit)
+        {
+            throw new ArgumentException($"The card's credit is {credit.ToString("N2", CultureInfo.InvariantCulture)} {card.Currency}.");
+        }
+    }
+
+    private void EnsureKeepsAmountsToPay(Account card, Transfer refund)
+    {
+        if (!CardStatementLedger.RefundKeepsAmountsToPay(
+            card, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), refund))
+        {
+            throw new ArgumentException("On that date the card had less credit than this refund; choose a later date.");
+        }
     }
 
     private (Account Source, Account Destination) ResolveAccounts(Guid sourceAccountId, Guid destinationAccountId)

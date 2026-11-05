@@ -301,6 +301,75 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         }
     }
 
+    private Task<HttpResponseMessage> PostCreditRefundAsync(decimal amount, int month = 11, int day = 10) =>
+        Client.PostAsJsonAsync($"{Api}/accounts/credit-refunds", new AccountTransferCreateDTO
+        {
+            Date = new DateOnly(2026, month, day),
+            SourceAccountId = Guid.Parse(AmexId),
+            DestinationAccountId = Guid.Parse(BarclaysId),
+            Amount = amount
+        });
+
+    private static async Task ShouldBeRefusedAsync(HttpResponseMessage response, HttpStatusCode status, string message)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(status);
+            problem!.Detail.Should().Be(message);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task CreditRefund_WritesOneTransfer_LowersCredit_CappedAtCredit_TransferRoutesReturn409()
+    {
+        const string RefundsCreditMessage = "This transfer refunds card credit; delete it from the card or bank screen instead.";
+        await AddCardChargeAsync(10, 8, -60m);
+        var bankBefore = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!.Balance;
+
+        await ShouldBeRefusedAsync(await PostCreditRefundAsync(60.01m), HttpStatusCode.BadRequest, "The card's credit is 60.00 GBP.");
+
+        var created = await PostCreditRefundAsync(35m);
+        created.EnsureSuccessStatusCode();
+        var refund = (await created.Content.ReadFromJsonAsync<AccountTransferDTO>())!;
+        var card = await AmexDetailAsync(11);
+        var bankAfter = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!.Balance;
+        var november = Month(await StatementsAsync(), 11);
+        var byMonth = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/month/2026/11");
+        var byBank = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/bank/{BarclaysId}");
+
+        var update = new TransferUpdateDTO { Date = refund.Date, SourceBankId = Guid.Parse(BarclaysId), DestinationBankId = Guid.Parse(BarclaysId), Amount = 1m };
+        var accountUpdate = new AccountTransferUpdateDTO { Date = refund.Date, SourceAccountId = Guid.Parse(BarclaysId), DestinationAccountId = Guid.Parse(BarclaysId), Amount = 1m };
+        await ShouldBeRefusedAsync(await Client.PutAsJsonAsync($"{Api}/transfers/{refund.Id}", update), HttpStatusCode.Conflict, RefundsCreditMessage);
+        await ShouldBeRefusedAsync(await Client.DeleteAsync($"{Api}/transfers/{refund.Id}"), HttpStatusCode.Conflict, RefundsCreditMessage);
+        await ShouldBeRefusedAsync(await Client.PutAsJsonAsync($"{Api}/accounts/transfers/{refund.Id}", accountUpdate), HttpStatusCode.Conflict, RefundsCreditMessage);
+        await ShouldBeRefusedAsync(await Client.DeleteAsync($"{Api}/accounts/transfers/{refund.Id}"), HttpStatusCode.Conflict, RefundsCreditMessage);
+        await ShouldBeRefusedAsync(await PostCreditRefundAsync(25.01m), HttpStatusCode.BadRequest, "The card's credit is 25.00 GBP.");
+
+        using (new AssertionScope())
+        {
+            refund.Should().BeEquivalentTo(new { SourceAccountName = "BA Amex", DestinationAccountName = "Barclays", Amount = 35m, DestinationAmount = 35m });
+            card.TotalOwed.Should().Be(-25m);
+            bankAfter.Should().Be(bankBefore + 35m);
+            november.Should().BeEquivalentTo(new { Id = (Guid?)null, Total = 35m, CreditIn = 60m, OutstandingTotal = 0m, CreditCarried = 25m, Status = "NothingDue" });
+            byMonth.Should().BeEmpty();
+            byBank.Should().NotContain(transfer => transfer.Id == refund.Id);
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task CreditRefund_DatedBeforeTheCreditArose_Returns400()
+    {
+        await AddCardChargeAsync(11, 2, -60m);
+
+        await ShouldBeRefusedAsync(
+            await PostCreditRefundAsync(35m, month: 10),
+            HttpStatusCode.BadRequest,
+            "On that date the card had less credit than this refund; choose a later date.");
+    }
+
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-07")]
     public async Task AccountDetail_Card_ReturnsViewedStatementFromTheLedger_AndKeepsBalance()
