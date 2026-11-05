@@ -288,6 +288,17 @@ describe('useCardCreditRefundForm in bank mode', () => {
     expect(createCardCreditRefundMock).not.toHaveBeenCalled()
   })
 
+  it('keeps an amount the user typed when the card changes', async () => {
+    const { result } = renderBankForm()
+    await openBankLoaded(result)
+
+    act(() => result.current.setField('counterpartId', 'amex'))
+    act(() => result.current.setField('amount', '10'))
+    act(() => result.current.setField('counterpartId', 'visa'))
+
+    expect(result.current.values.amount).toBe('10')
+  })
+
   it('[AC P60-F15-card-refunds-and-credit-05] posts one credit refund from the chosen card to the bank', async () => {
     const onRefunded = vi.fn()
     const { result } = renderBankForm(onRefunded)

@@ -98,8 +98,11 @@ export function useCardCreditRefundForm(
   const cancel = () => setIsOpen(false)
 
   const setField = (field: CardCreditRefundField, value: string) => {
+    const isAmountUntouched = values.amount === '' || values.amount === amountFor(chosen?.credit)
     const defaultAmount =
-      mode === 'bank' && field === 'counterpartId' ? amountFor(counterparts.find((counterpart) => counterpart.id === value)?.credit) : null
+      mode === 'bank' && field === 'counterpartId' && isAmountUntouched
+        ? amountFor(counterparts.find((counterpart) => counterpart.id === value)?.credit)
+        : null
     setValues((previous) => ({ ...previous, [field]: value, ...(defaultAmount === null ? {} : { amount: defaultAmount }) }))
     setSaveError(null)
     setFieldErrors((previous) => ({ ...previous, [field]: undefined, ...(defaultAmount === null ? {} : { amount: undefined }) }))
