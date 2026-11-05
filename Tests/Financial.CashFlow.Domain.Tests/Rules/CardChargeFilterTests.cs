@@ -98,6 +98,23 @@ public class CardChargeFilterTests
     }
 
     [Fact]
+    public void Credit_CardInCredit_IsTheNegatedTotalOwed()
+    {
+        var charge = Charge(_amex, new DateOnly(2026, 10, 3), 25m);
+        var refund = Charge(_amex, new DateOnly(2026, 10, 8), -60m);
+
+        CardChargeFilter.Credit(_amex, [charge, refund]).Should().Be(35m);
+    }
+
+    [Theory]
+    [InlineData(40)]
+    [InlineData(0)]
+    public void CreditOf_CardOwingOrSettled_IsZero(decimal totalOwed)
+    {
+        CardChargeFilter.CreditOf(totalOwed).Should().Be(0m);
+    }
+
+    [Fact]
     public void IsOnPaidStatement_ChargeOnAPaidStatement_IsTrue()
     {
         var charge = Charge(_amex, new DateOnly(2026, 10, 3), 30m);

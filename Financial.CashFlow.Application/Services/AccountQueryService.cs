@@ -91,7 +91,7 @@ public sealed class AccountQueryService : IAccountQueryService
                 HasStatements = hasStatements,
                 TotalOwed = totalOwed,
                 ViewedStatement = hasStatements ? ViewedStatementOf(account, year, month) : null,
-                AllowedActions = AccountActions.AllowedFor(account, isInCredit: totalOwed < 0).Select(action => action.ToString()).ToList()
+                AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList()
             };
 
             span.MarkSuccess();
