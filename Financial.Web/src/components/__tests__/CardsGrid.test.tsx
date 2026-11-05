@@ -73,15 +73,43 @@ describe('CardsGrid (Summary tab, no card management columns)', () => {
     expect(baAmexRow).toHaveTextContent('325.50')
   })
 
-  it('lists an active card with no statement this month as unpaid with nothing outstanding and no Mark Paid', () => {
+  it('[AC P60-F15-card-refunds-and-credit-02] lists an active card with no statement this month as Nothing due with nothing outstanding and no Mark Paid', () => {
     render(<CardsGrid {...statementProps} creditCards={CREDIT_CARDS.filter((card) => card.isActive)} cardStatements={[CARD_STATEMENTS[1]]} />)
 
     const baAmexRow = screen.getByText('BaAmex').closest('tr')!
     expect(within(baAmexRow).getByText('0.00')).toBeInTheDocument()
     expect(within(baAmexRow).getByText('—')).toBeInTheDocument()
-    expect(within(baAmexRow).getByText('Unpaid')).toBeInTheDocument()
+    expect(within(baAmexRow).getByText('Nothing due')).toBeInTheDocument()
     expect(screen.queryByLabelText('Paying bank for BaAmex')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Mark Paid' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-02] shows an unpaid statement with nothing outstanding as Nothing due with no Mark Paid or Unmark Paid', () => {
+    const nothingDue = { ...CARD_STATEMENTS[0], outstandingTotal: 0, accumulatedOutstandingTotal: 0 }
+    render(<CardsGrid {...statementProps} cardStatements={[nothingDue]} />)
+
+    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
+    expect(within(baAmexRow).getByText('Nothing due')).toBeInTheDocument()
+    expect(within(baAmexRow).queryByText('Unpaid')).not.toBeInTheDocument()
+    expect(within(baAmexRow).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(baAmexRow).queryByRole('combobox')).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F15-card-refunds-and-credit-06] shows a card in credit as Credit x in the accumulated cell', () => {
+    const inCredit = { ...CARD_STATEMENTS[0], outstandingTotal: 0, accumulatedOutstandingTotal: -35 }
+    render(<CardsGrid {...statementProps} cardStatements={[inCredit]} />)
+
+    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
+    expect(within(baAmexRow).getByText('Credit 35.00')).toBeInTheDocument()
+    expect(within(baAmexRow).getByText('Nothing due')).toBeInTheDocument()
+  })
+
+  it('keeps Unmark Paid and the Paid status on a paid statement with nothing outstanding', () => {
+    render(<CardsGrid {...statementProps} cardStatements={[CARD_STATEMENTS[1]]} />)
+
+    const chaseRow = screen.getByText('ChaseMaster4023').closest('tr')!
+    expect(within(chaseRow).getByText('Paid')).toBeInTheDocument()
+    expect(within(chaseRow).getByRole('button', { name: 'Unmark Paid' })).toBeInTheDocument()
   })
 
   it('leaves out an inactive card that has no statement this month', () => {
@@ -186,13 +214,13 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
   })
 
-  it('shows a card with no statement this month as 0.00, a dash for accumulated, Unpaid, and no mark-paid action', () => {
+  it('shows a card with no statement this month as 0.00, a dash for accumulated, Nothing due, and no mark-paid action', () => {
     render(<CardsGrid {...baseProps} />)
 
     const paypalRow = screen.getByText('PaypalCredit').closest('tr')!
     expect(within(paypalRow).getByText('0.00')).toBeInTheDocument()
     expect(within(paypalRow).getByText('—')).toBeInTheDocument()
-    expect(within(paypalRow).getByText('Unpaid')).toBeInTheDocument()
+    expect(within(paypalRow).getByText('Nothing due')).toBeInTheDocument()
     expect(screen.queryByLabelText('Paying bank for PaypalCredit')).not.toBeInTheDocument()
   })
 
@@ -314,7 +342,7 @@ describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
     expect(namesOf()).toEqual(['ChaseMaster4023', 'BaAmex', 'PaypalCredit'])
 
     fireEvent.click(screen.getByRole('button', { name: 'Status' }))
-    expect(namesOf()).toEqual(['ChaseMaster4023', 'BaAmex', 'PaypalCredit'])
+    expect(namesOf()).toEqual(['PaypalCredit', 'ChaseMaster4023', 'BaAmex'])
 
     fireEvent.click(screen.getByRole('button', { name: 'Next Invoice Due Date' }))
     expect(namesOf()).toEqual(['BaAmex', 'ChaseMaster4023', 'PaypalCredit'])

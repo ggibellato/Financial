@@ -8,7 +8,7 @@ import TotalsGrid from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
 import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, formatN2OrDash } from '../utils/formatters'
-import { formatLabelledBalance } from '../utils/owedBalance'
+import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
@@ -62,7 +62,7 @@ const totalOwedColumn = {
   key: 'totalOwed',
   header: 'Total owed',
   numeric: true,
-  render: (row: AccountGroupMemberDto) => formatN2OrDash(row.totalOwed),
+  render: (row: AccountGroupMemberDto) => (row.totalOwed == null ? formatN2OrDash(row.totalOwed) : formatOwedOrCredit(row.totalOwed)),
   sortAccessor: (row: AccountGroupMemberDto) => row.totalOwed,
 }
 
@@ -89,6 +89,7 @@ export default function AccountsPage() {
       ) : (
         groups.map((group) => {
           const grid = accountTemplateGrid(group.templateName)
+          const formatFooterTotal = grid.columns === 'card' ? formatOwedOrCredit : formatN2
           const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
           const renderName = grid.linksRows
             ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthParam}${tabParam}`}>{row.name}</Link>
@@ -104,7 +105,7 @@ export default function AccountsPage() {
                 rows={group.members}
                 rowKey={(row) => row.accountId}
                 emptyMessage="No accounts this month"
-                footerItems={group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatN2(total.total) }))}
+                footerItems={group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) }))}
               />
             </div>
           )
