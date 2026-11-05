@@ -11,4 +11,5 @@ public interface IAccountTransferService
     Task DeleteCreditRefundAsync(Guid id);
     IReadOnlyList<TransferAccountOptionDTO> GetDestinations(Guid accountId);
     IReadOnlyList<TransferAccountOptionDTO> GetSources(Guid accountId);
+    IReadOnlyList<CardCreditDTO> GetCardsInCredit();
 }

@@ -91,7 +91,7 @@ public class AccountQueryServiceTests
             detail.BalanceIsOwed.Should().BeFalse();
             detail.HasStatements.Should().BeFalse();
             detail.TotalOwed.Should().BeNull();
-            detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "Reconcile", "WithdrawFromPots");
+            detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "ReceiveCardCredit", "Reconcile", "WithdrawFromPots");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccount")
                 .Which.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_barclays.Id.ToString());
         }

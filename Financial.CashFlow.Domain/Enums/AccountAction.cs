@@ -11,6 +11,7 @@ public enum AccountAction
     TransferFrom,
     PayRecurringBill,
     PayCardStatement,
+    ReceiveCardCredit,
     Reconcile,
     Deposit,
     Withdraw,

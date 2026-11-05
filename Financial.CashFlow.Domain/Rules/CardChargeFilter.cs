@@ -31,6 +31,11 @@ public static class CardChargeFilter
     public static decimal TotalOwed(Account card, IEnumerable<IAccountTransaction> records) =>
         -AccountBalanceRule.Balance(card, DateOnly.MaxValue, records);
 
+    public static decimal Credit(Account card, IEnumerable<IAccountTransaction> records) =>
+        CreditOf(TotalOwed(card, records));
+
+    public static decimal CreditOf(decimal totalOwed) => Math.Max(0m, -totalOwed);
+
     public static bool IsStatementPaid(IEnumerable<CardStatement> statements, Account card, int year, int month) =>
         statements.Any(statement => statement.IsPaid && statement.IsFor(card.Id, year, month));
 }

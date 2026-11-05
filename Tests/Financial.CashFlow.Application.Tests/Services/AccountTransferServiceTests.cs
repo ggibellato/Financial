@@ -666,4 +666,58 @@ public class AccountTransferServiceTests
         _calendarSync.TriggeredCreditCardIds.Should().BeEmpty();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountTransferService.DeleteCreditRefund");
     }
+
+    private Account SeedCard(string name, decimal credit, Currency currency = Currency.GBP, bool isActive = true)
+    {
+        var card = Account.CreateWithCapabilities(name, currency, AccountTemplates.CapabilitiesOf(AccountTemplate.CreditCard));
+        _repository.Accounts.Add(card);
+        if (credit != 0m)
+        {
+            _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 5), "Charge", -credit, Category.Create("Mercado"), null, card));
+        }
+
+        card.SetActive(isActive);
+        return card;
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public void GetCardsInCredit_ListsEveryCardInCreditByName_InactiveAndOtherCurrenciesIncluded()
+    {
+        var visa = SeedCard("Visa", 35m);
+        var amex = SeedCard("amex", 12.5m, isActive: false);
+        var nubank = SeedCard("Nubank", 80m, Currency.BRL);
+        SeedCard("Owing", -40m);
+        SeedCard("Settled", 0m);
+
+        var result = _sut.GetCardsInCredit();
+
+        using (new AssertionScope())
+        {
+            result.Should().BeEquivalentTo(
+                [
+                    new { AccountId = amex.Id, Name = "amex", Currency = "GBP", IsActive = false, Credit = 12.5m },
+                    new { AccountId = nubank.Id, Name = "Nubank", Currency = "BRL", IsActive = true, Credit = 80m },
+                    new { AccountId = visa.Id, Name = "Visa", Currency = "GBP", IsActive = true, Credit = 35m }
+                ],
+                options => options.WithStrictOrdering());
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.GetCardsInCredit")
+                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        }
+    }
+
+    [Fact]
+    public void GetCardsInCredit_CreditPartlyRefundedToABank_ListsWhatIsLeft()
+    {
+        var visa = SeedCard("Visa", 35m);
+        _repository.Transfers.Add(Transfer.CreateCreditRefund(Date, visa, Named("Barclays"), 20m, null, TestClock.Today));
+
+        _sut.GetCardsInCredit().Should().ContainSingle().Which.Credit.Should().Be(15m);
+    }
+
+    [Fact]
+    public void GetCardsInCredit_NoCards_ReturnsEmpty()
+    {
+        _sut.GetCardsInCredit().Should().BeEmpty();
+    }
 }

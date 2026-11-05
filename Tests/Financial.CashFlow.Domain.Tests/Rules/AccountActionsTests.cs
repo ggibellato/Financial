@@ -23,6 +23,7 @@ public class AccountActionsTests
             AccountAction.TransferFrom,
             AccountAction.PayRecurringBill,
             AccountAction.PayCardStatement,
+            AccountAction.ReceiveCardCredit,
             AccountAction.Reconcile,
             AccountAction.WithdrawFromPots);
     }
@@ -31,11 +32,16 @@ public class AccountActionsTests
     [InlineData(Capability.HasCategories, AccountAction.AddExpense)]
     [InlineData(Capability.ReceivesIncome, AccountAction.AddIncome)]
     [InlineData(Capability.CanSendTransfers, AccountAction.TransferTo)]
-    [InlineData(Capability.CanReceiveTransfers, AccountAction.TransferFrom)]
     [InlineData(Capability.CanReconcile, AccountAction.Reconcile)]
     public void AllowedFor_SingleCapability_ReturnsOnlyItsAction(Capability capability, AccountAction expected)
     {
         AccountActions.AllowedFor(Minimal(capability)).Should().Equal(expected);
+    }
+
+    [Fact]
+    public void AllowedFor_CanReceiveTransfers_ReturnsTransferFromAndReceiveCardCredit()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.CanReceiveTransfers)).Should().Equal(AccountAction.TransferFrom, AccountAction.ReceiveCardCredit);
     }
 
     [Fact]

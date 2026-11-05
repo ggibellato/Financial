@@ -82,6 +82,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/cards-in-credit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CardCreditDTO"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/credit-refunds": {
         parameters: {
             query?: never;
@@ -8541,6 +8576,15 @@ export interface components {
         };
         CalendarDisconnectResultDTO: {
             remoteCleanupSucceeded: boolean;
+        };
+        CardCreditDTO: {
+            /** Format: uuid */
+            accountId: string;
+            /** Format: double */
+            credit: number;
+            currency: string;
+            isActive: boolean;
+            name: string;
         };
         CardStatementDTO: {
             /** Format: double */
