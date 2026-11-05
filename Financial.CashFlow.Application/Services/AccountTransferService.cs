@@ -5,7 +5,6 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
@@ -199,8 +198,7 @@ public sealed class AccountTransferService : IAccountTransferService
         try
         {
             var records = AccountTransactionReader.Read(_repository);
-            var result = _repository.GetAccounts()
-                .Where(account => account.Has(Capability.HasStatements))
+            var result = _repository.GetCreditCardAccounts()
                 .Select(card => new CardCreditDTO
                 {
                     AccountId = card.Id,
