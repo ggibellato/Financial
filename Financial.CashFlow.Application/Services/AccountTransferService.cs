@@ -5,6 +5,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
@@ -192,6 +193,37 @@ public sealed class AccountTransferService : IAccountTransferService
     public IReadOnlyList<TransferAccountOptionDTO> GetSources(Guid accountId) =>
         ListCounterparts("GetTransferSources", accountId, TransferPairRules.Default.SourcesFor);
 
+    public IReadOnlyList<CardCreditDTO> GetCardsInCredit()
+    {
+        using var span = StartSpan("GetCardsInCredit");
+        try
+        {
+            var records = AccountTransactionReader.Read(_repository);
+            var result = _repository.GetAccounts()
+                .Where(account => account.Has(Capability.HasStatements))
+                .Select(card => new CardCreditDTO
+                {
+                    AccountId = card.Id,
+                    Name = card.Name,
+                    Currency = card.Currency.ToString(),
+                    IsActive = card.IsActive,
+                    Credit = CardChargeFilter.Credit(card, records)
+                })
+                .Where(card => card.Credit > 0)
+                .OrderBy(card => card.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetCardsInCredit");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     private IReadOnlyList<TransferAccountOptionDTO> ListCounterparts(
         string operationName, Guid accountId, Func<Account, IEnumerable<Account>, IReadOnlyList<Account>> counterparts)
     {
@@ -230,7 +262,7 @@ public sealed class AccountTransferService : IAccountTransferService
     private void EnsureWithinCredit(Transfer refund)
     {
         var card = refund.SourceAccount;
-        var credit = Math.Max(0m, -CardChargeFilter.TotalOwed(card, AccountTransactionReader.Read(_repository)));
+        var credit = CardChargeFilter.Credit(card, AccountTransactionReader.Read(_repository));
         if (refund.Amount > credit)
         {
             throw new ArgumentException($"The card's credit is {credit.ToString("N2", CultureInfo.InvariantCulture)} {card.Currency}.");

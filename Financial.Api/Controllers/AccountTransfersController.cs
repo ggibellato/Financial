@@ -41,6 +41,13 @@ public sealed class AccountTransfersController : ControllerBase
         return Ok(await _accountTransferService.AddCreditRefundAsync(request));
     }
 
+    [HttpGet("cards-in-credit")]
+    [ProducesResponseType(typeof(IReadOnlyList<CardCreditDTO>), StatusCodes.Status200OK)]
+    public ActionResult<IReadOnlyList<CardCreditDTO>> GetCardsInCredit()
+    {
+        return Ok(_accountTransferService.GetCardsInCredit());
+    }
+
     [HttpDelete("credit-refunds/{id:guid}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

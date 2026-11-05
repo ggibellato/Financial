@@ -384,6 +384,34 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
+    private async Task<List<CardCreditDTO>> CardsInCreditAsync() =>
+        (await Client.GetFromJsonAsync<List<CardCreditDTO>>($"{Api}/accounts/cards-in-credit"))!;
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task ReceiveCardCredit_ListsCardsInCredit_AndWritesTheSameTransfer()
+    {
+        var bank = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!;
+        var beforeCredit = await CardsInCreditAsync();
+        await AddCardChargeAsync(10, 8, -60m);
+        var inCredit = await CardsInCreditAsync();
+
+        var received = await PostCreditRefundAsync(60m);
+        received.EnsureSuccessStatusCode();
+
+        var afterRefund = await CardsInCreditAsync();
+        var bankRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{BarclaysId}/transactions/2026/11");
+        using (new AssertionScope())
+        {
+            bank.AllowedActions.Should().Contain("ReceiveCardCredit");
+            beforeCredit.Should().BeEmpty();
+            inCredit.Should().ContainSingle().Which.Should().BeEquivalentTo(
+                new { AccountId = Guid.Parse(AmexId), Name = "BA Amex", Currency = "GBP", IsActive = true, Credit = 60m });
+            afterRefund.Should().BeEmpty();
+            bankRows.Should().ContainSingle(row => row.Kind == "CardCreditRefund").Which.Amount.Should().Be(60m);
+        }
+    }
+
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
     public async Task CreditRefund_ShowsOnCardAndBankAsReadOnlyRows()

@@ -1930,6 +1930,35 @@
         ],
         "type": "object"
       },
+      "CardCreditDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "credit": {
+            "format": "double",
+            "type": "number"
+          },
+          "currency": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "accountId",
+          "name",
+          "currency",
+          "isActive",
+          "credit"
+        ],
+        "type": "object"
+      },
       "CardStatementDTO": {
         "properties": {
           "accumulatedOutstandingTotal": {
@@ -7082,6 +7111,29 @@
         "summary": "",
         "tags": [
           "Accounts"
+        ]
+      }
+    },
+    "/accounts/cards-in-credit": {
+      "get": {
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/CardCreditDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "AccountTransfers"
         ]
       }
     },
