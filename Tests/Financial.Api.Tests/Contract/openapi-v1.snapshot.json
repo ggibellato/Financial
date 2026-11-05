@@ -158,6 +158,16 @@
               "number"
             ]
           },
+          "viewedStatement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/AccountStatementDTO"
+              }
+            ]
+          },
           "year": {
             "format": "int32",
             "type": "integer"
@@ -175,6 +185,7 @@
           "balanceIsOwed",
           "hasStatements",
           "totalOwed",
+          "viewedStatement",
           "allowedActions"
         ],
         "type": "object"
@@ -340,6 +351,14 @@
       },
       "AccountStatementDTO": {
         "properties": {
+          "creditCarried": {
+            "format": "double",
+            "type": "number"
+          },
+          "creditIn": {
+            "format": "double",
+            "type": "number"
+          },
           "dueDate": {
             "format": "date",
             "type": [
@@ -349,7 +368,10 @@
           },
           "id": {
             "format": "uuid",
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "isPaid": {
             "type": "boolean"
@@ -361,6 +383,13 @@
           "outstandingTotal": {
             "format": "double",
             "type": "number"
+          },
+          "paidAmount": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
           },
           "paidFromAccountName": {
             "type": [
@@ -374,6 +403,9 @@
               "null",
               "string"
             ]
+          },
+          "status": {
+            "type": "string"
           },
           "total": {
             "format": "double",
@@ -389,7 +421,10 @@
           "year",
           "month",
           "total",
+          "creditIn",
           "outstandingTotal",
+          "creditCarried",
+          "status",
           "isPaid"
         ],
         "type": "object"

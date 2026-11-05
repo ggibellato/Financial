@@ -33,6 +33,7 @@ const BARCLAYS: AccountDetailDto = {
   balanceIsOwed: false,
   hasStatements: false,
   totalOwed: null,
+  viewedStatement: null,
   isActive: true,
   allowedActions: ['AddExpense', 'AddIncome', 'TransferTo', 'TransferFrom', 'PayRecurringBill', 'Reconcile'],
   year: 2026,

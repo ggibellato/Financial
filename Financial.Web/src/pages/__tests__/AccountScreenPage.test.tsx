@@ -158,7 +158,7 @@ const ACCOUNTS: AccountDto[] = [
 function detailFor(id: string, year: number, month: number): AccountDetailDto {
   const account = ACCOUNTS.find((candidate) => candidate.id === id)!
   const isCard = id === AMEX_ID
-  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, allowedActions: isCard ? ['AddCharge'] : [] }
+  return { ...account, year, month, balance: id === BARCLAYS_ID ? 2800.25 : 500, balanceIsOwed: isCard, hasStatements: isCard, totalOwed: isCard ? 740.12 : null, viewedStatement: null, allowedActions: isCard ? ['AddCharge'] : [] }
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [
@@ -167,9 +167,9 @@ const TRANSACTIONS: AccountTransactionDto[] = [
 ]
 
 const CARD_STATEMENTS: AccountStatementDto[] = [
-  { id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
-  { id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
-  { id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
+  { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
+  { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
+  { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
 ]
 
 const BANKS: BankDto[] = [
@@ -266,7 +266,7 @@ function withPotsAccount(transactions: AccountTransactionDto[] = [LEGACY_WITHDRA
   getAccountMock.mockImplementation((id, year, month) =>
     Promise.resolve(
       id === RESERVA_ID
-        ? { ...reserva, year, month, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'] }
+        ? { ...reserva, year, month, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: ['Deposit', 'Withdraw', 'ManagePots'] }
         : detailFor(id, year, month),
     ),
   )
@@ -716,7 +716,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     const reserva = potsAccount({ id: RESERVA_ID, name: 'Reserva', isActive: false })
     getAccountsMock.mockResolvedValue([...ACCOUNTS, reserva])
     getAccountMock.mockImplementation((id, year, month) =>
-      Promise.resolve({ ...reserva, id, year, month, balance: 0, balanceIsOwed: false, hasStatements: false, totalOwed: null, allowedActions: [] }),
+      Promise.resolve({ ...reserva, id, year, month, balance: 0, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: [] }),
     )
     getAccountTransactionsMock.mockResolvedValue([])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
@@ -1129,7 +1129,7 @@ describe('AccountScreenPage on a Pots account', () => {
     expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Transactions' })).not.toBeInTheDocument()
 
-    finishAccount({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, allowedActions: [] })
+    finishAccount({ ...potsAccount({ id: RESERVA_ID, name: 'Reserva' }), year: 2026, month: 10, balance: 1500.5, balanceIsOwed: false, hasStatements: false, totalOwed: null, viewedStatement: null, allowedActions: [] })
 
     expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
   })
@@ -2226,7 +2226,7 @@ describe('AccountScreenPage card screen', () => {
     getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), isActive: false }))
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
 
-    expect(await screen.findByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
+    expect(await screen.findByText('Paid 512.30 on 12 Oct 2026 from Barclays')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
   })
 })

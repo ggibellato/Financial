@@ -2,9 +2,9 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountStatementDto, BankDto, CardStatementDto } from '../../api/types'
+import type { BankDto, CardStatementDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
-import { STATEMENTS_LOAD_ERROR, useCardStatements } from '../useCardStatements'
+import { STATEMENTS_LOAD_ERROR, useCardStatements, type StoredStatement } from '../useCardStatements'
 
 const { getAccountStatementsMock, getBanksMock, markCardStatementPaidMock, unmarkCardStatementPaidMock } = vi.hoisted(() => ({
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
@@ -24,11 +24,11 @@ vi.mock('../../api/financialApiClient', () => ({
 
 const CARD_ID = 'card-amex'
 
-const OCTOBER: AccountStatementDto = {
-  id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
+const OCTOBER: StoredStatement = {
+  creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null,
 }
-const SEPTEMBER: AccountStatementDto = {
-  id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
+const SEPTEMBER: StoredStatement = {
+  creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
 }
 
 const BANKS: BankDto[] = [

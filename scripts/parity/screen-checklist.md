@@ -35,6 +35,7 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Card screen (after only) | M1, M2 | **C2:** the Transactions tab for a month lists the same charges as Monthly's card charges for that statement month | — | | |
 | Card screen (after only) | A month with no charges | **C3:** the grid shows "No transactions in <Month Year>" | — | | |
 | Card screen (after only) | M1 | **C4:** at 320 px wide there's no horizontal page scroll on either tab | — | | |
+| Card screen (after only) | M1, M2 | **C5:** the card header's "<Month yyyy> statement" figure equals the Statements tab's To pay (or paid amount) for the viewed month, and "Total owed" equals Monthly's accumulated outstanding | — | | |
 | Pots screen (after only) | M1 | **P1:** the Pots tab's balance per pot and total equal the Reserva page's | — | | |
 | Pots screen (after only) | M1, M2 | **P2:** the Transactions tab lists the same movements as the Reserva page for that month (count and total) | — | | |
 | Pots screen (after only) | A month with no movements | **P3:** the Transactions tab shows "No transactions in <Month Year>" | — | | |
