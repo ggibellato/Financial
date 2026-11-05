@@ -1003,14 +1003,14 @@ graph TD
 - [x] Parity: 0 differences with the new card figures mapped; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F15. Card Refunds and Credit
-- [ ] Add refund saves a negative charge on the statement for its date; the card's owed balance and the category's spend in that statement month drop by the amount
-- [ ] A statement whose amount to pay is £0 or less shows "Nothing due", offers no Pay, and raises no payment-due banner or calendar reminder; a charge that brings it above £0 makes it Unpaid
-- [ ] The Statements tab lists every month from the card's first statement to the current month, months without charges as £0 "Nothing due"
-- [ ] A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger
-- [ ] Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes
-- [ ] F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x"
-- [ ] The card screen header shows "<Month yyyy> statement" (that month's amount to pay with its status: Unpaid, the paid date and amount, or Nothing due with any credit carried) and "Total owed" (or "Credit £x"); bank headers are unchanged
-- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] Add refund saves a negative charge on the statement for its date; the card's owed balance and the category's spend in that statement month drop by the amount (test: `CardRefundsAndCreditAcceptanceTests.AddRefund_SavesNegativeCharge_LowersOwedAndCategorySpendInStatementMonth`)
+- [x] A statement whose amount to pay is £0 or less shows "Nothing due", offers no Pay, and raises no payment-due banner or calendar reminder; a charge that brings it above £0 makes it Unpaid (test: `CardRefundsAndCreditAcceptanceTests.StatementAtOrBelowZero_IsNothingDueAndNotPayable_UntilAChargeRaisesIt`, `CardRefundsAndCreditAcceptanceTests.PaymentsDue_NothingDueMonthHasNoReminder_UntilAChargeRaisesIt`)
+- [x] The Statements tab lists every month from the card's first statement to the current month, months without charges as £0 "Nothing due" (test: `CardRefundsAndCreditAcceptanceTests.AccountStatements_ListEveryMonthFromFirstChargeToCurrent_EmptyMonthsNothingDue`)
+- [x] A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger (test: `CardRefundsAndCreditAcceptanceTests.Credit_LowersNextAmountToPay_AndCarriesWhileLarger`)
+- [x] Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes (test: `CardRefundsAndCreditAcceptanceTests.CreditRefund_WritesOneTransfer_LowersCredit_CappedAtCredit_TransferRoutesReturn409`, `CardRefundsAndCreditAcceptanceTests.CreditRefund_ShowsOnCardAndBankAsReadOnlyRows`, `CardRefundsAndCreditAcceptanceTests.ReceiveCardCredit_ListsCardsInCredit_AndWritesTheSameTransfer`)
+- [x] F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x" (test: `CardRefundsAndCreditAcceptanceTests.TemplateGroups_Card_NextStatementSkipsNothingDue_TotalOwedNetsCredit`)
+- [x] The card screen header shows "<Month yyyy> statement" (that month's amount to pay with its status: Unpaid, the paid date and amount, or Nothing due with any credit carried) and "Total owed" (or "Credit £x"); bank headers are unchanged (test: `CardRefundsAndCreditAcceptanceTests.AccountDetail_Card_ReturnsViewedStatementFromTheLedger_AndKeepsBalance`)
+- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F16. Month Transactions View
 - [ ] Monthly's All transactions grid lists, for the picked month, every record of every account (one row per account it touched), card charges and refunds by statement month and every other record by its own date
