@@ -6,6 +6,7 @@ export type AccountFormAction =
   | 'AddCharge'
   | 'AddRefund'
   | 'RefundCreditToBank'
+  | 'ReceiveCardCredit'
   | 'AddIncome'
   | 'TransferTo'
   | 'TransferFrom'
@@ -22,6 +23,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddCharge: 'Add charge',
   AddRefund: 'Add refund',
   RefundCreditToBank: 'Refund credit to bank',
+  ReceiveCardCredit: 'Receive card credit',
   AddIncome: 'Add income',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
@@ -35,7 +37,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
 }
 
 const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferFrom']
-const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots', 'RefundCreditToBank']
+const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots', 'RefundCreditToBank', 'ReceiveCardCredit']
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',

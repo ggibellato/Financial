@@ -180,6 +180,7 @@ export type IncomeCreateDto = Schema<'IncomeCreateDTO'>
 export type IncomeUpdateDto = Schema<'IncomeUpdateDTO'>
 export type CategoryTotalDto = Schema<'CategoryTotalDTO'>
 export type CardStatementDto = Schema<'CardStatementDTO'>
+export type CardCreditDto = Schema<'CardCreditDTO'>
 export type CreditCardDto = Schema<'CreditCardDTO'>
 export type CreditCardCreateDto = Schema<'CreditCardCreateDTO'>
 export type CreditCardUpdateDto = Schema<'CreditCardUpdateDTO'>

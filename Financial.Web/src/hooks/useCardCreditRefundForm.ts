@@ -1,59 +1,93 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
+import type { AccountDto, CardCreditDto } from '../api/types'
 import { accountsWith } from '../utils/accountCapabilities'
 import { formatN2, getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
+import { formatOwedOrCredit } from '../utils/owedBalance'
+import { inactiveMarked } from '../utils/selectableBanks'
 import { useAsyncResource } from './useAsyncResource'
 import { paymentDateError } from './useCardStatements'
 
-const BANKS_LOAD_ERROR = 'Unable to load the banks'
 const RECEIVES_TRANSFERS_CAPABILITY = 'CanReceiveTransfers'
 
-export type CardCreditRefundField = 'destinationAccountId' | 'amount' | 'date'
+export type CardCreditRefundField = 'counterpartId' | 'amount' | 'date'
+
+export type CreditRefundMode = 'card' | 'bank'
 
 interface CardCreditRefundValues {
-  destinationAccountId: string
+  counterpartId: string
   amount: string
   date: string
 }
 
-interface RefundedCard {
+export interface CreditRefundAccount {
   id: string
+  name: string
   currency: string
 }
 
-function initialValues(credit: number): CardCreditRefundValues {
-  return { destinationAccountId: '', amount: credit.toFixed(2), date: todayIsoDate() }
+interface Counterpart {
+  id: string
+  label: string
+  currency: string
+  credit?: number
 }
 
-function amountError(amount: string, credit: number, currency: string): string | undefined {
+const MODE_TEXT = {
+  card: { loadError: 'Unable to load the banks', saveError: 'Failed to refund the credit', missing: 'Select a bank.' },
+  bank: { loadError: 'Unable to load the cards', saveError: 'Failed to receive the card credit', missing: 'Select a card.' },
+} as const
+
+function amountFor(credit: number | undefined): string {
+  return credit === undefined ? '' : credit.toFixed(2)
+}
+
+function amountError(amount: string, credit: number | undefined, currency: string): string | undefined {
   const parsed = positiveAmount(amount)
   if (parsed === null) return 'Amount must be greater than zero.'
-  return parsed > credit ? `The card's credit is ${formatN2(credit)} ${currency}.` : undefined
+  return credit !== undefined && parsed > credit ? `The card's credit is ${formatN2(credit)} ${currency}.` : undefined
 }
 
-function validate(values: CardCreditRefundValues, credit: number, currency: string): Partial<Record<CardCreditRefundField, string>> {
-  return {
-    destinationAccountId: values.destinationAccountId ? undefined : 'Select a bank.',
-    amount: amountError(values.amount, credit, currency),
-    date: paymentDateError(values.date),
-  }
+function bankCounterparts(accounts: AccountDto[]): Counterpart[] {
+  return accountsWith(accounts, RECEIVES_TRANSFERS_CAPABILITY).map((bank) => ({ id: bank.id, label: bank.name, currency: bank.currency }))
 }
 
-export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: number, onRefunded: () => void) {
+function cardCounterparts(cards: CardCreditDto[]): Counterpart[] {
+  return cards.map((card) => ({
+    id: card.accountId,
+    label: `${inactiveMarked(card)} · ${formatOwedOrCredit(-card.credit)}`,
+    currency: card.currency,
+    credit: card.credit,
+  }))
+}
+
+function loadCounterparts(mode: CreditRefundMode): Promise<Counterpart[]> {
+  return mode === 'card' ? apiClient.getAccounts().then(bankCounterparts) : apiClient.getCardsInCredit().then(cardCounterparts)
+}
+
+export function useCardCreditRefundForm(
+  mode: CreditRefundMode,
+  account: CreditRefundAccount | undefined,
+  cardCredit: number,
+  onRefunded: () => void,
+) {
+  const text = MODE_TEXT[mode]
   const [isOpen, setIsOpen] = useState(false)
-  const [values, setValues] = useState<CardCreditRefundValues>(() => initialValues(credit))
+  const [values, setValues] = useState<CardCreditRefundValues>(() => ({ counterpartId: '', amount: '', date: todayIsoDate() }))
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<CardCreditRefundField, string>>>({})
-  const accounts = useAsyncResource(() => (isOpen ? apiClient.getAccounts() : null), [isOpen], BANKS_LOAD_ERROR)
-  const currency = card?.currency ?? ''
-  const banks = accountsWith(accounts.data ?? [], RECEIVES_TRANSFERS_CAPABILITY).filter((bank) => bank.currency === currency)
-  const destinationAccountId = banks.some((bank) => bank.id === values.destinationAccountId) ? values.destinationAccountId : ''
-  const current = { ...values, destinationAccountId }
-  const opened = initialValues(credit)
+  const lists = useAsyncResource(() => (isOpen ? loadCounterparts(mode) : null), [isOpen, mode], text.loadError)
+  const currency = account?.currency ?? ''
+  const counterparts = (lists.data ?? []).filter((counterpart) => counterpart.currency === currency)
+  const chosen = counterparts.find((counterpart) => counterpart.id === values.counterpartId)
+  const credit = mode === 'card' ? cardCredit : chosen?.credit
+  const current = { ...values, counterpartId: chosen?.id ?? '' }
+  const openedAmount = mode === 'card' ? amountFor(cardCredit) : ''
+  const openedDate = todayIsoDate()
 
   const open = () => {
-    setValues(opened)
+    setValues({ counterpartId: '', amount: openedAmount, date: openedDate })
     setSaveError(null)
     setFieldErrors({})
     setIsOpen(true)
@@ -62,28 +96,38 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
   const cancel = () => setIsOpen(false)
 
   const setField = (field: CardCreditRefundField, value: string) => {
-    setValues((previous) => ({ ...previous, [field]: value }))
+    const changed: Partial<CardCreditRefundValues> = { [field]: value }
+    const isAmountUntouched = values.amount === '' || values.amount === amountFor(chosen?.credit)
+    if (mode === 'bank' && field === 'counterpartId' && isAmountUntouched) {
+      changed.amount = amountFor(counterparts.find((counterpart) => counterpart.id === value)?.credit)
+    }
+    setValues((previous) => ({ ...previous, ...changed }))
     setSaveError(null)
-    setFieldErrors((previous) => ({ ...previous, [field]: undefined }))
+    setFieldErrors((previous) => ({ ...previous, ...Object.fromEntries(Object.keys(changed).map((key) => [key, undefined])) }))
   }
 
   const submit = (): CardCreditRefundField | null => {
-    if (isSaving || !card) return null
-    const errors = validate(current, credit, currency)
-    const firstInvalid = (['destinationAccountId', 'amount', 'date'] as const).find((field) => errors[field])
+    if (isSaving || !account) return null
+    const errors = {
+      counterpartId: current.counterpartId ? undefined : text.missing,
+      amount: amountError(current.amount, credit, currency),
+      date: paymentDateError(current.date),
+    }
+    const firstInvalid = (['counterpartId', 'amount', 'date'] as const).find((field) => errors[field])
     if (firstInvalid) {
       setFieldErrors(errors)
       setSaveError(null)
       return firstInvalid
     }
 
+    const [sourceAccountId, destinationAccountId] = mode === 'card' ? [account.id, current.counterpartId] : [current.counterpartId, account.id]
     setIsSaving(true)
     setSaveError(null)
     apiClient
       .createCardCreditRefund({
         date: current.date,
-        sourceAccountId: card.id,
-        destinationAccountId: current.destinationAccountId,
+        sourceAccountId,
+        destinationAccountId,
         amount: Number(current.amount),
         destinationAmount: null,
         note: null,
@@ -93,26 +137,28 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
         onRefunded()
       })
       .catch((err: unknown) => {
-        setSaveError(getSaveErrorMessage(err, 'Failed to refund the credit'))
-        void accounts.refresh()
+        setSaveError(getSaveErrorMessage(err, text.saveError))
+        void lists.refresh()
       })
       .finally(() => setIsSaving(false))
     return null
   }
 
   return {
+    mode,
     isOpen,
-    banks,
+    accountName: account?.name ?? '',
+    counterparts,
     currency,
     values: current,
-    isLoading: accounts.isLoading,
-    loadError: accounts.error,
-    retry: accounts.retry,
-    hasNoBanks: isOpen && !accounts.isLoading && accounts.error === null && accounts.data !== null && banks.length === 0,
+    isLoading: lists.isLoading,
+    loadError: lists.error,
+    retry: lists.retry,
+    hasNoCounterparts: isOpen && !lists.isLoading && lists.error === null && lists.data !== null && counterparts.length === 0,
     isSaving,
     saveError,
     fieldErrors,
-    isDirty: isOpen && (values.destinationAccountId !== '' || values.amount !== opened.amount || values.date !== opened.date),
+    isDirty: isOpen && (values.counterpartId !== '' || values.amount !== openedAmount || values.date !== openedDate),
     open,
     cancel,
     setField,

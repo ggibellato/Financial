@@ -13,6 +13,7 @@ import type {
   AccountTransferDto,
   BalanceAdjustmentDto,
   BankDto,
+  CardCreditDto,
   CategoryDto,
   ExpenseDto,
   IncomeDto,
@@ -50,6 +51,7 @@ const {
   deleteAccountTransferMock,
   createCardCreditRefundMock,
   deleteCardCreditRefundMock,
+  getCardsInCreditMock,
   createBalanceAdjustmentMock,
   deleteBalanceAdjustmentMock,
   getMensaisBillsMock,
@@ -88,6 +90,7 @@ const {
   deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
   createCardCreditRefundMock: vi.fn<FinancialApiClient['createCardCreditRefund']>(),
   deleteCardCreditRefundMock: vi.fn<FinancialApiClient['deleteCardCreditRefund']>(),
+  getCardsInCreditMock: vi.fn<FinancialApiClient['getCardsInCredit']>(),
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
   deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -129,6 +132,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteAccountTransfer: deleteAccountTransferMock,
     createCardCreditRefund: createCardCreditRefundMock,
     deleteCardCreditRefund: deleteCardCreditRefundMock,
+    getCardsInCredit: getCardsInCreditMock,
     createBalanceAdjustment: createBalanceAdjustmentMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
     getMensaisBills: getMensaisBillsMock,
@@ -341,6 +345,7 @@ beforeEach(() => {
   getAccountMock.mockReset().mockImplementation((id, year, month) => Promise.resolve(detailFor(id, year, month)))
   getAccountTransactionsMock.mockReset().mockResolvedValue(TRANSACTIONS)
   createCardCreditRefundMock.mockReset()
+  getCardsInCreditMock.mockReset().mockResolvedValue([])
   deleteCardCreditRefundMock.mockReset()
   getBanksMock.mockReset().mockResolvedValue(BANKS)
   getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
@@ -2325,6 +2330,78 @@ describe('AccountScreenPage card screen', () => {
       await user.click(screen.getByRole('tab', { name: 'Statements' }))
 
       await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(1))
+    })
+  })
+
+  describe('receive card credit on a bank', () => {
+    const CARD_CREDIT: CardCreditDto = { accountId: AMEX_ID, name: 'BA Amex', currency: 'GBP', isActive: false, credit: 35 }
+
+    async function openReceiveForm(user: ReturnType<typeof userEvent.setup>) {
+      withActions(['AddExpense', 'ReceiveCardCredit'])
+      renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+      await user.click(await screen.findByRole('button', { name: 'Receive card credit' }))
+      return screen.getByRole('heading', { name: 'Receive card credit' }).closest('form') as HTMLElement
+    }
+
+    it('[AC P60-F15-card-refunds-and-credit-05] receives the chosen card credit into the bank, closes with a toast and returns focus to the action', async () => {
+      const user = userEvent.setup()
+      getCardsInCreditMock.mockResolvedValue([CARD_CREDIT])
+      createCardCreditRefundMock.mockResolvedValue({
+        id: 'cr2',
+        date: '2026-10-15',
+        sourceAccountId: AMEX_ID,
+        sourceAccountName: 'BA Amex',
+        sourceCurrency: 'GBP',
+        destinationAccountId: BARCLAYS_ID,
+        destinationAccountName: 'Barclays',
+        destinationCurrency: 'GBP',
+        amount: 35,
+        destinationAmount: 35,
+        note: null,
+      })
+      const form = await openReceiveForm(user)
+      const card = within(form).getByRole('combobox', { name: /^From/ })
+      expect(card).toHaveFocus()
+      expect(within(form).getByText('Barclays')).toBeInTheDocument()
+
+      await user.selectOptions(card, await within(form).findByRole('option', { name: 'BA Amex (inactive) · Credit 35.00' }))
+      expect(within(form).getByLabelText(/^Amount \(GBP\)/)).toHaveValue(35)
+      await user.click(within(form).getByRole('button', { name: 'Receive card credit' }))
+
+      await waitFor(() =>
+        expect(createCardCreditRefundMock).toHaveBeenCalledWith({
+          date: '2026-10-15',
+          sourceAccountId: AMEX_ID,
+          destinationAccountId: BARCLAYS_ID,
+          amount: 35,
+          destinationAmount: null,
+          note: null,
+        }),
+      )
+      expect(await screen.findByText('Card credit received')).toBeInTheDocument()
+      expect(screen.queryByRole('heading', { name: 'Receive card credit' })).not.toBeInTheDocument()
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Receive card credit' })).toHaveFocus())
+    })
+
+    it('shows the hint and keeps the submit disabled when no card has credit', async () => {
+      const user = userEvent.setup()
+      getCardsInCreditMock.mockResolvedValue([])
+      const form = await openReceiveForm(user)
+
+      expect(await within(form).findByText('No card in GBP has credit to refund.')).toBeInTheDocument()
+      expect(within(form).getByRole('button', { name: 'Receive card credit' })).toBeDisabled()
+    })
+
+    it('prompts before discarding a chosen card', async () => {
+      const user = userEvent.setup()
+      getCardsInCreditMock.mockResolvedValue([CARD_CREDIT])
+      const form = await openReceiveForm(user)
+      await user.selectOptions(within(form).getByRole('combobox', { name: /^From/ }), await within(form).findByRole('option', { name: /^BA Amex/ }))
+
+      await user.click(screen.getByRole('button', { name: 'Add expense' }))
+
+      expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Receive card credit' })).toBeInTheDocument()
     })
   })
 

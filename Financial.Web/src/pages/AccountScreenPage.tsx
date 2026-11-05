@@ -337,9 +337,7 @@ export default function AccountScreenPage() {
         {payStatementForm.isOpen && lockedBank && (
           <PayCardStatementForm payForm={payStatementForm} lockedBank={lockedBank} onCancel={closeActiveForm} />
         )}
-        {creditRefundForm.isOpen && lockedCard && (
-          <CardCreditRefundForm refundForm={creditRefundForm} lockedCard={lockedCard} onCancel={closeActiveForm} />
-        )}
+        {creditRefundForm.isOpen && <CardCreditRefundForm refundForm={creditRefundForm} onCancel={closeActiveForm} />}
         {adjustmentForm.isOpen && (
           <BalanceAdjustmentForm
             isEditing={adjustmentForm.isEditing}
