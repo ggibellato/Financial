@@ -162,14 +162,14 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     public async Task ARefundInAnEarlierMonthThatCoversTheDueMonth_RemovesTheEvent()
     {
         Connect();
-        var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
-        await AddChargeAsync(cardId, new DateOnly(2026, 9, 5), 55.5m);
-        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
-        await WaitForResolvedSyncStatusAsync(cardId);
+        var baAmexId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004");
+        await AddChargeAsync(baAmexId, new DateOnly(2026, 9, 5), 55.5m);
+        await SetDueDateAsync(baAmexId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await WaitForResolvedSyncStatusAsync(baAmexId);
         _provider.CreatedEvents.Should().ContainSingle();
 
-        await AddChargeAsync(cardId, new DateOnly(2026, 8, 20), -60m);
-        await WaitForResolvedSyncStatusAsync(cardId);
+        await AddChargeAsync(baAmexId, new DateOnly(2026, 8, 20), -60m);
+        await WaitForResolvedSyncStatusAsync(baAmexId);
 
         _provider.DeletedEvents.Should().ContainSingle(e => e.EventId == _provider.CreatedEventId);
     }

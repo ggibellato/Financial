@@ -8,7 +8,7 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 import { selectableBanks } from '../utils/selectableBanks'
 import { formatN2, formatN2OrDash } from '../utils/formatters'
 import { currencyFooterItems } from '../utils/currencyFooterItems'
-import { UNPAID_STATEMENT_STATUS, formatOwedOrCredit, nothingDueText } from '../utils/owedBalance'
+import { formatOwedOrCredit, nothingDueText } from '../utils/owedBalance'
 import SectionTotals from './SectionTotals'
 import TruncatedText from './TruncatedText'
 
@@ -54,14 +54,16 @@ function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDt
 
 const outstandingOf = (row: CardRow) => row.statement?.outstandingTotal ?? 0
 
+const isUnpaid = (row: CardRow) => !row.statement?.isPaid && outstandingOf(row) > 0
+
 function statusOf(row: CardRow): string {
   if (row.statement?.isPaid) return 'Paid'
-  return outstandingOf(row) > 0 ? UNPAID_STATEMENT_STATUS : nothingDueText(0)
+  return isUnpaid(row) ? 'Unpaid' : nothingDueText(0)
 }
 
 function formatAccumulated(row: CardRow): string {
   const accumulated = row.statement?.accumulatedOutstandingTotal
-  return accumulated === undefined ? formatN2OrDash(accumulated) : formatOwedOrCredit(accumulated)
+  return accumulated == null ? formatN2OrDash(accumulated) : formatOwedOrCredit(accumulated)
 }
 
 export default function CardsGrid({
@@ -225,7 +227,7 @@ export default function CardsGrid({
                       </DataTableCell>
                     </>
                   )}
-                  <DataTableCell label="Actions" className="data-table__col--action-wide">
+                  <TableCell className="data-table__col--action-wide">
                     {row.statement &&
                       (row.statement.isPaid ? (
                         <button
@@ -235,7 +237,7 @@ export default function CardsGrid({
                         >
                           {isPending ? 'Unmarking…' : 'Unmark Paid'}
                         </button>
-                      ) : outstandingOf(row) > 0 ? (
+                      ) : isUnpaid(row) ? (
                         <>
                           <select
                             aria-label={`Paying bank for ${row.creditCardName}`}
@@ -259,7 +261,7 @@ export default function CardsGrid({
                           </button>
                         </>
                       ) : null)}
-                  </DataTableCell>
+                  </TableCell>
                 </TableRow>
               )
             })}

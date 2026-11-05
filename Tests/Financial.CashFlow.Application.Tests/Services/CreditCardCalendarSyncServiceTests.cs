@@ -427,6 +427,43 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    public void GetSyncStatuses_FreshProcess_ReportsADatedCardWithNothingDueAsSynced()
+    {
+        var card = Card("BaAmex");
+        _repository.SetCardDueDate(card, new DateOnly(2026, 9, 10));
+        Connect();
+
+        var statuses = _sut.GetSyncStatuses();
+
+        statuses.Should().ContainSingle(s => s.CreditCardId == card.Id && s.State == "Synced");
+    }
+
+    [Fact]
+    public void GetSyncStatuses_FreshProcess_LeavesOutADatedCardWithAnAmountDueAndNoEvent()
+    {
+        var card = Card("BaAmex");
+        SetDueDateWithCharge(card, new DateOnly(2026, 9, 10));
+        Connect();
+
+        _sut.GetSyncStatuses().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void GetSyncStatuses_NothingDueCard_IsNotReportedWhenNotConnectedOrRevoked()
+    {
+        var card = Card("BaAmex");
+        _repository.SetCardDueDate(card, new DateOnly(2026, 9, 10));
+
+        var notConnected = _sut.GetSyncStatuses();
+        Connect();
+        _connectionStore.Save(_connectionStore.Load()! with { RevokedReason = "token_revoked" });
+        var revoked = _sut.GetSyncStatuses();
+
+        notConnected.Should().BeEmpty();
+        revoked.Should().BeEmpty();
+    }
+
+    [Fact]
     public void GetSyncStatuses_WhenReadingThePersistedConnectionRaces_FallsBackToWhatIsTracked()
     {
         // The real store writes via temp-file-then-atomic-rename; a concurrent GetSyncStatuses

@@ -43,13 +43,13 @@ public class PaymentsDueServiceTests
     private static RecurringBill CreateBill(int dueDay, string description = "Internet") =>
         RecurringBill.Create(dueDay, description, 50m, Area.UK, string.Empty, null, null);
 
-    private Account CreateCard(string name, DateOnly? nextInvoiceDueDate, decimal chargeInDueMonth = 100m)
+    private Account CreateCard(string name, DateOnly? nextInvoiceDueDate)
     {
         var card = TestAccounts.CreditCard(name);
         _repository.SetCardDueDate(card, nextInvoiceDueDate);
-        if (nextInvoiceDueDate is { } dueDate && chargeInDueMonth != 0m)
+        if (nextInvoiceDueDate is { } dueDate)
         {
-            AddCharge(card, dueDate, chargeInDueMonth);
+            AddCharge(card, dueDate, 100m);
         }
 
         return card;
@@ -163,7 +163,9 @@ public class PaymentsDueServiceTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
     public void GetPaymentsDue_CreditCardWithNoChargesInTheDueMonth_IsExcluded()
     {
-        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(3), chargeInDueMonth: 0m));
+        var card = TestAccounts.CreditCard("Nubank");
+        _repository.SetCardDueDate(card, PinnedToday.AddDays(3));
+        _repository.AddAccount(card);
 
         _sut.GetPaymentsDue().Should().BeEmpty();
     }
