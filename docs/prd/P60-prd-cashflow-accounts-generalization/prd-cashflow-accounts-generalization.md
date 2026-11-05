@@ -686,7 +686,7 @@ Added 2026-11-04 at the user's request, after F10's deploy, from cases met on re
 - BA Amex screen on November 2026 → header "November 2026 statement £3,012.31 · Unpaid" and "Total owed £3,394.25"; switching to December shows December's statement and the same total owed.
 
 **Error Handling:**
-- Refund amount not above £0: 400 "Amount must be greater than zero."
+- Refund amount not above £0: the form shows "Amount must be greater than zero." and does not submit; a zero value that reaches the server gets the existing 400 "Value must not be zero." (spec decision, user 2026-11-05)
 - A refund into a paid statement: F08's 400 "This charge's statement is paid; unmark it first."
 - Refunding more credit than the card has: 400 "The card's credit is £35.00." (message fixed in the spec); with no credit the action is not offered.
 - Editing or deleting a credit refund transfer through `/transfers` or `/accounts/transfers`: 409 (message fixed in the spec), as for payment transfers.
