@@ -79,7 +79,7 @@ describe('CardStatementsTab', () => {
     expect(within(rowOf('October 2026')).getAllByText('210.45')).toHaveLength(2)
     expect(within(rowOf('October 2026')).getByText('03/11/2026')).toBeInTheDocument()
     expect(within(rowOf('November 2026')).getAllByText('—')).toHaveLength(2)
-    expect(within(rowOf('September 2026')).getByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
+    expect(within(rowOf('September 2026')).getByText('Paid 512.30 on 12 Oct 2026 from Barclays')).toBeInTheDocument()
     expect(within(rowOf('October 2026')).getByText('Unpaid')).toBeInTheDocument()
     expect(screen.getByRole('row', { current: true })).toBe(rowOf('October 2026'))
     expect(within(rowOf('October 2026')).getByText('Viewed month')).toBeInTheDocument()
@@ -119,6 +119,12 @@ describe('CardStatementsTab', () => {
     expect(screen.queryByRole('button', { name: /^Unmark / })).not.toBeInTheDocument()
   })
 
+  it('shows the amount actually paid when carried credit made it differ from the total', () => {
+    renderTab({ statements: [{ ...SEPTEMBER, creditIn: 100.3, paidAmount: 412 }] })
+
+    expect(within(rowOf('September 2026')).getByText('Paid 412.00 on 12 Oct 2026 from Barclays')).toBeInTheDocument()
+  })
+
   it('shows no empty Actions label on a row with no action', () => {
     renderTab({ statements: [NOVEMBER] })
 
@@ -142,16 +148,16 @@ describe('CardStatementsTab', () => {
     expect(screen.queryByRole('button', { name: /^Pay / })).not.toBeInTheDocument()
   })
 
-  it('shows Paid without a date when the payment date is unknown', () => {
+  it('shows the amount paid alone when the payment date is unknown', () => {
     renderTab({ statements: [{ ...SEPTEMBER, paidOn: null, paidFromAccountName: null }] })
 
-    expect(within(rowOf('September 2026')).getByText('Paid')).toBeInTheDocument()
+    expect(within(rowOf('September 2026')).getByText('Paid 512.30')).toBeInTheDocument()
   })
 
-  it('shows Paid with the date alone when the bank is unknown', () => {
+  it('shows the amount and date when the bank is unknown', () => {
     renderTab({ statements: [{ ...SEPTEMBER, paidFromAccountName: null }] })
 
-    expect(within(rowOf('September 2026')).getByText('Paid 12 Oct 2026')).toBeInTheDocument()
+    expect(within(rowOf('September 2026')).getByText('Paid 512.30 on 12 Oct 2026')).toBeInTheDocument()
   })
 
   it('shows a skeleton while loading', () => {

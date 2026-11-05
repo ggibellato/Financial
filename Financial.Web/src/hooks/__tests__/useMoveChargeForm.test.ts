@@ -22,6 +22,15 @@ function statement(year: number, month: number, isPaid: boolean): AccountStateme
   return { id: `s-${year}-${month}`, year, month, total: 10, creditIn: 0, outstandingTotal: isPaid ? 0 : 10, creditCarried: 0, status: isPaid ? 'Paid' : 'Unpaid', isPaid, dueDate: null, paidOn: null, paidAmount: isPaid ? 10 : null, paidFromAccountName: null }
 }
 
+describe('moveTargetsFor with a listed month that has no stored statement', () => {
+  it('marks it (new), and leaves a stored statement unmarked', () => {
+    const targets = moveTargetsFor('2026-11-01', [statement(2026, 12, false), { ...statement(2027, 1, false), id: null, status: 'NothingDue', outstandingTotal: 0 }])
+
+    expect(targets[0].label).toBe('December 2026')
+    expect(targets[1].label).toBe('January 2027 (new)')
+  })
+})
+
 const CHARGE: ExpenseDto = {
   id: 'c1',
   date: '2026-11-03',

@@ -21,7 +21,7 @@ import {
 import type { AccountStatementDto } from '../api/types'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
-import { formatCurrency, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
+import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -104,8 +104,10 @@ function monthOf(statement: AccountStatementDto): string {
 }
 
 function statusOf(statement: AccountStatementDto): string {
-  const status = statementStatusText(statement)
-  return statement.isPaid && statement.paidOn && statement.paidFromAccountName ? `${status} from ${statement.paidFromAccountName}` : status
+  if (!statement.isPaid) return statementStatusText(statement)
+  const paidOn = statement.paidOn ? ` on ${formatDayMonthYearUtc(statement.paidOn)}` : ''
+  const paidFrom = statement.paidFromAccountName ? ` from ${statement.paidFromAccountName}` : ''
+  return `Paid ${formatN2(statement.paidAmount ?? 0)}${paidOn}${paidFrom}`
 }
 
 interface PayStatementFormProps {

@@ -35,7 +35,7 @@ export function moveTargetsFor(invoiceDate: string, statements: readonly Account
     const statement = statements.find((s) => s.year === year && s.month === month)
     if (statement?.isPaid) continue
     const label = formatLongMonthYear(year, month)
-    targets.push({ value: formatMonthInputValue(year, month), label: statement ? label : `${label} (new)` })
+    targets.push({ value: formatMonthInputValue(year, month), label: statement?.id ? label : `${label} (new)` })
   }
   return targets
 }

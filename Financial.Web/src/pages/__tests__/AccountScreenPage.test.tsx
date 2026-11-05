@@ -2226,7 +2226,7 @@ describe('AccountScreenPage card screen', () => {
     getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), isActive: false }))
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
 
-    expect(await screen.findByText('Paid 12 Oct 2026 from Barclays')).toBeInTheDocument()
+    expect(await screen.findByText('Paid 512.30 on 12 Oct 2026 from Barclays')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
   })
 })
