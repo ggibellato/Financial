@@ -17,6 +17,7 @@ public class Transfer : IAccountTransaction
     public string? Note { get; private set; }
     public decimal? DestinationAmount { get; private set; }
     public bool IsStatementPayment => DestinationAccount.Has(Capability.ReceivesPayments);
+    public bool IsCreditRefund => SourceAccount.Has(Capability.ReceivesPayments);
 
     private Transfer() { }
 
@@ -53,6 +54,29 @@ public class Transfer : IAccountTransaction
             SourceAccount = bank,
             DestinationAccount = card,
             Amount = amount
+        };
+    }
+
+    public static Transfer CreateCreditRefund(DateOnly date, Account card, Account bank, decimal amount, string? note, DateOnly today)
+    {
+        EnsurePairIsValid(card, bank, TransferPairRules.CreditRefund);
+        ActiveAccountRule.EnsureUsable(null, bank);
+        if (card.Currency != bank.Currency)
+        {
+            throw new ArgumentException($"The receiving account must be in the card's currency ({card.Currency}).");
+        }
+
+        EnsureAmountsAreValid(amount, null, card.Currency, bank.Currency);
+        EnsureDateAndNoteAreValid(date, note, today);
+
+        return new Transfer
+        {
+            Id = Guid.NewGuid(),
+            Date = date,
+            SourceAccount = card,
+            DestinationAccount = bank,
+            Amount = amount,
+            Note = note
         };
     }
 

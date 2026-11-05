@@ -424,4 +424,95 @@ public class TransferTests
 
         act.Should().Throw<ArgumentException>().WithMessage("The paying account must be in the card's currency (GBP).");
     }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public void CreateCreditRefund_CardToBank_AssignsFieldsAndIsACreditRefund()
+    {
+        var card = TestAccounts.CreditCard("Amex");
+
+        var refund = Transfer.CreateCreditRefund(Date, card, _barclays, 35m, "Issuer refund", Today);
+
+        using (new AssertionScope())
+        {
+            refund.Id.Should().NotBeEmpty();
+            refund.Date.Should().Be(Date);
+            refund.SourceAccount.Should().Be(card);
+            refund.DestinationAccount.Should().Be(_barclays);
+            refund.Amount.Should().Be(35m);
+            refund.DestinationAmount.Should().BeNull();
+            refund.Note.Should().Be("Issuer refund");
+            refund.IsCreditRefund.Should().BeTrue();
+            refund.IsStatementPayment.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void CreateCreditRefund_InactiveCard_Succeeds()
+    {
+        var closedCard = Account.CreateWithCapabilities(
+            "Closed card", Currency.GBP, AccountTemplates.CapabilitiesOf(AccountTemplate.CreditCard), isActive: false);
+
+        Transfer.CreateCreditRefund(Date, closedCard, _barclays, 35m, null, Today).IsCreditRefund.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CreateCreditRefund_InactiveBank_Throws()
+    {
+        var act = () => Transfer.CreateCreditRefund(Date, TestAccounts.CreditCard("Amex"), _closed, 35m, null, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Closed is inactive.");
+    }
+
+    [Fact]
+    public void CreateCreditRefund_BankToBank_Throws()
+    {
+        var act = () => Transfer.CreateCreditRefund(Date, _barclays, _chase, 35m, null, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Transfers from Barclays to Chase are not allowed.");
+    }
+
+    [Fact]
+    public void CreateCreditRefund_BankInAnotherCurrency_ThrowsWithTheCardsCurrency()
+    {
+        var act = () => Transfer.CreateCreditRefund(Date, TestAccounts.CreditCard("Amex"), _itau, 35m, null, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("The receiving account must be in the card's currency (GBP).");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void CreateCreditRefund_NonPositiveAmount_Throws(decimal amount)
+    {
+        var act = () => Transfer.CreateCreditRefund(Date, TestAccounts.CreditCard("Amex"), _barclays, amount, null, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Transfer amount must be greater than zero.");
+    }
+
+    [Fact]
+    public void CreateCreditRefund_DatedTomorrow_Throws()
+    {
+        var act = () => Transfer.CreateCreditRefund(Today.AddDays(1), TestAccounts.CreditCard("Amex"), _barclays, 35m, null, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+    }
+
+    [Fact]
+    public void CreateCreditRefund_NoteTooLong_Throws()
+    {
+        var act = () => Transfer.CreateCreditRefund(Date, TestAccounts.CreditCard("Amex"), _barclays, 35m, new string('x', 201), Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Note must be 200 characters or fewer.");
+    }
+
+    [Fact]
+    public void IsCreditRefund_BankToBankAndStatementPayment_IsFalse()
+    {
+        using (new AssertionScope())
+        {
+            CreateValidTransfer().IsCreditRefund.Should().BeFalse();
+            Transfer.CreateStatementPayment(Date, _barclays, TestAccounts.CreditCard("Amex"), 40m, Today).IsCreditRefund.Should().BeFalse();
+        }
+    }
 }

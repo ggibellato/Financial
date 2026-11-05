@@ -55,24 +55,44 @@ public static class CardStatementLedger
         Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers) =>
         Walk(card, expenses, statements, transfers, NoThroughMonth).FirstOrDefault(row => row.IsUnpaid);
 
+    public static bool RefundKeepsAmountsToPay(
+        Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers, Transfer refund)
+    {
+        var throughIndex = MonthIndex(refund.Date.Year, refund.Date.Month);
+        var before = Walk(card, expenses, statements, transfers, throughIndex);
+        var after = Walk(card, expenses, statements, transfers.Append(refund), throughIndex);
+
+        var amountsBefore = before.ToDictionary(row => MonthIndex(row.Year, row.Month), row => row.AmountToPay);
+        var raisesAnAmount = after.Any(row => row.AmountToPay > amountsBefore.GetValueOrDefault(MonthIndex(row.Year, row.Month)));
+        var creditBefore = before.Count == 0 ? 0m : before[^1].CreditCarried;
+
+        return !raisesAnAmount && after[^1].CreditCarried == creditBefore - refund.Amount;
+    }
+
     private static List<CardStatementLedgerMonth> Walk(
         Account card, IEnumerable<Expense> expenses, IEnumerable<CardStatement> statements, IEnumerable<Transfer> transfers, int throughIndex)
     {
         var chargesByMonth = expenses
             .Where(expense => expense.CreditCard?.Id == card.Id && expense.InvoiceDate is not null)
             .ToLookup(expense => MonthIndex(expense.InvoiceDate!.Value.Year, expense.InvoiceDate.Value.Month));
+        var transferList = transfers.ToList();
+        var creditRefundsByMonth = transferList
+            .Where(transfer => transfer.IsCreditRefund && transfer.SourceAccount.Id == card.Id)
+            .ToLookup(transfer => MonthIndex(transfer.Date.Year, transfer.Date.Month));
         var rows = new List<CardStatementLedgerMonth>();
-        if (chargesByMonth.Count == 0)
+        var monthsWithRecords = chargesByMonth.Select(group => group.Key).Concat(creditRefundsByMonth.Select(group => group.Key)).ToList();
+        if (monthsWithRecords.Count == 0)
             return rows;
 
         var statementList = statements.ToList();
-        var transferList = transfers.ToList();
-        var lastIndex = Math.Max(chargesByMonth.Max(group => group.Key), throughIndex);
+        var lastIndex = Math.Max(monthsWithRecords.Max(), throughIndex);
         var creditIn = 0m;
 
-        for (var index = chargesByMonth.Min(group => group.Key); index <= lastIndex; index++)
+        for (var index = monthsWithRecords.Min(); index <= lastIndex; index++)
         {
-            var row = MonthRow(card, index / MonthsPerYear, index % MonthsPerYear + 1, statementList, chargesByMonth[index], transferList, creditIn);
+            var creditRefunded = creditRefundsByMonth[index].Sum(refund => refund.Amount);
+            var row = MonthRow(
+                card, index / MonthsPerYear, index % MonthsPerYear + 1, statementList, chargesByMonth[index], creditRefunded, transferList, creditIn);
             rows.Add(row);
             creditIn = row.CreditCarried;
         }
@@ -81,11 +101,18 @@ public static class CardStatementLedger
     }
 
     private static CardStatementLedgerMonth MonthRow(
-        Account card, int year, int month, List<CardStatement> statements, IEnumerable<Expense> charges, List<Transfer> transfers, decimal creditIn)
+        Account card,
+        int year,
+        int month,
+        List<CardStatement> statements,
+        IEnumerable<Expense> charges,
+        decimal creditRefunded,
+        List<Transfer> transfers,
+        decimal creditIn)
     {
         var statement = statements.FirstOrDefault(candidate => candidate.IsFor(card.Id, year, month));
-        var total = charges.Sum(charge => charge.Value);
-        var counted = SumWithStatus(charges, ExpensePaymentStatus.CreditCardCharge);
+        var total = charges.Sum(charge => charge.Value) + creditRefunded;
+        var counted = SumWithStatus(charges, ExpensePaymentStatus.CreditCardCharge) + creditRefunded;
 
         CardStatementLedgerMonth Row(decimal amountToPay, decimal creditCarried, decimal? paidAmount, CardStatementLedgerStatus status) =>
             new(year, month, statement, total, creditIn, amountToPay, creditCarried, paidAmount, status);
