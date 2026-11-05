@@ -643,7 +643,7 @@ Added 2026-10-30 at the user's request, after F09's deploy; built before F10 and
 - **Columns and totals per currency:** Banks: Account, Currency, Balance; footer "Bank total". Credit cards: Account, Currency, Next statement, Total owed; footer "Total owed". Pots: Account, Currency, Balance; footer "Pots total". Bank and card rows open the account screen; Pots rows stay plain text until F10. A card row no longer shows the month-end owed balance: in the current month it repeats the total owed.
 - **Next statement:** the card's oldest statement month that still has an unpaid charge (from F15, the oldest with an amount to pay above £0, refunds and carried credit included), shown as its month and unpaid total ("Oct 2026 · £512.30"), or "—" when the card has no unpaid charge. Empty unpaid statements are skipped (user decision 2026-10-30). *Why:* it is the amount due next; the current month's statement is usually still collecting charges (user decision 2026-10-30).
 - **Total owed:** every unpaid charge on the card, whatever its date or statement month (today's accumulated outstanding on Monthly's Card tab). It doesn't depend on the viewed month.
-- **Card screen header:** "Owed at end of <Month yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled.
+- **Card screen header:** "Owed at end of <Month yyyy>" (the month-end owed balance from F07, which changes with the month) and "Total owed now" (which doesn't), each labelled (from F15, "<Month yyyy> statement" and "Total owed").
 - **Parity:** the new card figures are mapped to today's card figures in the figure map (mapping fixed in the spec). Monthly and its summary are unchanged.
 
 **Experience:**
@@ -675,6 +675,7 @@ Added 2026-11-04 at the user's request, after F10's deploy, from cases met on re
 - **A statement for every month:** the card's Statements tab lists every month from the card's first statement to the current month (and any later stored statement), months without charges shown as £0 "Nothing due". These rows are worked out when read, not stored (user decision 2026-11-04).
 - **Refund credit to bank:** a card action for a card in credit: amount (defaults to the credit, at most the credit), date (not in the future) and the bank that received it. It is saved as one transfer card → bank, linked to the card's credit like a statement payment is to its statement, through a new pair rule (`ReceivesPayments` card → bank that can receive transfers) allowed only through this action. It lowers the credit and the card's balance, and the bank shows a read-only "Card credit refund" row. It starts from the card, and from the bank as "Receive card credit", per the both-sides rule (user decision 2026-11-04).
 - **Card totals:** F14's next statement becomes the oldest statement with an amount to pay above £0, and its total owed counts refunds and credit; a card in credit shows "Credit £x" instead of an owed amount.
+- **Card header:** on a card, F14's "Owed at end of <Month yyyy>" becomes "<Month yyyy> statement": that month's amount to pay, with its status under it ("Unpaid"; "Paid 12 Nov 2026" with the amount paid; "Nothing due", with any credit carried). "Total owed now" becomes "Total owed": every unpaid amount, or "Credit £x" when the card is in credit. Bank headers are unchanged. *Why:* the month-end owed balance counts charges by purchase date, so on a card it equalled the total owed (BA Amex: 3,394.25 in both) (user decision 2026-11-05).
 - **Parity:** the live data has no statement at or below £0 with charges and no refunded credit, so parity expects 0 differences; the spec maps any new figure.
 
 **Experience:**
@@ -682,9 +683,10 @@ Added 2026-11-04 at the user's request, after F10's deploy, from cases met on re
 - A £60.00 refund on a statement with £25.00 of charges → that statement shows "Nothing due" and December's amount to pay is £35.00 lower.
 - Card in credit £35.00 → Refund credit to bank → Barclays, £35.00 → the card shows no credit and Barclays shows "Card credit refund +£35.00".
 - Statements tab in a month without card use → that month's row reads "£0.00 · Nothing due" with no Pay.
+- BA Amex screen on November 2026 → header "November 2026 statement £3,012.31 · Unpaid" and "Total owed £3,394.25"; switching to December shows December's statement and the same total owed.
 
 **Error Handling:**
-- Refund amount not above £0: 400 "Amount must be greater than zero."
+- Refund amount not above £0: the form shows "Amount must be greater than zero." and does not submit; a zero value that reaches the server gets the existing 400 "Value must not be zero." (spec decision, user 2026-11-05)
 - A refund into a paid statement: F08's 400 "This charge's statement is paid; unmark it first."
 - Refunding more credit than the card has: 400 "The card's credit is £35.00." (message fixed in the spec); with no credit the action is not offered.
 - Editing or deleting a credit refund transfer through `/transfers` or `/accounts/transfers`: 409 (message fixed in the spec), as for payment transfers.
@@ -1007,6 +1009,7 @@ graph TD
 - [ ] A credit from refunds lowers the next statement's amount to pay and keeps carrying while it is larger
 - [ ] Refund credit to bank writes one linked transfer card → bank, lowers the credit and shows on both accounts; it cannot exceed the credit, and the transfer cannot be edited or deleted through the transfer routes
 - [ ] F14's next statement and total owed account for refunds and credit; a card in credit shows "Credit £x"
+- [ ] The card screen header shows "<Month yyyy> statement" (that month's amount to pay with its status: Unpaid, the paid date and amount, or Nothing due with any credit carried) and "Total owed" (or "Credit £x"); bank headers are unchanged
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F16. Month Transactions View
