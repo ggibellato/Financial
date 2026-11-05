@@ -2450,6 +2450,21 @@ describe('financialApiClient', () => {
     expect(init?.method).toBe('DELETE')
   })
 
+  it('posts a card credit refund to its own route', async () => {
+    const responseBody = { id: 't7' }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+    const requestBody = { date: '2026-11-05', sourceAccountId: 'amex', destinationAccountId: 'barclays', amount: 35, destinationAmount: null, note: null }
+
+    const result = await client.createCardCreditRefund(requestBody)
+
+    expect(result).toEqual(responseBody)
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/credit-refunds`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
   it('rejects a refused account transfer with an ApiError carrying the server message', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: 'Enter the amount received in EUR.' }), { status: 400 }),

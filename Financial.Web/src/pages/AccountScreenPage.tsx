@@ -5,6 +5,7 @@ import AccountActionBar from '../components/AccountActionBar'
 import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
+import CardCreditRefundForm from '../components/CardCreditRefundForm'
 import CardStatementsTab from '../components/CardStatementsTab'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
@@ -70,6 +71,7 @@ export default function AccountScreenPage() {
     transferForm,
     payBillForm,
     payStatementForm,
+    creditRefundForm,
     moveForm,
     potTransactionForm,
     depositForm,
@@ -327,6 +329,9 @@ export default function AccountScreenPage() {
         )}
         {payStatementForm.isOpen && lockedBank && (
           <PayCardStatementForm payForm={payStatementForm} lockedBank={lockedBank} onCancel={closeActiveForm} />
+        )}
+        {creditRefundForm.isOpen && lockedCard && (
+          <CardCreditRefundForm refundForm={creditRefundForm} lockedCard={lockedCard} onCancel={closeActiveForm} />
         )}
         {adjustmentForm.isOpen && (
           <BalanceAdjustmentForm
