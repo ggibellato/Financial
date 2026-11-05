@@ -1,11 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AccountDto } from '../api/types'
+import { accountsWith } from '../utils/accountCapabilities'
 import { formatN2, getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
-import { paymentDateError } from './useCardStatements'
+import { paymentDateError, PAYERS_LOAD_ERROR } from './useCardStatements'
 
-const BANKS_LOAD_ERROR = 'Unable to load the banks'
 const RECEIVES_TRANSFERS_CAPABILITY = 'CanReceiveTransfers'
 
 export type CardCreditRefundField = 'destinationAccountId' | 'amount' | 'date'
@@ -18,24 +17,11 @@ interface CardCreditRefundValues {
 
 interface RefundedCard {
   id: string
-  name: string
   currency: string
 }
 
-const NO_ACCOUNTS: AccountDto[] = []
-
-function formatAmountInput(credit: number): string {
-  return credit.toFixed(2)
-}
-
 function initialValues(credit: number): CardCreditRefundValues {
-  return { destinationAccountId: '', amount: formatAmountInput(credit), date: todayIsoDate() }
-}
-
-export function refundableBanksOf(accounts: readonly AccountDto[], currency: string | undefined): AccountDto[] {
-  return accounts.filter(
-    (account) => account.isActive && account.currency === currency && account.capabilities.includes(RECEIVES_TRANSFERS_CAPABILITY),
-  )
+  return { destinationAccountId: '', amount: credit.toFixed(2), date: todayIsoDate() }
 }
 
 function amountError(amount: string, credit: number, currency: string): string | undefined {
@@ -58,27 +44,21 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
   const [isSaving, setIsSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<CardCreditRefundField, string>>>({})
-  const accounts = useAsyncResource(() => (isOpen ? apiClient.getAccounts() : null), [isOpen], BANKS_LOAD_ERROR)
-  const currency = card?.currency
-  const banks = useMemo(() => refundableBanksOf(accounts.data ?? NO_ACCOUNTS, currency), [accounts.data, currency])
+  const accounts = useAsyncResource(() => (isOpen ? apiClient.getAccounts() : null), [isOpen], PAYERS_LOAD_ERROR)
+  const currency = card?.currency ?? ''
+  const banks = accountsWith(accounts.data ?? [], RECEIVES_TRANSFERS_CAPABILITY).filter((bank) => bank.currency === currency)
   const destinationAccountId = banks.some((bank) => bank.id === values.destinationAccountId) ? values.destinationAccountId : ''
   const current = { ...values, destinationAccountId }
-
-  const reset = () => {
-    setValues(initialValues(credit))
-    setSaveError(null)
-    setFieldErrors({})
-  }
+  const opened = initialValues(credit)
 
   const open = () => {
-    reset()
+    setValues(opened)
+    setSaveError(null)
+    setFieldErrors({})
     setIsOpen(true)
   }
 
-  const cancel = () => {
-    setIsOpen(false)
-    reset()
-  }
+  const cancel = () => setIsOpen(false)
 
   const setField = (field: CardCreditRefundField, value: string) => {
     setValues((previous) => ({ ...previous, [field]: value }))
@@ -88,7 +68,7 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
 
   const submit = (): CardCreditRefundField | null => {
     if (isSaving || !card) return null
-    const errors = validate(current, credit, card.currency)
+    const errors = validate(current, credit, currency)
     const firstInvalid = (['destinationAccountId', 'amount', 'date'] as const).find((field) => errors[field])
     if (firstInvalid) {
       setFieldErrors(errors)
@@ -108,7 +88,7 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
         note: null,
       })
       .then(() => {
-        setIsOpen(false)
+        cancel()
         onRefunded()
       })
       .catch((err: unknown) => {
@@ -122,7 +102,7 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
   return {
     isOpen,
     banks,
-    currency: currency ?? '',
+    currency,
     values: current,
     isLoading: accounts.isLoading,
     loadError: accounts.error,
@@ -131,7 +111,7 @@ export function useCardCreditRefundForm(card: RefundedCard | undefined, credit: 
     isSaving,
     saveError,
     fieldErrors,
-    isDirty: isOpen && (values.destinationAccountId !== '' || values.amount !== formatAmountInput(credit) || values.date !== todayIsoDate()),
+    isDirty: isOpen && (values.destinationAccountId !== '' || values.amount !== opened.amount || values.date !== opened.date),
     open,
     cancel,
     setField,

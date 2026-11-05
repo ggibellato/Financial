@@ -357,23 +357,20 @@ public sealed class AccountQueryService : IAccountQueryService
     private static IEnumerable<AccountTransactionDTO> ToRows(Transfer transfer, Account account, IReadOnlyList<CardStatement> statements)
     {
         var paidStatement = statements.FirstOrDefault(statement => statement.PaymentTransferId == transfer.Id);
-        var (sentKind, receivedKind) = TransferRowKinds(transfer);
 
         if (transfer.SourceAccount.Id == account.Id)
-            yield return ToRow(transfer, account, sentKind, transfer.DestinationAccount, -transfer.Amount, paidStatement);
+            yield return ToRow(transfer, account, TransferRowKind(transfer, TransactionKind.TransferOut), transfer.DestinationAccount, -transfer.Amount, paidStatement);
 
         if (transfer.DestinationAccount.Id == account.Id)
-            yield return ToRow(transfer, account, receivedKind, transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
+            yield return ToRow(transfer, account, TransferRowKind(transfer, TransactionKind.TransferIn), transfer.SourceAccount, transfer.AmountReceived(), paidStatement);
     }
 
-    private static (TransactionKind Sent, TransactionKind Received) TransferRowKinds(Transfer transfer)
+    private static TransactionKind TransferRowKind(Transfer transfer, TransactionKind ordinaryKind)
     {
         if (transfer.IsCreditRefund)
-            return (TransactionKind.CardCreditRefund, TransactionKind.CardCreditRefund);
+            return TransactionKind.CardCreditRefund;
 
-        return transfer.IsStatementPayment
-            ? (TransactionKind.CardPayment, TransactionKind.CardPayment)
-            : (TransactionKind.TransferOut, TransactionKind.TransferIn);
+        return transfer.IsStatementPayment ? TransactionKind.CardPayment : ordinaryKind;
     }
 
     private static AccountTransactionDTO ToRow(

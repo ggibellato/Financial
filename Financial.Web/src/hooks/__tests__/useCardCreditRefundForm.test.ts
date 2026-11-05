@@ -5,7 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransferDto } from '../../api/types'
 import { account, cardAccount, potsAccount } from '../../test/account'
 import { pinDate } from '../../test-utils/pinDate'
-import { refundableBanksOf, useCardCreditRefundForm } from '../useCardCreditRefundForm'
+import { useCardCreditRefundForm } from '../useCardCreditRefundForm'
 
 const { getAccountsMock, createCardCreditRefundMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -19,12 +19,12 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const AMEX = { id: 'amex', name: 'BA Amex', currency: 'GBP' }
+const AMEX = { id: 'amex', currency: 'GBP' }
 const BARCLAYS = account({ id: 'barclays', name: 'Barclays' })
 const CHASE = account({ id: 'chase', name: 'Chase' })
 const ACCOUNTS = [
-  BARCLAYS,
   CHASE,
+  BARCLAYS,
   account({ id: 'closed', name: 'Closed', isActive: false }),
   account({ id: 'itau', name: 'Itau', currency: 'BRL' }),
   cardAccount({ id: 'amex', name: 'BA Amex' }),
@@ -54,12 +54,6 @@ async function openLoaded(result: { current: ReturnType<typeof useCardCreditRefu
   await waitFor(() => expect(result.current.banks).toHaveLength(2))
 }
 
-describe('refundableBanksOf', () => {
-  it('keeps active accounts that receive transfers in the card currency', () => {
-    expect(refundableBanksOf(ACCOUNTS, 'GBP').map((bank) => bank.id)).toEqual(['barclays', 'chase'])
-  })
-})
-
 describe('useCardCreditRefundForm', () => {
   beforeEach(() => {
     pinDate('2026-11-05T12:00:00Z')
@@ -75,6 +69,14 @@ describe('useCardCreditRefundForm', () => {
     renderForm()
 
     expect(getAccountsMock).not.toHaveBeenCalled()
+  })
+
+  it('lists active accounts that receive transfers in the card currency, by name', async () => {
+    const { result } = renderForm()
+
+    await openLoaded(result)
+
+    expect(result.current.banks.map((bank) => bank.id)).toEqual(['barclays', 'chase'])
   })
 
   it('opens with the amount at the credit, today, and no bank chosen', async () => {
