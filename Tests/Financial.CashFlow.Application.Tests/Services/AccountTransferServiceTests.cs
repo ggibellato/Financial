@@ -667,13 +667,13 @@ public class AccountTransferServiceTests
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountTransferService.DeleteCreditRefund");
     }
 
-    private Account SeedCard(string name, decimal balance, Currency currency = Currency.GBP, bool isActive = true)
+    private Account SeedCard(string name, decimal credit, Currency currency = Currency.GBP, bool isActive = true)
     {
         var card = Account.CreateWithCapabilities(name, currency, AccountTemplates.CapabilitiesOf(AccountTemplate.CreditCard));
         _repository.Accounts.Add(card);
-        if (balance != 0m)
+        if (credit != 0m)
         {
-            _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 5), "Charge", -balance, Category.Create("Mercado"), null, card));
+            _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 8, 5), "Charge", -credit, Category.Create("Mercado"), null, card));
         }
 
         card.SetActive(isActive);
@@ -707,12 +707,12 @@ public class AccountTransferServiceTests
     }
 
     [Fact]
-    public void GetCardsInCredit_CreditRefundedToABank_LowersOrRemovesTheCard()
+    public void GetCardsInCredit_CreditPartlyRefundedToABank_ListsWhatIsLeft()
     {
         var visa = SeedCard("Visa", 35m);
-        _repository.Transfers.Add(Transfer.CreateCreditRefund(Date, visa, Named("Barclays"), 35m, null, TestClock.Today));
+        _repository.Transfers.Add(Transfer.CreateCreditRefund(Date, visa, Named("Barclays"), 20m, null, TestClock.Today));
 
-        _sut.GetCardsInCredit().Should().BeEmpty();
+        _sut.GetCardsInCredit().Should().ContainSingle().Which.Credit.Should().Be(15m);
     }
 
     [Fact]
