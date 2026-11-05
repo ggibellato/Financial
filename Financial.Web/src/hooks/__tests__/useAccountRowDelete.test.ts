@@ -7,8 +7,9 @@ import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { NETWORK_DELETE_ERROR } from '../../utils/formatters'
 import { useAccountRowDelete } from '../useAccountRowDelete'
 
-const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteBalanceAdjustmentMock, deleteReserveMovementMock } = vi.hoisted(() => ({
+const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteCardCreditRefundMock, deleteBalanceAdjustmentMock, deleteReserveMovementMock } = vi.hoisted(() => ({
   deleteReserveMovementMock: vi.fn<FinancialApiClient['deleteReserveMovement']>(),
+  deleteCardCreditRefundMock: vi.fn<FinancialApiClient['deleteCardCreditRefund']>(),
   deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
   deleteIncomeMock: vi.fn<FinancialApiClient['deleteIncome']>(),
   deleteAccountTransferMock: vi.fn<FinancialApiClient['deleteAccountTransfer']>(),
@@ -20,6 +21,7 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteExpense: deleteExpenseMock,
     deleteIncome: deleteIncomeMock,
     deleteAccountTransfer: deleteAccountTransferMock,
+    deleteCardCreditRefund: deleteCardCreditRefundMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
     deleteReserveMovement: deleteReserveMovementMock,
   } as Partial<FinancialApiClient>,
@@ -33,6 +35,13 @@ const TRANSFER_ROW = accountTransactionRow({
   date: '2026-10-05',
   amount: 200,
   transfer: { id: 't1' } as AccountTransactionDto['transfer'],
+})
+const CREDIT_REFUND_ROW = accountTransactionRow({
+  id: 'cr1',
+  kind: 'CardCreditRefund',
+  date: '2026-10-05',
+  amount: -35,
+  transfer: { id: 'cr1' } as AccountTransactionDto['transfer'],
 })
 const ADJUSTMENT_ROW = accountTransactionRow({
   id: 'a1',
@@ -75,6 +84,7 @@ describe('useAccountRowDelete', () => {
     deleteExpenseMock.mockReset().mockResolvedValue(undefined)
     deleteIncomeMock.mockReset().mockResolvedValue(undefined)
     deleteAccountTransferMock.mockReset().mockResolvedValue(undefined)
+    deleteCardCreditRefundMock.mockReset().mockResolvedValue(undefined)
     deleteBalanceAdjustmentMock.mockReset().mockResolvedValue(undefined)
   })
 
@@ -96,12 +106,19 @@ describe('useAccountRowDelete', () => {
     ['an income', INCOME_ROW, () => expect(deleteIncomeMock).toHaveBeenCalledWith('i1')],
     ['a transfer', TRANSFER_ROW, () => expect(deleteAccountTransferMock).toHaveBeenCalledWith('t1')],
     ['an adjustment', ADJUSTMENT_ROW, () => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('barclays', 'a1')],
+    ['a credit refund', CREDIT_REFUND_ROW, () => expect(deleteCardCreditRefundMock).toHaveBeenCalledWith('cr1')],
   ])('deletes %s through its own endpoint and reports the row', async (_, row, assertCall) => {
     const { result, onDeleted } = await confirmDelete(row)
 
     assertCall()
     expect(onDeleted).toHaveBeenCalledWith(row)
     expect(result.current.isOpen).toBe(false)
+  })
+
+  it('never sends a credit refund to the transfer route, which refuses it', async () => {
+    await confirmDelete(CREDIT_REFUND_ROW)
+
+    expect(deleteAccountTransferMock).not.toHaveBeenCalled()
   })
 
   it('keeps the row and shows the connection message when the delete cannot reach the server', async () => {

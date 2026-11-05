@@ -32,6 +32,33 @@ function bodyRows() {
 }
 
 describe('AccountTransactionsGrid', () => {
+  describe('a credit refund row', () => {
+    const CREDIT_REFUND = accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', amount: -35, canEdit: false })
+
+    it('[AC P60-F15-card-refunds-and-credit-05] offers only Delete on an active screen account', () => {
+      const onDelete = vi.fn()
+      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} onEdit={vi.fn()} onDelete={onDelete} onMove={vi.fn()} canDeleteCreditRefunds />)
+
+      const [row] = bodyRows()
+      expect(within(row).getAllByRole('button')).toHaveLength(1)
+      fireEvent.click(within(row).getByRole('button', { name: 'Delete credit refund' }))
+      expect(onDelete).toHaveBeenCalledWith(CREDIT_REFUND)
+    })
+
+    it('offers nothing when the screen account is inactive', () => {
+      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} canDeleteCreditRefunds={false} />)
+
+      expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+    })
+
+    it('gives other read-only rows no Delete', () => {
+      const charge = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Amazon', amount: -60, canEdit: false })
+      render(<AccountTransactionsGrid accountId="bank-1" transactions={[charge]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} canDeleteCreditRefunds />)
+
+      expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+    })
+  })
+
   it('shows pot movements as date, pot, description and amount, with edit and delete only on legacy rows', () => {
     render(
       <AccountTransactionsGrid accountId="bank-1"

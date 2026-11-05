@@ -2465,6 +2465,17 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
+  it('deletes a card credit refund through its own route, accepting the empty 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.deleteCardCreditRefund('t7')).resolves.toBeUndefined()
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/credit-refunds/t7`)
+    expect(init?.method).toBe('DELETE')
+  })
+
   it('rejects a refused account transfer with an ApiError carrying the server message', async () => {
     const fetchMock = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ error: 'Enter the amount received in EUR.' }), { status: 400 }),

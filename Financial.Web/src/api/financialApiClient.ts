@@ -280,6 +280,7 @@ export interface FinancialApiClient {
   updateAccountTransfer: (id: string, request: AccountTransferUpdateDto) => Promise<AccountTransferDto>
   deleteAccountTransfer: (id: string) => Promise<void>
   createCardCreditRefund: (request: AccountTransferCreateDto) => Promise<AccountTransferDto>
+  deleteCardCreditRefund: (id: string) => Promise<void>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
   deleteExpense: (id: string) => Promise<void>
@@ -786,6 +787,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
+    deleteCardCreditRefund: (id) => requestVoid(`/accounts/credit-refunds/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {
         method: 'POST',

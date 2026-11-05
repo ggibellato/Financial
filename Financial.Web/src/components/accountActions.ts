@@ -102,7 +102,12 @@ function linesDeletedWith(row: AccountTransactionDto): number {
   return row.movement?.splitLineCount ?? 1
 }
 
+export function isCreditRefund(row: AccountTransactionDto): boolean {
+  return row.kind === 'CardCreditRefund'
+}
+
 export function deleteConfirmation(row: AccountTransactionDto): string {
+  if (isCreditRefund(row)) return "Delete this credit refund? The card's credit returns."
   const question = `Delete this ${recordNoun(row.kind)}?`
   const lines = linesDeletedWith(row)
   return lines > 1

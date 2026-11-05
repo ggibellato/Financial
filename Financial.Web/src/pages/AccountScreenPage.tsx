@@ -55,15 +55,16 @@ export default function AccountScreenPage() {
   const hasTabs = screen.tabs.length > 0
   const activeTab = screen.tab
   const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
+  const notifyActionSaved = (message: string) => {
+    notifySaved(message)
+    cardStatements.retry()
+  }
   const forms = useAccountActionForms(
     screen.accountId,
     account,
     formOptions.options,
     { year: screen.year, month: screen.month },
-    (message) => {
-      notifySaved(message)
-      cardStatements.retry()
-    },
+    notifyActionSaved,
     { isDirty: cardStatements.isPayFormDirty, close: cardStatements.closePayForm },
     { accounts: screen.accounts, hasPots },
   )
@@ -107,7 +108,7 @@ export default function AccountScreenPage() {
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
-    notifySaved(deletedMessage(row))
+    notifyActionSaved(deletedMessage(row))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
 
@@ -424,6 +425,7 @@ export default function AccountScreenPage() {
               isEditDisabled={(row) => !isAccountCurrent || (row.movement ? pots.data === null : !formOptions.isReady)}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
+              canDeleteCreditRefunds={account?.isActive ?? false}
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}
