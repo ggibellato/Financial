@@ -13,4 +13,13 @@ public static class TestTransfers
         repository.Transfers.Add(payment);
         return payment;
     }
+
+    public static Transfer SeedCreditRefund(StubCashFlowRepository repository, Account bank, DateOnly date)
+    {
+        var card = TestAccounts.CreditCard("Amex");
+        repository.Accounts.Add(card);
+        var refund = Transfer.CreateCreditRefund(date, card, bank, 40m, null, TestClock.Today);
+        repository.Transfers.Add(refund);
+        return refund;
+    }
 }

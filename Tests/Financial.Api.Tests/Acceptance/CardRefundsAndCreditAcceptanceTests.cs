@@ -114,28 +114,14 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_DatedAfterToday_Returns400()
     {
-        var response = await PostCardChargeAsync(new DateOnly(2026, 11, 16), -40m);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            problem!.Detail.Should().Be("Date must not be in the future.");
-        }
+        await ShouldBeRefusedAsync(await PostCardChargeAsync(new DateOnly(2026, 11, 16), -40m), HttpStatusCode.BadRequest, "Date must not be in the future.");
     }
 
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_IntoAPaidStatement_Returns400()
     {
-        var response = await PostCardChargeAsync(new DateOnly(2026, 9, 20), -40m);
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            problem!.Detail.Should().Be("This charge's statement is paid; unmark it first.");
-        }
+        await ShouldBeRefusedAsync(await PostCardChargeAsync(new DateOnly(2026, 9, 20), -40m), HttpStatusCode.BadRequest, "This charge's statement is paid; unmark it first.");
     }
 
     [Fact]
@@ -301,10 +287,10 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         }
     }
 
-    private Task<HttpResponseMessage> PostCreditRefundAsync(decimal amount, int month = 11, int day = 10) =>
+    private Task<HttpResponseMessage> PostCreditRefundAsync(decimal amount, int month = 11) =>
         Client.PostAsJsonAsync($"{Api}/accounts/credit-refunds", new AccountTransferCreateDTO
         {
-            Date = new DateOnly(2026, month, day),
+            Date = new DateOnly(2026, month, 10),
             SourceAccountId = Guid.Parse(AmexId),
             DestinationAccountId = Guid.Parse(BarclaysId),
             Amount = amount

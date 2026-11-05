@@ -527,9 +527,7 @@ public class AccountTransferServiceTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
     public async Task UpdateAsync_CreditRefund_ThrowsConflictAndChangesNothing()
     {
-        SeedCardWithCredit(60m);
-        await AddCreditRefund(35m);
-        var refund = _repository.Transfers.Single();
+        var refund = TestTransfers.SeedCreditRefund(_repository, Named("Barclays"), Date);
 
         var act = () => _sut.UpdateAsync(refund.Id, UpdateRequest("Barclays", "Chase", 10m));
 
@@ -537,8 +535,8 @@ public class AccountTransferServiceTests
             .WithMessage("This transfer refunds card credit; delete it from the card or bank screen instead.");
         using (new AssertionScope())
         {
-            refund.Amount.Should().Be(35m);
-            _repository.SaveChangesCallCount.Should().Be(1);
+            refund.Amount.Should().Be(40m);
+            _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.UpdateTransfer");
         }
     }
@@ -547,9 +545,7 @@ public class AccountTransferServiceTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
     public async Task DeleteAsync_CreditRefund_ThrowsConflictAndKeepsIt()
     {
-        SeedCardWithCredit(60m);
-        await AddCreditRefund(35m);
-        var refund = _repository.Transfers.Single();
+        var refund = TestTransfers.SeedCreditRefund(_repository, Named("Barclays"), Date);
 
         var act = () => _sut.DeleteAsync(refund.Id);
 
@@ -558,7 +554,7 @@ public class AccountTransferServiceTests
         using (new AssertionScope())
         {
             _repository.Transfers.Should().ContainSingle();
-            _repository.SaveChangesCallCount.Should().Be(1);
+            _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<StatementPaymentConflictException>("CashFlow.AccountTransferService.DeleteTransfer");
         }
     }

@@ -483,11 +483,6 @@ public class TransferServiceTests
     private Transfer SeedStatementPayment(DateOnly date) =>
         TestTransfers.SeedStatementPayment(_repository, _repository.Accounts.First(a => a.Name == "Barclays"), date);
 
-    private Transfer SeedCreditRefund(DateOnly date)
-    {
-        var refund = Transfer.CreateCreditRefund(
-            date, TestAccounts.CreditCard("Amex"), _repository.Accounts.First(a => a.Name == "Barclays"), 40m, null, TestClock.Today);
-        _repository.Transfers.Add(refund);
-        return refund;
-    }
+    private Transfer SeedCreditRefund(DateOnly date) =>
+        TestTransfers.SeedCreditRefund(_repository, _repository.Accounts.First(a => a.Name == "Barclays"), date);
 }

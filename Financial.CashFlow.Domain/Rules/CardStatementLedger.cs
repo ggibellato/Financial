@@ -64,7 +64,7 @@ public static class CardStatementLedger
 
         var amountsBefore = before.ToDictionary(row => MonthIndex(row.Year, row.Month), row => row.AmountToPay);
         var raisesAnAmount = after.Any(row => row.AmountToPay > amountsBefore.GetValueOrDefault(MonthIndex(row.Year, row.Month)));
-        var creditBefore = before.Count == 0 ? 0m : before[^1].CreditCarried;
+        var creditBefore = before.LastOrDefault()?.CreditCarried ?? 0m;
 
         return !raisesAnAmount && after[^1].CreditCarried == creditBefore - refund.Amount;
     }
@@ -77,7 +77,7 @@ public static class CardStatementLedger
             .ToLookup(expense => MonthIndex(expense.InvoiceDate!.Value.Year, expense.InvoiceDate.Value.Month));
         var transferList = transfers.ToList();
         var creditRefundsByMonth = transferList
-            .Where(transfer => transfer.IsCreditRefund && transfer.SourceAccount.Id == card.Id)
+            .Where(transfer => transfer.SourceAccount.Id == card.Id && transfer.IsCreditRefund)
             .ToLookup(transfer => MonthIndex(transfer.Date.Year, transfer.Date.Month));
         var rows = new List<CardStatementLedgerMonth>();
         var monthsWithRecords = chargesByMonth.Select(group => group.Key).Concat(creditRefundsByMonth.Select(group => group.Key)).ToList();
