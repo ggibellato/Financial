@@ -305,7 +305,7 @@ export function useExpenseForm(
       errors.date = 'Date must not be in the future.'
     }
 
-    if (!state.isEditing && !state.description.trim()) {
+    if ((!state.isEditing || state.isRefund) && !state.description.trim()) {
       errors.description = 'Description is required'
     }
 

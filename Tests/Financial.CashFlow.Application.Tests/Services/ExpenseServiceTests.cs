@@ -82,7 +82,11 @@ public class ExpenseServiceTests
         var act = () => _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request with { Date = new DateOnly(2026, 11, 6) }));
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
-        _repository.Expenses.Single(e => e.Id == added.Id).Date.Should().Be(new DateOnly(2026, 11, 3));
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Single(e => e.Id == added.Id).Date.Should().Be(new DateOnly(2026, 11, 3));
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.UpdateExpense");
+        }
     }
 
     [Fact]
@@ -94,6 +98,11 @@ public class ExpenseServiceTests
         var act = () => _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request with { Value = -40m }));
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        using (new AssertionScope())
+        {
+            _repository.Expenses.Single(e => e.Id == added.Id).Value.Should().Be(40m);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.UpdateExpense");
+        }
     }
 
     [Fact]

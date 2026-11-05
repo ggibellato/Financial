@@ -106,7 +106,7 @@ export default function ExpenseForm({
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
         {!hasFieldErrors && saveError && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -197,6 +197,7 @@ export default function ExpenseForm({
             <Input
               type="number"
               step="0.01"
+              min={isRefund ? 0.01 : undefined}
               value={value}
               readOnly={isSettled}
               onChange={(e) => onFieldChange('value', e.target.value)}

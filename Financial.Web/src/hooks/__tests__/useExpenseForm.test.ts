@@ -963,6 +963,18 @@ describe('useExpenseForm with a locked card', () => {
       expect(result.current.isOpen).toBe(false)
     })
 
+    it('refuses an edit with the description cleared without saving', async () => {
+      pinDate('2026-10-15T12:00:00+01:00')
+      const { result } = lockedCardForm()
+      act(() => result.current.showEditForm(REFUND))
+      act(() => result.current.setField('description', ' '))
+
+      await act(async () => result.current.submit())
+
+      expect(result.current.saveErrorFields.description).toBe('Description is required')
+      expect(updateExpenseMock).not.toHaveBeenCalled()
+    })
+
     it('opens a positive charge on the card screen as a charge', () => {
       const { result } = lockedCardForm()
 

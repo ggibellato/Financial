@@ -19,7 +19,6 @@ public sealed class ExpenseService : IExpenseService
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
     private const string InvalidStatementMonthMessage = "The statement month is not a valid month.";
-
     private const string FutureRefundDateMessage = "Date must not be in the future.";
 
     private readonly ICashFlowRepository _repository;

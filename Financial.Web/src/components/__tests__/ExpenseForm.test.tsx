@@ -484,7 +484,7 @@ describe('ExpenseForm with a locked card', () => {
 
       rerender(<ExpenseForm {...refundProps} saveError="This charge's statement is paid; unmark it first." />)
 
-      expect(screen.getByText("This charge's statement is paid; unmark it first.")).toBeInTheDocument()
+      expect(screen.getByRole('alert')).toHaveTextContent("This charge's statement is paid; unmark it first.")
       expect(screen.getByRole('button', { name: 'Add Refund' })).toHaveFocus()
     })
   })
