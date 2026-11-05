@@ -3,7 +3,7 @@
 **Prerequisites:**
 - .NET 10 SDK, Node as for `Financial.Web`, PowerShell 7. No new packages.
 - The live file for parity is the 2026-11-05 download at `E:\dev\projetos\financial\data\data-cashflow.json` (SHA-256 starts `d83852d4`). Every PR runs `scripts/parity/Invoke-Parity.ps1 -Step All -LiveCopy "E:\dev\projetos\financial\data\data-cashflow.json"` against `p60-deployed-f10` and expects only the differences spec §7 lists (0 in stage 1, the same 4 from stage 2) with the SHA-256 unchanged. Parity reads that file and never writes it; local runs use `data/dev/data-cashflow.json`.
-- Implement each PR on its own branch off an up-to-date `main`, starting only after the previous PR is merged. Count the files before pushing: at most 8 non-test code files and about 15 in total (generated `openapi.ts` excluded), except the overages the spec names (stages 1, 2, 3 and 4b). Propose a split instead of pushing anything larger.
+- Implement each PR on its own branch off an up-to-date `main`, starting only after the previous PR is merged. Count the files before pushing: at most 8 non-test code files and about 15 in total (generated `openapi.ts` excluded), except the overages the spec names (stages 1, 2, 3, 4a and 4b). Propose a split instead of pushing anything larger.
 - Strict no-comments policy in all code, XML docs included.
 - Deploy only after stage 6.
 
@@ -43,7 +43,7 @@
 
 **14. Credit refund rule and transfer (PR 4a)** - Add the credit refund pair rule, the transfer factory and its identification, and count credit refunds in the ledger with the guard that a refund raises no amount to pay. See spec §3 "Credit refund pair and factory".
 
-**15. Credit refund route and guards (PR 4a)** - Add the route that records a credit refund within the card's credit, return 409 for credit refunds on both transfer routes, and leave them out of the transfer lists. See spec §3 "Credit refund" and "Credit refunds on transfer routes".
+**15. Credit refund route and guards (PR 4a)** - Add the route that records a credit refund within the card's credit and creates its month's stored statement if missing, return 409 for credit refunds on both transfer routes, and leave them out of the transfer lists. See spec §3 "Credit refund" and "Credit refunds on transfer routes".
 
 **16. Stage 4a verification** - Regenerate the snapshot and web types, run the suites and the parity run, `/simplify` and the architecture-reviewer, then push and open the PR.
 
