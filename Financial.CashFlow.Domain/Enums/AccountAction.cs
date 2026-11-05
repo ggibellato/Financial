@@ -5,6 +5,7 @@ public enum AccountAction
     AddExpense,
     AddCharge,
     AddRefund,
+    RefundCreditToBank,
     AddIncome,
     TransferTo,
     TransferFrom,

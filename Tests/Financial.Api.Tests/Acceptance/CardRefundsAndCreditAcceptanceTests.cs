@@ -349,6 +349,31 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
+    public async Task CreditRefund_ShowsOnCardAndBankAsReadOnlyRows()
+    {
+        await AddCardChargeAsync(10, 8, -60m);
+        var offered = (await AmexDetailAsync(11)).AllowedActions;
+
+        var created = await PostCreditRefundAsync(60m);
+        created.EnsureSuccessStatusCode();
+        var refund = (await created.Content.ReadFromJsonAsync<AccountTransferDTO>())!;
+        var bankRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{BarclaysId}/transactions/2026/11");
+        var cardRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{AmexId}/transactions/2026/11");
+        var offeredAfter = (await AmexDetailAsync(11)).AllowedActions;
+
+        using (new AssertionScope())
+        {
+            offered.Should().Equal("AddCharge", "AddRefund", "RefundCreditToBank");
+            offeredAfter.Should().Equal("AddCharge", "AddRefund");
+            bankRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Should().BeEquivalentTo(
+                new { Kind = "CardCreditRefund", Description = "BA Amex credit refund", Counterpart = "BA Amex", Amount = 60m, CanEdit = false });
+            cardRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Should().BeEquivalentTo(
+                new { Kind = "CardCreditRefund", Description = "BA Amex credit refund", Counterpart = "Barclays", Amount = -60m, CanEdit = false });
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
     public async Task CreditRefund_LaterChargeUsesTheCredit_ItsMonthCanStillBePaid()
     {
         await AddCardChargeAsync(10, 8, -60m);
