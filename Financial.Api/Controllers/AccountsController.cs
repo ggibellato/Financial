@@ -36,6 +36,12 @@ public sealed class AccountsController : ControllerBase
     public ActionResult<IReadOnlyList<AccountTransactionDTO>> GetTransactions(Guid id, int year, int month) =>
         Ok(_accountQueryService.GetTransactions(id, year, month));
 
+    [HttpGet("transactions/{year:int}/{month:int}")]
+    [ProducesResponseType(typeof(IReadOnlyList<MonthTransactionDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public ActionResult<IReadOnlyList<MonthTransactionDTO>> GetMonthTransactions(int year, int month) =>
+        Ok(_accountQueryService.GetMonthTransactions(year, month));
+
     [HttpGet("{id:guid}/statements")]
     [ProducesResponseType(typeof(IReadOnlyList<AccountStatementDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
