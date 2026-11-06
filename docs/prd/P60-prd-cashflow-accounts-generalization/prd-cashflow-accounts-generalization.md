@@ -1014,11 +1014,11 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F16. Month Transactions View
-- [ ] Monthly's All transactions tab lists, for the picked month, the rows of every account as the account screens show them, card charges and refunds by statement month and every other record by its own date; an old settled card charge appears once, on its card
-- [ ] Filtering by category, account or type narrows the rows; the footer shows the row count and total per currency, and filtered to one category its Spend equals that category's Category totals figure
-- [ ] Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation
-- [ ] Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too
-- [ ] Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] Monthly's All transactions tab lists, for the picked month, the rows of every account as the account screens show them, card charges and refunds by statement month and every other record by its own date; an old settled card charge appears once, on its card (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_ListEveryAccountsRowsAsTheAccountScreens_SettledChargeOnceOnItsCard`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-01] lists every account's rows with account, type, category and signed amount")
+- [x] Filtering by category, account or type narrows the rows; the footer shows the row count and total per currency, and filtered to one category its Spend equals that category's Category totals figure (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_SpendPerCategory_EqualsCategoryTotals`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-02] filters by category, account and type, with count, total per currency and Spend", `monthTransactionTotals.test.ts` "[AC P60-F16-month-transactions-view-02] sums each currency into a Total and a Spend, currencies in code order")
+- [x] Each row links to its account screen at that month; a linked deposit or withdrawal row opens its operation (test: `MonthTransactionsViewAcceptanceTests.MonthTransactions_RowsCarryTheirAccountAndOperation`, `MonthTransactionsGrid.test.tsx` "[AC P60-F16-month-transactions-view-03] links rows to the account screen and operation rows to their operation")
+- [x] Loading, empty month, no filter match and load error states pass the review checklist; keyboard use and narrow layout too (narrow: rows stack and the grid adds no horizontal scroll; sort and filters are wide-screen only, as on every grid, user 2026-11-06) (test: `MonthTransactionsGrid.test.tsx` and `MonthlyPage.test.tsx` "[AC P60-F16-month-transactions-view-04] …"; screen checklist T3; ui-reviewer)
+- [x] Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed (test: `Parity.test.ps1` monthTransactions cases; parity run 0 differences in 14,452 figures across 122 months)
 
 ### Cross-Feature Integration
 - [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
