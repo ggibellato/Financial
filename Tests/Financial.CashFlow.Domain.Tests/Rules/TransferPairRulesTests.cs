@@ -158,7 +158,7 @@ public class TransferPairRulesTests
     [Fact]
     public void Allows_EveryTable_RefusesSettlementOnEitherSide()
     {
-        var mae = Account.Create("Mãe", AccountTemplate.Settlement, Currency.BRL);
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
         var amex = TestAccounts.CreditCard("Amex");
         var tables = new[] { TransferPairRules.Default, TransferPairRules.StatementPayment, TransferPairRules.CreditRefund };
 

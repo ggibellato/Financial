@@ -153,7 +153,7 @@ public class AccountActionsTests
     [Fact]
     public void AllowedFor_SettlementAccount_ReturnsNone()
     {
-        var mae = Account.Create("Mãe", AccountTemplate.Settlement, Currency.BRL);
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
 
         AccountActions.AllowedFor(mae).Should().BeEmpty();
     }

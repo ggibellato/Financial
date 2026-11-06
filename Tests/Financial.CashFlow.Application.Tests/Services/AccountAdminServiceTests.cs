@@ -758,4 +758,28 @@ public class AccountAdminServiceTests
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
+
+    [Fact]
+    public async Task CreateAsync_SettlementInOneCurrency_AddsItWithThatCurrencyAndNoOtherParticipant()
+    {
+        var result = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Settlement", Name = "Mãe", Currency = "BRL" });
+
+        using (new AssertionScope())
+        {
+            var created = _repository.Accounts.Should().ContainSingle(account => account.Name == "Mãe").Which;
+            created.Template.Should().Be(AccountTemplate.Settlement);
+            created.Currencies.Should().Equal(Currency.BRL);
+            created.OtherParticipant.Should().BeNull();
+            result.Currency.Should().Be("BRL");
+            result.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_SettlementInUsd_ThrowsWithTheTemplatesCurrencies()
+    {
+        var act = () => _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Settlement", Name = "Mãe", Currency = "USD" });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
+    }
 }
