@@ -27,6 +27,7 @@ import { kindLabel, operationPath } from './accountActions'
 const useStyles = makeStyles({
   toolbar: {
     display: 'flex',
+    flexShrink: 0,
     justifyContent: 'flex-start',
     marginBottom: tokens.spacingVerticalM,
   },
@@ -83,7 +84,7 @@ interface MonthTransactionsGridProps {
 
 export default function MonthTransactionsGrid({ year, month, rows, isLoading, error, onRetry }: MonthTransactionsGridProps) {
   const styles = useStyles()
-  const gridRef = useRef<HTMLDivElement>(null)
+  const gridRef = useRef<HTMLElement>(null)
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, clearFilters } =
     useColumnFilters(rows, FILTER_ACCESSORS)
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
@@ -164,7 +165,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
   }
 
   return (
-    <div ref={gridRef}>
+    <section ref={gridRef} className="monthly-page__section monthly-page__section--grid">
       {isFiltered && (
         <div className={styles.toolbar}>
           <Button appearance="primary" onClick={clearAllFilters}>
@@ -211,7 +212,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
           showsSpend={isColumnFiltered('category')}
         />
       )}
-    </div>
+    </section>
   )
 }
 
