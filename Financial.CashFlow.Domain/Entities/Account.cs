@@ -12,6 +12,7 @@ public class Account
 {
     public const int MaxNameLength = 60;
     public const int MaxOtherParticipantLength = 60;
+    public const string SelfParticipantName = "You";
     public const decimal RequiredActiveSplitTotal = 100m;
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
@@ -112,9 +113,9 @@ public class Account
             "Enter the other participant's name.",
             $"The other participant's name must be {MaxOtherParticipantLength} characters or fewer.");
 
-        if (string.Equals(trimmed, "You", StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(trimmed, SelfParticipantName, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentException("The other participant can't be called You.");
+            throw new ArgumentException($"The other participant can't be called {SelfParticipantName}.");
         }
 
         OtherParticipant = trimmed;

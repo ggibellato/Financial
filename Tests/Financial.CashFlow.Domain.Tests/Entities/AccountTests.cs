@@ -12,6 +12,8 @@ public class AccountTests
 {
     private static Account CreateBank() => Account.Create("Chase", AccountTemplate.Bank, Currency.GBP);
 
+    private static Account CreateSettlement() => Account.Create("Mãe", AccountTemplate.Settlement, Currency.GBP);
+
     private static Account CreateMinimal(params Capability[] capabilities) =>
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
@@ -687,8 +689,6 @@ public class AccountTests
 
         account.Category.Should().BeNull();
     }
-
-    private static Account CreateSettlement() => Account.Create("Mãe", AccountTemplate.Settlement, Currency.GBP);
 
     [Fact]
     public void Create_Settlement_StartsWithItsCurrencyAndNoOtherParticipant()
