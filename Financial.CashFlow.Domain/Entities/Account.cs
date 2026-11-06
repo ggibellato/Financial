@@ -106,16 +106,11 @@ public class Account
             throw new ArgumentException($"{Name} has no participants.");
         }
 
-        var trimmed = otherParticipant?.Trim();
-        if (string.IsNullOrEmpty(trimmed))
-        {
-            throw new ArgumentException("Enter the other participant's name.");
-        }
-
-        if (trimmed.Length > MaxOtherParticipantLength)
-        {
-            throw new ArgumentException($"The other participant's name must be {MaxOtherParticipantLength} characters or fewer.");
-        }
+        var trimmed = ValidText(
+            otherParticipant,
+            MaxOtherParticipantLength,
+            "Enter the other participant's name.",
+            $"The other participant's name must be {MaxOtherParticipantLength} characters or fewer.");
 
         if (string.Equals(trimmed, "You", StringComparison.OrdinalIgnoreCase))
         {
@@ -285,17 +280,20 @@ public class Account
         }
     }
 
-    private static string ValidName(string name)
+    private static string ValidName(string name) =>
+        ValidText(name, MaxNameLength, "Account name is required.", $"Account name must be {MaxNameLength} characters or fewer.");
+
+    private static string ValidText(string? text, int maxLength, string requiredMessage, string tooLongMessage)
     {
-        var trimmed = name?.Trim();
+        var trimmed = text?.Trim();
         if (string.IsNullOrEmpty(trimmed))
         {
-            throw new ArgumentException("Account name is required.");
+            throw new ArgumentException(requiredMessage);
         }
 
-        if (trimmed.Length > MaxNameLength)
+        if (trimmed.Length > maxLength)
         {
-            throw new ArgumentException($"Account name must be {MaxNameLength} characters or fewer.");
+            throw new ArgumentException(tooLongMessage);
         }
 
         return trimmed;

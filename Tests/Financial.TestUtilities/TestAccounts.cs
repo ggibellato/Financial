@@ -50,9 +50,8 @@ public static class TestAccounts
 
     public static Account Settlement(string name, IEnumerable<Currency> currencies, string? otherParticipant = null)
     {
-        var currencyList = currencies.ToList();
-        var account = Account.Create(name, AccountTemplate.Settlement, currencyList.Min());
-        account.SetCurrencies(currencyList);
+        var account = Account.Create(name, AccountTemplate.Settlement, Currency.BRL);
+        account.SetCurrencies(currencies);
         if (otherParticipant is not null)
         {
             account.SetOtherParticipant(otherParticipant);
