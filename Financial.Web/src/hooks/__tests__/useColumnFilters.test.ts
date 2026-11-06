@@ -108,4 +108,17 @@ describe('useColumnFilters', () => {
 
     expect(result.current.filteredRows.map((r) => r.id)).toEqual(['t1'])
   })
+
+  it('clearFilters empties every column selection and restores all rows', () => {
+    const { result } = renderHook(() => useColumnFilters(ROWS, ACCESSORS))
+    act(() => result.current.toggleValue('category', 'Casa'))
+    act(() => result.current.toggleValue('card', 'Amex'))
+
+    act(() => result.current.clearFilters())
+
+    expect(result.current.filteredRows).toEqual(ROWS)
+    expect(result.current.isColumnFiltered('category')).toBe(false)
+    expect(result.current.isColumnFiltered('card')).toBe(false)
+    expect(result.current.selectedValues).toEqual({})
+  })
 })

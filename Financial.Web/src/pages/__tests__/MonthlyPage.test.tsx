@@ -1,6 +1,8 @@
 import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
+import { accountTransactionRow } from '../../test/accountTransactionRow'
 import MonthlyPage from '../MonthlyPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type {
@@ -15,6 +17,7 @@ import type {
   ExpenseDto,
   IncomeDto,
   IncomeSourceDto,
+  MonthTransactionDto,
   TitheSummaryDto,
   TransferDto,
 } from '../../api/types'
@@ -50,6 +53,7 @@ const {
   createBalanceAdjustmentMock,
   updateBalanceAdjustmentMock,
   deleteBalanceAdjustmentMock,
+  getMonthTransactionsMock,
 } = vi.hoisted(() => ({
   getExpensesByMonthMock: vi.fn<FinancialApiClient['getExpensesByMonth']>(),
   getUnpaidCardChargesByMonthMock: vi.fn<FinancialApiClient['getUnpaidCardChargesByMonth']>(),
@@ -81,6 +85,7 @@ const {
   createBalanceAdjustmentMock: vi.fn<FinancialApiClient['createBalanceAdjustment']>(),
   updateBalanceAdjustmentMock: vi.fn<FinancialApiClient['updateBalanceAdjustment']>(),
   deleteBalanceAdjustmentMock: vi.fn<FinancialApiClient['deleteBalanceAdjustment']>(),
+  getMonthTransactionsMock: vi.fn<FinancialApiClient['getMonthTransactions']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -115,6 +120,7 @@ vi.mock('../../api/financialApiClient', () => ({
     createBalanceAdjustment: createBalanceAdjustmentMock,
     updateBalanceAdjustment: updateBalanceAdjustmentMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
+    getMonthTransactions: getMonthTransactionsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -222,6 +228,16 @@ const SUMMARY: AccountGroupSummaryDto = {
   totalIncoming: 2450,
 }
 
+const MONTH_TRANSACTIONS: MonthTransactionDto[] = [
+  {
+    accountId: 'bank-barclays',
+    accountName: 'Barclays',
+    accountCurrency: 'GBP',
+    accountIsActive: true,
+    transaction: accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-07-05', description: 'Lidl UK', categoryName: 'Mercado', amount: -42.5 }),
+  },
+]
+
 const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245, carryForward: null }
 
 const TRANSFERS: TransferDto[] = [
@@ -288,6 +304,7 @@ describe('MonthlyPage', () => {
     createBalanceAdjustmentMock.mockReset()
     updateBalanceAdjustmentMock.mockReset()
     deleteBalanceAdjustmentMock.mockReset()
+    getMonthTransactionsMock.mockReset().mockResolvedValue(MONTH_TRANSACTIONS)
     getExpensesByMonthMock.mockResolvedValue(EXPENSES)
     getUnpaidCardChargesByMonthMock.mockResolvedValue(UNPAID_CARD_CHARGES)
     getCategoryTotalsByMonthMock.mockResolvedValue(CATEGORY_TOTALS)
@@ -414,14 +431,87 @@ describe('MonthlyPage', () => {
     expect(screen.getByRole('tab', { name: 'Income' })).toHaveAttribute('aria-selected', 'false')
   })
 
-  it('lists Summary, Bank expenses, Credit Card expenses, Income, Bank balance adjustment in order in the tab strip', async () => {
+  it('lists Summary, All transactions, Bank expenses, Credit Card expenses, Income, Bank balance adjustment in order in the tab strip', async () => {
     render(<MonthlyPage />)
 
     await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
     const tabs = screen.getAllByRole('tab')
-    const expectedOrder = ['Summary', 'Bank expenses', 'Credit Card expenses', 'Income', 'Bank balance adjustment']
+    const expectedOrder = ['Summary', 'All transactions', 'Bank expenses', 'Credit Card expenses', 'Income', 'Bank balance adjustment']
     const actualOrder = expectedOrder.map((label) => tabs.indexOf(screen.getByRole('tab', { name: label })))
-    expect(actualOrder).toEqual([0, 1, 2, 3, 4])
+    expect(actualOrder).toEqual([0, 1, 2, 3, 4, 5])
+  })
+
+  describe('All transactions tab', () => {
+    async function openAllTransactions() {
+      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
+      const grid = await screen.findByRole('table', { name: 'All transactions' })
+      await waitFor(() => expect(within(grid).getByText('Lidl UK')).toBeInTheDocument())
+    }
+
+    it('requests nothing until the tab is opened, then lists the month', async () => {
+      render(<MonthlyPage />, { wrapper: MemoryRouter })
+      await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
+      expect(getMonthTransactionsMock).not.toHaveBeenCalled()
+
+      await openAllTransactions()
+      expect(getMonthTransactionsMock).toHaveBeenCalledWith(2026, 7)
+    })
+
+    it('[AC P60-F16-month-transactions-view-04] works while the Monthly load is pending', async () => {
+      getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+      render(<MonthlyPage />, { wrapper: MemoryRouter })
+
+      await openAllTransactions()
+      expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+    })
+
+    it('[AC P60-F16-month-transactions-view-04] works while the Monthly load has failed', async () => {
+      getExpensesByMonthMock.mockRejectedValue(new Error('Network down'))
+      render(<MonthlyPage />, { wrapper: MemoryRouter })
+      await waitFor(() => expect(screen.getByText('Network down')).toBeInTheDocument())
+
+      await openAllTransactions()
+      expect(screen.queryByText('Network down')).not.toBeInTheDocument()
+    })
+
+    it('[AC P60-F16-month-transactions-view-04] keeps its load error to the tab and leaves Summary working', async () => {
+      getMonthTransactionsMock.mockRejectedValue({ status: 503 })
+      render(<MonthlyPage />, { wrapper: MemoryRouter })
+      await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
+
+      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
+
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Unable to load the transactions'))
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument()
+    })
+
+    it('reloads on a month change and starts again with no filter', async () => {
+      render(<MonthlyPage />, { wrapper: MemoryRouter })
+      await openAllTransactions()
+      fireEvent.click(screen.getByRole('button', { name: 'Filter by Account' }))
+      fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
+      expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
+
+      fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+      await waitFor(() => expect(getMonthTransactionsMock).toHaveBeenLastCalledWith(2026, 8))
+      await screen.findByText('Lidl UK')
+      expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+    })
+
+    it('reloads every time the tab is reopened', async () => {
+      render(<MonthlyPage />, { wrapper: MemoryRouter })
+      await openAllTransactions()
+
+      fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
+      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
+
+      await waitFor(() => expect(getMonthTransactionsMock).toHaveBeenCalledTimes(2))
+    })
   })
 
   it('re-scopes all 4 Summary grids when the month/year value changes', async () => {

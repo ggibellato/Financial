@@ -84,6 +84,7 @@ import type {
   MaeLedgerTotalsDto,
   MarkCardStatementPaidDto,
   MoveChargeToStatementDto,
+  MonthTransactionDto,
   PayableStatementDto,
   PaymentDueDto,
   PortfolioAssetSummaryItemDto,
@@ -266,6 +267,7 @@ export interface FinancialApiClient {
   getAccount: (id: string, year: number, month: number) => Promise<AccountDetailDto>
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
   getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
+  getMonthTransactions: (year: number, month: number) => Promise<MonthTransactionDto[]>
   getPots: (potsAccountId: string, year: number, month: number) => Promise<PotsSummaryDto>
   updatePots: (potsAccountId: string, request: PotsUpdateDto) => Promise<void>
   createPotDeposit: (potsAccountId: string, request: PotDepositRequestDto) => Promise<PotOperationDto>
@@ -748,6 +750,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAccountTransactions: (id, year, month) =>
       request<AccountTransactionDto[]>(`/accounts/${encodeURIComponent(id)}/transactions/${year}/${month}`),
     getAccountStatements: (id) => request<AccountStatementDto[]>(`/accounts/${encodeURIComponent(id)}/statements`),
+    getMonthTransactions: (year, month) => request<MonthTransactionDto[]>(`/accounts/transactions/${year}/${month}`),
     getPots: (potsAccountId, year, month) =>
       request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),
     updatePots: (potsAccountId, requestBody) =>
