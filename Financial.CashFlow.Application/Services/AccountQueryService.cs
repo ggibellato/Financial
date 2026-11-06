@@ -112,15 +112,34 @@ public sealed class AccountQueryService : IAccountQueryService
         try
         {
             var account = FindAccountOrThrow(id);
-            var statements = _repository.GetCardStatements().ToList();
-            var rows = account.Has(Capability.HasStatements)
-                ? CardRows(account, year, month, statements)
-                : AccountRows(account, year, month, statements);
-
-            var result = rows.OrderByDescending(row => row.Date).ToList();
+            var result = RowsOf(account, MonthRecordsOf(year, month)).OrderByDescending(row => row.Date).ToList();
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetAccountTransactions");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
+    public IReadOnlyList<MonthTransactionDTO> GetMonthTransactions(int year, int month)
+    {
+        using var span = StartSpan("GetMonthTransactions");
+        try
+        {
+            var records = WithoutBankCopyOfCardCharges(MonthRecordsOf(year, month));
+
+            var result = _repository.GetAccounts()
+                .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
+                .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
+                .OrderByDescending(row => row.Transaction.Date)
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetMonthTransactions");
             return result;
         }
         catch (Exception ex)
@@ -245,32 +264,49 @@ public sealed class AccountQueryService : IAccountQueryService
             : null;
     }
 
-    private IEnumerable<AccountTransactionDTO> AccountRows(Account account, int year, int month, IReadOnlyList<CardStatement> statements) =>
-        RecordsDatedIn(year, month).SelectMany(record => ToRows(record, account, statements));
+    private sealed record MonthRecords(
+        int Year, int Month, IReadOnlyList<IAccountTransaction> Records, IReadOnlyList<Expense> AllExpenses, IReadOnlyList<CardStatement> Statements);
 
-    private IEnumerable<AccountTransactionDTO> CardRows(Account card, int year, int month, IReadOnlyList<CardStatement> statements) =>
-        RecordsDatedIn(year, month)
-            .Where(record => record is not Expense)
-            .SelectMany(record => ToRows(record, card, statements))
-            .Concat(CardChargeRows(card, year, month, statements));
-
-    private IEnumerable<IAccountTransaction> RecordsDatedIn(int year, int month)
+    private MonthRecords MonthRecordsOf(int year, int month)
     {
         var startOfMonth = new DateOnly(year, month, 1);
         var endOfMonth = EndOfMonth(year, month);
-        return AccountTransactionReader.Read(_repository).Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth);
+        var records = AccountTransactionReader.Read(_repository)
+            .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth)
+            .ToList();
+        return new MonthRecords(year, month, records, _repository.GetExpenses().ToList(), _repository.GetCardStatements().ToList());
     }
 
-    private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, int year, int month, IReadOnlyList<CardStatement> statements) =>
-        CardChargeFilter.ChargesFor(_repository.GetExpenses(), card, year, month)
+    private static MonthRecords WithoutBankCopyOfCardCharges(MonthRecords month) =>
+        month with { Records = month.Records.Where(record => record is not Expense { CreditCard: not null }).ToList() };
+
+    private IEnumerable<AccountTransactionDTO> RowsOf(Account account, MonthRecords month) =>
+        account.Has(Capability.HasStatements)
+            ? month.Records
+                .Where(record => record is not Expense)
+                .SelectMany(record => ToRows(record, account, month.Statements))
+                .Concat(CardChargeRows(account, month))
+            : month.Records.SelectMany(record => ToRows(record, account, month.Statements));
+
+    private static MonthTransactionDTO ToMonthRow(Account account, AccountTransactionDTO row) => new()
+    {
+        AccountId = account.Id,
+        AccountName = account.Name,
+        AccountCurrency = account.Currency.ToString(),
+        AccountIsActive = account.IsActive,
+        Transaction = row
+    };
+
+    private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, MonthRecords month) =>
+        CardChargeFilter.ChargesFor(month.AllExpenses, card, month.Year, month.Month)
             .Select(charge => ToRow(
                 charge,
                 CardRowKind(charge),
                 charge.ChargeDate ?? charge.Date,
                 charge.PaymentSourceAccount?.Name,
                 roundUp: null,
-                canEdit: card.IsActive && !CardChargeFilter.IsPaid(charge, statements),
-                statements));
+                canEdit: card.IsActive && !CardChargeFilter.IsPaid(charge, month.Statements),
+                month.Statements));
 
     private static TransactionKind CardRowKind(Expense charge) =>
         charge.Value < 0 ? TransactionKind.CardRefund : TransactionKind.CardCharge;
