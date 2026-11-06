@@ -87,13 +87,13 @@ public class AccountAdminServiceTests
     };
 
     [Fact]
-    public void GetTemplates_ListsBankCreditCardAndPotsWithTheirCurrenciesAndCapabilitiesInOrder()
+    public void GetTemplates_ListsBankCreditCardPotsAndSettlementWithTheirCurrenciesAndCapabilitiesInOrder()
     {
         var templates = _sut.GetTemplates();
 
         using (new AssertionScope())
         {
-            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots");
+            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots", "Settlement");
             var bank = templates[0];
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
@@ -105,6 +105,9 @@ public class AccountAdminServiceTests
             var pots = templates[2];
             pots.Currencies.Should().Equal("GBP");
             pots.Capabilities.Should().Equal("HasPots", "ReceivesIncomeSplit", "CanWithdraw");
+            var settlement = templates[3];
+            settlement.Currencies.Should().Equal("BRL", "GBP");
+            settlement.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }

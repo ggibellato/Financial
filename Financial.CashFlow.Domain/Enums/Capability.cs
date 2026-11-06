@@ -14,5 +14,8 @@ public enum Capability
     ReceivesPayments,
     HasPots,
     ReceivesIncomeSplit,
-    CanWithdraw
+    CanWithdraw,
+    HasParticipants,
+    MultiCurrency,
+    CanSettle
 }

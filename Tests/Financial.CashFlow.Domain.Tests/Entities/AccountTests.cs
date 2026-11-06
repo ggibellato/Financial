@@ -80,6 +80,7 @@ public class AccountTests
     [InlineData(AccountTemplate.Bank, 0)]
     [InlineData(AccountTemplate.CreditCard, 1)]
     [InlineData(AccountTemplate.Pots, 2)]
+    [InlineData(AccountTemplate.Settlement, 3)]
     public void TemplateOrder_IsTheTemplatesPositionInTheAvailableTemplates(AccountTemplate template, int expected)
     {
         Account.Create("Account", template, Currency.GBP).TemplateOrder.Should().Be(expected);

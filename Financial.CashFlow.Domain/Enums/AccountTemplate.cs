@@ -4,5 +4,6 @@ public enum AccountTemplate
 {
     Bank,
     CreditCard,
-    Pots
+    Pots,
+    Settlement
 }

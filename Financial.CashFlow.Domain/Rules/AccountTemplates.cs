@@ -49,6 +49,16 @@ public static class AccountTemplates
                 Capability.CanWithdraw
             }.ToFrozenSet(),
             Array.AsReadOnly([Currency.GBP]),
+            JoinsDefaultGroup: false),
+        new(
+            AccountTemplate.Settlement,
+            new[]
+            {
+                Capability.HasParticipants,
+                Capability.MultiCurrency,
+                Capability.CanSettle
+            }.ToFrozenSet(),
+            Array.AsReadOnly([Currency.BRL, Currency.GBP]),
             JoinsDefaultGroup: false)
     ];
 

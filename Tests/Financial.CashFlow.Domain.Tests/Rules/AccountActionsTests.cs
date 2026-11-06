@@ -149,4 +149,12 @@ public class AccountActionsTests
         AccountActions.AllowedFor(Minimal(Capability.HasCategories, Capability.HasStatements, Capability.ReceivesIncome))
             .Should().Equal(AccountAction.AddCharge, AccountAction.AddRefund, AccountAction.AddIncome);
     }
+
+    [Fact]
+    public void AllowedFor_SettlementAccount_ReturnsNone()
+    {
+        var mae = Account.Create("Mãe", AccountTemplate.Settlement, Currency.BRL);
+
+        AccountActions.AllowedFor(mae).Should().BeEmpty();
+    }
 }
