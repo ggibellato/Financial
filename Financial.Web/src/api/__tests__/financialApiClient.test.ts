@@ -2288,6 +2288,17 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/statements`)
   })
 
+  it('reads every account\'s rows of a month', async () => {
+    const responseBody = [{ accountId: 'a1', accountName: 'Barclays', accountCurrency: 'GBP', accountIsActive: true, transaction: { id: 'e1' } }]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getMonthTransactions(2026, 10)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/transactions/2026/10`)
+  })
+
   it('reads the pots of a Pots account at the end of a month', async () => {
     const responseBody = { potsAccountId: 'p1', currency: 'GBP', total: 30, pots: [] }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
