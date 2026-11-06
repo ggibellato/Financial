@@ -3,7 +3,7 @@ using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Entities;
 
-public class MaeLedgerEntry
+public class SettlementEntry
 {
     public Guid Id { get; private set; }
     public DateOnly Date { get; private set; }
@@ -13,9 +13,9 @@ public class MaeLedgerEntry
     public decimal? BrlValue { get; private set; }
     public decimal? GbpValue { get; private set; }
 
-    private MaeLedgerEntry() { }
+    private SettlementEntry() { }
 
-    public static MaeLedgerEntry Create(
+    public static SettlementEntry Create(
         DateOnly date,
         string description,
         string note,

@@ -6,14 +6,14 @@ using FluentAssertions.Execution;
 namespace Financial.CashFlow.Domain.Tests;
 
 [Trait("Category", "Unit")]
-public class MaeLedgerEntryTests
+public class SettlementEntryTests
 {
     [Fact]
     public void Create_AssignsAllFieldsAndANewId()
     {
         var date = new DateOnly(2026, 7, 15);
 
-        var entry = MaeLedgerEntry.Create(date, "School supplies", "Bought at the start of term", Currency.BRL, 350m, 51.23m);
+        var entry = SettlementEntry.Create(date, "School supplies", "Bought at the start of term", Currency.BRL, 350m, 51.23m);
 
         using (new AssertionScope())
         {
@@ -30,7 +30,7 @@ public class MaeLedgerEntryTests
     [Fact]
     public void Create_WithNullConvertedValue_AllowsIt()
     {
-        var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 16), "Medical appointment", string.Empty, Currency.GBP, null, 40m);
+        var entry = SettlementEntry.Create(new DateOnly(2026, 7, 16), "Medical appointment", string.Empty, Currency.GBP, null, 40m);
 
         entry.BrlValue.Should().BeNull();
         entry.GbpValue.Should().Be(40m);
@@ -39,7 +39,7 @@ public class MaeLedgerEntryTests
     [Fact]
     public void UpdateValues_ChangesBothCurrenciesWithoutChangingOtherFields()
     {
-        var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 16), "Medical appointment", string.Empty, Currency.GBP, null, 40m);
+        var entry = SettlementEntry.Create(new DateOnly(2026, 7, 16), "Medical appointment", string.Empty, Currency.GBP, null, 40m);
         var originalId = entry.Id;
 
         entry.UpdateValues(320.50m, 40m);

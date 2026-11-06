@@ -290,7 +290,7 @@ static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, Impor
 
     foreach (var entry in ControleMaeSheetImporter.Import(sheet, report))
     {
-        data.AddMaeLedgerEntry(entry);
+        data.AddSettlementEntry(entry);
     }
 
     report.SheetImported(sheet.Name);

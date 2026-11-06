@@ -16,7 +16,7 @@ public class CashFlowTypeInfoResolver : DefaultJsonTypeInfoResolver
         typeof(PotTransaction),
         typeof(CardStatement),
         typeof(RecurringBill),
-        typeof(MaeLedgerEntry),
+        typeof(SettlementEntry),
         typeof(InvestmentSnapshot),
         typeof(InvestmentAccount),
         typeof(Account),
