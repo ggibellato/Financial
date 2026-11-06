@@ -17,6 +17,7 @@ const OTHER_PARTICIPANT_MAX_LENGTH = 60
 const SELF_PARTICIPANT_NAME = 'You'
 const CONFLICT_STATUS = 409
 const LOCKED_HINT = "Can't change once the account has transactions."
+const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
 const CATEGORY_INFO = "When money moves between a bank and this account, the bank's entry is recorded in this category."
 
@@ -154,6 +155,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const currenciesRef = useRef<FieldControl>(null)
   const otherParticipantRef = useRef<FieldControl>(null)
   const currenciesLabelId = useId()
+  const currenciesHintId = useId()
   const currenciesMessageId = useId()
   const categoryRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
@@ -198,7 +200,10 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       ...current,
       templateName,
       currency: next?.currencies.includes(current.currency) ? current.currency : (next?.currencies[0] ?? ''),
-      currencies: current.currencies.filter((currency) => next?.currencies.includes(currency)),
+      currencies: next?.capabilities.includes('MultiCurrency')
+        ? current.currencies.filter((currency) => next.currencies.includes(currency))
+        : initial.currencies,
+      otherParticipant: next?.capabilities.includes('HasParticipants') ? current.otherParticipant : initial.otherParticipant,
     }))
   }
 
@@ -295,7 +300,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           <Field
             label={{ children: 'Currencies', id: currenciesLabelId, htmlFor: undefined }}
             required={!isLocked}
-            hint={isLocked ? LOCKED_HINT : undefined}
+            hint={isLocked ? LOCKED_HINT : { children: CURRENCIES_HINT, id: currenciesHintId }}
             validationState={fieldState('currencies')}
             validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
           >
@@ -306,7 +311,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
                 <div
                   role="group"
                   aria-labelledby={currenciesLabelId}
-                  aria-describedby={fieldMessage('currencies') ? currenciesMessageId : undefined}
+                  aria-describedby={fieldMessage('currencies') ? `${currenciesHintId} ${currenciesMessageId}` : currenciesHintId}
                 >
                   {currencies.map((currency, index) => (
                     <Checkbox

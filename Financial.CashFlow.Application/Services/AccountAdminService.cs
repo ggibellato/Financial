@@ -107,8 +107,9 @@ public sealed class AccountAdminService : IAccountAdminService
             var template = ParseTemplate(request.TemplateName);
             var currency = ParseCurrency(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
+            var trimmedName = request.Name?.Trim() ?? string.Empty;
             Func<Capability, bool> templateHas = AccountTemplates.CapabilitiesOf(template).Contains;
-            var currencies = RequestedCurrencies(templateHas, request.Name, currency, request.Currencies);
+            var currencies = RequestedCurrencies(templateHas, trimmedName, currency, request.Currencies);
             var changesTemplate = template != account.Template || !currencies.SequenceEqual(account.Currencies);
             var wasCard = account.Has(Capability.HasStatements);
 
@@ -119,7 +120,8 @@ public sealed class AccountAdminService : IAccountAdminService
 
             _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DisplayName);
             var targetHas = changesTemplate ? templateHas : account.Has;
-            EnsureOtherParticipantFits(targetHas, request.Name, request.OtherParticipant);
+            EnsureOtherParticipantFits(targetHas, trimmedName, request.OtherParticipant);
+            EnsureTemplateFieldsAreValid(trimmedName, template, currencies, request.OtherParticipant);
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
 
@@ -236,6 +238,14 @@ public sealed class AccountAdminService : IAccountAdminService
         {
             throw new ArgumentException($"{accountName} has no participants.");
         }
+    }
+
+    private static void EnsureTemplateFieldsAreValid(
+        string accountName, AccountTemplate template, IReadOnlyList<Currency> currencies, string? otherParticipant)
+    {
+        var preview = Account.Create(accountName, template, currencies[0]);
+        ApplyCurrencies(preview, currencies);
+        ApplyOtherParticipant(preview, otherParticipant);
     }
 
     private static void ApplyCurrencies(Account account, IReadOnlyList<Currency> currencies)

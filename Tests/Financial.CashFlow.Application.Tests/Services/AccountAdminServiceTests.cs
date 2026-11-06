@@ -941,6 +941,8 @@ public class AccountAdminServiceTests
         using (new AssertionScope())
         {
             (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Enter the other participant's name.");
+            _chase.Template.Should().Be(AccountTemplate.Bank);
+            _chase.OpeningBalance.Should().NotBeNull();
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }

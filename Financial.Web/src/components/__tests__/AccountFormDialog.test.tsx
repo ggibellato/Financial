@@ -450,7 +450,7 @@ describe('AccountFormDialog', () => {
       save()
 
       expect(screen.getByText('Choose at least one currency.')).toBeInTheDocument()
-      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Choose at least one currency.')
+      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Tick at least one. Choose at least one currency.')
       expect(screen.getByText("Enter the other participant's name.")).toBeInTheDocument()
       expect(currencyBox('BRL')).toHaveFocus()
       expect(onSubmit).not.toHaveBeenCalled()
@@ -496,6 +496,25 @@ describe('AccountFormDialog', () => {
       expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
       expect(screen.getAllByText("Can't change once the account has transactions.")).toHaveLength(2)
       expect(screen.getByLabelText(/Other participant/)).not.toHaveAttribute('readonly')
+    })
+
+    it('describes the Currencies group with its rule before any save', () => {
+      renderDialog({ templates: [SETTLEMENT] })
+
+      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Tick at least one.')
+    })
+
+    it('forgets Settlement values when switching to a template without them, so Cancel closes without asking', () => {
+      const { onCancel } = renderDialog({ templates: [BANK, SETTLEMENT] })
+
+      chooseSettlement()
+      fireEvent.click(currencyBox('GBP'))
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'Samuel' } })
+      fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Bank' } })
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      expect(onCancel).toHaveBeenCalledTimes(1)
+      expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?' })).not.toBeInTheDocument()
     })
 
     it('asks before discarding a changed tick, and not after ticking it back', async () => {
