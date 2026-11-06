@@ -130,15 +130,11 @@ public sealed class AccountQueryService : IAccountQueryService
         using var span = StartSpan("GetMonthTransactions");
         try
         {
-            var records = MonthRecordsOf(year, month);
-            var withoutBankCopyOfCardCharges = records with
-            {
-                Records = records.Records.Where(record => record is not Expense { CreditCard: not null }).ToList()
-            };
+            var records = WithoutBankCopyOfCardCharges(MonthRecordsOf(year, month));
 
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
-                .SelectMany(account => RowsOf(account, withoutBankCopyOfCardCharges).Select(row => ToMonthRow(account, row)))
+                .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
                 .OrderByDescending(row => row.Transaction.Date)
                 .ToList();
 
@@ -269,7 +265,7 @@ public sealed class AccountQueryService : IAccountQueryService
     }
 
     private sealed record MonthRecords(
-        int Year, int Month, IReadOnlyList<IAccountTransaction> Records, IReadOnlyList<Expense> Expenses, IReadOnlyList<CardStatement> Statements);
+        int Year, int Month, IReadOnlyList<IAccountTransaction> Records, IReadOnlyList<Expense> AllExpenses, IReadOnlyList<CardStatement> Statements);
 
     private MonthRecords MonthRecordsOf(int year, int month)
     {
@@ -280,6 +276,9 @@ public sealed class AccountQueryService : IAccountQueryService
             .ToList();
         return new MonthRecords(year, month, records, _repository.GetExpenses().ToList(), _repository.GetCardStatements().ToList());
     }
+
+    private static MonthRecords WithoutBankCopyOfCardCharges(MonthRecords month) =>
+        month with { Records = month.Records.Where(record => record is not Expense { CreditCard: not null }).ToList() };
 
     private IEnumerable<AccountTransactionDTO> RowsOf(Account account, MonthRecords month) =>
         account.Has(Capability.HasStatements)
@@ -299,7 +298,7 @@ public sealed class AccountQueryService : IAccountQueryService
     };
 
     private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, MonthRecords month) =>
-        CardChargeFilter.ChargesFor(month.Expenses, card, month.Year, month.Month)
+        CardChargeFilter.ChargesFor(month.AllExpenses, card, month.Year, month.Month)
             .Select(charge => ToRow(
                 charge,
                 CardRowKind(charge),

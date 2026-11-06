@@ -1094,7 +1094,8 @@ public class AccountQueryServiceTests
                 row.AccountName == "Barclays" && row.AccountCurrency == "GBP" && row.AccountIsActive);
             rows.Where(row => row.AccountId == _chase.Id).Should().OnlyContain(row =>
                 row.AccountName == "chase" && row.AccountCurrency == "GBP" && row.AccountIsActive);
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetMonthTransactions");
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetMonthTransactions")
+                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
         }
     }
 
@@ -1239,7 +1240,8 @@ public class AccountQueryServiceTests
         using (new AssertionScope())
         {
             rows.Should().BeEmpty();
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetMonthTransactions");
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetMonthTransactions")
+                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
         }
     }
 
