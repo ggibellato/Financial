@@ -40,5 +40,8 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Pots screen (after only) | M1, M2 | **P2:** the Transactions tab lists the same movements as the Reserva page for that month (count and total) | — | | |
 | Pots screen (after only) | A month with no movements | **P3:** the Transactions tab shows "No transactions in <Month Year>" | — | | |
 | Pots screen (after only) | M1 | **P4:** at 320 px wide there's no horizontal page scroll on either tab | — | | |
+| Monthly → All transactions (after only) | M1, M2, M3 | **T1:** filtered to one category, Spend equals that category's Category totals figure | — | | |
+| Monthly → All transactions (after only) | M1, M3 | **T2:** filtered to one account, the rows equal that account screen's Transactions tab for the month, except a bank's old settled card charges, which appear only on their card | — | | |
+| Monthly → All transactions (after only) | M1 | **T3:** at 320 px wide the rows stack with no horizontal page scroll; Tab reaches every sort button, filter, link and Clear filters with visible focus | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.
