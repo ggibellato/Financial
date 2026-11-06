@@ -42,8 +42,19 @@ export default function AdminAccountsPage() {
       await updateAccount(formTarget.account.id, request)
       showSuccess('Account updated')
     } else {
-      const { templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled, categoryId } = request
-      await createAccount({ templateName, name, currency, openingBalance, balanceStartDate, roundUpEnabled, categoryId })
+      const { templateName, name, currency, currencies, otherParticipant, openingBalance, balanceStartDate, roundUpEnabled, categoryId } =
+        request
+      await createAccount({
+        templateName,
+        name,
+        currency,
+        currencies,
+        otherParticipant,
+        openingBalance,
+        balanceStartDate,
+        roundUpEnabled,
+        categoryId,
+      })
       showSuccess('Account created')
     }
     setFormTarget(null)
@@ -144,7 +155,7 @@ export default function AdminAccountsPage() {
             <TableRow key={account.id}>
               <DataTableCell label="Name"><TruncatedText text={account.name} /></DataTableCell>
               <DataTableCell label="Template">{accountTemplateLabel(account.templateName)}</DataTableCell>
-              <DataTableCell label="Currency">{account.currency}</DataTableCell>
+              <DataTableCell label="Currency">{account.currencies.join(', ')}</DataTableCell>
               <DataTableCell label="Active">{account.isActive ? 'Active' : 'Inactive'}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}

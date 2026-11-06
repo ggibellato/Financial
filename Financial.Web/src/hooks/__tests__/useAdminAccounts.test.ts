@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTemplateDto, CategoryDto } from '../../api/types'
-import { account, potsAccount } from '../../test/account'
+import { account, potsAccount, settlementAccount } from '../../test/account'
 import { useAdminAccounts } from '../useAdminAccounts'
 
 const { getAccountsMock, getAccountTemplatesMock, getCategoriesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
@@ -70,7 +70,7 @@ describe('useAdminAccounts', () => {
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     getAccountsMock.mockResolvedValue([BARCLAYS, monzo])
-    const request = { templateName: 'Bank', name: 'Monzo', currency: 'GBP', openingBalance: 0, balanceStartDate: '2026-10-24', roundUpEnabled: false, categoryId: null }
+    const request = { templateName: 'Bank', name: 'Monzo', currency: 'GBP', openingBalance: 0, balanceStartDate: '2026-10-24', roundUpEnabled: false, categoryId: null, currencies: null, otherParticipant: null }
 
     await act(() => result.current.createAccount(request))
 
@@ -82,7 +82,7 @@ describe('useAdminAccounts', () => {
     updateAccountMock.mockResolvedValue(BARCLAYS)
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
-    const request = { templateName: 'Bank', name: 'Barclays UK', currency: 'GBP', openingBalance: 10, balanceStartDate: '2026-01-01', roundUpEnabled: true, categoryId: null, isActive: true }
+    const request = { templateName: 'Bank', name: 'Barclays UK', currency: 'GBP', openingBalance: 10, balanceStartDate: '2026-01-01', roundUpEnabled: true, categoryId: null, currencies: null, otherParticipant: null, isActive: true }
 
     await act(() => result.current.updateAccount('a1', request))
 
@@ -101,12 +101,28 @@ describe('useAdminAccounts', () => {
       templateName: 'Bank',
       name: 'Barclays',
       currency: 'GBP',
+      currencies: ['GBP'],
+      otherParticipant: null,
       openingBalance: 10,
       balanceStartDate: '2026-01-01',
       roundUpEnabled: true,
       categoryId: null,
       isActive: false,
     })
+  })
+
+  it("echoes a Settlement account's currencies and other participant when deactivating it", async () => {
+    const mae = settlementAccount({ id: 's1', name: 'Mãe' })
+    updateAccountMock.mockResolvedValue({ ...mae, isActive: false })
+    const { result } = renderHook(() => useAdminAccounts())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(() => result.current.deactivateAccount(mae))
+
+    expect(updateAccountMock).toHaveBeenCalledWith(
+      's1',
+      expect.objectContaining({ currency: 'BRL', currencies: ['BRL', 'GBP'], otherParticipant: 'Mãe', isActive: false }),
+    )
   })
 
   it("keeps a Pots account's category when deactivating it", async () => {

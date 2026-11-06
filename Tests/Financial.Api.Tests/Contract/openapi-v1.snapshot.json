@@ -17,6 +17,15 @@
               "string"
             ]
           },
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
           "currency": {
             "type": "string"
           },
@@ -28,6 +37,12 @@
             "type": [
               "null",
               "number"
+            ]
+          },
+          "otherParticipant": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "roundUpEnabled": {
@@ -69,6 +84,12 @@
               "string"
             ]
           },
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "currency": {
             "type": "string"
           },
@@ -92,6 +113,12 @@
               "number"
             ]
           },
+          "otherParticipant": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "roundUpEnabled": {
             "type": [
               "null",
@@ -107,6 +134,7 @@
           "name",
           "templateName",
           "currency",
+          "currencies",
           "isActive",
           "hasRecords",
           "capabilities"
@@ -831,6 +859,15 @@
               "string"
             ]
           },
+          "currencies": {
+            "items": {
+              "type": "string"
+            },
+            "type": [
+              "null",
+              "array"
+            ]
+          },
           "currency": {
             "type": "string"
           },
@@ -845,6 +882,12 @@
             "type": [
               "null",
               "number"
+            ]
+          },
+          "otherParticipant": {
+            "type": [
+              "null",
+              "string"
             ]
           },
           "roundUpEnabled": {

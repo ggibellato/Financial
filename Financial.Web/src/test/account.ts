@@ -17,6 +17,8 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
   return {
     templateName: 'Bank',
     currency: 'GBP',
+    currencies: [fields.currency ?? 'GBP'],
+    otherParticipant: null,
     isActive: true,
     hasRecords: false,
     openingBalance: 0,
@@ -46,6 +48,20 @@ export function potsAccount(fields: RequiredAccountFields & Partial<AccountDto>)
     balanceStartDate: null,
     roundUpEnabled: null,
     capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'],
+    ...fields,
+  })
+}
+
+export function settlementAccount(fields: RequiredAccountFields & Partial<AccountDto>): AccountDto {
+  return account({
+    templateName: 'Settlement',
+    currency: 'BRL',
+    currencies: ['BRL', 'GBP'],
+    otherParticipant: fields.name,
+    openingBalance: null,
+    balanceStartDate: null,
+    roundUpEnabled: null,
+    capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
     ...fields,
   })
 }

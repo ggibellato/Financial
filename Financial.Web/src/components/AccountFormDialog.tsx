@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Field, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
+import { useEffect, useId, useRef, useState } from 'react'
+import { Checkbox, Field, FieldContextProvider, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
@@ -13,12 +13,24 @@ import { todayIsoDate } from '../utils/formatters'
 
 const UNSET_START_DATE = '0001-01-01'
 const NAME_MAX_LENGTH = 60
+const OTHER_PARTICIPANT_MAX_LENGTH = 60
+const SELF_PARTICIPANT_NAME = 'You'
 const CONFLICT_STATUS = 409
 const LOCKED_HINT = "Can't change once the account has transactions."
+const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
 const CATEGORY_INFO = "When money moves between a bank and this account, the bank's entry is recorded in this category."
 
-const FIELD_ORDER = ['template', 'name', 'currency', 'category', 'openingBalance', 'balanceStartDate'] as const
+const FIELD_ORDER = [
+  'template',
+  'name',
+  'currency',
+  'currencies',
+  'otherParticipant',
+  'category',
+  'openingBalance',
+  'balanceStartDate',
+] as const
 
 type FieldName = (typeof FIELD_ORDER)[number]
 
@@ -30,6 +42,8 @@ interface FormValues {
   templateName: string
   name: string
   currency: string
+  currencies: readonly string[]
+  otherParticipant: string
   categoryId: string
   openingBalance: string
   balanceStartDate: string
@@ -41,6 +55,7 @@ const FORM_FIELDS: readonly (keyof FormValues)[] = [
   'templateName',
   'name',
   'currency',
+  'otherParticipant',
   'categoryId',
   'openingBalance',
   'balanceStartDate',
@@ -63,6 +78,8 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
       templateName: template?.name ?? '',
       name: '',
       currency: template?.currencies[0] ?? '',
+      currencies: [],
+      otherParticipant: '',
       categoryId: '',
       openingBalance: '0.00',
       balanceStartDate: todayIsoDate(),
@@ -74,6 +91,8 @@ function initialValues(account: AccountDto | null, templates: AccountTemplateDto
     templateName: account.templateName,
     name: account.name,
     currency: account.currency,
+    currencies: account.currencies,
+    otherParticipant: account.otherParticipant ?? '',
     categoryId: account.categoryId ?? '',
     openingBalance: account.openingBalance?.toFixed(2) ?? '0.00',
     balanceStartDate: !account.balanceStartDate || account.balanceStartDate === UNSET_START_DATE ? '' : account.balanceStartDate,
@@ -93,7 +112,17 @@ function validateAccountForm(
   if (!template) errors.template = 'Choose a template.'
   if (name.length === 0) errors.name = 'Account name is required.'
   else if (name.length > NAME_MAX_LENGTH) errors.name = `Account name must be ${NAME_MAX_LENGTH} characters or fewer.`
-  if (!values.currency) errors.currency = 'Choose a currency.'
+  if (template?.capabilities.includes('MultiCurrency')) {
+    if (values.currencies.length === 0) errors.currencies = 'Choose at least one currency.'
+  } else if (!values.currency) errors.currency = 'Choose a currency.'
+  if (template?.capabilities.includes('HasParticipants')) {
+    const otherParticipant = values.otherParticipant.trim()
+    if (otherParticipant.length === 0) errors.otherParticipant = "Enter the other participant's name."
+    else if (otherParticipant.length > OTHER_PARTICIPANT_MAX_LENGTH)
+      errors.otherParticipant = `The other participant's name must be ${OTHER_PARTICIPANT_MAX_LENGTH} characters or fewer.`
+    else if (otherParticipant.toLowerCase() === SELF_PARTICIPANT_NAME.toLowerCase())
+      errors.otherParticipant = `The other participant can't be called ${SELF_PARTICIPANT_NAME}.`
+  }
   if (template?.capabilities.includes('HasOpeningBalance')) {
     if (values.openingBalance.trim().length === 0) errors.openingBalance = 'Opening balance is required.'
     else if (!Number.isFinite(openingBalance)) errors.openingBalance = 'Enter the opening balance as a number, for example 250.00.'
@@ -123,16 +152,25 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const templateRef = useRef<FieldControl>(null)
   const nameRef = useRef<FieldControl>(null)
   const currencyRef = useRef<FieldControl>(null)
+  const currenciesRef = useRef<FieldControl>(null)
+  const otherParticipantRef = useRef<FieldControl>(null)
+  const currenciesLabelId = useId()
+  const currenciesHintId = useId()
+  const currenciesMessageId = useId()
   const categoryRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
-  const discardPrompt = useDiscardPrompt(hasChangedFields(values, initial, FORM_FIELDS))
+  const discardPrompt = useDiscardPrompt(
+    hasChangedFields(values, initial, FORM_FIELDS) || values.currencies.join() !== initial.currencies.join(),
+  )
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
   const capabilities = template?.capabilities ?? []
   const hasOpeningBalance = capabilities.includes('HasOpeningBalance')
   const supportsRoundUp = capabilities.includes('SupportsRoundUp')
   const hasPots = capabilities.includes('HasPots')
+  const isMultiCurrency = capabilities.includes('MultiCurrency')
+  const hasParticipants = capabilities.includes('HasParticipants')
   const selectableCategories = categoryOptions(categories, initial.categoryId)
   const currencies = template?.currencies ?? [values.currency]
   const isCurrencyFixed = isLocked || currencies.length <= 1
@@ -162,13 +200,25 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       ...current,
       templateName,
       currency: next?.currencies.includes(current.currency) ? current.currency : (next?.currencies[0] ?? ''),
+      currencies: next?.capabilities.includes('MultiCurrency')
+        ? current.currencies.filter((currency) => next.currencies.includes(currency))
+        : initial.currencies,
+      otherParticipant: next?.capabilities.includes('HasParticipants') ? current.otherParticipant : initial.otherParticipant,
     }))
   }
+
+  const toggleCurrency = (currency: string, ticked: boolean) =>
+    setValues((current) => ({
+      ...current,
+      currencies: currencies.filter((candidate) => (candidate === currency ? ticked : current.currencies.includes(candidate))),
+    }))
 
   const toRequest = (): AccountUpdateDto => ({
     templateName: values.templateName,
     name: trimmedName,
-    currency: values.currency,
+    currency: isMultiCurrency ? values.currencies[0] : values.currency,
+    currencies: isMultiCurrency ? [...values.currencies] : null,
+    otherParticipant: hasParticipants ? values.otherParticipant.trim() : null,
     categoryId: hasPots ? values.categoryId : null,
     openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
     balanceStartDate: hasOpeningBalance ? values.balanceStartDate || UNSET_START_DATE : null,
@@ -184,6 +234,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
         template: templateRef,
         name: nameRef,
         currency: currencyRef,
+        currencies: currenciesRef,
+        otherParticipant: otherParticipantRef,
         category: categoryRef,
         openingBalance: openingBalanceRef,
         balanceStartDate: balanceStartDateRef,
@@ -244,25 +296,73 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           <Input ref={nameRef} value={values.name} onChange={(_, data) => setField('name', data.value)} />
         </Field>
 
-        <Field
-          label="Currency"
-          required={!isCurrencyFixed}
-          hint={currencyHint}
-          validationState={fieldState('currency')}
-          validationMessage={fieldMessage('currency')}
-        >
-          {isCurrencyFixed ? (
-            <Input ref={currencyRef} value={values.currency} readOnly />
-          ) : (
-            <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
-              {currencies.map((currency) => (
-                <option key={currency} value={currency}>
-                  {currency}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+        {isMultiCurrency ? (
+          <Field
+            label={{ children: 'Currencies', id: currenciesLabelId, htmlFor: undefined }}
+            required={!isLocked}
+            hint={isLocked ? LOCKED_HINT : { children: CURRENCIES_HINT, id: currenciesHintId }}
+            validationState={fieldState('currencies')}
+            validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
+          >
+            {isLocked ? (
+              <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly aria-labelledby={currenciesLabelId} />
+            ) : (
+              <FieldContextProvider value={undefined}>
+                <div
+                  role="group"
+                  aria-labelledby={currenciesLabelId}
+                  aria-describedby={fieldMessage('currencies') ? `${currenciesHintId} ${currenciesMessageId}` : currenciesHintId}
+                >
+                  {currencies.map((currency, index) => (
+                    <Checkbox
+                      key={currency}
+                      ref={index === 0 ? currenciesRef : undefined}
+                      label={currency}
+                      checked={values.currencies.includes(currency)}
+                      onChange={(_, data) => toggleCurrency(currency, data.checked === true)}
+                    />
+                  ))}
+                </div>
+              </FieldContextProvider>
+            )}
+          </Field>
+        ) : (
+          <Field
+            label="Currency"
+            required={!isCurrencyFixed}
+            hint={currencyHint}
+            validationState={fieldState('currency')}
+            validationMessage={fieldMessage('currency')}
+          >
+            {isCurrencyFixed ? (
+              <Input ref={currencyRef} value={values.currency} readOnly />
+            ) : (
+              <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
+                {currencies.map((currency) => (
+                  <option key={currency} value={currency}>
+                    {currency}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        )}
+
+        {hasParticipants && (
+          <Field
+            label="Other participant"
+            required
+            hint="The person you settle with, for example Mãe."
+            validationState={fieldState('otherParticipant')}
+            validationMessage={fieldMessage('otherParticipant')}
+          >
+            <Input
+              ref={otherParticipantRef}
+              value={values.otherParticipant}
+              onChange={(_, data) => setField('otherParticipant', data.value)}
+            />
+          </Field>
+        )}
 
         {hasPots && (
           <Field

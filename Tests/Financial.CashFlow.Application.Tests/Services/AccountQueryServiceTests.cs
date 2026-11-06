@@ -60,6 +60,26 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetAccounts_SettlementAndBank_CarryTheirCurrenciesAndOtherParticipant()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.GBP, Currency.BRL], "Mãe");
+        _repository.Accounts.Add(mae);
+
+        var accounts = _sut.GetAccounts();
+
+        using (new AssertionScope())
+        {
+            var settlement = accounts.Should().ContainSingle(account => account.Id == mae.Id).Which;
+            settlement.Currency.Should().Be("BRL");
+            settlement.Currencies.Should().Equal("BRL", "GBP");
+            settlement.OtherParticipant.Should().Be("Mãe");
+            var bank = accounts.Should().ContainSingle(account => account.Id == _barclays.Id).Which;
+            bank.Currencies.Should().Equal("GBP");
+            bank.OtherParticipant.Should().BeNull();
+        }
+    }
+
+    [Fact]
     public void GetAccounts_SameNameIgnoringCase_KeepsRepositoryOrder()
     {
         var upper = TestAccounts.Bank("SAVINGS");

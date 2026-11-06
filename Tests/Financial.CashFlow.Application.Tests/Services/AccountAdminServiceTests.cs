@@ -759,27 +759,223 @@ public class AccountAdminServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateAsync_SettlementInOneCurrency_AddsItWithThatCurrencyAndNoOtherParticipant()
+    private static AccountCreateDTO NewSettlement(string currency, string? currencies, string? otherParticipant = "Mãe") => new()
     {
-        var result = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Settlement", Name = "Mãe", Currency = "BRL" });
+        TemplateName = "Settlement",
+        Name = "Mãe",
+        Currency = currency,
+        Currencies = currencies?.Split(',', StringSplitOptions.RemoveEmptyEntries),
+        OtherParticipant = otherParticipant
+    };
+
+    private static AccountUpdateDTO EditSettlement(Account account, string currency, IReadOnlyList<string> currencies, string? otherParticipant) => new()
+    {
+        TemplateName = "Settlement",
+        Name = account.Name,
+        Currency = currency,
+        Currencies = currencies,
+        OtherParticipant = otherParticipant,
+        IsActive = true
+    };
+
+    [Fact]
+    public async Task CreateAsync_SettlementInTwoCurrencies_StoresBothWithTheFirstAsMainAndTheTrimmedOtherParticipant()
+    {
+        var result = await _sut.CreateAsync(NewSettlement("GBP", "GBP,BRL", otherParticipant: "  Mãe  "));
 
         using (new AssertionScope())
         {
             var created = _repository.Accounts.Should().ContainSingle(account => account.Name == "Mãe").Which;
             created.Template.Should().Be(AccountTemplate.Settlement);
-            created.Currencies.Should().Equal(Currency.BRL);
-            created.OtherParticipant.Should().BeNull();
+            created.Currency.Should().Be(Currency.BRL);
+            created.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            created.OtherParticipant.Should().Be("Mãe");
             result.Currency.Should().Be("BRL");
+            result.Currencies.Should().Equal("BRL", "GBP");
+            result.OtherParticipant.Should().Be("Mãe");
             result.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 
     [Fact]
-    public async Task CreateAsync_SettlementInUsd_ThrowsWithTheTemplatesCurrencies()
+    public async Task CreateAsync_GbpOnlySettlement_HasOneCurrency()
     {
-        var act = () => _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Settlement", Name = "Mãe", Currency = "USD" });
+        var result = await _sut.CreateAsync(NewSettlement("GBP", "GBP", otherParticipant: "Samuel"));
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
+        using (new AssertionScope())
+        {
+            result.Currency.Should().Be("GBP");
+            result.Currencies.Should().Equal("GBP");
+            result.OtherParticipant.Should().Be("Samuel");
+        }
+    }
+
+    [Theory]
+    [InlineData("BRL", null, "Mãe", "Choose at least one currency.")]
+    [InlineData("BRL", "", "Mãe", "Choose at least one currency.")]
+    [InlineData("USD", "USD", "Mãe", "Settlement accounts must be BRL or GBP.")]
+    [InlineData("BRL", "BRL,USD", "Mãe", "Settlement accounts must be BRL or GBP.")]
+    [InlineData("BRL", "BRL,XYZ", "Mãe", "Unknown currency 'XYZ'.")]
+    [InlineData("GBP", "BRL", "Mãe", "Currency must be one of the account's currencies.")]
+    [InlineData("BRL", "BRL", null, "Enter the other participant's name.")]
+    [InlineData("BRL", "BRL", "   ", "Enter the other participant's name.")]
+    [InlineData("BRL", "BRL", "you", "The other participant can't be called You.")]
+    public async Task CreateAsync_SettlementWithAnInvalidField_ThrowsAndWritesNothing(
+        string currency, string? currencies, string? otherParticipant, string message)
+    {
+        var act = () => _sut.CreateAsync(NewSettlement(currency, currencies, otherParticipant));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage(message);
+            _repository.Accounts.Should().HaveCount(2);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_SettlementOtherParticipantOverSixtyCharacters_Throws()
+    {
+        var act = () => _sut.CreateAsync(NewSettlement("BRL", "BRL", new string('a', 61)));
+
+        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("The other participant's name must be 60 characters or fewer.");
+    }
+
+    [Fact]
+    public async Task CreateAsync_BankEchoingItsOwnCurrency_Succeeds()
+    {
+        var request = NewBank();
+
+        var result = await _sut.CreateAsync(new AccountCreateDTO
+        {
+            TemplateName = request.TemplateName, Name = request.Name, Currency = "GBP", Currencies = ["GBP"],
+            OpeningBalance = request.OpeningBalance, BalanceStartDate = request.BalanceStartDate, RoundUpEnabled = request.RoundUpEnabled
+        });
+
+        using (new AssertionScope())
+        {
+            result.Currencies.Should().Equal("GBP");
+            result.OtherParticipant.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_BankWithSeveralCurrenciesOrAnOtherParticipant_ThrowsAndWritesNothing()
+    {
+        var request = NewBank();
+        var withCurrencies = () => _sut.CreateAsync(new AccountCreateDTO
+        {
+            TemplateName = "Bank", Name = "Monzo", Currency = "GBP", Currencies = ["GBP", "BRL"],
+            OpeningBalance = request.OpeningBalance, BalanceStartDate = request.BalanceStartDate, RoundUpEnabled = request.RoundUpEnabled
+        });
+        var withParticipant = () => _sut.CreateAsync(new AccountCreateDTO
+        {
+            TemplateName = "Bank", Name = "Monzo", Currency = "GBP", OtherParticipant = "Mãe",
+            OpeningBalance = request.OpeningBalance, BalanceStartDate = request.BalanceStartDate, RoundUpEnabled = request.RoundUpEnabled
+        });
+
+        using (new AssertionScope())
+        {
+            (await withCurrencies.Should().ThrowAsync<ArgumentException>()).WithMessage("Monzo has one currency.");
+            (await withParticipant.Should().ThrowAsync<ArgumentException>()).WithMessage("Monzo has no participants.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_TwoCurrencySettlement_KeepsBothCurrenciesWhileRenamingAndChangingTheOtherParticipant()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        _repository.Accounts.Add(mae);
+
+        var result = await _sut.UpdateAsync(mae.Id, EditSettlement(mae, "BRL", ["BRL", "GBP"], "Mother"));
+
+        using (new AssertionScope())
+        {
+            mae.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            mae.Currency.Should().Be(Currency.BRL);
+            mae.OtherParticipant.Should().Be("Mother");
+            result.Currencies.Should().Equal("BRL", "GBP");
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettlementChangingItsCurrenciesWithoutRecords_StoresTheNewSet()
+    {
+        var samuel = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
+        _repository.Accounts.Add(samuel);
+
+        await _sut.UpdateAsync(samuel.Id, EditSettlement(samuel, "GBP", ["GBP", "BRL"], "Samuel"));
+
+        using (new AssertionScope())
+        {
+            samuel.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            samuel.Currency.Should().Be(Currency.BRL);
+            samuel.OtherParticipant.Should().Be("Samuel");
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettlementWithoutCurrencies_ThrowsAndKeepsThem()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        _repository.Accounts.Add(mae);
+
+        var act = () => _sut.UpdateAsync(mae.Id, EditSettlement(mae, "BRL", [], "Mãe"));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Choose at least one currency.");
+            mae.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_BankBecomingSettlement_RequiresAnOtherParticipant()
+    {
+        var act = () => _sut.UpdateAsync(_chase.Id, EditSettlement(_chase, "GBP", ["GBP"], otherParticipant: null));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Enter the other participant's name.");
+            _chase.Template.Should().Be(AccountTemplate.Bank);
+            _chase.OpeningBalance.Should().NotBeNull();
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettlementBecomingBank_ClearsItsCurrenciesAndOtherParticipant()
+    {
+        var samuel = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
+        _repository.Accounts.Add(samuel);
+
+        await _sut.UpdateAsync(samuel.Id, Edit(samuel));
+
+        using (new AssertionScope())
+        {
+            samuel.Template.Should().Be(AccountTemplate.Bank);
+            samuel.Currencies.Should().Equal(Currency.GBP);
+            samuel.OtherParticipant.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_BankWithAnOtherParticipant_ThrowsAndWritesNothing()
+    {
+        var act = () => _sut.UpdateAsync(_chase.Id, new AccountUpdateDTO
+        {
+            TemplateName = "Bank", Name = "Chase", Currency = "GBP", OtherParticipant = "Mãe",
+            OpeningBalance = 0m, BalanceStartDate = new DateOnly(2026, 1, 1), RoundUpEnabled = false, IsActive = true
+        });
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Chase has no participants.");
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
     }
 }
