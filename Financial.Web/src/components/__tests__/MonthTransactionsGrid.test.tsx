@@ -55,13 +55,23 @@ function descriptions() {
   return bodyRows().map((row) => within(row).getAllByRole('cell')[3].textContent)
 }
 
+const FOOTER = /rows?\b/
+
 function footer() {
-  return screen.getByText(/rows?\b/, { selector: 'p' })
+  return screen.getByText(FOOTER, { selector: 'p' })
+}
+
+function queryFooter() {
+  return screen.queryByText(FOOTER, { selector: 'p' })
+}
+
+function filterToNone(label: string) {
+  fireEvent.click(screen.getByRole('button', { name: `Filter by ${label}` }))
+  fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
 }
 
 function filterTo(label: string, value: string) {
-  fireEvent.click(screen.getByRole('button', { name: `Filter by ${label}` }))
-  fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
+  filterToNone(label)
   fireEvent.click(screen.getByRole('checkbox', { name: value }))
 }
 
@@ -192,25 +202,24 @@ describe('MonthTransactionsGrid', () => {
 
     expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument()
     expect(screen.getByLabelText('Loading transactions')).toBeInTheDocument()
-    expect(screen.queryByText(/rows?\b/, { selector: 'p' })).not.toBeInTheDocument()
+    expect(queryFooter()).not.toBeInTheDocument()
   })
 
   it('[AC P60-F16-month-transactions-view-04] shows the empty month message with no footer and nothing to clear', () => {
     renderGrid({ rows: [] })
 
-    expect(screen.getByText('No transactions in October 2026.')).toBeInTheDocument()
-    expect(screen.queryByText(/rows?\b/, { selector: 'p' })).not.toBeInTheDocument()
+    expect(screen.getByText('No transactions in October 2026')).toBeInTheDocument()
+    expect(queryFooter()).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
   })
 
   it('[AC P60-F16-month-transactions-view-04] shows the no-match message with Clear filters above the grid', () => {
     renderGrid()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Filter by Account' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
+    filterToNone('Account')
 
-    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
-    expect(screen.queryByText(/rows?\b/, { selector: 'p' })).not.toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(queryFooter()).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
   })
 

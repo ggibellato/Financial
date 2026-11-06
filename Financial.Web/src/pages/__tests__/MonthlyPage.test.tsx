@@ -442,15 +442,18 @@ describe('MonthlyPage', () => {
   })
 
   describe('All transactions tab', () => {
+    async function openAllTransactions() {
+      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
+      const grid = await screen.findByRole('table', { name: 'All transactions' })
+      await waitFor(() => expect(within(grid).getByText('Lidl UK')).toBeInTheDocument())
+    }
+
     it('requests nothing until the tab is opened, then lists the month', async () => {
       render(<MonthlyPage />, { wrapper: MemoryRouter })
       await waitFor(() => expect(screen.getByText('BaAmex')).toBeInTheDocument())
       expect(getMonthTransactionsMock).not.toHaveBeenCalled()
 
-      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
-
-      const grid = await screen.findByRole('table', { name: 'All transactions' })
-      await waitFor(() => expect(within(grid).getByText('Lidl UK')).toBeInTheDocument())
+      await openAllTransactions()
       expect(getMonthTransactionsMock).toHaveBeenCalledWith(2026, 7)
     })
 
@@ -458,10 +461,7 @@ describe('MonthlyPage', () => {
       getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
       render(<MonthlyPage />, { wrapper: MemoryRouter })
 
-      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
-
-      const grid = await screen.findByRole('table', { name: 'All transactions' })
-      await waitFor(() => expect(within(grid).getByText('Lidl UK')).toBeInTheDocument())
+      await openAllTransactions()
       expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
     })
 
@@ -470,10 +470,7 @@ describe('MonthlyPage', () => {
       render(<MonthlyPage />, { wrapper: MemoryRouter })
       await waitFor(() => expect(screen.getByText('Network down')).toBeInTheDocument())
 
-      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
-
-      const grid = await screen.findByRole('table', { name: 'All transactions' })
-      await waitFor(() => expect(within(grid).getByText('Lidl UK')).toBeInTheDocument())
+      await openAllTransactions()
       expect(screen.queryByText('Network down')).not.toBeInTheDocument()
     })
 
@@ -494,8 +491,7 @@ describe('MonthlyPage', () => {
 
     it('reloads on a month change and starts again with no filter', async () => {
       render(<MonthlyPage />, { wrapper: MemoryRouter })
-      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
-      await screen.findByText('Lidl UK')
+      await openAllTransactions()
       fireEvent.click(screen.getByRole('button', { name: 'Filter by Account' }))
       fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
       expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
@@ -509,8 +505,7 @@ describe('MonthlyPage', () => {
 
     it('reloads every time the tab is reopened', async () => {
       render(<MonthlyPage />, { wrapper: MemoryRouter })
-      fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
-      await screen.findByText('Lidl UK')
+      await openAllTransactions()
 
       fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
       fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))

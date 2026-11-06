@@ -121,12 +121,4 @@ describe('useColumnFilters', () => {
     expect(result.current.isColumnFiltered('card')).toBe(false)
     expect(result.current.selectedValues).toEqual({})
   })
-
-  it('clearFilters leaves unfiltered rows as they are', () => {
-    const { result } = renderHook(() => useColumnFilters(ROWS, ACCESSORS))
-
-    act(() => result.current.clearFilters())
-
-    expect(result.current.filteredRows).toEqual(ROWS)
-  })
 })

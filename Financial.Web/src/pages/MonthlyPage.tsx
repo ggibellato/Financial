@@ -1,6 +1,7 @@
 import { Tab, TabList } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { useState } from 'react'
+import type { MonthTransactionDto } from '../api/types'
 import BalanceAdjustmentForm from '../components/BalanceAdjustmentForm'
 import BankOperationsSection from '../components/BankOperationsSection'
 import BanksGrid from '../components/BanksGrid'
@@ -36,6 +37,13 @@ const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'incoming', label: 'Income' },
   { id: 'bank', label: 'Bank balance adjustment' },
 ]
+
+const NO_ROWS: MonthTransactionDto[] = []
+
+function AllTransactionsTab({ year, month }: { year: number; month: number }) {
+  const { data, isLoading, error, retry } = useMonthTransactions(year, month)
+  return <MonthTransactionsGrid year={year} month={month} rows={data ?? NO_ROWS} isLoading={isLoading} error={error} onRetry={retry} />
+}
 
 export default function MonthlyPage() {
   const {
@@ -164,7 +172,6 @@ export default function MonthlyPage() {
   })
 
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
-  const monthTransactions = useMonthTransactions(year, month, activeTab === 'transactions')
 
   const isBankFormVisible = transferForm.isOpen || adjustmentForm.isOpen
 
@@ -235,15 +242,7 @@ export default function MonthlyPage() {
 
       {activeTab === 'transactions' ? (
         <div className="monthly-page__content">
-          <MonthTransactionsGrid
-            key={`${year}-${month}`}
-            year={year}
-            month={month}
-            rows={monthTransactions.rows}
-            isLoading={monthTransactions.isLoading}
-            error={monthTransactions.error}
-            onRetry={monthTransactions.retry}
-          />
+          <AllTransactionsTab key={`${year}-${month}`} year={year} month={month} />
         </div>
       ) : isLoading || creditCardsData.isLoading ? (
         <LoadingState />

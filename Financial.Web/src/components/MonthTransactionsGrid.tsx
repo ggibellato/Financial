@@ -42,26 +42,27 @@ interface Column {
   key: string
   header: string
   numeric?: boolean
-  filterable?: boolean
   accessor: SortAccessor<MonthTransactionDto>
 }
 
+const accountName = (row: MonthTransactionDto) => row.accountName
+const typeLabel = (row: MonthTransactionDto) => kindLabel(row.transaction.kind)
+const categoryName = (row: MonthTransactionDto) => row.transaction.categoryName
+
+const CATEGORY_HEADER = 'Category'
+
 const COLUMNS: Column[] = [
   { key: 'date', header: 'Date', accessor: (row) => row.transaction.date },
-  { key: 'account', header: 'Account', filterable: true, accessor: (row) => row.accountName },
-  { key: 'kind', header: 'Type', filterable: true, accessor: (row) => kindLabel(row.transaction.kind) },
+  { key: 'account', header: 'Account', accessor: accountName },
+  { key: 'kind', header: 'Type', accessor: typeLabel },
   { key: 'description', header: 'Description', accessor: (row) => row.transaction.description },
-  { key: 'category', header: 'Category', filterable: true, accessor: (row) => row.transaction.categoryName },
+  { key: 'category', header: CATEGORY_HEADER, accessor: categoryName },
   { key: 'amount', header: 'Amount', numeric: true, accessor: (row) => row.transaction.amount },
 ]
 
 const SORT_ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, column.accessor]))
 
-const FILTER_ACCESSORS = {
-  category: (row: MonthTransactionDto) => row.transaction.categoryName,
-  account: (row: MonthTransactionDto) => row.accountName,
-  kind: (row: MonthTransactionDto) => kindLabel(row.transaction.kind),
-}
+const FILTER_ACCESSORS = { account: accountName, kind: typeLabel, category: categoryName }
 
 const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
 
@@ -93,7 +94,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   const clearAllFilters = () => {
     clearFilters()
-    gridRef.current?.querySelector<HTMLButtonElement>('button[aria-label="Filter by Category"]')?.focus()
+    gridRef.current?.querySelector<HTMLButtonElement>(`button[aria-label="Filter by ${CATEGORY_HEADER}"]`)?.focus()
   }
 
   const renderCell = (column: Column, row: MonthTransactionDto): ReactNode => {
@@ -113,7 +114,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
           </span>
         )
       case 'kind':
-        return kindLabel(transaction.kind)
+        return typeLabel(row)
       case 'description':
         return transaction.operation ? (
           <TruncatedText text={transaction.description || BLANK_OPERATION_LINK} to={operationPath(transaction.operation, row.accountId)} />
@@ -149,8 +150,8 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         </TableRow>
       )
     }
-    if (rows.length === 0) return renderMessage(`No transactions in ${formatLongMonthYear(year, month)}.`)
-    if (sortedRows.length === 0) return renderMessage('No rows match the current filters.')
+    if (rows.length === 0) return renderMessage(`No transactions in ${formatLongMonthYear(year, month)}`)
+    if (sortedRows.length === 0) return renderMessage('No rows match the current filters')
     return sortedRows.map((row) => (
       <TableRow key={rowKey(row)}>
         {COLUMNS.map((column) => (
@@ -184,7 +185,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
                   sortDirection={sortState?.columnKey === column.key ? sortState.direction : undefined}
                   onSort={requestSort}
                 >
-                  {column.filterable && (
+                  {FILTER_KEYS.includes(column.key) && (
                     <ColumnFilterMenu
                       columnKey={column.key}
                       label={column.header}
