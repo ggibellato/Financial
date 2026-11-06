@@ -9,6 +9,7 @@ export interface UseColumnFiltersResult<T> {
   toggleValue: (columnKey: string, value: string) => void
   toggleAll: (columnKey: string) => void
   isColumnFiltered: (columnKey: string) => boolean
+  clearFilters: () => void
 }
 
 function normalizeValues(value: string | string[] | null | undefined): string[] {
@@ -79,6 +80,8 @@ export function useColumnFilters<T>(
     })
   }
 
+  const clearFilters = () => setSelections({})
+
   const filteredRows = useMemo(() => {
     const activeColumns = Object.keys(accessors).filter((columnKey) => isColumnFiltered(columnKey))
     if (activeColumns.length === 0) {
@@ -95,5 +98,5 @@ export function useColumnFilters<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, selections, availableValues])
 
-  return { filteredRows, availableValues, selectedValues: selections, toggleValue, toggleAll, isColumnFiltered }
+  return { filteredRows, availableValues, selectedValues: selections, toggleValue, toggleAll, isColumnFiltered, clearFilters }
 }
