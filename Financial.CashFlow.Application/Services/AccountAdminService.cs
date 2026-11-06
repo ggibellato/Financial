@@ -107,7 +107,7 @@ public sealed class AccountAdminService : IAccountAdminService
             var template = ParseTemplate(request.TemplateName);
             var currency = ParseCurrency(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
-            var trimmedName = request.Name?.Trim() ?? string.Empty;
+            var trimmedName = request.Name.Trim();
             Func<Capability, bool> templateHas = AccountTemplates.CapabilitiesOf(template).Contains;
             var currencies = RequestedCurrencies(templateHas, trimmedName, currency, request.Currencies);
             var changesTemplate = template != account.Template || !currencies.SequenceEqual(account.Currencies);
