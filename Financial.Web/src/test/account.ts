@@ -51,3 +51,17 @@ export function potsAccount(fields: RequiredAccountFields & Partial<AccountDto>)
     ...fields,
   })
 }
+
+export function settlementAccount(fields: RequiredAccountFields & Partial<AccountDto>): AccountDto {
+  return account({
+    templateName: 'Settlement',
+    currency: 'BRL',
+    currencies: ['BRL', 'GBP'],
+    otherParticipant: fields.name,
+    openingBalance: null,
+    balanceStartDate: null,
+    roundUpEnabled: null,
+    capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
+    ...fields,
+  })
+}

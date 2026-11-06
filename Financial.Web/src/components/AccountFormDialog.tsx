@@ -50,10 +50,6 @@ interface FormValues {
   isActive: boolean
 }
 
-function currencySetKey(currencies: readonly string[]): string {
-  return [...currencies].sort().join(',')
-}
-
 const FORM_FIELDS: readonly (keyof FormValues)[] = [
   'templateName',
   'name',
@@ -163,7 +159,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
   const discardPrompt = useDiscardPrompt(
-    hasChangedFields(values, initial, FORM_FIELDS) || currencySetKey(values.currencies) !== currencySetKey(initial.currencies),
+    hasChangedFields(values, initial, FORM_FIELDS) || values.currencies.join() !== initial.currencies.join(),
   )
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
@@ -175,7 +171,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const hasParticipants = capabilities.includes('HasParticipants')
   const selectableCategories = categoryOptions(categories, initial.categoryId)
   const currencies = template?.currencies ?? [values.currency]
-  const tickedCurrencies = currencies.filter((currency) => values.currencies.includes(currency))
   const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
   const trimmedName = values.name.trim()
@@ -210,16 +205,14 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const toggleCurrency = (currency: string, ticked: boolean) =>
     setValues((current) => ({
       ...current,
-      currencies: ticked
-        ? [...current.currencies, currency]
-        : current.currencies.filter((candidate) => candidate !== currency),
+      currencies: currencies.filter((candidate) => (candidate === currency ? ticked : current.currencies.includes(candidate))),
     }))
 
   const toRequest = (): AccountUpdateDto => ({
     templateName: values.templateName,
     name: trimmedName,
-    currency: isMultiCurrency ? tickedCurrencies[0] : values.currency,
-    currencies: isMultiCurrency ? tickedCurrencies : null,
+    currency: isMultiCurrency ? values.currencies[0] : values.currency,
+    currencies: isMultiCurrency ? [...values.currencies] : null,
     otherParticipant: hasParticipants ? values.otherParticipant.trim() : null,
     categoryId: hasPots ? values.categoryId : null,
     openingBalance: hasOpeningBalance ? Number(values.openingBalance) : null,
@@ -307,7 +300,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
             validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
           >
             {isLocked ? (
-              <Input ref={currenciesRef} value={tickedCurrencies.join(', ')} readOnly aria-labelledby={currenciesLabelId} />
+              <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly aria-labelledby={currenciesLabelId} />
             ) : (
               <FieldContextProvider value={undefined}>
                 <div

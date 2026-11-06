@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTemplateDto, CategoryDto } from '../../api/types'
-import { account, potsAccount } from '../../test/account'
+import { account, potsAccount, settlementAccount } from '../../test/account'
 import { useAdminAccounts } from '../useAdminAccounts'
 
 const { getAccountsMock, getAccountTemplatesMock, getCategoriesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
@@ -112,18 +112,7 @@ describe('useAdminAccounts', () => {
   })
 
   it("echoes a Settlement account's currencies and other participant when deactivating it", async () => {
-    const mae = account({
-      id: 's1',
-      name: 'Mãe',
-      templateName: 'Settlement',
-      currency: 'BRL',
-      currencies: ['BRL', 'GBP'],
-      otherParticipant: 'Mãe',
-      openingBalance: null,
-      balanceStartDate: null,
-      roundUpEnabled: null,
-      capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
-    })
+    const mae = settlementAccount({ id: 's1', name: 'Mãe' })
     updateAccountMock.mockResolvedValue({ ...mae, isActive: false })
     const { result } = renderHook(() => useAdminAccounts())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

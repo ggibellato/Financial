@@ -4,7 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTemplateDto } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
-import { account, cardAccount, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AdminAccountsPage from '../AdminAccountsPage'
 
@@ -39,18 +39,7 @@ const SETTLEMENT_TEMPLATE: AccountTemplateDto = {
   currencies: ['BRL', 'GBP'],
   capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
 }
-const MAE = account({
-  id: 's1',
-  name: 'Mãe',
-  templateName: 'Settlement',
-  currency: 'BRL',
-  currencies: ['BRL', 'GBP'],
-  otherParticipant: 'Mãe',
-  openingBalance: null,
-  balanceStartDate: null,
-  roundUpEnabled: null,
-  capabilities: SETTLEMENT_TEMPLATE.capabilities,
-})
+const MAE = settlementAccount({ id: 's1', name: 'Mãe' })
 const BARCLAYS = account({ id: 'a1', name: 'Barclays', hasRecords: true })
 const CHASE = account({ id: 'a2', name: 'Chase', hasRecords: true, isActive: false })
 const MONZO = account({ id: 'a3', name: 'Monzo' })

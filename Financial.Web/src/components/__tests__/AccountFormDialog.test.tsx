@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { AccountTemplateDto, CategoryDto } from '../../api/types'
-import { account, cardAccount, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AccountFormDialog from '../AccountFormDialog'
 
@@ -18,18 +18,7 @@ const SETTLEMENT: AccountTemplateDto = {
   currencies: ['BRL', 'GBP'],
   capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
 }
-const MAE = account({
-  id: 'm1',
-  name: 'Mãe',
-  templateName: 'Settlement',
-  currency: 'BRL',
-  currencies: ['BRL', 'GBP'],
-  otherParticipant: 'Mãe',
-  openingBalance: null,
-  balanceStartDate: null,
-  roundUpEnabled: null,
-  capabilities: SETTLEMENT.capabilities,
-})
+const MAE = settlementAccount({ id: 'm1', name: 'Mãe' })
 
 const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}): CategoryDto => ({
   id,

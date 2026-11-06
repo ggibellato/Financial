@@ -107,7 +107,8 @@ public sealed class AccountAdminService : IAccountAdminService
             var template = ParseTemplate(request.TemplateName);
             var currency = ParseCurrency(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
-            var currencies = RequestedCurrencies(AccountTemplates.CapabilitiesOf(template).Contains, request.Name, currency, request.Currencies);
+            Func<Capability, bool> templateHas = AccountTemplates.CapabilitiesOf(template).Contains;
+            var currencies = RequestedCurrencies(templateHas, request.Name, currency, request.Currencies);
             var changesTemplate = template != account.Template || !currencies.SequenceEqual(account.Currencies);
             var wasCard = account.Has(Capability.HasStatements);
 
@@ -117,7 +118,7 @@ public sealed class AccountAdminService : IAccountAdminService
             }
 
             _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DisplayName);
-            Func<Capability, bool> targetHas = changesTemplate ? AccountTemplates.CapabilitiesOf(template).Contains : account.Has;
+            var targetHas = changesTemplate ? templateHas : account.Has;
             EnsureOtherParticipantFits(targetHas, request.Name, request.OtherParticipant);
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var category = ResolveCategory(targetHas, request.Name, request.CategoryId, account.Category);
@@ -211,15 +212,14 @@ public sealed class AccountAdminService : IAccountAdminService
     private static IReadOnlyList<Currency> RequestedCurrencies(
         Func<Capability, bool> has, string accountName, Currency currency, IReadOnlyList<string>? codes)
     {
-        var requested = (codes ?? []).Select(ParseCurrency).Distinct().Order().ToList();
-
         if (!has(Capability.MultiCurrency))
         {
-            return codes is null || requested.SequenceEqual([currency])
+            return codes is null || codes.Select(ParseCurrency).Distinct().SequenceEqual([currency])
                 ? [currency]
                 : throw new ArgumentException($"{accountName} has one currency.");
         }
 
+        var requested = (codes ?? []).Select(ParseCurrency).Distinct().Order().ToList();
         if (requested.Count == 0)
         {
             throw new ArgumentException("Choose at least one currency.");
