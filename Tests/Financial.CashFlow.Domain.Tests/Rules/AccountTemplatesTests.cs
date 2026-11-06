@@ -106,9 +106,33 @@ public class AccountTemplatesTests
     }
 
     [Fact]
-    public void Available_ListsBankCreditCardAndPots()
+    public void CapabilitiesOf_Settlement_IsExactlyParticipantsMultiCurrencyAndSettle()
     {
-        AccountTemplates.Available.Should().Equal(AccountTemplate.Bank, AccountTemplate.CreditCard, AccountTemplate.Pots);
+        AccountTemplates.CapabilitiesOf(AccountTemplate.Settlement).Should().BeEquivalentTo(new[]
+        {
+            Capability.HasParticipants,
+            Capability.MultiCurrency,
+            Capability.CanSettle
+        });
+    }
+
+    [Fact]
+    public void AllowedCurrencies_Settlement_IsBrlAndGbp()
+    {
+        AccountTemplates.AllowedCurrencies(AccountTemplate.Settlement).Should().Equal(Currency.BRL, Currency.GBP);
+    }
+
+    [Fact]
+    public void JoinsDefaultGroup_Settlement_IsFalse()
+    {
+        AccountTemplates.JoinsDefaultGroup(AccountTemplate.Settlement).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Available_ListsBankCreditCardPotsAndSettlementInThatOrder()
+    {
+        AccountTemplates.Available.Should().Equal(
+            AccountTemplate.Bank, AccountTemplate.CreditCard, AccountTemplate.Pots, AccountTemplate.Settlement);
     }
 
     public static TheoryData<AccountTemplate> AvailableTemplates => new(AccountTemplates.Available);

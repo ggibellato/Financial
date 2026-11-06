@@ -47,4 +47,16 @@ public static class TestAccounts
         account.SetActive(isActive);
         return account;
     }
+
+    public static Account Settlement(string name, IEnumerable<Currency> currencies, string? otherParticipant = null)
+    {
+        var account = Account.Create(name, AccountTemplate.Settlement, Currency.BRL);
+        account.SetCurrencies(currencies);
+        if (otherParticipant is not null)
+        {
+            account.SetOtherParticipant(otherParticipant);
+        }
+
+        return account;
+    }
 }

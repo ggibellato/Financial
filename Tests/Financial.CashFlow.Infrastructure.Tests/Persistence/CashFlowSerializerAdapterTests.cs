@@ -437,6 +437,43 @@ public class CashFlowSerializerAdapterTests
     }
 
     [Fact]
+    public void SerializeThenDeserialize_V4FileWithoutSettlementAccounts_IsByteIdentical()
+    {
+        var data = CashFlowData.Create();
+        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: true);
+        bank.SetOpeningBalance(1250.75m, new DateOnly(2026, 7, 1));
+        data.AddAccount(bank);
+        data.AddAccount(TestAccounts.CreditCard("Amex"));
+        TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 100m));
+        var v4File = _sut.Serialize(data);
+
+        var resaved = _sut.Serialize(_sut.Deserialize(v4File));
+
+        using (new AssertionScope())
+        {
+            resaved.Should().Be(v4File);
+            v4File.Should().NotContain("\"Currencies\"").And.NotContain("\"OtherParticipant\"");
+        }
+    }
+
+    [Fact]
+    public void SerializeThenDeserialize_SettlementAccount_KeepsItsCurrenciesAndOtherParticipant()
+    {
+        var data = CashFlowData.Create();
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        data.AddAccount(mae);
+
+        var result = _sut.Deserialize(_sut.Serialize(data)).Accounts.Should().ContainSingle().Which;
+
+        using (new AssertionScope())
+        {
+            result.Id.Should().Be(mae.Id);
+            result.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            result.OtherParticipant.Should().Be("Mãe");
+        }
+    }
+
+    [Fact]
     public void Serialize_WritesVersion4()
     {
         var json = _sut.Serialize(CashFlowData.Create());

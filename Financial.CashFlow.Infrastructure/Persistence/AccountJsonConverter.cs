@@ -60,6 +60,9 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
             account.SetCategory(category);
         }
 
+        ApplyCurrencies(account, record);
+        ApplyOtherParticipant(account, record);
+
         return account;
     }
 
@@ -74,9 +77,45 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
             value.OpeningBalance is { } openingBalance ? new OpeningBalanceRecord(openingBalance.Amount, openingBalance.StartDate) : null,
             value.RoundUp is { } roundUp ? new RoundUpRecord(roundUp.Enabled) : null,
             value.Pots?.Select(pot => JsonSerializer.SerializeToElement(pot, AccountOptions)).ToList(),
-            value.Category);
+            value.Category,
+            value.Has(Capability.MultiCurrency) ? [.. value.Currencies] : null,
+            value.OtherParticipant);
 
         JsonSerializer.Serialize(writer, record, _recordOptions);
+    }
+
+    private static void ApplyCurrencies(Account account, AccountRecord record)
+    {
+        if (account.Has(Capability.MultiCurrency) != record.Currencies is not null)
+        {
+            throw new JsonException($"Account {record.Id} must have Currencies exactly when its template has several currencies.");
+        }
+
+        if (record.Currencies is not { } currencies)
+        {
+            return;
+        }
+
+        account.SetCurrencies(currencies);
+        if (account.Currency != record.Currency)
+        {
+            throw new JsonException($"Account {record.Id} Currency must be the first of its Currencies.");
+        }
+    }
+
+    private static void ApplyOtherParticipant(Account account, AccountRecord record)
+    {
+        if (record.OtherParticipant is not { } otherParticipant)
+        {
+            return;
+        }
+
+        if (!account.Has(Capability.HasParticipants))
+        {
+            throw new JsonException($"Account {record.Id} can name another participant only when its template has participants.");
+        }
+
+        account.SetOtherParticipant(otherParticipant);
     }
 
     private sealed record AccountRecord(
@@ -88,7 +127,9 @@ public sealed class AccountJsonConverter(ReferenceResolutionContext? context = n
         OpeningBalanceRecord? OpeningBalance,
         RoundUpRecord? RoundUp,
         List<JsonElement>? Pots,
-        [property: JsonPropertyName("CategoryId")] Category? Category);
+        [property: JsonPropertyName("CategoryId")] Category? Category,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] List<Currency>? Currencies,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OtherParticipant);
 
     private sealed record OpeningBalanceRecord(decimal Amount, DateOnly StartDate);
 

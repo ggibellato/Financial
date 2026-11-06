@@ -87,13 +87,13 @@ public class AccountAdminServiceTests
     };
 
     [Fact]
-    public void GetTemplates_ListsBankCreditCardAndPotsWithTheirCurrenciesAndCapabilitiesInOrder()
+    public void GetTemplates_ListsBankCreditCardPotsAndSettlementWithTheirCurrenciesAndCapabilitiesInOrder()
     {
         var templates = _sut.GetTemplates();
 
         using (new AssertionScope())
         {
-            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots");
+            templates.Select(template => template.Name).Should().Equal("Bank", "CreditCard", "Pots", "Settlement");
             var bank = templates[0];
             bank.Currencies.Should().Equal("GBP");
             bank.Capabilities.Should().Equal(
@@ -105,6 +105,9 @@ public class AccountAdminServiceTests
             var pots = templates[2];
             pots.Currencies.Should().Equal("GBP");
             pots.Capabilities.Should().Equal("HasPots", "ReceivesIncomeSplit", "CanWithdraw");
+            var settlement = templates[3];
+            settlement.Currencies.Should().Equal("BRL", "GBP");
+            settlement.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }
@@ -754,5 +757,29 @@ public class AccountAdminServiceTests
             _repository.Accounts.Should().NotContain(holidays);
             _repository.SaveChangesCallCount.Should().Be(1);
         }
+    }
+
+    [Fact]
+    public async Task CreateAsync_SettlementInOneCurrency_AddsItWithThatCurrencyAndNoOtherParticipant()
+    {
+        var result = await _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Settlement", Name = "Mãe", Currency = "BRL" });
+
+        using (new AssertionScope())
+        {
+            var created = _repository.Accounts.Should().ContainSingle(account => account.Name == "Mãe").Which;
+            created.Template.Should().Be(AccountTemplate.Settlement);
+            created.Currencies.Should().Equal(Currency.BRL);
+            created.OtherParticipant.Should().BeNull();
+            result.Currency.Should().Be("BRL");
+            result.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
+        }
+    }
+
+    [Fact]
+    public async Task CreateAsync_SettlementInUsd_ThrowsWithTheTemplatesCurrencies()
+    {
+        var act = () => _sut.CreateAsync(new AccountCreateDTO { TemplateName = "Settlement", Name = "Mãe", Currency = "USD" });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
     }
 }

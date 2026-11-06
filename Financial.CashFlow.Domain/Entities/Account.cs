@@ -11,15 +11,20 @@ namespace Financial.CashFlow.Domain.Entities;
 public class Account
 {
     public const int MaxNameLength = 60;
+    public const int MaxOtherParticipantLength = 60;
+    public const string SelfParticipantName = "You";
     public const decimal RequiredActiveSplitTotal = 100m;
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
     private IReadOnlyList<Pot> _pots = [];
+    private IReadOnlyList<Currency> _currencies = [];
 
     public Guid Id { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public AccountTemplate Template { get; private set; }
     public Currency Currency { get; private set; }
+    public IReadOnlyList<Currency> Currencies => Has(Capability.MultiCurrency) ? _currencies : [Currency];
+    public string? OtherParticipant { get; private set; }
     public bool IsActive { get; private set; }
     public OpeningBalance? OpeningBalance { get; private set; }
     public RoundUpSetting? RoundUp { get; private set; }
@@ -69,6 +74,51 @@ public class Account
         Currency = currency;
         _capabilitiesOverride = null;
         ApplyCapabilityDefaults();
+    }
+
+    public void SetCurrencies(IEnumerable<Currency> currencies)
+    {
+        ArgumentNullException.ThrowIfNull(currencies);
+
+        if (!Has(Capability.MultiCurrency))
+        {
+            throw new ArgumentException($"{Name} has one currency.");
+        }
+
+        var ordered = currencies.Distinct().Order().ToList();
+        if (ordered.Count == 0)
+        {
+            throw new ArgumentException("Choose at least one currency.");
+        }
+
+        foreach (var currency in ordered)
+        {
+            EnsureCurrencyIsAllowed(Template, currency);
+        }
+
+        _currencies = ordered.AsReadOnly();
+        Currency = ordered[0];
+    }
+
+    public void SetOtherParticipant(string otherParticipant)
+    {
+        if (!Has(Capability.HasParticipants))
+        {
+            throw new ArgumentException($"{Name} has no participants.");
+        }
+
+        var trimmed = ValidText(
+            otherParticipant,
+            MaxOtherParticipantLength,
+            "Enter the other participant's name.",
+            $"The other participant's name must be {MaxOtherParticipantLength} characters or fewer.");
+
+        if (string.Equals(trimmed, SelfParticipantName, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"The other participant can't be called {SelfParticipantName}.");
+        }
+
+        OtherParticipant = trimmed;
     }
 
     public void SetOpeningBalance(decimal amount, DateOnly startDate)
@@ -222,6 +272,8 @@ public class Account
     {
         OpeningBalance = Has(Capability.HasOpeningBalance) ? OpeningBalance ?? OpeningBalance.Create(0m, default) : null;
         RoundUp = Has(Capability.SupportsRoundUp) ? RoundUp ?? new RoundUpSetting(false) : null;
+        _currencies = Has(Capability.MultiCurrency) ? [Currency] : [];
+        OtherParticipant = Has(Capability.HasParticipants) ? OtherParticipant : null;
         if (!Has(Capability.HasPots))
         {
             _pots = [];
@@ -229,17 +281,20 @@ public class Account
         }
     }
 
-    private static string ValidName(string name)
+    private static string ValidName(string name) =>
+        ValidText(name, MaxNameLength, "Account name is required.", $"Account name must be {MaxNameLength} characters or fewer.");
+
+    private static string ValidText(string? text, int maxLength, string requiredMessage, string tooLongMessage)
     {
-        var trimmed = name?.Trim();
+        var trimmed = text?.Trim();
         if (string.IsNullOrEmpty(trimmed))
         {
-            throw new ArgumentException("Account name is required.");
+            throw new ArgumentException(requiredMessage);
         }
 
-        if (trimmed.Length > MaxNameLength)
+        if (trimmed.Length > maxLength)
         {
-            throw new ArgumentException($"Account name must be {MaxNameLength} characters or fewer.");
+            throw new ArgumentException(tooLongMessage);
         }
 
         return trimmed;

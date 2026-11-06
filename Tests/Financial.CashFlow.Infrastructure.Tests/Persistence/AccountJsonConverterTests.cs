@@ -5,6 +5,7 @@ using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
@@ -20,6 +21,9 @@ public class AccountJsonConverterTests
     private const string Reserva =
         $$"""{"Id":"5db5c88d-0000-0000-0000-000000000004","Name":"Reserva","Template":"Pots","Currency":"GBP","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":[{"Id":"5db5c88d-0000-0000-0000-000000000005","Name":"Investimento","IsActive":true,"SplitPercentage":33.33},{"Id":"5db5c88d-0000-0000-0000-000000000006","Name":"Ariana","IsActive":false,"SplitPercentage":0}],"CategoryId":"{{ReservaCategoryId}}"}""";
 
+    private const string Mae =
+        """{"Id":"5db5c88d-0000-0000-0000-000000000008","Name":"Mãe","Template":"Settlement","Currency":"BRL","IsActive":true,"OpeningBalance":null,"RoundUp":null,"Pots":null,"CategoryId":null,"Currencies":["BRL","GBP"],"OtherParticipant":"Mãe"}""";
+
     private readonly JsonSerializerOptions _options;
 
     public AccountJsonConverterTests()
@@ -28,7 +32,11 @@ public class AccountJsonConverterTests
         var category = JsonSerializer.Deserialize<Category>(
             $$"""{"Id":"{{ReservaCategoryId}}","Name":"Reserva","Active":true,"IsInvestment":false,"IsTithe":false}""", CashFlowElementOptions.Create())!;
         context.Categories[category.Id] = category;
-        _options = new JsonSerializerOptions { Converters = { new AccountJsonConverter(context) } };
+        _options = new JsonSerializerOptions
+        {
+            Converters = { new AccountJsonConverter(context) },
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        };
     }
 
     [Fact]
@@ -127,5 +135,90 @@ public class AccountJsonConverterTests
             _options);
 
         act.Should().Throw<ArgumentException>().WithMessage("Opening balance cannot be negative.");
+    }
+
+    [Fact]
+    public void ReadThenWrite_SettlementAccount_KeepsItsCurrenciesAndOtherParticipant()
+    {
+        var account = JsonSerializer.Deserialize<Account>(Mae, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.Template.Should().Be(AccountTemplate.Settlement);
+            account.Currency.Should().Be(Currency.BRL);
+            account.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            account.OtherParticipant.Should().Be("Mãe");
+            JsonSerializer.Serialize(account, _options).Should().Be(Mae);
+        }
+    }
+
+    [Fact]
+    public void ReadThenWrite_SettlementAccountWithoutOtherParticipant_OmitsTheKey()
+    {
+        var json = Mae.Replace(",\"OtherParticipant\":\"Mãe\"", "");
+
+        var account = JsonSerializer.Deserialize<Account>(json, _options)!;
+
+        using (new AssertionScope())
+        {
+            account.OtherParticipant.Should().BeNull();
+            JsonSerializer.Serialize(account, _options).Should().Be(json);
+        }
+    }
+
+    [Fact]
+    public void Write_NewCreditCardAccount_HasNoCurrenciesOrOtherParticipantKeys()
+    {
+        var json = JsonSerializer.Serialize(Account.Create("Amex", AccountTemplate.CreditCard, Currency.GBP), _options);
+
+        using (new AssertionScope())
+        {
+            json.Should().NotContain("Currencies");
+            json.Should().NotContain("OtherParticipant");
+        }
+    }
+
+    [Fact]
+    public void Read_BankWithCurrencies_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(V4Bank.Replace("\"CategoryId\":null", "\"CategoryId\":null,\"Currencies\":[\"GBP\"]"), _options);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000001 must have Currencies exactly when its template has several currencies.");
+    }
+
+    [Fact]
+    public void Read_SettlementWithoutCurrencies_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(Mae.Replace("\"Currencies\":[\"BRL\",\"GBP\"],", ""), _options);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000008 must have Currencies exactly when its template has several currencies.");
+    }
+
+    [Fact]
+    public void Read_SettlementWhoseCurrencyIsNotTheFirstOfItsCurrencies_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(Mae.Replace("\"Currency\":\"BRL\"", "\"Currency\":\"GBP\""), _options);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000008 Currency must be the first of its Currencies.");
+    }
+
+    [Fact]
+    public void Read_BankWithAnOtherParticipant_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(V4Bank.Replace("\"CategoryId\":null", "\"CategoryId\":null,\"OtherParticipant\":\"Mãe\""), _options);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("Account 5db5c88d-0000-0000-0000-000000000001 can name another participant only when its template has participants.");
+    }
+
+    [Fact]
+    public void Read_SettlementInACurrencyTheTemplateDoesNotAllow_Fails()
+    {
+        var act = () => JsonSerializer.Deserialize<Account>(Mae.Replace("[\"BRL\",\"GBP\"]", "[\"BRL\",\"USD\"]"), _options);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
     }
 }

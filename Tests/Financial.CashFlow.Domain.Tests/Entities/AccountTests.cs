@@ -12,6 +12,8 @@ public class AccountTests
 {
     private static Account CreateBank() => Account.Create("Chase", AccountTemplate.Bank, Currency.GBP);
 
+    private static Account CreateSettlement() => Account.Create("Mãe", AccountTemplate.Settlement, Currency.GBP);
+
     private static Account CreateMinimal(params Capability[] capabilities) =>
         Account.CreateWithCapabilities("Minimal", Currency.GBP, capabilities.ToHashSet());
 
@@ -80,6 +82,7 @@ public class AccountTests
     [InlineData(AccountTemplate.Bank, 0)]
     [InlineData(AccountTemplate.CreditCard, 1)]
     [InlineData(AccountTemplate.Pots, 2)]
+    [InlineData(AccountTemplate.Settlement, 3)]
     public void TemplateOrder_IsTheTemplatesPositionInTheAvailableTemplates(AccountTemplate template, int expected)
     {
         Account.Create("Account", template, Currency.GBP).TemplateOrder.Should().Be(expected);
@@ -685,5 +688,173 @@ public class AccountTests
         account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
 
         account.Category.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_Settlement_StartsWithItsCurrencyAndNoOtherParticipant()
+    {
+        var account = CreateSettlement();
+
+        using (new AssertionScope())
+        {
+            account.Currencies.Should().Equal(Currency.GBP);
+            account.OtherParticipant.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Currencies_AccountWithoutMultiCurrency_IsItsOneCurrency()
+    {
+        CreateBank().Currencies.Should().Equal(Currency.GBP);
+    }
+
+    [Fact]
+    public void SetCurrencies_GivenOutOfOrderWithDuplicates_StoresThemOnceInCodeOrderAndCurrencyIsTheFirst()
+    {
+        var account = CreateSettlement();
+
+        account.SetCurrencies([Currency.GBP, Currency.BRL, Currency.GBP]);
+
+        using (new AssertionScope())
+        {
+            account.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            account.Currency.Should().Be(Currency.BRL);
+        }
+    }
+
+    [Fact]
+    public void SetCurrencies_None_ThrowsAndKeepsTheCurrencies()
+    {
+        var account = CreateSettlement();
+
+        var act = () => account.SetCurrencies([]);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Choose at least one currency.");
+            account.Currencies.Should().Equal(Currency.GBP);
+        }
+    }
+
+    [Fact]
+    public void SetCurrencies_ACurrencyTheTemplateDoesNotAllow_ThrowsAndKeepsTheCurrencies()
+    {
+        var account = CreateSettlement();
+
+        var act = () => account.SetCurrencies([Currency.BRL, Currency.USD]);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
+            account.Currencies.Should().Equal(Currency.GBP);
+            account.Currency.Should().Be(Currency.GBP);
+        }
+    }
+
+    [Fact]
+    public void SetCurrencies_AccountWithoutMultiCurrency_Throws()
+    {
+        var act = () => CreateBank().SetCurrencies([Currency.GBP]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase has one currency.");
+    }
+
+    [Fact]
+    public void Create_SettlementInUsd_ThrowsWithTheTemplatesCurrencies()
+    {
+        var act = () => Account.Create("Mãe", AccountTemplate.Settlement, Currency.USD);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Settlement accounts must be BRL or GBP.");
+    }
+
+    [Fact]
+    public void SetOtherParticipant_PaddedName_StoresItTrimmed()
+    {
+        var account = CreateSettlement();
+
+        account.SetOtherParticipant("  Mãe  ");
+
+        account.OtherParticipant.Should().Be("Mãe");
+    }
+
+    [Fact]
+    public void SetOtherParticipant_SixtyCharacters_IsAccepted()
+    {
+        var account = CreateSettlement();
+        var name = new string('a', Account.MaxOtherParticipantLength);
+
+        account.SetOtherParticipant(name);
+
+        account.OtherParticipant.Should().Be(name);
+    }
+
+    [Theory]
+    [InlineData("", "Enter the other participant's name.")]
+    [InlineData("   ", "Enter the other participant's name.")]
+    [InlineData(null, "Enter the other participant's name.")]
+    [InlineData("you", "The other participant can't be called You.")]
+    [InlineData(" YOU ", "The other participant can't be called You.")]
+    public void SetOtherParticipant_InvalidName_ThrowsAndKeepsTheName(string? name, string message)
+    {
+        var account = CreateSettlement();
+        account.SetOtherParticipant("Mãe");
+
+        var act = () => account.SetOtherParticipant(name!);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage(message);
+            account.OtherParticipant.Should().Be("Mãe");
+        }
+    }
+
+    [Fact]
+    public void SetOtherParticipant_SixtyOneCharacters_Throws()
+    {
+        var act = () => CreateSettlement().SetOtherParticipant(new string('a', Account.MaxOtherParticipantLength + 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage("The other participant's name must be 60 characters or fewer.");
+    }
+
+    [Fact]
+    public void SetOtherParticipant_AccountWithoutParticipants_Throws()
+    {
+        var act = () => CreateBank().SetOtherParticipant("Mãe");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Chase has no participants.");
+    }
+
+    [Fact]
+    public void ChangeTemplate_AwayFromSettlement_ClearsTheCurrenciesAndTheOtherParticipant()
+    {
+        var account = CreateSettlement();
+        account.SetCurrencies([Currency.BRL, Currency.GBP]);
+        account.SetOtherParticipant("Mãe");
+
+        account.ChangeTemplate(AccountTemplate.Pots, Currency.GBP);
+
+        using (new AssertionScope())
+        {
+            account.Currencies.Should().Equal(Currency.GBP);
+            account.Currency.Should().Be(Currency.GBP);
+            account.OtherParticipant.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void ChangeTemplate_ToSettlement_StartsWithTheGivenCurrencyAndNoOtherParticipant()
+    {
+        var account = CreateBank();
+
+        account.ChangeTemplate(AccountTemplate.Settlement, Currency.BRL);
+
+        using (new AssertionScope())
+        {
+            account.Currencies.Should().Equal(Currency.BRL);
+            account.Currency.Should().Be(Currency.BRL);
+            account.OtherParticipant.Should().BeNull();
+            account.OpeningBalance.Should().BeNull();
+            account.RoundUp.Should().BeNull();
+        }
     }
 }

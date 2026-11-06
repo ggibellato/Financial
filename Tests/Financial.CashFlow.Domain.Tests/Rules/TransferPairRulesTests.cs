@@ -154,4 +154,23 @@ public class TransferPairRulesTests
             TransferPairRules.StatementPayment.Allows(amex, _barclays).Should().BeFalse();
         }
     }
+
+    [Fact]
+    public void Allows_EveryTable_RefusesSettlementOnEitherSide()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        var amex = TestAccounts.CreditCard("Amex");
+        var tables = new[] { TransferPairRules.Default, TransferPairRules.StatementPayment, TransferPairRules.CreditRefund };
+
+        using (new AssertionScope())
+        {
+            foreach (var table in tables)
+            {
+                table.Allows(_barclays, mae).Should().BeFalse();
+                table.Allows(mae, _barclays).Should().BeFalse();
+                table.Allows(amex, mae).Should().BeFalse();
+                table.Allows(mae, amex).Should().BeFalse();
+            }
+        }
+    }
 }
