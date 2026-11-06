@@ -450,6 +450,8 @@ public sealed class AccountQueryService : IAccountQueryService
         Name = account.Name,
         TemplateName = account.TemplateName,
         Currency = account.Currency.ToString(),
+        Currencies = account.Currencies.Select(currency => currency.ToString()).ToList(),
+        OtherParticipant = account.OtherParticipant,
         IsActive = account.IsActive,
         HasRecords = hasRecords,
         OpeningBalance = account.OpeningBalance?.Amount,

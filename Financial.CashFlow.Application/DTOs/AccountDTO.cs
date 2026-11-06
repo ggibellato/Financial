@@ -6,6 +6,8 @@ public sealed class AccountDTO
     public required string Name { get; init; }
     public required string TemplateName { get; init; }
     public required string Currency { get; init; }
+    public required IReadOnlyList<string> Currencies { get; init; }
+    public string? OtherParticipant { get; init; }
     public required bool IsActive { get; init; }
     public required bool HasRecords { get; init; }
     public decimal? OpeningBalance { get; init; }
