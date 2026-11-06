@@ -265,7 +265,7 @@ public sealed class AccountQueryService : IAccountQueryService
     }
 
     private sealed record MonthRecords(
-        int Year, int Month, IReadOnlyList<IAccountTransaction> Records, IReadOnlyList<Expense> AllExpenses, IReadOnlyList<CardStatement> Statements);
+        int Year, int Month, IReadOnlyList<IAccountTransaction> Records, IEnumerable<Expense> AllExpenses, IReadOnlyList<CardStatement> Statements);
 
     private MonthRecords MonthRecordsOf(int year, int month)
     {
@@ -274,19 +274,16 @@ public sealed class AccountQueryService : IAccountQueryService
         var records = AccountTransactionReader.Read(_repository)
             .Where(record => record.Date >= startOfMonth && record.Date <= endOfMonth)
             .ToList();
-        return new MonthRecords(year, month, records, _repository.GetExpenses().ToList(), _repository.GetCardStatements().ToList());
+        return new MonthRecords(year, month, records, _repository.GetExpenses(),_repository.GetCardStatements().ToList());
     }
 
     private static MonthRecords WithoutBankCopyOfCardCharges(MonthRecords month) =>
         month with { Records = month.Records.Where(record => record is not Expense { CreditCard: not null }).ToList() };
 
     private IEnumerable<AccountTransactionDTO> RowsOf(Account account, MonthRecords month) =>
-        account.Has(Capability.HasStatements)
-            ? month.Records
-                .Where(record => record is not Expense)
-                .SelectMany(record => ToRows(record, account, month.Statements))
-                .Concat(CardChargeRows(account, month))
-            : month.Records.SelectMany(record => ToRows(record, account, month.Statements));
+        month.Records
+            .SelectMany(record => ToRows(record, account, month.Statements))
+            .Concat(account.Has(Capability.HasStatements) ? CardChargeRows(account, month) : []);
 
     private static MonthTransactionDTO ToMonthRow(Account account, AccountTransactionDTO row) => new()
     {
