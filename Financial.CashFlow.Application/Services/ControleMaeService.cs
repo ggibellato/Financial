@@ -11,7 +11,7 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ControleMaeService : IControleMaeService
 {
-    private const string EntityType = "SettlementEntry";
+    private const string EntityType = "MaeLedgerEntry";
 
     private readonly ICashFlowRepository _repository;
     private readonly IExchangeRateProvider _exchangeRateProvider;
