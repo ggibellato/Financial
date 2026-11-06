@@ -138,7 +138,7 @@ function Add-ParityMissingCardStatementFigures($Report, [string[]]$Months, $Acco
 function Add-ParityCategoryFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
     $categoryTotals = & $Fetch "expenses/month/$Route/category-totals"
     foreach ($category in $categoryTotals) { Add-ParityFigure $Report "$Month/categories/$($category.category)/total" $category.totalValue }
-    Get-ParitySum $categoryTotals { param($c) $c.totalValue }
+    , @($categoryTotals)
 }
 
 function Add-ParityIncomeFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
@@ -253,19 +253,12 @@ function Add-ParityPotsTabFigures($Report, [string]$Month, [string]$Route, [scri
     Add-ParityFigure $Report "$Month/potsTab/total" $summary.total
 }
 
-function Add-ParityMonthTransactionFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
+function Add-ParityMonthTransactionFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $CategoryTotals) {
     $spendByCategory = [System.Collections.Generic.SortedDictionary[string, decimal]]::new([System.StringComparer]::Ordinal)
-    $categoryTotal = [regex]::new('^' + [regex]::Escape($Month) + '/categories/(.+)/total$')
-    foreach ($key in $Report.Keys) {
-        $match = $categoryTotal.Match($key)
-        if ($match.Success) { $spendByCategory[$match.Groups[1].Value] = 0 }
-    }
-    foreach ($row in (& $Fetch "accounts/transactions/$Route")) {
-        $category = $row.transaction['categoryName']
-        if ($null -eq $category) { continue }
-        $spend = [decimal]0
-        [void]$spendByCategory.TryGetValue($category, [ref]$spend)
-        $spendByCategory[$category] = $spend - $row.transaction.amount
+    foreach ($category in $CategoryTotals) { $spendByCategory[$category.category] = 0 }
+    $categorizedRows = foreach ($row in (& $Fetch "accounts/transactions/$Route")) { if ($null -ne $row.transaction['categoryName']) { $row } }
+    foreach ($group in ($categorizedRows | Group-Object -CaseSensitive { $_.transaction['categoryName'] })) {
+        $spendByCategory[$group.Name] = -(Get-ParitySum $group.Group { param($r) $r.transaction.amount })
     }
     foreach ($category in $spendByCategory.Keys) {
         Add-ParityFigure $Report "$Month/monthTransactions/categories/$category/spend" $spendByCategory[$category]
@@ -276,14 +269,14 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     $route = '{0}/{1}' -f [int]$Month.Substring(0, 4), [int]$Month.Substring(5, 2)
     $bankTotals = Add-ParityBankFigures $Report $Month $route $Fetch $Banks
     $cardOutstandingTotal = Add-ParityCardFigures $Report $Month $route $Fetch
-    $categoryTotalsSum = Add-ParityCategoryFigures $Report $Month $route $Fetch
+    $categoryTotals = Add-ParityCategoryFigures $Report $Month $route $Fetch
     Add-ParityIncomeFigures $Report $Month $route $Fetch
     Add-ParityTitheFigures $Report $Month $route $Fetch
     Add-ParitySnapshotFigures $Report $Month $route $Fetch
     Add-ParityFigure $Report "$Month/monthly/bankTotalsSum" $bankTotals.BankTotalsSum
     Add-ParityFigure $Report "$Month/monthly/roundUpTotalsSum" $bankTotals.RoundUpTotalsSum
     Add-ParityFigure $Report "$Month/monthly/cardOutstandingTotal" $cardOutstandingTotal
-    Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" $categoryTotalsSum
+    Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" (Get-ParitySum $categoryTotals { param($c) $c.totalValue })
     Add-ParityPotFigures $Report $Month $PotBalances
     if ($IncludeSummary) {
         Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth)
@@ -292,7 +285,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     if ($null -ne $Accounts) {
         Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth)
         Add-ParityPotsTabFigures $Report $Month $route $Fetch $Accounts $PotBalances
-        Add-ParityMonthTransactionFigures $Report $Month $route $Fetch
+        Add-ParityMonthTransactionFigures $Report $Month $route $Fetch $categoryTotals
     }
 }
 

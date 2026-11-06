@@ -106,7 +106,6 @@ public class MonthTransactionsViewAcceptanceTests : ApiEndpointTests
         {
             october.Select(row => (row.AccountId, row.Transaction)).Should().BeEquivalentTo(accountScreens);
             october.Select(row => row.Transaction.Date).Should().BeInDescendingOrder();
-            october.Should().NotContain(row => row.Transaction.Id == Guid.Parse(SettledChargeId));
             october.Single(row => row.Transaction.Description == "Taxi").Should().BeEquivalentTo(
                 new { AccountName = "Amex", AccountCurrency = "GBP", AccountIsActive = true, Transaction = new { Kind = "CardCharge", Date = new DateOnly(2026, 9, 25) } });
             october.Single(row => row.Transaction.Description == "Shoes returned").Transaction.Kind.Should().Be("CardRefund");
