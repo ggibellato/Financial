@@ -125,6 +125,34 @@ public sealed class AccountQueryService : IAccountQueryService
         }
     }
 
+    public IReadOnlyList<MonthTransactionDTO> GetMonthTransactions(int year, int month)
+    {
+        using var span = StartSpan("GetMonthTransactions");
+        try
+        {
+            var records = MonthRecordsOf(year, month);
+            var withoutBankCopyOfCardCharges = records with
+            {
+                Records = records.Records.Where(record => record is not Expense { CreditCard: not null }).ToList()
+            };
+
+            var result = _repository.GetAccounts()
+                .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
+                .SelectMany(account => RowsOf(account, withoutBankCopyOfCardCharges).Select(row => ToMonthRow(account, row)))
+                .OrderByDescending(row => row.Transaction.Date)
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetMonthTransactions");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     public IReadOnlyList<AccountStatementDTO> GetStatements(Guid id)
     {
         using var span = StartSpan("GetAccountStatements");
@@ -260,6 +288,15 @@ public sealed class AccountQueryService : IAccountQueryService
                 .SelectMany(record => ToRows(record, account, month.Statements))
                 .Concat(CardChargeRows(account, month))
             : month.Records.SelectMany(record => ToRows(record, account, month.Statements));
+
+    private static MonthTransactionDTO ToMonthRow(Account account, AccountTransactionDTO row) => new()
+    {
+        AccountId = account.Id,
+        AccountName = account.Name,
+        AccountCurrency = account.Currency.ToString(),
+        AccountIsActive = account.IsActive,
+        Transaction = row
+    };
 
     private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, MonthRecords month) =>
         CardChargeFilter.ChargesFor(month.Expenses, card, month.Year, month.Month)

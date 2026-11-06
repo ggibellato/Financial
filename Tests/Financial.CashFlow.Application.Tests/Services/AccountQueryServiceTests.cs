@@ -1079,4 +1079,179 @@ public class AccountQueryServiceTests
             accounts["Holidays"].HasRecords.Should().BeFalse();
         }
     }
+
+    [Fact]
+    public void GetMonthTransactions_EveryAccount_ListsItsRowsWithItsAccount()
+    {
+        SeedEveryRecordKind();
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        using (new AssertionScope())
+        {
+            rows.Select(row => row.AccountId).Distinct().Should().BeEquivalentTo([_barclays.Id, _chase.Id]);
+            rows.Where(row => row.AccountId == _barclays.Id).Should().OnlyContain(row =>
+                row.AccountName == "Barclays" && row.AccountCurrency == "GBP" && row.AccountIsActive);
+            rows.Where(row => row.AccountId == _chase.Id).Should().OnlyContain(row =>
+                row.AccountName == "chase" && row.AccountCurrency == "GBP" && row.AccountIsActive);
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetMonthTransactions");
+        }
+    }
+
+    [Fact]
+    public void GetMonthTransactions_EqualsEachAccountsTransactions_WithoutTheBankCopyOfSettledCharges()
+    {
+        _repository.Accounts.Add(_amex);
+        SeedEveryRecordKind();
+        var (pots, pot) = AddPotsAccount();
+        var operationId = Guid.NewGuid();
+        _repository.PotTransactions.Add(PotTransaction.Create(pot, 30m, new DateOnly(2026, 10, 5), "Deposit", operationId: operationId));
+        _repository.Expenses.Add(Expense.Create(
+            new DateOnly(2026, 10, 5), "Deposit", 30m, _groceries, _barclays, creditCard: null, operationId: operationId));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 10, 12), "Train", 18m, _groceries, null, _amex));
+        var settledCharge = _repository.Expenses.Single(expense => expense.Description == "Taxi");
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+        var accountScreens = _repository.Accounts
+            .SelectMany(account => _sut.GetTransactions(account.Id, 2026, 10).Select(row => (account.Id, Row: row)))
+            .Where(pair => pair.Row.Id != settledCharge.Id);
+
+        using (new AssertionScope())
+        {
+            rows.Select(row => (row.AccountId, row.Transaction)).Should().BeEquivalentTo(accountScreens);
+            rows.Should().Contain(row => row.AccountId == pots.Id);
+            rows.Should().NotContain(row => row.Transaction.Id == settledCharge.Id);
+        }
+    }
+
+    [Fact]
+    public void GetMonthTransactions_SettledCardCharge_ListedOnceOnItsCardInItsStatementMonth()
+    {
+        _repository.Accounts.Add(_amex);
+        SeedEveryRecordKind();
+        var settledCharge = _repository.Expenses.Single(expense => expense.Description == "Taxi");
+
+        var september = _sut.GetMonthTransactions(2026, 9).Where(row => row.Transaction.Id == settledCharge.Id).ToList();
+        var october = _sut.GetMonthTransactions(2026, 10);
+
+        using (new AssertionScope())
+        {
+            september.Should().ContainSingle();
+            september[0].AccountId.Should().Be(_amex.Id);
+            september[0].Transaction.Kind.Should().Be("CardCharge");
+            september[0].Transaction.Date.Should().Be(new DateOnly(2026, 9, 28));
+            october.Should().NotContain(row => row.Transaction.Id == settledCharge.Id);
+        }
+    }
+
+    [Fact]
+    public void GetMonthTransactions_TransferCardPaymentAndCreditRefund_ShowOnceOnEachSide()
+    {
+        _repository.Accounts.Add(_amex);
+        var transfer = Transfer.Create(new DateOnly(2026, 10, 8), _barclays, _chase, 200m, null, "Savings", Today);
+        var payment = Transfer.CreateStatementPayment(new DateOnly(2026, 10, 20), _barclays, _amex, 40m, Today);
+        var creditRefund = Transfer.CreateCreditRefund(new DateOnly(2026, 10, 22), _amex, _chase, 5m, null, Today);
+        _repository.Transfers.AddRange([transfer, payment, creditRefund]);
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        using (new AssertionScope())
+        {
+            rows.Where(row => row.Transaction.Id == transfer.Id).Select(row => (row.AccountId, row.Transaction.Kind, row.Transaction.Amount))
+                .Should().BeEquivalentTo([(_barclays.Id, "TransferOut", -200m), (_chase.Id, "TransferIn", 200m)]);
+            rows.Where(row => row.Transaction.Id == payment.Id).Select(row => (row.AccountId, row.Transaction.Kind, row.Transaction.Amount))
+                .Should().BeEquivalentTo([(_barclays.Id, "CardPayment", -40m), (_amex.Id, "CardPayment", 40m)]);
+            rows.Where(row => row.Transaction.Id == creditRefund.Id).Select(row => (row.AccountId, row.Transaction.Kind, row.Transaction.Amount))
+                .Should().BeEquivalentTo([(_amex.Id, "CardCreditRefund", -5m), (_chase.Id, "CardCreditRefund", 5m)]);
+        }
+    }
+
+    [Fact]
+    public void GetMonthTransactions_PotDeposit_ListsBankExpensesAndOneRowPerPot()
+    {
+        var (pots, pot) = AddPotsAccount();
+        var otherPot = Pot.Create("Gifts", 0m);
+        pots.AddPot(otherPot);
+        var operationId = Guid.NewGuid();
+        var date = new DateOnly(2026, 10, 5);
+        _repository.PotTransactions.AddRange([
+            PotTransaction.Create(pot, 60m, date, "Deposit", operationId: operationId),
+            PotTransaction.Create(otherPot, 30m, date, "Deposit", operationId: operationId)]);
+        _repository.Expenses.AddRange([
+            Expense.Create(date, "Deposit", 50m, _groceries, _barclays, creditCard: null, operationId: operationId),
+            Expense.Create(date, "Deposit", 40m, _groceries, _chase, creditCard: null, operationId: operationId)]);
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        using (new AssertionScope())
+        {
+            rows.Select(row => (row.AccountName, row.Transaction.Kind, row.Transaction.Counterpart, row.Transaction.Amount)).Should().BeEquivalentTo([
+                ("Barclays", "Expense", (string?)null, -50m),
+                ("chase", "Expense", null, -40m),
+                ("Holiday pots", "PotTransaction", "Trips", 60m),
+                ("Holiday pots", "PotTransaction", "Gifts", 30m)]);
+            rows.Should().OnlyContain(row => row.Transaction.Operation!.OperationId == operationId);
+        }
+    }
+
+    [Fact]
+    public void GetMonthTransactions_InactiveAccount_IsListedAndFlagged()
+    {
+        var closing = TestAccounts.Bank("Closing");
+        _repository.Accounts.Add(closing);
+        _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 10, 3), _barclays, 0m, 4m, null));
+        _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 10, 3), closing, 0m, 9m, null));
+        closing.SetActive(false);
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        using (new AssertionScope())
+        {
+            rows.Single(row => row.AccountId == closing.Id).AccountIsActive.Should().BeFalse();
+            rows.Single(row => row.AccountId == _barclays.Id).AccountIsActive.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void GetMonthTransactions_SameDate_OrdersByAccountName()
+    {
+        var dormant = TestAccounts.Bank("Dormant");
+        _repository.Accounts.Add(dormant);
+        _repository.BalanceAdjustments.AddRange([
+            BalanceAdjustment.Create(new DateOnly(2026, 10, 3), dormant, 0m, 1m, null),
+            BalanceAdjustment.Create(new DateOnly(2026, 10, 3), _chase, 0m, 2m, null),
+            BalanceAdjustment.Create(new DateOnly(2026, 10, 2), _barclays, 0m, 3m, null),
+            BalanceAdjustment.Create(new DateOnly(2026, 10, 3), _barclays, 0m, 4m, null)]);
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        rows.Select(row => (row.AccountName, row.Transaction.Date.Day)).Should().Equal(
+            ("Barclays", 3), ("chase", 3), ("Dormant", 3), ("Barclays", 2));
+    }
+
+    [Fact]
+    public void GetMonthTransactions_EmptyMonth_ReturnsEmpty()
+    {
+        SeedEveryRecordKind();
+
+        var rows = _sut.GetMonthTransactions(2026, 7);
+
+        using (new AssertionScope())
+        {
+            rows.Should().BeEmpty();
+            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetMonthTransactions");
+        }
+    }
+
+    [Theory]
+    [InlineData(2026, 0)]
+    [InlineData(2026, 13)]
+    [InlineData(0, 10)]
+    public void GetMonthTransactions_InvalidMonth_ThrowsArgumentOutOfRangeAndFailsTheSpan(int year, int month)
+    {
+        var act = () => _sut.GetMonthTransactions(year, month);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.AccountQueryService.GetMonthTransactions");
+    }
 }
