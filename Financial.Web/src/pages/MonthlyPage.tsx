@@ -13,6 +13,7 @@ import IncomeForm from '../components/IncomeForm'
 import IncomeSection from '../components/IncomeSection'
 import IncomingGrid from '../components/IncomingGrid'
 import LoadingState from '../components/LoadingState'
+import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
 import TransferForm from '../components/TransferForm'
 import { useBalanceAdjustmentForm } from '../hooks/useBalanceAdjustmentForm'
 import { useBankOperations } from '../hooks/useBankOperations'
@@ -20,14 +21,16 @@ import { useCreditCards } from '../hooks/useCreditCards'
 import { useExpenseForm } from '../hooks/useExpenseForm'
 import { useIncomeForm } from '../hooks/useIncomeForm'
 import { useMonthly } from '../hooks/useMonthly'
+import { useMonthTransactions } from '../hooks/useMonthTransactions'
 import { useTransferForm } from '../hooks/useTransferForm'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import './MonthlyPage.css'
 
-type MonthlyTabId = 'summary' | 'expense' | 'card' | 'incoming' | 'bank'
+type MonthlyTabId = 'summary' | 'transactions' | 'expense' | 'card' | 'incoming' | 'bank'
 
 const MONTHLY_TABS: { id: MonthlyTabId; label: string }[] = [
   { id: 'summary', label: 'Summary' },
+  { id: 'transactions', label: 'All transactions' },
   { id: 'expense', label: 'Bank expenses' },
   { id: 'card', label: 'Credit Card expenses' },
   { id: 'incoming', label: 'Income' },
@@ -161,6 +164,7 @@ export default function MonthlyPage() {
   })
 
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
+  const monthTransactions = useMonthTransactions(year, month, activeTab === 'transactions')
 
   const isBankFormVisible = transferForm.isOpen || adjustmentForm.isOpen
 
@@ -229,7 +233,19 @@ export default function MonthlyPage() {
         ))}
       </TabList>
 
-      {isLoading || creditCardsData.isLoading ? (
+      {activeTab === 'transactions' ? (
+        <div className="monthly-page__content">
+          <MonthTransactionsGrid
+            key={`${year}-${month}`}
+            year={year}
+            month={month}
+            rows={monthTransactions.rows}
+            isLoading={monthTransactions.isLoading}
+            error={monthTransactions.error}
+            onRetry={monthTransactions.retry}
+          />
+        </div>
+      ) : isLoading || creditCardsData.isLoading ? (
         <LoadingState />
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
