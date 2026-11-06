@@ -17,6 +17,8 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
   return {
     templateName: 'Bank',
     currency: 'GBP',
+    currencies: [fields.currency ?? 'GBP'],
+    otherParticipant: null,
     isActive: true,
     hasRecords: false,
     openingBalance: 0,

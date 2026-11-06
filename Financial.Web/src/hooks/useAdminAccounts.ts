@@ -40,6 +40,8 @@ function toUpdateRequest(account: AccountDto): AccountUpdateDto {
     templateName: account.templateName,
     name: account.name,
     currency: account.currency,
+    currencies: account.currencies,
+    otherParticipant: account.otherParticipant,
     openingBalance: account.openingBalance,
     balanceStartDate: account.balanceStartDate,
     roundUpEnabled: account.roundUpEnabled,

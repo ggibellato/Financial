@@ -2189,6 +2189,8 @@ describe('financialApiClient', () => {
       balanceStartDate: '2026-10-24',
       roundUpEnabled: true,
       categoryId: null,
+      currencies: null,
+      otherParticipant: null,
     }
     const responseBody = account({ id: 'a9', name: 'Monzo' })
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
@@ -2212,6 +2214,8 @@ describe('financialApiClient', () => {
       balanceStartDate: '2026-10-24',
       roundUpEnabled: true,
       categoryId: null,
+      currencies: null,
+      otherParticipant: null,
       isActive: false,
     }
     const responseBody = account({ id: 'a9', name: 'Monzo', isActive: false })

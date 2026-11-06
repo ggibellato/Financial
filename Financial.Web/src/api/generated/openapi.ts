@@ -8082,10 +8082,12 @@ export interface components {
             balanceStartDate?: null | string;
             /** Format: uuid */
             categoryId?: null | string;
+            currencies?: null | string[];
             currency: string;
             name: string;
             /** Format: double */
             openingBalance?: null | number;
+            otherParticipant?: null | string;
             roundUpEnabled?: null | boolean;
             templateName: string;
         };
@@ -8095,6 +8097,7 @@ export interface components {
             capabilities: string[];
             /** Format: uuid */
             categoryId?: null | string;
+            currencies: string[];
             currency: string;
             hasRecords: boolean;
             /** Format: uuid */
@@ -8103,6 +8106,7 @@ export interface components {
             name: string;
             /** Format: double */
             openingBalance?: null | number;
+            otherParticipant?: null | string;
             roundUpEnabled?: null | boolean;
             templateName: string;
         };
@@ -8301,11 +8305,13 @@ export interface components {
             balanceStartDate?: null | string;
             /** Format: uuid */
             categoryId?: null | string;
+            currencies?: null | string[];
             currency: string;
             isActive: boolean;
             name: string;
             /** Format: double */
             openingBalance?: null | number;
+            otherParticipant?: null | string;
             roundUpEnabled?: null | boolean;
             templateName: string;
         };

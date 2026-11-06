@@ -13,6 +13,23 @@ const BANK: AccountTemplateDto = {
 const PLAIN: AccountTemplateDto = { name: 'Plain', currencies: ['GBP', 'BRL'], capabilities: [] }
 const CREDIT_CARD: AccountTemplateDto = { name: 'CreditCard', currencies: ['GBP'], capabilities: ['HasStatements', 'HasCategories', 'ReceivesPayments'] }
 const POTS: AccountTemplateDto = { name: 'Pots', currencies: ['GBP'], capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'] }
+const SETTLEMENT: AccountTemplateDto = {
+  name: 'Settlement',
+  currencies: ['BRL', 'GBP'],
+  capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
+}
+const MAE = account({
+  id: 'm1',
+  name: 'Mãe',
+  templateName: 'Settlement',
+  currency: 'BRL',
+  currencies: ['BRL', 'GBP'],
+  otherParticipant: 'Mãe',
+  openingBalance: null,
+  balanceStartDate: null,
+  roundUpEnabled: null,
+  capabilities: SETTLEMENT.capabilities,
+})
 
 const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}): CategoryDto => ({
   id,
@@ -103,6 +120,8 @@ describe('AccountFormDialog', () => {
         templateName: 'Bank',
         name: 'Monzo',
         currency: 'GBP',
+        currencies: null,
+        otherParticipant: null,
         openingBalance: 250.5,
         balanceStartDate: '2026-09-01',
         roundUpEnabled: true,
@@ -308,6 +327,8 @@ describe('AccountFormDialog', () => {
         templateName: 'Bank',
         name: 'Barclays',
         currency: 'GBP',
+        currencies: null,
+        otherParticipant: null,
         openingBalance: 12.3,
         balanceStartDate: '2026-02-01',
         roundUpEnabled: true,
@@ -373,5 +394,132 @@ describe('AccountFormDialog', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
     expect(onCancel).not.toHaveBeenCalled()
+  })
+
+  describe('Settlement', () => {
+    const chooseSettlement = () => fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Settlement' } })
+    const currencyBox = (name: string) => screen.getByRole('checkbox', { name })
+
+    it('shows Currencies as checkboxes with none ticked and an Other participant field, in place of Currency', () => {
+      renderDialog({ templates: [BANK, SETTLEMENT] })
+
+      chooseSettlement()
+
+      const currencies = screen.getByRole('group', { name: /Currencies/ })
+      expect(within(currencies).getAllByRole('checkbox')).toEqual([currencyBox('BRL'), currencyBox('GBP')])
+      expect(currencyBox('BRL')).not.toBeChecked()
+      expect(currencyBox('GBP')).not.toBeChecked()
+      expect(screen.queryByLabelText(/^Currency/)).not.toBeInTheDocument()
+      expect(screen.getByLabelText(/Other participant/)).toHaveValue('')
+      expect(screen.getByText('The person you settle with, for example Mãe.')).toBeInTheDocument()
+      expect(screen.queryByLabelText(/Opening balance/)).not.toBeInTheDocument()
+    })
+
+    it('[AC P60-F11-settlement-template-and-mae-migration-05] creates a Settlement account with its currencies and other participant', async () => {
+      const { onSubmit } = renderDialog({ templates: [BANK, SETTLEMENT] })
+
+      chooseSettlement()
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Samuel' } })
+      fireEvent.click(currencyBox('GBP'))
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: '  Samuel  ' } })
+      save()
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith({
+          templateName: 'Settlement',
+          name: 'Samuel',
+          currency: 'GBP',
+          currencies: ['GBP'],
+          otherParticipant: 'Samuel',
+          openingBalance: null,
+          balanceStartDate: null,
+          roundUpEnabled: null,
+          categoryId: null,
+          isActive: true,
+        }),
+      )
+    })
+
+    it('sends the first ticked currency in code order as the main currency', async () => {
+      const { onSubmit } = renderDialog({ templates: [SETTLEMENT] })
+
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+      fireEvent.click(currencyBox('GBP'))
+      fireEvent.click(currencyBox('BRL'))
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'Mãe' } })
+      save()
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ currency: 'BRL', currencies: ['BRL', 'GBP'] })),
+      )
+    })
+
+    it('requires a currency and the other participant, focusing the currencies first', () => {
+      const { onSubmit } = renderDialog({ templates: [SETTLEMENT] })
+
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+      save()
+
+      expect(screen.getByText('Choose at least one currency.')).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Choose at least one currency.')
+      expect(screen.getByText("Enter the other participant's name.")).toBeInTheDocument()
+      expect(currencyBox('BRL')).toHaveFocus()
+      expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it.each([
+      ['a'.repeat(61), "The other participant's name must be 60 characters or fewer."],
+      [' you ', "The other participant can't be called You."],
+    ])('rejects the other participant %j', (otherParticipant, message) => {
+      const { onSubmit } = renderDialog({ templates: [SETTLEMENT] })
+
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+      fireEvent.click(currencyBox('BRL'))
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: otherParticipant } })
+      save()
+
+      expect(screen.getByText(message)).toBeInTheDocument()
+      expect(screen.getByLabelText(/Other participant/)).toHaveFocus()
+      expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it('edits a two-currency account keeping both currencies ticked and sending them', async () => {
+      const { onSubmit } = renderDialog({ account: MAE, templates: [BANK, SETTLEMENT] })
+
+      expect(currencyBox('BRL')).toBeChecked()
+      expect(currencyBox('GBP')).toBeChecked()
+      expect(screen.getByLabelText(/Other participant/)).toHaveValue('Mãe')
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'Mother' } })
+      save('Save')
+
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(
+          expect.objectContaining({ currency: 'BRL', currencies: ['BRL', 'GBP'], otherParticipant: 'Mother', isActive: true }),
+        ),
+      )
+    })
+
+    it('shows the currencies as read-only text once the account has records, keeping the other participant editable', () => {
+      renderDialog({ account: { ...MAE, hasRecords: true }, templates: [SETTLEMENT] })
+
+      expect(screen.getByLabelText(/Currencies/)).toHaveValue('BRL, GBP')
+      expect(screen.getByLabelText(/Currencies/)).toHaveAttribute('readonly')
+      expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+      expect(screen.getAllByText("Can't change once the account has transactions.")).toHaveLength(2)
+      expect(screen.getByLabelText(/Other participant/)).not.toHaveAttribute('readonly')
+    })
+
+    it('asks before discarding a changed tick, and not after ticking it back', async () => {
+      const { onCancel } = renderDialog({ account: MAE, templates: [SETTLEMENT] })
+
+      fireEvent.click(currencyBox('GBP'))
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Keep editing' }))
+
+      fireEvent.click(currencyBox('GBP'))
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(onCancel).toHaveBeenCalledTimes(1)
+    })
   })
 })

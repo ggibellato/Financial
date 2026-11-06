@@ -34,6 +34,23 @@ const TEMPLATES: AccountTemplateDto[] = [
   { name: 'Bank', currencies: ['GBP'], capabilities: ['HasOpeningBalance', 'SupportsRoundUp'] },
 ]
 const POTS_TEMPLATE: AccountTemplateDto = { name: 'Pots', currencies: ['GBP'], capabilities: ['HasPots', 'ReceivesIncomeSplit', 'CanWithdraw'] }
+const SETTLEMENT_TEMPLATE: AccountTemplateDto = {
+  name: 'Settlement',
+  currencies: ['BRL', 'GBP'],
+  capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
+}
+const MAE = account({
+  id: 's1',
+  name: 'Mãe',
+  templateName: 'Settlement',
+  currency: 'BRL',
+  currencies: ['BRL', 'GBP'],
+  otherParticipant: 'Mãe',
+  openingBalance: null,
+  balanceStartDate: null,
+  roundUpEnabled: null,
+  capabilities: SETTLEMENT_TEMPLATE.capabilities,
+})
 const BARCLAYS = account({ id: 'a1', name: 'Barclays', hasRecords: true })
 const CHASE = account({ id: 'a2', name: 'Chase', hasRecords: true, isActive: false })
 const MONZO = account({ id: 'a3', name: 'Monzo' })
@@ -77,6 +94,43 @@ describe('AdminAccountsPage', () => {
     expect(within(rowOf('Barclays')).getByText('GBP')).toBeInTheDocument()
     expect(within(rowOf('Barclays')).getByText('Active')).toBeInTheDocument()
     expect(within(rowOf('Chase')).getByText('Inactive')).toBeInTheDocument()
+  })
+
+  it("lists a Settlement account's currencies in the Currency cell", async () => {
+    getAccountsMock.mockResolvedValue([BARCLAYS, MAE])
+    renderPage()
+
+    expect(await screen.findByRole('table', { name: 'Accounts' })).toBeInTheDocument()
+    expect(within(rowOf('Mãe')).getByText('BRL, GBP')).toBeInTheDocument()
+    expect(within(rowOf('Barclays')).getByText('GBP')).toBeInTheDocument()
+  })
+
+  it('creates a Settlement account sending its currencies and other participant', async () => {
+    getAccountTemplatesMock.mockResolvedValue([...TEMPLATES, SETTLEMENT_TEMPLATE])
+    createAccountMock.mockResolvedValue(MAE)
+    renderPage()
+
+    fireEvent.click(await screen.findByRole('button', { name: 'New account' }))
+    fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Settlement' } })
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+    fireEvent.click(screen.getByRole('checkbox', { name: 'BRL' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'GBP' }))
+    fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'Mãe' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add account' }))
+
+    await waitFor(() =>
+      expect(createAccountMock).toHaveBeenCalledWith({
+        templateName: 'Settlement',
+        name: 'Mãe',
+        currency: 'BRL',
+        currencies: ['BRL', 'GBP'],
+        otherParticipant: 'Mãe',
+        openingBalance: null,
+        balanceStartDate: null,
+        roundUpEnabled: null,
+        categoryId: null,
+      }),
+    )
   })
 
   it('shows the loading state, then the empty state when there are no accounts', async () => {
@@ -150,6 +204,8 @@ describe('AdminAccountsPage', () => {
       templateName: 'Pots',
       name: 'Travel',
       currency: 'GBP',
+      currencies: null,
+      otherParticipant: null,
       openingBalance: null,
       balanceStartDate: null,
       roundUpEnabled: null,
