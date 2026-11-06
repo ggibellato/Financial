@@ -27,7 +27,7 @@ function Get-Error([scriptblock]$action) {
     try { $null = & $action; return '' } catch { return $_.Exception.Message }
 }
 
-$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'potsTab', 'summary', 'templateGroups', 'account', 'cardAccount', 'current', 'annual', 'averages', 'investment')
+$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'potsTab', 'summary', 'templateGroups', 'account', 'cardAccount', 'monthTransactions', 'current', 'annual', 'averages', 'investment')
 $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
@@ -60,6 +60,7 @@ foreach ($month in 8, 9) {
     $responses["accounts/$barclaysId/$route"] = '{"balance":130.83}'
     $responses["accounts/$chaseId/$route"] = '{"balance":10.00}'
     $responses["accounts/$amexId/$route"] = '{"balance":-40.10,"totalOwed":40.10}'
+    $responses["accounts/transactions/$route"] = "[{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Expense`",`"categoryName`":`"Mercado`",`"amount`":-0.1}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardCharge`",`"categoryName`":`"Casa`",`"amount`":-0.25}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardRefund`",`"categoryName`":`"Casa`",`"amount`":0.05}},{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Income`",`"categoryName`":null,`"amount`":2000.00}},{`"accountName`":`"Chase`",`"transaction`":{`"kind`":`"TransferIn`",`"amount`":40.00}}]"
     $responses["investment-snapshots/$route/suggestions"] = '{"suggestions":[{"accountName":"Amex card","suggestedValue":-40.10,"currentValue":0,"sourceDescription":"Invoice"}],"notUpdated":[{"accountName":"Pension","reason":"No source"}]}'
 }
 $fetch = { param($path) if (-not $responses.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $responses[$path] }
@@ -80,6 +81,7 @@ try {
         summary    = '{0}/summary/members/Barclays/balance'
         templateGroups = '{0}/templateGroups/Pots/totals/GBP'
         account    = '{0}/account/Chase/balance'
+        monthTransactions = '{0}/monthTransactions/categories/Casa/spend'
     }
     $missing = [System.Collections.Generic.List[string]]::new()
     foreach ($month in '2026-08', '2026-09') {
@@ -187,6 +189,24 @@ try {
 
     $summaryDifferences = Compare-ParityReport $reportWithoutSummary $report $shippedMappings
     Check 'shipped figure map resolves every summary, account and card account key to its before key' ($summaryDifferences.Count -eq 0) (($summaryDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
+    $monthTransactionKeys = @($report.Keys | Where-Object { $_ -like '2026-09/monthTransactions/*' })
+    Check 'month transactions spend per category is minus the sum of its rows and ignores rows without a category' ($monthTransactionKeys.Count -eq 2 -and $report['2026-09/monthTransactions/categories/Mercado/spend'] -eq [decimal]'0.1' -and $report['2026-09/monthTransactions/categories/Casa/spend'] -eq [decimal]'0.2' -and $report['2026-09/monthTransactions/categories/Casa/spend'] -is [decimal]) ($monthTransactionKeys -join ', ')
+    Check 'month transactions figures are built only with IncludeAccounts' (-not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'monthTransactions' })) ''
+
+    $compareGridVariant = { param($rows)
+        $variant = $responses.Clone()
+        $variant['accounts/transactions/2026/9'] = $rows
+        $variantFetch = { param($path) ConvertFrom-ParityJson $variant[$path] }.GetNewClosure()
+        $variantReport = Get-ParityReport -Fetch $variantFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
+        , @(Compare-ParityReport $reportWithoutSummary $variantReport $shippedMappings)
+    }
+    $lackingCasa = & $compareGridVariant '[{"transaction":{"categoryName":"Mercado","amount":-0.1}}]'
+    Check 'a category Category totals list that the grid lacks is emitted as 0 and differs from its total' ($lackingCasa.Count -eq 1 -and $lackingCasa[0].Key -eq '2026-09/monthTransactions/categories/Casa/spend' -and $lackingCasa[0].Before -eq '0.2' -and $lackingCasa[0].After -eq '0') (($lackingCasa | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+    $gridOnly = & $compareGridVariant '[{"transaction":{"categoryName":"Mercado","amount":-0.1}},{"transaction":{"categoryName":"Casa","amount":-0.2}},{"transaction":{"categoryName":"Lazer","amount":-9}}]'
+    Check 'a grid-only category shows as missing on the before side' ($gridOnly.Count -eq 1 -and $gridOnly[0].Key -eq '2026-09/monthTransactions/categories/Lazer/spend' -and $gridOnly[0].Before -eq '(missing)') (($gridOnly | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+    $differentSpend = & $compareGridVariant '[{"transaction":{"categoryName":"Mercado","amount":-0.11}},{"transaction":{"categoryName":"Casa","amount":-0.2}}]'
+    Check 'a different spend is a difference' ($differentSpend.Count -eq 1 -and $differentSpend[0].Key -eq '2026-09/monthTransactions/categories/Mercado/spend') (($differentSpend | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
     $dataPath = Join-Path $work 'data-cashflow.json'
     Set-Content -LiteralPath $dataPath -Value '{ "Expenses": [ { "Date": "2019-03-04T00:00:00", "ChargeDate": null, "InvoiceDate": "2027-02-01T00:00:00" } ], "Incomes": [ { "Date": "2026-10-14T00:00:00" } ], "InvestmentSnapshots": [ { "Year": 2026, "Month": 12 } ], "CardStatements": [], "Version": 1 }'

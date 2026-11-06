@@ -253,6 +253,25 @@ function Add-ParityPotsTabFigures($Report, [string]$Month, [string]$Route, [scri
     Add-ParityFigure $Report "$Month/potsTab/total" $summary.total
 }
 
+function Add-ParityMonthTransactionFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
+    $spendByCategory = [System.Collections.Generic.SortedDictionary[string, decimal]]::new([System.StringComparer]::Ordinal)
+    $categoryTotal = [regex]::new('^' + [regex]::Escape($Month) + '/categories/(.+)/total$')
+    foreach ($key in $Report.Keys) {
+        $match = $categoryTotal.Match($key)
+        if ($match.Success) { $spendByCategory[$match.Groups[1].Value] = 0 }
+    }
+    foreach ($row in (& $Fetch "accounts/transactions/$Route")) {
+        $category = $row.transaction['categoryName']
+        if ($null -eq $category) { continue }
+        $spend = [decimal]0
+        [void]$spendByCategory.TryGetValue($category, [ref]$spend)
+        $spendByCategory[$category] = $spend - $row.transaction.amount
+    }
+    foreach ($category in $spendByCategory.Keys) {
+        Add-ParityFigure $Report "$Month/monthTransactions/categories/$category/spend" $spendByCategory[$category]
+    }
+}
+
 function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances, [bool]$IncludeSummary, $Accounts, [string]$CurrentMonth) {
     $route = '{0}/{1}' -f [int]$Month.Substring(0, 4), [int]$Month.Substring(5, 2)
     $bankTotals = Add-ParityBankFigures $Report $Month $route $Fetch $Banks
@@ -273,6 +292,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     if ($null -ne $Accounts) {
         Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth)
         Add-ParityPotsTabFigures $Report $Month $route $Fetch $Accounts $PotBalances
+        Add-ParityMonthTransactionFigures $Report $Month $route $Fetch
     }
 }
 
