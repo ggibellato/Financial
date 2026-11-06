@@ -559,36 +559,41 @@ Rules that apply to every feature:
 - Settlement accounts with participants, currencies and entries with "paid by" (used by F12)
 
 **Capabilities:**
-- **Settlement template** = `HasParticipants`, `MultiCurrency`, `CanSettle`. Each account lists its currencies (Mãe: BRL + GBP; son: GBP) and 2 participants (the user and the other person), no categories, no bank link.
-- **Entry:** date (not in the future), description (required), note (optional), paid by (a participant, explicit), currency (asked only when the account has 2 currencies), amount > 0. Multi-currency accounts store the original amount plus the converted value in the other currency at the entry date's historical rate (existing exchange-rate provider), as today; if no rate is found, the converted value stays empty, as today. Single-currency accounts store only the amount.
-- **Balance** through the shared calculation, per currency: entries paid by the user add, entries paid by the other participant subtract (fourth calculation removed: `ControleMaeService.GetTotals`). One debt shown in both currencies.
-- **Migration step V4 → V5:** creates Settlement account "Mãe" (BRL + GBP, participants: the user and Mãe); the 36 entries move into it with "paid by" from their sign — **positive = the user paid for Mãe**, negative = Mãe paid for the user (user's answer) — and amounts stored as positive values; empty converted values stay empty; `Version` 5. The BRL and GBP totals must stay exactly as they are. *Deviation:* the doc said the totals are currently zero; the live totals are R$167.88 / £7.94 (Mãe owes the user), and 22 of the 36 entries have no converted value, so history is not one debt in both currencies — the migration keeps both figures exactly.
+- **Settlement template** = `HasParticipants`, `MultiCurrency`, `CanSettle`. Each account lists its currencies (Mãe: BRL + GBP; son: GBP) and stores the other participant's name; the user is always the fixed participant "You" (user decision 2026-11-06). No categories, no bank link, no transfers (no pair rule allows it). The new fields are written only when set, so a V4 file without Settlement accounts loads and saves unchanged.
+- **Entry:** date (not in the future), description (required), note (optional), paid by (You or the other participant, explicit), currency (asked only when the account has 2 currencies), amount > 0. Multi-currency accounts store the original amount plus the converted value in the other currency at the entry date's historical rate (existing exchange-rate provider), as today; if no rate is found, the converted value stays empty, as today. Single-currency accounts store only the amount.
+- **Balance** through the shared calculation, per currency: entries paid by the user add, entries paid by the other participant subtract; an entry counts in its paid currency and, when it has one, its converted value in the other currency (fourth calculation removed: `ControleMaeService.GetTotals`). Totals are kept at stored precision (live: R$167.8768 / £7.94214099, shown as R$167.88 / £7.94).
+- **Migration step V4 → V5:** creates Settlement account "Mãe" (BRL + GBP, participants: the user and Mãe); the 36 entries move into it with "paid by" from their sign — **positive = the user paid for Mãe**, negative = Mãe paid for the user (user's answer) — and amounts stored as positive values; empty converted values stay empty; `Version` 5. The BRL and GBP totals must stay exactly as they are, compared at stored precision. Five entries tagged BRL were paid in pounds (18 May 2022 £80, 25 Nov 2022 £100, 23 Nov 2023 £100, 3 Jan 2024 £10, 11 Oct 2024 £80): the migration records them as paid in GBP with the BRL value as the converted value; both stored values are unchanged, so the totals are too (user decision 2026-11-06). The step refuses a file that already has a Settlement account or an account named "Mãe", as F09's step does for Reserva. *Deviation:* the doc said the totals are currently zero; the live totals are R$167.88 / £7.94 (Mãe owes the user), and 22 of the 36 entries have no converted value, so history is not one debt in both currencies — the migration keeps both figures exactly.
 - **Son account:** created from Admin → Accounts (Settlement, GBP only, participants); no migration.
 - Admin → Accounts gains the Settlement template (fields: currencies, other participant's name).
-- `controle-mae` endpoints keep their shapes (against Mãe) until F13.
-- Test and example data migrated to V5.
+- `controle-mae` endpoints keep their shapes (against Mãe) until F13. The values edit keeps taking signed BRL and GBP values: the value in the entry's paid currency sets who paid (positive = You, negative = Mãe), the amount is stored positive and the other value becomes the converted value (may be empty); a missing or zero paid-currency value, or BRL and GBP with opposite signs, is refused with 400 (user decision 2026-11-06).
+- **Accounts page:** F14's grids gain a Settlement grid: "Mãe · Mãe owes you R$167.88 / £7.94" (one figure per currency, 2 decimals; "You owe Mãe …" when negative; "Settled" at zero), no grid totals (debts to different people don't add up), and no link until F12's screen (user decision 2026-11-06).
+- **Transaction lists:** Settlement entries stay out of the account transaction rows and F16's All transactions until F12, which adds them with a per-row currency (user decision 2026-11-06).
+- Test and example data migrated to V5: the inline `"Version": 4` fixtures move to 5 as one repeated change, and the "newer version" refusal tests move to 6.
 - The spreadsheet import creates the Mãe Settlement account with its entries directly and its output loads under the version guard (the F02 import rule).
 
 **Experience:**
 - No visible change on Controle Mãe; the Accounts page lists "Mãe" in its Settlement grid with "Mãe owes you R$167.88 / £7.94".
+- Admin → Accounts → New account → Settlement → currencies GBP, other participant "Samuel" → the Accounts page lists "Samuel · Settled".
 
 **Error Handling:**
 - Migration total mismatch (BRL or GBP total after ≠ before): migration stops and writes nothing.
-- Settlement account with a currency outside GBP/BRL: 400 "Currency must be GBP or BRL."
-- Entry dated in the future: 400 "The entry date cannot be in the future."
+- Settlement account with a currency outside GBP/BRL: 400 with the account's existing currency message (`Account.EnsureCurrencyIsAllowed`; the spec fixes the wording).
+- Entry dated in the future: 400 "Date must not be in the future." (today's Controle Mãe message).
+- Values edit with a missing or zero paid-currency value, or opposite signs: 400 (message fixed in the spec).
 
 ### F12. Settlement Screen
 
 **Consumes:**
 - F05: account screen shell
 - F11: Settlement accounts, participants, currencies, entries
+- F16: the All transactions rows, which gain Settlement entries with a per-row currency
 
 **Provides:**
 - Settlement screen with entries, balance per currency and Settle (used by F13)
 
 **Capabilities:**
 - **Header:** balance in each currency and the direction ("Mãe owes you R$167.88 / £7.94", "You owe Samuel £15.00", or "Settled").
-- **Transactions:** entries with Date, Description, Paid by, original amount and currency, BRL value, GBP value (multi-currency), Note; row actions Edit (description, note, values, as today) and Delete.
+- **Transactions:** entries with Date, Description, Paid by, original amount and currency, BRL value, GBP value (multi-currency), Note; row actions Edit (description, note and values; today's Controle Mãe edits values only) and Delete. F12 also adds Settlement entries to the account transaction rows and F16's All transactions, each row with its own currency (moved from F11, user decision 2026-11-06).
 - **Add entry:** inline form (Date, Description, Paid by, Currency when 2, Amount, Note); the converted value is computed on save.
 - **Settle** (at any time): the user picks the currency the money moved in; the form is pre-filled with paid by = the participant who owes, amount = the outstanding balance in that currency, and the other currency's value = its outstanding balance, so both totals reach zero in one entry; the implied rate is shown; both values stay editable. Single-currency accounts pre-fill the one amount. Confirmation dialog: "Save this settlement? Both totals become zero." — or, if edited so they do not, "This leaves R$3.20 / £0.00 outstanding."
 
@@ -706,7 +711,7 @@ Added 2026-11-04 at the user's request: a view of every transaction in a month a
 - The All transactions grid on Monthly (kept by F13 when Monthly becomes an overview)
 
 **Capabilities:**
-- **All transactions grid:** Monthly gains an "All transactions" tab, second after Summary, using Monthly's month picker and loading only when opened (user decision 2026-11-05). It lists the picked month's rows from every account (any template, active or inactive, an inactive one marked Inactive), as the account screens show them: a transfer, card payment or credit refund shows once on each side; a pot deposit shows its funding banks' expense rows and one pot transaction row per pot on the Pots account. One route returns the rows of all accounts, each with its account's id, name and currency, built from F05's account-transactions rows, so Settlement rows join when F11 and F12 ship with no change here (user decision 2026-11-04; one route, spec decision).
+- **All transactions grid:** Monthly gains an "All transactions" tab, second after Summary, using Monthly's month picker and loading only when opened (user decision 2026-11-05). It lists the picked month's rows from every account (any template, active or inactive, an inactive one marked Inactive), as the account screens show them: a transfer, card payment or credit refund shows once on each side; a pot deposit shows its funding banks' expense rows and one pot transaction row per pot on the Pots account. One route returns the rows of all accounts, each with its account's id, name and currency, built from F05's account-transactions rows, so Settlement rows join when F12 ships (it adds a per-row currency for two-currency accounts) (user decision 2026-11-04; one route, spec decision).
 - **Old settled card charges:** a card charge settled the pre-F08 way (moved to a bank) shows on both the bank and the card screens; the grid lists it once, on the card in its statement month, so category totals still match (user decision 2026-11-05).
 - **Which month:** a row belongs to the month the category totals use: card charges and refunds by statement month, with the purchase date shown; every other record by its own date. Only expense-type rows (expenses, card charges and refunds, pot operations' bank expenses) carry a category, so a Category filter shows only those; filtered to one category, the grid's spend equals that category's line in Category totals (user decision 2026-11-04).
 - **Columns:** Date, Account, Type, Description, Category, Amount (signed for that account, right-aligned); newest first; sortable.
@@ -754,7 +759,7 @@ Added 2026-11-04 at the user's request: a view of every transaction in a month a
 | F09 | Pots Template and Reserva Migration | 1 | F02, F06, F07 |
 | F10 | Linked Deposit, Withdrawal and Pots Screen | 1 | F05, F09, F14 |
 | F11 | Settlement Template and Mãe Migration | 1 | F02, F06, F09, F14 |
-| F12 | Settlement Screen | 1 | F05, F11 |
+| F12 | Settlement Screen | 1 | F05, F11, F16 |
 | F13 | Consolidated Navigation and Retirement | 1 | F08, F10, F12, F15, F16 |
 | F14 | Accounts Page by Template and Card Totals | 2 | F08, F09 |
 | F15 | Card Refunds and Credit | 2 | F08, F14 |
@@ -813,6 +818,7 @@ graph TD
   F09 --> F11
   F05 --> F12[F12 Settle screen]
   F11 --> F12
+  F16 --> F12
   F08 --> F14[F14 Accounts by template]
   F09 --> F14
   F14 --> F10
@@ -968,11 +974,12 @@ graph TD
 
 ### F11. Settlement Template and Mãe Migration
 - [ ] `migrate` upgrades V4 to V5: Settlement account "Mãe" (BRL + GBP, 2 participants) with the 36 entries; positive entries paid by the user, negative by Mãe; amounts stored positive
-- [ ] The Mãe BRL and GBP totals are exactly R$167.88 / £7.94 (or the live copy's totals) before and after
+- [ ] The Mãe BRL and GBP totals are exactly the same at stored precision before and after (live: R$167.8768 / £7.94214099); the 5 pound entries are recorded as paid in GBP
 - [ ] Entries without a converted value keep it empty
 - [ ] A new entry stores who paid, the original amount and, on a 2-currency account, the converted value at the entry date's rate
 - [ ] Creating a GBP-only son account in Admin → Accounts needs no code and asks no currency per entry
-- [ ] `controle-mae` endpoints return the same shapes and values
+- [ ] `controle-mae` endpoints return the same shapes and values; a values edit sets who paid from the sign and refuses missing, zero or opposite-signed values
+- [ ] The Accounts page shows a Settlement grid with who owes whom per currency and no totals
 - [ ] A fresh spreadsheet import writes the Mãe Settlement account with its entries and the API starts on it
 - [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
