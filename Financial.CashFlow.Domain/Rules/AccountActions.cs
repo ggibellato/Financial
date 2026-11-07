@@ -30,7 +30,7 @@ public static class AccountActions
         (AccountAction.Settle, (account, _) => account.Has(Capability.CanSettle))
     ];
 
-    public const string NothingToSettle = "Nothing to settle.";
+    private const string NothingToSettle = "Nothing to settle.";
 
     public static IReadOnlyList<AccountAction> AllowedFor(Account account, bool isInCredit = false)
     {
@@ -51,8 +51,7 @@ public static class AccountActions
         ArgumentNullException.ThrowIfNull(account);
         ArgumentNullException.ThrowIfNull(currentBalances);
 
-        var isSettled = account.IsActive
-            && account.Has(Capability.CanSettle)
+        var isSettled = AllowedFor(account).Contains(AccountAction.Settle)
             && currentBalances.All(balance => SettlementTransaction.RoundsToZero(balance.Balance));
 
         return isSettled

@@ -1312,7 +1312,7 @@ public class AccountQueryServiceTests
         using (new AssertionScope())
         {
             detail.Balance.Should().Be(0m);
-            detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance)).Should().Equal(("BRL", 260m), ("GBP", 35m));
+            Figures(detail).Should().Equal(("BRL", 260m), ("GBP", 35m));
             detail.OtherParticipant.Should().Be("Mãe");
             detail.AllowedActions.Should().Equal("AddEntry", "Settle");
             detail.DisabledActions.Should().BeEmpty();
@@ -1331,7 +1331,7 @@ public class AccountQueryServiceTests
         {
             detail.AllowedActions.Should().Equal("AddEntry", "Settle");
             detail.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
-            detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance)).Should().Equal(("BRL", 0m), ("GBP", 0m));
+            Figures(detail).Should().Equal(("BRL", 0m), ("GBP", 0m));
         }
     }
 
@@ -1347,6 +1347,9 @@ public class AccountQueryServiceTests
         detail.AllowedActions.Should().BeEmpty();
         detail.DisabledActions.Should().BeEmpty();
     }
+
+    private static IEnumerable<(string Currency, decimal Balance)> Figures(AccountDetailDTO detail) =>
+        detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance));
 
     private Account MaeWithEntriesIn(int year, int month)
     {

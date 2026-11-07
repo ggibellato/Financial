@@ -161,7 +161,7 @@ public sealed class SettlementService : ISettlementService
 
     private void EnsureCanBeSettledNow(Account account)
     {
-        if (!account.Has(Capability.CanSettle))
+        if (!AccountActions.AllowedFor(account).Contains(AccountAction.Settle))
         {
             throw new ArgumentException($"{account.Name} can't be settled.");
         }

@@ -323,8 +323,8 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         ConvertedValue = convertedValue
     };
 
-    private async Task<AccountDetailDTO> AccountDetail(string accountId, int year = 2026, int month = 8) =>
-        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/{year}/{month}"))!;
+    private async Task<AccountDetailDTO> AccountDetail(string accountId) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/8"))!;
 
     private static IEnumerable<(string Currency, decimal Balance)> Figures(AccountDetailDTO detail) =>
         detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance));

@@ -363,7 +363,6 @@ public class SettlementServiceTests
     {
         Date = date ?? TestClock.Today,
         Description = "Settlement",
-        Note = null,
         PaidBy = "Other",
         Currency = currency,
         Amount = amount,
