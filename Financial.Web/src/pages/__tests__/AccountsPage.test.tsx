@@ -71,6 +71,24 @@ const POTS: AccountTemplateGroupDto = {
   totals: [{ currency: 'GBP', total: 716.58 }],
 }
 
+const SETTLEMENT: AccountTemplateGroupDto = {
+  templateName: 'Settlement',
+  members: [
+    member('mae', 'Mãe', 'Settlement', {
+      currency: 'BRL',
+      balance: 167.8768,
+      otherParticipant: 'Mãe',
+      currencyBalances: [
+        { currency: 'BRL', balance: 167.8768 },
+        { currency: 'GBP', balance: 7.94214099 },
+      ],
+    }),
+    member('samuel', 'Samuel', 'Settlement', { isActive: false, otherParticipant: 'Samuel' }),
+    member('tia', 'Tia', 'Settlement', { balance: -15, otherParticipant: 'Tia' }),
+  ],
+  totals: [],
+}
+
 function renderPage() {
   return render(
     <MemoryRouter>
@@ -204,14 +222,42 @@ describe('AccountsPage', () => {
     expect(within(pots).getByRole('link', { name: 'Reserva' })).toHaveAttribute('href', expect.stringMatching(/\?month=2026-10&tab=pots$/))
   })
 
+  it('[AC P60-F11-settlement-template-and-mae-migration-07] shows the Settlement grid with who owes whom per currency and no totals', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([BANKS, CARDS, POTS, SETTLEMENT])
+
+    renderPage()
+
+    const settlement = await screen.findByRole('table', { name: 'Settlement' })
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots', 'Settlement'])
+    expect(headers(settlement)).toEqual(['Account', 'Balance'])
+    expect(accountNames(settlement)).toEqual(['Mãe', 'SamuelInactive', 'Tia'])
+    expect(within(settlement).queryByRole('link')).not.toBeInTheDocument()
+    const [mae, samuel, tia] = bodyRows(settlement)
+    expect(within(mae).getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
+    expect(within(samuel).getByText('Settled')).toBeInTheDocument()
+    expect(within(tia).getByText('You owe Tia £15.00')).toBeInTheDocument()
+    expect(footer(settlement)).toBeFalsy()
+  })
+
+  it('sorts the Settlement grid by the main-currency balance', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([SETTLEMENT])
+
+    renderPage()
+
+    const settlement = await screen.findByRole('table', { name: 'Settlement' })
+    fireEvent.click(within(settlement).getByRole('button', { name: 'Balance' }))
+
+    expect(accountNames(screen.getByRole('table', { name: 'Settlement' }))).toEqual(['Tia', 'SamuelInactive', 'Mãe'])
+  })
+
   it('shows an unknown template under its own name with a "Total" footer and plain-text rows', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([
-      { templateName: 'Settlement', members: [member('mae', 'Mãe', 'Settlement', { balance: 50 })], totals: [{ currency: 'GBP', total: 50 }] },
+      { templateName: 'Loans', members: [member('loan', 'Car loan', 'Loans', { balance: 50 })], totals: [{ currency: 'GBP', total: 50 }] },
     ])
 
     renderPage()
 
-    const table = await screen.findByRole('table', { name: 'Settlement' })
+    const table = await screen.findByRole('table', { name: 'Loans' })
     expect(headers(table)).toEqual(['Account', 'Currency', 'Balance'])
     expect(within(table).queryByRole('link')).not.toBeInTheDocument()
     expect(footer(table)).toBe('Total GBP: 50.00')
