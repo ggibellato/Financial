@@ -151,10 +151,65 @@ public class AccountActionsTests
     }
 
     [Fact]
-    public void AllowedFor_SettlementAccount_ReturnsNone()
+    public void AllowedFor_SettlementAccount_ReturnsAddEntryAndSettle()
     {
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
 
+        AccountActions.AllowedFor(mae).Should().Equal(AccountAction.AddEntry, AccountAction.Settle);
+    }
+
+    [Fact]
+    public void AllowedFor_InactiveSettlementAccount_ReturnsNone()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        mae.SetActive(false);
+
         AccountActions.AllowedFor(mae).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AllowedFor_HasParticipantsWithoutCanSettle_ReturnsOnlyAddEntry()
+    {
+        AccountActions.AllowedFor(Minimal(Capability.HasParticipants)).Should().Equal(AccountAction.AddEntry);
+    }
+
+    [Fact]
+    public void DisabledFor_SettlementAccountWhoseEveryBalanceRoundsToZero_DisablesSettleWithNothingToSettle()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+
+        AccountActions.DisabledFor(mae, [(Currency.BRL, -0.0032m), (Currency.GBP, 0.00214099m)])
+            .Should().Equal(new Dictionary<AccountAction, string> { [AccountAction.Settle] = "Nothing to settle." });
+    }
+
+    [Fact]
+    public void DisabledFor_SettlementAccountWithOneCurrencyOutstanding_DisablesNothing()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+
+        AccountActions.DisabledFor(mae, [(Currency.BRL, 0m), (Currency.GBP, 0.005m)]).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DisabledFor_InactiveSettledAccount_DisablesNothing()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        mae.SetActive(false);
+
+        AccountActions.DisabledFor(mae, [(Currency.BRL, 0m), (Currency.GBP, 0m)]).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DisabledFor_Bank_DisablesNothing()
+    {
+        AccountActions.DisabledFor(TestAccounts.Bank("Barclays"), []).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DisabledFor_NullBalances_Throws()
+    {
+        var act = () => AccountActions.DisabledFor(TestAccounts.Bank("Barclays"), null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 }

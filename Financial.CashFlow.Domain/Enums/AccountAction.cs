@@ -16,5 +16,7 @@ public enum AccountAction
     Deposit,
     Withdraw,
     ManagePots,
-    WithdrawFromPots
+    WithdrawFromPots,
+    AddEntry,
+    Settle
 }

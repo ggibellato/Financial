@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Rules;
 
@@ -24,8 +25,12 @@ public static class AccountActions
         (AccountAction.Deposit, (account, _) => account.Has(Capability.HasPots)),
         (AccountAction.Withdraw, (account, _) => account.Has(Capability.CanWithdraw)),
         (AccountAction.ManagePots, (account, _) => account.Has(Capability.HasPots)),
-        (AccountAction.WithdrawFromPots, (account, _) => account.Has(Capability.CanPayBills))
+        (AccountAction.WithdrawFromPots, (account, _) => account.Has(Capability.CanPayBills)),
+        (AccountAction.AddEntry, (account, _) => account.Has(Capability.HasParticipants)),
+        (AccountAction.Settle, (account, _) => account.Has(Capability.CanSettle))
     ];
+
+    public const string NothingToSettle = "Nothing to settle.";
 
     public static IReadOnlyList<AccountAction> AllowedFor(Account account, bool isInCredit = false)
     {
@@ -38,5 +43,20 @@ public static class AccountActions
             .Where(entry => entry.IsAllowed(account, isInCredit))
             .Select(entry => entry.Action)
             .ToList();
+    }
+
+    public static IReadOnlyDictionary<AccountAction, string> DisabledFor(
+        Account account, IEnumerable<(Currency Currency, decimal Balance)> currentBalances)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        ArgumentNullException.ThrowIfNull(currentBalances);
+
+        var isSettled = account.IsActive
+            && account.Has(Capability.CanSettle)
+            && currentBalances.All(balance => SettlementTransaction.RoundsToZero(balance.Balance));
+
+        return isSettled
+            ? new Dictionary<AccountAction, string> { [AccountAction.Settle] = NothingToSettle }
+            : new Dictionary<AccountAction, string>();
     }
 }
