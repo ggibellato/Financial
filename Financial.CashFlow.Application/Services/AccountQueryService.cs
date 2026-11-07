@@ -76,6 +76,9 @@ public sealed class AccountQueryService : IAccountQueryService
             var records = AccountTransactionReader.Read(_repository);
             var hasStatements = account.Has(Capability.HasStatements);
             decimal? totalOwed = hasStatements ? CardChargeFilter.TotalOwed(account, records) : null;
+            var currentBalances = account.Has(Capability.HasParticipants)
+                ? AccountBalanceRule.Balances(account, DateOnly.MaxValue, records)
+                : [];
 
             var result = new AccountDetailDTO
             {
@@ -91,7 +94,12 @@ public sealed class AccountQueryService : IAccountQueryService
                 HasStatements = hasStatements,
                 TotalOwed = totalOwed,
                 ViewedStatement = hasStatements ? ViewedStatementOf(account, year, month) : null,
-                AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList()
+                AllowedActions = AccountActions.AllowedFor(account, isInCredit: CardChargeFilter.CreditOf(totalOwed ?? 0m) > 0).Select(action => action.ToString()).ToList(),
+                DisabledActions = AccountActions.DisabledFor(account, currentBalances).ToDictionary(disabled => disabled.Key.ToString(), disabled => disabled.Value),
+                CurrentBalances = currentBalances
+                    .Select(balance => new CurrencyBalanceDTO { Currency = balance.Currency.ToString(), Balance = balance.Balance })
+                    .ToList(),
+                OtherParticipant = account.OtherParticipant
             };
 
             span.MarkSuccess();
