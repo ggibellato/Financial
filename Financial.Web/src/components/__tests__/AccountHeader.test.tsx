@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountHeader from '../AccountHeader'
-import { account } from '../../test/account'
+import { account, settlementAccount } from '../../test/account'
 
 const ACCOUNTS: AccountDto[] = [
   account({ id: 'barclays', name: 'Barclays' }),
@@ -11,6 +11,7 @@ const ACCOUNTS: AccountDto[] = [
   account({ id: 'old', name: 'Old Savings', isActive: false }),
   account({ id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL' }),
   account({ id: 'amex', name: 'BA Amex', templateName: 'CreditCard' }),
+  settlementAccount({ id: 'mae', name: 'Mãe' }),
 ]
 
 const OCTOBER_UNPAID: AccountStatementDto = {
@@ -210,6 +211,17 @@ describe('AccountHeader', () => {
     expect(within(screen.getByRole('group', { name: 'Cash' })).getByRole('option', { name: 'Wallet' })).toBeInTheDocument()
     expect(within(screen.getByRole('group', { name: 'Credit card' })).getByRole('option', { name: 'BA Amex' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Old Savings' })).not.toBeInTheDocument()
+  })
+
+  it('leaves accounts with participants out of the picker and keeps the others', async () => {
+    const user = userEvent.setup()
+    renderHeader()
+
+    await user.click(screen.getByRole('combobox', { name: 'Account' }))
+
+    expect(screen.queryByRole('option', { name: 'Mãe' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Settlement' })).not.toBeInTheDocument()
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['Barclays', 'Chase', 'Wallet', 'BA Amex'])
   })
 
   it('reports the chosen account', async () => {

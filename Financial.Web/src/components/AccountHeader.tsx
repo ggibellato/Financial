@@ -15,9 +15,13 @@ interface AccountHeaderProps {
   onAccountSelect: (accountId: string) => void
 }
 
+function hasAccountScreen(account: AccountDto): boolean {
+  return !account.capabilities.includes('HasParticipants')
+}
+
 function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][] {
   const groups = new Map<string, AccountDto[]>()
-  for (const account of accounts.filter((candidate) => candidate.isActive)) {
+  for (const account of accounts.filter((candidate) => candidate.isActive && hasAccountScreen(candidate))) {
     const label = accountTemplateLabel(account.templateName)
     const members = groups.get(label)
     if (members) members.push(account)
