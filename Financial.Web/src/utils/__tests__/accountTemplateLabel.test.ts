@@ -32,8 +32,8 @@ describe('accountTemplateGrid', () => {
     expect(accountTemplateGrid('Pots')).toEqual({ heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: true, rowLinkTab: 'pots' })
   })
 
-  it('shows Settlement accounts with who owes whom under "Settlement", with plain-text rows', () => {
-    expect(accountTemplateGrid('Settlement')).toEqual({ heading: 'Settlement', footerLabel: 'Total', columns: 'settlement', linksRows: false })
+  it('shows Settlement accounts with who owes whom under "Settlement", with plain-text rows and no footer', () => {
+    expect(accountTemplateGrid('Settlement')).toEqual({ heading: 'Settlement', columns: 'settlement', linksRows: false })
   })
 
   it('shows any other template under its label with a "Total" footer, its balance and plain-text rows', () => {

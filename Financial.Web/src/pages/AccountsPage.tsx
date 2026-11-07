@@ -114,7 +114,7 @@ export default function AccountsPage() {
                 rows={group.members}
                 rowKey={(row) => row.accountId}
                 emptyMessage="No accounts this month"
-                footerItems={group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) }))}
+                footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
               />
             </div>
           )

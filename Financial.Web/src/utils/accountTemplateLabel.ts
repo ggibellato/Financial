@@ -8,7 +8,7 @@ export type AccountGridColumns = 'balance' | 'card' | 'settlement'
 
 export interface AccountTemplateGrid {
   heading: string
-  footerLabel: string
+  footerLabel?: string
   columns: AccountGridColumns
   linksRows: boolean
   rowLinkTab?: string
@@ -18,7 +18,7 @@ const TEMPLATE_GRIDS: Record<string, AccountTemplateGrid> = {
   Bank: { heading: 'Banks', footerLabel: 'Bank total', columns: 'balance', linksRows: true },
   CreditCard: { heading: 'Credit cards', footerLabel: 'Net owed', columns: 'card', linksRows: true },
   Pots: { heading: 'Pots', footerLabel: 'Pots total', columns: 'balance', linksRows: true, rowLinkTab: 'pots' },
-  Settlement: { heading: 'Settlement', footerLabel: 'Total', columns: 'settlement', linksRows: false },
+  Settlement: { heading: 'Settlement', columns: 'settlement', linksRows: false },
 }
 
 export function accountTemplateLabel(templateName: string): string {

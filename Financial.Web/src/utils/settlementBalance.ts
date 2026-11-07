@@ -1,8 +1,6 @@
 import type { AccountGroupMemberDto } from '../api/types'
 import { formatCurrency, toPence } from './formatters'
 
-const SETTLED_TEXT = 'Settled'
-
 type CurrencyBalances = AccountGroupMemberDto['currencyBalances']
 
 function formatAmounts(balances: CurrencyBalances): string {
@@ -10,12 +8,10 @@ function formatAmounts(balances: CurrencyBalances): string {
 }
 
 export function settlementBalanceText(otherParticipant: string, currencyBalances: CurrencyBalances): string {
-  const owed = currencyBalances.filter(({ balance }) => toPence(balance) !== 0)
-  const owedToYou = owed.filter(({ balance }) => balance > 0)
-  const owedByYou = owed.filter(({ balance }) => balance < 0)
-  const parts = [
-    ...(owedToYou.length > 0 ? [`${otherParticipant} owes you ${formatAmounts(owedToYou)}`] : []),
-    ...(owedByYou.length > 0 ? [`You owe ${otherParticipant} ${formatAmounts(owedByYou)}`] : []),
-  ]
-  return parts.length > 0 ? parts.join(' · ') : SETTLED_TEXT
+  const owedToYou = currencyBalances.filter(({ balance }) => toPence(balance) > 0)
+  const owedByYou = currencyBalances.filter(({ balance }) => toPence(balance) < 0)
+  const parts: string[] = []
+  if (owedToYou.length > 0) parts.push(`${otherParticipant} owes you ${formatAmounts(owedToYou)}`)
+  if (owedByYou.length > 0) parts.push(`You owe ${otherParticipant} ${formatAmounts(owedByYou)}`)
+  return parts.length > 0 ? parts.join(' · ') : 'Settled'
 }
