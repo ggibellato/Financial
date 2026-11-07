@@ -310,4 +310,161 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         add.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         edit.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    private static string SettleUrl(string accountId) => $"{Api}/accounts/{accountId}/settlements";
+
+    private static SettleRequestDTO Settlement(decimal amount, decimal? convertedValue, string? currency = "BRL", DateOnly? date = null) => new()
+    {
+        Date = date ?? TestClock.Today,
+        Description = "Settlement",
+        PaidBy = "Other",
+        Currency = currency,
+        Amount = amount,
+        ConvertedValue = convertedValue
+    };
+
+    private async Task<AccountDetailDTO> AccountDetail(string accountId) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/8"))!;
+
+    private static IEnumerable<(string Currency, decimal Balance)> Figures(AccountDetailDTO detail) =>
+        detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance));
+
+    [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-01")]
+    public async Task AccountDetail_Settlement_ReturnsCurrentBalancesPerCurrencyWhateverTheMonth()
+    {
+        var mae = await AccountDetail(MaeId);
+        var samuel = await AccountDetail(SamuelId);
+        var barclays = await AccountDetail(BarclaysId);
+
+        using (new AssertionScope())
+        {
+            mae.Balance.Should().Be(0m);
+            Figures(mae).Should().Equal(("BRL", 150m), ("GBP", 21.94m));
+            mae.OtherParticipant.Should().Be("Mãe");
+            mae.AllowedActions.Should().Equal("AddEntry", "Settle");
+            mae.DisabledActions.Should().BeEmpty();
+            Figures(samuel).Should().Equal(("GBP", 60m));
+            samuel.OtherParticipant.Should().Be("Samuel");
+            barclays.CurrentBalances.Should().BeEmpty();
+            barclays.OtherParticipant.Should().BeNull();
+            barclays.DisabledActions.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task AccountDetail_InactiveSettlement_HasNoActions()
+    {
+        var pai = await AccountDetail(PaiId);
+
+        pai.AllowedActions.Should().BeEmpty();
+        pai.DisabledActions.Should().BeEmpty();
+        Figures(pai).Should().Equal(("GBP", -15m));
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-05")]
+    public async Task Settle_PrefilledValues_LeaveEveryCurrencySettled()
+    {
+        var response = await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(150m, 21.94m));
+        var returned = await response.Content.ReadFromJsonAsync<SettlementEntryDTO>();
+        var after = await AccountDetail(MaeId);
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            returned!.Should().BeEquivalentTo(new
+            {
+                AccountId = Guid.Parse(MaeId),
+                Description = "Settlement",
+                PaidBy = "Other",
+                Currency = "BRL",
+                Amount = 150m,
+                ConvertedCurrency = "GBP",
+                ConvertedValue = 21.94m,
+                Warning = (string?)null
+            });
+            Figures(after).Should().Equal(("BRL", 0m), ("GBP", 0m));
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-06")]
+    public async Task Settle_EditedValues_SaveAndLeaveTheRemainder()
+    {
+        var response = await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(100m, null));
+        var after = await AccountDetail(MaeId);
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.Created);
+            Figures(after).Should().Equal(("BRL", 50m), ("GBP", 21.94m));
+            after.DisabledActions.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-07")]
+    public async Task AccountDetail_SettledAccount_DisablesSettleWithNothingToSettle()
+    {
+        await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(150m, 21.94m));
+
+        var after = await AccountDetail(MaeId);
+
+        using (new AssertionScope())
+        {
+            after.AllowedActions.Should().Equal("AddEntry", "Settle");
+            after.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-07")]
+    public async Task Settle_SettledAccount_Returns400NothingToSettle()
+    {
+        await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(150m, 21.94m));
+
+        var response = await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(1m, null));
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(response)).Should().Be("Nothing to settle.");
+            StoredEntries().Should().HaveCount(4);
+        }
+    }
+
+    [Theory]
+    [InlineData(BarclaysId, "GBP", "Barclays is not a Settlement account.")]
+    [InlineData(PaiId, "GBP", "Pai is inactive.")]
+    [InlineData(MaeId, null, "Choose the currency.")]
+    [InlineData(SamuelId, "GBP", "Samuel has one currency, so an entry has no converted value.")]
+    public async Task Settle_InvalidRequest_Returns400WithTheMessageAndSavesNothing(string accountId, string? currency, string message)
+    {
+        var response = await Client.PostAsJsonAsync(SettleUrl(accountId), Settlement(10m, 1m, currency));
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(response)).Should().Be(message);
+            StoredEntries().Should().HaveCount(3);
+        }
+    }
+
+    [Fact]
+    public async Task Settle_FutureDateUnknownAccountOrNullBody_IsRefused()
+    {
+        var future = await Client.PostAsJsonAsync(SettleUrl(MaeId), Settlement(150m, 21.94m, date: TestClock.Today.AddDays(1)));
+        var unknown = await Client.PostAsJsonAsync(SettleUrl(Guid.NewGuid().ToString()), Settlement(150m, 21.94m));
+        var nullBody = await Client.PostAsync(SettleUrl(MaeId), JsonContent.Create<SettleRequestDTO?>(null));
+
+        using (new AssertionScope())
+        {
+            future.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            (await DetailOf(future)).Should().Be("Date must not be in the future.");
+            unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            nullBody.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            StoredEntries().Should().HaveCount(3);
+        }
+    }
 }

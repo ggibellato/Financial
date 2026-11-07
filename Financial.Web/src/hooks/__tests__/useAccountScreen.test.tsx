@@ -42,6 +42,9 @@ const DETAIL: AccountDetailDto = {
   totalOwed: null,
   viewedStatement: null,
   allowedActions: [],
+  disabledActions: {},
+  currentBalances: [],
+  otherParticipant: null,
 }
 
 const TRANSACTIONS: AccountTransactionDto[] = [

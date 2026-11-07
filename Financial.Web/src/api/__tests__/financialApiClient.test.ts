@@ -2269,6 +2269,9 @@ describe('financialApiClient', () => {
       totalOwed: null,
       viewedStatement: null,
       allowedActions: ['AddExpense'],
+      disabledActions: {},
+      currentBalances: [],
+      otherParticipant: null,
     }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

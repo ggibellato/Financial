@@ -358,4 +358,120 @@ public class SettlementServiceTests
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Mãe is inactive.");
         _repository.SettlementTransactions.Should().ContainSingle();
     }
+
+    private static SettleRequestDTO Settlement(decimal amount, decimal? convertedValue, string currency = "BRL", DateOnly? date = null) => new()
+    {
+        Date = date ?? TestClock.Today,
+        Description = "Settlement",
+        PaidBy = "Other",
+        Currency = currency,
+        Amount = amount,
+        ConvertedValue = convertedValue
+    };
+
+    [Fact]
+    public async Task SettleAsync_PrefilledValues_SavesThemAsEnteredWithoutAskingARate()
+    {
+        AddStoredEntry(_mae, Currency.BRL, 21.94m);
+        var provider = new StubExchangeRateProvider(1m);
+
+        var result = await CreateService(provider).SettleAsync(_mae.Id, Settlement(150m, 21.94m));
+
+        var stored = _repository.SettlementTransactions.Last();
+        using (new AssertionScope())
+        {
+            stored.Description.Should().Be("Settlement");
+            stored.PaidBy.Should().Be(SettlementPayer.Other);
+            stored.Currency.Should().Be(Currency.BRL);
+            stored.Amount.Should().Be(150m);
+            stored.ConvertedValue.Should().Be(21.94m);
+            result.Id.Should().Be(stored.Id);
+            result.Warning.Should().BeNull();
+            provider.CallCount.Should().Be(0);
+            _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.Spans.Should().ContainSingle(s => s.Name == "CashFlow.SettlementService.Settle")
+                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        }
+    }
+
+    [Fact]
+    public async Task SettleAsync_NoConvertedValue_LeavesItEmptyAndAllowsTheRemainder()
+    {
+        AddStoredEntry(_mae, Currency.BRL, 21.94m);
+
+        var result = await CreateService().SettleAsync(_mae.Id, Settlement(100m, null));
+
+        _repository.SettlementTransactions.Last().ConvertedValue.Should().BeNull();
+        result.Amount.Should().Be(100m);
+        result.Warning.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task SettleAsync_ConvertedValueRoundsToZero_SavesItEmptyWithWarning()
+    {
+        AddStoredEntry(_mae, Currency.BRL, 21.94m);
+
+        var result = await CreateService().SettleAsync(_mae.Id, Settlement(150m, 0.004m));
+
+        _repository.SettlementTransactions.Last().ConvertedValue.Should().BeNull();
+        result.Warning.Should().Be("The GBP value rounds to 0.00, so it was left empty.");
+    }
+
+    [Fact]
+    public async Task SettleAsync_EveryBalanceRoundsToZero_RefusedWithNothingToSettle()
+    {
+        AddStoredEntry(_mae, Currency.BRL, 21.94m);
+        _repository.SettlementTransactions.Add(
+            SettlementTransaction.Create(_mae, EntryDate, "Back", null, SettlementPayer.Other, Currency.BRL, 149.996m, 21.94m));
+
+        var act = () => CreateService().SettleAsync(_mae.Id, Settlement(1m, null));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Nothing to settle.");
+        _repository.SettlementTransactions.Should().HaveCount(2);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.SettlementService.Settle");
+    }
+
+    [Fact]
+    public async Task SettleAsync_AccountWithoutCanSettle_Refused()
+    {
+        var shared = Account.CreateWithCapabilities("Shared", Currency.GBP, new HashSet<Capability> { Capability.HasParticipants });
+        _repository.Accounts.Add(shared);
+
+        var act = () => CreateService().SettleAsync(shared.Id, Settlement(10m, null, "GBP"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Shared can't be settled.");
+    }
+
+    [Fact]
+    public async Task SettleAsync_FutureDate_Refused()
+    {
+        AddStoredEntry(_mae, Currency.BRL, 21.94m);
+
+        var act = () => CreateService().SettleAsync(_mae.Id, Settlement(150m, 21.94m, date: TestClock.Today.AddDays(1)));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
+        _repository.SettlementTransactions.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task SettleAsync_InactiveAccount_Refused()
+    {
+        AddStoredEntry(_mae, Currency.BRL, 21.94m);
+        _mae.SetActive(false);
+
+        var act = () => CreateService().SettleAsync(_mae.Id, Settlement(150m, 21.94m));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Mãe is inactive.");
+    }
+
+    [Fact]
+    public async Task SettleAsync_AccountWithoutParticipants_Refused()
+    {
+        var bank = TestAccounts.Bank("Barclays");
+        _repository.Accounts.Add(bank);
+
+        var act = () => CreateService().SettleAsync(bank.Id, Settlement(10m, null, "GBP"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays is not a Settlement account.");
+    }
 }

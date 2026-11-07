@@ -52,4 +52,18 @@ public sealed class SettlementController : ControllerBase
         await _settlementService.DeleteEntryAsync(accountId, entryId);
         return NoContent();
     }
+
+    [HttpPost("{accountId:guid}/settlements")]
+    [ProducesResponseType(typeof(SettlementEntryDTO), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<SettlementEntryDTO>> Settle(Guid accountId, [FromBody] SettleRequestDTO? request)
+    {
+        if (request is null)
+        {
+            return BadRequest();
+        }
+
+        return StatusCode(StatusCodes.Status201Created, await _settlementService.SettleAsync(accountId, request));
+    }
 }

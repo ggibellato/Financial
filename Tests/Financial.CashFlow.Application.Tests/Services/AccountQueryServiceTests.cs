@@ -112,6 +112,9 @@ public class AccountQueryServiceTests
             detail.HasStatements.Should().BeFalse();
             detail.TotalOwed.Should().BeNull();
             detail.AllowedActions.Should().Equal("AddExpense", "AddIncome", "TransferTo", "TransferFrom", "PayRecurringBill", "PayCardStatement", "ReceiveCardCredit", "Reconcile", "WithdrawFromPots");
+            detail.DisabledActions.Should().BeEmpty();
+            detail.CurrentBalances.Should().BeEmpty();
+            detail.OtherParticipant.Should().BeNull();
             _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountQueryService.GetAccount")
                 .Which.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_barclays.Id.ToString());
         }
@@ -1298,6 +1301,55 @@ public class AccountQueryServiceTests
             _sut.GetAccount(_barclays.Id, 2026, 10).Balance.Should().Be(1000m);
         }
     }
+
+    [Fact]
+    public void GetAccount_Settlement_CurrentBalancesCountEveryEntryWhateverTheViewedMonth()
+    {
+        var mae = MaeWithEntriesIn(2026, 10);
+
+        var detail = _sut.GetAccount(mae.Id, 2026, 9);
+
+        using (new AssertionScope())
+        {
+            detail.Balance.Should().Be(0m);
+            Figures(detail).Should().Equal(("BRL", 260m), ("GBP", 35m));
+            detail.OtherParticipant.Should().Be("Mãe");
+            detail.AllowedActions.Should().Equal("AddEntry", "Settle");
+            detail.DisabledActions.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void GetAccount_SettlementWhoseEveryBalanceRoundsToZero_DisablesSettleWithNothingToSettle()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        _repository.Accounts.Add(mae);
+
+        var detail = _sut.GetAccount(mae.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            detail.AllowedActions.Should().Equal("AddEntry", "Settle");
+            detail.DisabledActions.Should().Equal(new Dictionary<string, string> { ["Settle"] = "Nothing to settle." });
+            Figures(detail).Should().Equal(("BRL", 0m), ("GBP", 0m));
+        }
+    }
+
+    [Fact]
+    public void GetAccount_InactiveSettledSettlement_HasNoActionsAndDisablesNothing()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        mae.SetActive(false);
+        _repository.Accounts.Add(mae);
+
+        var detail = _sut.GetAccount(mae.Id, 2026, 10);
+
+        detail.AllowedActions.Should().BeEmpty();
+        detail.DisabledActions.Should().BeEmpty();
+    }
+
+    private static IEnumerable<(string Currency, decimal Balance)> Figures(AccountDetailDTO detail) =>
+        detail.CurrentBalances.Select(balance => (balance.Currency, balance.Balance));
 
     private Account MaeWithEntriesIn(int year, int month)
     {
