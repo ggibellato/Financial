@@ -24,6 +24,7 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Reserva | — | Each pot's balance and the pots total | | | |
 | Reserva | M1, M2 | Movements listed for the month (count and total) | | | |
 | Controle Mãe | — | BRL and GBP totals | | | |
+| Controle Mãe | — | Entries from 2022-01-01: every BRL and GBP value the same (the 5 pound entries look the same; the page doesn't show their currency) | | | |
 | Annual summary | Current year, 2024 | Category totals (annual, average), income summary, result | | | |
 | Annual summary | Current year | Investment annual result: net position monthly values and full-year change | | | |
 | Investment snapshots | M1, M2 | Suggested and current value per account; accounts not updated and why | | | |
@@ -43,5 +44,8 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly → All transactions (after only) | M1, M2, M3 | **T1:** filtered to one category, Spend equals that category's Category totals figure | — | | |
 | Monthly → All transactions (after only) | M1, M3 | **T2:** filtered to one account, the rows equal that account screen's Transactions tab for the month, except a bank's old settled card charges, which appear only on their card | — | | |
 | Monthly → All transactions (after only) | M1 | **T3:** at 320 px wide the rows stack and the grid adds no horizontal scroll (sort and filters are wide-screen only, as on every grid); on a wide screen Tab reaches every sort button, filter, link and Clear filters with visible focus | — | | |
+| Accounts page (after only) | M1 | **S1:** the Settlement grid reads "Mãe · Mãe owes you R$167.88 / £7.94" when Controle Mãe's totals are R$167.88 / £7.94 | — | | |
+| Accounts page (after only) | M1 | **S2:** Admin → Accounts → New account → Settlement → GBP, "Samuel" → the Accounts page lists "Samuel · Settled"; delete it afterwards (after side's copy only) | — | | |
+| Accounts page (after only) | M1 | **S3:** at 320 px wide the Settlement grid stacks with no horizontal page scroll; on a wide screen Tab reaches the sort buttons with visible focus; the Mãe account is not in the account screen's picker | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.
