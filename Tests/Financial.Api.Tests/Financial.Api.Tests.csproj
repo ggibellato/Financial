@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Financial.Api\Financial.Api.csproj" />
+    <ProjectReference Include="..\..\Tools\CashFlowSpreadsheetImport\CashFlowSpreadsheetImport.csproj" />
     <ProjectReference Include="..\Financial.TestUtilities\Financial.TestUtilities.csproj" />
   </ItemGroup>
 

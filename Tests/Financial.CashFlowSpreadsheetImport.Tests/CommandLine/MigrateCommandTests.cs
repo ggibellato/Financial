@@ -47,10 +47,10 @@ public sealed class MigrateCommandTests : IDisposable
         using (new AssertionScope())
         {
             exitCode.Should().Be(0);
-            WithoutReservaId(File.ReadAllText(_outputPath)).Should().Be(WithoutReservaId(DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, _inputPath).Json));
+            WithoutCreatedAccountIds(File.ReadAllText(_outputPath)).Should().Be(WithoutCreatedAccountIds(DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, _inputPath).Json));
             File.ReadAllText(_inputPath).Should().Be(V1DataFile.Json);
             _output.ToString().Trim().Should().Be(
-                $"Migrated {_inputPath} from version 1 to 4: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements; Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it. Wrote {_outputPath}.");
+                $"Migrated {_inputPath} from version 1 to 5: 3 banks became accounts; 5 references renamed; 0 cards became accounts; 0 statements added; 0 due dates moved to statements; Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it; Mãe Settlement account created with 0 entries (0 paid by you, 0 by Mãe); 0 pound entries recorded in GBP; 0 without a converted value; totals BRL 0 and GBP 0 unchanged. Wrote {_outputPath}.");
         }
     }
 
@@ -71,14 +71,23 @@ public sealed class MigrateCommandTests : IDisposable
         {
             exitCode.Should().Be(0);
             File.ReadAllBytes(_outputPath).Should().Equal(version2Bytes);
-            _output.ToString().Trim().Should().Be($"{version2Path} is already version 4; copied unchanged to {_outputPath}.");
+            _output.ToString().Trim().Should().Be($"{version2Path} is already version 5; copied unchanged to {_outputPath}.");
         }
     }
 
-    private static string WithoutReservaId(string json)
+    private static string WithoutCreatedAccountIds(string json)
     {
         var root = JsonNode.Parse(json)!.AsObject();
-        root["Accounts"]!.AsArray().Last()!["Id"] = null;
+        foreach (var account in root["Accounts"]!.AsArray().Where(account => (string?)account!["Template"] is "Pots" or "Settlement"))
+        {
+            account!["Id"] = null;
+        }
+
+        foreach (var entry in root["SettlementTransactions"]!.AsArray())
+        {
+            entry!["AccountId"] = null;
+        }
+
         return root.ToJsonString();
     }
 
@@ -160,14 +169,14 @@ public sealed class MigrateCommandTests : IDisposable
     [Fact]
     public void Run_VersionAboveCurrent_RefusedAndWritesNothing()
     {
-        File.WriteAllText(_inputPath, """{ "Version": 5 }""");
+        File.WriteAllText(_inputPath, """{ "Version": 6 }""");
 
         var exitCode = Run("--input", _inputPath, "--output", _outputPath);
 
         using (new AssertionScope())
         {
             exitCode.Should().Be(1);
-            _error.ToString().Trim().Should().Be($"{_inputPath} is version 5; this build needs version 4.");
+            _error.ToString().Trim().Should().Be($"{_inputPath} is version 6; this build needs version 5.");
             File.Exists(_outputPath).Should().BeFalse();
         }
     }
