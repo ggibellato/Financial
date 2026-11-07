@@ -9,6 +9,7 @@ import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccou
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
 import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, formatN2OrDash } from '../utils/formatters'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
+import { settlementBalanceText } from '../utils/settlementBalance'
 import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
@@ -66,7 +67,15 @@ const totalOwedColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.totalOwed,
 }
 
+const settlementBalanceColumn = {
+  key: 'balance',
+  header: 'Balance',
+  render: (row: AccountGroupMemberDto) => settlementBalanceText(row.otherParticipant ?? row.name, row.currencyBalances),
+  sortAccessor: (row: AccountGroupMemberDto) => row.balance,
+}
+
 function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
+  if (columns === 'settlement') return [nameColumn(renderName), settlementBalanceColumn]
   const leading = [nameColumn(renderName), currencyColumn]
   return columns === 'card' ? [...leading, nextStatementColumn, totalOwedColumn] : [...leading, balanceColumn]
 }
@@ -105,7 +114,7 @@ export default function AccountsPage() {
                 rows={group.members}
                 rowKey={(row) => row.accountId}
                 emptyMessage="No accounts this month"
-                footerItems={group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) }))}
+                footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
               />
             </div>
           )

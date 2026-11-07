@@ -973,15 +973,15 @@ graph TD
 - [x] Parity: 0 differences and Pots screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F11. Settlement Template and Mãe Migration
-- [ ] `migrate` upgrades V4 to V5: Settlement account "Mãe" (BRL + GBP, 2 participants) with the 36 entries; positive entries paid by the user, negative by Mãe; amounts stored positive
-- [ ] The Mãe BRL and GBP totals are exactly the same at stored precision before and after (live: R$167.8768 / £7.94214099); the 5 pound entries are recorded as paid in GBP
-- [ ] Entries without a converted value keep it empty
-- [ ] A new entry stores who paid, the original amount and, on a 2-currency account, the converted value at the entry date's rate
-- [ ] Creating a GBP-only son account in Admin → Accounts needs no code and asks no currency per entry
-- [ ] `controle-mae` endpoints return the same shapes and values; a values edit sets who paid from the sign and refuses missing, zero or opposite-signed values
-- [ ] The Accounts page shows a Settlement grid with who owes whom per currency and no totals
-- [ ] A fresh spreadsheet import writes the Mãe Settlement account with its entries and the API starts on it
-- [ ] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
+- [x] `migrate` upgrades V4 to V5: Settlement account "Mãe" (BRL + GBP, 2 participants) with the 36 entries; positive entries paid by the user, negative by Mãe; amounts stored positive
+- [x] The Mãe BRL and GBP totals are exactly the same at stored precision before and after (live: R$167.8768 / £7.94214099); the 5 pound entries are recorded as paid in GBP
+- [x] Entries without a converted value keep it empty
+- [x] A new entry stores who paid, the original amount and, on a 2-currency account, the converted value at the entry date's rate
+- [x] Creating a GBP-only son account in Admin → Accounts needs no code and asks no currency per entry
+- [x] `controle-mae` endpoints return the same shapes and values; a values edit sets who paid from the sign and refuses missing, zero or opposite-signed values
+- [x] The Accounts page shows a Settlement grid with who owes whom per currency and no totals
+- [x] A fresh spreadsheet import writes the Mãe Settlement account with its entries and the API starts on it
+- [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F12. Settlement Screen
 - [ ] The header shows the balance in each currency with its direction (owes you / you owe / settled)
@@ -1032,15 +1032,15 @@ graph TD
 - [x] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
 - [x] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
 - [x] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
-- [ ] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
-- [ ] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
-- [ ] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
+- [x] The `migrate` command from F02 runs the F07, F09 and F11 steps in one chain from V1 on a fresh live copy, and refuses to skip a step
+- [x] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
+- [x] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
 - [x] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
 - [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
 - [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header with no change to the shell's allowed-actions rendering
 - [x] F07's card accounts and charge filter give the statement totals F08 pays
 - [x] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
 - [x] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
-- [ ] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
+- [x] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
 - [ ] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill
 - [ ] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it
