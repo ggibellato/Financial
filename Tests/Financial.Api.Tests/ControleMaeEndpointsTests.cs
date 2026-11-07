@@ -6,13 +6,31 @@ using System.Net.Http.Json;
 namespace Financial.Api.Tests;
 
 [Trait("Category", "Integration")]
-public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRateProvider(DefaultRate))
+public class ControleMaeEndpointsTests : ApiEndpointTests
 {
     private const decimal DefaultRate = 1.5m;
 
-    /// <summary>Boots the API on a rate other than the class-wide default, for the three tests that
-    /// pin one; every other test runs against the shared host.</summary>
-    private static ApiTestFactory CreateFactory(decimal? rate) => new(new StubExchangeRateProvider(rate));
+    private const string Seed = """
+        {
+          "Accounts": [
+            { "Id": "6d0e0000-0000-0000-0000-000000000001", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" }
+          ],
+          "SettlementTransactions": [],
+          "Version": 5
+        }
+        """;
+
+    public ControleMaeEndpointsTests() : base(new StubExchangeRateProvider(DefaultRate))
+    {
+        ReplaceCashFlowDataBeforeStart(Seed);
+    }
+
+    private static ApiTestFactory CreateFactory(decimal? rate)
+    {
+        var factory = new ApiTestFactory(new StubExchangeRateProvider(rate));
+        factory.ReplaceCashFlowData(Seed);
+        return factory;
+    }
 
     [Fact]
     public async Task CreateEntry_ValidRequest_ReturnsOkWithBothCurrenciesPopulated()
@@ -202,5 +220,46 @@ public class ControleMaeEndpointsTests() : ApiEndpointTests(new StubExchangeRate
         var response = await Client.DeleteAsync($"/api/v1/financial/controle-mae/entries/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateEntryValues_OppositeSigns_Returns400WithMessage()
+    {
+        var entry = await CreateBrlEntry();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{entry.Id}/values", new MaeLedgerEntryValuesUpdateDTO
+        {
+            BrlValue = 100m,
+            GbpValue = -15m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("BRL and GBP values must both be positive or both be negative.");
+    }
+
+    [Fact]
+    public async Task UpdateEntryValues_MissingPaidCurrencyValue_Returns400WithMessage()
+    {
+        var entry = await CreateBrlEntry();
+
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/controle-mae/entries/{entry.Id}/values", new MaeLedgerEntryValuesUpdateDTO
+        {
+            GbpValue = 15m
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("BRL value is required and must not be zero.");
+    }
+
+    private async Task<MaeLedgerEntryDTO> CreateBrlEntry()
+    {
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            Description = "School supplies",
+            SourceCurrency = "BRL",
+            SourceValue = 100m
+        });
+        return (await created.Content.ReadFromJsonAsync<MaeLedgerEntryDTO>())!;
     }
 }

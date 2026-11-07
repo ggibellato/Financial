@@ -43,7 +43,7 @@ public class AccountsByTemplateAcceptanceTests : ApiEndpointTests
             { "Id": "6d2e0000-0000-0000-0000-000000000202", "Date": "2026-10-03", "Description": "October shop", "Value": 586.08, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": null, "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-10-03", "InvoiceDate": "2026-10-01", "RoundUpAmount": null, "CountsAsTithe": false },
             { "Id": "6d2e0000-0000-0000-0000-000000000203", "Date": "2026-10-02", "Description": "Settled lunch", "Value": 7, "CategoryId": "{{MercadoId}}", "PaymentSourceAccountId": "{{BarclaysId}}", "CreditCardId": "{{AmexId}}", "ChargeDate": "2026-09-15", "InvoiceDate": "2026-09-01", "RoundUpAmount": null, "CountsAsTithe": false }
           ],
-          "Version": 4
+          "Version": 5
         }
         """;
 

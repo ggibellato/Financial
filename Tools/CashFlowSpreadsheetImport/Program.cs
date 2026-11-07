@@ -282,18 +282,27 @@ static void ImportMensaisSheet(XLWorkbook workbook, CashFlowData data, ImportRep
 
 static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, ImportReport report)
 {
+    var mae = MaeAccount.Find(data.Accounts) ?? AddMaeAccount(data);
+
     if (!workbook.TryGetWorksheet(ControleMaeSheetName, out var sheet))
     {
         report.SheetSkipped(ControleMaeSheetName, "Sheet not found in workbook");
         return;
     }
 
-    foreach (var entry in ControleMaeSheetImporter.Import(sheet, report))
+    foreach (var entry in ControleMaeSheetImporter.Import(sheet, mae, report))
     {
         data.AddSettlementTransaction(entry);
     }
 
     report.SheetImported(sheet.Name);
+}
+
+static Account AddMaeAccount(CashFlowData data)
+{
+    var mae = MaeAccount.Create();
+    data.AddAccount(mae);
+    return mae;
 }
 
 static void ImportResumoSheets(XLWorkbook workbook, CashFlowData data, ImportReport report)

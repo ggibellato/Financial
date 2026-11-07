@@ -5,6 +5,7 @@ using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -20,10 +21,12 @@ public class ControleMaeServiceTests
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
     private readonly ControleMaeService _sut;
+    private readonly Account _mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
 
     public ControleMaeServiceTests()
     {
         _repository = new StubCashFlowRepository();
+        _repository.Accounts.Add(_mae);
         _tracer = new RecordingTelemetryTracer();
         _sut = CreateService();
     }
@@ -144,11 +147,87 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
+    public async Task CreateEntryAsync_PositiveValue_IsPaidByYouWithPositiveAmountAndConvertedValueInTheOtherCurrency()
+    {
+        await _sut.CreateEntryAsync(NewEntry("GBP", 80m));
+
+        var entry = _repository.SettlementTransactions.Single();
+        using (new AssertionScope())
+        {
+            entry.Account.Should().BeSameAs(_mae);
+            entry.PaidBy.Should().Be(SettlementPayer.You);
+            entry.Currency.Should().Be(Currency.GBP);
+            entry.Amount.Should().Be(80m);
+            entry.ConvertedValue.Should().Be(80m * DefaultRate);
+        }
+    }
+
+    [Fact]
+    public async Task CreateEntryAsync_NegativeValue_IsPaidByOtherWithPositiveAmountAndSignedValuesInTheResult()
+    {
+        var result = await _sut.CreateEntryAsync(NewEntry("BRL", -200m));
+
+        var entry = _repository.SettlementTransactions.Single();
+        using (new AssertionScope())
+        {
+            entry.PaidBy.Should().Be(SettlementPayer.Other);
+            entry.Amount.Should().Be(200m);
+            entry.ConvertedValue.Should().Be(300m);
+            result.SourceCurrency.Should().Be("BRL");
+            result.BrlValue.Should().Be(-200m);
+            result.GbpValue.Should().Be(-300m);
+        }
+    }
+
+    [Fact]
+    public async Task CreateEntryAsync_OneCurrencyAccount_StoresNoConvertedValueAndAsksNoRate()
+    {
+        var provider = new StubExchangeRateProvider(DefaultRate);
+        var repository = new StubCashFlowRepository();
+        repository.Accounts.Add(TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel"));
+
+        await CreateService(repository, provider).CreateEntryAsync(NewEntry("GBP", 15m));
+
+        repository.SettlementTransactions.Single().ConvertedValue.Should().BeNull();
+        provider.CallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task CreateEntryAsync_NoSettlementAccount_Returns400Message()
+    {
+        var repository = new StubCashFlowRepository();
+        repository.Accounts.Add(TestAccounts.Bank("Barclays"));
+
+        var act = async () => await CreateService(repository).CreateEntryAsync(NewEntry("BRL", 10m));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Create a Settlement account first.");
+        repository.SettlementTransactions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CreateEntryAsync_Success_RecordsSuccessfulSpan()
+    {
+        await _sut.CreateEntryAsync(NewEntry("BRL", 10m));
+
+        _tracer.Spans.Should().ContainSingle(s => s.Name == "CashFlow.ControleMaeService.CreateEntry")
+            .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+    }
+
+    [Fact]
+    public async Task CreateEntryAsync_Invalid_RecordsFailedSpan()
+    {
+        var act = async () => await _sut.CreateEntryAsync(NewEntry("BRL", 0m));
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ControleMaeService.CreateEntry");
+    }
+
+    [Fact]
     public void GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
-        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
-        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
-        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
+        AddEntry(new DateOnly(2026, 6, 30), "Before", SettlementPayer.You, Currency.BRL, 10m, 1m);
+        AddEntry(new DateOnly(2026, 7, 1), "OnDate", SettlementPayer.You, Currency.BRL, 10m, 1m);
+        AddEntry(new DateOnly(2026, 8, 10), "After", SettlementPayer.You, Currency.BRL, 10m, 1m);
 
         var result = _sut.GetEntriesFromDate(new DateOnly(2026, 7, 1));
 
@@ -157,37 +236,116 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
-    public void GetTotals_SumsBrlAndGbpAcrossAllEntriesRegardlessOfDate()
+    public void GetEntriesFromDate_ValuesAreTheSignedValuesAndAnEmptyConvertedValueIsNull()
     {
-        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
-        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
+        AddEntry(new DateOnly(2026, 7, 1), "Paid by Mãe", SettlementPayer.Other, Currency.GBP, 80m, 491.04m);
+        AddEntry(new DateOnly(2026, 7, 2), "No rate", SettlementPayer.You, Currency.BRL, 100m, null);
+
+        var result = _sut.GetEntriesFromDate(new DateOnly(2026, 1, 1));
+
+        using (new AssertionScope())
+        {
+            result[0].SourceCurrency.Should().Be("GBP");
+            result[0].GbpValue.Should().Be(-80m);
+            result[0].BrlValue.Should().Be(-491.04m);
+            result[1].BrlValue.Should().Be(100m);
+            result[1].GbpValue.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetEntriesFromDate_EntriesOfAnotherSettlementAccount_AreLeftOut()
+    {
+        var son = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
+        _repository.Accounts.Add(son);
+        _repository.SettlementTransactions.Add(SettlementTransaction.Create(son, new DateOnly(2026, 7, 1), "Son", null, SettlementPayer.You, Currency.GBP, 10m, null));
+        AddEntry(new DateOnly(2026, 7, 1), "Mãe", SettlementPayer.You, Currency.BRL, 10m, null);
+
+        _sut.GetEntriesFromDate(new DateOnly(2026, 1, 1)).Select(e => e.Description).Should().Equal("Mãe");
+    }
+
+    [Fact]
+    public void GetTotals_SumsSignedValuesPerCurrencyAcrossAllEntriesRegardlessOfDate()
+    {
+        AddEntry(new DateOnly(2020, 1, 1), "Old", SettlementPayer.You, Currency.BRL, 100m, 10m);
+        AddEntry(new DateOnly(2026, 7, 10), "Recent", SettlementPayer.Other, Currency.GBP, 5m, null);
 
         var result = _sut.GetTotals();
 
         result.TotalBrlValue.Should().Be(100m);
-        result.TotalGbpValue.Should().Be(15m);
+        result.TotalGbpValue.Should().Be(5m);
     }
 
     [Fact]
-    public async Task UpdateEntryValuesAsync_UpdatesOnlyCurrencyValues()
+    public void GetTotals_NoSettlementAccount_IsZero()
     {
-        var entry = SettlementTransaction.Create(new DateOnly(2026, 7, 1), "Medical appointment", "Note", Currency.GBP, null, 40m);
-        _repository.SettlementTransactions.Add(entry);
+        var result = CreateService(new StubCashFlowRepository()).GetTotals();
 
-        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO
-        {
-            BrlValue = 320.50m,
-            GbpValue = 40m
-        });
+        result.TotalBrlValue.Should().Be(0m);
+        result.TotalGbpValue.Should().Be(0m);
+    }
+
+    [Theory]
+    [InlineData(320.50, 40, SettlementPayer.You)]
+    [InlineData(-320.50, -40, SettlementPayer.Other)]
+    public async Task UpdateEntryValuesAsync_SignOfThePaidCurrencyValueSetsPaidBy(decimal brl, decimal gbp, SettlementPayer expected)
+    {
+        var entry = AddEntry(new DateOnly(2026, 7, 1), "Medical appointment", SettlementPayer.Other, Currency.GBP, 30m, null, "Note");
+
+        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO { BrlValue = brl, GbpValue = gbp });
 
         using (new AssertionScope())
         {
-            result.BrlValue.Should().Be(320.50m);
-            result.GbpValue.Should().Be(40m);
+            entry.PaidBy.Should().Be(expected);
+            entry.Amount.Should().Be(40m);
+            entry.ConvertedValue.Should().Be(320.50m);
+            result.BrlValue.Should().Be(brl);
+            result.GbpValue.Should().Be(gbp);
             entry.Date.Should().Be(new DateOnly(2026, 7, 1));
             entry.Description.Should().Be("Medical appointment");
             entry.Note.Should().Be("Note");
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
+    }
+
+    [Fact]
+    public async Task UpdateEntryValuesAsync_MissingOtherValue_EmptiesTheConvertedValue()
+    {
+        var entry = AddEntry(new DateOnly(2026, 7, 1), "Entry", SettlementPayer.You, Currency.BRL, 100m, 15m);
+
+        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO { BrlValue = 120m });
+
+        entry.ConvertedValue.Should().BeNull();
+        result.GbpValue.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(null, 40, "BRL value is required and must not be zero.")]
+    [InlineData(0, 40, "BRL value is required and must not be zero.")]
+    [InlineData(100, -40, "BRL and GBP values must both be positive or both be negative.")]
+    [InlineData(-100, 40, "BRL and GBP values must both be positive or both be negative.")]
+    [InlineData(100, 0, "BRL and GBP values must both be positive or both be negative.")]
+    public async Task UpdateEntryValuesAsync_MissingZeroOrOppositeSignedValues_RefusedAndNothingSaved(int? brl, int? gbp, string message)
+    {
+        var entry = AddEntry(new DateOnly(2026, 7, 1), "Entry", SettlementPayer.You, Currency.BRL, 100m, 15m);
+
+        var act = async () => await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO { BrlValue = (decimal?)brl, GbpValue = (decimal?)gbp });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage(message);
+        entry.Amount.Should().Be(100m);
+        entry.ConvertedValue.Should().Be(15m);
+        _repository.SaveChangesCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ControleMaeService.UpdateEntryValues");
+    }
+
+    [Fact]
+    public async Task UpdateEntryValuesAsync_GbpEntryWithoutGbpValue_NamesGbp()
+    {
+        var entry = AddEntry(new DateOnly(2026, 7, 1), "Entry", SettlementPayer.You, Currency.GBP, 10m, null);
+
+        var act = async () => await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO { BrlValue = 60m });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("GBP value is required and must not be zero.");
     }
 
     [Fact]
@@ -203,10 +361,22 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
+    public async Task UpdateEntryValuesAsync_EntryOfAnotherAccount_ThrowsKeyNotFoundException()
+    {
+        var son = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
+        _repository.Accounts.Add(son);
+        var entry = SettlementTransaction.Create(son, new DateOnly(2026, 7, 1), "Son", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        _repository.SettlementTransactions.Add(entry);
+
+        var act = async () => await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO { GbpValue = 12m });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
     public async Task DeleteEntryAsync_ExistingId_RemovesEntryAndSaves()
     {
-        var entry = SettlementTransaction.Create(new DateOnly(2026, 7, 1), "School supplies", string.Empty, Currency.BRL, 350m, 51.1m);
-        _repository.SettlementTransactions.Add(entry);
+        var entry = AddEntry(new DateOnly(2026, 7, 1), "School supplies", SettlementPayer.You, Currency.BRL, 350m, 51.1m);
 
         await _sut.DeleteEntryAsync(entry.Id);
 
@@ -220,6 +390,36 @@ public class ControleMaeServiceTests
         var act = async () => await _sut.DeleteEntryAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task DeleteEntryAsync_EntryOfAnotherAccount_ThrowsKeyNotFoundAndKeepsIt()
+    {
+        var son = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
+        _repository.Accounts.Add(son);
+        var entry = SettlementTransaction.Create(son, new DateOnly(2026, 7, 1), "Son", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        _repository.SettlementTransactions.Add(entry);
+
+        var act = async () => await _sut.DeleteEntryAsync(entry.Id);
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.SettlementTransactions.Should().ContainSingle();
+    }
+
+    private static MaeLedgerEntryCreateDTO NewEntry(string currency, decimal value) => new()
+    {
+        Date = new DateOnly(2026, 7, 1),
+        Description = "Entry",
+        SourceCurrency = currency,
+        SourceValue = value
+    };
+
+    private SettlementTransaction AddEntry(
+        DateOnly date, string description, SettlementPayer paidBy, Currency currency, decimal amount, decimal? convertedValue, string note = "")
+    {
+        var entry = SettlementTransaction.Create(_mae, date, description, note, paidBy, currency, amount, convertedValue);
+        _repository.SettlementTransactions.Add(entry);
+        return entry;
     }
 
     [Fact]

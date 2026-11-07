@@ -25,6 +25,12 @@ public sealed class FreshImportVersionTests : IDisposable
 
         using var workbook = new XLWorkbook();
         workbook.AddWorksheet("Notes");
+        var controleMae = workbook.AddWorksheet("Controle mae");
+        controleMae.Cell(1, 1).Value = "Deposito 28/05/2019";
+        controleMae.Cell(1, 2).Value = 300.0;
+        controleMae.Cell(1, 3).Value = 60.0;
+        controleMae.Cell(2, 1).Value = "Mae pagou 10/02/2024";
+        controleMae.Cell(2, 3).Value = -15.0;
         workbook.SaveAs(_workbookPath);
     }
 
@@ -34,7 +40,8 @@ public sealed class FreshImportVersionTests : IDisposable
     [Trait("AC", "P60-F02-account-model-and-bank-migration-04")]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-13")]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-07")]
-    public void Import_FreshWorkbook_WritesVersion4WithReservaPotsAccount()
+    [Trait("AC", "P60-F11-settlement-template-and-mae-migration-08")]
+    public void Import_FreshWorkbook_WritesVersion5WithMaeSettlementAccountAndItsEntries()
     {
         var exitCode = RunImport(_workbookPath, "--output", _outputPath);
 
@@ -44,7 +51,8 @@ public sealed class FreshImportVersionTests : IDisposable
         {
             exitCode.Should().Be(0);
             var root = JsonNode.Parse(json)!.AsObject();
-            root["Version"]!.GetValue<int>().Should().Be(4);
+            root["Version"]!.GetValue<int>().Should().Be(5);
+            root.ContainsKey("MaeLedgerEntries").Should().BeFalse();
             root.ContainsKey("CreditCards").Should().BeFalse();
             root.ContainsKey("ReserveBuckets").Should().BeFalse();
             var reserva = data.Accounts.Should().ContainSingle(a => a.Template == AccountTemplate.Pots).Which;
@@ -58,6 +66,12 @@ public sealed class FreshImportVersionTests : IDisposable
             banks.Should().OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance!.Amount == 0m);
             data.Accounts.Where(a => a.Template == AccountTemplate.CreditCard).Should().HaveCount(5)
                 .And.OnlyContain(a => a.Currency == Currency.GBP && a.IsActive && a.OpeningBalance == null && a.RoundUp == null);
+            var mae = data.Accounts.Should().ContainSingle(a => a.Template == AccountTemplate.Settlement).Which;
+            mae.Should().BeEquivalentTo(new { Name = "Mãe", Currency = Currency.BRL, IsActive = true, OtherParticipant = "Mãe" });
+            mae.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            data.SettlementTransactions.Select(e => (e.Account, e.PaidBy, e.Currency, e.Amount, e.ConvertedValue)).Should().Equal(
+                (mae, SettlementPayer.You, Currency.BRL, 300m, (decimal?)60m),
+                (mae, SettlementPayer.Other, Currency.GBP, 15m, (decimal?)null));
         }
     }
 
@@ -82,23 +96,23 @@ public sealed class FreshImportVersionTests : IDisposable
         File.WriteAllText(_outputPath, V1DataFile.Json);
 
         ExistingOutputVersionGuard.RefusalFor(_outputPath).Should().Be(
-            $"{_outputPath} is version 1; this build needs version 4. Run the migrate command first.");
+            $"{_outputPath} is version 1; this build needs version 5. Run the migrate command first.");
     }
 
     [Fact]
-    public void RefusalFor_Version5Output_RefusesWithoutTheMigrateHint()
+    public void RefusalFor_Version6Output_RefusesWithoutTheMigrateHint()
     {
-        File.WriteAllText(_outputPath, """{ "Version": 5 }""");
+        File.WriteAllText(_outputPath, """{ "Version": 6 }""");
 
         ExistingOutputVersionGuard.RefusalFor(_outputPath).Should().Be(
-            $"{_outputPath} is version 5; this build needs version 4.");
+            $"{_outputPath} is version 6; this build needs version 5.");
     }
 
     [Fact]
-    public void RefusalFor_Version4OrMissingOutput_AllowsTheImport()
+    public void RefusalFor_Version5OrMissingOutput_AllowsTheImport()
     {
         var missing = ExistingOutputVersionGuard.RefusalFor(_outputPath);
-        File.WriteAllText(_outputPath, """{ "Version": 4 }""");
+        File.WriteAllText(_outputPath, """{ "Version": 5 }""");
 
         using (new AssertionScope())
         {

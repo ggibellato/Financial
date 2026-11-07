@@ -16,7 +16,7 @@ public class DataFileMigratorTests
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-01")]
-    public void Migrate_Version1File_RunsAllStepsToVersion4()
+    public void Migrate_Version1File_RunsAllStepsToVersion5()
     {
         var result = DataFileMigrator.CreateDefault().Migrate(V1DataFile.Json, SourceName);
 
@@ -25,9 +25,10 @@ public class DataFileMigratorTests
         using (new AssertionScope())
         {
             result.FromVersion.Should().Be(1);
-            result.ToVersion.Should().Be(4);
-            JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(4);
-            data.Accounts.Last().Should().BeEquivalentTo(new { Name = "Reserva", Template = AccountTemplate.Pots, Pots = Array.Empty<object>(), Category = new { Name = "Reserva" } });
+            result.ToVersion.Should().Be(5);
+            JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(5);
+            data.Accounts.Single(a => a.Template == AccountTemplate.Pots).Should().BeEquivalentTo(new { Name = "Reserva", Pots = Array.Empty<object>(), Category = new { Name = "Reserva" } });
+            data.Accounts.Last().Should().BeEquivalentTo(new { Name = "Mãe", Template = AccountTemplate.Settlement, OtherParticipant = "Mãe", Currencies = new[] { Currency.BRL, Currency.GBP } });
             accounts.Keys.Should().BeEquivalentTo(V1DataFile.BarclaysId, V1DataFile.Trading212Id, V1DataFile.ChaseId);
             accounts.Values.Should().OnlyContain(a => a.Template == AccountTemplate.Bank && a.Currency == Currency.GBP && a.IsActive);
             accounts[V1DataFile.BarclaysId].Name.Should().Be("Barclays");
@@ -45,7 +46,8 @@ public class DataFileMigratorTests
             result.StepSummaries.Should().Equal(
                 "3 banks became accounts; 5 references renamed",
                 "0 cards became accounts; 0 statements added; 0 due dates moved to statements",
-                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it");
+                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it",
+                "Mãe Settlement account created with 0 entries (0 paid by you, 0 by Mãe); 0 pound entries recorded in GBP; 0 without a converted value; totals BRL 0 and GBP 0 unchanged");
         }
     }
 
@@ -89,10 +91,10 @@ public class DataFileMigratorTests
     [Fact]
     public void Migrate_VersionAboveCurrent_Refused()
     {
-        var act = () => DataFileMigrator.CreateDefault().Migrate("""{ "Version": 5 }""", SourceName);
+        var act = () => DataFileMigrator.CreateDefault().Migrate("""{ "Version": 6 }""", SourceName);
 
         act.Should().Throw<InvalidDataException>()
-            .WithMessage("copy.json is version 5; this build needs version 4.");
+            .WithMessage("copy.json is version 6; this build needs version 5.");
     }
 
     [Fact]
@@ -108,7 +110,8 @@ public class DataFileMigratorTests
             result.FromVersion.Should().Be(2);
             result.StepSummaries.Should().Equal(
                 "5 cards became accounts; 3 statements added; 2 due dates moved to statements",
-                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it");
+                "Reserva Pots account created with 0 pots; category Reserva; 0 snapshot sources, 0 income sources and 0 incomes point at it",
+                "Mãe Settlement account created with 0 entries (0 paid by you, 0 by Mãe); 0 pound entries recorded in GBP; 0 without a converted value; totals BRL 0 and GBP 0 unchanged");
             cards.Keys.Should().Equal(V2DataFile.Visa8003Id, V2DataFile.Visa6007Id, V2DataFile.ChaseMasterId, V2DataFile.AmexId, V2DataFile.PaypalId);
             cards.Values.Should().OnlyContain(a => a.Template == AccountTemplate.CreditCard && a.Currency == Currency.GBP);
             cards[V2DataFile.ChaseMasterId].IsActive.Should().BeFalse();
@@ -118,6 +121,27 @@ public class DataFileMigratorTests
             CardDueDate.For(cards[V2DataFile.Visa8003Id], data.CardStatements).Should().Be(new DateOnly(2026, 11, 18));
             CardDueDate.For(cards[V2DataFile.AmexId], data.CardStatements).Should().Be(new DateOnly(2026, 10, 25));
             CardDueDate.For(cards[V2DataFile.Visa6007Id], data.CardStatements).Should().BeNull();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F11-settlement-template-and-mae-migration-01")]
+    public void Migrate_Version4File_AddsMaeSettlementAccount()
+    {
+        var result = DataFileMigrator.CreateDefault().Migrate(V4DataFile.Json, SourceName);
+
+        var data = new CashFlowSerializerAdapter().Deserialize(result.Json);
+        var mae = data.Accounts.Last();
+        using (new AssertionScope())
+        {
+            result.FromVersion.Should().Be(4);
+            result.ToVersion.Should().Be(5);
+            mae.Should().BeEquivalentTo(new { Name = "Mãe", Template = AccountTemplate.Settlement, Currency = Currency.BRL, IsActive = true, OtherParticipant = "Mãe" });
+            mae.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            data.SettlementTransactions.Should().HaveCount(5).And.OnlyContain(entry => ReferenceEquals(entry.Account, mae));
+            data.SettlementTransactions.Sum(entry => entry.SignedValueIn(Currency.BRL) ?? 0m).Should().Be(V4DataFile.TotalBrl);
+            data.SettlementTransactions.Sum(entry => entry.SignedValueIn(Currency.GBP) ?? 0m).Should().Be(V4DataFile.TotalGbp);
+            result.StepSummaries.Should().ContainSingle().Which.Should().StartWith("Mãe Settlement account created with 5 entries");
         }
     }
 
@@ -147,16 +171,16 @@ public class DataFileMigratorTests
     {
         var applied = new List<int>();
         var migrator = new DataFileMigrator(
-            [new RecordingStep(3, applied), new RecordingStep(1, applied), new RecordingStep(2, applied)],
-            4,
+            [new RecordingStep(3, applied), new RecordingStep(4, applied), new RecordingStep(1, applied), new RecordingStep(2, applied)],
+            5,
             json => json);
 
         var result = migrator.Migrate("""{ "Version": 1 }""", SourceName);
 
         using (new AssertionScope())
         {
-            applied.Should().Equal(1, 2, 3);
-            JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(4);
+            applied.Should().Equal(1, 2, 3, 4);
+            JsonNode.Parse(result.Json)!["Version"]!.GetValue<int>().Should().Be(5);
         }
     }
 
@@ -164,14 +188,14 @@ public class DataFileMigratorTests
     public void Migrate_MissingStepInTheChain_RefusesToSkipIt()
     {
         var applied = new List<int>();
-        var migrator = new DataFileMigrator([new RecordingStep(1, applied), new RecordingStep(3, applied)], 4, json => json);
+        var migrator = new DataFileMigrator([new RecordingStep(1, applied), new RecordingStep(2, applied), new RecordingStep(4, applied)], 5, json => json);
 
         var act = () => migrator.Migrate("""{ "Version": 1 }""", SourceName);
 
         using (new AssertionScope())
         {
-            act.Should().Throw<InvalidDataException>().WithMessage("No migration step from version 2 to 3.");
-            applied.Should().Equal(1);
+            act.Should().Throw<InvalidDataException>().WithMessage("No migration step from version 3 to 4.");
+            applied.Should().Equal(1, 2);
         }
     }
 

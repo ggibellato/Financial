@@ -125,7 +125,7 @@ The following features are built as React pages.
 * **Recurring Bills** — CRUD management of fixed recurring monthly bills.
 * **Investment Snapshots** — monthly snapshot of quick-access accounts (savings, ISAs, Trading 212 brokerage balance, etc.) for net-worth tracking; lighter-weight than the Investment domain's full transaction-level tracking.
 * **Annual Summary** — yearly rollups including gross-vs-net/after-tax salary comparisons (`SalaryAfterTaxes`/`TaxDifference`) and server-side Category Totals averages scoped to the correct months.
-* **Controle Mãe** — household ledger tracking informal borrowed money between myself and my mother, recorded in both BRL and GBP.
+* **Controle Mãe** — household ledger tracking informal borrowed money between myself and my mother, kept on the "Mãe" Settlement account (BRL and GBP): each entry records who paid, its currency, the amount and, when a rate was found, the value converted to the other currency.
 * **Tithe calculation** — computes 10% of a month's net income on demand (not persisted), read fresh whenever income or tithe-tagged expenses change.
 
 ---

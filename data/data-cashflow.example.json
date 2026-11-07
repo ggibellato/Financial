@@ -1,14 +1,28 @@
 {
   "Expenses": [],
   "Incomes": [],
-  "Accounts": [],
+  "Accounts": [
+    {
+      "Id": "3cd771bd-1cb3-4455-b83b-cd1d4e93ff6a",
+      "Name": "Mãe",
+      "Template": "Settlement",
+      "Currency": "BRL",
+      "IsActive": true,
+      "OpeningBalance": null,
+      "RoundUp": null,
+      "Pots": null,
+      "CategoryId": null,
+      "Currencies": ["BRL", "GBP"],
+      "OtherParticipant": "Mãe"
+    }
+  ],
   "CardStatements": [],
   "RecurringBills": [],
   "ReserveMovements": [],
   "InvestmentSnapshots": [],
   "InvestmentAccounts": [],
-  "MaeLedgerEntries": [],
+  "SettlementTransactions": [],
   "TitheCarryForwards": [],
   "TitheCarryForwardEffectiveFrom": null,
-  "Version": 4
+  "Version": 5
 }

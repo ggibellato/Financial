@@ -24,6 +24,9 @@ public class FxRateProviderCompositionAcceptanceTests() : ApiEndpointTests(useRe
     [Fact]
     public async Task ControleMaeCreateEntry_UsesRateFromTheLayeredFxRateProviderChain()
     {
+        ReplaceCashFlowDataBeforeStart("""
+            { "Accounts": [ { "Id": "6d0e0000-0000-0000-0000-000000000001", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" } ], "Version": 5 }
+            """);
         var store = Services.GetRequiredService<IFxRateStore>();
         await store.SetRateAsync(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", TestClock.Default));
 

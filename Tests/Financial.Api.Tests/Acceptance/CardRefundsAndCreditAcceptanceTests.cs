@@ -37,7 +37,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
           "CardStatements": [
             { "Id": "{{SeptemberStatementId}}", "CreditCardId": "{{AmexId}}", "Year": 2026, "Month": 9, "IsPaid": true, "DueDate": "2026-09-28", "PaymentTransferId": "{{SeptemberPaymentId}}" }
           ],
-          "Version": 4
+          "Version": 5
         }
         """;
 
