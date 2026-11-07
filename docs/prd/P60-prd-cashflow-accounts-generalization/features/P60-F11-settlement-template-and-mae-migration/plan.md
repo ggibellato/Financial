@@ -28,7 +28,7 @@
 
 ### Stage 2a — Rename the Mãe entry
 
-**8. Settlement entry rename** - Rename the Mãe ledger entry type, its data collection and its repository members to Settlement entry names, keeping the file key and every behaviour, and delete the doc comments on the renamed lines. See spec §3 "Entry model".
+**8. Settlement entry rename** - Rename the Mãe ledger entry type, its data collection and its repository members to `SettlementTransaction` names, keeping the file key and every behaviour, and delete the doc comments on the renamed lines. See spec §3 "Entry model".
 
 **9. Stage 2a verification** - Run the suites, parity, `/simplify` and the architecture-reviewer, then push and open the PR, naming it a one-rename change.
 
