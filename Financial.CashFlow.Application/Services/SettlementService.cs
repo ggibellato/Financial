@@ -44,16 +44,30 @@ public sealed class SettlementService : ISettlementService
                 account, request.Date, request.Description, request.Note, ParsePaidBy(request.PaidBy), CurrencyOf(account, request.Currency), request.Amount, null);
             var warning = await ApplyConvertedValueAsync(entry).ConfigureAwait(false);
 
-            await _repository.ApplyAndSaveAsync(() =>
-            {
-                _repository.AddSettlementTransaction(entry);
-                return true;
-            }).ConfigureAwait(false);
+            return await SaveNewAsync(entry, warning, span, "AddEntry").ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
 
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, entry.Id.ToString());
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "AddEntry");
-            return ToDto(entry, warning);
+    public async Task<SettlementEntryDTO> SettleAsync(Guid accountId, SettleRequestDTO request)
+    {
+        using var span = StartSpan("Settle");
+        try
+        {
+            ArgumentNullException.ThrowIfNull(request);
+
+            var account = UsableSettlementAccount(accountId);
+            EnsureCanBeSettledNow(account);
+            EnsureNotInTheFuture(request.Date);
+            var entry = SettlementTransaction.Create(
+                account, request.Date, request.Description, request.Note, ParsePaidBy(request.PaidBy), CurrencyOf(account, request.Currency), request.Amount, request.ConvertedValue);
+            var warning = RoundedAwayWarning(request.ConvertedValue, entry);
+
+            return await SaveNewAsync(entry, warning, span, "Settle").ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -80,7 +94,7 @@ public sealed class SettlementService : ISettlementService
                 return true;
             }).ConfigureAwait(false);
 
-            var warning = request.ConvertedValue is not null && entry.ConvertedValue is null ? RoundsToZeroWarning(entry) : null;
+            var warning = RoundedAwayWarning(request.ConvertedValue, entry);
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateEntry");
             return ToDto(entry, warning);
@@ -145,6 +159,34 @@ public sealed class SettlementService : ISettlementService
         return account;
     }
 
+    private void EnsureCanBeSettledNow(Account account)
+    {
+        if (!account.Has(Capability.CanSettle))
+        {
+            throw new ArgumentException($"{account.Name} can't be settled.");
+        }
+
+        var currentBalances = AccountBalanceRule.Balances(account, DateOnly.MaxValue, AccountTransactionReader.Read(_repository));
+        if (AccountActions.DisabledFor(account, currentBalances).TryGetValue(AccountAction.Settle, out var reason))
+        {
+            throw new ArgumentException(reason);
+        }
+    }
+
+    private async Task<SettlementEntryDTO> SaveNewAsync(SettlementTransaction entry, string? warning, ITelemetrySpan span, string operationName)
+    {
+        await _repository.ApplyAndSaveAsync(() =>
+        {
+            _repository.AddSettlementTransaction(entry);
+            return true;
+        }).ConfigureAwait(false);
+
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, entry.Id.ToString());
+        span.MarkSuccess();
+        _logger.LogInformation("{Operation} completed", operationName);
+        return ToDto(entry, warning);
+    }
+
     private SettlementTransaction EntryOf(Account account, Guid entryId) =>
         _repository.GetSettlementTransactions().FirstOrThrow(entry => entry.Id == entryId && entry.Account.Id == account.Id, "Settlement entry", entryId);
 
@@ -173,6 +215,9 @@ public sealed class SettlementService : ISettlementService
         entry.UpdateValues(entry.PaidBy, entry.Amount, SettlementTransaction.ConvertedValueAt(entry.Amount, rate.Value));
         return entry.ConvertedValue is null ? RoundsToZeroWarning(entry) : null;
     }
+
+    private static string? RoundedAwayWarning(decimal? requestedConvertedValue, SettlementTransaction entry) =>
+        requestedConvertedValue is not null && entry.ConvertedValue is null ? RoundsToZeroWarning(entry) : null;
 
     private static string RoundsToZeroWarning(SettlementTransaction entry) =>
         $"The {SettlementTransaction.ConvertedCurrencyOf(entry.Account, entry.Currency)} value rounds to 0.00, so it was left empty.";

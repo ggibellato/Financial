@@ -7,4 +7,5 @@ public interface ISettlementService
     Task<SettlementEntryDTO> AddEntryAsync(Guid accountId, SettlementEntryCreateDTO request);
     Task<SettlementEntryDTO> UpdateEntryAsync(Guid accountId, Guid entryId, SettlementEntryUpdateDTO request);
     Task DeleteEntryAsync(Guid accountId, Guid entryId);
+    Task<SettlementEntryDTO> SettleAsync(Guid accountId, SettleRequestDTO request);
 }
