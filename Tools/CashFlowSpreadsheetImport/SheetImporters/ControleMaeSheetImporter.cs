@@ -18,10 +18,10 @@ public static partial class ControleMaeSheetImporter
     private static readonly Regex MonthYearPattern = BuildMonthYearPattern();
     private static readonly Regex YearMonthPattern = BuildYearMonthPattern();
 
-    public static IReadOnlyList<SettlementEntry> Import(IXLWorksheet sheet, ImportReport report)
+    public static IReadOnlyList<SettlementTransaction> Import(IXLWorksheet sheet, ImportReport report)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        var entries = new List<SettlementEntry>();
+        var entries = new List<SettlementTransaction>();
         DateOnly? previousDate = null;
 
         for (var row = 1; row <= lastRow; row++)
@@ -62,7 +62,7 @@ public static partial class ControleMaeSheetImporter
             var note = sheet.Cell(row, NoteColumn).GetString();
             var sourceCurrency = brlValue is not null ? Currency.BRL : Currency.GBP;
 
-            entries.Add(SettlementEntry.Create(date, description, note, sourceCurrency, brlValue, gbpValue));
+            entries.Add(SettlementTransaction.Create(date, description, note, sourceCurrency, brlValue, gbpValue));
         }
 
         return entries;

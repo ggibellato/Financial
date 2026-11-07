@@ -19,8 +19,8 @@ public class CashFlowData
     private readonly IdCollection<RecurringBill> _recurringBills = new(i => i.Id);
     public IReadOnlyCollection<RecurringBill> RecurringBills => _recurringBills;
 
-    private readonly IdCollection<SettlementEntry> _settlementEntries = new(i => i.Id);
-    public IReadOnlyCollection<SettlementEntry> SettlementEntries => _settlementEntries;
+    private readonly IdCollection<SettlementTransaction> _settlementTransactions = new(i => i.Id);
+    public IReadOnlyCollection<SettlementTransaction> SettlementTransactions => _settlementTransactions;
 
     private readonly ItemCollection<InvestmentSnapshot> _investmentSnapshots = new();
     public IReadOnlyCollection<InvestmentSnapshot> InvestmentSnapshots => _investmentSnapshots;
@@ -69,9 +69,9 @@ public class CashFlowData
 
     public void RemoveRecurringBill(Guid id) => _recurringBills.RemoveById(id);
 
-    public void AddSettlementEntry(SettlementEntry entry) => _settlementEntries.Add(entry);
+    public void AddSettlementTransaction(SettlementTransaction entry) => _settlementTransactions.Add(entry);
 
-    public void RemoveSettlementEntry(Guid id) => _settlementEntries.RemoveById(id);
+    public void RemoveSettlementTransaction(Guid id) => _settlementTransactions.RemoveById(id);
 
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _investmentSnapshots.Add(snapshot);
 

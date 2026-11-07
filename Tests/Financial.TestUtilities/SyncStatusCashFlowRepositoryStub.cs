@@ -38,9 +38,9 @@ public sealed class SyncStatusCashFlowRepositoryStub : ICashFlowRepository, ISyn
     public IEnumerable<RecurringBill> GetRecurringBills() => throw new NotImplementedException();
     public void AddRecurringBill(RecurringBill bill) => throw new NotImplementedException();
     public void DeleteRecurringBill(Guid id) => throw new NotImplementedException();
-    public IEnumerable<SettlementEntry> GetSettlementEntries() => throw new NotImplementedException();
-    public void AddSettlementEntry(SettlementEntry entry) => throw new NotImplementedException();
-    public void DeleteSettlementEntry(Guid id) => throw new NotImplementedException();
+    public IEnumerable<SettlementTransaction> GetSettlementTransactions() => throw new NotImplementedException();
+    public void AddSettlementTransaction(SettlementTransaction entry) => throw new NotImplementedException();
+    public void DeleteSettlementTransaction(Guid id) => throw new NotImplementedException();
     public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => throw new NotImplementedException();
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => throw new NotImplementedException();
     public IEnumerable<InvestmentAccount> GetInvestmentAccounts() => throw new NotImplementedException();

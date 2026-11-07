@@ -11,7 +11,7 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ControleMaeService : IControleMaeService
 {
-    private const string EntityType = "MaeLedgerEntry";
+    private const string EntityType = "SettlementTransaction";
 
     private readonly ICashFlowRepository _repository;
     private readonly IExchangeRateProvider _exchangeRateProvider;
@@ -66,10 +66,10 @@ public sealed class ControleMaeService : IControleMaeService
                 ? ((decimal?)request.SourceValue, convertedValue)
                 : (convertedValue, (decimal?)request.SourceValue);
 
-            var entry = SettlementEntry.Create(request.Date, request.Description, request.Note, sourceCurrency, brlValue, gbpValue);
+            var entry = SettlementTransaction.Create(request.Date, request.Description, request.Note, sourceCurrency, brlValue, gbpValue);
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.AddSettlementEntry(entry);
+                _repository.AddSettlementTransaction(entry);
                 return true;
             }).ConfigureAwait(false);
 
@@ -90,7 +90,7 @@ public sealed class ControleMaeService : IControleMaeService
         using var span = StartSpan("GetEntriesFromDate");
         try
         {
-            var result = _repository.GetSettlementEntries()
+            var result = _repository.GetSettlementTransactions()
                 .Where(e => e.Date >= fromDate)
                 .OrderBy(e => e.Date)
                 .Select(ToDto)
@@ -113,7 +113,7 @@ public sealed class ControleMaeService : IControleMaeService
         try
         {
             decimal totalBrl = 0m, totalGbp = 0m;
-            foreach (var entry in _repository.GetSettlementEntries())
+            foreach (var entry in _repository.GetSettlementTransactions())
             {
                 totalBrl += entry.BrlValue ?? 0m;
                 totalGbp += entry.GbpValue ?? 0m;
@@ -138,7 +138,7 @@ public sealed class ControleMaeService : IControleMaeService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var entry = _repository.GetSettlementEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+            var entry = _repository.GetSettlementTransactions().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -163,11 +163,11 @@ public sealed class ControleMaeService : IControleMaeService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            _ = _repository.GetSettlementEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+            _ = _repository.GetSettlementTransactions().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                _repository.DeleteSettlementEntry(id);
+                _repository.DeleteSettlementTransaction(id);
                 return true;
             }).ConfigureAwait(false);
 
@@ -187,7 +187,7 @@ public sealed class ControleMaeService : IControleMaeService
         return _tracer.StartServiceSpan("CashFlow", nameof(ControleMaeService), operationName, EntityType);
     }
 
-    private static MaeLedgerEntryDTO ToDto(SettlementEntry entry) => new()
+    private static MaeLedgerEntryDTO ToDto(SettlementTransaction entry) => new()
     {
         Id = entry.Id,
         Date = entry.Date,
