@@ -1041,7 +1041,7 @@ graph TD
 - [x] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
 - [x] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
 - [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
-- [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header with no change to the shell's allowed-actions rendering
+- [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header, with the shell's allowed-actions rendering extended only to show an action the API returns as disabled, with the API's reason (F12's Settle: "Nothing to settle.")
 - [x] F07's card accounts and charge filter give the statement totals F08 pays
 - [x] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
 - [x] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
