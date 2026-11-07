@@ -139,11 +139,11 @@ public sealed class ControleMaeService : IControleMaeService
             var (paidValue, otherValue) = entry.Currency == Currency.BRL
                 ? (request.BrlValue, request.GbpValue)
                 : (request.GbpValue, request.BrlValue);
-            EnsureValuesHaveOneSign(entry.Currency, paidValue, otherValue);
+            var paid = RequireOneSignedPaidValue(entry.Currency, paidValue, otherValue);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                entry.UpdateValues(SettlementTransaction.PayerOf(paidValue!.Value), Math.Abs(paidValue.Value), otherValue is null ? null : Math.Abs(otherValue.Value));
+                entry.UpdateValues(SettlementTransaction.PayerOf(paid), Math.Abs(paid), otherValue is null ? null : Math.Abs(otherValue.Value));
                 return true;
             }).ConfigureAwait(false);
 
@@ -191,7 +191,7 @@ public sealed class ControleMaeService : IControleMaeService
     private IEnumerable<SettlementTransaction> MaeEntries()
     {
         var mae = MaeAccount.Find(_repository.GetAccounts());
-        return mae is null ? [] : _repository.GetSettlementTransactions().Where(entry => entry.Account == mae);
+        return mae is null ? [] : _repository.GetSettlementTransactions().Where(entry => entry.Account.Id == mae.Id);
     }
 
     private async Task<decimal?> ConvertedValueAsync(Account account, DateOnly date, Currency sourceCurrency, decimal amount)
@@ -206,7 +206,7 @@ public sealed class ControleMaeService : IControleMaeService
         return rate.HasValue ? amount * rate.Value : null;
     }
 
-    private static void EnsureValuesHaveOneSign(Currency paidCurrency, decimal? paidValue, decimal? otherValue)
+    private static decimal RequireOneSignedPaidValue(Currency paidCurrency, decimal? paidValue, decimal? otherValue)
     {
         if (paidValue is null or 0)
         {
@@ -217,6 +217,8 @@ public sealed class ControleMaeService : IControleMaeService
         {
             throw new ArgumentException("BRL and GBP values must both be positive or both be negative.");
         }
+
+        return paidValue.Value;
     }
 
     private static MaeLedgerEntryDTO ToDto(SettlementTransaction entry) => new()
