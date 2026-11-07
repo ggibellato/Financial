@@ -2,6 +2,8 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
 using Financial.Shared.Abstractions.Time;
@@ -45,8 +47,10 @@ public sealed class ControleMaeService : IControleMaeService
                 throw new ArgumentException("Source value must not be zero.");
             }
 
-            if (!CurrencyParser.TryParse(request.SourceCurrency, out var sourceCurrency) ||
-                (sourceCurrency != Currency.BRL && sourceCurrency != Currency.GBP))
+            var mae = MaeAccount.Find(_repository.GetAccounts())
+                ?? throw new ArgumentException("Create a Settlement account first.");
+
+            if (!CurrencyParser.TryParse(request.SourceCurrency, out var sourceCurrency) || !mae.Currencies.Contains(sourceCurrency))
             {
                 throw new ArgumentException($"Currency '{request.SourceCurrency}' is not recognized.");
             }
@@ -57,16 +61,10 @@ public sealed class ControleMaeService : IControleMaeService
                 throw new ArgumentException("Date must not be in the future.");
             }
 
-            var targetCurrency = sourceCurrency == Currency.BRL ? Currency.GBP : Currency.BRL;
-            var rate = await _exchangeRateProvider.GetHistoricalRateAsync(request.Date, sourceCurrency, targetCurrency)
-                .ConfigureAwait(false);
-            var convertedValue = rate.HasValue ? request.SourceValue * rate.Value : (decimal?)null;
-
-            var (brlValue, gbpValue) = sourceCurrency == Currency.BRL
-                ? ((decimal?)request.SourceValue, convertedValue)
-                : (convertedValue, (decimal?)request.SourceValue);
-
-            var entry = SettlementTransaction.Create(request.Date, request.Description, request.Note, sourceCurrency, brlValue, gbpValue);
+            var amount = Math.Abs(request.SourceValue);
+            var convertedValue = await ConvertedValueAsync(mae, request.Date, sourceCurrency, amount).ConfigureAwait(false);
+            var entry = SettlementTransaction.Create(
+                mae, request.Date, request.Description, request.Note, PayerOf(request.SourceValue), sourceCurrency, amount, convertedValue);
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddSettlementTransaction(entry);
@@ -90,7 +88,7 @@ public sealed class ControleMaeService : IControleMaeService
         using var span = StartSpan("GetEntriesFromDate");
         try
         {
-            var result = _repository.GetSettlementTransactions()
+            var result = MaeEntries()
                 .Where(e => e.Date >= fromDate)
                 .OrderBy(e => e.Date)
                 .Select(ToDto)
@@ -112,12 +110,9 @@ public sealed class ControleMaeService : IControleMaeService
         using var span = StartSpan("GetTotals");
         try
         {
-            decimal totalBrl = 0m, totalGbp = 0m;
-            foreach (var entry in _repository.GetSettlementTransactions())
-            {
-                totalBrl += entry.BrlValue ?? 0m;
-                totalGbp += entry.GbpValue ?? 0m;
-            }
+            var entries = MaeEntries().ToList();
+            var totalBrl = entries.Sum(entry => entry.SignedValueIn(Currency.BRL) ?? 0m);
+            var totalGbp = entries.Sum(entry => entry.SignedValueIn(Currency.GBP) ?? 0m);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTotals");
@@ -138,11 +133,15 @@ public sealed class ControleMaeService : IControleMaeService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var entry = _repository.GetSettlementTransactions().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+            var entry = MaeEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+            var (paidValue, otherValue) = entry.Currency == Currency.BRL
+                ? (request.BrlValue, request.GbpValue)
+                : (request.GbpValue, request.BrlValue);
+            EnsureValuesHaveOneSign(entry.Currency, paidValue, otherValue);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                entry.UpdateValues(request.BrlValue, request.GbpValue);
+                entry.UpdateValues(PayerOf(paidValue!.Value), Math.Abs(paidValue.Value), otherValue is null ? null : Math.Abs(otherValue.Value));
                 return true;
             }).ConfigureAwait(false);
 
@@ -163,7 +162,7 @@ public sealed class ControleMaeService : IControleMaeService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            _ = _repository.GetSettlementTransactions().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
+            _ = MaeEntries().FirstOrThrow(e => e.Id == id, "Mae ledger entry", id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -187,14 +186,48 @@ public sealed class ControleMaeService : IControleMaeService
         return _tracer.StartServiceSpan("CashFlow", nameof(ControleMaeService), operationName, EntityType);
     }
 
+    private IEnumerable<SettlementTransaction> MaeEntries()
+    {
+        var mae = MaeAccount.Find(_repository.GetAccounts());
+        return _repository.GetSettlementTransactions().Where(entry => mae is not null && entry.Account == mae);
+    }
+
+    private async Task<decimal?> ConvertedValueAsync(Account account, DateOnly date, Currency sourceCurrency, decimal amount)
+    {
+        var targetCurrency = account.Currencies.Where(currency => currency != sourceCurrency).Select(currency => (Currency?)currency).FirstOrDefault();
+        if (targetCurrency is null)
+        {
+            return null;
+        }
+
+        var rate = await _exchangeRateProvider.GetHistoricalRateAsync(date, sourceCurrency, targetCurrency.Value).ConfigureAwait(false);
+        return rate.HasValue ? amount * rate.Value : null;
+    }
+
+    private static SettlementPayer PayerOf(decimal signedValue) =>
+        signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;
+
+    private static void EnsureValuesHaveOneSign(Currency paidCurrency, decimal? paidValue, decimal? otherValue)
+    {
+        if (paidValue is null or 0)
+        {
+            throw new ArgumentException($"{paidCurrency} value is required and must not be zero.");
+        }
+
+        if (otherValue is not null && Math.Sign(otherValue.Value) != Math.Sign(paidValue.Value))
+        {
+            throw new ArgumentException("BRL and GBP values must both be positive or both be negative.");
+        }
+    }
+
     private static MaeLedgerEntryDTO ToDto(SettlementTransaction entry) => new()
     {
         Id = entry.Id,
         Date = entry.Date,
         Description = entry.Description,
         Note = entry.Note,
-        SourceCurrency = entry.SourceCurrency.ToString(),
-        BrlValue = entry.BrlValue,
-        GbpValue = entry.GbpValue
+        SourceCurrency = entry.Currency.ToString(),
+        BrlValue = entry.SignedValueIn(Currency.BRL),
+        GbpValue = entry.SignedValueIn(Currency.GBP)
     };
 }
