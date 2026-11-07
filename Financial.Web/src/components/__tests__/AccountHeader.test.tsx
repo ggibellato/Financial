@@ -200,6 +200,12 @@ describe('AccountHeader', () => {
     expect(screen.getByRole('combobox', { name: 'Account' })).toHaveTextContent('Old Savings')
   })
 
+  it('keeps an account with participants opened from its URL as the picker value', () => {
+    renderHeader({ ...BARCLAYS, id: 'mae', name: 'Mãe', templateName: 'Settlement', currency: 'BRL' })
+
+    expect(screen.getByRole('combobox', { name: 'Account' })).toHaveTextContent('Mãe')
+  })
+
   it('lists only active accounts in the picker, grouped by template', async () => {
     const user = userEvent.setup()
     renderHeader()

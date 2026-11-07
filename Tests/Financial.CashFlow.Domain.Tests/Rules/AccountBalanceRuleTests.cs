@@ -326,8 +326,6 @@ public class AccountBalanceRuleTests
                 TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe"), new DateOnly(2026, 9, 2), "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m)
         };
 
-        AccountBalanceRule.Balances(_barclays, new DateOnly(2026, 9, 30), records)
-            .Should().Equal((Currency.GBP, AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records)));
-        AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(1300m);
+        AccountBalanceRule.Balances(_barclays, new DateOnly(2026, 9, 30), records).Should().Equal((Currency.GBP, 1300m));
     }
 }

@@ -6,7 +6,6 @@ using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
-using Financial.CashFlow.Domain.Rules;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -278,7 +277,7 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
-    public void GetTotals_EqualTheSharedBalancePerCurrency_LeavingOtherAccountsEntriesOut()
+    public void GetTotals_MaeBalancePerCurrencyAtStoredPrecision_LeavingOtherAccountsEntriesOut()
     {
         var son = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
         _repository.Accounts.Add(son);
@@ -290,8 +289,6 @@ public class ControleMaeServiceTests
 
         using (new AssertionScope())
         {
-            result.TotalBrlValue.Should().Be(AccountBalanceRule.Balance(_mae, Currency.BRL, DateOnly.MaxValue, _repository.SettlementTransactions));
-            result.TotalGbpValue.Should().Be(AccountBalanceRule.Balance(_mae, Currency.GBP, DateOnly.MaxValue, _repository.SettlementTransactions));
             result.TotalBrlValue.Should().Be(167.8768m);
             result.TotalGbpValue.Should().Be(27.94200793m);
         }
