@@ -1267,4 +1267,46 @@ public class AccountQueryServiceTests
         act.Should().Throw<ArgumentOutOfRangeException>();
         _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.AccountQueryService.GetMonthTransactions");
     }
+
+    [Fact]
+    public void GetTransactionsAndMonthTransactions_SettlementEntriesInTheMonth_AddNoRows()
+    {
+        var mae = MaeWithEntriesIn(2026, 10);
+        SeedEveryRecordKind();
+        var barclaysRows = _sut.GetTransactions(_barclays.Id, 2026, 10);
+
+        using (new AssertionScope())
+        {
+            _sut.GetTransactions(mae.Id, 2026, 10).Should().BeEmpty();
+            _sut.GetMonthTransactions(2026, 10).Should().NotContain(row => row.AccountId == mae.Id);
+            barclaysRows.Should().NotBeEmpty();
+        }
+    }
+
+    [Fact]
+    public void GetAccountAndGetAccounts_SettlementWithEntries_HaveItsMainCurrencyBalanceAndRecords()
+    {
+        var mae = MaeWithEntriesIn(2026, 10);
+
+        var detail = _sut.GetAccount(mae.Id, 2026, 10);
+        var listed = _sut.GetAccounts().Single(account => account.Id == mae.Id);
+
+        using (new AssertionScope())
+        {
+            detail.Balance.Should().Be(260m);
+            listed.HasRecords.Should().BeTrue();
+            _sut.GetAccount(_barclays.Id, 2026, 10).Balance.Should().Be(1000m);
+        }
+    }
+
+    private Account MaeWithEntriesIn(int year, int month)
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        _repository.Accounts.Add(mae);
+        _repository.SettlementTransactions.Add(
+            SettlementTransaction.Create(mae, new DateOnly(year, month, 5), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45m));
+        _repository.SettlementTransactions.Add(
+            SettlementTransaction.Create(mae, new DateOnly(year, month, 6), "Paid by Mãe", null, SettlementPayer.Other, Currency.GBP, 10m, 40m));
+        return mae;
+    }
 }

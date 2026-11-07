@@ -64,6 +64,10 @@ internal static class AccountReferenceReader
             yield return transfer.SourceAccount.Id;
             yield return transfer.DestinationAccount.Id;
         }
+        foreach (var entry in repository.GetSettlementTransactions())
+        {
+            yield return entry.Account.Id;
+        }
         foreach (var potsOwner in repository.GetAccounts().Where(account => account.Pots is { Count: > 0 }))
         {
             yield return potsOwner.Id;

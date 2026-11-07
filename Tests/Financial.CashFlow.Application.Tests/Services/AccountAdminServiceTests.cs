@@ -978,4 +978,74 @@ public class AccountAdminServiceTests
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
+
+    [Fact]
+    public async Task UpdateAsync_SettlementWithAnEntryChangingItsCurrencies_ThrowsAndKeepsThem()
+    {
+        var mae = MaeWithAnEntry();
+
+        var act = () => _sut.UpdateAsync(mae.Id, EditSettlement(mae, "GBP", ["GBP"], "Mãe"));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Template and currency can't change once the account has transactions.");
+            mae.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettlementWithAnEntryChangingItsTemplate_ThrowsAndKeepsIt()
+    {
+        var mae = MaeWithAnEntry();
+
+        var act = () => _sut.UpdateAsync(mae.Id, Edit(mae));
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Template and currency can't change once the account has transactions.");
+            mae.Template.Should().Be(AccountTemplate.Settlement);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateAsync_SettlementWithAnEntry_KeepsTheOtherParticipantEditableAndReportsRecords()
+    {
+        var mae = MaeWithAnEntry();
+
+        var result = await _sut.UpdateAsync(mae.Id, EditSettlement(mae, "BRL", ["BRL", "GBP"], "Mother"));
+
+        using (new AssertionScope())
+        {
+            mae.OtherParticipant.Should().Be("Mother");
+            result.HasRecords.Should().BeTrue();
+            _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task DeleteAsync_SettlementWithAnEntry_ThrowsTheDeactivateMessageAndKeepsIt()
+    {
+        var mae = MaeWithAnEntry();
+
+        var act = () => _sut.DeleteAsync(mae.Id);
+
+        using (new AssertionScope())
+        {
+            (await act.Should().ThrowAsync<EntityInUseException>())
+                .WithMessage("Mãe has transactions and cannot be deleted. Deactivate it instead.");
+            _repository.Accounts.Should().Contain(mae);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    private Account MaeWithAnEntry()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        _repository.Accounts.Add(mae);
+        _repository.SettlementTransactions.Add(
+            SettlementTransaction.Create(mae, new DateOnly(2026, 7, 1), "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m));
+        return mae;
+    }
 }

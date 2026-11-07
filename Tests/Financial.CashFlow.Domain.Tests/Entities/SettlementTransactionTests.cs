@@ -203,4 +203,50 @@ public class SettlementTransactionTests
         SettlementTransaction.ConvertedCurrencyOf(Mae(), Currency.BRL).Should().Be(Currency.GBP);
         SettlementTransaction.ConvertedCurrencyOf(Son(), Currency.GBP).Should().BeNull();
     }
+
+    [Fact]
+    public void ContributionTo_OwnAccount_IsTheSignedValueInEachCurrency()
+    {
+        var mae = Mae();
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.Other, Currency.GBP, 40m, 260.5m);
+
+        using (new AssertionScope())
+        {
+            entry.ContributionTo(mae, Currency.GBP).Should().Be(-40m);
+            entry.ContributionTo(mae, Currency.BRL).Should().Be(-260.5m);
+            entry.ContributionTo(mae, Currency.USD).Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public void ContributionTo_EmptyConvertedValue_IsZeroInTheOtherCurrency()
+    {
+        var mae = Mae();
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, null);
+
+        entry.ContributionTo(mae, Currency.GBP).Should().Be(0m);
+    }
+
+    [Fact]
+    public void ContributionTo_AnotherAccount_IsZero()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m);
+        var otherMae = Mae();
+
+        using (new AssertionScope())
+        {
+            entry.ContributionTo(otherMae, Currency.BRL).Should().Be(0m);
+            entry.ContributionTo(otherMae).Should().Be(0m);
+            entry.ContributionTo(TestAccounts.Bank("Barclays")).Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public void ContributionTo_WithoutCurrency_IsTheContributionInTheAccountsMainCurrency()
+    {
+        var mae = Mae();
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m);
+
+        entry.ContributionTo(mae).Should().Be(65m);
+    }
 }
