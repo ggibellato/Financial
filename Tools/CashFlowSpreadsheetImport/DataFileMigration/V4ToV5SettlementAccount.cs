@@ -32,14 +32,13 @@ public sealed class V4ToV5SettlementAccount : IDataFileMigrationStep
         EnsureNoSettlementAccount(accounts);
         EnsureNoAccountNamedMae(accounts);
 
-        var mae = NewMaeAccount();
-        var maeId = mae["Id"]!.GetValue<string>();
+        var maeId = Guid.NewGuid().ToString();
         var legacyEntries = Objects(root, LegacyCollection);
         var entries = legacyEntries.Select(entry => ToSettlementTransaction(entry, maeId)).ToList();
         var totals = EnsureTotalsUnchanged(legacyEntries, entries);
 
         var accountArray = root["Accounts"] as JsonArray ?? [];
-        accountArray.Add(mae);
+        accountArray.Add(NewMaeAccount(maeId));
         root["Accounts"] = accountArray;
         root["SettlementTransactions"] = new JsonArray(entries.Select(entry => (JsonNode)entry.Json).ToArray());
         root.Remove(LegacyCollection);
@@ -133,9 +132,9 @@ public sealed class V4ToV5SettlementAccount : IDataFileMigrationStep
         }
     }
 
-    private static JsonObject NewMaeAccount() => new()
+    private static JsonObject NewMaeAccount(string id) => new()
     {
-        ["Id"] = Guid.NewGuid().ToString(),
+        ["Id"] = id,
         ["Name"] = MaeName,
         ["Template"] = "Settlement",
         ["Currency"] = Brl,

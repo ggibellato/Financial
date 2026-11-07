@@ -1,3 +1,4 @@
+using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
@@ -21,5 +22,15 @@ public class MaeAccountTests
     public void Find_NoSettlementAccount_ReturnsNull()
     {
         MaeAccount.Find([TestAccounts.Bank("Barclays"), TestAccounts.CreditCard("BA Amex"), TestAccounts.Pots("Reserva")]).Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_IsASettlementAccountInBrlAndGbpWithMaeAsTheOtherParticipant()
+    {
+        var mae = MaeAccount.Create();
+
+        mae.Should().BeEquivalentTo(new { Name = "Mãe", Template = AccountTemplate.Settlement, Currency = Currency.BRL, IsActive = true, OtherParticipant = "Mãe" });
+        mae.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+        MaeAccount.Find([TestAccounts.Bank("Barclays"), mae]).Should().BeSameAs(mae);
     }
 }

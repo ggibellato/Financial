@@ -20,7 +20,6 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reportin
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 using Financial.CashFlow.Infrastructure.Persistence;
 using Financial.CashFlow.Infrastructure.Repositories;
-using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Infrastructure.Persistence;
 
 const string ReservasSheetName = "Reservas";
@@ -301,9 +300,7 @@ static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, Impor
 
 static Account AddMaeAccount(CashFlowData data)
 {
-    var mae = Account.Create(MaeAccount.Name, AccountTemplate.Settlement, Currency.BRL);
-    mae.SetCurrencies([Currency.BRL, Currency.GBP]);
-    mae.SetOtherParticipant(MaeAccount.Name);
+    var mae = MaeAccount.Create();
     data.AddAccount(mae);
     return mae;
 }

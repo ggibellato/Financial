@@ -11,4 +11,13 @@ public static class MaeAccount
 
     public static Account? Find(IEnumerable<Account> accounts) =>
         accounts.FirstOrDefault(account => account.Has(Capability.HasParticipants));
+
+    public static Account Create()
+    {
+        var currencies = AccountTemplates.AllowedCurrencies(AccountTemplate.Settlement);
+        var mae = Account.Create(Name, AccountTemplate.Settlement, currencies[0]);
+        mae.SetCurrencies(currencies);
+        mae.SetOtherParticipant(Name);
+        return mae;
+    }
 }

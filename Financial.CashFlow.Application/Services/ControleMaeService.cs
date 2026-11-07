@@ -2,7 +2,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
@@ -64,7 +63,7 @@ public sealed class ControleMaeService : IControleMaeService
             var amount = Math.Abs(request.SourceValue);
             var convertedValue = await ConvertedValueAsync(mae, request.Date, sourceCurrency, amount).ConfigureAwait(false);
             var entry = SettlementTransaction.Create(
-                mae, request.Date, request.Description, request.Note, PayerOf(request.SourceValue), sourceCurrency, amount, convertedValue);
+                mae, request.Date, request.Description, request.Note, SettlementTransaction.PayerOf(request.SourceValue), sourceCurrency, amount, convertedValue);
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddSettlementTransaction(entry);
@@ -110,9 +109,12 @@ public sealed class ControleMaeService : IControleMaeService
         using var span = StartSpan("GetTotals");
         try
         {
-            var entries = MaeEntries().ToList();
-            var totalBrl = entries.Sum(entry => entry.SignedValueIn(Currency.BRL) ?? 0m);
-            var totalGbp = entries.Sum(entry => entry.SignedValueIn(Currency.GBP) ?? 0m);
+            decimal totalBrl = 0m, totalGbp = 0m;
+            foreach (var entry in MaeEntries())
+            {
+                totalBrl += entry.SignedValueIn(Currency.BRL) ?? 0m;
+                totalGbp += entry.SignedValueIn(Currency.GBP) ?? 0m;
+            }
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTotals");
@@ -141,7 +143,7 @@ public sealed class ControleMaeService : IControleMaeService
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                entry.UpdateValues(PayerOf(paidValue!.Value), Math.Abs(paidValue.Value), otherValue is null ? null : Math.Abs(otherValue.Value));
+                entry.UpdateValues(SettlementTransaction.PayerOf(paidValue!.Value), Math.Abs(paidValue.Value), otherValue is null ? null : Math.Abs(otherValue.Value));
                 return true;
             }).ConfigureAwait(false);
 
@@ -189,12 +191,12 @@ public sealed class ControleMaeService : IControleMaeService
     private IEnumerable<SettlementTransaction> MaeEntries()
     {
         var mae = MaeAccount.Find(_repository.GetAccounts());
-        return _repository.GetSettlementTransactions().Where(entry => mae is not null && entry.Account == mae);
+        return mae is null ? [] : _repository.GetSettlementTransactions().Where(entry => entry.Account == mae);
     }
 
     private async Task<decimal?> ConvertedValueAsync(Account account, DateOnly date, Currency sourceCurrency, decimal amount)
     {
-        var targetCurrency = account.Currencies.Where(currency => currency != sourceCurrency).Select(currency => (Currency?)currency).FirstOrDefault();
+        var targetCurrency = SettlementTransaction.ConvertedCurrencyOf(account, sourceCurrency);
         if (targetCurrency is null)
         {
             return null;
@@ -204,9 +206,6 @@ public sealed class ControleMaeService : IControleMaeService
         return rate.HasValue ? amount * rate.Value : null;
     }
 
-    private static SettlementPayer PayerOf(decimal signedValue) =>
-        signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;
-
     private static void EnsureValuesHaveOneSign(Currency paidCurrency, decimal? paidValue, decimal? otherValue)
     {
         if (paidValue is null or 0)
@@ -214,7 +213,7 @@ public sealed class ControleMaeService : IControleMaeService
             throw new ArgumentException($"{paidCurrency} value is required and must not be zero.");
         }
 
-        if (otherValue is not null && Math.Sign(otherValue.Value) != Math.Sign(paidValue.Value))
+        if (!SettlementTransaction.HaveOneSign(paidValue.Value, otherValue))
         {
             throw new ArgumentException("BRL and GBP values must both be positive or both be negative.");
         }

@@ -174,4 +174,33 @@ public class SettlementTransactionTests
         mae.SignedValueIn(Currency.USD).Should().BeNull();
         son.SignedValueIn(Currency.BRL).Should().BeNull();
     }
+
+    [Theory]
+    [InlineData(5, SettlementPayer.You)]
+    [InlineData(-5, SettlementPayer.Other)]
+    public void PayerOf_SignSetsThePayer(int signedValue, SettlementPayer expected)
+    {
+        SettlementTransaction.PayerOf(signedValue).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(10, null, true)]
+    [InlineData(10, 2, true)]
+    [InlineData(-10, -2, true)]
+    [InlineData(0, null, false)]
+    [InlineData(10, -2, false)]
+    [InlineData(-10, 2, false)]
+    [InlineData(10, 0, false)]
+    public void HaveOneSign_NonZeroValueAndAnOtherValueOfTheSameSign(int signedValue, int? otherSignedValue, bool expected)
+    {
+        SettlementTransaction.HaveOneSign(signedValue, otherSignedValue).Should().Be(expected);
+    }
+
+    [Fact]
+    public void ConvertedCurrencyOf_IsTheAccountsOtherCurrencyOrNone()
+    {
+        SettlementTransaction.ConvertedCurrencyOf(Mae(), Currency.GBP).Should().Be(Currency.BRL);
+        SettlementTransaction.ConvertedCurrencyOf(Mae(), Currency.BRL).Should().Be(Currency.GBP);
+        SettlementTransaction.ConvertedCurrencyOf(Son(), Currency.GBP).Should().BeNull();
+    }
 }

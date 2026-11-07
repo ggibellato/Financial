@@ -66,7 +66,7 @@ public class SettlementTransaction
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
-        if (convertedValue.HasValue && ConvertedCurrency() is null)
+        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
         {
             throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
         }
@@ -90,9 +90,18 @@ public class SettlementTransaction
             return sign * Amount;
         }
 
-        return currency == ConvertedCurrency() ? sign * ConvertedValue : null;
+        return currency == ConvertedCurrencyOf(Account, Currency) ? sign * ConvertedValue : null;
     }
 
-    private Currency? ConvertedCurrency() =>
-        Account.Currencies.Where(currency => currency != Currency).Select(currency => (Currency?)currency).FirstOrDefault();
+    public static Currency? ConvertedCurrencyOf(Account account, Currency paidCurrency)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        return account.Currencies.Where(currency => currency != paidCurrency).Select(currency => (Currency?)currency).FirstOrDefault();
+    }
+
+    public static SettlementPayer PayerOf(decimal signedValue) =>
+        signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;
+
+    public static bool HaveOneSign(decimal signedValue, decimal? otherSignedValue) =>
+        signedValue != 0 && (otherSignedValue is null || Math.Sign(otherSignedValue.Value) == Math.Sign(signedValue));
 }
