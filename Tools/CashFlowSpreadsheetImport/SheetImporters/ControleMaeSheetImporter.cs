@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
@@ -18,7 +19,7 @@ public static partial class ControleMaeSheetImporter
     private static readonly Regex MonthYearPattern = BuildMonthYearPattern();
     private static readonly Regex YearMonthPattern = BuildYearMonthPattern();
 
-    public static IReadOnlyList<SettlementTransaction> Import(IXLWorksheet sheet, ImportReport report)
+    public static IReadOnlyList<SettlementTransaction> Import(IXLWorksheet sheet, Account mae, ImportReport report)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var entries = new List<SettlementTransaction>();
@@ -59,10 +60,20 @@ public static partial class ControleMaeSheetImporter
 
             previousDate = date;
 
-            var note = sheet.Cell(row, NoteColumn).GetString();
-            var sourceCurrency = brlValue is not null ? Currency.BRL : Currency.GBP;
+            var (currency, paidValue, otherValue) = brlValue is not null
+                ? (Currency.BRL, brlValue.Value, gbpValue)
+                : (Currency.GBP, gbpValue!.Value, brlValue);
+            if (paidValue == 0 || (otherValue is not null && Math.Sign(otherValue.Value) != Math.Sign(paidValue)))
+            {
+                report.RowFlagged(sheet.Name, row, "Description", description, "Zero value, or BRL and GBP values with different signs - entry not imported");
+                continue;
+            }
 
-            entries.Add(SettlementTransaction.Create(date, description, note, sourceCurrency, brlValue, gbpValue));
+            var note = sheet.Cell(row, NoteColumn).GetString();
+            var paidBy = paidValue > 0 ? SettlementPayer.You : SettlementPayer.Other;
+            var convertedValue = otherValue is null ? (decimal?)null : Math.Abs(otherValue.Value);
+
+            entries.Add(SettlementTransaction.Create(mae, date, description, note, paidBy, currency, Math.Abs(paidValue), convertedValue));
         }
 
         return entries;
