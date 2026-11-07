@@ -65,18 +65,14 @@ public class SettlementTransaction : IAccountTransaction
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
         var roundedAmount = RoundToTwoDecimals(amount);
-        var roundedConvertedValue = convertedValue is { } value ? RoundToTwoDecimals(value) : (decimal?)null;
-        if (roundedConvertedValue == 0)
-        {
-            roundedConvertedValue = null;
-        }
+        var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? RoundToTwoDecimals(value) : (decimal?)null;
 
         if (roundedAmount <= 0)
         {
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
-        if (roundedConvertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
+        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
         {
             throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
         }
@@ -100,14 +96,6 @@ public class SettlementTransaction : IAccountTransaction
         if (!account.Has(Capability.HasParticipants))
         {
             throw new ArgumentException($"{account.Name} is not a Settlement account.");
-        }
-    }
-
-    private static void EnsureDescription(string description)
-    {
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            throw new ArgumentException("Description is required.");
         }
     }
 
@@ -144,6 +132,14 @@ public class SettlementTransaction : IAccountTransaction
     public static decimal ConvertedValueAt(decimal amount, decimal rate) => RoundToTwoDecimals(RoundToTwoDecimals(amount) * rate);
 
     private static decimal RoundToTwoDecimals(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    private static void EnsureDescription(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description is required.");
+        }
+    }
 
     public static SettlementPayer PayerOf(decimal signedValue) =>
         signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;

@@ -261,7 +261,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     {
         var future = await Client.PutAsJsonAsync(EntryUrl(MaeId, MaeEntryId), EntryUpdate(25.6m, TestClock.Today.AddDays(1)));
         var negative = await Client.PutAsJsonAsync(EntryUrl(MaeId, MaeEntryId), EntryUpdate(-1m));
-        var oneCurrency = await Client.PutAsJsonAsync(EntryUrl(SamuelId, SamuelEntryId), EntryUpdate(60m));
+        var oneCurrency = await Client.PutAsJsonAsync(EntryUrl(SamuelId, SamuelEntryId), EntryUpdate(0m));
         var inactive = await Client.PutAsJsonAsync(EntryUrl(PaiId, PaiEntryId), EntryUpdate(null));
 
         using (new AssertionScope())

@@ -212,12 +212,15 @@ public class SettlementTransactionTests
         }
     }
 
-    [Fact]
-    public void Update_ConvertedValueOnOneCurrencyAccount_Refused()
+    [Theory]
+    [InlineData(60)]
+    [InlineData(0)]
+    [InlineData(0.004)]
+    public void Update_ConvertedValueOnOneCurrencyAccount_Refused(decimal convertedValue)
     {
         var entry = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null);
 
-        var act = () => entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, 60m);
+        var act = () => entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, convertedValue);
 
         act.Should().Throw<ArgumentException>().WithMessage("Samuel has one currency, so an entry has no converted value.");
     }
