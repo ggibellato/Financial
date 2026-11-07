@@ -202,6 +202,12 @@ public class AccountActionsTests
     }
 
     [Fact]
+    public void DisabledFor_SettlementAccountWithoutBalances_DisablesNothing()
+    {
+        AccountActions.DisabledFor(Mae(), []).Should().BeEmpty();
+    }
+
+    [Fact]
     public void DisabledFor_Bank_DisablesNothing()
     {
         AccountActions.DisabledFor(TestAccounts.Bank("Barclays"), []).Should().BeEmpty();

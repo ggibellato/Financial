@@ -51,8 +51,10 @@ public static class AccountActions
         ArgumentNullException.ThrowIfNull(account);
         ArgumentNullException.ThrowIfNull(currentBalances);
 
+        var balances = currentBalances.ToList();
         var isSettled = AllowedFor(account).Contains(AccountAction.Settle)
-            && currentBalances.All(balance => SettlementTransaction.RoundsToZero(balance.Balance));
+            && balances.Count > 0
+            && balances.All(balance => SettlementTransaction.RoundsToZero(balance.Balance));
 
         return isSettled
             ? new Dictionary<AccountAction, string> { [AccountAction.Settle] = NothingToSettle }
