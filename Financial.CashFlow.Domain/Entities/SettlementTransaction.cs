@@ -42,10 +42,7 @@ public class SettlementTransaction : IAccountTransaction
             throw new ArgumentException($"{account.Name} doesn't use {currency}.");
         }
 
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            throw new ArgumentException("Description is required.");
-        }
+        EnsureDescription(description);
 
         var entry = new SettlementTransaction
         {
@@ -60,10 +57,34 @@ public class SettlementTransaction : IAccountTransaction
         return entry;
     }
 
+    public void Update(DateOnly date, string description, string? note, SettlementPayer paidBy, decimal amount, decimal? convertedValue)
+    {
+        EnsureDescription(description);
+        var (roundedAmount, roundedConvertedValue) = ValidatedValues(amount, convertedValue);
+
+        Date = date;
+        Description = description;
+        Note = note ?? string.Empty;
+        PaidBy = paidBy;
+        Amount = roundedAmount;
+        ConvertedValue = roundedConvertedValue;
+    }
+
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
+        var (roundedAmount, roundedConvertedValue) = ValidatedValues(amount, convertedValue);
+
+        PaidBy = paidBy;
+        Amount = roundedAmount;
+        ConvertedValue = roundedConvertedValue;
+    }
+
+    public static bool RoundsToZero(decimal value) => RoundToTwoDecimals(value) == 0;
+
+    private (decimal Amount, decimal? ConvertedValue) ValidatedValues(decimal amount, decimal? convertedValue)
+    {
         var roundedAmount = RoundToTwoDecimals(amount);
-        var roundedConvertedValue = convertedValue is { } value ? RoundToTwoDecimals(value) : (decimal?)null;
+        var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? RoundToTwoDecimals(value) : (decimal?)null;
 
         if (roundedAmount <= 0)
         {
@@ -75,14 +96,20 @@ public class SettlementTransaction : IAccountTransaction
             throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
         }
 
-        if (roundedConvertedValue <= 0)
+        if (roundedConvertedValue < 0)
         {
             throw new ArgumentException("The converted value must be greater than zero.");
         }
 
-        PaidBy = paidBy;
-        Amount = roundedAmount;
-        ConvertedValue = roundedConvertedValue;
+        return (roundedAmount, roundedConvertedValue);
+    }
+
+    private static void EnsureDescription(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description is required.");
+        }
     }
 
     public decimal ContributionTo(Account account)
