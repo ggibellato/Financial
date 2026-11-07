@@ -60,7 +60,7 @@ public sealed class ControleMaeService : IControleMaeService
                 throw new ArgumentException("Date must not be in the future.");
             }
 
-            var amount = SettlementTransaction.ToCents(Math.Abs(request.SourceValue));
+            var amount = Math.Abs(request.SourceValue);
             var convertedValue = await ConvertedValueAsync(mae, request.Date, sourceCurrency, amount).ConfigureAwait(false);
             var entry = SettlementTransaction.Create(
                 mae, request.Date, request.Description, request.Note, SettlementTransaction.PayerOf(request.SourceValue), sourceCurrency, amount, convertedValue);
@@ -206,7 +206,7 @@ public sealed class ControleMaeService : IControleMaeService
         }
 
         var rate = await _exchangeRateProvider.GetHistoricalRateAsync(date, sourceCurrency, targetCurrency.Value).ConfigureAwait(false);
-        return rate.HasValue ? amount * rate.Value : null;
+        return rate.HasValue ? SettlementTransaction.ConvertedValueAt(amount, rate.Value) : null;
     }
 
     private static decimal RequireOneSignedPaidValue(Currency paidCurrency, decimal? paidValue, decimal? otherValue)

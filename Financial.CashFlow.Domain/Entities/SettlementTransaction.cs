@@ -62,27 +62,27 @@ public class SettlementTransaction : IAccountTransaction
 
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
-        amount = ToCents(amount);
-        convertedValue = convertedValue.HasValue ? ToCents(convertedValue.Value) : null;
+        var roundedAmount = RoundToTwoDecimals(amount);
+        var roundedConvertedValue = convertedValue is { } value ? RoundToTwoDecimals(value) : (decimal?)null;
 
-        if (amount <= 0)
+        if (roundedAmount <= 0)
         {
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
-        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
+        if (roundedConvertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
         {
             throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
         }
 
-        if (convertedValue <= 0)
+        if (roundedConvertedValue <= 0)
         {
             throw new ArgumentException("The converted value must be greater than zero.");
         }
 
         PaidBy = paidBy;
-        Amount = amount;
-        ConvertedValue = convertedValue;
+        Amount = roundedAmount;
+        ConvertedValue = roundedConvertedValue;
     }
 
     public decimal ContributionTo(Account account)
@@ -115,7 +115,9 @@ public class SettlementTransaction : IAccountTransaction
         return account.Currencies.Where(currency => currency != paidCurrency).Select(currency => (Currency?)currency).FirstOrDefault();
     }
 
-    public static decimal ToCents(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    public static decimal ConvertedValueAt(decimal amount, decimal rate) => RoundToTwoDecimals(RoundToTwoDecimals(amount) * rate);
+
+    private static decimal RoundToTwoDecimals(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     public static SettlementPayer PayerOf(decimal signedValue) =>
         signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;

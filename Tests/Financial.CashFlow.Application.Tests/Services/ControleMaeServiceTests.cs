@@ -62,17 +62,17 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task CreateEntryAsync_AmountAndRateWithManyDecimals_SavesBothRoundedToTwo()
     {
-        var service = CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.14627391m));
+        var service = CreateService(exchangeRateProvider: new StubExchangeRateProvider(100.0012345m));
 
-        var result = await service.CreateEntryAsync(NewEntry("BRL", -350.125m));
+        var result = await service.CreateEntryAsync(NewEntry("BRL", -10.005m));
 
         using (new AssertionScope())
         {
             var stored = _repository.SettlementTransactions.Single();
-            stored.Amount.Should().Be(350.13m);
-            stored.ConvertedValue.Should().Be(51.21m);
-            result.BrlValue.Should().Be(-350.13m);
-            result.GbpValue.Should().Be(-51.21m);
+            stored.Amount.Should().Be(10.01m);
+            stored.ConvertedValue.Should().Be(1001.01m);
+            result.BrlValue.Should().Be(-10.01m);
+            result.GbpValue.Should().Be(-1001.01m);
         }
     }
 

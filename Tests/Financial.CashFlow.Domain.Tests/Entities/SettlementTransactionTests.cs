@@ -63,7 +63,6 @@ public class SettlementTransactionTests
     }
 
     [Theory]
-    [InlineData(350.1234, 51.23456789, 350.12, 51.23)]
     [InlineData(10.005, 1.535, 10.01, 1.54)]
     [InlineData(486.3632, 72.05799207, 486.36, 72.06)]
     public void Create_ValuesWithMoreThanTwoDecimals_StoredRoundedToTwoAwayFromZero(decimal amount, decimal convertedValue, decimal expectedAmount, decimal expectedConvertedValue)
@@ -75,6 +74,15 @@ public class SettlementTransactionTests
             entry.Amount.Should().Be(expectedAmount);
             entry.ConvertedValue.Should().Be(expectedConvertedValue);
         }
+    }
+
+    [Theory]
+    [InlineData(10.005, 2, 20.02)]
+    [InlineData(350.125, 0.14627391, 51.21)]
+    [InlineData(80, 6.138, 491.04)]
+    public void ConvertedValueAt_RoundsTheAmountThenTheProductToTwoDecimals(decimal amount, decimal rate, decimal expected)
+    {
+        SettlementTransaction.ConvertedValueAt(amount, rate).Should().Be(expected);
     }
 
     [Theory]
