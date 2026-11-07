@@ -63,8 +63,32 @@ public class SettlementTransactionTests
     }
 
     [Theory]
+    [InlineData(10.005, 1.535, 10.01, 1.54)]
+    [InlineData(486.3632, 72.05799207, 486.36, 72.06)]
+    public void Create_ValuesWithMoreThanTwoDecimals_StoredRoundedToTwoAwayFromZero(decimal amount, decimal convertedValue, decimal expectedAmount, decimal expectedConvertedValue)
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, amount, convertedValue);
+
+        using (new AssertionScope())
+        {
+            entry.Amount.Should().Be(expectedAmount);
+            entry.ConvertedValue.Should().Be(expectedConvertedValue);
+        }
+    }
+
+    [Theory]
+    [InlineData(10.005, 2, 20.02)]
+    [InlineData(350.125, 0.14627391, 51.21)]
+    [InlineData(80, 6.138, 491.04)]
+    public void ConvertedValueAt_RoundsTheAmountThenTheProductToTwoDecimals(decimal amount, decimal rate, decimal expected)
+    {
+        SettlementTransaction.ConvertedValueAt(amount, rate).Should().Be(expected);
+    }
+
+    [Theory]
     [InlineData(0)]
     [InlineData(-5)]
+    [InlineData(0.004)]
     public void Create_AmountNotPositive_Refused(decimal amount)
     {
         var act = () => SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, amount, null);
@@ -116,6 +140,20 @@ public class SettlementTransactionTests
             entry.PaidBy.Should().Be(SettlementPayer.Other);
             entry.Amount.Should().Be(45m);
             entry.ConvertedValue.Should().Be(320.50m);
+        }
+    }
+
+    [Fact]
+    public void UpdateValues_ValuesWithFourDecimals_StoredWithTwo()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 40m, null);
+
+        entry.UpdateValues(SettlementPayer.Other, 7.9421m, 167.8768m);
+
+        using (new AssertionScope())
+        {
+            entry.Amount.Should().Be(7.94m);
+            entry.ConvertedValue.Should().Be(167.88m);
         }
     }
 

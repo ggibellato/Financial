@@ -206,7 +206,7 @@ public sealed class ControleMaeService : IControleMaeService
         }
 
         var rate = await _exchangeRateProvider.GetHistoricalRateAsync(date, sourceCurrency, targetCurrency.Value).ConfigureAwait(false);
-        return rate.HasValue ? amount * rate.Value : null;
+        return rate.HasValue ? SettlementTransaction.ConvertedValueAt(amount, rate.Value) : null;
     }
 
     private static decimal RequireOneSignedPaidValue(Currency paidCurrency, decimal? paidValue, decimal? otherValue)
