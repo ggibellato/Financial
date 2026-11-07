@@ -99,6 +99,21 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
+    public async Task CreateEntryAsync_ConvertedValueRoundsToZero_SavesItEmpty()
+    {
+        var service = CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.0001m));
+
+        var result = await service.CreateEntryAsync(NewEntry("BRL", 10m));
+
+        using (new AssertionScope())
+        {
+            _repository.SettlementTransactions.Single().ConvertedValue.Should().BeNull();
+            result.BrlValue.Should().Be(10m);
+            result.GbpValue.Should().BeNull();
+        }
+    }
+
+    [Fact]
     public async Task CreateEntryAsync_WithFutureDate_ThrowsBeforeTouchingRepositoryOrProvider()
     {
         var provider = new StubExchangeRateProvider(DefaultRate);

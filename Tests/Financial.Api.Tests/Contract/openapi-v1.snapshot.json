@@ -6150,6 +6150,143 @@
         },
         "type": "object"
       },
+      "SettlementEntryCreateDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "paidBy",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "SettlementEntryDTO": {
+        "properties": {
+          "accountId": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "convertedCurrency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "convertedValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "currency": {
+            "type": "string"
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "paidBy": {
+            "type": "string"
+          },
+          "warning": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "accountId",
+          "date",
+          "description",
+          "note",
+          "paidBy",
+          "currency",
+          "amount"
+        ],
+        "type": "object"
+      },
+      "SettlementEntryUpdateDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "convertedValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "paidBy",
+          "amount"
+        ],
+        "type": "object"
+      },
       "SpecificLotAllocationDTO": {
         "properties": {
           "quantity": {
@@ -7863,6 +8000,253 @@
         "summary": "",
         "tags": [
           "AccountTransfers"
+        ]
+      }
+    },
+    "/accounts/{accountId}/settlement-entries": {
+      "post": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettlementEntryCreateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettlementEntryCreateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettlementEntryCreateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementEntryDTO"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Settlement"
+        ]
+      }
+    },
+    "/accounts/{accountId}/settlement-entries/{entryId}": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "entryId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Settlement"
+        ]
+      },
+      "put": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "path",
+            "name": "entryId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettlementEntryUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettlementEntryUpdateDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettlementEntryUpdateDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementEntryDTO"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Settlement"
         ]
       }
     },
@@ -17064,6 +17448,9 @@
     },
     {
       "name": "Reserve"
+    },
+    {
+      "name": "Settlement"
     },
     {
       "name": "Summary"

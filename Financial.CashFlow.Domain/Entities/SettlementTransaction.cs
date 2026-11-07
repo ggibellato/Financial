@@ -30,22 +30,14 @@ public class SettlementTransaction : IAccountTransaction
         decimal amount,
         decimal? convertedValue)
     {
-        ArgumentNullException.ThrowIfNull(account);
-
-        if (!account.Has(Capability.HasParticipants))
-        {
-            throw new ArgumentException($"{account.Name} is not a Settlement account.");
-        }
+        EnsureSettlementAccount(account);
 
         if (!account.Currencies.Contains(currency))
         {
             throw new ArgumentException($"{account.Name} doesn't use {currency}.");
         }
 
-        if (string.IsNullOrWhiteSpace(description))
-        {
-            throw new ArgumentException("Description is required.");
-        }
+        EnsureDescription(description);
 
         var entry = new SettlementTransaction
         {
@@ -60,22 +52,32 @@ public class SettlementTransaction : IAccountTransaction
         return entry;
     }
 
+    public void Update(DateOnly date, string description, string? note, SettlementPayer paidBy, decimal amount, decimal? convertedValue)
+    {
+        EnsureDescription(description);
+        UpdateValues(paidBy, amount, convertedValue);
+
+        Date = date;
+        Description = description;
+        Note = note ?? string.Empty;
+    }
+
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
         var roundedAmount = RoundToTwoDecimals(amount);
-        var roundedConvertedValue = convertedValue is { } value ? RoundToTwoDecimals(value) : (decimal?)null;
+        var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? RoundToTwoDecimals(value) : (decimal?)null;
 
         if (roundedAmount <= 0)
         {
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
-        if (roundedConvertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
+        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
         {
             throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
         }
 
-        if (roundedConvertedValue <= 0)
+        if (roundedConvertedValue < 0)
         {
             throw new ArgumentException("The converted value must be greater than zero.");
         }
@@ -83,6 +85,18 @@ public class SettlementTransaction : IAccountTransaction
         PaidBy = paidBy;
         Amount = roundedAmount;
         ConvertedValue = roundedConvertedValue;
+    }
+
+    public static bool RoundsToZero(decimal value) => RoundToTwoDecimals(value) == 0;
+
+    public static void EnsureSettlementAccount(Account account)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+
+        if (!account.Has(Capability.HasParticipants))
+        {
+            throw new ArgumentException($"{account.Name} is not a Settlement account.");
+        }
     }
 
     public decimal ContributionTo(Account account)
@@ -118,6 +132,14 @@ public class SettlementTransaction : IAccountTransaction
     public static decimal ConvertedValueAt(decimal amount, decimal rate) => RoundToTwoDecimals(RoundToTwoDecimals(amount) * rate);
 
     private static decimal RoundToTwoDecimals(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+
+    private static void EnsureDescription(string description)
+    {
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            throw new ArgumentException("Description is required.");
+        }
+    }
 
     public static SettlementPayer PayerOf(decimal signedValue) =>
         signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;

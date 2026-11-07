@@ -671,6 +671,167 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{accountId}/settlement-entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["SettlementEntryCreateDTO"];
+                    "application/json": null | components["schemas"]["SettlementEntryCreateDTO"];
+                    "text/json": null | components["schemas"]["SettlementEntryCreateDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SettlementEntryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/accounts/{accountId}/settlement-entries/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["SettlementEntryUpdateDTO"];
+                    "application/json": null | components["schemas"]["SettlementEntryUpdateDTO"];
+                    "text/json": null | components["schemas"]["SettlementEntryUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SettlementEntryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                    entryId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}": {
         parameters: {
             query?: never;
@@ -9890,6 +10051,45 @@ export interface components {
         };
         SetReportingCurrencyEnabledRequestDTO: {
             enabled: boolean;
+        };
+        SettlementEntryCreateDTO: {
+            /** Format: double */
+            amount: number;
+            currency?: null | string;
+            /** Format: date */
+            date: string;
+            description: string;
+            note?: null | string;
+            paidBy: string;
+        };
+        SettlementEntryDTO: {
+            /** Format: uuid */
+            accountId: string;
+            /** Format: double */
+            amount: number;
+            convertedCurrency?: null | string;
+            /** Format: double */
+            convertedValue?: null | number;
+            currency: string;
+            /** Format: date */
+            date: string;
+            description: string;
+            /** Format: uuid */
+            id: string;
+            note: string;
+            paidBy: string;
+            warning?: null | string;
+        };
+        SettlementEntryUpdateDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: double */
+            convertedValue?: null | number;
+            /** Format: date */
+            date: string;
+            description: string;
+            note?: null | string;
+            paidBy: string;
         };
         SpecificLotAllocationDTO: {
             /** Format: double */

@@ -105,13 +105,124 @@ public class SettlementTransactionTests
     }
 
     [Theory]
-    [InlineData(0)]
     [InlineData(-1)]
-    public void Create_ConvertedValueNotPositive_Refused(decimal convertedValue)
+    [InlineData(-0.005)]
+    public void Create_NegativeConvertedValue_Refused(decimal convertedValue)
     {
         var act = () => SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, convertedValue);
 
         act.Should().Throw<ArgumentException>().WithMessage("The converted value must be greater than zero.");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(0.004)]
+    [InlineData(-0.004)]
+    public void Create_ConvertedValueRoundingToZero_StoredEmpty(decimal convertedValue)
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, convertedValue);
+
+        entry.ConvertedValue.Should().BeNull();
+    }
+
+    [Fact]
+    public void UpdateValues_ConvertedValueRoundingToZero_StoredEmpty()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m);
+
+        entry.UpdateValues(SettlementPayer.Other, 12m, 0.004m);
+
+        entry.ConvertedValue.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(0.004, true)]
+    [InlineData(-0.004, true)]
+    [InlineData(0.005, false)]
+    [InlineData(-0.005, false)]
+    public void RoundsToZero_IsTrueWhenTheValueRoundsToZeroAtTwoDecimals(decimal value, bool expected)
+    {
+        SettlementTransaction.RoundsToZero(value).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Update_ChangesTheSixFieldsAndKeepsIdAccountAndCurrency()
+    {
+        var mae = Mae();
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Farmácia", "first", SettlementPayer.You, Currency.BRL, 150m, 22m);
+        var originalId = entry.Id;
+
+        entry.Update(new DateOnly(2026, 7, 14), "Farmácia e mercado", "metade", SettlementPayer.Other, 180.005m, 25.6m);
+
+        using (new AssertionScope())
+        {
+            entry.Id.Should().Be(originalId);
+            entry.Account.Should().BeSameAs(mae);
+            entry.Currency.Should().Be(Currency.BRL);
+            entry.Date.Should().Be(new DateOnly(2026, 7, 14));
+            entry.Description.Should().Be("Farmácia e mercado");
+            entry.Note.Should().Be("metade");
+            entry.PaidBy.Should().Be(SettlementPayer.Other);
+            entry.Amount.Should().Be(180.01m);
+            entry.ConvertedValue.Should().Be(25.6m);
+        }
+    }
+
+    [Fact]
+    public void Update_NullNoteAndNullConvertedValue_StoreEmptyNoteAndNoConvertedValue()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", "note", SettlementPayer.You, Currency.BRL, 10m, 2m);
+
+        entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, null);
+
+        entry.Note.Should().BeEmpty();
+        entry.ConvertedValue.Should().BeNull();
+    }
+
+    [Fact]
+    public void Update_ConvertedValueRoundingToZero_StoredEmpty()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m);
+
+        entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, 0.001m);
+
+        entry.ConvertedValue.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(" ", 10, null, "Description is required.")]
+    [InlineData("New", 0, null, "Amount must be greater than zero.")]
+    [InlineData("New", 10, -1, "The converted value must be greater than zero.")]
+    public void Update_InvalidValue_RefusedWithoutChangingAnything(string description, decimal amount, int? convertedValue, string message)
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", "note", SettlementPayer.You, Currency.BRL, 10m, 2m);
+
+        var act = () => entry.Update(new DateOnly(2026, 7, 1), description, "changed", SettlementPayer.Other, amount, convertedValue);
+
+        act.Should().Throw<ArgumentException>().WithMessage(message);
+        using (new AssertionScope())
+        {
+            entry.Date.Should().Be(EntryDate);
+            entry.Description.Should().Be("Entry");
+            entry.Note.Should().Be("note");
+            entry.PaidBy.Should().Be(SettlementPayer.You);
+            entry.Amount.Should().Be(10m);
+            entry.ConvertedValue.Should().Be(2m);
+        }
+    }
+
+    [Theory]
+    [InlineData(60)]
+    [InlineData(0)]
+    [InlineData(0.004)]
+    public void Update_ConvertedValueOnOneCurrencyAccount_Refused(decimal convertedValue)
+    {
+        var entry = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null);
+
+        var act = () => entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, convertedValue);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Samuel has one currency, so an entry has no converted value.");
     }
 
     [Theory]
