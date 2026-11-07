@@ -30,12 +30,7 @@ public class SettlementTransaction : IAccountTransaction
         decimal amount,
         decimal? convertedValue)
     {
-        ArgumentNullException.ThrowIfNull(account);
-
-        if (!account.Has(Capability.HasParticipants))
-        {
-            throw new ArgumentException($"{account.Name} is not a Settlement account.");
-        }
+        EnsureSettlementAccount(account);
 
         if (!account.Currencies.Contains(currency))
         {
@@ -60,31 +55,21 @@ public class SettlementTransaction : IAccountTransaction
     public void Update(DateOnly date, string description, string? note, SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
         EnsureDescription(description);
-        var (roundedAmount, roundedConvertedValue) = ValidatedValues(amount, convertedValue);
+        UpdateValues(paidBy, amount, convertedValue);
 
         Date = date;
         Description = description;
         Note = note ?? string.Empty;
-        PaidBy = paidBy;
-        Amount = roundedAmount;
-        ConvertedValue = roundedConvertedValue;
     }
 
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
-        var (roundedAmount, roundedConvertedValue) = ValidatedValues(amount, convertedValue);
-
-        PaidBy = paidBy;
-        Amount = roundedAmount;
-        ConvertedValue = roundedConvertedValue;
-    }
-
-    public static bool RoundsToZero(decimal value) => RoundToTwoDecimals(value) == 0;
-
-    private (decimal Amount, decimal? ConvertedValue) ValidatedValues(decimal amount, decimal? convertedValue)
-    {
         var roundedAmount = RoundToTwoDecimals(amount);
-        var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? RoundToTwoDecimals(value) : (decimal?)null;
+        var roundedConvertedValue = convertedValue is { } value ? RoundToTwoDecimals(value) : (decimal?)null;
+        if (roundedConvertedValue == 0)
+        {
+            roundedConvertedValue = null;
+        }
 
         if (roundedAmount <= 0)
         {
@@ -101,7 +86,21 @@ public class SettlementTransaction : IAccountTransaction
             throw new ArgumentException("The converted value must be greater than zero.");
         }
 
-        return (roundedAmount, roundedConvertedValue);
+        PaidBy = paidBy;
+        Amount = roundedAmount;
+        ConvertedValue = roundedConvertedValue;
+    }
+
+    public static bool RoundsToZero(decimal value) => RoundToTwoDecimals(value) == 0;
+
+    public static void EnsureSettlementAccount(Account account)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+
+        if (!account.Has(Capability.HasParticipants))
+        {
+            throw new ArgumentException($"{account.Name} is not a Settlement account.");
+        }
     }
 
     private static void EnsureDescription(string description)

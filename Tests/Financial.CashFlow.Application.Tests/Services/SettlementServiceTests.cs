@@ -125,12 +125,12 @@ public class SettlementServiceTests
     }
 
     [Theory]
-    [InlineData("Mãe", null, "Choose the currency.")]
-    [InlineData("Mãe", "USX", "Unknown currency 'USX'.")]
-    [InlineData("Samuel", "BRL", "Samuel doesn't use BRL.")]
-    public async Task AddEntryAsync_MissingUnknownOrUnheldCurrency_RefusedAndNothingSaved(string accountName, string? currency, string message)
+    [InlineData(true, null, "Choose the currency.")]
+    [InlineData(true, "USX", "Unknown currency 'USX'.")]
+    [InlineData(false, "BRL", "Samuel doesn't use BRL.")]
+    public async Task AddEntryAsync_MissingUnknownOrUnheldCurrency_RefusedAndNothingSaved(bool twoCurrencyAccount, string? currency, string message)
     {
-        var account = accountName == "Mãe" ? _mae : _son;
+        var account = twoCurrencyAccount ? _mae : _son;
 
         var act = () => CreateService().AddEntryAsync(account.Id, NewEntry(currency));
 

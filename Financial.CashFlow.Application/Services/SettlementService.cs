@@ -140,12 +140,7 @@ public sealed class SettlementService : ISettlementService
     private Account UsableSettlementAccount(Guid accountId)
     {
         var account = _repository.GetAccounts().FirstOrThrow(account => account.Id == accountId, "Account", accountId);
-
-        if (!account.Has(Capability.HasParticipants))
-        {
-            throw new ArgumentException($"{account.Name} is not a Settlement account.");
-        }
-
+        SettlementTransaction.EnsureSettlementAccount(account);
         ActiveAccountRule.EnsureUsable(null, account);
         return account;
     }
