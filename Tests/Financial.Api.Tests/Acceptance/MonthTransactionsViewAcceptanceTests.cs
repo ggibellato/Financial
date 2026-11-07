@@ -67,7 +67,7 @@ public class MonthTransactionsViewAcceptanceTests : ApiEndpointTests
           "ReserveMovements": [
             { "Id": "{{DepositMovementId}}", "BucketId": "{{InvestimentoId}}", "Amount": 90, "Date": "2026-10-06", "Description": "October savings", "IncomeId": null, "OperationId": "{{OperationId}}" }
           ],
-          "Version": 4
+          "Version": 5
         }
         """;
 

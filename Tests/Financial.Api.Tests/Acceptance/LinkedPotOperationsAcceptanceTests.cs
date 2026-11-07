@@ -55,7 +55,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             { "Id": "{{LegacyDepositId}}", "BucketId": "{{InvestimentoId}}", "Amount": 500, "Date": "2026-09-01", "Description": "Split", "IncomeId": null },
             { "Id": "{{LegacyWithdrawalId}}", "BucketId": "{{HouseTreatsId}}", "Amount": -20, "Date": "2026-09-15", "Description": "Cinema", "IncomeId": null }
           ],
-          "Version": 4
+          "Version": 5
         }
         """;
 

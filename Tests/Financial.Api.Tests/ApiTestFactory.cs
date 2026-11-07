@@ -185,7 +185,7 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000013", "Name": "Investimento", "Active": true, "IsInvestment": true, "IsTithe": false },
             { "Id": "8f3b1c1a-2e3a-4b1a-9a7f-600000000014", "Name": "Reserva", "Active": true, "IsInvestment": false, "IsTithe": false }
           ],
-          "Version": 4
+          "Version": 5
         }
         """;
 

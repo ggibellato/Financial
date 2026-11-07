@@ -54,7 +54,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             { "Id": "9a1c0000-0000-0000-0000-000000000203", "BucketId": "{{InvestimentoId}}", "Amount": -75.5, "Date": "2026-10-12", "Description": "Withdrawal", "IncomeId": null },
             { "Id": "9a1c0000-0000-0000-0000-000000000204", "BucketId": "{{FlightsId}}", "Amount": 900, "Date": "2026-10-01", "Description": "Other account", "IncomeId": null }
           ],
-          "Version": 4
+          "Version": 5
         }
         """;
 

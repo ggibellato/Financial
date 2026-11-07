@@ -5,7 +5,7 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 
 public static class CashFlowDataFileVersion
 {
-    public const int Current = 4;
+    public const int Current = 5;
     public const string Property = "Version";
 
     public static int StoredIn(JsonObject root)
