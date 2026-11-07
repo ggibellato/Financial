@@ -2121,7 +2121,7 @@ describe('financialApiClient', () => {
       year: 2026,
       month: 7,
       members: [
-        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, roundUpTotal: 0.5, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+        { accountId: 'b1', name: 'Barclays', templateName: 'Bank', currency: 'GBP', balance: 1500, currencyBalances: [{ currency: 'GBP', balance: 1500 }], otherParticipant: null, roundUpTotal: 0.5, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
       ],
       totals: [{ currency: 'GBP', balance: 1500, roundUpTotal: 0.5, cardOutstandingTotal: 0 }],
       categoryTotalsSum: 320,
@@ -2142,7 +2142,7 @@ describe('financialApiClient', () => {
       {
         templateName: 'Pots',
         members: [
-          { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 704.08, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
+          { accountId: 'reserva', name: 'Reserva', templateName: 'Pots', currency: 'GBP', balance: 704.08, currencyBalances: [{ currency: 'GBP', balance: 704.08 }], otherParticipant: null, roundUpTotal: null, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null },
         ],
         totals: [{ currency: 'GBP', total: 704.08 }],
       },

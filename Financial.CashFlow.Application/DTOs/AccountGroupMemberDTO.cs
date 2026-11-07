@@ -8,6 +8,8 @@ public sealed class AccountGroupMemberDTO
     public required string Currency { get; init; }
     public required bool IsActive { get; init; }
     public required decimal Balance { get; init; }
+    public required IReadOnlyList<CurrencyBalanceDTO> CurrencyBalances { get; init; }
+    public string? OtherParticipant { get; init; }
     public decimal? RoundUpTotal { get; init; }
     public AccountGroupStatementDTO? Statement { get; init; }
     public required bool BalanceIsOwed { get; init; }

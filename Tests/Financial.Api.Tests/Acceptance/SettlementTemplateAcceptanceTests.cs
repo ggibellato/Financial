@@ -43,11 +43,12 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F11-settlement-template-and-mae-migration-05")]
-    public async Task AdminAccounts_CreateGbpOnlySettlement_HasOneCurrencyAndItsOtherParticipant()
+    public async Task AdminAccounts_CreateGbpOnlySettlement_HasOneCurrencyAndIsSettled()
     {
         var created = await Client.PostAsJsonAsync($"{Api}/accounts", Settlement("Samuel", "GBP", ["GBP"], "Samuel"));
         var samuel = await created.Content.ReadFromJsonAsync<AccountDTO>();
         var listed = (await Client.GetFromJsonAsync<List<AccountDTO>>($"{Api}/accounts"))!;
+        var groups = (await Client.GetFromJsonAsync<List<AccountTemplateGroupDTO>>($"{Api}/accounts/groups/by-template/2026/11"))!;
 
         using (new AssertionScope())
         {
@@ -61,6 +62,42 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
                 .Which.Should().BeEquivalentTo(new { Currencies = new[] { "GBP" }, OtherParticipant = "Samuel" });
             listed.Should().ContainSingle(account => account.Name == "Barclays")
                 .Which.Should().BeEquivalentTo(new { Currencies = new[] { "GBP" }, OtherParticipant = (string?)null });
+            var settlement = groups.Should().ContainSingle(group => group.TemplateName == "Settlement").Which;
+            settlement.Members.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+            {
+                Name = "Samuel",
+                OtherParticipant = "Samuel",
+                CurrencyBalances = new[] { new { Currency = "GBP", Balance = 0m } }
+            });
+            settlement.Totals.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F11-settlement-template-and-mae-migration-07")]
+    public async Task TemplateGroups_Settlement_HasPerCurrencyBalancesAndNoTotals()
+    {
+        SeedMigratedV4File();
+
+        var groups = (await Client.GetFromJsonAsync<List<AccountTemplateGroupDTO>>($"{Api}/accounts/groups/by-template/2026/7"))!;
+
+        using (new AssertionScope())
+        {
+            var settlement = groups.Should().ContainSingle(group => group.TemplateName == "Settlement").Which;
+            settlement.Members.Should().ContainSingle().Which.Should().BeEquivalentTo(new
+            {
+                Name = "Mãe",
+                Currency = "BRL",
+                Balance = 350.1234m - 186m - 300.5m + 654.24m,
+                OtherParticipant = "Mãe",
+                CurrencyBalances = new[]
+                {
+                    new { Currency = "BRL", Balance = 350.1234m - 186m - 300.5m + 654.24m },
+                    new { Currency = "GBP", Balance = 51.23456789m - 40m + 100m }
+                }
+            }, options => options.WithStrictOrdering());
+            settlement.Totals.Should().BeEmpty();
+            groups.Should().ContainSingle(group => group.TemplateName == "Bank").Which.Totals.Should().NotBeEmpty();
         }
     }
 

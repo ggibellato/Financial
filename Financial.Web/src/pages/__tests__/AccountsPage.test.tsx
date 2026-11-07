@@ -22,6 +22,8 @@ function member(accountId: string, name: string, templateName: string, fields: P
     currency: 'GBP',
     isActive: true,
     balance: 0,
+    currencyBalances: [{ currency: fields.currency ?? 'GBP', balance: fields.balance ?? 0 }],
+    otherParticipant: null,
     roundUpTotal: null,
     statement: null,
     balanceIsOwed: false,

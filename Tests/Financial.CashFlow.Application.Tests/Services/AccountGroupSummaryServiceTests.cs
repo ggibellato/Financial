@@ -397,6 +397,53 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
+    public void GetTemplateGroups_SettlementGroup_MembersCarryMonthEndBalancePerCurrencyAndOtherParticipantWithNoTotals()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        var samuel = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
+        _repository.Accounts.AddRange([mae, samuel]);
+        _repository.SettlementTransactions.AddRange(
+        [
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45.5m),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 3), "Paid by Mãe", null, SettlementPayer.Other, Currency.BRL, 100m, null),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 10, 1), "Next month", null, SettlementPayer.You, Currency.GBP, 10m, 65m)
+        ]);
+
+        var settlement = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "Settlement");
+
+        using (new AssertionScope())
+        {
+            settlement.Members.Select(member => member.Name).Should().Equal("Mãe", "Samuel");
+            settlement.Members[0].Currency.Should().Be("BRL");
+            settlement.Members[0].Balance.Should().Be(200m);
+            settlement.Members[0].CurrencyBalances.Select(balance => (balance.Currency, balance.Balance)).Should().Equal(("BRL", 200m), ("GBP", 45.5m));
+            settlement.Members[0].OtherParticipant.Should().Be("Mãe");
+            settlement.Members[1].CurrencyBalances.Select(balance => (balance.Currency, balance.Balance)).Should().Equal(("GBP", 0m));
+            settlement.Members[1].OtherParticipant.Should().Be("Samuel");
+            settlement.Totals.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void GetTemplateGroups_NonSettlementMembers_HaveTheirMainCurrencyBalanceAndNoOtherParticipant()
+    {
+        _repository.Accounts.Add(_amex);
+        AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
+
+        var members = _sut.GetTemplateGroups(2026, 9).SelectMany(group => group.Members).ToList();
+
+        using (new AssertionScope())
+        {
+            members.Should().AllSatisfy(member =>
+            {
+                member.CurrencyBalances.Select(balance => (balance.Currency, balance.Balance)).Should().Equal((member.Currency, member.Balance));
+                member.OtherParticipant.Should().BeNull();
+            });
+            members.Single(member => member.Name == "Amex").CurrencyBalances.Single().Balance.Should().Be(-30m);
+        }
+    }
+
+    [Fact]
     public void GetTemplateGroups_NoAccounts_ReturnsNoGroups()
     {
         _repository.Accounts.Clear();
