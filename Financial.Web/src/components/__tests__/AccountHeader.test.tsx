@@ -44,6 +44,9 @@ const AMEX: AccountDetailDto = {
   totalOwed: 740.12,
   viewedStatement: OCTOBER_UNPAID,
   allowedActions: [],
+  disabledActions: {},
+  currentBalances: [],
+  otherParticipant: null,
 }
 
 const BARCLAYS: AccountDetailDto = {
@@ -60,6 +63,9 @@ const BARCLAYS: AccountDetailDto = {
   totalOwed: null,
   viewedStatement: null,
   allowedActions: [],
+  disabledActions: {},
+  currentBalances: [],
+  otherParticipant: null,
 }
 
 function renderHeader(

@@ -159,6 +159,18 @@
           "currency": {
             "type": "string"
           },
+          "currentBalances": {
+            "items": {
+              "$ref": "#/components/schemas/CurrencyBalanceDTO"
+            },
+            "type": "array"
+          },
+          "disabledActions": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object"
+          },
           "hasStatements": {
             "type": "boolean"
           },
@@ -175,6 +187,12 @@
           },
           "name": {
             "type": "string"
+          },
+          "otherParticipant": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "templateName": {
             "type": "string"
@@ -214,7 +232,9 @@
           "hasStatements",
           "totalOwed",
           "viewedStatement",
-          "allowedActions"
+          "allowedActions",
+          "disabledActions",
+          "currentBalances"
         ],
         "type": "object"
       },
@@ -6150,6 +6170,50 @@
         },
         "type": "object"
       },
+      "SettleRequestDTO": {
+        "properties": {
+          "amount": {
+            "format": "double",
+            "type": "number"
+          },
+          "convertedValue": {
+            "format": "double",
+            "type": [
+              "null",
+              "number"
+            ]
+          },
+          "currency": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "date": {
+            "format": "date",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "note": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "paidBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "description",
+          "paidBy",
+          "amount"
+        ],
+        "type": "object"
+      },
       "SettlementEntryCreateDTO": {
         "properties": {
           "amount": {
@@ -8222,6 +8286,98 @@
               }
             },
             "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Not Found"
+          }
+        },
+        "summary": "",
+        "tags": [
+          "Settlement"
+        ]
+      }
+    },
+    "/accounts/{accountId}/settlements": {
+      "post": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "accountId",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/*\u002Bjson": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettleRequestDTO"
+                  }
+                ]
+              }
+            },
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettleRequestDTO"
+                  }
+                ]
+              }
+            },
+            "text/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SettleRequestDTO"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettlementEntryDTO"
+                }
+              }
+            },
+            "description": "Created"
           },
           "400": {
             "content": {

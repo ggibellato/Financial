@@ -832,6 +832,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{accountId}/settlements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["SettleRequestDTO"];
+                    "application/json": null | components["schemas"]["SettleRequestDTO"];
+                    "text/json": null | components["schemas"]["SettleRequestDTO"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SettlementEntryDTO"];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}": {
         parameters: {
             query?: never;
@@ -8277,6 +8338,10 @@ export interface components {
             balance: number;
             balanceIsOwed: boolean;
             currency: string;
+            currentBalances: components["schemas"]["CurrencyBalanceDTO"][];
+            disabledActions: {
+                [key: string]: string;
+            };
             hasStatements: boolean;
             /** Format: uuid */
             id: string;
@@ -8284,6 +8349,7 @@ export interface components {
             /** Format: int32 */
             month: number;
             name: string;
+            otherParticipant?: null | string;
             templateName: string;
             /** Format: double */
             totalOwed: null | number;
@@ -10051,6 +10117,18 @@ export interface components {
         };
         SetReportingCurrencyEnabledRequestDTO: {
             enabled: boolean;
+        };
+        SettleRequestDTO: {
+            /** Format: double */
+            amount: number;
+            /** Format: double */
+            convertedValue?: null | number;
+            currency?: null | string;
+            /** Format: date */
+            date: string;
+            description: string;
+            note?: null | string;
+            paidBy: string;
         };
         SettlementEntryCreateDTO: {
             /** Format: double */
