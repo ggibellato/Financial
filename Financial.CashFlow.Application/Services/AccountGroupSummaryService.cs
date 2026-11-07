@@ -119,15 +119,18 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         IReadOnlyCollection<IAccountTransaction> records,
         IReadOnlyCollection<Expense> listedExpenses,
         AccountGroupStatementDTO? statement,
-        AccountNextStatementDTO? nextStatement) => new()
+        AccountNextStatementDTO? nextStatement)
+    {
+        var balances = AccountBalanceRule.Balances(account, endOfMonth, records);
+        return new()
         {
             AccountId = account.Id,
             Name = account.Name,
             TemplateName = account.TemplateName,
             Currency = account.Currency.ToString(),
             IsActive = account.IsActive,
-            Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
-            CurrencyBalances = AccountBalanceRule.Balances(account, endOfMonth, records)
+            Balance = balances.First(balance => balance.Currency == account.Currency).Balance,
+            CurrencyBalances = balances
                 .Select(balance => new CurrencyBalanceDTO { Currency = balance.Currency.ToString(), Balance = balance.Balance })
                 .ToList(),
             OtherParticipant = account.OtherParticipant,
@@ -139,6 +142,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
             NextStatement = nextStatement
         };
+    }
 
     private static AccountNextStatementDTO? NextStatementFor(
         Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements, IReadOnlyCollection<Transfer> transfers) =>

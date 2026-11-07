@@ -227,17 +227,26 @@ function Add-ParityTemplateGroupFigures($Report, [string]$Month, $Groups) {
     }
 }
 
-function Get-ParityMaeEntryBalances($Entries, [string]$MonthEnd) {
-    $balances = [ordered]@{ BRL = [decimal]0; GBP = [decimal]0 }
-    foreach ($entry in $Entries) {
-        if ([string]::CompareOrdinal($entry.date, $MonthEnd) -gt 0) { continue }
-        if ($null -ne $entry.brlValue) { $balances.BRL += $entry.brlValue }
-        if ($null -ne $entry.gbpValue) { $balances.GBP += $entry.gbpValue }
+function Get-ParityMaeBalancesByMonth($Entries, [string[]]$Months) {
+    $ordered = @(@(foreach ($entry in $Entries) {
+                [pscustomobject]@{ Date = [datetime]::Parse($entry.date, $script:Invariant); Brl = $entry.brlValue; Gbp = $entry.gbpValue }
+            }) | Sort-Object Date)
+    $running = @{ BRL = [decimal]0; GBP = [decimal]0 }
+    $byMonth = @{}
+    $next = 0
+    foreach ($month in $Months) {
+        $monthEnd = [datetime]::ParseExact($month, 'yyyy-MM', $script:Invariant).AddMonths(1)
+        while ($next -lt $ordered.Count -and $ordered[$next].Date -lt $monthEnd) {
+            if ($null -ne $ordered[$next].Brl) { $running.BRL += $ordered[$next].Brl }
+            if ($null -ne $ordered[$next].Gbp) { $running.GBP += $ordered[$next].Gbp }
+            $next++
+        }
+        $byMonth[$month] = [ordered]@{ BRL = $running.BRL; GBP = $running.GBP }
     }
-    $balances
+    $byMonth
 }
 
-function Add-ParitySettlementFigures($Report, [string]$Month, $Groups, [scriptblock]$Fetch, [hashtable]$Cache) {
+function Add-ParitySettlementFigures($Report, [string]$Month, $Groups, [scriptblock]$Fetch, $MaeBalances) {
     $settlement = @($Groups | Where-Object { $_['templateName'] -eq 'Settlement' })
     if ($settlement.Count -gt 0) {
         foreach ($member in $settlement[0].members) {
@@ -247,9 +256,10 @@ function Add-ParitySettlementFigures($Report, [string]$Month, $Groups, [scriptbl
         }
         return
     }
-    if (-not $Cache.ContainsKey('MaeEntries')) { $Cache.MaeEntries = & $Fetch 'controle-mae/entries/from/0001-01-01' }
-    $monthEnd = [datetime]::ParseExact($Month, 'yyyy-MM', $script:Invariant).AddMonths(1).AddDays(-1).ToString('yyyy-MM-dd', $script:Invariant)
-    $balances = Get-ParityMaeEntryBalances $Cache.MaeEntries $monthEnd
+    if ($null -eq $MaeBalances.ByMonth) {
+        $MaeBalances.ByMonth = Get-ParityMaeBalancesByMonth (& $Fetch 'controle-mae/entries/from/0001-01-01') $MaeBalances.Months
+    }
+    $balances = $MaeBalances.ByMonth[$Month]
     foreach ($currency in $balances.Keys) { Add-ParityFigure $Report "$Month/settlement/$script:MaeAccountName/$currency" $balances[$currency] }
 }
 
@@ -291,7 +301,7 @@ function Add-ParityMonthTransactionFigures($Report, [string]$Month, [string]$Rou
     }
 }
 
-function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances, [bool]$IncludeSummary, $Accounts, [string]$CurrentMonth, [hashtable]$Cache) {
+function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances, [bool]$IncludeSummary, $Accounts, [string]$CurrentMonth, $MaeBalances) {
     $route = '{0}/{1}' -f [int]$Month.Substring(0, 4), [int]$Month.Substring(5, 2)
     $bankTotals = Add-ParityBankFigures $Report $Month $route $Fetch $Banks
     $cardOutstandingTotal = Add-ParityCardFigures $Report $Month $route $Fetch
@@ -305,7 +315,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
     Add-ParityFigure $Report "$Month/monthly/categoryTotalsSum" (Get-ParitySum $categoryTotals { param($c) $c.totalValue })
     Add-ParityPotFigures $Report $Month $PotBalances
     $groups = & $Fetch "accounts/groups/by-template/$route"
-    Add-ParitySettlementFigures $Report $Month $groups $Fetch $Cache
+    Add-ParitySettlementFigures $Report $Month $groups $Fetch $MaeBalances
     if ($IncludeSummary) {
         Add-ParitySummaryFigures $Report $Month $route $Fetch ($Month -eq $CurrentMonth)
         Add-ParityTemplateGroupFigures $Report $Month $groups
@@ -387,9 +397,9 @@ function Get-ParityReport {
         $potBalancesByMonth = Get-ParityPotBalancesByMonth (& $Fetch 'reserve/movements') $months
         $accounts = if ($IncludeAccounts -or $FillMissingStatements) { @(& $Fetch 'accounts') } else { $null }
         $figureAccounts = if ($IncludeAccounts) { $accounts } else { $null }
-        $cache = @{}
+        $maeBalances = [pscustomobject]@{ Months = $months; ByMonth = $null }
         foreach ($month in $months) {
-            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $figureAccounts $CurrentMonth $cache
+            Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $figureAccounts $CurrentMonth $maeBalances
         }
         if ($FillMissingStatements) { Add-ParityMissingCardStatementFigures $report $months $accounts }
 

@@ -213,7 +213,9 @@ try {
 
     $settlementKeys = { param($r) @($r.Keys | Where-Object { $_.Split('/')[1] -eq 'settlement' } | Sort-Object) }
     $expectedSettlementKeys = @(foreach ($month in '2026-08', '2026-09') { "$month/settlement/$mae/BRL", "$month/settlement/$mae/GBP" }) | Sort-Object
-    Check 'settlement figures come from the entries dated on or before the month end, null as 0, on both sides' ((Compare-Object (& $settlementKeys $report) $expectedSettlementKeys).Count -eq 0 -and (Compare-Object (& $settlementKeys $reportWithoutSummary) $expectedSettlementKeys).Count -eq 0 -and $report["2026-08/settlement/$mae/BRL"] -eq [decimal]'70.50' -and $report["2026-08/settlement/$mae/GBP"] -eq [decimal]'15.25' -and $reportWithoutSummary["2026-09/settlement/$mae/BRL"] -eq [decimal]'137.88' -and $reportWithoutSummary["2026-09/settlement/$mae/GBP"] -eq [decimal]'7.94' -and $report["2026-09/settlement/$mae/GBP"] -is [decimal]) ((& $settlementKeys $report) -join ', ')
+    Check 'settlement figures are built for every month on both sides' ((Compare-Object (& $settlementKeys $report) $expectedSettlementKeys).Count -eq 0 -and (Compare-Object (& $settlementKeys $reportWithoutSummary) $expectedSettlementKeys).Count -eq 0) ((& $settlementKeys $report) -join ', ')
+    Check 'settlement figures without a Settlement group sum the entries dated up to the month end, null as 0' ($report["2026-08/settlement/$mae/BRL"] -eq [decimal]'70.50' -and $report["2026-08/settlement/$mae/GBP"] -eq [decimal]'15.25' -and $reportWithoutSummary["2026-09/settlement/$mae/BRL"] -eq [decimal]'137.88' -and $reportWithoutSummary["2026-09/settlement/$mae/GBP"] -eq [decimal]'7.94') "$($report["2026-08/settlement/$mae/BRL"]) $($report["2026-08/settlement/$mae/GBP"]) $($reportWithoutSummary["2026-09/settlement/$mae/BRL"]) $($reportWithoutSummary["2026-09/settlement/$mae/GBP"])"
+    Check 'settlement figures are exact decimals' ($report["2026-09/settlement/$mae/GBP"] -is [decimal]) ''
 
     $entryFetches = @{ Count = 0 }
     $countingFetch = { param($path) if ($path -eq 'controle-mae/entries/from/0001-01-01') { $entryFetches.Count++ }; & $fetch $path }
@@ -228,7 +230,9 @@ try {
     $withGroupFetch = { param($path) if (-not $withGroup.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $withGroup[$path] }
     $groupReport = Get-ParityReport -Fetch $withGroupFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
     $groupDifferences = Compare-ParityReport $reportWithoutSummary $groupReport $shippedMappings
-    Check 'settlement figures come from the Settlement group members when there is one, with the same keys as from the entries' ((Compare-Object (& $settlementKeys $groupReport) $expectedSettlementKeys).Count -eq 0 -and $groupDifferences.Count -eq 0 -and -not ($groupReport.Keys | Where-Object { $_ -like '*/templateGroups/Settlement/*' })) (($groupDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+    Check 'settlement figures from the Settlement group members have the same keys and values as from the entries' ((Compare-Object (& $settlementKeys $groupReport) $expectedSettlementKeys).Count -eq 0 -and $groupDifferences.Count -eq 0) (($groupDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
+    Check 'a Settlement group adds no template group figures' (-not ($groupReport.Keys | Where-Object { $_ -like '*/templateGroups/Settlement/*' })) ''
 
     $withGroup['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].TrimEnd(']') + (& $settlementGroup '137.88' '7.95')
     $changedSettlement = Compare-ParityReport $reportWithoutSummary (Get-ParityReport -Fetch $withGroupFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts) $shippedMappings
