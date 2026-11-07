@@ -208,6 +208,35 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task AdminAccounts_MaeWithEntries_IsInUse_DeleteReturns409AndCurrenciesAreLocked()
+    {
+        SeedMigratedV4File();
+        var mae = (await Client.GetFromJsonAsync<List<AccountDTO>>($"{Api}/accounts"))!.Single(account => account.Name == "Mãe");
+
+        var deleted = await Client.DeleteAsync($"{Api}/accounts/{mae.Id}");
+        var deleteProblem = await deleted.Content.ReadFromJsonAsync<ProblemDetails>();
+        var edited = await Client.PutAsJsonAsync($"{Api}/accounts/{mae.Id}", new AccountUpdateDTO
+        {
+            TemplateName = "Settlement",
+            Name = "Mãe",
+            Currency = "BRL",
+            Currencies = ["BRL"],
+            OtherParticipant = "Mãe",
+            IsActive = true
+        });
+        var editProblem = await edited.Content.ReadFromJsonAsync<ProblemDetails>();
+
+        using (new AssertionScope())
+        {
+            mae.HasRecords.Should().BeTrue();
+            deleted.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            deleteProblem!.Detail.Should().Be("Mãe has transactions and cannot be deleted. Deactivate it instead.");
+            edited.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            editProblem!.Detail.Should().Be("Template and currency can't change once the account has transactions.");
+        }
+    }
+
+    [Fact]
     [Trait("AC", "P60-F11-settlement-template-and-mae-migration-03")]
     [Trait("AC", "P60-F11-settlement-template-and-mae-migration-06")]
     public async Task ControleMae_MigratedFile_ReturnsTheSameEntriesAndValues()

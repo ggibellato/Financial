@@ -109,16 +109,17 @@ public sealed class ControleMaeService : IControleMaeService
         using var span = StartSpan("GetTotals");
         try
         {
-            decimal totalBrl = 0m, totalGbp = 0m;
-            foreach (var entry in MaeEntries())
+            var mae = MaeAccount.Find(_repository.GetAccounts());
+            var entries = _repository.GetSettlementTransactions();
+            var result = new MaeLedgerTotalsDTO
             {
-                totalBrl += entry.SignedValueIn(Currency.BRL) ?? 0m;
-                totalGbp += entry.SignedValueIn(Currency.GBP) ?? 0m;
-            }
+                TotalBrlValue = mae is null ? 0m : AccountBalanceRule.Balance(mae, Currency.BRL, DateOnly.MaxValue, entries),
+                TotalGbpValue = mae is null ? 0m : AccountBalanceRule.Balance(mae, Currency.GBP, DateOnly.MaxValue, entries)
+            };
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTotals");
-            return new MaeLedgerTotalsDTO { TotalBrlValue = totalBrl, TotalGbpValue = totalGbp };
+            return result;
         }
         catch (Exception ex)
         {
