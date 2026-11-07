@@ -27,7 +27,8 @@ function Get-Error([scriptblock]$action) {
     try { $null = & $action; return '' } catch { return $_.Exception.Message }
 }
 
-$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'potsTab', 'summary', 'templateGroups', 'account', 'cardAccount', 'monthTransactions', 'current', 'annual', 'averages', 'investment')
+$figureFamilies = @('banks', 'cards', 'categories', 'incomes', 'tithe', 'snapshots', 'monthly', 'pots', 'potsTab', 'summary', 'templateGroups', 'account', 'cardAccount', 'monthTransactions', 'settlement', 'current', 'annual', 'averages', 'investment')
+$mae = "M$([char]0xE3)e"
 $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
@@ -38,6 +39,7 @@ $responses = @{
     'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$reservaId`",`"name`":`"Reserva`",`"templateName`":`"Pots`"}]"
     'reserve/balances'                            = '[{"bucketName":"Casa","balance":150.00},{"bucketName":"Viagem","balance":25.50}]'
     'controle-mae/entries/totals'                 = '{"totalBrlValue":167.88,"totalGbpValue":7.94}'
+    'controle-mae/entries/from/0001-01-01'        = '[{"date":"2026-08-10","brlValue":100.50,"gbpValue":15.25},{"date":"2026-08-31","brlValue":-30.00,"gbpValue":null},{"date":"2026-09-01","brlValue":67.38,"gbpValue":-7.31}]'
     'annual-summary/2026/category-totals'         = '{"categoryTotals":[{"category":"Mercado","annualTotal":1200.00,"average":100.00,"monthlyTotals":[100.00,100.00]}],"incomeSummary":{"salaryAnnualTotal":5000.00,"salaryMonthly":[2500.00,2500.00]},"resultadoAnnualTotal":3800.00,"resultadoMonthly":[1900.00,1900.00]}'
     'annual-summary/2026/historic-summary-averages' = '[{"year":2025,"annualAverages":[{"category":"Mercado","value":95.00}]}]'
     'annual-summary/2026/investment-annual-result' = '{"accounts":[{"account":"ISA","isLiability":false,"monthlyValues":[1000.00,1100.00],"monthlyDiffs":[null,100.00]}],"netPosition":{"monthlyValues":[1000.00,1100.00],"monthlyDiffs":[null,100.00],"averageMonthResult":100.00,"fullYearNetChange":100.00,"sumOfMonthResults":100.00}}'
@@ -82,6 +84,7 @@ try {
         templateGroups = '{0}/templateGroups/Pots/totals/GBP'
         account    = '{0}/account/Chase/balance'
         monthTransactions = '{0}/monthTransactions/categories/Casa/spend'
+        settlement = "{0}/settlement/$mae/GBP"
     }
     $missing = [System.Collections.Generic.List[string]]::new()
     foreach ($month in '2026-08', '2026-09') {
@@ -208,11 +211,38 @@ try {
     $differentSpend = & $compareGridVariant '[{"transaction":{"categoryName":"Mercado","amount":-0.11}},{"transaction":{"categoryName":"Casa","amount":-0.2}}]'
     Check 'a different spend is a difference' ($differentSpend.Count -eq 1 -and $differentSpend[0].Key -eq '2026-09/monthTransactions/categories/Mercado/spend') (($differentSpend | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
+    $settlementKeys = { param($r) @($r.Keys | Where-Object { $_.Split('/')[1] -eq 'settlement' } | Sort-Object) }
+    $expectedSettlementKeys = @(foreach ($month in '2026-08', '2026-09') { "$month/settlement/$mae/BRL", "$month/settlement/$mae/GBP" }) | Sort-Object
+    Check 'settlement figures are built for every month on both sides' ((Compare-Object (& $settlementKeys $report) $expectedSettlementKeys).Count -eq 0 -and (Compare-Object (& $settlementKeys $reportWithoutSummary) $expectedSettlementKeys).Count -eq 0) ((& $settlementKeys $report) -join ', ')
+    Check 'settlement figures without a Settlement group sum the entries dated up to the month end, null as 0' ($report["2026-08/settlement/$mae/BRL"] -eq [decimal]'70.50' -and $report["2026-08/settlement/$mae/GBP"] -eq [decimal]'15.25' -and $reportWithoutSummary["2026-09/settlement/$mae/BRL"] -eq [decimal]'137.88' -and $reportWithoutSummary["2026-09/settlement/$mae/GBP"] -eq [decimal]'7.94') "$($report["2026-08/settlement/$mae/BRL"]) $($report["2026-08/settlement/$mae/GBP"]) $($reportWithoutSummary["2026-09/settlement/$mae/BRL"]) $($reportWithoutSummary["2026-09/settlement/$mae/GBP"])"
+    Check 'settlement figures are exact decimals' ($report["2026-09/settlement/$mae/GBP"] -is [decimal]) ''
+
+    $entryFetches = @{ Count = 0 }
+    $countingFetch = { param($path) if ($path -eq 'controle-mae/entries/from/0001-01-01') { $entryFetches.Count++ }; & $fetch $path }
+    $null = Get-ParityReport -Fetch $countingFetch -First '2026-08' -Last '2026-09'
+    Check 'the entries are fetched once per report' ($entryFetches.Count -eq 1) $entryFetches.Count
+
+    $settlementGroup = { param($brl, $gbp) ",{`"templateName`":`"Settlement`",`"members`":[{`"name`":`"$mae`",`"balance`":$brl,`"totalOwed`":null,`"currencyBalances`":[{`"currency`":`"BRL`",`"balance`":$brl},{`"currency`":`"GBP`",`"balance`":$gbp}]}],`"totals`":[]}]" }
+    $withGroup = $responses.Clone()
+    $withGroup.Remove('controle-mae/entries/from/0001-01-01')
+    $withGroup['accounts/groups/by-template/2026/8'] = $responses['accounts/groups/by-template/2026/8'].TrimEnd(']') + (& $settlementGroup '70.50' '15.25')
+    $withGroup['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].TrimEnd(']') + (& $settlementGroup '137.88' '7.94')
+    $withGroupFetch = { param($path) if (-not $withGroup.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $withGroup[$path] }
+    $groupReport = Get-ParityReport -Fetch $withGroupFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
+    $groupDifferences = Compare-ParityReport $reportWithoutSummary $groupReport $shippedMappings
+    Check 'settlement figures from the Settlement group members have the same keys and values as from the entries' ((Compare-Object (& $settlementKeys $groupReport) $expectedSettlementKeys).Count -eq 0 -and $groupDifferences.Count -eq 0) (($groupDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
+    Check 'a Settlement group adds no template group figures' (-not ($groupReport.Keys | Where-Object { $_ -like '*/templateGroups/Settlement/*' })) ''
+
+    $withGroup['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].TrimEnd(']') + (& $settlementGroup '137.88' '7.95')
+    $changedSettlement = Compare-ParityReport $reportWithoutSummary (Get-ParityReport -Fetch $withGroupFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts) $shippedMappings
+    Check 'a different settlement balance is a difference' ($changedSettlement.Count -eq 1 -and $changedSettlement[0].Key -eq "2026-09/settlement/$mae/GBP") (($changedSettlement | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
     $dataPath = Join-Path $work 'data-cashflow.json'
-    Set-Content -LiteralPath $dataPath -Value '{ "Expenses": [ { "Date": "2019-03-04T00:00:00", "ChargeDate": null, "InvoiceDate": "2027-02-01T00:00:00" } ], "Incomes": [ { "Date": "2026-10-14T00:00:00" } ], "InvestmentSnapshots": [ { "Year": 2026, "Month": 12 } ], "CardStatements": [], "Version": 1 }'
+    Set-Content -LiteralPath $dataPath -Value '{ "Expenses": [ { "Date": "2019-03-04T00:00:00", "ChargeDate": null, "InvoiceDate": "2027-02-01T00:00:00" } ], "Incomes": [ { "Date": "2026-10-14T00:00:00" } ], "SettlementTransactions": [ { "Date": "2018-05-06" } ], "InvestmentSnapshots": [ { "Year": 2026, "Month": 12 } ], "CardStatements": [], "Version": 1 }'
     $range = Get-ParityMonthRange $dataPath ([datetime]'2026-10-18')
     $laterNow = Get-ParityMonthRange $dataPath ([datetime]'2027-05-02')
-    Check 'month range spans first record to later of now and last record' ($range.First -eq '2019-03' -and $range.Last -eq '2027-02' -and $range.CurrentMonth -eq '2026-10' -and $laterNow.Last -eq '2027-05') "$($range.First)..$($range.Last) / $($laterNow.Last)"
+    Check 'month range spans first record, settlement entries included, to later of now and last record' ($range.First -eq '2018-05' -and $range.Last -eq '2027-02' -and $range.CurrentMonth -eq '2026-10' -and $laterNow.Last -eq '2027-05') "$($range.First)..$($range.Last) / $($laterNow.Last)"
 
     $repoRoot = Join-Path $work 'repo'
     New-Item -ItemType Directory -Path (Join-Path $repoRoot 'data') | Out-Null

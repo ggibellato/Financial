@@ -8137,9 +8137,11 @@ export interface components {
             balance: number;
             balanceIsOwed: boolean;
             currency: string;
+            currencyBalances: components["schemas"]["CurrencyBalanceDTO"][];
             isActive: boolean;
             name: string;
             nextStatement: null | components["schemas"]["AccountNextStatementDTO"];
+            otherParticipant?: null | string;
             /** Format: double */
             roundUpTotal?: null | number;
             statement?: null | components["schemas"]["AccountGroupStatementDTO"];
@@ -8987,6 +8989,11 @@ export interface components {
             marketValue: number;
             /** Format: double */
             percentage: number;
+        };
+        CurrencyBalanceDTO: {
+            /** Format: double */
+            balance: number;
+            currency: string;
         };
         CurrencyTotalDTO: {
             /** Format: double */

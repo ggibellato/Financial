@@ -69,7 +69,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             var result = DefaultAccountGroup.ListedIn(_repository.GetAccounts(), year, month, records)
                 .GroupBy(account => account.TemplateOrder)
                 .OrderBy(group => group.Key)
-                .Select(group => ToTemplateGroupDto(group.Select(toMember).ToList()))
+                .Select(group => ToTemplateGroupDto(group.Select(toMember).ToList(), group.First().Has(Capability.HasParticipants)))
                 .ToList();
 
             span.MarkSuccess();
@@ -99,11 +99,11 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             NextStatementFor(account, expenses, statements, transfers));
     }
 
-    private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members) => new()
+    private static AccountTemplateGroupDTO ToTemplateGroupDto(IReadOnlyList<AccountGroupMemberDTO> members, bool hasParticipants) => new()
     {
         TemplateName = members[0].TemplateName,
         Members = members,
-        Totals = members
+        Totals = hasParticipants ? [] : members
             .GroupBy(member => member.Currency)
             .Select(group => new AccountTemplateGroupTotalDTO
             {
@@ -119,14 +119,21 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
         IReadOnlyCollection<IAccountTransaction> records,
         IReadOnlyCollection<Expense> listedExpenses,
         AccountGroupStatementDTO? statement,
-        AccountNextStatementDTO? nextStatement) => new()
+        AccountNextStatementDTO? nextStatement)
+    {
+        var balances = AccountBalanceRule.Balances(account, endOfMonth, records);
+        return new()
         {
             AccountId = account.Id,
             Name = account.Name,
             TemplateName = account.TemplateName,
             Currency = account.Currency.ToString(),
             IsActive = account.IsActive,
-            Balance = AccountBalanceRule.Balance(account, endOfMonth, records),
+            Balance = balances.First(balance => balance.Currency == account.Currency).Balance,
+            CurrencyBalances = balances
+                .Select(balance => new CurrencyBalanceDTO { Currency = balance.Currency.ToString(), Balance = balance.Balance })
+                .ToList(),
+            OtherParticipant = account.OtherParticipant,
             RoundUpTotal = account.Has(Capability.SupportsRoundUp)
                 ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)
                 : null,
@@ -135,6 +142,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             TotalOwed = account.Has(Capability.HasStatements) ? CardChargeFilter.TotalOwed(account, records) : null,
             NextStatement = nextStatement
         };
+    }
 
     private static AccountNextStatementDTO? NextStatementFor(
         Account account, IReadOnlyCollection<Expense> expenses, IReadOnlyCollection<CardStatement> statements, IReadOnlyCollection<Transfer> transfers) =>
