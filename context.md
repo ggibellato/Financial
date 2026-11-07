@@ -72,7 +72,7 @@ The solution must be extensible so that new asset classes can be added in the fu
 
 A second, fully independent domain that tracks household finances — income, expenses, bank/card balances, a savings-split reserve ledger, recurring bills, and a household ledger with my mother — separate from investment tracking. It was migrated from a personal Excel workbook (`Despesas.xlsx`) and has no cross-domain references to the Investment side — see `docs/prd/P11-prd-cashflow-tracking/cashflow-context.md`. See [Implemented Features (CashFlow Domain)](#implemented-features-cashflow-domain) below for the full feature breakdown.
 
-Core entities: `Bank`, `Expense`, `Income`, `CardStatement`, `RecurringBill`, `ReserveMovement`, `InvestmentSnapshot`, `MaeLedgerEntry`.
+Core entities: `Bank`, `Expense`, `Income`, `CardStatement`, `RecurringBill`, `ReserveMovement`, `InvestmentSnapshot`, `SettlementTransaction`.
 
 Storage mirrors the Investment domain's pattern but is entirely separate: a dedicated `data-cashflow.json` file, with its own independent LocalJson/GoogleDrive repository selection and its own configuration keys.
 
@@ -151,7 +151,7 @@ The architecture should follow Domain-Driven Design (DDD) principles while remai
 The solution is split into **two independent bounded contexts**, each with its own Domain/Application/Infrastructure projects:
 
 * `Financial.Investment.{Domain,Application,Infrastructure}` — concepts: Broker, Portfolio, Asset, Transaction, Credit.
-* `Financial.CashFlow.{Domain,Application,Infrastructure}` — concepts: Bank, Expense, Income, CardStatement, RecurringBill, ReserveMovement, InvestmentSnapshot, MaeLedgerEntry.
+* `Financial.CashFlow.{Domain,Application,Infrastructure}` — concepts: Bank, Expense, Income, CardStatement, RecurringBill, ReserveMovement, InvestmentSnapshot, SettlementTransaction.
 
 `Financial.Shared.Infrastructure` holds cross-cutting infrastructure used by both contexts (e.g. `GoogleDriveJsonStorage`).
 

@@ -51,7 +51,7 @@ public class ControleMaeServiceTests
         {
             result.BrlValue.Should().Be(350m);
             result.GbpValue.Should().Be(51.1m);
-            _repository.MaeLedgerEntries.Should().ContainSingle();
+            _repository.SettlementTransactions.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
@@ -74,7 +74,7 @@ public class ControleMaeServiceTests
         {
             result.GbpValue.Should().Be(40m);
             result.BrlValue.Should().BeNull();
-            _repository.MaeLedgerEntries.Should().ContainSingle();
+            _repository.SettlementTransactions.Should().ContainSingle();
         }
     }
 
@@ -96,7 +96,7 @@ public class ControleMaeServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<ArgumentException>();
-            _repository.MaeLedgerEntries.Should().BeEmpty();
+            _repository.SettlementTransactions.Should().BeEmpty();
             provider.CallCount.Should().Be(0);
         }
     }
@@ -146,9 +146,9 @@ public class ControleMaeServiceTests
     [Fact]
     public void GetEntriesFromDate_ReturnsOnlyEntriesOnOrAfterDate()
     {
-        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
-        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
-        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
+        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 6, 30), "Before", string.Empty, Currency.BRL, 10m, 1m));
+        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 7, 1), "OnDate", string.Empty, Currency.BRL, 10m, 1m));
+        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 8, 10), "After", string.Empty, Currency.BRL, 10m, 1m));
 
         var result = _sut.GetEntriesFromDate(new DateOnly(2026, 7, 1));
 
@@ -159,8 +159,8 @@ public class ControleMaeServiceTests
     [Fact]
     public void GetTotals_SumsBrlAndGbpAcrossAllEntriesRegardlessOfDate()
     {
-        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
-        _repository.MaeLedgerEntries.Add(MaeLedgerEntry.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
+        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2020, 1, 1), "Old", string.Empty, Currency.BRL, 100m, 10m));
+        _repository.SettlementTransactions.Add(SettlementTransaction.Create(new DateOnly(2026, 7, 10), "Recent", string.Empty, Currency.GBP, null, 5m));
 
         var result = _sut.GetTotals();
 
@@ -171,8 +171,8 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task UpdateEntryValuesAsync_UpdatesOnlyCurrencyValues()
     {
-        var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "Medical appointment", "Note", Currency.GBP, null, 40m);
-        _repository.MaeLedgerEntries.Add(entry);
+        var entry = SettlementTransaction.Create(new DateOnly(2026, 7, 1), "Medical appointment", "Note", Currency.GBP, null, 40m);
+        _repository.SettlementTransactions.Add(entry);
 
         var result = await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO
         {
@@ -205,12 +205,12 @@ public class ControleMaeServiceTests
     [Fact]
     public async Task DeleteEntryAsync_ExistingId_RemovesEntryAndSaves()
     {
-        var entry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 1), "School supplies", string.Empty, Currency.BRL, 350m, 51.1m);
-        _repository.MaeLedgerEntries.Add(entry);
+        var entry = SettlementTransaction.Create(new DateOnly(2026, 7, 1), "School supplies", string.Empty, Currency.BRL, 350m, 51.1m);
+        _repository.SettlementTransactions.Add(entry);
 
         await _sut.DeleteEntryAsync(entry.Id);
 
-        _repository.MaeLedgerEntries.Should().BeEmpty();
+        _repository.SettlementTransactions.Should().BeEmpty();
         _repository.SaveChangesCallCount.Should().Be(1);
     }
 

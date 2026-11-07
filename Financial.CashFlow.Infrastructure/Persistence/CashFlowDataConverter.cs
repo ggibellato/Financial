@@ -47,7 +47,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var movement in DeserializeCollection<PotTransaction>(root, "ReserveMovements", resolvedOptions)) data.AddPotTransaction(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", resolvedOptions)) data.AddRecurringBill(bill);
-        foreach (var entry in DeserializeCollection<MaeLedgerEntry>(root, "MaeLedgerEntries", resolvedOptions)) data.AddMaeLedgerEntry(entry);
+        foreach (var entry in DeserializeCollection<SettlementTransaction>(root, "MaeLedgerEntries", resolvedOptions)) data.AddSettlementTransaction(entry);
         foreach (var snapshot in DeserializeCollection<InvestmentSnapshot>(root, "InvestmentSnapshots", resolvedOptions)) data.AddInvestmentSnapshot(snapshot);
         foreach (var transfer in DeserializeCollection<Transfer>(root, "Transfers", resolvedOptions)) data.AddTransfer(transfer);
         foreach (var adjustment in DeserializeCollection<BalanceAdjustment>(root, "BalanceAdjustments", resolvedOptions)) data.AddBalanceAdjustment(adjustment);
@@ -71,7 +71,7 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         WriteCollection(writer, "ReserveMovements", value.PotTransactions, elementOptions);
         WriteCollection(writer, "CardStatements", value.CardStatements, elementOptions);
         WriteCollection(writer, "RecurringBills", value.RecurringBills, elementOptions);
-        WriteCollection(writer, "MaeLedgerEntries", value.MaeLedgerEntries, elementOptions);
+        WriteCollection(writer, "MaeLedgerEntries", value.SettlementTransactions, elementOptions);
         WriteCollection(writer, "InvestmentSnapshots", value.InvestmentSnapshots, elementOptions);
         WriteCollection(writer, "InvestmentAccounts", value.InvestmentAccounts, elementOptions);
         WriteCollection(writer, "Accounts", value.Accounts, elementOptions);

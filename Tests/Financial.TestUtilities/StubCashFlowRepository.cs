@@ -18,7 +18,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public List<PotTransaction> PotTransactions { get; } = new();
     public List<CardStatement> CardStatements { get; } = new();
     public List<RecurringBill> RecurringBills { get; } = new();
-    public List<MaeLedgerEntry> MaeLedgerEntries { get; } = new();
+    public List<SettlementTransaction> SettlementTransactions { get; } = new();
     public List<InvestmentSnapshot> InvestmentSnapshots { get; } = new();
     public List<InvestmentAccount> InvestmentAccounts { get; } = new();
     public List<Account> Accounts { get; } = new();
@@ -194,9 +194,9 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddRecurringBill(RecurringBill bill) => RecurringBills.Add(bill);
     public void DeleteRecurringBill(Guid id) => RecurringBills.RemoveAll(b => b.Id == id);
 
-    public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => CheckThrow(MaeLedgerEntries);
-    public void AddMaeLedgerEntry(MaeLedgerEntry entry) => MaeLedgerEntries.Add(entry);
-    public void DeleteMaeLedgerEntry(Guid id) => MaeLedgerEntries.RemoveAll(e => e.Id == id);
+    public IEnumerable<SettlementTransaction> GetSettlementTransactions() => CheckThrow(SettlementTransactions);
+    public void AddSettlementTransaction(SettlementTransaction entry) => SettlementTransactions.Add(entry);
+    public void DeleteSettlementTransaction(Guid id) => SettlementTransactions.RemoveAll(e => e.Id == id);
 
     public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => CheckThrow(InvestmentSnapshots);
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => InvestmentSnapshots.Add(snapshot);

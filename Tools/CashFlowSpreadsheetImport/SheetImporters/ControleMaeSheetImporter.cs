@@ -7,16 +7,6 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reportin
 
 namespace Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.SheetImporters;
 
-/// <summary>
-/// Parses the single continuous "Controle mae" sheet into <see cref="MaeLedgerEntry"/> entities.
-/// The sheet has no dedicated date column — column A is free text that usually embeds a date, a
-/// single month/year, or a month/year range covering a period (e.g. "Jan/2020-Dez/2020 - Seguro",
-/// which resolves to the end of that range) — so a row's date is extracted from that text with
-/// regex. Rows are always imported in their original sheet order: when no date pattern can be
-/// confidently found, the row is stamped one day after the previous row's resolved date (rather
-/// than skipped) purely to preserve that order, and is flagged in the report either way. Both
-/// currency values are preserved exactly as recorded (no live FX call is ever made here).
-/// </summary>
 public static partial class ControleMaeSheetImporter
 {
     private const int DescriptionColumn = 1;
@@ -28,10 +18,10 @@ public static partial class ControleMaeSheetImporter
     private static readonly Regex MonthYearPattern = BuildMonthYearPattern();
     private static readonly Regex YearMonthPattern = BuildYearMonthPattern();
 
-    public static IReadOnlyList<MaeLedgerEntry> Import(IXLWorksheet sheet, ImportReport report)
+    public static IReadOnlyList<SettlementTransaction> Import(IXLWorksheet sheet, ImportReport report)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
-        var entries = new List<MaeLedgerEntry>();
+        var entries = new List<SettlementTransaction>();
         DateOnly? previousDate = null;
 
         for (var row = 1; row <= lastRow; row++)
@@ -72,7 +62,7 @@ public static partial class ControleMaeSheetImporter
             var note = sheet.Cell(row, NoteColumn).GetString();
             var sourceCurrency = brlValue is not null ? Currency.BRL : Currency.GBP;
 
-            entries.Add(MaeLedgerEntry.Create(date, description, note, sourceCurrency, brlValue, gbpValue));
+            entries.Add(SettlementTransaction.Create(date, description, note, sourceCurrency, brlValue, gbpValue));
         }
 
         return entries;

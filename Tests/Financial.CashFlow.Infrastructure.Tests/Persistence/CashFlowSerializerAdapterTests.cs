@@ -46,7 +46,7 @@ public class CashFlowSerializerAdapterTests
         var cardStatement = CardStatement.Create(creditCard, 2026, 7);
         cardStatement.SetDueDate(new DateOnly(2026, 8, 18));
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
-        var maeLedgerEntry = MaeLedgerEntry.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
+        var settlementTransaction = SettlementTransaction.Create(new DateOnly(2026, 7, 15), "School supplies", "Note", Currency.BRL, 350m, 51.23m);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, destinationAmount: null, "Round-up top-up", today: TestClock.Today);
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");
@@ -59,7 +59,7 @@ public class CashFlowSerializerAdapterTests
         original.AddPotTransaction(potTransaction);
         original.AddCardStatement(cardStatement);
         original.AddRecurringBill(recurringBill);
-        original.AddMaeLedgerEntry(maeLedgerEntry);
+        original.AddSettlementTransaction(settlementTransaction);
         original.AddInvestmentSnapshot(investmentSnapshot);
         original.AddInvestmentAccount(investmentAccount);
         original.AddAccount(bank);
@@ -101,7 +101,7 @@ public class CashFlowSerializerAdapterTests
             resultCardStatement.Id.Should().Be(cardStatement.Id);
             resultCardStatement.DueDate.Should().Be(new DateOnly(2026, 8, 18));
             result.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(recurringBill.Id);
-            result.MaeLedgerEntries.Should().ContainSingle().Which.Id.Should().Be(maeLedgerEntry.Id);
+            result.SettlementTransactions.Should().ContainSingle().Which.Id.Should().Be(settlementTransaction.Id);
             var resultSnapshot = result.InvestmentSnapshots.Should().ContainSingle().Which;
             resultSnapshot.Id.Should().Be(investmentSnapshot.Id);
             var resultInvestmentAccount = result.InvestmentAccounts.Should().ContainSingle().Which;
@@ -403,7 +403,7 @@ public class CashFlowSerializerAdapterTests
         result.PotTransactions.Should().BeEmpty();
         result.CardStatements.Should().BeEmpty();
         result.RecurringBills.Should().BeEmpty();
-        result.MaeLedgerEntries.Should().BeEmpty();
+        result.SettlementTransactions.Should().BeEmpty();
         result.InvestmentSnapshots.Should().BeEmpty();
         result.InvestmentAccounts.Should().BeEmpty();
         result.Accounts.Should().BeEmpty();

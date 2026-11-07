@@ -20,9 +20,9 @@ public interface ICashFlowRepository
     void AddRecurringBill(RecurringBill bill);
     void DeleteRecurringBill(Guid id);
 
-    IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries();
-    void AddMaeLedgerEntry(MaeLedgerEntry entry);
-    void DeleteMaeLedgerEntry(Guid id);
+    IEnumerable<SettlementTransaction> GetSettlementTransactions();
+    void AddSettlementTransaction(SettlementTransaction entry);
+    void DeleteSettlementTransaction(Guid id);
 
     IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots();
     void AddInvestmentSnapshot(InvestmentSnapshot snapshot);

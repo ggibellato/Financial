@@ -42,9 +42,9 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     public void AddRecurringBill(RecurringBill bill) => _data.AddRecurringBill(bill);
     public void DeleteRecurringBill(Guid id) => _data.RemoveRecurringBill(id);
 
-    public IEnumerable<MaeLedgerEntry> GetMaeLedgerEntries() => _data.MaeLedgerEntries;
-    public void AddMaeLedgerEntry(MaeLedgerEntry entry) => _data.AddMaeLedgerEntry(entry);
-    public void DeleteMaeLedgerEntry(Guid id) => _data.RemoveMaeLedgerEntry(id);
+    public IEnumerable<SettlementTransaction> GetSettlementTransactions() => _data.SettlementTransactions;
+    public void AddSettlementTransaction(SettlementTransaction entry) => _data.AddSettlementTransaction(entry);
+    public void DeleteSettlementTransaction(Guid id) => _data.RemoveSettlementTransaction(id);
 
     public IEnumerable<InvestmentSnapshot> GetInvestmentSnapshots() => _data.InvestmentSnapshots;
     public void AddInvestmentSnapshot(InvestmentSnapshot snapshot) => _data.AddInvestmentSnapshot(snapshot);

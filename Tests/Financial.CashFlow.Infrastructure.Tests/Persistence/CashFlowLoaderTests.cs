@@ -26,7 +26,7 @@ public class CashFlowLoaderTests
         data.PotTransactions.Should().BeEmpty();
         data.CardStatements.Should().BeEmpty();
         data.RecurringBills.Should().BeEmpty();
-        data.MaeLedgerEntries.Should().BeEmpty();
+        data.SettlementTransactions.Should().BeEmpty();
         data.InvestmentSnapshots.Should().BeEmpty();
         data.Accounts.Should().BeEmpty();
     }
