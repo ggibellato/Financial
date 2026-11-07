@@ -60,6 +60,23 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
+    public async Task CreateEntryAsync_AmountAndRateWithManyDecimals_SavesBothRoundedToTwo()
+    {
+        var service = CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.14627391m));
+
+        var result = await service.CreateEntryAsync(NewEntry("BRL", -350.125m));
+
+        using (new AssertionScope())
+        {
+            var stored = _repository.SettlementTransactions.Single();
+            stored.Amount.Should().Be(350.13m);
+            stored.ConvertedValue.Should().Be(51.21m);
+            result.BrlValue.Should().Be(-350.13m);
+            result.GbpValue.Should().Be(-51.21m);
+        }
+    }
+
+    [Fact]
     public async Task CreateEntryAsync_WithFailedRateLookup_StillSavesWithOnlyEnteredCurrency()
     {
         var provider = new StubExchangeRateProvider(null);
@@ -277,20 +294,20 @@ public class ControleMaeServiceTests
     }
 
     [Fact]
-    public void GetTotals_MaeBalancePerCurrencyAtStoredPrecision_LeavingOtherAccountsEntriesOut()
+    public void GetTotals_MaeBalancePerCurrency_LeavingOtherAccountsEntriesOut()
     {
         var son = TestAccounts.Settlement("Samuel", [Currency.GBP], "Samuel");
         _repository.Accounts.Add(son);
         _repository.SettlementTransactions.Add(SettlementTransaction.Create(son, new DateOnly(2026, 7, 1), "Son", null, SettlementPayer.You, Currency.GBP, 70m, null));
         AddEntry(new DateOnly(2022, 11, 25), "Pounds", SettlementPayer.You, Currency.GBP, 100m, 654.24m);
-        AddEntry(new DateOnly(2026, 7, 10), "Paid by Mãe", SettlementPayer.Other, Currency.BRL, 486.3632m, 72.05799207m);
+        AddEntry(new DateOnly(2026, 7, 10), "Paid by Mãe", SettlementPayer.Other, Currency.BRL, 486.36m, 72.06m);
 
         var result = _sut.GetTotals();
 
         using (new AssertionScope())
         {
-            result.TotalBrlValue.Should().Be(167.8768m);
-            result.TotalGbpValue.Should().Be(27.94200793m);
+            result.TotalBrlValue.Should().Be(167.88m);
+            result.TotalGbpValue.Should().Be(27.94m);
         }
     }
 
@@ -323,6 +340,22 @@ public class ControleMaeServiceTests
             entry.Description.Should().Be("Medical appointment");
             entry.Note.Should().Be("Note");
             _repository.SaveChangesCallCount.Should().Be(1);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateEntryValuesAsync_ValuesWithFourDecimals_SavesThemWithTwo()
+    {
+        var entry = AddEntry(new DateOnly(2026, 7, 1), "Entry", SettlementPayer.You, Currency.BRL, 100m, 15m);
+
+        var result = await _sut.UpdateEntryValuesAsync(entry.Id, new MaeLedgerEntryValuesUpdateDTO { BrlValue = -167.8768m, GbpValue = -7.9421m });
+
+        using (new AssertionScope())
+        {
+            entry.Amount.Should().Be(167.88m);
+            entry.ConvertedValue.Should().Be(7.94m);
+            result.BrlValue.Should().Be(-167.88m);
+            result.GbpValue.Should().Be(-7.94m);
         }
     }
 

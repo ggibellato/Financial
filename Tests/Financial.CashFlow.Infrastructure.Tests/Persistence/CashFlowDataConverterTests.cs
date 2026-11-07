@@ -247,6 +247,23 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
+    public void LoadAndSave_SettlementTransactionWithMoreThanTwoDecimals_KeepsTheStoredValuesByteIdentical()
+    {
+        var file = V5FileWithMaeEntry.Replace("\"Amount\":80,\"ConvertedValue\":491.04", "\"Amount\":486.3632,\"ConvertedValue\":72.05799207");
+
+        var data = _serializer.Deserialize(file);
+        var saved = _serializer.Serialize(data);
+
+        using (new AssertionScope())
+        {
+            var entry = data.SettlementTransactions.Single();
+            entry.Amount.Should().Be(486.3632m);
+            entry.ConvertedValue.Should().Be(72.05799207m);
+            saved.Should().Be(file);
+        }
+    }
+
+    [Fact]
     public void Load_SettlementTransactionWithUnknownAccountId_FailsTheLoad()
     {
         var file = V5FileWithMaeEntry.Replace("\"AccountId\":\"" + MaeId + "\"", "\"AccountId\":\"5db5c88d-0000-0000-0000-000000000999\"");

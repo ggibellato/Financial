@@ -62,6 +62,9 @@ public class SettlementTransaction : IAccountTransaction
 
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
+        amount = ToCents(amount);
+        convertedValue = convertedValue.HasValue ? ToCents(convertedValue.Value) : null;
+
         if (amount <= 0)
         {
             throw new ArgumentException("Amount must be greater than zero.");
@@ -111,6 +114,8 @@ public class SettlementTransaction : IAccountTransaction
         ArgumentNullException.ThrowIfNull(account);
         return account.Currencies.Where(currency => currency != paidCurrency).Select(currency => (Currency?)currency).FirstOrDefault();
     }
+
+    public static decimal ToCents(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     public static SettlementPayer PayerOf(decimal signedValue) =>
         signedValue > 0 ? SettlementPayer.You : SettlementPayer.Other;
