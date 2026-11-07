@@ -592,18 +592,20 @@ Rules that apply to every feature:
 - Settlement screen with entries, balance per currency and Settle (used by F13)
 
 **Capabilities:**
-- **Header:** balance in each currency and the direction ("Mãe owes you R$167.88 / £7.94", "You owe Samuel £15.00", or "Settled").
-- **Transactions:** entries with Date, Description, Paid by, original amount and currency, BRL value, GBP value (multi-currency), Note; row actions Edit (description, note and values; today's Controle Mãe edits values only) and Delete. F12 also adds Settlement entries to the account transaction rows and F16's All transactions, each row with its own currency (moved from F11, user decision 2026-11-06).
-- **Add entry:** inline form (Date, Description, Paid by, Currency when 2, Amount, Note); the converted value is computed on save.
-- **Settle** (at any time): the user picks the currency the money moved in; the form is pre-filled with paid by = the participant who owes, amount = the outstanding balance in that currency, and the other currency's value = its outstanding balance, so both totals reach zero in one entry; the implied rate is shown; both values stay editable. Single-currency accounts pre-fill the one amount. Confirmation dialog: "Save this settlement? Both totals become zero." — or, if edited so they do not, "This leaves R$3.20 / £0.00 outstanding."
+- **Header:** the **current** balance (every entry, not the viewed month) in each currency and the direction ("Mãe owes you R$167.88 / £7.94", "You owe Samuel £15.00", or "Settled"); the month picker only picks the entries the grid lists (user decision 2026-11-07). A currency counts as settled when its balance rounds to 0.00; sub-penny remainders from entries saved before 2026-11-07 are accepted (user decision 2026-11-07).
+- **Routes:** the screen uses new account-scoped Settlement routes (add, edit, delete, Settle), so any Settlement account (Mãe, the son's) works; the `controle-mae` routes and the Controle Mãe page stay unchanged until F13. Settlement accounts appear in the account-screen picker and the Accounts page Settlement rows become links (user decision 2026-11-07).
+- **Transactions:** entries of the viewed month with Date, Description, Paid by, Amount (in the entry's currency, e.g. "R$150.00" or "£80.00"), Converted (in the other currency, "—" when empty), Note; row actions Edit and Delete (user decision 2026-11-07). Edit changes description, note, date, paid by, amount and converted value; the converted value is a field of its own, so changing the amount or date does not recalculate it; the currency cannot change (delete and add again); values are saved with 2 decimals (user decision 2026-11-07).
+- **Settlement rows elsewhere:** the account transaction rows and F16's All transactions gain one row per entry: the paid amount in the entry's own currency, positive when you paid and negative when the other participant paid (a GBP-paid Mãe entry shows in GBP although Mãe's main currency is BRL); All transactions' footer totals add these per currency, converted values are not counted, and entries carry no category, so the Category filter and Spend ignore them (user decision 2026-11-07; moved from F11, user decision 2026-11-06).
+- **Add entry:** inline form (Date, Description, Paid by, Currency when 2, Amount, Note); the converted value is computed on save at the date's historical rate and saved with 2 decimals. When it rounds to 0.00 the entry is saved without one and the form says "The GBP value rounds to 0.00, so it was left empty." (user decision 2026-11-07).
+- **Settle** (at any time on an active account; an inactive account has no actions, so it is reactivated first, user decision 2026-11-07): the user picks the currency the money moved in; the form is pre-filled with paid by = the participant who owes in that currency, amount = its outstanding balance rounded to 2 decimals, and, when the other currency's balance points the same way, the converted value = that outstanding, so both totals reach zero in one entry. When the other currency points the other way or is already settled, the converted value is left empty and the confirmation says what remains; the user settles that currency with a second Settle (user decision 2026-11-07). The implied rate is shown as "1 GBP = R$21.14" (2 decimals) whichever currency is settled (user decision 2026-11-07); both values stay editable. Single-currency accounts pre-fill the one amount. Confirmation dialog: "Save this settlement? Both totals become zero." — or, if edited so they do not, "This leaves R$3.20 / £0.00 outstanding."
 
 **Experience:**
 - Mãe screen → Settle → Currency BRL → pre-filled "Paid by: Mãe · R$167.88 · £7.94 · implied rate 21.14" → Save → confirm → header "Settled".
 - States as in F05.
 
 **Error Handling:**
-- Settle on a settled account: action disabled with "Nothing to settle."
-- Exchange-rate provider failure when adding an ordinary entry: the entry saves with the converted value empty (as today) and a warning "No exchange rate found for 2026-10-17; the GBP value is empty."
+- Settle on a settled account (every currency rounds to 0.00): action disabled with "Nothing to settle."
+- Exchange-rate provider failure (no rate for the date) when adding an entry: the entry saves with the converted value empty (as today) and the response carries a warning shown by the form, naming the other currency: "No exchange rate found for 17 Oct 2026; the GBP value is empty." (or "the BRL value" for a GBP entry) (user decision 2026-11-07).
 - Save failure: nothing persisted; values kept.
 
 ### F13. Consolidated Navigation and Retirement
@@ -984,9 +986,11 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F12. Settlement Screen
-- [ ] The header shows the balance in each currency with its direction (owes you / you owe / settled)
-- [ ] Add entry asks for currency only on a 2-currency account and saves with the converted value
-- [ ] Settle pre-fills paid by, amount and other-currency value so both totals become zero after saving, showing the implied rate
+- [ ] The header shows the current balance in each currency with its direction (owes you / you owe / settled), a currency counting as settled when it rounds to 0.00
+- [ ] Edit changes description, note, date, paid by, amount and converted value without recalculating it; the currency cannot change
+- [ ] Settlement entries appear in the account transaction rows and F16's All transactions with their own currency; the footer totals them per currency
+- [ ] Add entry asks for currency only on a 2-currency account and saves with the converted value at 2 decimals; a converted value rounding to 0.00 or a missing rate saves it empty with a warning naming the currency
+- [ ] Settle pre-fills paid by, amount and, when the other currency points the same way, the converted value, so both totals round to zero after saving; it shows the implied rate as "1 GBP = R$x"; with opposite directions the confirmation states what remains
 - [ ] Editing a Settle value so totals do not reach zero shows the leftover in the confirmation
 - [ ] Settle is disabled on a settled account
 - [ ] Settlement screen states, keyboard use and narrow layout pass the review checklist
