@@ -1,11 +1,12 @@
 using System;
 using System.Linq;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Entities;
 
-public class SettlementTransaction
+public class SettlementTransaction : IAccountTransaction
 {
     public Guid Id { get; private set; }
     public Account Account { get; private set; } = null!;
@@ -79,6 +80,18 @@ public class SettlementTransaction
         PaidBy = paidBy;
         Amount = amount;
         ConvertedValue = convertedValue;
+    }
+
+    public decimal ContributionTo(Account account)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        return ContributionTo(account, account.Currency);
+    }
+
+    public decimal ContributionTo(Account account, Currency currency)
+    {
+        ArgumentNullException.ThrowIfNull(account);
+        return account.Id == Account.Id ? SignedValueIn(currency) ?? 0m : 0m;
     }
 
     public decimal? SignedValueIn(Currency currency)

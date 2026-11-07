@@ -265,4 +265,69 @@ public class AccountBalanceRuleTests
 
         AccountBalanceRule.PotBalance(ferias, DateOnly.MaxValue, movements).Should().Be(120m);
     }
+
+    [Fact]
+    public void Balance_SettlementPerCurrency_SumsSignedAndConvertedValuesWithEmptyAsZero()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        var records = new IAccountTransaction[]
+        {
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45.5m),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 3), "Paid by Mãe", null, SettlementPayer.Other, Currency.BRL, 100m, null),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 4), "Pounds", null, SettlementPayer.You, Currency.GBP, 10m, 65m),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 10, 1), "After as-of", null, SettlementPayer.You, Currency.BRL, 999m, 99m),
+            Expense.Create(new DateOnly(2026, 9, 5), "Another account", 50m, _groceries, _barclays, creditCard: null)
+        };
+        var asOf = new DateOnly(2026, 9, 30);
+
+        using (new AssertionScope())
+        {
+            AccountBalanceRule.Balance(mae, Currency.BRL, asOf, records).Should().Be(265m);
+            AccountBalanceRule.Balance(mae, Currency.GBP, asOf, records).Should().Be(55.5m);
+            AccountBalanceRule.Balance(mae, asOf, records).Should().Be(265m);
+        }
+    }
+
+    [Fact]
+    public void Balance_OtherCurrencyThanTheMainOne_LeavesTheOpeningBalanceOut()
+    {
+        var records = new IAccountTransaction[]
+        {
+            Expense.Create(new DateOnly(2026, 9, 5), "Groceries", 50m, _groceries, _barclays, creditCard: null)
+        };
+
+        using (new AssertionScope())
+        {
+            AccountBalanceRule.Balance(_barclays, Currency.GBP, new DateOnly(2026, 9, 30), records).Should().Be(950m);
+            AccountBalanceRule.Balance(_barclays, Currency.BRL, new DateOnly(2026, 9, 30), records).Should().Be(0m);
+        }
+    }
+
+    [Fact]
+    public void Balances_OneBalancePerAccountCurrencyInCodeOrder()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.GBP, Currency.BRL], "Mãe");
+        var records = new IAccountTransaction[]
+        {
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Pounds", null, SettlementPayer.Other, Currency.GBP, 10m, 65m)
+        };
+
+        AccountBalanceRule.Balances(mae, new DateOnly(2026, 9, 30), records)
+            .Should().Equal((Currency.BRL, -65m), (Currency.GBP, -10m));
+    }
+
+    [Fact]
+    public void Balances_ExistingBank_IsItsOneUnchangedBalance()
+    {
+        var records = new IAccountTransaction[]
+        {
+            Income.Create(new DateOnly(2026, 9, 20), _salary, null, 300m, _barclays),
+            SettlementTransaction.Create(
+                TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe"), new DateOnly(2026, 9, 2), "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m)
+        };
+
+        AccountBalanceRule.Balances(_barclays, new DateOnly(2026, 9, 30), records)
+            .Should().Equal((Currency.GBP, AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records)));
+        AccountBalanceRule.Balance(_barclays, new DateOnly(2026, 9, 30), records).Should().Be(1300m);
+    }
 }

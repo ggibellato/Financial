@@ -28,6 +28,7 @@ public static class DefaultAccountGroup
     }
 
     private static bool StillMattersIn(Account account, DateOnly start, DateOnly end, IReadOnlyCollection<IAccountTransaction> records) =>
-        AccountBalanceRule.Balance(account, end, records) != 0m
-        || records.Any(record => record.Date >= start && record.Date <= end && record.ContributionTo(account) != 0m);
+        account.Currencies.Any(currency =>
+            AccountBalanceRule.Balance(account, currency, end, records) != 0m
+            || records.Any(record => record.Date >= start && record.Date <= end && record.ContributionTo(account, currency) != 0m));
 }

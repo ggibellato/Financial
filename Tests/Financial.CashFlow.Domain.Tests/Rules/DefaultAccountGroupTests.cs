@@ -145,6 +145,44 @@ public class DefaultAccountGroupTests
         DefaultAccountGroup.ListedIn([closedPots, closedCard, closedBank, keptBank], 2026, 9, records).Should().Equal(closedPots, keptBank);
     }
 
+    [Fact]
+    public void ListedIn_InactiveSettlementOwingOnlyPounds_IsListed()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        var entry = SettlementTransaction.Create(mae, new DateOnly(2026, 3, 10), "Pounds", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        mae.SetActive(false);
+
+        DefaultAccountGroup.ListedIn([mae], 2026, 9, [entry]).Should().Equal(mae);
+    }
+
+    [Fact]
+    public void ListedIn_InactiveSettlementWithAPoundsRecordThatMonthAndZeroBalance_IsListed()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        IAccountTransaction[] records =
+        [
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 10), "Paid", null, SettlementPayer.You, Currency.GBP, 10m, null),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 11), "Paid back", null, SettlementPayer.Other, Currency.GBP, 10m, null)
+        ];
+        mae.SetActive(false);
+
+        DefaultAccountGroup.ListedIn([mae], 2026, 9, records).Should().Equal(mae);
+    }
+
+    [Fact]
+    public void ListedIn_InactiveSettledSettlementWithoutRecordsThatMonth_IsDropped()
+    {
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        IAccountTransaction[] records =
+        [
+            SettlementTransaction.Create(mae, new DateOnly(2026, 3, 10), "Paid", null, SettlementPayer.You, Currency.GBP, 10m, null),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 3, 11), "Paid back", null, SettlementPayer.Other, Currency.GBP, 10m, null)
+        ];
+        mae.SetActive(false);
+
+        DefaultAccountGroup.ListedIn([mae], 2026, 9, records).Should().BeEmpty();
+    }
+
     private static (Account Account, Pot Pot) PotsWithOnePot(string name)
     {
         var account = TestAccounts.Pots(name);
