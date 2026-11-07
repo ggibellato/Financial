@@ -84,7 +84,7 @@ const SETTLEMENT: AccountTemplateGroupDto = {
       ],
     }),
     member('samuel', 'Samuel', 'Settlement', { isActive: false, otherParticipant: 'Samuel' }),
-    member('tia', 'Tia', 'Settlement', { balance: -15, otherParticipant: 'Tia' }),
+    member('tia', 'Tia', 'Settlement', { balance: -15 }),
   ],
   totals: [],
 }
