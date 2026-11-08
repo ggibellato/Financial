@@ -33,8 +33,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
             ArgumentNullException.ThrowIfNull(request);
 
             var account = FindAccountOrThrow(accountId);
-            var currentBalance = AccountBalanceRule.Balance(account, request.Date, AccountTransactionReader.Read(_repository));
-            var delta = request.TargetBalance - currentBalance;
+            var delta = DeltaTo(account, request.Date, request.TargetBalance);
 
             var adjustment = BalanceAdjustment.Create(request.Date, account, request.TargetBalance, delta, request.Note);
             await _repository.ApplyAndSaveAsync(() =>
@@ -64,9 +63,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
 
             var account = FindAccountOrThrow(accountId);
             var adjustment = FindAdjustmentOrThrow(account, id);
-            var otherTransactions = AccountTransactionReader.Read(_repository).Where(transaction => !ReferenceEquals(transaction, adjustment));
-            var currentBalance = AccountBalanceRule.Balance(account, request.Date, otherTransactions);
-            var delta = request.TargetBalance - currentBalance;
+            var delta = DeltaTo(account, request.Date, request.TargetBalance, excludingAdjustmentId: id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -143,6 +140,13 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
     {
         _logger.LogInformation("{Operation} started", operationName);
         return _tracer.StartServiceSpan("CashFlow", nameof(BalanceAdjustmentService), operationName, EntityType);
+    }
+
+    private decimal DeltaTo(Account account, DateOnly date, decimal targetBalance, Guid? excludingAdjustmentId = null)
+    {
+        var records = AccountTransactionReader.Read(_repository)
+            .Where(transaction => transaction is not BalanceAdjustment adjustment || adjustment.Id != excludingAdjustmentId);
+        return targetBalance - AccountBalanceRule.Balance(account, date, records);
     }
 
     private Account FindAccountOrThrow(Guid accountId) =>

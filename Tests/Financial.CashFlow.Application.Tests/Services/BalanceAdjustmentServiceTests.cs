@@ -29,10 +29,8 @@ public class BalanceAdjustmentServiceTests
     {
         _repository = new StubCashFlowRepository(seedDefaultBanks: true);
         _tracer = new RecordingTelemetryTracer();
-        _sut = CreateService();
+        _sut = new BalanceAdjustmentService(_repository, _tracer, Logger);
     }
-
-    private BalanceAdjustmentService CreateService() => new(_repository, _tracer, Logger);
 
     private static Account BankOf(StubCashFlowRepository repository, string name) =>
         repository.Accounts.First(b => b.Name == name);
@@ -124,17 +122,17 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public async Task AddAdjustmentAsync_WithUnresolvableBank_ThrowsKeyNotFoundException()
+    public async Task AddAdjustmentAsync_WithUnknownAccount_ThrowsKeyNotFoundException()
     {
-        var unknownBankId = Guid.NewGuid();
+        var unknownAccountId = Guid.NewGuid();
 
-        var act = async () => await _sut.AddAdjustmentAsync(unknownBankId, new BalanceAdjustmentCreateDTO
+        var act = async () => await _sut.AddAdjustmentAsync(unknownAccountId, new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
             TargetBalance = 100m
         });
 
-        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownBankId}' was not found*");
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownAccountId}' was not found*");
     }
 
     [Fact]
@@ -155,7 +153,7 @@ public class BalanceAdjustmentServiceTests
     [Fact]
     public async Task AddAdjustmentAsync_OnAnAccountWithoutTheBankTemplate_UsesThatAccountsBalance()
     {
-        var account = TestAccounts.Bank("Itau", currency: Currency.BRL);
+        var account = Account.CreateWithCapabilities("Custom", Currency.GBP, new HashSet<Capability> { Capability.CanReconcile, Capability.HasOpeningBalance }, template: AccountTemplate.Pots);
         account.SetOpeningBalance(70m, new DateOnly(2026, 1, 1));
         _repository.Accounts.Add(account);
 
@@ -212,7 +210,7 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAdjustmentAsync_WithUnresolvableBank_ThrowsKeyNotFoundException()
+    public async Task UpdateAdjustmentAsync_WithUnknownAccount_ThrowsKeyNotFoundException()
     {
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
         var added = await _sut.AddAdjustmentAsync(BankIdOf(_repository, "Barclays"), new BalanceAdjustmentCreateDTO
@@ -220,15 +218,15 @@ public class BalanceAdjustmentServiceTests
             Date = new DateOnly(2026, 7, 25),
             TargetBalance = 150m
         });
-        var unknownBankId = Guid.NewGuid();
+        var unknownAccountId = Guid.NewGuid();
 
-        var act = async () => await _sut.UpdateAdjustmentAsync(unknownBankId, added.Id, new BalanceAdjustmentUpdateDTO
+        var act = async () => await _sut.UpdateAdjustmentAsync(unknownAccountId, added.Id, new BalanceAdjustmentUpdateDTO
         {
             Date = new DateOnly(2026, 7, 25),
             TargetBalance = 120m
         });
 
-        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownBankId}' was not found*");
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownAccountId}' was not found*");
     }
 
     [Fact]

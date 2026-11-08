@@ -35,7 +35,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddAdjustment_UnresolvableBank_ReturnsNotFound()
+    public async Task AddAdjustment_UnknownAccount_ReturnsNotFound()
     {
         var request = new BalanceAdjustmentCreateDTO
         {
@@ -46,6 +46,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
         var response = await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{Guid.NewGuid()}/adjustments", request);
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        (await response.Content.ReadAsStringAsync()).Should().Contain("Account").And.Contain("was not found");
     }
 
     [Fact]
@@ -99,7 +100,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task UpdateAdjustment_UnknownBankId_ReturnsNotFound()
+    public async Task UpdateAdjustment_UnknownAccountId_ReturnsNotFound()
     {
         var response = await Client.PutAsJsonAsync($"/api/v1/financial/accounts/{Guid.NewGuid()}/adjustments/{Guid.NewGuid()}", new BalanceAdjustmentUpdateDTO
         {
@@ -137,23 +138,11 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task DeleteAdjustment_UnknownBankId_ReturnsNotFound()
+    public async Task DeleteAdjustment_UnknownAccountId_ReturnsNotFound()
     {
         var response = await Client.DeleteAsync($"/api/v1/financial/accounts/{Guid.NewGuid()}/adjustments/{Guid.NewGuid()}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task AddAdjustment_UnknownAccount_NamesTheAccountInTheError()
-    {
-        var response = await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{Guid.NewGuid()}/adjustments", new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = 100m
-        });
-
-        (await response.Content.ReadAsStringAsync()).Should().Contain("Account").And.Contain("was not found");
     }
 
     [Fact]
@@ -219,7 +208,6 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
 
         var response = await Client.SendAsync(request);
 
-        response.IsSuccessStatusCode.Should().BeFalse();
         response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed);
     }
 
