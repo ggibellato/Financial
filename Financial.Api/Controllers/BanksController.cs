@@ -110,58 +110,6 @@ public sealed class BanksController : ControllerBase
         return Ok(result);
     }
 
-    /// <summary>Records a new balance adjustment for a bank.</summary>
-    /// <param name="id">The bank's identifier.</param>
-    /// <param name="request">The adjustment to create.</param>
-    /// <returns>200 OK with the created adjustment and its computed delta, 400 Bad Request if the request is invalid, or 404 Not Found if no such bank exists.</returns>
-    [HttpPost("{id:guid}/adjustments")]
-    [ProducesResponseType(typeof(BalanceAdjustmentDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BalanceAdjustmentDTO>> AddAdjustment(Guid id, [FromBody] BalanceAdjustmentCreateDTO? request)
-    {
-        if (request is null)
-        {
-            return BadRequest();
-        }
-
-        var adjustment = await _balanceAdjustmentService.AddAdjustmentAsync(id, request);
-        return Ok(adjustment);
-    }
-
-    /// <summary>Updates an existing balance adjustment.</summary>
-    /// <param name="id">The bank's identifier.</param>
-    /// <param name="adjustmentId">The adjustment's identifier.</param>
-    /// <param name="request">The new adjustment fields.</param>
-    /// <returns>200 OK with the updated adjustment, 400 Bad Request if the request is invalid, or 404 Not Found if the bank or adjustment doesn't exist.</returns>
-    [HttpPut("{id:guid}/adjustments/{adjustmentId:guid}")]
-    [ProducesResponseType(typeof(BalanceAdjustmentDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<ActionResult<BalanceAdjustmentDTO>> UpdateAdjustment(Guid id, Guid adjustmentId, [FromBody] BalanceAdjustmentUpdateDTO? request)
-    {
-        if (request is null)
-        {
-            return BadRequest();
-        }
-
-        var adjustment = await _balanceAdjustmentService.UpdateAdjustmentAsync(id, adjustmentId, request);
-        return Ok(adjustment);
-    }
-
-    /// <summary>Deletes a balance adjustment.</summary>
-    /// <param name="id">The bank's identifier.</param>
-    /// <param name="adjustmentId">The adjustment's identifier.</param>
-    /// <returns>200 OK if deleted, or 404 Not Found if the bank or adjustment doesn't exist.</returns>
-    [HttpDelete("{id:guid}/adjustments/{adjustmentId:guid}")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> DeleteAdjustment(Guid id, Guid adjustmentId)
-    {
-        await _balanceAdjustmentService.DeleteAdjustmentAsync(id, adjustmentId);
-        return Ok();
-    }
-
     /// <summary>Lists all balance adjustments for a bank.</summary>
     /// <param name="id">The bank's identifier.</param>
     /// <returns>200 OK with the matching adjustments (empty if the bank doesn't exist).</returns>

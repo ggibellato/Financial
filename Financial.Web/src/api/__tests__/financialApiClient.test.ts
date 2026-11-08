@@ -1240,7 +1240,7 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments`)
+    expect(url).toBe(`${API_BASE_URL}/accounts/Barclays/adjustments`)
     expect(init?.method).toBe('POST')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
@@ -1265,7 +1265,7 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments/a1`)
+    expect(url).toBe(`${API_BASE_URL}/accounts/Barclays/adjustments/a1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
@@ -1333,7 +1333,7 @@ describe('financialApiClient', () => {
     await client.deleteBalanceAdjustment('Barclays', 'a1')
 
     const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments/a1`)
+    expect(url).toBe(`${API_BASE_URL}/accounts/Barclays/adjustments/a1`)
     expect(init?.method).toBe('DELETE')
   })
 
