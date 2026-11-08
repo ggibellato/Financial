@@ -1269,7 +1269,7 @@ describe('AccountScreenPage on a Settlement account', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Save this settlement?' })
     expect(within(dialog).getByText('Both totals become zero.')).toBeInTheDocument()
-    await user.click(within(dialog).getByRole('button', { name: 'Save settlement' }))
+    await user.click(await within(dialog).findByRole('button', { name: 'Save settlement' }))
 
     expect(await screen.findByText('Settlement saved')).toBeInTheDocument()
     expect(settleAccountMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ paidBy: 'Other', currency: 'BRL', amount: 167.88, convertedValue: 7.94, description: 'Settlement' }))
@@ -1352,7 +1352,7 @@ describe('AccountScreenPage on a Settlement account', () => {
     await user.click(screen.getByRole('button', { name: 'Edit entry' }))
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: /keep editing/i }))
+    await user.click(await screen.findByRole('button', { name: /keep editing/i }))
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
     expect(screen.queryByRole('form', { name: 'Edit entry' })).not.toBeInTheDocument()
   })
