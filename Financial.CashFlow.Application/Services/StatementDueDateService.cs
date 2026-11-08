@@ -45,7 +45,7 @@ public sealed class StatementDueDateService : IStatementDueDateService
 
             var card = FindUsableCardOrThrow(accountId);
             var listedMonth = FindListedMonthOrThrow(card, year, month);
-            CardDueDate.EnsureCanChange(listedMonth, request.DueDate);
+            CardDueDate.EnsureDueDateAllowed(listedMonth, request.DueDate);
 
             await _repository.ApplyAndSaveAsync(() => ApplyDueDate(card, listedMonth, request.DueDate)).ConfigureAwait(false);
 

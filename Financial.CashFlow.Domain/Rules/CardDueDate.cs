@@ -26,15 +26,7 @@ public static class CardDueDate
         statement.SetDueDate(dueDate);
     }
 
-    private static void EnsureWithinMonth(int year, int month, DateOnly dueDate)
-    {
-        if (dueDate.Year != year || dueDate.Month != month)
-        {
-            throw new ArgumentException($"The due date must be in {MonthLabel(year, month)}.");
-        }
-    }
-
-    public static void EnsureCanChange(CardStatementLedgerMonth month, DateOnly? newDueDate)
+    public static void EnsureDueDateAllowed(CardStatementLedgerMonth month, DateOnly? newDueDate)
     {
         if (month.Status == CardStatementLedgerStatus.Paid)
         {
@@ -57,6 +49,14 @@ public static class CardDueDate
         foreach (var statement in superseded)
         {
             statement.SetDueDate(null);
+        }
+    }
+
+    private static void EnsureWithinMonth(int year, int month, DateOnly dueDate)
+    {
+        if (dueDate.Year != year || dueDate.Month != month)
+        {
+            throw new ArgumentException($"The due date must be in {MonthLabel(year, month)}.");
         }
     }
 

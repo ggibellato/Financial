@@ -80,6 +80,18 @@ public class CardDueDateTests
             new DateOnly(2026, 9, 18), new DateOnly(2026, 10, 25), null, new DateOnly(2026, 11, 5));
     }
 
+    [Fact]
+    public void SetOn_LaterStatementIsPaid_ClearsItsDateToo()
+    {
+        var october = Statement(_amex, 2026, 10);
+        var november = Statement(_amex, 2026, 11, new DateOnly(2026, 11, 18));
+        november.MarkPaidBy(Guid.NewGuid());
+
+        CardDueDate.SetOn(_amex, [october, november], october, new DateOnly(2026, 10, 25));
+
+        november.DueDate.Should().BeNull();
+    }
+
     [Theory]
     [InlineData(2026, 11, 1)]
     [InlineData(2026, 9, 30)]
@@ -98,25 +110,25 @@ public class CardDueDateTests
     [Theory]
     [InlineData(CardStatementLedgerStatus.Unpaid)]
     [InlineData(CardStatementLedgerStatus.NothingDue)]
-    public void EnsureCanChange_RowThatIsNotPaid_IsAccepted(CardStatementLedgerStatus status)
+    public void EnsureDueDateAllowed_RowThatIsNotPaid_IsAccepted(CardStatementLedgerStatus status)
     {
-        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(status), new DateOnly(2026, 10, 25));
+        var act = () => CardDueDate.EnsureDueDateAllowed(LedgerMonth(status), new DateOnly(2026, 10, 25));
 
         act.Should().NotThrow();
     }
 
     [Fact]
-    public void EnsureCanChange_PaidRow_IsRefused()
+    public void EnsureDueDateAllowed_PaidRow_IsRefused()
     {
-        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(CardStatementLedgerStatus.Paid), null);
+        var act = () => CardDueDate.EnsureDueDateAllowed(LedgerMonth(CardStatementLedgerStatus.Paid), null);
 
         act.Should().Throw<ArgumentException>().WithMessage("The October 2026 statement is paid, so its due date can't change.");
     }
 
     [Fact]
-    public void EnsureCanChange_DateOutsideTheMonth_IsRefused()
+    public void EnsureDueDateAllowed_DateOutsideTheMonth_IsRefused()
     {
-        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(CardStatementLedgerStatus.Unpaid), new DateOnly(2026, 11, 1));
+        var act = () => CardDueDate.EnsureDueDateAllowed(LedgerMonth(CardStatementLedgerStatus.Unpaid), new DateOnly(2026, 11, 1));
 
         act.Should().Throw<ArgumentException>().WithMessage("The due date must be in October 2026.");
     }

@@ -6,7 +6,6 @@ using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Financial.CashFlow.Application.Tests.Services;
 
@@ -18,6 +17,7 @@ public class StatementDueDateServiceTests
     private readonly StubCashFlowRepository _repository = new(seedDefaultBanks: true);
     private readonly FakeCreditCardCalendarSyncService _calendarSync = new();
     private readonly RecordingTelemetryTracer _tracer = new();
+    private readonly RecordingLogger<StatementDueDateService> _logger = new();
     private readonly Category _groceries = Category.Create("Mercado");
     private readonly Account _amex = TestAccounts.CreditCard("BA Amex");
     private readonly StatementDueDateService _sut;
@@ -28,9 +28,11 @@ public class StatementDueDateServiceTests
         AddChargeInvoiced(_amex, 2026, 9);
         AddChargeInvoiced(_amex, 2026, 10);
         AddChargeInvoiced(_amex, 2026, 11);
-        _sut = new StatementDueDateService(
-            _repository, _calendarSync, TestClock.At(), _tracer, NullLogger<StatementDueDateService>.Instance);
+        _sut = CreateService();
     }
+
+    private StatementDueDateService CreateService(TimeProvider? timeProvider = null) =>
+        new(_repository, _calendarSync, timeProvider ?? TestClock.At(), _tracer, _logger);
 
     private void AddChargeInvoiced(Account card, int year, int month) =>
         _repository.Expenses.Add(Expense.Create(
@@ -137,9 +139,7 @@ public class StatementDueDateServiceTests
     [Fact]
     public async Task SetDueDateAsync_CurrentMonthBeforeItsFirstCharge_IsAccepted()
     {
-        var sut = new StatementDueDateService(
-            _repository, _calendarSync, TestClock.At(new DateTimeOffset(2026, 12, 5, 12, 0, 0, TimeSpan.Zero)), _tracer,
-            NullLogger<StatementDueDateService>.Instance);
+        var sut = CreateService(TestClock.At(new DateTimeOffset(2026, 12, 5, 12, 0, 0, TimeSpan.Zero)));
 
         await sut.SetDueDateAsync(_amex.Id, 2026, 12, new StatementDueDateUpdateDTO { DueDate = new DateOnly(2026, 12, 20) });
 
@@ -221,6 +221,7 @@ public class StatementDueDateServiceTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("The due date must be in October 2026.");
         _repository.CardStatements.Should().BeEmpty();
+        _logger.Entries.Should().NotContain(entry => entry.Message.Contains("October"));
         ShouldHaveRefused<ArgumentException>();
     }
 
