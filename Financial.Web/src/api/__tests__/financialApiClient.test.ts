@@ -2483,6 +2483,34 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
+  it('adds a settlement entry through its account route', async () => {
+    const responseBody = { id: 'e7' }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+    const requestBody = { date: '2026-10-17', description: 'Farmácia', note: null, paidBy: 'You', currency: 'BRL', amount: 150 }
+
+    await expect(client.createSettlementEntry('mae', requestBody)).resolves.toEqual(responseBody)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlement-entries`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('edits a settlement entry through its account route', async () => {
+    const responseBody = { id: 'e7' }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200, headers: { 'Content-Type': 'application/json' } }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+    const requestBody = { date: '2026-10-16', description: 'Mercado', note: 'metade', paidBy: 'Other', amount: 180, convertedValue: 25.6 }
+
+    await expect(client.updateSettlementEntry('mae', 'e7', requestBody)).resolves.toEqual(responseBody)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlement-entries/e7`)
+    expect(init?.method).toBe('PUT')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
   it('deletes a settlement entry through its account route, accepting the empty 204', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

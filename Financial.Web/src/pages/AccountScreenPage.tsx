@@ -21,6 +21,7 @@ import PayRecurringBillForm from '../components/PayRecurringBillForm'
 import PotDepositForm from '../components/PotDepositForm'
 import PotWithdrawalForm from '../components/PotWithdrawalForm'
 import PotsTab from '../components/PotsTab'
+import SettlementEntryForm from '../components/SettlementEntryForm'
 import TransferForm from '../components/TransferForm'
 import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
@@ -81,6 +82,7 @@ export default function AccountScreenPage() {
     potTransactionForm,
     depositForm,
     withdrawalForm,
+    settlementEntryForm,
     operationDelete,
     isManagePotsOpen,
     closeManagePots,
@@ -226,6 +228,7 @@ export default function AccountScreenPage() {
             onCancel={closeActiveForm}
           />
         )}
+        {settlementEntryForm.isOpen && <SettlementEntryForm form={settlementEntryForm} onCancel={closeActiveForm} />}
         {expenseForm.isOpen && (
           <ExpenseForm
             isEditing={expenseForm.isEditing}
@@ -427,7 +430,7 @@ export default function AccountScreenPage() {
               isLoading={screen.isLoading}
               emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
               dateHeader={isCard ? 'Purchased' : 'Date'}
-              isEditDisabled={(row) => !isAccountCurrent || (row.movement ? pots.data === null : !formOptions.isReady)}
+              isEditDisabled={(row) => !isAccountCurrent || (!row.settlement && (row.movement ? pots.data === null : !formOptions.isReady))}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
               canDeleteCreditRefunds={isAccountActive}

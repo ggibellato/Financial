@@ -71,7 +71,11 @@ const {
   getPotOperationMock,
   deletePotOperationMock,
   getIncomesByMonthMock,
+  createSettlementEntryMock,
+  updateSettlementEntryMock,
 } = vi.hoisted(() => ({
+  createSettlementEntryMock: vi.fn<FinancialApiClient['createSettlementEntry']>(),
+  updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
   getAccountTransactionsMock: vi.fn<FinancialApiClient['getAccountTransactions']>(),
@@ -114,6 +118,8 @@ const {
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
+    createSettlementEntry: createSettlementEntryMock,
+    updateSettlementEntry: updateSettlementEntryMock,
     getAccounts: getAccountsMock,
     getAccount: getAccountMock,
     getAccountTransactions: getAccountTransactionsMock,
@@ -1204,6 +1210,8 @@ describe('AccountScreenPage on a Settlement account', () => {
       ),
     )
     getAccountTransactionsMock.mockResolvedValue([ENTRY_ROW])
+    createSettlementEntryMock.mockReset().mockResolvedValue(ENTRY_ROW.settlement!)
+    updateSettlementEntryMock.mockReset().mockResolvedValue(ENTRY_ROW.settlement!)
   })
 
   it('[AC P60-F12-settlement-screen-01] shows the current balance in the header and the entries in the Settlement columns', async () => {
@@ -1218,12 +1226,95 @@ describe('AccountScreenPage on a Settlement account', () => {
     expect(within(table).getByText('—')).toBeInTheDocument()
   })
 
-  it('keeps Edit disabled on an entry row until the entry form exists and shows no action buttons yet', async () => {
+  const openMaeScreen = async () => {
+    const user = userEvent.setup()
     renderScreen(`/cashflow/accounts/${MAE_ID}?month=2026-10`)
+    await screen.findByRole('table', { name: 'Transactions' })
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit entry' })).toBeEnabled())
+    return user
+  }
 
-    expect(await screen.findByRole('button', { name: 'Edit entry' })).toBeDisabled()
-    expect(screen.queryByRole('button', { name: 'Add entry' })).not.toBeInTheDocument()
+  it('[AC P60-F12-settlement-screen-04] adds an entry, stays open with the kept fields, focus on Description and a toast', async () => {
+    const user = await openMaeScreen()
     expect(screen.queryByRole('button', { name: 'Settle' })).not.toBeInTheDocument()
+    expect(getBanksMock).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Add entry' }))
+    const form = screen.getByRole('form', { name: 'Add entry' })
+    expect(within(form).getByLabelText(/^Date/)).toHaveFocus()
+    await user.click(within(form).getByRole('radio', { name: 'You' }))
+    await user.type(within(form).getByLabelText(/^Description/), 'Mercado')
+    await user.type(within(form).getByLabelText(/^Amount \(BRL\)/), '80')
+    await user.click(within(form).getByRole('button', { name: 'Add entry' }))
+
+    expect(await screen.findByText('Entry added')).toBeInTheDocument()
+    expect(createSettlementEntryMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ description: 'Mercado', paidBy: 'You', currency: 'BRL', amount: 80 }))
+    await waitFor(() => expect(within(form).getByLabelText(/^Description/)).toHaveFocus())
+    expect(within(form).getByLabelText(/^Description/)).toHaveValue('')
+    expect(within(form).getByRole('radio', { name: 'You' })).toBeChecked()
+  })
+
+  it('[AC P60-F12-settlement-screen-02] edits an entry row, closes and toasts', async () => {
+    const user = await openMaeScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Edit entry' }))
+    const form = screen.getByRole('form', { name: 'Edit entry' })
+    expect(within(form).getByLabelText(/^Description/)).toHaveValue('Farmácia')
+    await user.click(within(form).getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText('Entry updated')).toBeInTheDocument()
+    expect(updateSettlementEntryMock).toHaveBeenCalledWith(MAE_ID, 'entry-1', expect.objectContaining({ description: 'Farmácia', paidBy: 'Other', amount: 150, convertedValue: null }))
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Edit entry' })).not.toBeInTheDocument())
+  })
+
+  it('[AC P60-F12-settlement-screen-08] keeps the edit open with the warning the save returned', async () => {
+    const warning = 'The GBP value rounds to 0.00, so it was left empty.'
+    updateSettlementEntryMock.mockResolvedValue({ ...ENTRY_ROW.settlement!, warning })
+    const user = await openMaeScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Edit entry' }))
+    await user.click(screen.getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByText(warning)).toBeInTheDocument()
+    expect(screen.getByRole('form', { name: 'Edit entry' })).toBeInTheDocument()
+  })
+
+  it('[AC P60-F12-settlement-screen-08] asks before discarding a typed entry when a row is opened, and keeps it on Keep editing', async () => {
+    const user = await openMaeScreen()
+    await user.click(screen.getByRole('button', { name: 'Add entry' }))
+    await user.type(screen.getByLabelText(/^Description/), 'Mercado')
+
+    await user.click(screen.getByRole('button', { name: 'Edit entry' }))
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /keep editing/i }))
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
+    expect(screen.queryByRole('form', { name: 'Edit entry' })).not.toBeInTheDocument()
+  })
+
+  it('[AC P60-F12-settlement-screen-08] shows the server refusal in the form and keeps the values', async () => {
+    createSettlementEntryMock.mockRejectedValue(new ApiError('Mãe is inactive.', 400))
+    const user = await openMaeScreen()
+    await user.click(screen.getByRole('button', { name: 'Add entry' }))
+    await user.click(screen.getByRole('radio', { name: 'Mãe' }))
+    await user.type(screen.getByLabelText(/^Description/), 'Mercado')
+    await user.type(screen.getByLabelText(/^Amount/), '80')
+
+    await user.click(within(screen.getByRole('form', { name: 'Add entry' })).getByRole('button', { name: 'Add entry' }))
+
+    expect(await screen.findByText('Mãe is inactive.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
+  })
+
+  it('closes the form and returns focus to Add entry on Cancel', async () => {
+    const user = await openMaeScreen()
+    const addEntry = screen.getByRole('button', { name: 'Add entry' })
+    await user.click(addEntry)
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('form', { name: 'Add entry' })).not.toBeInTheDocument()
+    expect(addEntry).toHaveFocus()
   })
 
   it('shows the empty message for a month without entries, and the header still shows the current balance', async () => {
