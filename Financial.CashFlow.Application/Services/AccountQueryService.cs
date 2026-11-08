@@ -50,9 +50,13 @@ public sealed class AccountQueryService : IAccountQueryService
         try
         {
             var referencedIds = AccountReferenceReader.ReferencedAccountIds(_repository);
+            var statements = _repository.GetCardStatements().ToList();
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
-                .Select(account => ToAccountDto(account, referencedIds.Contains(account.Id)))
+                .Select(account => ToAccountDto(
+                    account,
+                    referencedIds.Contains(account.Id),
+                    account.Has(Capability.HasStatements) ? CardDueDate.For(account, statements) : null))
                 .ToList();
 
             span.MarkSuccess();
@@ -473,7 +477,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Settlement = SettlementService.ToDto(entry, null)
     };
 
-    internal static AccountDTO ToAccountDto(Account account, bool hasRecords) => new()
+    internal static AccountDTO ToAccountDto(Account account, bool hasRecords, DateOnly? dueDate = null) => new()
     {
         Id = account.Id,
         Name = account.Name,
@@ -487,6 +491,7 @@ public sealed class AccountQueryService : IAccountQueryService
         BalanceStartDate = account.OpeningBalance?.StartDate,
         RoundUpEnabled = account.RoundUp?.Enabled,
         CategoryId = account.Category?.Id,
+        DueDate = dueDate,
         Capabilities = CapabilityNames(account.Has)
     };
 
