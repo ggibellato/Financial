@@ -31,6 +31,7 @@ import { OPERATION_LOAD_ERROR, OPERATION_NOT_FOUND, useOperationRoute } from '..
 import { POTS_LOAD_ERROR, usePots } from '../hooks/usePots'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import { formatLongMonthYear } from '../utils/formatters'
+import { settlementCounterparty } from '../utils/settlementBalance'
 import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
@@ -112,6 +113,10 @@ export default function AccountScreenPage() {
     notifySaved(deletedMessage(row))
   })
   const deleteKind = rowDelete.row?.kind ?? ''
+  const gridColumns =
+    hasParticipants && account
+      ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account) } as const)
+      : ({ columns: hasPots ? 'pots' : 'account' } as const)
 
   useEffect(() => {
     if (!isRefreshAfterSavePending.current) return
@@ -418,8 +423,7 @@ export default function AccountScreenPage() {
             <AccountTransactionsGrid
               accountId={screen.accountId}
               transactions={screen.transactions}
-              columns={hasParticipants ? 'settlement' : hasPots ? 'pots' : 'account'}
-              otherParticipant={account?.otherParticipant ?? account?.name}
+              {...gridColumns}
               isLoading={screen.isLoading}
               emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
               dateHeader={isCard ? 'Purchased' : 'Date'}

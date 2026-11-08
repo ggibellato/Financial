@@ -70,11 +70,10 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
   },
 ]
 
-const NO_CONVERTED_VALUE = '—'
-
-const POT_COLUMNS: TransactionColumn[] =[DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
+const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
 const PAID_BY_YOU = 'You'
+const NO_CONVERTED_VALUE = '—'
 
 function settlementColumns(otherParticipant: string): TransactionColumn[] {
   const paidByLabel = (row: AccountTransactionDto) => (row.settlement?.paidBy === PAID_BY_YOU ? PAID_BY_YOU : otherParticipant)
@@ -83,9 +82,7 @@ function settlementColumns(otherParticipant: string): TransactionColumn[] {
     DESCRIPTION_COLUMN,
     { key: 'paidBy', header: 'Paid by', accessor: paidByLabel, render: paidByLabel },
     {
-      key: 'amount',
-      header: 'Amount',
-      numeric: true,
+      ...AMOUNT_COLUMN,
       accessor: (row) => Math.abs(row.amount),
       render: (row) => formatCurrency(Math.abs(row.amount), row.currency),
     },
@@ -103,11 +100,11 @@ function settlementColumns(otherParticipant: string): TransactionColumn[] {
   ]
 }
 
-export type TransactionColumnSet = 'account' | 'pots' | 'settlement'
+type ColumnSelection = { columns?: 'account' | 'pots' } | { columns: 'settlement'; otherParticipant: string }
 
-function columnsOf(columnSet: TransactionColumnSet, otherParticipant: string): TransactionColumn[] {
-  if (columnSet === 'settlement') return settlementColumns(otherParticipant)
-  return columnSet === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
+function columnsOf(selection: ColumnSelection): TransactionColumn[] {
+  if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant)
+  return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 
 const BLANK_OPERATION_LINK = 'Deposit from an income'
@@ -117,11 +114,9 @@ function actionColumnClass(hasHint: boolean, hasMove: boolean): string {
   return hasMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
 }
 
-interface AccountTransactionsGridProps {
+type AccountTransactionsGridProps = ColumnSelection & {
   accountId: string
   transactions: AccountTransactionDto[]
-  columns?: TransactionColumnSet
-  otherParticipant?: string
   isLoading?: boolean
   emptyMessage: string
   dateHeader?: string
@@ -138,8 +133,6 @@ interface AccountTransactionsGridProps {
 export default function AccountTransactionsGrid({
   accountId,
   transactions,
-  columns: columnSet = 'account',
-  otherParticipant = '',
   isLoading = false,
   emptyMessage,
   dateHeader = 'Date',
@@ -151,8 +144,9 @@ export default function AccountTransactionsGrid({
   isMoveDisabled = false,
   onOpenStatement,
   onOpenOperation,
+  ...columnSelection
 }: AccountTransactionsGridProps) {
-  const columns = columnsOf(columnSet, otherParticipant)
+  const columns = columnsOf(columnSelection)
   const columnCount = columns.length + 1
   const accessors = Object.fromEntries(columns.map((column) => [column.key, column.accessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)

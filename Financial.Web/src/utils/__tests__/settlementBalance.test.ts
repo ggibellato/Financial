@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { settlementBalanceText } from '../settlementBalance'
+import { settlementBalanceText, settlementCounterparty } from '../settlementBalance'
+
+describe('settlementCounterparty', () => {
+  it('names the other participant', () => {
+    expect(settlementCounterparty({ otherParticipant: 'Samuel', name: 'Son account' })).toBe('Samuel')
+  })
+
+  it('falls back to the account name without one', () => {
+    expect(settlementCounterparty({ otherParticipant: null, name: 'Mãe' })).toBe('Mãe')
+  })
+})
 
 describe('settlementBalanceText', () => {
   it('says the other participant owes you every positive currency, joined with " / "', () => {

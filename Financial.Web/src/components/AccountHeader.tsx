@@ -4,7 +4,7 @@ import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../api/t
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
-import { settlementBalanceText } from '../utils/settlementBalance'
+import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
@@ -37,7 +37,7 @@ function firstFigure(account: AccountDetailDto, hasParticipants: boolean): { lab
   if (hasParticipants) {
     return {
       label: 'Current balance',
-      value: settlementBalanceText(account.otherParticipant ?? account.name, account.currentBalances),
+      value: settlementBalanceText(settlementCounterparty(account), account.currentBalances),
       status: null,
     }
   }

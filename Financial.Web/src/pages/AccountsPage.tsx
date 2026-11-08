@@ -9,7 +9,7 @@ import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccou
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
 import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, formatN2OrDash } from '../utils/formatters'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
-import { settlementBalanceText } from '../utils/settlementBalance'
+import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
@@ -70,7 +70,7 @@ const totalOwedColumn = {
 const settlementBalanceColumn = {
   key: 'balance',
   header: 'Balance',
-  render: (row: AccountGroupMemberDto) => settlementBalanceText(row.otherParticipant ?? row.name, row.currencyBalances),
+  render: (row: AccountGroupMemberDto) => settlementBalanceText(settlementCounterparty(row), row.currencyBalances),
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 

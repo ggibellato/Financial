@@ -87,8 +87,8 @@ describe('AccountTransactionsGrid', () => {
       entryRow('Farmácia', 150, 'BRL', { convertedCurrency: 'GBP', convertedValue: 21.5, note: 'metade' }),
       entryRow('Taxa', -80, 'GBP', { paidBy: 'Other', convertedCurrency: 'BRL', convertedValue: null }),
     ]
-    const renderSettlement = () =>
-      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" transactions={ENTRIES} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+    const renderSettlement = (transactions = ENTRIES) =>
+      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" transactions={transactions} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     it('[AC P60-F12-settlement-screen-03] shows each entry with who paid, its amount in its own currency, the converted value or a dash, and the note', () => {
       renderSettlement()
@@ -126,7 +126,7 @@ describe('AccountTransactionsGrid', () => {
     })
 
     it('spans the message across the Settlement columns when the month has no entries', () => {
-      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" transactions={[]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+      renderSettlement([])
 
       expect(screen.getByText(EMPTY_MESSAGE)).toHaveAttribute('colspan', '7')
     })
