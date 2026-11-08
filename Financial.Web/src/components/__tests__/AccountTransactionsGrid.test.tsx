@@ -1,6 +1,6 @@
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import type { AccountTransactionDto } from '../../api/types'
+import type { AccountTransactionDto, SettlementEntryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountTransactionsGrid from '../AccountTransactionsGrid'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
@@ -59,10 +59,83 @@ describe('AccountTransactionsGrid', () => {
     })
   })
 
+  describe('Settlement columns', () => {
+    const entryRow = (id: string, amount: number, currency: string, settlement: Partial<SettlementEntryDto>) =>
+      accountTransactionRow({
+        id,
+        kind: 'SettlementEntry',
+        date: '2026-10-10',
+        description: id,
+        amount,
+        currency,
+        settlement: {
+          id,
+          accountId: 'mae',
+          date: '2026-10-10',
+          description: id,
+          note: '',
+          paidBy: 'You',
+          currency,
+          amount: Math.abs(amount),
+          convertedCurrency: null,
+          convertedValue: null,
+          warning: null,
+          ...settlement,
+        },
+      })
+    const ENTRIES = [
+      entryRow('Farmácia', 150, 'BRL', { convertedCurrency: 'GBP', convertedValue: 21.5, note: 'metade' }),
+      entryRow('Taxa', -80, 'GBP', { paidBy: 'Other', convertedCurrency: 'BRL', convertedValue: null }),
+    ]
+    const renderSettlement = () =>
+      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" transactions={ENTRIES} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    it('[AC P60-F12-settlement-screen-03] shows each entry with who paid, its amount in its own currency, the converted value or a dash, and the note', () => {
+      renderSettlement()
+
+      expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Date', 'Description', 'Paid by', 'Amount', 'Converted', 'Note', ''])
+      const paidByYou = bodyRows().find((row) => within(row).queryByText('Farmácia')) as HTMLElement
+      const paidByOther = bodyRows().find((row) => within(row).queryByText('Taxa')) as HTMLElement
+      expect(within(paidByYou).getByText('You')).toBeInTheDocument()
+      expect(within(paidByYou).getByText('R$150.00').closest('td')).toHaveClass('data-table__col--numeric')
+      expect(within(paidByYou).getByText('£21.50').closest('td')).toHaveClass('data-table__col--numeric')
+      expect(within(paidByYou).getByText('metade')).toBeInTheDocument()
+      expect(within(paidByOther).getByText('Mãe')).toBeInTheDocument()
+      expect(within(paidByOther).getByText('£80.00')).toBeInTheDocument()
+      expect(within(paidByOther).getByText('—')).toBeInTheDocument()
+    })
+
+    it('offers Edit and Delete on an entry row', () => {
+      renderSettlement()
+
+      expect(screen.getAllByRole('button', { name: 'Edit entry' })).toHaveLength(2)
+      expect(screen.getAllByRole('button', { name: 'Delete entry' })).toHaveLength(2)
+    })
+
+    it.each([
+      ['Paid by', 'Taxa'],
+      ['Amount', 'Taxa'],
+      ['Converted', 'Farmácia'],
+      ['Note', 'Taxa'],
+    ])('sorts ascending by %s, putting %s first', (header, firstDescription) => {
+      renderSettlement()
+
+      fireEvent.click(screen.getByRole('button', { name: header }))
+
+      expect(within(bodyRows()[0]).getByText(firstDescription)).toBeInTheDocument()
+    })
+
+    it('spans the message across the Settlement columns when the month has no entries', () => {
+      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" transactions={[]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+      expect(screen.getByText(EMPTY_MESSAGE)).toHaveAttribute('colspan', '7')
+    })
+  })
+
   it('shows pot movements as date, pot, description and amount, with edit and delete only on legacy rows', () => {
     render(
       <AccountTransactionsGrid accountId="bank-1"
-        showsPotColumns
+        columns="pots"
         transactions={[
           accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-05', description: 'Boots', counterpart: 'Trips', amount: -20, canEdit: true }),
           accountTransactionRow({ id: 'm2', kind: 'PotTransaction', date: '2026-10-04', description: 'Bonus', counterpart: 'Home', amount: 30, canEdit: false }),
@@ -82,7 +155,7 @@ describe('AccountTransactionsGrid', () => {
   })
 
   it('spans the message across the pot columns when there are no movements', () => {
-    render(<AccountTransactionsGrid accountId="bank-1" showsPotColumns transactions={[]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+    render(<AccountTransactionsGrid accountId="bank-1" columns="pots" transactions={[]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     expect(screen.getByText(EMPTY_MESSAGE)).toHaveAttribute('colspan', '5')
   })
@@ -263,7 +336,7 @@ describe('AccountTransactionsGrid', () => {
       const blank = accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description: '', counterpart: 'Home', amount: 30, canEdit: false, operation: { ...OPERATION, incomeId: 'i1' } })
       render(
         <MemoryRouter>
-          <AccountTransactionsGrid accountId="pots-1" showsPotColumns transactions={[blank]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />
+          <AccountTransactionsGrid accountId="pots-1" columns="pots" transactions={[blank]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />
         </MemoryRouter>,
       )
 
@@ -286,7 +359,7 @@ describe('AccountTransactionsGrid', () => {
     const olderLine = accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-04', description: 'Salary', counterpart: 'Home', amount: 30, canEdit: false, movement })
 
     it('tells where to edit an older split income line, in a column wide enough for the hint', () => {
-      render(<AccountTransactionsGrid accountId="pots-1" showsPotColumns transactions={[olderLine]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+      render(<AccountTransactionsGrid accountId="pots-1" columns="pots" transactions={[olderLine]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
       const hint = within(bodyRows()[0]).getByText('Edit from the income')
       expect(hint.closest('td')).toHaveClass('data-table__col--action-wide')

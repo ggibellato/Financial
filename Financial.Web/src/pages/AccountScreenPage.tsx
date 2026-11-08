@@ -38,7 +38,7 @@ const FORM_AREA_ID = 'account-screen-form'
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
   const navigate = useNavigate()
-  const { account, hasPots } = screen
+  const { account, hasPots, hasParticipants } = screen
   const allowedActions = account?.allowedActions ?? []
   const usesFormOptions = screen.operationId !== null || formActionsOf(allowedActions).some(needsFormOptions)
   const formOptions = useAccountFormOptions(usesFormOptions, account && canTransfer(allowedActions) ? account.id : null)
@@ -145,6 +145,7 @@ export default function AccountScreenPage() {
       {account ? (
         <AccountHeader
           account={account}
+          hasParticipants={hasParticipants}
           accounts={screen.accounts}
           selectedAccountId={screen.accountId}
           monthInputValue={screen.monthInputValue}
@@ -417,7 +418,8 @@ export default function AccountScreenPage() {
             <AccountTransactionsGrid
               accountId={screen.accountId}
               transactions={screen.transactions}
-              showsPotColumns={hasPots}
+              columns={hasParticipants ? 'settlement' : hasPots ? 'pots' : 'account'}
+              otherParticipant={account?.otherParticipant ?? account?.name}
               isLoading={screen.isLoading}
               emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
               dateHeader={isCard ? 'Purchased' : 'Date'}

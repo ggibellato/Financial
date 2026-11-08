@@ -54,6 +54,10 @@ function isPotsAccount({ accounts, account }: AccountScreenData, routeAccountId:
   )
 }
 
+function hasParticipantsAccount({ accounts, account }: AccountScreenData): boolean {
+  return accounts.some((candidate) => candidate.id === account.id && candidate.capabilities.includes('HasParticipants'))
+}
+
 function tabsOf(data: AccountScreenData | null, hasPots: boolean): ScreenTab[] {
   if (hasPots) return POTS_TABS
   return data?.account.hasStatements ? CARD_TABS : NO_TABS
@@ -74,6 +78,7 @@ export interface AccountScreen {
   accounts: AccountDto[]
   account: AccountDetailDto | null
   hasPots: boolean
+  hasParticipants: boolean
   transactions: AccountTransactionDto[]
   isLoading: boolean
   isNotFound: boolean
@@ -158,6 +163,7 @@ export function useAccountScreen(): AccountScreen {
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
     hasPots,
+    hasParticipants: loaded !== null && hasParticipantsAccount(loaded),
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',

@@ -30,7 +30,7 @@ import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { recurringBill } from '../../test/recurringBill'
-import { account, cardAccount, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 
 const {
   getAccountsMock,
@@ -1166,6 +1166,72 @@ describe('AccountScreenPage on a Pots account', () => {
     expect(await screen.findByText('Tesco')).toBeInTheDocument()
     expect(screen.queryByRole('tablist')).not.toBeInTheDocument()
     expect(getPotsMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('AccountScreenPage on a Settlement account', () => {
+  const MAE_ID = '8f3b1c1a-2e3a-4b1a-9a7f-1000000000ae'
+  const ENTRY_ROW = accountTransactionRow({
+    id: 'entry-1',
+    kind: 'SettlementEntry',
+    date: '2026-10-10',
+    description: 'Farmácia',
+    amount: -150,
+    currency: 'BRL',
+    settlement: { id: 'entry-1', accountId: MAE_ID, date: '2026-10-10', description: 'Farmácia', note: '', paidBy: 'Other', currency: 'BRL', amount: 150, convertedCurrency: 'GBP', convertedValue: null, warning: null },
+  })
+
+  beforeEach(() => {
+    const mae = settlementAccount({ id: MAE_ID, name: 'Mãe' })
+    getAccountsMock.mockResolvedValue([...ACCOUNTS, mae])
+    getAccountMock.mockImplementation((id, year, month) =>
+      Promise.resolve(
+        id === MAE_ID
+          ? {
+              ...mae,
+              year,
+              month,
+              balance: 1,
+              balanceIsOwed: false,
+              hasStatements: false,
+              totalOwed: null,
+              viewedStatement: null,
+              allowedActions: ['AddEntry', 'Settle'],
+              disabledActions: {},
+              currentBalances: [{ currency: 'BRL', balance: 167.8768 }, { currency: 'GBP', balance: 7.94214099 }],
+            }
+          : detailFor(id, year, month),
+      ),
+    )
+    getAccountTransactionsMock.mockResolvedValue([ENTRY_ROW])
+  })
+
+  it('[AC P60-F12-settlement-screen-01] shows the current balance in the header and the entries in the Settlement columns', async () => {
+    renderScreen(`/cashflow/accounts/${MAE_ID}?month=2026-10`)
+
+    expect(await screen.findByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
+    expect(screen.getByText('Settlement · BRL, GBP')).toBeInTheDocument()
+    const table = await screen.findByRole('table', { name: 'Transactions' })
+    await waitFor(() => expect(within(table).getByText('Farmácia')).toBeInTheDocument())
+    expect(within(table).getByRole('columnheader', { name: 'Paid by' })).toBeInTheDocument()
+    expect(within(table).getByText('R$150.00')).toBeInTheDocument()
+    expect(within(table).getByText('—')).toBeInTheDocument()
+  })
+
+  it('keeps Edit disabled on an entry row until the entry form exists and shows no action buttons yet', async () => {
+    renderScreen(`/cashflow/accounts/${MAE_ID}?month=2026-10`)
+
+    expect(await screen.findByRole('button', { name: 'Edit entry' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Add entry' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Settle' })).not.toBeInTheDocument()
+  })
+
+  it('shows the empty message for a month without entries, and the header still shows the current balance', async () => {
+    getAccountTransactionsMock.mockResolvedValue([])
+    renderScreen(`/cashflow/accounts/${MAE_ID}?month=2022-03`)
+
+    expect(await screen.findByText('No transactions in March 2022')).toBeInTheDocument()
+    expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
   })
 })
 

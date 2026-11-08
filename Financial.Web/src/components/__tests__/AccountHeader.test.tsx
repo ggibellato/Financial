@@ -68,14 +68,29 @@ const BARCLAYS: AccountDetailDto = {
   otherParticipant: null,
 }
 
+const MAE: AccountDetailDto = {
+  ...BARCLAYS,
+  id: 'mae',
+  name: 'Mãe',
+  templateName: 'Settlement',
+  currency: 'BRL',
+  balance: 999.99,
+  currentBalances: [
+    { currency: 'BRL', balance: 167.8768 },
+    { currency: 'GBP', balance: 7.94214099 },
+  ],
+  otherParticipant: 'Mãe',
+}
+
 function renderHeader(
   account: AccountDetailDto = BARCLAYS,
-  { selectedAccountId = account.id, isBusy = false } = {},
+  { selectedAccountId = account.id, isBusy = false, hasParticipants = false } = {},
 ) {
   const handlers = { onMonthChange: vi.fn(), onAccountSelect: vi.fn() }
   render(
     <AccountHeader
       account={account}
+      hasParticipants={hasParticipants}
       accounts={ACCOUNTS}
       selectedAccountId={selectedAccountId}
       monthInputValue="2026-10"
@@ -151,6 +166,7 @@ describe('AccountHeader', () => {
     const header = (detail: AccountDetailDto) => (
       <AccountHeader
         account={detail}
+        hasParticipants={false}
         accounts={ACCOUNTS}
         selectedAccountId={detail.id}
         monthInputValue={`${detail.year}-${String(detail.month).padStart(2, '0')}`}
@@ -225,15 +241,64 @@ describe('AccountHeader', () => {
     expect(screen.queryByRole('option', { name: 'Old Savings' })).not.toBeInTheDocument()
   })
 
-  it('leaves accounts with participants out of the picker and keeps the others', async () => {
+  it('lists an active Settlement account under Settlement in the picker', async () => {
     const user = userEvent.setup()
     renderHeader()
 
     await user.click(screen.getByRole('combobox', { name: 'Account' }))
 
-    expect(screen.queryByRole('option', { name: 'Mãe' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('group', { name: 'Settlement' })).not.toBeInTheDocument()
-    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual(['Barclays', 'Chase', 'Wallet', 'BA Amex'])
+    expect(within(screen.getByRole('group', { name: 'Settlement' })).getByRole('option', { name: 'Mãe' })).toBeInTheDocument()
+  })
+
+  describe('on a Settlement account', () => {
+    it('[AC P60-F12-settlement-screen-01] shows the current balance per currency with who owes whom, Settled when it rounds to 0.00', () => {
+      renderHeader(MAE, { hasParticipants: true })
+
+      expect(screen.getByText('Settlement · BRL, GBP')).toBeInTheDocument()
+      expect(screen.getByText('Current balance')).toBeInTheDocument()
+      expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
+      expect(screen.queryByText(/at end of/)).not.toBeInTheDocument()
+    })
+
+    it('[AC P60-F12-settlement-screen-01] reads Settled when every currency rounds to 0.00', () => {
+      renderHeader(
+        { ...MAE, currentBalances: [{ currency: 'BRL', balance: -0.004 }, { currency: 'GBP', balance: 0.004 }] },
+        { hasParticipants: true },
+      )
+
+      expect(screen.getByText('Settled')).toBeInTheDocument()
+    })
+
+    it('[AC P60-F12-settlement-screen-01] says you owe when the balance is negative, on one currency', () => {
+      renderHeader(
+        { ...MAE, name: 'Samuel', currency: 'GBP', otherParticipant: 'Samuel', currentBalances: [{ currency: 'GBP', balance: -15 }] },
+        { hasParticipants: true },
+      )
+
+      expect(screen.getByText('Settlement · GBP')).toBeInTheDocument()
+      expect(screen.getByText('You owe Samuel £15.00')).toBeInTheDocument()
+    })
+
+    it('[AC P60-F12-settlement-screen-01] joins opposite directions with a separator', () => {
+      renderHeader(
+        { ...MAE, currentBalances: [{ currency: 'BRL', balance: 3.2 }, { currency: 'GBP', balance: -1 }] },
+        { hasParticipants: true },
+      )
+
+      expect(screen.getByText('Mãe owes you R$3.20 · You owe Mãe £1.00')).toBeInTheDocument()
+    })
+
+    it('[AC P60-F12-settlement-screen-01] is unchanged by the viewed month', () => {
+      renderHeader({ ...MAE, year: 2022, month: 3, balance: 12 }, { hasParticipants: true })
+
+      expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
+    })
+
+    it('falls back to the account name when it has no other participant', () => {
+      renderHeader({ ...MAE, otherParticipant: null, currentBalances: [{ currency: 'BRL', balance: 5 }] }, { hasParticipants: true })
+
+      expect(screen.getByText('Mãe owes you R$5.00')).toBeInTheDocument()
+    })
   })
 
   it('reports the chosen account', async () => {

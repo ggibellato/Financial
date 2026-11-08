@@ -8,7 +8,7 @@ import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../../
 import { pinDate } from '../../test-utils/pinDate'
 import { useAccountScreen } from '../useAccountScreen'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { account, potsAccount } from '../../test/account'
+import { account, potsAccount, settlementAccount } from '../../test/account'
 
 const { getAccountsMock, getAccountMock, getAccountTransactionsMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -217,6 +217,22 @@ describe('useAccountScreen', () => {
 
       expect(result.current.screen.tab).toBe('pots')
     })
+  })
+
+  it('reports hasParticipants for a Settlement account, with no tabs', async () => {
+    getAccountsMock.mockResolvedValue([settlementAccount({ id: BARCLAYS_ID, name: 'Mãe' })])
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+    expect(result.current.screen.hasParticipants).toBe(true)
+    expect(result.current.screen.tabs).toEqual([])
+  })
+
+  it('does not report hasParticipants for a bank', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+    expect(result.current.screen.hasParticipants).toBe(false)
   })
 
   it('reads a Pots tab on a bank as Transactions', async () => {

@@ -15,7 +15,7 @@ import {
 import { CalendarArrowRightRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -70,9 +70,45 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
   },
 ]
 
-const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
+const NO_CONVERTED_VALUE = '—'
 
-const ACCESSORS = Object.fromEntries(ACCOUNT_COLUMNS.map((column) => [column.key, column.accessor]))
+const POT_COLUMNS: TransactionColumn[] =[DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
+
+const PAID_BY_YOU = 'You'
+
+function settlementColumns(otherParticipant: string): TransactionColumn[] {
+  const paidByLabel = (row: AccountTransactionDto) => (row.settlement?.paidBy === PAID_BY_YOU ? PAID_BY_YOU : otherParticipant)
+  return [
+    DATE_COLUMN,
+    DESCRIPTION_COLUMN,
+    { key: 'paidBy', header: 'Paid by', accessor: paidByLabel, render: paidByLabel },
+    {
+      key: 'amount',
+      header: 'Amount',
+      numeric: true,
+      accessor: (row) => Math.abs(row.amount),
+      render: (row) => formatCurrency(Math.abs(row.amount), row.currency),
+    },
+    {
+      key: 'converted',
+      header: 'Converted',
+      numeric: true,
+      accessor: (row) => row.settlement?.convertedValue,
+      render: ({ settlement }) =>
+        settlement?.convertedValue != null && settlement.convertedCurrency
+          ? formatCurrency(settlement.convertedValue, settlement.convertedCurrency)
+          : NO_CONVERTED_VALUE,
+    },
+    { key: 'note', header: 'Note', accessor: (row) => row.settlement?.note, render: (row) => <TruncatedText text={row.settlement?.note} /> },
+  ]
+}
+
+export type TransactionColumnSet = 'account' | 'pots' | 'settlement'
+
+function columnsOf(columnSet: TransactionColumnSet, otherParticipant: string): TransactionColumn[] {
+  if (columnSet === 'settlement') return settlementColumns(otherParticipant)
+  return columnSet === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
+}
 
 const BLANK_OPERATION_LINK = 'Deposit from an income'
 
@@ -84,7 +120,8 @@ function actionColumnClass(hasHint: boolean, hasMove: boolean): string {
 interface AccountTransactionsGridProps {
   accountId: string
   transactions: AccountTransactionDto[]
-  showsPotColumns?: boolean
+  columns?: TransactionColumnSet
+  otherParticipant?: string
   isLoading?: boolean
   emptyMessage: string
   dateHeader?: string
@@ -101,7 +138,8 @@ interface AccountTransactionsGridProps {
 export default function AccountTransactionsGrid({
   accountId,
   transactions,
-  showsPotColumns = false,
+  columns: columnSet = 'account',
+  otherParticipant = '',
   isLoading = false,
   emptyMessage,
   dateHeader = 'Date',
@@ -114,9 +152,10 @@ export default function AccountTransactionsGrid({
   onOpenStatement,
   onOpenOperation,
 }: AccountTransactionsGridProps) {
-  const columns = showsPotColumns ? POT_COLUMNS : ACCOUNT_COLUMNS
+  const columns = columnsOf(columnSet, otherParticipant)
   const columnCount = columns.length + 1
-  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
+  const accessors = Object.fromEntries(columns.map((column) => [column.key, column.accessor]))
+  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
   const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
