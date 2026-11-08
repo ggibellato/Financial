@@ -46,6 +46,10 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly → All transactions (after only) | M1 | **T3:** at 320 px wide the rows stack and the grid adds no horizontal scroll (sort and filters are wide-screen only, as on every grid); on a wide screen Tab reaches every sort button, filter, link and Clear filters with visible focus | — | | |
 | Accounts page (after only) | M1 | **S1:** the Settlement grid reads "Mãe · Mãe owes you R$167.88 / £7.94" when Controle Mãe's totals are R$167.88 / £7.94 | — | | |
 | Accounts page (after only) | M1 | **S2:** Admin → Accounts → New account → Settlement → GBP, "Samuel" → the Accounts page lists "Samuel · Settled"; delete it afterwards (after side's copy only) | — | | |
-| Accounts page (after only) | M1 | **S3:** at 320 px wide the Settlement grid stacks with no horizontal page scroll; on a wide screen Tab reaches the sort buttons with visible focus; the Mãe account is not in the account screen's picker | — | | |
+| Accounts page (after only) | M1 | **S3:** at 320 px wide the Settlement grid stacks with no horizontal page scroll; on a wide screen Tab reaches the sort buttons with visible focus; the Mãe account is in the account screen's picker under Settlement | — | | |
+| Settlement screen (after only) | M1, M3 | **S4:** the Mãe screen header reads "Mãe owes you R$167.88 / £7.94", equal to Controle Mãe's totals, in M1 and M3 alike | — | | |
+| Settlement screen (after only) | M3, a 2022 month with pound entries | **S5:** the Mãe screen's Transactions for a month list the same entries as Controle Mãe for that month, each amount in its own currency, Converted "—" where Controle Mãe shows no value | — | | |
+| Monthly → All transactions (after only) | M1, M3 | **S6:** filtered to Mãe: one row per entry, amount in the entry's currency, footer totals per currency; Spend for every category unchanged | — | | |
+| Settlement screen (after only) | M1 | **S7:** at 320 px the Settlement header, actions and grid stack with no horizontal page scroll; on a wide screen Tab reaches the picker, month, Add entry, Settle, the row actions and every form field with visible focus | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.
