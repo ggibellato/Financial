@@ -18,6 +18,7 @@ export type AccountFormAction =
   | 'ManagePots'
   | 'WithdrawFromPots'
   | 'AddEntry'
+  | 'Settle'
 
 export const PAID_BY_YOU = 'You'
 export const PAID_BY_OTHER = 'Other'
@@ -39,10 +40,11 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   ManagePots: 'Manage pots',
   WithdrawFromPots: 'Withdraw from pots',
   AddEntry: 'Add entry',
+  Settle: 'Settle',
 }
 
 const TRANSFER_ACTIONS: readonly AccountFormAction[] = ['TransferTo', 'TransferFrom']
-const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots', 'RefundCreditToBank', 'ReceiveCardCredit', 'AddEntry']
+const ACTIONS_WITHOUT_FORM_OPTIONS: readonly AccountFormAction[] = ['PayCardStatement', 'ManagePots', 'RefundCreditToBank', 'ReceiveCardCredit', 'AddEntry', 'Settle']
 
 const KIND_LABELS: Record<string, string> = {
   CardCharge: 'Card charge',

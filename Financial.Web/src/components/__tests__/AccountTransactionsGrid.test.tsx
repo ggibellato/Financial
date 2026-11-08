@@ -87,8 +87,8 @@ describe('AccountTransactionsGrid', () => {
       entryRow('Farmácia', 150, 'BRL', { convertedCurrency: 'GBP', convertedValue: 21.5, note: 'metade' }),
       entryRow('Taxa', -80, 'GBP', { paidBy: 'Other', convertedCurrency: 'BRL', convertedValue: null }),
     ]
-    const renderSettlement = (transactions = ENTRIES) =>
-      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" transactions={transactions} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+    const renderSettlement = (transactions = ENTRIES, showsConverted = true) =>
+      render(<AccountTransactionsGrid accountId="mae" columns="settlement" otherParticipant="Mãe" showsConverted={showsConverted} transactions={transactions} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
     it('[AC P60-F12-settlement-screen-03] shows each entry with who paid, its amount in its own currency, the converted value or a dash, and the note', () => {
       renderSettlement()
@@ -103,6 +103,13 @@ describe('AccountTransactionsGrid', () => {
       expect(within(paidByOther).getByText('Mãe')).toBeInTheDocument()
       expect(within(paidByOther).getByText('£80.00')).toBeInTheDocument()
       expect(within(paidByOther).getByText('—')).toBeInTheDocument()
+    })
+
+    it('[AC P60-F12-settlement-screen-03] hides the Converted column on a one-currency account', () => {
+      renderSettlement([entryRow('Taxa', 80, 'GBP', {})], false)
+
+      expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Date', 'Description', 'Paid by', 'Amount', 'Note', ''])
+      expect(screen.queryByText('—')).not.toBeInTheDocument()
     })
 
     it('offers Edit and Delete on an entry row', () => {

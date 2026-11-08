@@ -74,7 +74,18 @@ const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, 
 
 const NO_CONVERTED_VALUE = '—'
 
-function settlementColumns(otherParticipant: string): TransactionColumn[] {
+const CONVERTED_COLUMN: TransactionColumn = {
+  key: 'converted',
+  header: 'Converted',
+  numeric: true,
+  accessor: (row) => row.settlement?.convertedValue,
+  render: ({ settlement }) =>
+    settlement?.convertedValue != null && settlement.convertedCurrency
+      ? formatCurrency(settlement.convertedValue, settlement.convertedCurrency)
+      : NO_CONVERTED_VALUE,
+}
+
+function settlementColumns(otherParticipant: string, showsConverted: boolean): TransactionColumn[] {
   const paidByLabel = (row: AccountTransactionDto) => (row.settlement?.paidBy === PAID_BY_YOU ? PAID_BY_YOU : otherParticipant)
   return [
     DATE_COLUMN,
@@ -85,24 +96,15 @@ function settlementColumns(otherParticipant: string): TransactionColumn[] {
       accessor: (row) => Math.abs(row.amount),
       render: (row) => formatCurrency(Math.abs(row.amount), row.currency),
     },
-    {
-      key: 'converted',
-      header: 'Converted',
-      numeric: true,
-      accessor: (row) => row.settlement?.convertedValue,
-      render: ({ settlement }) =>
-        settlement?.convertedValue != null && settlement.convertedCurrency
-          ? formatCurrency(settlement.convertedValue, settlement.convertedCurrency)
-          : NO_CONVERTED_VALUE,
-    },
+    ...(showsConverted ? [CONVERTED_COLUMN] : []),
     { key: 'note', header: 'Note', accessor: (row) => row.settlement?.note || null, render: (row) => <TruncatedText text={row.settlement?.note} /> },
   ]
 }
 
-type ColumnSelection = { columns?: 'account' | 'pots' } | { columns: 'settlement'; otherParticipant: string }
+type ColumnSelection = { columns?: 'account' | 'pots' } | { columns: 'settlement'; otherParticipant: string; showsConverted: boolean }
 
 function columnsOf(selection: ColumnSelection): TransactionColumn[] {
-  if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant)
+  if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant, selection.showsConverted)
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 

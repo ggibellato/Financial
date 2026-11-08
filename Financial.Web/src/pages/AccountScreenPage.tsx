@@ -117,7 +117,7 @@ export default function AccountScreenPage() {
   const deleteKind = rowDelete.row?.kind ?? ''
   const gridColumns =
     hasParticipants && account
-      ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account) } as const)
+      ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account), showsConverted: account.currentBalances.length > 1 } as const)
       : ({ columns: hasPots ? 'pots' : 'account' } as const)
 
   useEffect(() => {
@@ -172,6 +172,7 @@ export default function AccountScreenPage() {
           allowedActions={account.allowedActions}
           activeAction={activeAction}
           formAreaId={FORM_AREA_ID}
+          disabledReasons={account.disabledActions}
           isActionDisabled={(action) =>
             !isAccountCurrent ||
             (needsFormOptions(action) && !formOptions.isReady) ||
@@ -424,6 +425,7 @@ export default function AccountScreenPage() {
             </Text>
             {pots.error && <ErrorState message={POTS_LOAD_ERROR} onRetry={pots.retry} />}
             <AccountTransactionsGrid
+              key={screen.accountId}
               accountId={screen.accountId}
               transactions={screen.transactions}
               {...gridColumns}

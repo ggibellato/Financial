@@ -106,6 +106,8 @@ describe('a settlement entry row', () => {
   it('is labelled as an entry', () => {
     expect(ACTION_LABELS.AddEntry).toBe('Add entry')
     expect(needsFormOptions('AddEntry')).toBe(false)
+    expect(ACTION_LABELS.Settle).toBe('Settle')
+    expect(needsFormOptions('Settle')).toBe(false)
     expect(kindLabel('SettlementEntry')).toBe('Settlement entry')
     expect(recordNoun('SettlementEntry')).toBe('entry')
   })

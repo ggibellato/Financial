@@ -98,6 +98,7 @@ import type {
   SettlementEntryCreateDto,
   SettlementEntryDto,
   SettlementEntryUpdateDto,
+  SettleRequestDto,
   ReportingCurrencySettingDto,
   SetCostBasisMethodRequestDto,
   SetReportingCurrencyEnabledRequestDto,
@@ -290,6 +291,7 @@ export interface FinancialApiClient {
   createSettlementEntry: (accountId: string, requestBody: SettlementEntryCreateDto) => Promise<SettlementEntryDto>
   updateSettlementEntry: (accountId: string, entryId: string, requestBody: SettlementEntryUpdateDto) => Promise<SettlementEntryDto>
   deleteSettlementEntry: (accountId: string, entryId: string) => Promise<void>
+  settleAccount: (accountId: string, requestBody: SettleRequestDto) => Promise<SettlementEntryDto>
   getCardsInCredit: () => Promise<CardCreditDto[]>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
   updateExpense: (id: string, request: ExpenseUpdateDto) => Promise<ExpenseDto>
@@ -811,6 +813,11 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteSettlementEntry: (accountId, entryId) =>
       requestVoid(`/accounts/${encodeURIComponent(accountId)}/settlement-entries/${encodeURIComponent(entryId)}`, { method: 'DELETE' }),
+    settleAccount: (accountId, requestBody) =>
+      request<SettlementEntryDto>(`/accounts/${encodeURIComponent(accountId)}/settlements`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
     getCardsInCredit: () => request<CardCreditDto[]>('/accounts/cards-in-credit'),
     createExpense: (requestBody) =>
       request<ExpenseDto>('/expenses', {

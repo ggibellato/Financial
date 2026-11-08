@@ -51,5 +51,6 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Settlement screen (after only) | M3, a 2022 month with pound entries | **S5:** the Mãe screen's Transactions for a month list the same entries as Controle Mãe for that month, each amount in its own currency, Converted "—" where Controle Mãe shows no value | — | | |
 | Monthly → All transactions (after only) | M1, M3 | **S6:** filtered to Mãe: one row per entry, amount in the entry's currency, footer totals per currency; Spend for every category unchanged | — | | |
 | Settlement screen (after only) | M1 | **S7:** at 320 px the Settlement header, actions and grid stack with no horizontal page scroll; on a wide screen Tab reaches the picker, month, Add entry, Settle, the row actions and every form field with visible focus | — | | |
+| Settlement screen (after only, on the after side's copy) | M1 | **S8:** Mãe → Settle → BRL pre-fills paid by Mãe, R$167.88, £7.94 and "1 GBP = R$21.14"; Save settlement → "Both totals become zero." → header "Settled", Settle disabled with "Nothing to settle." | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.

@@ -152,6 +152,7 @@ export function useAccountActionForms(
     ManagePots: () => setIsManagePotsOpen(true),
     WithdrawFromPots: () => withdrawalForm.openFromBank(routeAccountId),
     AddEntry: () => settlementEntryForm.openAdd(),
+    Settle: () => settlementEntryForm.openSettle(),
   }
 
   const createAction = (): AccountFormAction | null => {
@@ -164,7 +165,7 @@ export function useAccountActionForms(
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
     if (creditRefundForm.isOpen) return creditRefundForm.mode === 'card' ? 'RefundCreditToBank' : 'ReceiveCardCredit'
-    if (settlementEntryForm.isOpen && !settlementEntryForm.isEditing) return 'AddEntry'
+    if (settlementEntryForm.isOpen && !settlementEntryForm.isEditing) return settlementEntryForm.isSettling ? 'Settle' : 'AddEntry'
     if (isManagePotsOpen) return 'ManagePots'
     return null
   }
@@ -228,7 +229,10 @@ export function useAccountActionForms(
 
   useEffect(() => {
     if (activeFormKey) {
-      formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD_SELECTOR)?.focus()
+      const firstField = formAreaRef.current?.querySelector<HTMLInputElement>(FIRST_FIELD_SELECTOR)
+      const checkedChoice = firstField?.type === 'radio' ? formAreaRef.current?.querySelector<HTMLElement>(`input[name="${firstField.name}"]:checked`) : null
+      const fieldToFocus = checkedChoice ?? firstField
+      fieldToFocus?.focus()
     } else if (document.activeElement === document.body) {
       openerRef.current?.focus()
     }

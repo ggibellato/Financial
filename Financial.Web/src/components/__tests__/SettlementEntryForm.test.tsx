@@ -7,6 +7,7 @@ function addState(overrides: Partial<SettlementEntryFormModel> = {}): Settlement
   return {
     isOpen: true,
     isEditing: false,
+    isSettling: false,
     values: { date: '2026-10-31', paidBy: '', currency: 'BRL', description: '', amount: '', convertedValue: '', note: '' },
     currencies: ['BRL', 'GBP'],
     otherParticipant: 'Mãe',
@@ -16,12 +17,17 @@ function addState(overrides: Partial<SettlementEntryFormModel> = {}): Settlement
     saveError: null,
     fieldErrors: {},
     warning: null,
+    impliedRate: null,
+    confirmation: null,
     isDirty: false,
     openAdd: vi.fn(),
     openEdit: vi.fn(),
+    openSettle: vi.fn(),
     cancel: vi.fn(),
     setField: vi.fn(),
     submit: vi.fn(() => null),
+    confirmSettle: vi.fn(),
+    cancelConfirmation: vi.fn(),
     ...overrides,
   }
 }
@@ -32,6 +38,16 @@ function editState(overrides: Partial<SettlementEntryFormModel> = {}): Settlemen
     asksCurrency: false,
     convertedCurrency: 'GBP',
     values: { date: '2026-10-10', paidBy: 'Other', currency: 'BRL', description: 'Farmácia', amount: '150', convertedValue: '21.5', note: 'metade' },
+    ...overrides,
+  })
+}
+
+function settleState(overrides: Partial<SettlementEntryFormModel> = {}): SettlementEntryFormModel {
+  return addState({
+    isSettling: true,
+    convertedCurrency: 'GBP',
+    impliedRate: 'Implied rate: 1 GBP = R$21.14',
+    values: { date: '2026-11-07', paidBy: 'Other', currency: 'BRL', description: 'Settlement', amount: '167.88', convertedValue: '7.94', note: '' },
     ...overrides,
   })
 }
@@ -50,6 +66,44 @@ describe('SettlementEntryForm', () => {
       .map((label) => label.textContent?.replace('*', '').trim())
       .filter((label) => !['You', 'Mãe', 'BRL', 'GBP'].includes(label ?? ''))
     expect(labels).toEqual(['Date', 'Paid by', 'Currency', 'Description', 'Amount (BRL)', 'Note'])
+  })
+
+  it('[AC P60-F12-settlement-screen-05] titles Settle, puts the currency first and shows the implied rate', () => {
+    renderForm(settleState())
+
+    expect(screen.getByRole('heading', { name: 'Settle' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Save settlement' })).toBeEnabled()
+    const labels = Array.from(document.querySelectorAll('form label'))
+      .map((label) => label.textContent?.replace('*', '').trim())
+      .filter((label) => !['You', 'Mãe', 'BRL', 'GBP'].includes(label ?? ''))
+    expect(labels).toEqual(['Currency', 'Date', 'Paid by', 'Description', 'Amount (BRL)', 'GBP value', 'Note'])
+    expect(screen.getByText('Implied rate: 1 GBP = R$21.14')).toHaveAttribute('aria-live', 'polite')
+  })
+
+  it('[AC P60-F12-settlement-screen-05] confirms with the outcome and hands the answer back', () => {
+    const confirmSettle = vi.fn()
+    const cancelConfirmation = vi.fn()
+    renderForm(settleState({ confirmation: 'Both totals become zero.', confirmSettle, cancelConfirmation }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Save this settlement?' })
+    expect(within(dialog).getByText('Both totals become zero.')).toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save settlement' }))
+    expect(confirmSettle).toHaveBeenCalledOnce()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+    expect(cancelConfirmation).toHaveBeenCalledOnce()
+  })
+
+  it('has no implied rate region on a one-currency Settle', () => {
+    renderForm(settleState({ convertedCurrency: null, impliedRate: null, asksCurrency: false, currencies: ['GBP'] }))
+
+    expect(document.querySelector('[aria-live="polite"]')).toBeNull()
+  })
+
+  it('shows no confirmation and no rate outside Settle', () => {
+    renderForm(addState())
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Implied rate/)).not.toBeInTheDocument()
   })
 
   it('offers You and the other participant with nothing selected', () => {

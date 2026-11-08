@@ -1,4 +1,4 @@
-import { Button } from '@fluentui/react-components'
+import { Button, makeStyles, Text } from '@fluentui/react-components'
 import { ACTION_LABELS, formActionsOf, opensDialog, type AccountFormAction } from './accountActions'
 
 interface AccountActionBarProps {
@@ -6,16 +6,25 @@ interface AccountActionBarProps {
   activeAction: AccountFormAction | null
   formAreaId: string
   isActionDisabled?: (action: AccountFormAction) => boolean
+  disabledReasons?: Readonly<Record<string, string>>
   onAction: (action: AccountFormAction, button: HTMLButtonElement) => void
 }
+
+const useActionBarStyles = makeStyles({
+  reason: { alignSelf: 'center' },
+})
+
+const reasonId = (action: AccountFormAction) => `account-action-reason-${action}`
 
 export default function AccountActionBar({
   allowedActions,
   activeAction,
   formAreaId,
   isActionDisabled = () => false,
+  disabledReasons = {},
   onAction,
 }: AccountActionBarProps) {
+  const styles = useActionBarStyles()
   const knownActions = formActionsOf(allowedActions)
   if (knownActions.length === 0) return null
 
@@ -25,7 +34,9 @@ export default function AccountActionBar({
         <Button
           key={action}
           appearance="primary"
-          disabled={isActionDisabled(action)}
+          disabled={!(action in disabledReasons) && isActionDisabled(action)}
+          disabledFocusable={action in disabledReasons}
+          aria-describedby={action in disabledReasons ? reasonId(action) : undefined}
           {...(opensDialog(action)
             ? { 'aria-haspopup': 'dialog' as const }
             : { 'aria-expanded': activeAction === action, 'aria-controls': formAreaId })}
@@ -34,6 +45,14 @@ export default function AccountActionBar({
           {ACTION_LABELS[action]}
         </Button>
       ))}
+      {knownActions.map(
+        (action) =>
+          action in disabledReasons && (
+            <Text key={action} id={reasonId(action)} className={styles.reason}>
+              {disabledReasons[action]}
+            </Text>
+          ),
+      )}
     </div>
   )
 }
