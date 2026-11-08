@@ -79,7 +79,7 @@ The core value is one place per account, a new account from an existing template
 | No-code accounts | 4 of 4 templates create a working account through Admin → Accounts with 0 code changes | Manual check after F11: create one account per template, see it in the account list and use one action on it |
 | Centralise tasks | 14 of 14 per-account tasks reachable from the account screen (bank: add expense, add income, transfer, pay recurring bill, reconcile; card: add charge, pay statement, move charge, unmark paid; Pots: deposit, withdraw, manage pots; Settlement: add entry, settle) | Task checklist ticked before F13 retires the old pages |
 | Unify | 4 old balance calculations deleted; 0 template-name checks in production code | Code review at F12; architecture test green |
-| Unify | 0 name-string joins between balances, accounts and the Reserva category | Grep at F13 of `useMonthly.ts`, `withdrawalExpenseCategories.ts`, `Category.ReservaName` (all removed) |
+| Unify | 0 name-string joins between balances, accounts and the Reserva category | Grep at F13 of `useMonthly.ts`, `withdrawalExpenseCategories.ts` and production code: no name-string join left in them, and no `Category.ReservaName` or `RESERVA_CATEGORY_NAME` (the files stay: Monthly's overview and pot withdrawals use them) |
 | Server summary | Monthly summary area served by 1 call; 0 browser-side sums of balances, outstanding, category totals or income totals | F04 code review and network panel check (bank balances, round-ups, category and income totals); F07 for card outstanding |
 
 ## 5. User Stories
@@ -1009,7 +1009,7 @@ graph TD
 - [ ] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins
 - [ ] The E2E smoke journeys (add expense on the account screen, pay a card statement, manual pots deposit, settle) pass in the `web-e2e` job
 - [ ] `context.md`, README, example data and `docs/ui/` describe the account model
-- [ ] Final parity run on the latest live copy with the full V1 → V5 chain: 0 differences and the full screen checklist ticked
+- [ ] Final parity run on the latest live copy, through any migration step it still needs (none once it is V5): 0 differences and the full screen checklist ticked
 - [ ] `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F14. Accounts Page by Template and Card Totals
