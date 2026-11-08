@@ -10,6 +10,7 @@ function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
   if (row.transfer) return apiClient.deleteAccountTransfer(row.transfer.id)
   if (row.adjustment) return apiClient.deleteBalanceAdjustment(row.adjustment.bankId, row.adjustment.id)
   if (row.movement) return apiClient.deleteReserveMovement(row.movement.id)
+  if (row.settlement) return apiClient.deleteSettlementEntry(row.settlement.accountId, row.settlement.id)
   return Promise.reject(new Error('This row has no record to delete.'))
 }
 

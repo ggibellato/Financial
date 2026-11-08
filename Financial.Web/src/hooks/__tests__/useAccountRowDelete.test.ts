@@ -2,12 +2,13 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountTransactionDto, BalanceAdjustmentDto, ExpenseDto, IncomeDto } from '../../api/types'
+import type { AccountTransactionDto, BalanceAdjustmentDto, ExpenseDto, IncomeDto, SettlementEntryDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { NETWORK_DELETE_ERROR } from '../../utils/formatters'
 import { useAccountRowDelete } from '../useAccountRowDelete'
 
-const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteCardCreditRefundMock, deleteBalanceAdjustmentMock, deleteReserveMovementMock } = vi.hoisted(() => ({
+const { deleteExpenseMock, deleteIncomeMock, deleteAccountTransferMock, deleteCardCreditRefundMock, deleteBalanceAdjustmentMock, deleteReserveMovementMock, deleteSettlementEntryMock } = vi.hoisted(() => ({
+  deleteSettlementEntryMock: vi.fn<FinancialApiClient['deleteSettlementEntry']>(),
   deleteReserveMovementMock: vi.fn<FinancialApiClient['deleteReserveMovement']>(),
   deleteCardCreditRefundMock: vi.fn<FinancialApiClient['deleteCardCreditRefund']>(),
   deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
@@ -24,9 +25,11 @@ vi.mock('../../api/financialApiClient', () => ({
     deleteCardCreditRefund: deleteCardCreditRefundMock,
     deleteBalanceAdjustment: deleteBalanceAdjustmentMock,
     deleteReserveMovement: deleteReserveMovementMock,
+    deleteSettlementEntry: deleteSettlementEntryMock,
   } as Partial<FinancialApiClient>,
 }))
 
+const SETTLEMENT_ROW = accountTransactionRow({ id: 's1', kind: 'SettlementEntry', date: '2026-10-11', amount: 80, settlement: { id: 's1', accountId: 'mae' } as SettlementEntryDto })
 const EXPENSE_ROW = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-14', amount: -42.1, expense: { id: 'e1' } as ExpenseDto })
 const INCOME_ROW = accountTransactionRow({ id: 'i1', kind: 'Income', date: '2026-10-12', amount: 2500, income: { id: 'i1' } as IncomeDto })
 const TRANSFER_ROW = accountTransactionRow({
@@ -85,6 +88,7 @@ describe('useAccountRowDelete', () => {
     deleteIncomeMock.mockReset().mockResolvedValue(undefined)
     deleteAccountTransferMock.mockReset().mockResolvedValue(undefined)
     deleteCardCreditRefundMock.mockReset().mockResolvedValue(undefined)
+    deleteSettlementEntryMock.mockReset().mockResolvedValue(undefined)
     deleteBalanceAdjustmentMock.mockReset().mockResolvedValue(undefined)
   })
 
@@ -107,6 +111,7 @@ describe('useAccountRowDelete', () => {
     ['a transfer', TRANSFER_ROW, () => expect(deleteAccountTransferMock).toHaveBeenCalledWith('t1')],
     ['an adjustment', ADJUSTMENT_ROW, () => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith('barclays', 'a1')],
     ['a credit refund', CREDIT_REFUND_ROW, () => expect(deleteCardCreditRefundMock).toHaveBeenCalledWith('cr1')],
+    ['a settlement entry', SETTLEMENT_ROW, () => expect(deleteSettlementEntryMock).toHaveBeenCalledWith('mae', 's1')],
   ])('deletes %s through its own endpoint and reports the row', async (_, row, assertCall) => {
     const { result, onDeleted } = await confirmDelete(row)
 
