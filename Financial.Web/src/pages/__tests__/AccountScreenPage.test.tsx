@@ -1267,9 +1267,8 @@ describe('AccountScreenPage on a Settlement account', () => {
     expect(within(form).getByText('Implied rate: 1 GBP = R$21.14')).toBeInTheDocument()
     await user.click(within(form).getByRole('button', { name: 'Save settlement' }))
 
-    const dialog = await screen.findByRole('dialog', { name: 'Save this settlement?' })
-    expect(within(dialog).getByText('Both totals become zero.')).toBeInTheDocument()
-    await user.click(await within(dialog).findByRole('button', { name: 'Save settlement' }))
+    expect(await findDialog('Save this settlement?')).toHaveTextContent('Both totals become zero.')
+    await user.click(await dialogButton('Save this settlement?', 'Save settlement'))
 
     expect(await screen.findByText('Settlement saved')).toBeInTheDocument()
     expect(settleAccountMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ paidBy: 'Other', currency: 'BRL', amount: 167.88, convertedValue: 7.94, description: 'Settlement' }))
@@ -1285,8 +1284,7 @@ describe('AccountScreenPage on a Settlement account', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save settlement' }))
 
-    const dialog = await screen.findByRole('dialog', { name: 'Save this settlement?' })
-    expect(within(dialog).getByText('This leaves R$67.88 / £0.00 outstanding (Mãe owes you).')).toBeInTheDocument()
+    expect(await findDialog('Save this settlement?')).toHaveTextContent('This leaves R$67.88 / £0.00 outstanding (Mãe owes you).')
   })
 
   it('[AC P60-F12-settlement-screen-08] puts focus on the chosen currency when Settle opens on a later one', async () => {
@@ -1351,8 +1349,7 @@ describe('AccountScreenPage on a Settlement account', () => {
 
     await user.click(screen.getByRole('button', { name: 'Edit entry' }))
 
-    expect(await screen.findByRole('dialog')).toBeInTheDocument()
-    await user.click(await screen.findByRole('button', { name: /keep editing/i }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
     expect(screen.queryByRole('form', { name: 'Edit entry' })).not.toBeInTheDocument()
   })
