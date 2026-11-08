@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Button, Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Spinner, Text } from '@fluentui/react-components'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
+import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
 import { PAID_BY_OTHER, PAID_BY_YOU } from './accountActions'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -18,8 +19,9 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
   const submitRef = useRef<HTMLButtonElement | null>(null)
-  const { isEditing, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, setField, submit } = form
-  const title = isEditing ? 'Edit entry' : 'Add entry'
+  const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
+  const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'Add entry'
+  const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : title
   const validation = (field: SettlementEntryField) => ({
     validationState: fieldErrors[field] ? ('error' as const) : ('none' as const),
     validationMessage: fieldErrors[field],
@@ -34,7 +36,18 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
     if (saveError && !isSaving) submitRef.current?.focus()
   }, [saveError, isSaving])
 
+  const currencyChoice = asksCurrency && (
+    <Field label="Currency" required {...validation('currency')}>
+      <RadioGroup name="currency" layout="horizontal" className={styles.radioRow} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
+        {currencies.map((currency) => (
+          <Radio key={currency} value={currency} label={currency} />
+        ))}
+      </RadioGroup>
+    </Field>
+  )
+
   return (
+    <>
     <form
       className={styles.panel}
       noValidate
@@ -60,6 +73,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
           </MessageBar>
         )}
         <div className={styles.grid}>
+          {isSettling && currencyChoice}
           <Field label="Date" required {...validation('date')}>
             <Input type="date" max={todayIsoDate()} {...inputProps('date')} />
           </Field>
@@ -74,15 +88,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
               <Text weight="semibold">{values.currency}</Text>
             </Field>
           )}
-          {asksCurrency && (
-            <Field label="Currency" required {...validation('currency')}>
-              <RadioGroup name="currency" layout="horizontal" className={styles.radioRow} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
-                {currencies.map((currency) => (
-                  <Radio key={currency} value={currency} label={currency} />
-                ))}
-              </RadioGroup>
-            </Field>
-          )}
+          {!isSettling && currencyChoice}
           <Field label="Description" required className={mergeClasses(styles.spanTwo, entryStyles.startsRow)} {...validation('description')}>
             <Input {...inputProps('description')} />
           </Field>
@@ -94,13 +100,18 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
               <Input type="number" step="0.01" {...inputProps('convertedValue')} />
             </Field>
           )}
+          {isSettling && (
+            <Text aria-live="polite" className={styles.spanAll}>
+              {impliedRate}
+            </Text>
+          )}
           <Field label="Note" className={styles.spanAll}>
             <Input {...inputProps('note')} />
           </Field>
         </div>
         <div className={styles.actions}>
           <Button ref={submitRef} type="submit" appearance="primary" icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : title}
+            {isSaving ? 'Saving...' : submitLabel}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>
             Cancel
@@ -108,5 +119,15 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
         </div>
       </fieldset>
     </form>
+    <ConfirmDialog
+      open={confirmation !== null}
+      title="Save this settlement?"
+      message={confirmation ?? ''}
+      confirmLabel="Save settlement"
+      cancelLabel="Cancel"
+      onConfirm={confirmSettle}
+      onCancel={cancelConfirmation}
+    />
+    </>
   )
 }

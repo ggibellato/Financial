@@ -172,6 +172,7 @@ export default function AccountScreenPage() {
           allowedActions={account.allowedActions}
           activeAction={activeAction}
           formAreaId={FORM_AREA_ID}
+          disabledReasons={account.disabledActions}
           isActionDisabled={(action) =>
             !isAccountCurrent ||
             (needsFormOptions(action) && !formOptions.isReady) ||

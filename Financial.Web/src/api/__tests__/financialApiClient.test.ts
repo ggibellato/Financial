@@ -2511,6 +2511,27 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
+  it('settles through the account route', async () => {
+    const responseBody = { id: 'e8' }
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 201, headers: { 'Content-Type': 'application/json' } }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+    const requestBody = { date: '2026-11-07', description: 'Settlement', note: null, paidBy: 'Other', currency: 'BRL', amount: 167.88, convertedValue: 7.94 }
+
+    await expect(client.settleAccount('mae', requestBody)).resolves.toEqual(responseBody)
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlements`)
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
+  })
+
+  it('throws the API error when settling is refused', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ title: 'Nothing to settle.', status: 400 }), { status: 400, headers: { 'Content-Type': 'application/problem+json' } }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.settleAccount('mae', { date: '2026-11-07', description: 'Settlement', note: null, paidBy: 'Other', currency: 'BRL', amount: 1, convertedValue: null })).rejects.toMatchObject({ status: 400 })
+  })
+
   it('deletes a settlement entry through its account route, accepting the empty 204', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

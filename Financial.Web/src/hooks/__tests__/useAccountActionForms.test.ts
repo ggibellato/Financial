@@ -207,6 +207,28 @@ describe('useAccountActionForms', () => {
       expect(result.current.activeAction).toBe('AddEntry')
     })
 
+    it('opens the Settle form as the active action', () => {
+      const { result } = renderSettlementForms()
+
+      act(() => result.current.openAction('Settle', openerButton()))
+
+      expect(result.current.settlementEntryForm.isSettling).toBe(true)
+      expect(result.current.activeAction).toBe('Settle')
+      expect(result.current.settlementEntryForm.isDirty).toBe(false)
+    })
+
+    it('prompts before leaving an edited Settle form', () => {
+      const { result } = renderSettlementForms()
+      act(() => result.current.openAction('Settle', openerButton()))
+      act(() => result.current.settlementEntryForm.setField('amount', '1'))
+      const change = vi.fn()
+
+      act(() => result.current.guardChange(change))
+
+      expect(result.current.discardPrompt.isPromptOpen).toBe(true)
+      expect(change).not.toHaveBeenCalled()
+    })
+
     it('opens an entry row for editing without an active action', () => {
       const { result } = renderSettlementForms()
 

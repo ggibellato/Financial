@@ -7,7 +7,8 @@ import { pinDate } from '../../test-utils/pinDate'
 import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { useSettlementEntryForm, type SettlementEntryField } from '../useSettlementEntryForm'
 
-const { createSettlementEntryMock, updateSettlementEntryMock } = vi.hoisted(() => ({
+const { createSettlementEntryMock, updateSettlementEntryMock, settleAccountMock } = vi.hoisted(() => ({
+  settleAccountMock: vi.fn<FinancialApiClient['settleAccount']>(),
   createSettlementEntryMock: vi.fn<FinancialApiClient['createSettlementEntry']>(),
   updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
 }))
@@ -16,6 +17,7 @@ vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     createSettlementEntry: createSettlementEntryMock,
     updateSettlementEntry: updateSettlementEntryMock,
+    settleAccount: settleAccountMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -70,6 +72,177 @@ function submit(result: Rendered): SettlementEntryField | null {
   })
   return firstInvalid
 }
+
+function maeWith(brl: number, gbp: number) {
+  return { ...MAE, currentBalances: [{ currency: 'BRL', balance: brl }, { currency: 'GBP', balance: gbp }] }
+}
+
+function openSettle(account: typeof MAE | typeof SAMUEL = MAE) {
+  const rendered = renderForm(account)
+  act(() => rendered.result.current.openSettle())
+  return rendered
+}
+
+describe('useSettlementEntryForm in Settle mode', () => {
+  beforeEach(() => {
+    pinDate('2026-11-07T12:00:00+00:00')
+    sessionStorage.clear()
+    settleAccountMock.mockReset().mockResolvedValue({ ...ENTRY, description: 'Settlement' })
+  })
+
+  afterEach(() => vi.useRealTimers())
+
+  it('[AC P60-F12-settlement-screen-05] pre-fills who pays, the amount and a same-direction converted value at 2 decimals', () => {
+    const { result } = openSettle(maeWith(167.8768, 7.94214099))
+
+    expect(result.current.isSettling).toBe(true)
+    expect(result.current.isDirty).toBe(false)
+    expect(result.current.convertedCurrency).toBe('GBP')
+    expect(result.current.values).toMatchObject({ currency: 'BRL', paidBy: 'Other', amount: '167.88', convertedValue: '7.94', description: 'Settlement', date: '2026-10-31' })
+    expect(result.current.impliedRate).toBe('Implied rate: 1 GBP = R$21.14')
+  })
+
+  it('[AC P60-F12-settlement-screen-05] leaves the converted value empty for opposite directions and says what remains', () => {
+    const { result } = openSettle(maeWith(100, -10))
+
+    expect(result.current.values).toMatchObject({ currency: 'BRL', paidBy: 'Other', amount: '100.00', convertedValue: '' })
+    expect(result.current.impliedRate).toBeNull()
+    submit(result)
+    expect(result.current.confirmation).toBe('This leaves R$0.00 / £10.00 outstanding (you owe Mãe).')
+  })
+
+  it('starts on the first currency not settled, paid by you when you owe', () => {
+    const { result } = openSettle(maeWith(0.004, -5))
+
+    expect(result.current.values).toMatchObject({ currency: 'GBP', paidBy: 'You', amount: '5.00', convertedValue: '' })
+    expect(result.current.convertedCurrency).toBe('BRL')
+  })
+
+  it('re-fills paid by, amount and converted value when the currency changes', () => {
+    const { result } = openSettle(maeWith(100, -10))
+
+    fill(result, { currency: 'GBP' })
+
+    expect(result.current.values).toMatchObject({ currency: 'GBP', paidBy: 'You', amount: '10.00', convertedValue: '' })
+    expect(result.current.convertedCurrency).toBe('BRL')
+    expect(result.current.isDirty).toBe(true)
+  })
+
+  it('gives the same implied rate whichever currency is settled', () => {
+    const { result } = openSettle()
+
+    fill(result, { currency: 'GBP' })
+
+    expect(result.current.values).toMatchObject({ amount: '7.94', convertedValue: '167.88' })
+    expect(result.current.impliedRate).toBe('Implied rate: 1 GBP = R$21.14')
+  })
+
+  it('pre-fills only the amount on a one-currency account', () => {
+    const { result } = openSettle(SAMUEL)
+
+    expect(result.current.asksCurrency).toBe(false)
+    expect(result.current.convertedCurrency).toBeNull()
+    expect(result.current.values).toMatchObject({ currency: 'GBP', paidBy: 'Other', amount: '15.00', convertedValue: '' })
+    expect(result.current.impliedRate).toBeNull()
+    submit(result)
+    expect(result.current.confirmation).toBe('The total becomes zero.')
+  })
+
+  it('[AC P60-F12-settlement-screen-05] says both totals become zero, accepting sub-penny residue', () => {
+    const { result } = openSettle(maeWith(167.8768, 7.94214099))
+
+    submit(result)
+
+    expect(result.current.confirmation).toBe('Both totals become zero.')
+    expect(settleAccountMock).not.toHaveBeenCalled()
+  })
+
+  it('[AC P60-F12-settlement-screen-06] shows the leftover when an edited value does not reach zero', () => {
+    const { result } = openSettle(maeWith(167.8768, 7.94214099))
+
+    fill(result, { amount: '100' })
+    submit(result)
+
+    expect(result.current.confirmation).toBe('This leaves R$67.88 / £0.00 outstanding (Mãe owes you).')
+  })
+
+  it('[AC P60-F12-settlement-screen-06] names who owes per currency when the leftovers point different ways', () => {
+    const { result } = openSettle(maeWith(103.2, -1))
+
+    fill(result, { amount: '100' })
+    submit(result)
+
+    expect(result.current.confirmation).toBe('This leaves R$3.20 / £1.00 outstanding (Mãe owes you R$3.20; you owe Mãe £1.00).')
+  })
+
+  it('does not ask for confirmation while a field is invalid', () => {
+    const { result } = openSettle()
+
+    fill(result, { amount: '' })
+
+    expect(submit(result)).toBe('amount')
+    expect(result.current.confirmation).toBeNull()
+  })
+
+  it('keeps the form open and saves nothing when the confirmation is cancelled', () => {
+    const { result } = openSettle()
+    submit(result)
+
+    act(() => result.current.cancelConfirmation())
+
+    expect(result.current.confirmation).toBeNull()
+    expect(result.current.isOpen).toBe(true)
+    expect(settleAccountMock).not.toHaveBeenCalled()
+  })
+
+  it('saves the values as entered on confirmation, closes and reports it', async () => {
+    const { result, onSaved } = openSettle()
+    submit(result)
+
+    act(() => result.current.confirmSettle())
+
+    expect(result.current.isSaving).toBe(true)
+    expect(result.current.confirmation).toBeNull()
+    await waitFor(() => expect(result.current.isOpen).toBe(false))
+    expect(settleAccountMock).toHaveBeenCalledWith('mae', { date: '2026-10-31', description: 'Settlement', note: null, paidBy: 'Other', currency: 'BRL', amount: 167.88, convertedValue: 7.94 })
+    expect(onSaved).toHaveBeenCalledWith('Settlement saved')
+  })
+
+  it('sends no converted value when it is left empty', async () => {
+    const { result } = openSettle()
+    fill(result, { convertedValue: '' })
+    submit(result)
+
+    act(() => result.current.confirmSettle())
+
+    await waitFor(() => expect(settleAccountMock).toHaveBeenCalledWith('mae', expect.objectContaining({ convertedValue: null })))
+  })
+
+  it('keeps a warning the save returned in the saved message', async () => {
+    const warning = 'The GBP value rounds to 0.00, so it was left empty.'
+    settleAccountMock.mockResolvedValue({ ...ENTRY, warning })
+    const { result, onSaved } = openSettle()
+    submit(result)
+
+    act(() => result.current.confirmSettle())
+
+    await waitFor(() => expect(onSaved).toHaveBeenCalledWith(`Settlement saved. ${warning}`))
+    expect(result.current.isOpen).toBe(false)
+  })
+
+  it('shows a server refusal in the form and keeps the values', async () => {
+    settleAccountMock.mockRejectedValue(new ApiError('Nothing to settle.', 400))
+    const { result, onSaved } = openSettle()
+    submit(result)
+
+    act(() => result.current.confirmSettle())
+
+    await waitFor(() => expect(result.current.saveError).toBe('Nothing to settle.'))
+    expect(result.current.isOpen).toBe(true)
+    expect(result.current.values.amount).toBe('167.88')
+    expect(onSaved).not.toHaveBeenCalled()
+  })
+})
 
 describe('useSettlementEntryForm', () => {
   beforeEach(() => {

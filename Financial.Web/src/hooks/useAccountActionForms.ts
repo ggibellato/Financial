@@ -152,6 +152,7 @@ export function useAccountActionForms(
     ManagePots: () => setIsManagePotsOpen(true),
     WithdrawFromPots: () => withdrawalForm.openFromBank(routeAccountId),
     AddEntry: () => settlementEntryForm.openAdd(),
+    Settle: () => settlementEntryForm.openSettle(),
   }
 
   const createAction = (): AccountFormAction | null => {
@@ -164,7 +165,7 @@ export function useAccountActionForms(
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
     if (creditRefundForm.isOpen) return creditRefundForm.mode === 'card' ? 'RefundCreditToBank' : 'ReceiveCardCredit'
-    if (settlementEntryForm.isOpen && !settlementEntryForm.isEditing) return 'AddEntry'
+    if (settlementEntryForm.isOpen && !settlementEntryForm.isEditing) return settlementEntryForm.isSettling ? 'Settle' : 'AddEntry'
     if (isManagePotsOpen) return 'ManagePots'
     return null
   }
