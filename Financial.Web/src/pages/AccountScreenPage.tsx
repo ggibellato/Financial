@@ -117,7 +117,7 @@ export default function AccountScreenPage() {
   const deleteKind = rowDelete.row?.kind ?? ''
   const gridColumns =
     hasParticipants && account
-      ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account) } as const)
+      ? ({ columns: 'settlement', otherParticipant: settlementCounterparty(account), showsConverted: account.currentBalances.length > 1 } as const)
       : ({ columns: hasPots ? 'pots' : 'account' } as const)
 
   useEffect(() => {

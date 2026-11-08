@@ -73,9 +73,11 @@ const {
   getIncomesByMonthMock,
   createSettlementEntryMock,
   updateSettlementEntryMock,
+  settleAccountMock,
 } = vi.hoisted(() => ({
   createSettlementEntryMock: vi.fn<FinancialApiClient['createSettlementEntry']>(),
   updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
+  settleAccountMock: vi.fn<FinancialApiClient['settleAccount']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
   getAccountTransactionsMock: vi.fn<FinancialApiClient['getAccountTransactions']>(),
@@ -120,6 +122,7 @@ vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     createSettlementEntry: createSettlementEntryMock,
     updateSettlementEntry: updateSettlementEntryMock,
+    settleAccount: settleAccountMock,
     getAccounts: getAccountsMock,
     getAccount: getAccountMock,
     getAccountTransactions: getAccountTransactionsMock,
@@ -1212,6 +1215,7 @@ describe('AccountScreenPage on a Settlement account', () => {
     getAccountTransactionsMock.mockResolvedValue([ENTRY_ROW])
     createSettlementEntryMock.mockReset().mockResolvedValue(ENTRY_ROW.settlement!)
     updateSettlementEntryMock.mockReset().mockResolvedValue(ENTRY_ROW.settlement!)
+    settleAccountMock.mockReset().mockResolvedValue(ENTRY_ROW.settlement!)
   })
 
   it('[AC P60-F12-settlement-screen-01] shows the current balance in the header and the entries in the Settlement columns', async () => {
@@ -1236,7 +1240,6 @@ describe('AccountScreenPage on a Settlement account', () => {
 
   it('[AC P60-F12-settlement-screen-04] adds an entry, stays open with the kept fields, focus on Description and a toast', async () => {
     const user = await openMaeScreen()
-    expect(screen.queryByRole('button', { name: 'Settle' })).not.toBeInTheDocument()
     expect(getBanksMock).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: 'Add entry' }))
@@ -1252,6 +1255,58 @@ describe('AccountScreenPage on a Settlement account', () => {
     await waitFor(() => expect(within(form).getByLabelText(/^Description/)).toHaveFocus())
     expect(within(form).getByLabelText(/^Description/)).toHaveValue('')
     expect(within(form).getByRole('radio', { name: 'You' })).toBeChecked()
+  })
+
+  it('[AC P60-F12-settlement-screen-05] settles with the pre-filled values after confirming both totals become zero', async () => {
+    const user = await openMaeScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Settle' }))
+    const form = screen.getByRole('form', { name: 'Settle' })
+    expect(within(form).getByLabelText(/^Amount \(BRL\)/)).toHaveValue(167.88)
+    expect(within(form).getByLabelText(/^GBP value/)).toHaveValue(7.94)
+    expect(within(form).getByText('Implied rate: 1 GBP = R$21.14')).toBeInTheDocument()
+    await user.click(within(form).getByRole('button', { name: 'Save settlement' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Save this settlement?' })
+    expect(within(dialog).getByText('Both totals become zero.')).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('button', { name: 'Save settlement' }))
+
+    expect(await screen.findByText('Settlement saved')).toBeInTheDocument()
+    expect(settleAccountMock).toHaveBeenCalledWith(MAE_ID, expect.objectContaining({ paidBy: 'Other', currency: 'BRL', amount: 167.88, convertedValue: 7.94, description: 'Settlement' }))
+    await waitFor(() => expect(screen.queryByRole('form', { name: 'Settle' })).not.toBeInTheDocument())
+  })
+
+  it('[AC P60-F12-settlement-screen-06] states the leftover before saving an edited settlement', async () => {
+    const user = await openMaeScreen()
+    await user.click(screen.getByRole('button', { name: 'Settle' }))
+    const amount = screen.getByLabelText(/^Amount \(BRL\)/)
+    await user.clear(amount)
+    await user.type(amount, '100')
+
+    await user.click(screen.getByRole('button', { name: 'Save settlement' }))
+
+    const dialog = await screen.findByRole('dialog', { name: 'Save this settlement?' })
+    expect(within(dialog).getByText('This leaves R$67.88 / £0.00 outstanding (Mãe owes you).')).toBeInTheDocument()
+  })
+
+  it('[AC P60-F12-settlement-screen-07] shows Settle disabled with its reason when the API disables it', async () => {
+    const detail = await getAccountMock(MAE_ID, 2026, 10)
+    getAccountMock.mockResolvedValue({ ...detail, disabledActions: { Settle: 'Nothing to settle.' }, currentBalances: [{ currency: 'BRL', balance: 0 }, { currency: 'GBP', balance: 0 }] })
+    renderScreen(`/cashflow/accounts/${MAE_ID}?month=2026-10`)
+
+    expect(await screen.findByText('Nothing to settle.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Settle' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('button', { name: 'Add entry' })).toBeEnabled()
+  })
+
+  it('[AC P60-F12-settlement-screen-08] hides the Converted column on a one-currency account', async () => {
+    const detail = await getAccountMock(MAE_ID, 2026, 10)
+    getAccountMock.mockResolvedValue({ ...detail, currentBalances: [{ currency: 'GBP', balance: 15 }] })
+    renderScreen(`/cashflow/accounts/${MAE_ID}?month=2026-10`)
+
+    const table = await screen.findByRole('table', { name: 'Transactions' })
+    await waitFor(() => expect(within(table).getByRole('columnheader', { name: 'Paid by' })).toBeInTheDocument())
+    expect(within(table).queryByRole('columnheader', { name: 'Converted' })).not.toBeInTheDocument()
   })
 
   it('[AC P60-F12-settlement-screen-02] edits an entry row, closes and toasts', async () => {
