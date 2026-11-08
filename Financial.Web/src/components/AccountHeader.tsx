@@ -4,9 +4,11 @@ import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../api/t
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
+import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 
 interface AccountHeaderProps {
   account: AccountDetailDto
+  hasParticipants: boolean
   accounts: AccountDto[]
   selectedAccountId: string
   monthInputValue: string
@@ -15,13 +17,9 @@ interface AccountHeaderProps {
   onAccountSelect: (accountId: string) => void
 }
 
-function appearsInPicker(account: AccountDto): boolean {
-  return !account.capabilities.includes('HasParticipants')
-}
-
 function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][] {
   const groups = new Map<string, AccountDto[]>()
-  for (const account of accounts.filter((candidate) => candidate.isActive && appearsInPicker(candidate))) {
+  for (const account of accounts.filter((candidate) => candidate.isActive)) {
     const label = accountTemplateLabel(account.templateName)
     const members = groups.get(label)
     if (members) members.push(account)
@@ -35,25 +33,33 @@ function viewedStatementAmount(statement: AccountStatementDto | null): number {
   return statement?.paidAmount ?? 0
 }
 
-function firstFigure(account: AccountDetailDto): { label: string; amount: string; status: string | null } {
+function firstFigure(account: AccountDetailDto, hasParticipants: boolean): { label: string; value: string; status: string | null } {
+  if (hasParticipants) {
+    return {
+      label: 'Current balance',
+      value: settlementBalanceText(settlementCounterparty(account), account.currentBalances),
+      status: null,
+    }
+  }
   const viewedMonth = formatLongMonthYear(account.year, account.month)
   if (!account.hasStatements) {
     return {
       label: `${balanceLabel(account.balanceIsOwed)} at end of ${viewedMonth}`,
-      amount: formatShownBalance(account.balance, account.balanceIsOwed),
+      value: `${formatShownBalance(account.balance, account.balanceIsOwed)} ${account.currency}`,
       status: null,
     }
   }
   const statement = account.viewedStatement
   return {
     label: `${viewedMonth} statement`,
-    amount: formatN2(viewedStatementAmount(statement)),
+    value: `${formatN2(viewedStatementAmount(statement))} ${account.currency}`,
     status: statement ? statementStatusText(statement) : nothingDueText(0),
   }
 }
 
 export default function AccountHeader({
   account,
+  hasParticipants,
   accounts,
   selectedAccountId,
   monthInputValue,
@@ -64,7 +70,8 @@ export default function AccountHeader({
   const pickerGroups = useMemo(() => groupActiveByTemplate(accounts), [accounts])
   const selectedName =
     accounts.find((candidate) => candidate.id.toLowerCase() === selectedAccountId.toLowerCase())?.name ?? account.name
-  const figure = firstFigure(account)
+  const figure = firstFigure(account, hasParticipants)
+  const currencies = hasParticipants ? account.currentBalances.map(({ currency }) => currency).join(', ') : account.currency
 
   return (
     <header className="account-screen__header" aria-busy={isBusy}>
@@ -81,14 +88,14 @@ export default function AccountHeader({
             )}
           </div>
           <Text>
-            {accountTemplateLabel(account.templateName)} · {account.currency}
+            {accountTemplateLabel(account.templateName)} · {currencies}
           </Text>
         </div>
 
         <div className={`account-screen__balance${account.hasStatements ? ' account-screen__balance--top-aligned' : ''}`}>
           <Text size={200}>{figure.label}</Text>
           <Text size={500} weight="semibold">
-            {figure.amount} {account.currency}
+            {figure.value}
           </Text>
           {figure.status && <Text size={300}>{figure.status}</Text>}
         </div>

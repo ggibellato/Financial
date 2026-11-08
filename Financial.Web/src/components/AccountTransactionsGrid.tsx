@@ -15,7 +15,7 @@ import {
 import { CalendarArrowRightRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -72,7 +72,40 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
 
 const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
-const ACCESSORS = Object.fromEntries(ACCOUNT_COLUMNS.map((column) => [column.key, column.accessor]))
+const PAID_BY_YOU = 'You'
+const NO_CONVERTED_VALUE = '—'
+
+function settlementColumns(otherParticipant: string): TransactionColumn[] {
+  const paidByLabel = (row: AccountTransactionDto) => (row.settlement?.paidBy === PAID_BY_YOU ? PAID_BY_YOU : otherParticipant)
+  return [
+    DATE_COLUMN,
+    DESCRIPTION_COLUMN,
+    { key: 'paidBy', header: 'Paid by', accessor: paidByLabel, render: (row) => <TruncatedText text={paidByLabel(row)} /> },
+    {
+      ...AMOUNT_COLUMN,
+      accessor: (row) => Math.abs(row.amount),
+      render: (row) => formatCurrency(Math.abs(row.amount), row.currency),
+    },
+    {
+      key: 'converted',
+      header: 'Converted',
+      numeric: true,
+      accessor: (row) => row.settlement?.convertedValue,
+      render: ({ settlement }) =>
+        settlement?.convertedValue != null && settlement.convertedCurrency
+          ? formatCurrency(settlement.convertedValue, settlement.convertedCurrency)
+          : NO_CONVERTED_VALUE,
+    },
+    { key: 'note', header: 'Note', accessor: (row) => row.settlement?.note || null, render: (row) => <TruncatedText text={row.settlement?.note} /> },
+  ]
+}
+
+type ColumnSelection = { columns?: 'account' | 'pots' } | { columns: 'settlement'; otherParticipant: string }
+
+function columnsOf(selection: ColumnSelection): TransactionColumn[] {
+  if (selection.columns === 'settlement') return settlementColumns(selection.otherParticipant)
+  return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
+}
 
 const BLANK_OPERATION_LINK = 'Deposit from an income'
 
@@ -81,10 +114,9 @@ function actionColumnClass(hasHint: boolean, hasMove: boolean): string {
   return hasMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
 }
 
-interface AccountTransactionsGridProps {
+type AccountTransactionsGridProps = ColumnSelection & {
   accountId: string
   transactions: AccountTransactionDto[]
-  showsPotColumns?: boolean
   isLoading?: boolean
   emptyMessage: string
   dateHeader?: string
@@ -101,7 +133,6 @@ interface AccountTransactionsGridProps {
 export default function AccountTransactionsGrid({
   accountId,
   transactions,
-  showsPotColumns = false,
   isLoading = false,
   emptyMessage,
   dateHeader = 'Date',
@@ -113,10 +144,12 @@ export default function AccountTransactionsGrid({
   isMoveDisabled = false,
   onOpenStatement,
   onOpenOperation,
+  ...columnSelection
 }: AccountTransactionsGridProps) {
-  const columns = showsPotColumns ? POT_COLUMNS : ACCOUNT_COLUMNS
+  const columns = columnsOf(columnSelection)
   const columnCount = columns.length + 1
-  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, ACCESSORS, DATE_DESC_SORT)
+  const accessors = Object.fromEntries(columns.map((column) => [column.key, column.accessor]))
+  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
   const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {

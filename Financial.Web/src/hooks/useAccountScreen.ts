@@ -47,11 +47,12 @@ type AccountScreenLoad = AccountScreenData | 'not-found'
 const NO_ACCOUNTS: AccountDto[] = []
 const NO_TRANSACTIONS: AccountTransactionDto[] = []
 
-function isPotsAccount({ accounts, account }: AccountScreenData, routeAccountId: string): boolean {
-  return (
-    account.id.toLowerCase() === routeAccountId.toLowerCase() &&
-    accounts.some((candidate) => candidate.id === account.id && candidate.capabilities.includes('HasPots'))
-  )
+function loadedAccountHas({ accounts, account }: AccountScreenData, capability: string): boolean {
+  return accounts.some((candidate) => candidate.id === account.id && candidate.capabilities.includes(capability))
+}
+
+function isPotsAccount(data: AccountScreenData, routeAccountId: string): boolean {
+  return data.account.id.toLowerCase() === routeAccountId.toLowerCase() && loadedAccountHas(data, 'HasPots')
 }
 
 function tabsOf(data: AccountScreenData | null, hasPots: boolean): ScreenTab[] {
@@ -74,6 +75,7 @@ export interface AccountScreen {
   accounts: AccountDto[]
   account: AccountDetailDto | null
   hasPots: boolean
+  hasParticipants: boolean
   transactions: AccountTransactionDto[]
   isLoading: boolean
   isNotFound: boolean
@@ -158,6 +160,7 @@ export function useAccountScreen(): AccountScreen {
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
     hasPots,
+    hasParticipants: loaded !== null && loadedAccountHas(loaded, 'HasParticipants'),
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',
