@@ -90,7 +90,7 @@ export default function AccountsPage() {
   return (
     <div className="accounts-page">
       {showMovedNotice && (
-        <MessageBar intent="info">
+        <MessageBar role="status" intent="info">
           <MessageBarBody>That page moved to the account screen.</MessageBarBody>
         </MessageBar>
       )}

@@ -134,8 +134,10 @@ describe('AccountsPage', () => {
   it('[AC P60-F13-consolidated-navigation-and-retirement-04] shows the moved notice above the grids when a redirect found no account', async () => {
     renderPageAfterMovedRedirect()
 
-    expect(await screen.findByRole('table', { name: 'Banks' })).toBeInTheDocument()
-    expect(screen.getByText('That page moved to the account screen.')).toBeInTheDocument()
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    const notice = screen.getByRole('status')
+    expect(notice).toHaveTextContent('That page moved to the account screen.')
+    expect(notice.compareDocumentPosition(banks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows no moved notice on an ordinary visit', async () => {

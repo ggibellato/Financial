@@ -45,8 +45,10 @@ describe('route and sidebar agreement', () => {
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends the reserve buckets address to the Pots tab of the account that replaces Reserva', () => {
-    expect(REDIRECT_ROUTES[0].element.type).toBe(MovedPageRedirect)
-    expect(REDIRECT_ROUTES[0].element.props).toEqual({ page: 'reserva', tab: 'pots' })
+    const reserveBuckets = REDIRECT_ROUTES.find((route) => route.path === 'admin/cashflow/reserve-buckets')
+
+    expect(reserveBuckets?.element.type).toBe(MovedPageRedirect)
+    expect(reserveBuckets?.element.props).toEqual({ page: 'reserva', tab: 'pots' })
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {
