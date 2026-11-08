@@ -342,7 +342,7 @@ decision 2026-11-04).
 
 `CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are a third
 exception: they are named text buttons in `.data-table__col--action-wide`, as
-the P60 F08 and F13 specs define them (user decision 2026-11-08).
+the P60 F08 and F13 specs define them.
 
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
