@@ -125,7 +125,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'category':
         return <TruncatedText text={transaction.categoryName} />
       default:
-        return `${formatSignedN2(transaction.amount)} ${row.accountCurrency}`
+        return `${formatSignedN2(transaction.amount)} ${transaction.currency}`
     }
   }
 

@@ -48,6 +48,7 @@ const KIND_LABELS: Record<string, string> = {
   TransferOut: 'Transfer out',
   Adjustment: 'Balance adjustment',
   PotTransaction: 'Pot transaction',
+  SettlementEntry: 'Settlement entry',
 }
 
 const RECORD_NOUNS: Record<string, string> = {
@@ -61,6 +62,7 @@ const RECORD_NOUNS: Record<string, string> = {
   TransferOut: 'transfer',
   Adjustment: 'balance adjustment',
   PotTransaction: 'pot transaction',
+  SettlementEntry: 'entry',
 }
 
 export function isFormAction(action: string): action is AccountFormAction {

@@ -30,7 +30,7 @@ const ROWS: MonthTransactionDto[] = [
   monthRow(RESERVA, accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', description: '', counterpart: 'Casa', amount: 90, operation: DEPOSIT })),
   monthRow(BARCLAYS, accountTransactionRow({ id: 'cp1', kind: 'CardPayment', date: '2026-10-05', description: 'BA Amex payment', amount: -100 })),
   monthRow(AMEX, accountTransactionRow({ id: 'cp1', kind: 'CardPayment', date: '2026-10-05', description: 'BA Amex payment', amount: 100 })),
-  monthRow(ITAU, accountTransactionRow({ id: 'x1', kind: 'Expense', date: '2026-10-03', description: 'Padaria', categoryName: 'Groceries', amount: -12.5 })),
+  monthRow(ITAU, accountTransactionRow({ id: 'x1', kind: 'Expense', date: '2026-10-03', description: 'Padaria', categoryName: 'Groceries', amount: -12.5, currency: 'BRL' })),
 ]
 
 interface GridOptions {
@@ -92,6 +92,49 @@ describe('MonthTransactionsGrid', () => {
       'Amount:-45.20 GBP',
     ])
     expect(within(tesco).getAllByRole('cell')[5]).toHaveClass('data-table__col--numeric')
+  })
+
+  describe('settlement entries', () => {
+    const MAE: AccountFields = { accountId: 'mae-1', accountName: 'Mãe', accountCurrency: 'BRL', accountIsActive: true }
+    const ENTRY_ROWS: MonthTransactionDto[] = [
+      monthRow(MAE, accountTransactionRow({ id: 's1', kind: 'SettlementEntry', date: '2026-10-11', description: 'Taxa', amount: 80, currency: 'GBP' })),
+      monthRow(MAE, accountTransactionRow({ id: 's2', kind: 'SettlementEntry', date: '2026-10-10', description: 'Farmácia', amount: -150, currency: 'BRL' })),
+      monthRow(BARCLAYS, accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-09', description: 'Tesco', categoryName: 'Groceries', amount: -45.2 })),
+      monthRow(BARCLAYS, accountTransactionRow({ id: 'e2', kind: 'Expense', date: '2026-10-08', description: 'Bus', categoryName: 'Transport', amount: -3 })),
+    ]
+
+    it('[AC P60-F12-settlement-screen-03] shows each entry in its own currency and totals the footer per row currency', () => {
+      renderGrid({ rows: ENTRY_ROWS })
+
+      const [taxa] = bodyRows()
+      expect(within(taxa).getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
+        'Date:11/10/2026',
+        'Account:Mãe',
+        'Type:Settlement entry',
+        'Description:Taxa',
+        'Category:',
+        'Amount:+80.00 GBP',
+      ])
+      expect(footer()).toHaveTextContent('4 rows · Total -150.00 BRL · Total +31.80 GBP')
+    })
+
+    it('[AC P60-F12-settlement-screen-03] filters to entries by the Settlement entry type', () => {
+      renderGrid({ rows: ENTRY_ROWS })
+
+      filterTo('Type', 'Settlement entry')
+
+      expect(descriptions()).toEqual(['Description:Taxa', 'Description:Farmácia'])
+    })
+
+    it('leaves entries out of a category filter and its Spend', () => {
+      renderGrid({ rows: ENTRY_ROWS })
+
+      filterTo('Category', 'Groceries')
+
+      expect(descriptions()).toEqual(['Description:Tesco'])
+      expect(footer()).toHaveTextContent('Spend 45.20 GBP')
+      expect(footer()).not.toHaveTextContent('BRL')
+    })
   })
 
   it('orders newest first and sorts by any column', () => {
