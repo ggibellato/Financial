@@ -986,15 +986,15 @@ graph TD
 - [x] Parity: 0 differences; `/simplify` run; architecture-reviewer passed
 
 ### F12. Settlement Screen
-- [ ] The header shows the current balance in each currency with its direction (owes you / you owe / settled), a currency counting as settled when it rounds to 0.00
-- [ ] Edit changes description, note, date, paid by, amount and converted value without recalculating it; the currency cannot change
-- [ ] Settlement entries appear in the account transaction rows and F16's All transactions with their own currency; the footer totals them per currency
-- [ ] Add entry asks for currency only on a 2-currency account and saves with the converted value at 2 decimals; a converted value rounding to 0.00 or a missing rate saves it empty with a warning naming the currency
-- [ ] Settle pre-fills paid by, amount and, when the other currency points the same way, the converted value, so both totals round to zero after saving; it shows the implied rate as "1 GBP = R$x"; with opposite directions the confirmation states what remains
-- [ ] Editing a Settle value so totals do not reach zero shows the leftover in the confirmation
-- [ ] Settle is disabled on a settled account
-- [ ] Settlement screen states, keyboard use and narrow layout pass the review checklist
-- [ ] Parity: 0 differences and Settlement screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] The header shows the current balance in each currency with its direction (owes you / you owe / settled), a currency counting as settled when it rounds to 0.00 (test: `SettlementScreenAcceptanceTests.AccountDetail_Settlement_ReturnsCurrentBalancesPerCurrencyWhateverTheMonth`, `AccountHeader.test.tsx` "[AC P60-F12-settlement-screen-01] shows the current balance per currency with who owes whom, Settled when it rounds to 0.00")
+- [x] Edit changes description, note, date, paid by, amount and converted value without recalculating it; the currency cannot change (test: `SettlementScreenAcceptanceTests.EditEntry_ChangesDetailsAndValues_KeepsCurrencyAndDoesNotRecalculateTheConvertedValue`, `SettlementEntryForm.test.tsx` "[AC P60-F12-settlement-screen-02] edits every field but the currency, which reads as text")
+- [x] Settlement entries appear in the account transaction rows and F16's All transactions with their own currency; the footer totals them per currency (test: `SettlementScreenAcceptanceTests.Transactions_SettlementEntries_AreOneRowEachInTheirOwnCurrency_OnTheAccountAndInMonthTransactions`, `MonthTransactionsGrid.test.tsx`, `monthTransactionTotals.test.ts` and `AccountTransactionsGrid.test.tsx` [AC P60-F12-settlement-screen-03] cases)
+- [x] Add entry asks for currency only on a 2-currency account and saves with the converted value at 2 decimals; a converted value rounding to 0.00 or a missing rate saves it empty with a warning naming the currency (test: `SettlementScreenAcceptanceTests.AddEntry_TwoCurrencies_StoresConvertedValueAtTheDateRateToTwoDecimals`, `…AddEntry_OneCurrency_NeedsNoCurrencyAndStoresNoConvertedValue`, `…AddEntry_ConvertedRoundsToZero_SavesItEmptyWithWarning`, `…AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `SettlementEntryForm.test.tsx` [AC P60-F12-settlement-screen-04] cases)
+- [x] Settle pre-fills paid by, amount and, when the other currency points the same way, the converted value, so both totals round to zero after saving; it shows the implied rate as "1 GBP = R$x"; with opposite directions the confirmation states what remains (test: `SettlementScreenAcceptanceTests.Settle_PrefilledValues_LeaveEveryCurrencySettled`, `useSettlementEntryForm.test.ts` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-05] cases)
+- [x] Editing a Settle value so totals do not reach zero shows the leftover in the confirmation (test: `SettlementScreenAcceptanceTests.Settle_EditedValues_SaveAndLeaveTheRemainder`, `useSettlementEntryForm.test.ts` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-06] cases)
+- [x] Settle is disabled on a settled account (test: `SettlementScreenAcceptanceTests.AccountDetail_SettledAccount_DisablesSettleWithNothingToSettle`, `…Settle_SettledAccount_Returns400NothingToSettle`, `AccountActionBar.test.tsx` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-07] cases)
+- [x] Settlement screen states, keyboard use and narrow layout pass the review checklist (test: `SettlementEntryForm.test.tsx` and `AccountScreenPage.test.tsx` [AC P60-F12-settlement-screen-08] cases; ui-reviewer; browser check at 320 px)
+- [x] Parity: 0 differences and Settlement screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F13. Consolidated Navigation and Retirement
 - [ ] Opening CashFlow lands on Accounts; the menus match the F13 lists
@@ -1040,11 +1040,11 @@ graph TD
 - [x] Card (F07), pot and Pots account (F09) and Settlement (F11) balances come from the F02 shared balance calculation; no other balance code remains
 - [x] The F02 architecture test passes with the Credit card, Pots and Settlement templates added by F07, F09 and F11
 - [x] The default group from F04 appears on F05's Accounts page and includes F07's cards after migration
-- [ ] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog
-- [ ] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header, with the shell's allowed-actions rendering extended only to show an action the API returns as disabled, with the API's reason (F12's Settle: "Nothing to settle.")
+- [x] An account created through F06 appears in F05's picker and Accounts page; F07, F09 and F11 accounts are created through the same dialog (test: `AccountHeader.test.tsx` "lists an active Settlement account under Settlement in the picker", F11's Admin tests)
+- [x] F05's account screen shell hosts F08's Statements tab, F10's Pots tab and F12's Settlement header, with the shell's allowed-actions rendering extended only to show an action the API returns as disabled, with the API's reason (F12's Settle: "Nothing to settle.") (test: `AccountScreenPage.test.tsx`, `AccountActionBar.test.tsx` "[AC P60-F12-settlement-screen-07] keeps a disabled action focusable, does not run it, and describes it with its visible reason")
 - [x] F07's card accounts and charge filter give the statement totals F08 pays
 - [x] F09's Pots account category is the category F10's deposit and withdrawal expenses are written in
 - [x] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
 - [x] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
-- [ ] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill
+- [x] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill (test: `SettlementEntryForm.test.tsx`, `useSettlementEntryForm.test.ts`)
 - [ ] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it
