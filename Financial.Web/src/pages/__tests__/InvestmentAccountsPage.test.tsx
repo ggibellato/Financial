@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -63,6 +63,17 @@ describe('InvestmentAccountsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Create Investment Account' }))
     fireEvent.change(await screen.findByLabelText('Source'), { target: { value: 'CreditCard' } })
+    const picker = (await screen.findByLabelText(/^Credit Card/)) as HTMLSelectElement
+
+    expect(Array.from(picker.options).map((option) => option.textContent)).toEqual(['Select card…', 'Platinum Visa 8003'])
+  })
+
+  it('still names an inactive linked card and offers it when editing its account', async () => {
+    getAccountsMock.mockResolvedValue([cardAccount({ id: 'cc1', name: 'Platinum Visa 8003', isActive: false })])
+    render(<InvestmentAccountsPage />)
+    const row = (await screen.findByText('Platinum Visa 8003')).closest('tr') as HTMLElement
+
+    fireEvent.click(within(row).getAllByRole('button')[0])
     const picker = (await screen.findByLabelText(/^Credit Card/)) as HTMLSelectElement
 
     expect(Array.from(picker.options).map((option) => option.textContent)).toEqual(['Select card…', 'Platinum Visa 8003'])

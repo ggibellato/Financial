@@ -42,6 +42,13 @@ public class AccountQueryServiceTests
         _sut = new AccountQueryService(_repository, TestClock.At(new DateTimeOffset(2026, 11, 15, 12, 0, 0, TimeSpan.Zero)), _tracer, _logger);
     }
 
+    private CardStatement AmexStatement(int month, DateOnly? dueDate)
+    {
+        var statement = CardStatement.Create(_amex, 2026, month);
+        statement.SetDueDate(dueDate);
+        return statement;
+    }
+
     [Fact]
     public void GetAccounts_MixedCaseNames_ListsEveryAccountByNameIgnoringCase()
     {
@@ -95,13 +102,6 @@ public class AccountQueryServiceTests
             accounts.Single(account => account.Id == _amex.Id).DueDate.Should().Be(new DateOnly(2026, 10, 25));
             accounts.Single(account => account.Id == _barclays.Id).DueDate.Should().BeNull();
         }
-    }
-
-    private CardStatement AmexStatement(int month, DateOnly? dueDate)
-    {
-        var statement = CardStatement.Create(_amex, 2026, month);
-        statement.SetDueDate(dueDate);
-        return statement;
     }
 
     [Fact]
