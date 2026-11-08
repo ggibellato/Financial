@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { Button, Field, Input, MessageBar, MessageBarBody, Spinner, Text } from '@fluentui/react-components'
-import { dueDateRangeOf, type DueDateFormState, type StatementDueDateForm as DueDateFormHandle } from '../hooks/useStatementDueDateForm'
+import { dueDateRangeOf, type DueDateFormState, type StatementDueDateFormHandle } from '../hooks/useStatementDueDateForm'
 import { formatLongMonthYear } from '../utils/formatters'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface StatementDueDateFormProps {
   form: DueDateFormState
-  dueDateForm: DueDateFormHandle
+  dueDateForm: StatementDueDateFormHandle
   onCancel: () => void
 }
 
@@ -37,7 +37,7 @@ export default function StatementDueDateForm({ form, dueDateForm, onCancel }: St
           {formatLongMonthYear(statement.year, statement.month)} due date
         </Text>
         {error && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{error}</MessageBarBody>
           </MessageBar>
         )}
@@ -50,14 +50,20 @@ export default function StatementDueDateForm({ form, dueDateForm, onCancel }: St
           <Button type="submit" appearance="primary" disabled={isSaving} icon={pendingAction === 'save' ? <Spinner size="tiny" /> : undefined}>
             {pendingAction === 'save' ? 'Saving...' : 'Save due date'}
           </Button>
-          {statement.dueDate && (
-            <Button appearance="secondary" disabled={isSaving} icon={pendingAction === 'clear' ? <Spinner size="tiny" /> : undefined} onClick={clear}>
-              {pendingAction === 'clear' ? 'Clearing...' : 'Clear due date'}
-            </Button>
-          )}
           <Button appearance="secondary" onClick={onCancel}>
             Cancel
           </Button>
+          {statement.dueDate && (
+            <Button
+              className={styles.deleteAction}
+              appearance="primary"
+              disabled={isSaving}
+              icon={pendingAction === 'clear' ? <Spinner size="tiny" /> : undefined}
+              onClick={clear}
+            >
+              {pendingAction === 'clear' ? 'Clearing...' : 'Clear due date'}
+            </Button>
+          )}
         </div>
       </fieldset>
     </form>

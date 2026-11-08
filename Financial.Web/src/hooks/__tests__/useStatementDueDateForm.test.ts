@@ -130,6 +130,20 @@ describe('useStatementDueDateForm', () => {
     expect(onSaved).not.toHaveBeenCalled()
   })
 
+  it('leaves a form reopened on another month alone when the earlier request settles', async () => {
+    let rejectSave: (reason: unknown) => void = () => {}
+    setStatementDueDateMock.mockReturnValue(new Promise((_, reject) => { rejectSave = reject }))
+    const { result } = renderForm()
+    act(() => result.current.clear())
+    act(() => result.current.close())
+    act(() => result.current.open(NOVEMBER_UNSTORED))
+
+    await act(async () => rejectSave(new ApiError('Refused.', 400)))
+
+    expect(result.current.form?.statement).toBe(NOVEMBER_UNSTORED)
+    expect(result.current.form?.error).toBeNull()
+  })
+
   it('says so on a network failure', async () => {
     setStatementDueDateMock.mockRejectedValue(new ApiError('Failed to fetch', NETWORK_FAILURE_STATUS))
     const { result } = renderForm()

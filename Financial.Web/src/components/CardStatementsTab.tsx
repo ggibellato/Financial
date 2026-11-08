@@ -148,7 +148,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
           Pay {monthOf(payForm.statement)} statement
         </Text>
         {payForm.error && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{payForm.error}</MessageBarBody>
           </MessageBar>
         )}
@@ -244,6 +244,8 @@ export default function CardStatementsTab({
       openForm()
     })
 
+  const isFormSaving = (payForm?.isSaving ?? false) || Boolean(dueDateForm.form?.pendingAction)
+
   const isViewed = (statement: AccountStatementDto) => statement.year === viewedYear && statement.month === viewedMonth
 
   return (
@@ -328,7 +330,7 @@ export default function CardStatementsTab({
                             <div className="data-table__actions-cell">
                               {statement.isPaid ? (
                                 isStoredStatement(statement) && (
-                                  <Button appearance="primary" aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
+                                  <Button appearance="primary" aria-label={`Unmark ${month} statement`} disabled={isFormSaving} onClick={() => requestUnmark(statement)}>
                                     Unmark
                                   </Button>
                                 )
@@ -338,14 +340,16 @@ export default function CardStatementsTab({
                                     <Button
                                       appearance="primary"
                                       aria-label={`Pay ${month} statement`}
+                                      disabled={isFormSaving}
                                       onClick={(event) => openFormFrom(event.currentTarget, () => openPayForm(statement))}
                                     >
                                       Pay
                                     </Button>
                                   )}
                                   <Button
-                                    appearance="secondary"
+                                    appearance="primary"
                                     aria-label={`Set the ${month} due date`}
+                                    disabled={isFormSaving}
                                     onClick={(event) => openFormFrom(event.currentTarget, () => dueDateForm.open(statement))}
                                   >
                                     Due date

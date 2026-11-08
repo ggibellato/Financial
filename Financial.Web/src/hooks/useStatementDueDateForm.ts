@@ -44,11 +44,13 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
     apiClient
       .setStatementDueDate(cardId, current.statement.year, current.statement.month, { dueDate })
       .then(() => {
-        setForm(null)
+        setForm((latest) => (latest?.statement === current.statement ? null : latest))
         onSaved(dueDate === null ? 'Due date cleared' : 'Due date saved')
       })
       .catch((err: unknown) => {
-        setForm((latest) => latest && { ...latest, pendingAction: null, error: getSaveErrorMessage(err, 'Failed to save the due date') })
+        const error = getSaveErrorMessage(err, 'Failed to save the due date')
+        setForm((latest) => (latest?.statement === current.statement ? { ...latest, pendingAction: null, error } : latest))
+        setFailedSubmits((count) => count + 1)
       })
   }
 
@@ -80,4 +82,4 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
   }
 }
 
-export type StatementDueDateForm = ReturnType<typeof useStatementDueDateForm>
+export type StatementDueDateFormHandle = ReturnType<typeof useStatementDueDateForm>
