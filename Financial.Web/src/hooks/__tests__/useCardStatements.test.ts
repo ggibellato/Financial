@@ -90,11 +90,11 @@ describe('useCardStatements', () => {
     act(() => result.current.openPayForm(OCTOBER))
 
     expect(result.current.payForm).toMatchObject({ bankId: '', date: '2026-10-15' })
-    expect(result.current.isPayFormDirty).toBe(false)
+    expect(result.current.isFormDirty).toBe(false)
 
     act(() => result.current.setPayField('bankId', 'barclays'))
 
-    expect(result.current.isPayFormDirty).toBe(true)
+    expect(result.current.isFormDirty).toBe(true)
   })
 
   it('asks for a bank and refuses a future date without calling the API', async () => {

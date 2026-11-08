@@ -4,6 +4,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto, BankDto } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
+import { useStatementDueDateForm } from './useStatementDueDateForm'
 
 export const STATEMENTS_LOAD_ERROR = 'Unable to load the statements'
 export const PAYERS_LOAD_ERROR = 'Unable to load the banks'
@@ -61,10 +62,19 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
   const [failedSubmit, setFailedSubmit] = useState<{ firstInvalidField: PayStatementField } | null>(null)
   const [formsCardId, setFormsCardId] = useState(cardId)
 
+  const afterSave = (message: string) => {
+    setSavedCount((count) => count + 1)
+    void statements.refresh()
+    onChanged(message)
+  }
+
+  const dueDateForm = useStatementDueDateForm(cardId, afterSave)
+
   if (formsCardId !== cardId) {
     setFormsCardId(cardId)
     setPayForm(null)
     setUnmark(null)
+    dueDateForm.close()
   }
 
   const openPayForm = (statement: StoredStatement) => {
@@ -74,10 +84,9 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
 
   const closePayForm = () => setPayForm(null)
 
-  const afterSave = (message: string) => {
-    setSavedCount((count) => count + 1)
-    void statements.refresh()
-    onChanged(message)
+  const closeForms = () => {
+    closePayForm()
+    dueDateForm.close()
   }
 
   const refreshOnConflict = (err: unknown) => {
@@ -142,9 +151,10 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     payForm,
     savedCount,
     failedSubmit,
-    isPayFormDirty: payForm !== null && (payForm.bankId !== '' || payForm.date !== todayIsoDate()),
+    isFormDirty: dueDateForm.isDirty || (payForm !== null && (payForm.bankId !== '' || payForm.date !== todayIsoDate())),
+    dueDateForm,
     openPayForm,
-    closePayForm,
+    closeForms,
     setPayField,
     submitPayForm,
     unmark,

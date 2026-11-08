@@ -57,6 +57,7 @@ const {
   getMensaisBillsMock,
   markMensaisBillPaidMock,
   getAccountStatementsMock,
+  setStatementDueDateMock,
   markCardStatementPaidMock,
   unmarkCardStatementPaidMock,
   moveChargeToStatementMock,
@@ -102,6 +103,7 @@ const {
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
+  setStatementDueDateMock: vi.fn<FinancialApiClient['setStatementDueDate']>(),
   markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
   unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
   moveChargeToStatementMock: vi.fn<FinancialApiClient['moveChargeToStatement']>(),
@@ -147,6 +149,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getMensaisBills: getMensaisBillsMock,
     markMensaisBillPaid: markMensaisBillPaidMock,
     getAccountStatements: getAccountStatementsMock,
+    setStatementDueDate: setStatementDueDateMock,
     markCardStatementPaid: markCardStatementPaidMock,
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
     moveChargeToStatement: moveChargeToStatementMock,
@@ -377,6 +380,7 @@ beforeEach(() => {
   getMensaisBillsMock.mockReset().mockResolvedValue(BILLS)
   markMensaisBillPaidMock.mockReset()
   getAccountStatementsMock.mockReset().mockResolvedValue(CARD_STATEMENTS)
+  setStatementDueDateMock.mockReset().mockResolvedValue(undefined)
   markCardStatementPaidMock.mockReset()
   unmarkCardStatementPaidMock.mockReset()
   moveChargeToStatementMock.mockReset()
@@ -2885,6 +2889,43 @@ describe('AccountScreenPage card screen', () => {
 
     expect(await screen.findByRole('tab', { name: 'Transactions', selected: true })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Pay statement' })).not.toBeInTheDocument()
+  })
+
+  it('saves a due date from the Statements tab, shows the toast and reloads the statements', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+
+    await user.click(await screen.findByRole('button', { name: 'Set the October 2026 due date' }))
+    fireEvent.change(screen.getByLabelText(/^Due date/), { target: { value: '2026-10-25' } })
+    await user.click(screen.getByRole('button', { name: 'Save due date' }))
+
+    expect(setStatementDueDateMock).toHaveBeenCalledWith(AMEX_ID, 2026, 10, { dueDate: '2026-10-25' })
+    expect(await screen.findByText('Due date saved')).toBeInTheDocument()
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+  })
+
+  it('asks before a tab change discards an edited due date', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+
+    await user.click(await screen.findByRole('button', { name: 'Set the October 2026 due date' }))
+    fireEvent.change(screen.getByLabelText(/^Due date/), { target: { value: '2026-10-25' } })
+    await user.click(screen.getByRole('tab', { name: 'Transactions' }))
+    await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
+
+    expect(await screen.findByRole('tab', { name: 'Transactions', selected: true })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Save due date' })).not.toBeInTheDocument()
+  })
+
+  it('keeps one form open: opening Pay closes an untouched due-date form', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`)
+
+    await user.click(await screen.findByRole('button', { name: 'Set the October 2026 due date' }))
+    await user.click(screen.getByRole('button', { name: 'Pay October 2026 statement' }))
+
+    expect(screen.queryByRole('button', { name: 'Save due date' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pay statement' })).toBeInTheDocument()
   })
 
   it('shows no Pay or Unmark on an inactive card', async () => {

@@ -1,9 +1,26 @@
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/apiError'
+import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto } from '../../api/types'
-import type { CardStatements, StoredStatement } from '../../hooks/useCardStatements'
-import { render, screen, within } from '../../test/renderWithFluent'
+import { useCardStatements, type CardStatements, type StoredStatement } from '../../hooks/useCardStatements'
+import type { DueDateFormState, StatementDueDateFormHandle } from '../../hooks/useStatementDueDateForm'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import CardStatementsTab from '../CardStatementsTab'
+
+const { getAccountStatementsMock, getBanksMock, setStatementDueDateMock } = vi.hoisted(() => ({
+  getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
+  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  setStatementDueDateMock: vi.fn<FinancialApiClient['setStatementDueDate']>(),
+}))
+
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: {
+    getAccountStatements: getAccountStatementsMock,
+    getBanks: getBanksMock,
+    setStatementDueDate: setStatementDueDateMock,
+  } as Partial<FinancialApiClient>,
+}))
 
 const NOVEMBER: AccountStatementDto = {
   id: null, year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null,
@@ -16,6 +33,14 @@ const SEPTEMBER: StoredStatement = {
 }
 const CARRYING: AccountStatementDto = {
   id: 's-aug', year: 2026, month: 8, total: -35, creditIn: 12.5, outstandingTotal: 0, creditCarried: 47.5, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null,
+}
+
+function dueDateHandle(overrides: Partial<StatementDueDateFormHandle> = {}): StatementDueDateFormHandle {
+  return { form: null, failedSubmits: 0, isDirty: false, open: vi.fn(), close: vi.fn(), setDate: vi.fn(), save: vi.fn(), clear: vi.fn(), ...overrides }
+}
+
+function dueDateFormState(overrides: Partial<DueDateFormState> = {}): DueDateFormState {
+  return { statement: { ...OCTOBER, dueDate: '2026-10-25' }, date: '2026-10-25', pendingAction: null, error: null, dateError: undefined, ...overrides }
 }
 
 function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements {
@@ -34,9 +59,10 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
     payForm: null,
     savedCount: 0,
     failedSubmit: null,
-    isPayFormDirty: false,
+    isFormDirty: false,
+    dueDateForm: dueDateHandle(),
     openPayForm: vi.fn(),
-    closePayForm: vi.fn(),
+    closeForms: vi.fn(),
     setPayField: vi.fn(),
     submitPayForm: vi.fn(),
     unmark: null,
@@ -126,7 +152,7 @@ describe('CardStatementsTab', () => {
   })
 
   it('shows no empty Actions label on a row with no action', () => {
-    renderTab({ statements: [NOVEMBER] })
+    renderTab({ statements: [NOVEMBER] }, false)
 
     expect(screen.queryByText(/^Actions/)).not.toBeInTheDocument()
   })
@@ -196,7 +222,7 @@ describe('CardStatementsTab', () => {
     renderTab({}, false)
 
     expect(screen.queryByRole('button', { name: /^(Pay|Unmark) / })).not.toBeInTheDocument()
-    expect(screen.getByText("This card is inactive, so its statements can't be paid or unmarked here.")).toBeInTheDocument()
+    expect(screen.getByText("This card is inactive, so its statements can't be paid, unmarked or given a due date here.")).toBeInTheDocument()
   })
 
   it('opens Pay only through the discard guard', async () => {
@@ -295,7 +321,7 @@ describe('CardStatementsTab', () => {
 
     expect(statements.setPayField).toHaveBeenCalledWith('bankId', 'barclays')
     expect(statements.submitPayForm).toHaveBeenCalled()
-    expect(statements.closePayForm).toHaveBeenCalled()
+    expect(statements.closeForms).toHaveBeenCalled()
   })
 
   it('asks before unmarking and shows the reason when unmark fails', async () => {
@@ -303,5 +329,149 @@ describe('CardStatementsTab', () => {
 
     expect(await screen.findByText('Unmark September 2026 as paid? The payment will be deleted.')).toBeInTheDocument()
     expect(screen.getByText('The payment for this statement was changed elsewhere. Reload and try again.')).toBeInTheDocument()
+  })
+
+  describe('due date', () => {
+    const IN_MONTH: StoredStatement = { ...OCTOBER, dueDate: '2026-10-25' }
+
+    beforeEach(() => {
+      getAccountStatementsMock.mockReset().mockResolvedValue([IN_MONTH])
+      getBanksMock.mockReset().mockResolvedValue([])
+      setStatementDueDateMock.mockReset().mockResolvedValue(undefined)
+    })
+
+    function RealTab({ onChanged }: { onChanged: (message: string) => void }) {
+      return tabElement(useCardStatements('card-amex', onChanged), true)
+    }
+
+    it("[AC P60-F13-consolidated-navigation-and-retirement-03] sets and clears a statement's due date", async () => {
+      const onChanged = vi.fn()
+      render(<RealTab onChanged={onChanged} />)
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Set the October 2026 due date' }))
+      expect(screen.getByRole('heading', { name: 'October 2026 due date' })).toBeInTheDocument()
+      expect(screen.getByLabelText(/^Due date/)).toHaveFocus()
+      fireEvent.change(screen.getByLabelText(/^Due date/), { target: { value: '2026-10-20' } })
+      await userEvent.click(screen.getByRole('button', { name: 'Save due date' }))
+
+      expect(setStatementDueDateMock).toHaveBeenCalledWith('card-amex', 2026, 10, { dueDate: '2026-10-20' })
+      await waitFor(() => expect(onChanged).toHaveBeenCalledWith('Due date saved'))
+      await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+      expect(screen.queryByRole('button', { name: 'Save due date' })).not.toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Statements' })).toHaveFocus()
+
+      await userEvent.click(screen.getByRole('button', { name: 'Set the October 2026 due date' }))
+      await userEvent.click(screen.getByRole('button', { name: 'Clear due date' }))
+
+      expect(setStatementDueDateMock).toHaveBeenLastCalledWith('card-amex', 2026, 10, { dueDate: null })
+      await waitFor(() => expect(onChanged).toHaveBeenCalledWith('Due date cleared'))
+    })
+
+    it('offers Due date on Unpaid and Nothing due rows, stored or not, and never on a Paid row', () => {
+      renderTab({ statements: [NOVEMBER, OCTOBER, SEPTEMBER, CARRYING, { ...OCTOBER, id: null, month: 7 }] })
+
+      expect(screen.getByRole('button', { name: 'Set the November 2026 due date' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Set the October 2026 due date' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Set the August 2026 due date' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Set the July 2026 due date' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Set the September 2026 due date' })).not.toBeInTheDocument()
+    })
+
+    it('offers no Due date on an inactive card or a card with no rows', () => {
+      const { rerenderWith } = renderTab({}, false)
+      expect(screen.queryByRole('button', { name: /due date$/ })).not.toBeInTheDocument()
+
+      rerenderWith({ statements: [] })
+      expect(screen.getByText('No statements yet')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: /due date$/ })).not.toBeInTheDocument()
+    })
+
+    it('opens only through the discard guard', async () => {
+      const guardChange = vi.fn()
+      const dueDateForm = dueDateHandle()
+      renderTab({ dueDateForm }, true, guardChange)
+
+      await userEvent.click(screen.getByRole('button', { name: 'Set the October 2026 due date' }))
+
+      expect(guardChange).toHaveBeenCalledTimes(1)
+      expect(dueDateForm.open).not.toHaveBeenCalled()
+    })
+
+    it('limits the field to the month and offers Clear only when the row has a date', () => {
+      const { rerenderWith } = renderTab({ dueDateForm: dueDateHandle({ form: dueDateFormState() }) })
+
+      expect(screen.getByLabelText(/^Due date/)).toHaveAttribute('min', '2026-10-01')
+      expect(screen.getByLabelText(/^Due date/)).toHaveAttribute('max', '2026-10-31')
+      expect(screen.getByRole('button', { name: 'Clear due date' })).toBeInTheDocument()
+
+      rerenderWith({ dueDateForm: dueDateHandle({ form: dueDateFormState({ statement: { ...OCTOBER, dueDate: null }, date: '' }) }) })
+      expect(screen.queryByRole('button', { name: 'Clear due date' })).not.toBeInTheDocument()
+    })
+
+    async function openRealForm() {
+      render(<RealTab onChanged={vi.fn()} />)
+      await userEvent.click(await screen.findByRole('button', { name: 'Set the October 2026 due date' }))
+    }
+
+    it('shows the validation message and moves focus to the field after a failed submit', async () => {
+      await openRealForm()
+      fireEvent.change(screen.getByLabelText(/^Due date/), { target: { value: '2026-11-01' } })
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save due date' }))
+
+      expect(screen.getByText('The due date must be in October 2026.')).toBeInTheDocument()
+      expect(screen.getByLabelText(/^Due date/)).toHaveFocus()
+      expect(setStatementDueDateMock).not.toHaveBeenCalled()
+    })
+
+    it('announces a server error in the form, keeps the value and returns focus to the field', async () => {
+      setStatementDueDateMock.mockRejectedValue(new ApiError('Amex is inactive.', 400))
+      await openRealForm()
+      fireEvent.change(screen.getByLabelText(/^Due date/), { target: { value: '2026-10-20' } })
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save due date' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('Amex is inactive.')
+      expect(screen.getByLabelText(/^Due date/)).toHaveValue('2026-10-20')
+      expect(screen.getByLabelText(/^Due date/)).toHaveFocus()
+    })
+
+    it.each([
+      ['Save due date', 'Saving...'],
+      ['Clear due date', 'Clearing...'],
+    ])('disables the form and the row actions while %s runs', async (action, label) => {
+      setStatementDueDateMock.mockReturnValue(new Promise(() => {}))
+      await openRealForm()
+
+      await userEvent.click(screen.getByRole('button', { name: action }))
+
+      expect(screen.getByRole('button', { name: label })).toBeDisabled()
+      expect(screen.getByLabelText(/^Due date/)).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Set the October 2026 due date' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Pay October 2026 statement' })).toBeDisabled()
+    })
+
+    it('places Clear due date after Cancel, apart from the save pair', () => {
+      renderTab({ dueDateForm: dueDateHandle({ form: dueDateFormState() }) })
+
+      const actions = within(screen.getByRole('form', { name: 'October 2026 due date' })).getAllByRole('button').map((button) => button.textContent)
+      expect(actions).toEqual(['Save due date', 'Cancel', 'Clear due date'])
+    })
+
+    it('saves through the hook, and Cancel closes and returns focus to the row button', async () => {
+      const dueDateForm = dueDateHandle({ form: dueDateFormState() })
+      const statements = renderTab({ dueDateForm })
+
+      await userEvent.click(screen.getByRole('button', { name: 'Save due date' }))
+      expect(dueDateForm.save).toHaveBeenCalled()
+
+      const opener = screen.getByRole('button', { name: 'Set the October 2026 due date' })
+      await userEvent.click(opener)
+      expect(dueDateForm.open).toHaveBeenCalledWith(OCTOBER)
+      await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+      expect(statements.closeForms).toHaveBeenCalled()
+      expect(opener).toHaveFocus()
+    })
   })
 })
