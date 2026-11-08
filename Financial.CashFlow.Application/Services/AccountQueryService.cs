@@ -27,7 +27,8 @@ public sealed class AccountQueryService : IAccountQueryService
         TransferIn,
         TransferOut,
         Adjustment,
-        PotTransaction
+        PotTransaction,
+        SettlementEntry
     }
 
     private readonly ICashFlowRepository _repository;
@@ -306,6 +307,7 @@ public sealed class AccountQueryService : IAccountQueryService
         CardChargeFilter.ChargesFor(month.AllExpenses, card, month.Year, month.Month)
             .Select(charge => ToRow(
                 charge,
+                card,
                 CardRowKind(charge),
                 charge.ChargeDate ?? charge.Date,
                 charge.PaymentSourceAccount?.Name,
@@ -324,6 +326,7 @@ public sealed class AccountQueryService : IAccountQueryService
             Transfer transfer => ToRows(transfer, account, statements),
             BalanceAdjustment adjustment when adjustment.Account.Id == account.Id => [ToRow(adjustment, account)],
             PotTransaction transaction when account.OwnsPot(transaction.Pot.Id) => [ToRow(transaction, account)],
+            SettlementTransaction entry when entry.Account.Id == account.Id => [ToRow(entry, account)],
             _ => []
         };
 
@@ -332,6 +335,7 @@ public sealed class AccountQueryService : IAccountQueryService
         var kind = expense.CreditCard is null ? TransactionKind.Expense : CardRowKind(expense);
         return ToRow(
             expense,
+            account,
             kind,
             expense.Date,
             expense.CreditCard?.Name,
@@ -341,7 +345,7 @@ public sealed class AccountQueryService : IAccountQueryService
     }
 
     private AccountTransactionDTO ToRow(
-        Expense expense, TransactionKind kind, DateOnly date, string? counterpart, decimal? roundUp, bool canEdit, IReadOnlyList<CardStatement> statements) =>
+        Expense expense, Account account, TransactionKind kind, DateOnly date, string? counterpart, decimal? roundUp, bool canEdit, IReadOnlyList<CardStatement> statements) =>
         new()
         {
             Id = expense.Id,
@@ -351,6 +355,7 @@ public sealed class AccountQueryService : IAccountQueryService
             CategoryName = expense.Category.Name,
             Counterpart = counterpart,
             Amount = -expense.Value,
+            Currency = account.Currency.ToString(),
             RoundUp = roundUp,
             CanEdit = canEdit && expense.OperationId is null,
             Operation = OperationLink(expense.OperationId),
@@ -378,6 +383,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = transaction.Description,
         Counterpart = transaction.Pot.Name,
         Amount = transaction.Amount,
+        Currency = account.Currency.ToString(),
         CanEdit = account.IsActive && transaction.OperationId is null && transaction.Income is null,
         Operation = OperationLink(transaction.OperationId),
         Movement = ReserveService.ToDto(transaction, _repository.GetPotTransactions())
@@ -391,6 +397,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = income.Description,
         Counterpart = income.IncomeSource.Name,
         Amount = income.NetValue,
+        Currency = account.Currency.ToString(),
         CanEdit = account.IsActive,
         Income = IncomeService.ToDto(income, IncomeService.DepositExpensesOf(income.Id, _repository))
     };
@@ -423,6 +430,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = paidStatement is null ? TransferDescription(transfer) : PaymentDescription(paidStatement),
         Counterpart = counterpart.Name,
         Amount = amount,
+        Currency = account.Currency.ToString(),
         CanEdit = account.IsActive && !transfer.IsStatementPayment && !transfer.IsCreditRefund,
         Statement = paidStatement is null ? null : ToStatementLink(paidStatement),
         Transfer = AccountTransferService.ToDto(transfer)
@@ -448,8 +456,21 @@ public sealed class AccountQueryService : IAccountQueryService
         Date = adjustment.Date,
         Description = adjustment.Note,
         Amount = adjustment.Delta,
+        Currency = account.Currency.ToString(),
         CanEdit = account.IsActive,
         Adjustment = BalanceAdjustmentService.ToDto(adjustment)
+    };
+
+    private static AccountTransactionDTO ToRow(SettlementTransaction entry, Account account) => new()
+    {
+        Id = entry.Id,
+        Kind = TransactionKind.SettlementEntry.ToString(),
+        Date = entry.Date,
+        Description = entry.Description,
+        Amount = entry.SignedValueIn(entry.Currency)!.Value,
+        Currency = entry.Currency.ToString(),
+        CanEdit = account.IsActive,
+        Settlement = SettlementService.ToDto(entry, null)
     };
 
     internal static AccountDTO ToAccountDto(Account account, bool hasRecords) => new()

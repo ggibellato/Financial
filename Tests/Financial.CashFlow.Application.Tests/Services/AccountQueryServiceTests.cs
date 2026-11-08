@@ -1272,17 +1272,78 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
-    public void GetTransactionsAndMonthTransactions_SettlementEntriesInTheMonth_AddNoRows()
+    public void GetTransactionsAndMonthTransactions_SettlementEntriesInTheMonth_AddOneRowEachInTheirCurrency()
     {
         var mae = MaeWithEntriesIn(2026, 10);
         SeedEveryRecordKind();
-        var barclaysRows = _sut.GetTransactions(_barclays.Id, 2026, 10);
+
+        var rows = _sut.GetTransactions(mae.Id, 2026, 10);
+        var monthRows = _sut.GetMonthTransactions(2026, 10).Where(row => row.AccountId == mae.Id).ToList();
 
         using (new AssertionScope())
         {
-            _sut.GetTransactions(mae.Id, 2026, 10).Should().BeEmpty();
-            _sut.GetMonthTransactions(2026, 10).Should().NotContain(row => row.AccountId == mae.Id);
-            barclaysRows.Should().NotBeEmpty();
+            rows.Select(row => (row.Kind, row.Date.Day, row.Amount, row.Currency)).Should().Equal(
+                ("SettlementEntry", 6, -10m, "GBP"),
+                ("SettlementEntry", 5, 300m, "BRL"));
+            monthRows.Select(row => (row.Transaction.Amount, row.Transaction.Currency, row.AccountCurrency)).Should().Equal(
+                (-10m, "GBP", "BRL"),
+                (300m, "BRL", "BRL"));
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_SettlementEntry_CarriesItsEntryWithNoCategoryOrCounterpart()
+    {
+        var mae = MaeWithEntriesIn(2026, 10);
+
+        var row = _sut.GetTransactions(mae.Id, 2026, 10).Single(candidate => candidate.Date.Day == 5);
+
+        using (new AssertionScope())
+        {
+            row.Description.Should().Be("Paid by you");
+            row.CategoryName.Should().BeNull();
+            row.Counterpart.Should().BeNull();
+            row.RoundUp.Should().BeNull();
+            row.CanEdit.Should().BeTrue();
+            row.Settlement!.Id.Should().Be(row.Id);
+            row.Settlement.PaidBy.Should().Be("You");
+            row.Settlement.Amount.Should().Be(300m);
+            row.Settlement.ConvertedCurrency.Should().Be("GBP");
+            row.Settlement.ConvertedValue.Should().Be(45m);
+            row.Settlement.Warning.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetTransactions_InactiveSettlementAccount_EntryRowsCannotBeEdited()
+    {
+        var pai = TestAccounts.Settlement("Pai", [Currency.GBP], "Pai");
+        _repository.Accounts.Add(pai);
+        _repository.SettlementTransactions.Add(
+            SettlementTransaction.Create(pai, new DateOnly(2026, 10, 5), "Old", null, SettlementPayer.You, Currency.GBP, 5m, null));
+        pai.SetActive(false);
+
+        _sut.GetTransactions(pai.Id, 2026, 10).Should().ContainSingle().Which.CanEdit.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetTransactions_SettlementEntriesOfAnotherAccount_AddNoRows()
+    {
+        MaeWithEntriesIn(2026, 10);
+        SeedEveryRecordKind();
+
+        _sut.GetTransactions(_barclays.Id, 2026, 10).Should().NotBeEmpty().And.NotContain(row => row.Kind == "SettlementEntry");
+    }
+
+    [Fact]
+    public void GetTransactionsAndMonthTransactions_EveryOtherRow_IsInItsAccountCurrency()
+    {
+        SeedEveryRecordKind();
+
+        using (new AssertionScope())
+        {
+            _sut.GetTransactions(_barclays.Id, 2026, 10).Select(row => row.Currency).Distinct().Should().Equal("GBP");
+            _sut.GetMonthTransactions(2026, 10).Should().OnlyContain(row => row.Transaction.Currency == row.AccountCurrency);
         }
     }
 

@@ -8449,6 +8449,7 @@ export interface components {
             canEdit: boolean;
             categoryName?: null | string;
             counterpart?: null | string;
+            currency: string;
             /** Format: date */
             date: string;
             description?: null | string;
@@ -8461,6 +8462,7 @@ export interface components {
             operation?: null | components["schemas"]["AccountTransactionOperationDTO"];
             /** Format: double */
             roundUp?: null | number;
+            settlement?: null | components["schemas"]["SettlementEntryDTO"];
             statement?: null | components["schemas"]["AccountTransactionStatementDTO"];
             transfer?: null | components["schemas"]["AccountTransferDTO"];
         };
