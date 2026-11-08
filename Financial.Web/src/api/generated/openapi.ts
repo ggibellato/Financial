@@ -1045,6 +1045,67 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/accounts/{accountId}/statements/{year}/{month}/due-date": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    accountId: string;
+                    year: number;
+                    month: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/*+json": null | components["schemas"]["StatementDueDateUpdateDTO"];
+                    "application/json": null | components["schemas"]["StatementDueDateUpdateDTO"];
+                    "text/json": null | components["schemas"]["StatementDueDateUpdateDTO"];
+                };
+            };
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+                /** @description Not Found */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/accounts/{id}": {
         parameters: {
             query?: never;
@@ -10184,6 +10245,10 @@ export interface components {
             quantity?: number;
             /** Format: uuid */
             sourceTransactionId: string;
+        };
+        StatementDueDateUpdateDTO: {
+            /** Format: date */
+            dueDate: null | string;
         };
         /** @description One bounded context's current persistence status. */
         SyncStatusDTO: {

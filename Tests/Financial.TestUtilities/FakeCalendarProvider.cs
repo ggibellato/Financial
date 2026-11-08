@@ -119,6 +119,7 @@ public sealed class FakeCalendarProvider : ICalendarProvider
     public List<(string CalendarId, string Title, string Description, DateOnly Date)> CreatedEvents { get; } = new();
     public List<(string CalendarId, string EventId, string Title, string Description, DateOnly Date)> UpdatedEvents { get; } = new();
     public List<(string CalendarId, string EventId)> DeletedEvents { get; } = new();
+    public SemaphoreSlim EventWrites { get; } = new(0);
 
     /// <summary>When set, FindEventIdByTitlePrefixAsync returns this id instead of null,
     /// simulating a matching event already present in the calendar (e.g. a reused one).</summary>
@@ -141,6 +142,7 @@ public sealed class FakeCalendarProvider : ICalendarProvider
         string accessToken, string calendarId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
     {
         CreatedEvents.Add((calendarId, title, description, date));
+        EventWrites.Release();
         if (calendarId == NotFoundCalendarId)
         {
             throw new CalendarNotFoundException("Calendar not found.");
@@ -158,6 +160,7 @@ public sealed class FakeCalendarProvider : ICalendarProvider
         string accessToken, string calendarId, string eventId, string title, string description, DateOnly date, CancellationToken cancellationToken = default)
     {
         UpdatedEvents.Add((calendarId, eventId, title, description, date));
+        EventWrites.Release();
         if (calendarId == NotFoundCalendarId)
         {
             throw new CalendarNotFoundException("Calendar not found.");
@@ -174,6 +177,7 @@ public sealed class FakeCalendarProvider : ICalendarProvider
     public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
     {
         DeletedEvents.Add((calendarId, eventId));
+        EventWrites.Release();
         if (calendarId == NotFoundCalendarId)
         {
             throw new CalendarNotFoundException("Calendar not found.");
