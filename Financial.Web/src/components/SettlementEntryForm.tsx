@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Button, Field, Input, MessageBar, MessageBarBody, Radio, RadioGroup, Spinner, Text } from '@fluentui/react-components'
+import { Button, Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Spinner, Text } from '@fluentui/react-components'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
 import { todayIsoDate } from '../utils/formatters'
 import { PAID_BY_OTHER, PAID_BY_YOU } from './accountActions'
@@ -10,9 +10,13 @@ interface SettlementEntryFormProps {
   onCancel: () => void
 }
 
+const useEntryFormStyles = makeStyles({
+  startsRow: { gridColumnStart: 1 },
+})
+
 export default function SettlementEntryForm({ form, onCancel }: SettlementEntryFormProps) {
   const styles = useFormPanelStyles()
-  const formRef = useRef<HTMLFormElement | null>(null)
+  const entryStyles = useEntryFormStyles()
   const submitRef = useRef<HTMLButtonElement | null>(null)
   const { isEditing, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, setField, submit } = form
   const title = isEditing ? 'Edit entry' : 'Add entry'
@@ -32,14 +36,13 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
 
   return (
     <form
-      ref={formRef}
       className={styles.panel}
       noValidate
       aria-labelledby="settlement-entry-title"
       onSubmit={(event) => {
         event.preventDefault()
         const firstInvalid = submit()
-        if (firstInvalid) formRef.current?.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus()
+        if (firstInvalid) event.currentTarget.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus()
       }}
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
@@ -80,7 +83,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
               </RadioGroup>
             </Field>
           )}
-          <Field label="Description" required className={styles.spanTwo} {...validation('description')}>
+          <Field label="Description" required className={mergeClasses(styles.spanTwo, entryStyles.startsRow)} {...validation('description')}>
             <Input {...inputProps('description')} />
           </Field>
           <Field label={`Amount (${values.currency})`} required {...validation('amount')}>
@@ -96,7 +99,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
           </Field>
         </div>
         <div className={styles.actions}>
-          <Button ref={submitRef} type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
+          <Button ref={submitRef} type="submit" appearance="primary" icon={isSaving ? <Spinner size="tiny" /> : undefined}>
             {isSaving ? 'Saving...' : isEditing ? 'Save' : title}
           </Button>
           <Button appearance="secondary" onClick={onCancel}>

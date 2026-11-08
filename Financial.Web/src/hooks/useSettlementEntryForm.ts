@@ -18,7 +18,6 @@ type SettlementEntryValues = Record<SettlementEntryField, string>
 type SettlementEntryAccount = Pick<AccountDetailDto, 'id' | 'name' | 'currency' | 'currentBalances' | 'otherParticipant'>
 
 interface SettlementEntryFormState {
-  isOpen: boolean
   editingId: string | null
   convertedCurrency: string | null
   values: SettlementEntryValues
@@ -32,7 +31,6 @@ interface SettlementEntryFormState {
 const BLANK_VALUES: SettlementEntryValues = { date: '', paidBy: '', currency: '', description: '', amount: '', convertedValue: '', note: '' }
 
 const CLOSED_STATE: SettlementEntryFormState = {
-  isOpen: false,
   editingId: null,
   convertedCurrency: null,
   values: BLANK_VALUES,
@@ -85,7 +83,7 @@ function afterSave(state: SettlementEntryFormState, saved: SettlementEntryDto): 
 }
 
 export function useSettlementEntryForm(
-  account: SettlementEntryAccount | undefined,
+  account: SettlementEntryAccount | null,
   viewedMonth: { year: number; month: number },
   onSaved: (message: string) => void,
 ) {
@@ -98,12 +96,12 @@ export function useSettlementEntryForm(
   const openAdd = () => {
     if (!account) return
     const opened = { ...BLANK_VALUES, date: getCreateFormDate(DATE_KEY, viewedMonth), currency: account.currency }
-    setState({ ...CLOSED_STATE, isOpen: true, values: opened, openedValues: opened })
+    setState({ ...CLOSED_STATE, values: opened, openedValues: opened })
   }
 
   const openEdit = (entry: SettlementEntryDto) => {
     const opened = valuesOfEntry(entry)
-    setState({ ...CLOSED_STATE, isOpen: true, editingId: entry.id, convertedCurrency: entry.convertedCurrency, values: opened, openedValues: opened })
+    setState({ ...CLOSED_STATE, editingId: entry.id, convertedCurrency: entry.convertedCurrency, values: opened, openedValues: opened })
   }
 
   const cancel = () => setState(CLOSED_STATE)
@@ -143,17 +141,17 @@ export function useSettlementEntryForm(
     request(account.id)
       .then((saved) => {
         setStoredDefault(DATE_KEY, values.date)
-        setState((previous) => (previous.isOpen && previous.isSaving ? afterSave(previous, saved) : previous))
+        setState((previous) => (previous.isSaving ? afterSave(previous, saved) : previous))
         onSaved(isEditing ? 'Entry updated' : 'Entry added')
       })
       .catch((err: unknown) => {
-        setState((previous) => ({ ...previous, isSaving: false, saveError: getSaveErrorMessage(err, 'Failed to save the entry') }))
+        setState((previous) => (previous.isSaving ? { ...previous, isSaving: false, saveError: getSaveErrorMessage(err, 'Failed to save the entry') } : previous))
       })
     return null
   }
 
   return {
-    isOpen: state.isOpen,
+    isOpen: state.openedValues !== null,
     isEditing,
     values,
     currencies,
@@ -164,7 +162,7 @@ export function useSettlementEntryForm(
     saveError: state.saveError,
     fieldErrors: state.fieldErrors,
     warning: state.warning,
-    isDirty: state.isOpen && hasChangedFields(values, state.openedValues, VALUE_FIELDS),
+    isDirty: hasChangedFields(values, state.openedValues, VALUE_FIELDS),
     openAdd,
     openEdit,
     cancel,

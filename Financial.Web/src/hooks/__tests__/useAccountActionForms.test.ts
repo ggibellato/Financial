@@ -8,7 +8,8 @@ import { pinDate } from '../../test-utils/pinDate'
 import type { AccountFormOptions } from '../useAccountFormOptions'
 import { useAccountActionForms } from '../useAccountActionForms'
 
-const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMock } = vi.hoisted(() => ({
+const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMock, updateSettlementEntryMock } = vi.hoisted(() => ({
+  updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -17,6 +18,7 @@ const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMoc
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
+    updateSettlementEntry: updateSettlementEntryMock,
     createExpense: createExpenseMock,
     createIncome: createIncomeMock,
     getMensaisBills: getMensaisBillsMock,
@@ -228,6 +230,20 @@ describe('useAccountActionForms', () => {
       act(() => result.current.discardPrompt.discard())
       expect(change).toHaveBeenCalledTimes(1)
       expect(result.current.settlementEntryForm.isOpen).toBe(false)
+    })
+
+    it('keeps an edit showing a warning open when its row left the viewed month', async () => {
+      updateSettlementEntryMock.mockResolvedValue({ ...ENTRY_ROW.settlement!, warning: 'The BRL value rounds to 0.00, so it was left empty.' })
+      const { result } = renderSettlementForms()
+      act(() => result.current.openRowEdit(ENTRY_ROW, openerButton()))
+
+      act(() => {
+        result.current.settlementEntryForm.submit()
+      })
+      await waitFor(() => expect(result.current.settlementEntryForm.warning).not.toBeNull())
+      act(() => result.current.closeFormOfRemovedRow([]))
+
+      expect(result.current.settlementEntryForm.isOpen).toBe(true)
     })
 
     it('closes the edit when its row disappears after a refresh', () => {

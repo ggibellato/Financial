@@ -132,7 +132,7 @@ export function useAccountActionForms(
   const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
   const depositForm = usePotDepositForm(hasPots ? currentAccountOption : undefined, viewedMonth, () => saved('Deposit saved'))
   const withdrawalForm = usePotWithdrawalForm(accounts, options.categories, viewedMonth, () => saved('Withdrawal saved'))
-  const settlementEntryForm = useSettlementEntryForm(currentAccount ?? undefined, viewedMonth, saved)
+  const settlementEntryForm = useSettlementEntryForm(currentAccount, viewedMonth, saved)
   const [isManagePotsOpen, setIsManagePotsOpen] = useState(false)
 
   const openers: Record<AccountFormAction, () => void> = {
@@ -329,7 +329,7 @@ export function useAccountActionForms(
   }
 
   const closeFormOfRemovedRow = (rows: readonly AccountTransactionDto[]) => {
-    if (editingRowKey && !isOperationRowKey(editingRowKey) && !rows.some((row) => rowKey(row) === editingRowKey)) closeActiveForm()
+    if (editingRowKey && !isOperationRowKey(editingRowKey) && !settlementEntryForm.warning && !rows.some((row) => rowKey(row) === editingRowKey)) closeActiveForm()
   }
 
   const guardChange = (change: () => void) =>

@@ -123,7 +123,7 @@ describe('useSettlementEntryForm', () => {
     })
 
     it('does not open without a loaded account', () => {
-      const { result } = renderHook(() => useSettlementEntryForm(undefined, { year: 2026, month: 10 }, vi.fn()))
+      const { result } = renderHook(() => useSettlementEntryForm(null, { year: 2026, month: 10 }, vi.fn()))
 
       act(() => result.current.openAdd())
 
@@ -290,6 +290,21 @@ describe('useSettlementEntryForm', () => {
   })
 
   describe('save failures', () => {
+    it('does not show a failure on a form opened after the failed save was cancelled', async () => {
+      let failSave: (reason: Error) => void = () => {}
+      createSettlementEntryMock.mockReturnValue(new Promise((_, reject) => { failSave = reject }))
+      const { result } = renderForm()
+      act(() => result.current.openAdd())
+      fillValidEntry(result)
+      submit(result)
+
+      act(() => result.current.cancel())
+      act(() => result.current.openAdd())
+      await act(async () => failSave(new Error('Refused.')))
+
+      expect(result.current.saveError).toBeNull()
+    })
+
     it('shows the server message and keeps the values', async () => {
       createSettlementEntryMock.mockRejectedValue(new Error('Mãe is inactive.'))
       const { result, onSaved } = renderForm()
