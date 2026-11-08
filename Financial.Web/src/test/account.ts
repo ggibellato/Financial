@@ -26,6 +26,7 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
     roundUpEnabled: false,
     categoryId: null,
     dueDate: null,
+    replacesPage: null,
     capabilities: BANK_CAPABILITIES,
     ...fields,
   }

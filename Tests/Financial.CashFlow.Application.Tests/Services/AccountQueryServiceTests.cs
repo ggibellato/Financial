@@ -87,6 +87,32 @@ public class AccountQueryServiceTests
     }
 
     [Fact]
+    public void GetAccounts_FirstPotsAndSettlementInFileOrder_ReplaceTheOldPagesEvenWhenInactive()
+    {
+        var inactiveTrips = TestAccounts.Pots("Trips", isActive: false);
+        var reserva = TestAccounts.Pots("Reserva");
+        var tia = TestAccounts.Settlement("Tia", [Currency.GBP], "Tia");
+        tia.SetActive(false);
+        var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
+        _repository.Accounts.AddRange([inactiveTrips, reserva, tia, mae]);
+
+        var accounts = _sut.GetAccounts();
+
+        using (new AssertionScope())
+        {
+            accounts.Single(account => account.Id == inactiveTrips.Id).ReplacesPage.Should().Be("reserva");
+            accounts.Single(account => account.Id == tia.Id).ReplacesPage.Should().Be("controle-mae");
+            accounts.Where(account => account.Id != inactiveTrips.Id && account.Id != tia.Id).Should().OnlyContain(account => account.ReplacesPage == null);
+        }
+    }
+
+    [Fact]
+    public void GetAccounts_WithoutPotsOrSettlementAccounts_ReplaceNoPage()
+    {
+        _sut.GetAccounts().Should().OnlyContain(account => account.ReplacesPage == null);
+    }
+
+    [Fact]
     public void GetAccounts_CardWithDatedStatements_CarriesTheLatestDueDate()
     {
         _repository.Accounts.Add(_amex);
