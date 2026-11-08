@@ -340,6 +340,10 @@ says "Edit from the income" instead of staying empty, and the column uses the
 same `.data-table__col--action-wide` while the month has such a row (user
 decision 2026-11-04).
 
+`CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are a third
+exception: they are named text buttons in `.data-table__col--action-wide`, as
+the P60 F08 and F13 specs define them (user decision 2026-11-08).
+
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
 the identifying/label column does above. A narrow, fixed action column next
