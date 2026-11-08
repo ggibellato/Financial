@@ -303,6 +303,23 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
+    public async Task UpdateAdjustmentAsync_WithAnotherAdjustmentOnTheAccount_KeepsItsDelta()
+    {
+        _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
+        var barclaysId = BankIdOf(_repository, "Barclays");
+        await _sut.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO { Date = new DateOnly(2026, 6, 1), TargetBalance = 150m });
+        var edited = await _sut.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO { Date = new DateOnly(2026, 7, 1), TargetBalance = 130m });
+
+        var result = await _sut.UpdateAdjustmentAsync(barclaysId, edited.Id, new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 200m
+        });
+
+        result.Delta.Should().Be(50m);
+    }
+
+    [Fact]
     public async Task UpdateAdjustmentAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var act = async () => await _sut.UpdateAdjustmentAsync(BankIdOf(_repository, "Barclays"), Guid.NewGuid(), new BalanceAdjustmentUpdateDTO

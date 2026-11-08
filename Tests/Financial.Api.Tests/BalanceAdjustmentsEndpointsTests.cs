@@ -198,6 +198,23 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
         (await response.Content.ReadAsStringAsync()).Should().Contain("Balance adjustment");
     }
 
+    [Fact]
+    public async Task DeleteAdjustment_AdjustmentOfAnotherAccount_ReturnsNotFoundAndKeepsIt()
+    {
+        var created = await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 1),
+            TargetBalance = 100m
+        });
+        var createdAdjustment = await created.Content.ReadFromJsonAsync<BalanceAdjustmentDTO>();
+
+        var response = await Client.DeleteAsync($"/api/v1/financial/accounts/{ChaseId}/adjustments/{createdAdjustment!.Id}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var list = await Client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>($"/api/v1/financial/banks/{BarclaysId}/adjustments");
+        list.Should().Contain(a => a.Id == createdAdjustment.Id);
+    }
+
     [Theory]
     [InlineData("POST", "")]
     [InlineData("PUT", "/8f3b1c1a-2e3a-4b1a-9a7f-900000000001")]
