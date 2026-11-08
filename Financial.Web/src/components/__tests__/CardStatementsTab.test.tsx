@@ -61,7 +61,6 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
     isFormDirty: false,
     dueDateForm: dueDateHandle(),
     openPayForm: vi.fn(),
-    closePayForm: vi.fn(),
     closeForms: vi.fn(),
     setPayField: vi.fn(),
     submitPayForm: vi.fn(),
@@ -321,7 +320,7 @@ describe('CardStatementsTab', () => {
 
     expect(statements.setPayField).toHaveBeenCalledWith('bankId', 'barclays')
     expect(statements.submitPayForm).toHaveBeenCalled()
-    expect(statements.closePayForm).toHaveBeenCalled()
+    expect(statements.closeForms).toHaveBeenCalled()
   })
 
   it('asks before unmarking and shows the reason when unmark fails', async () => {
@@ -438,7 +437,7 @@ describe('CardStatementsTab', () => {
 
     it('saves through the hook, and Cancel closes and returns focus to the row button', async () => {
       const dueDateForm = dueDateHandle({ form: dueDateFormState() })
-      renderTab({ dueDateForm })
+      const statements = renderTab({ dueDateForm })
 
       await userEvent.click(screen.getByRole('button', { name: 'Save due date' }))
       expect(dueDateForm.save).toHaveBeenCalled()
@@ -448,7 +447,7 @@ describe('CardStatementsTab', () => {
       expect(dueDateForm.open).toHaveBeenCalledWith(OCTOBER)
       await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
-      expect(dueDateForm.close).toHaveBeenCalled()
+      expect(statements.closeForms).toHaveBeenCalled()
       expect(opener).toHaveFocus()
     })
   })

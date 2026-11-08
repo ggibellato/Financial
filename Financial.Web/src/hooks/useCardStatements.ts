@@ -154,7 +154,6 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     isFormDirty: dueDateForm.isDirty || (payForm !== null && (payForm.bankId !== '' || payForm.date !== todayIsoDate())),
     dueDateForm,
     openPayForm,
-    closePayForm,
     closeForms,
     setPayField,
     submitPayForm,

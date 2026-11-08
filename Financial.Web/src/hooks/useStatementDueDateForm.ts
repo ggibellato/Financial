@@ -3,15 +3,10 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto } from '../api/types'
 import { formatLongMonthYear, formatMonthInputValue, getSaveErrorMessage, lastDayOfMonthIsoDate } from '../utils/formatters'
 
-export const DUE_DATE_SAVED = 'Due date saved'
-export const DUE_DATE_CLEARED = 'Due date cleared'
-
-type PendingAction = 'save' | 'clear'
-
 export interface DueDateFormState {
   statement: AccountStatementDto
   date: string
-  pendingAction: PendingAction | null
+  pendingAction: 'save' | 'clear' | null
   error: string | null
   dateError: string | undefined
 }
@@ -43,14 +38,14 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
 
   const setDate = (date: string) => setForm((current) => current && { ...current, date, dateError: undefined })
 
-  const send = (current: DueDateFormState, dueDate: string | null, pendingAction: PendingAction, savedMessage: string) => {
+  const send = (current: DueDateFormState, dueDate: string | null) => {
     if (!cardId) return
-    setForm({ ...current, pendingAction, error: null, dateError: undefined })
+    setForm({ ...current, pendingAction: dueDate === null ? 'clear' : 'save', error: null, dateError: undefined })
     apiClient
       .setStatementDueDate(cardId, current.statement.year, current.statement.month, { dueDate })
       .then(() => {
         setForm(null)
-        onSaved(savedMessage)
+        onSaved(dueDate === null ? 'Due date cleared' : 'Due date saved')
       })
       .catch((err: unknown) => {
         setForm((latest) => latest && { ...latest, pendingAction: null, error: getSaveErrorMessage(err, 'Failed to save the due date') })
@@ -65,12 +60,12 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
       setFailedSubmits((count) => count + 1)
       return
     }
-    send(form, form.date, 'save', DUE_DATE_SAVED)
+    send(form, form.date)
   }
 
   const clear = () => {
     if (!form || form.pendingAction) return
-    send(form, null, 'clear', DUE_DATE_CLEARED)
+    send(form, null)
   }
 
   return {

@@ -218,7 +218,7 @@ export default function CardStatementsTab({
   canAct,
   guardChange,
 }: CardStatementsTabProps) {
-  const { statements, isLoading, error, retry, payForm, dueDateForm, savedCount, openPayForm, closePayForm, requestUnmark, unmark, cancelUnmark, confirmUnmark } =
+  const { statements, isLoading, error, retry, payForm, dueDateForm, savedCount, openPayForm, closeForms, requestUnmark, unmark, cancelUnmark, confirmUnmark } =
     cardStatements
   const headingRef = useRef<HTMLHeadingElement | null>(null)
   const viewedRowRef = useRef<HTMLTableRowElement | null>(null)
@@ -233,18 +233,9 @@ export default function CardStatementsTab({
     if (savedCount > 0) headingRef.current?.focus()
   }, [savedCount])
 
-  const returnFocusToOpener = () => {
+  const cancelForm = () => {
+    closeForms()
     if (formOpenerRef.current?.isConnected) formOpenerRef.current.focus()
-  }
-
-  const cancelPayForm = () => {
-    closePayForm()
-    returnFocusToOpener()
-  }
-
-  const cancelDueDateForm = () => {
-    dueDateForm.close()
-    returnFocusToOpener()
   }
 
   const openFormFrom = (button: HTMLButtonElement, openForm: () => void) =>
@@ -269,13 +260,13 @@ export default function CardStatementsTab({
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <>
-          {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelPayForm} />}
+          {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
           {dueDateForm.form && (
             <StatementDueDateForm
               key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
               form={dueDateForm.form}
               dueDateForm={dueDateForm}
-              onCancel={cancelDueDateForm}
+              onCancel={cancelForm}
             />
           )}
           <div className="account-screen__grid-scroll">
@@ -335,28 +326,31 @@ export default function CardStatementsTab({
                         <TableCell className="data-table__col--action-wide">
                           {canAct && (
                             <div className="data-table__actions-cell">
-                              {isStoredStatement(statement) && statement.isPaid && (
-                                <Button appearance="primary" aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
-                                  Unmark
-                                </Button>
-                              )}
-                              {isStoredStatement(statement) && !statement.isPaid && statement.status === UNPAID_STATEMENT_STATUS && (
-                                <Button
-                                  appearance="primary"
-                                  aria-label={`Pay ${month} statement`}
-                                  onClick={(event) => openFormFrom(event.currentTarget, () => openPayForm(statement))}
-                                >
-                                  Pay
-                                </Button>
-                              )}
-                              {!statement.isPaid && (
-                                <Button
-                                  appearance="secondary"
-                                  aria-label={`Set the ${month} due date`}
-                                  onClick={(event) => openFormFrom(event.currentTarget, () => dueDateForm.open(statement))}
-                                >
-                                  Due date
-                                </Button>
+                              {statement.isPaid ? (
+                                isStoredStatement(statement) && (
+                                  <Button appearance="primary" aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
+                                    Unmark
+                                  </Button>
+                                )
+                              ) : (
+                                <>
+                                  {isStoredStatement(statement) && statement.status === UNPAID_STATEMENT_STATUS && (
+                                    <Button
+                                      appearance="primary"
+                                      aria-label={`Pay ${month} statement`}
+                                      onClick={(event) => openFormFrom(event.currentTarget, () => openPayForm(statement))}
+                                    >
+                                      Pay
+                                    </Button>
+                                  )}
+                                  <Button
+                                    appearance="secondary"
+                                    aria-label={`Set the ${month} due date`}
+                                    onClick={(event) => openFormFrom(event.currentTarget, () => dueDateForm.open(statement))}
+                                  >
+                                    Due date
+                                  </Button>
+                                </>
                               )}
                             </div>
                           )}
