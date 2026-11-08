@@ -21,10 +21,8 @@ type SettlementEntryAccount = Pick<AccountDetailDto, 'id' | 'name' | 'currency' 
 
 type CurrencyBalances = SettlementEntryAccount['currentBalances']
 
-type SettlementFormMode = 'add' | 'edit' | 'settle'
-
 interface SettlementEntryFormState {
-  mode: SettlementFormMode
+  isSettling: boolean
   editingId: string | null
   convertedCurrency: string | null
   values: SettlementEntryValues
@@ -39,7 +37,7 @@ interface SettlementEntryFormState {
 const BLANK_VALUES: SettlementEntryValues = { date: '', paidBy: '', currency: '', description: '', amount: '', convertedValue: '', note: '' }
 
 const CLOSED_STATE: SettlementEntryFormState = {
-  mode: 'add',
+  isSettling: false,
   editingId: null,
   convertedCurrency: null,
   values: BLANK_VALUES,
@@ -86,8 +84,8 @@ function validate(values: SettlementEntryValues, asksCurrency: boolean, hasConve
 }
 
 function afterSave(state: SettlementEntryFormState, saved: SettlementEntryDto): SettlementEntryFormState {
-  const isEdit = state.mode === 'edit'
-  if (state.mode === 'settle' || (isEdit && !saved.warning)) return CLOSED_STATE
+  const isEdit = state.editingId !== null
+  if (state.isSettling || (isEdit && !saved.warning)) return CLOSED_STATE
   const values = isEdit ? valuesOfEntry(saved) : { ...state.values, description: '', amount: '', note: '' }
   return { ...state, values, openedValues: values, isSaving: false, warning: saved.warning }
 }
@@ -101,9 +99,8 @@ function penceText(pence: number): string {
 }
 
 function settleFill(balances: CurrencyBalances, currency: string): Pick<SettlementEntryValues, 'paidBy' | 'amount' | 'convertedValue'> {
-  const penceIn = (wanted: string | null) => toPence(balances.find((balance) => balance.currency === wanted)?.balance ?? 0)
-  const outstanding = penceIn(currency)
-  const otherOutstanding = penceIn(otherCurrencyOf(balances, currency))
+  const outstanding = toPence(balances.find((balance) => balance.currency === currency)?.balance ?? 0)
+  const otherOutstanding = toPence(balances.find((balance) => balance.currency !== currency)?.balance ?? 0)
   if (outstanding === 0) return { paidBy: '', amount: '', convertedValue: '' }
   return {
     paidBy: outstanding > 0 ? PAID_BY_OTHER : PAID_BY_YOU,
@@ -144,16 +141,16 @@ function settleOutcomeText(otherParticipant: string, balances: CurrencyBalances,
 }
 
 function impliedRateText(values: SettlementEntryValues, convertedCurrency: string | null): string | null {
+  if (!convertedCurrency) return null
   const paid = { currency: values.currency, value: Number(values.amount) }
-  const converted = { currency: convertedCurrency ?? '', value: Number(values.convertedValue) }
-  if (!convertedCurrency || !(paid.value > 0) || !(converted.value > 0)) return null
+  const converted = { currency: convertedCurrency, value: Number(values.convertedValue) }
+  if (!(paid.value > 0) || !(converted.value > 0)) return null
   const [unit, quoted] = paid.value <= converted.value ? [paid, converted] : [converted, paid]
   return `Implied rate: 1 ${unit.currency} = ${formatCurrency(quoted.value / unit.value, quoted.currency)}`
 }
 
-function savedMessage(mode: SettlementFormMode, warning: string | null): string {
-  if (mode === 'settle') return warning ? `Settlement saved. ${warning}` : 'Settlement saved'
-  return mode === 'edit' ? 'Entry updated' : 'Entry added'
+function settlementSavedMessage(warning: string | null): string {
+  return warning ? `Settlement saved. ${warning}` : 'Settlement saved'
 }
 
 export function useSettlementEntryForm(
@@ -162,11 +159,10 @@ export function useSettlementEntryForm(
   onSaved: (message: string) => void,
 ) {
   const [state, setState] = useState<SettlementEntryFormState>(CLOSED_STATE)
-  const { mode, values, editingId, convertedCurrency, isSaving } = state
+  const { isSettling, values, editingId, convertedCurrency, isSaving } = state
   const balances = account?.currentBalances ?? []
   const currencies = balances.map((balance) => balance.currency)
-  const isEditing = mode === 'edit'
-  const isSettling = mode === 'settle'
+  const isEditing = editingId !== null
   const otherParticipant = account ? settlementCounterparty(account) : ''
   const asksCurrency = !isEditing && currencies.length > 1
 
@@ -178,28 +174,28 @@ export function useSettlementEntryForm(
 
   const openEdit = (entry: SettlementEntryDto) => {
     const opened = valuesOfEntry(entry)
-    setState({ ...CLOSED_STATE, mode: 'edit', editingId: entry.id, convertedCurrency: entry.convertedCurrency, values: opened, openedValues: opened })
+    setState({ ...CLOSED_STATE, editingId: entry.id, convertedCurrency: entry.convertedCurrency, values: opened, openedValues: opened })
   }
 
   const openSettle = () => {
     if (!account) return
     const currency = balances.find((balance) => toPence(balance.balance) !== 0)?.currency ?? account.currency
     const blank = { ...BLANK_VALUES, date: getCreateFormDate(DATE_KEY, viewedMonth), description: SETTLE_DESCRIPTION }
-    const opened = withSettleCurrency({ ...CLOSED_STATE, mode: 'settle', values: blank }, balances, currency)
+    const opened = withSettleCurrency({ ...CLOSED_STATE, isSettling: true, values: blank }, balances, currency)
     setState({ ...opened, openedValues: opened.values })
   }
 
   const cancel = () => setState(CLOSED_STATE)
 
   const setField = (field: SettlementEntryField, value: string) =>
-    setState((state) => {
-      const previous = state.mode === 'settle' && field === 'currency' ? withSettleCurrency(state, balances, value) : state
+    setState((previous) => {
+      const next = previous.isSettling && field === 'currency' ? withSettleCurrency(previous, balances, value) : previous
       return {
-        ...previous,
-        values: { ...previous.values, [field]: value },
+        ...next,
+        values: { ...next.values, [field]: value },
         saveError: null,
         warning: null,
-        fieldErrors: { ...previous.fieldErrors, [field]: undefined },
+        fieldErrors: { ...next.fieldErrors, [field]: undefined },
       }
     })
 
@@ -212,7 +208,7 @@ export function useSettlementEntryForm(
       amount: Number(values.amount),
     }
     const convertedValue = convertedCurrency && values.convertedValue.trim() !== '' ? Number(values.convertedValue) : null
-    if (mode === 'settle') return apiClient.settleAccount(accountId, { ...details, currency: values.currency, convertedValue })
+    if (isSettling) return apiClient.settleAccount(accountId, { ...details, currency: values.currency, convertedValue })
     if (editingId === null) return apiClient.createSettlementEntry(accountId, { ...details, currency: values.currency })
     return apiClient.updateSettlementEntry(accountId, editingId, { ...details, convertedValue })
   }
@@ -223,7 +219,7 @@ export function useSettlementEntryForm(
       .then((saved) => {
         setStoredDefault(DATE_KEY, values.date)
         setState((previous) => (previous.isSaving ? afterSave(previous, saved) : previous))
-        onSaved(savedMessage(mode, saved.warning))
+        onSaved(isSettling ? settlementSavedMessage(saved.warning) : isEditing ? 'Entry updated' : 'Entry added')
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, isSettling ? 'Failed to save the settlement' : 'Failed to save the entry')

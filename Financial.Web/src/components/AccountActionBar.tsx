@@ -10,8 +10,6 @@ interface AccountActionBarProps {
   onAction: (action: AccountFormAction, button: HTMLButtonElement) => void
 }
 
-const NO_DISABLED_REASONS: Readonly<Record<string, string>> = {}
-
 const useActionBarStyles = makeStyles({
   reason: { alignSelf: 'center' },
 })
@@ -23,7 +21,7 @@ export default function AccountActionBar({
   activeAction,
   formAreaId,
   isActionDisabled = () => false,
-  disabledReasons = NO_DISABLED_REASONS,
+  disabledReasons = {},
   onAction,
 }: AccountActionBarProps) {
   const styles = useActionBarStyles()
@@ -36,9 +34,9 @@ export default function AccountActionBar({
         <Button
           key={action}
           appearance="primary"
-          disabled={!disabledReasons[action] && isActionDisabled(action)}
-          disabledFocusable={Boolean(disabledReasons[action])}
-          aria-describedby={disabledReasons[action] ? reasonId(action) : undefined}
+          disabled={!(action in disabledReasons) && isActionDisabled(action)}
+          disabledFocusable={action in disabledReasons}
+          aria-describedby={action in disabledReasons ? reasonId(action) : undefined}
           {...(opensDialog(action)
             ? { 'aria-haspopup': 'dialog' as const }
             : { 'aria-expanded': activeAction === action, 'aria-controls': formAreaId })}
@@ -47,13 +45,14 @@ export default function AccountActionBar({
           {ACTION_LABELS[action]}
         </Button>
       ))}
-      {knownActions
-        .filter((action) => disabledReasons[action])
-        .map((action) => (
-          <Text key={action} id={reasonId(action)} className={styles.reason}>
-            {disabledReasons[action]}
-          </Text>
-        ))}
+      {knownActions.map(
+        (action) =>
+          action in disabledReasons && (
+            <Text key={action} id={reasonId(action)} className={styles.reason}>
+              {disabledReasons[action]}
+            </Text>
+          ),
+      )}
     </div>
   )
 }
