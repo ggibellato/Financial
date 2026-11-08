@@ -1,28 +1,30 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CreditCardCalendarSyncStatusDto, CreditCardDto } from '../../api/types'
+import type { CreditCardCalendarSyncStatusDto } from '../../api/types'
+import { account, cardAccount } from '../../test/account'
 import { useCalendarSyncStatuses } from '../useCalendarSyncStatuses'
 
-const { getCreditCardsMock, getCalendarSyncStatusesMock, resyncCreditCardCalendarMock } = vi.hoisted(() => ({
-  getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
+const { getAccountsMock, getCalendarSyncStatusesMock, resyncCreditCardCalendarMock } = vi.hoisted(() => ({
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getCalendarSyncStatusesMock: vi.fn<FinancialApiClient['getCalendarSyncStatuses']>(),
   resyncCreditCardCalendarMock: vi.fn<FinancialApiClient['resyncCreditCardCalendar']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
-    getCreditCards: getCreditCardsMock,
+    getAccounts: getAccountsMock,
     getCalendarSyncStatuses: getCalendarSyncStatusesMock,
     resyncCreditCardCalendar: resyncCreditCardCalendarMock,
   } as Partial<FinancialApiClient>,
 }))
 
-const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-due', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-10', latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-never-synced', name: 'Nubank', isActive: true, nextInvoiceDueDate: '2026-09-15', latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-no-due-date', name: 'PaypalCredit', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-inactive', name: 'OldCard', isActive: false, nextInvoiceDueDate: '2026-09-01', latestInvoiceDate: null, hasReferences: false },
+const ACCOUNTS = [
+  cardAccount({ id: 'card-due', name: 'BaAmex', dueDate: '2026-09-10' }),
+  cardAccount({ id: 'card-never-synced', name: 'Nubank', dueDate: '2026-09-15' }),
+  cardAccount({ id: 'card-no-due-date', name: 'PaypalCredit', dueDate: null }),
+  cardAccount({ id: 'card-inactive', name: 'OldCard', isActive: false, dueDate: '2026-09-01' }),
+  account({ id: 'bank-with-date', name: 'Barclays', dueDate: '2026-09-20' }),
 ]
 
 const STATUSES: CreditCardCalendarSyncStatusDto[] = [
@@ -31,10 +33,10 @@ const STATUSES: CreditCardCalendarSyncStatusDto[] = [
 
 describe('useCalendarSyncStatuses', () => {
   beforeEach(() => {
-    getCreditCardsMock.mockReset()
+    getAccountsMock.mockReset()
     getCalendarSyncStatusesMock.mockReset()
     resyncCreditCardCalendarMock.mockReset()
-    getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     getCalendarSyncStatusesMock.mockResolvedValue(STATUSES)
   })
 
@@ -50,17 +52,18 @@ describe('useCalendarSyncStatuses', () => {
     ])
   })
 
-  it('excludes inactive cards and cards with no due date', async () => {
+  it('excludes inactive cards, cards with no due date and accounts without statements', async () => {
     const { result } = renderHook(() => useCalendarSyncStatuses())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     const ids = result.current.rows.map((row) => row.creditCardId)
     expect(ids).not.toContain('card-no-due-date')
     expect(ids).not.toContain('card-inactive')
+    expect(ids).not.toContain('bank-with-date')
   })
 
   it('surfaces a fetch error', async () => {
-    getCreditCardsMock.mockRejectedValue(new Error('Network down'))
+    getAccountsMock.mockRejectedValue(new Error('Network down'))
     const { result } = renderHook(() => useCalendarSyncStatuses())
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))

@@ -3,19 +3,20 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import IntegrationsPage from '../IntegrationsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CreditCardCalendarSyncStatusDto, CreditCardDto } from '../../api/types'
+import type { CreditCardCalendarSyncStatusDto } from '../../api/types'
+import { cardAccount } from '../../test/account'
 
 const {
   getCalendarStatusMock,
   disconnectCalendarMock,
-  getCreditCardsMock,
+  getAccountsMock,
   getCalendarSyncStatusesMock,
   resyncCreditCardCalendarMock,
   buildCalendarConnectUrlMock,
 } = vi.hoisted(() => ({
   getCalendarStatusMock: vi.fn<FinancialApiClient['getCalendarStatus']>(),
   disconnectCalendarMock: vi.fn<FinancialApiClient['disconnectCalendar']>(),
-  getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getCalendarSyncStatusesMock: vi.fn<FinancialApiClient['getCalendarSyncStatuses']>(),
   resyncCreditCardCalendarMock: vi.fn<FinancialApiClient['resyncCreditCardCalendar']>(),
   buildCalendarConnectUrlMock: vi.fn<FinancialApiClient['buildCalendarConnectUrl']>(),
@@ -25,7 +26,7 @@ vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getCalendarStatus: getCalendarStatusMock,
     disconnectCalendar: disconnectCalendarMock,
-    getCreditCards: getCreditCardsMock,
+    getAccounts: getAccountsMock,
     getCalendarSyncStatuses: getCalendarSyncStatusesMock,
     resyncCreditCardCalendar: resyncCreditCardCalendarMock,
     buildCalendarConnectUrl: buildCalendarConnectUrlMock,
@@ -50,9 +51,9 @@ const NOT_CONNECTED_STATUS = {
   disconnectReason: null,
 }
 
-const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-synced', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-10', latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-error', name: 'Nubank', isActive: true, nextInvoiceDueDate: '2026-09-15', latestInvoiceDate: null, hasReferences: false },
+const ACCOUNTS = [
+  cardAccount({ id: 'card-synced', name: 'BaAmex', dueDate: '2026-09-10' }),
+  cardAccount({ id: 'card-error', name: 'Nubank', dueDate: '2026-09-15' }),
 ]
 
 const SYNC_STATUSES: CreditCardCalendarSyncStatusDto[] = [
@@ -64,12 +65,12 @@ describe('IntegrationsPage', () => {
   beforeEach(() => {
     getCalendarStatusMock.mockReset()
     disconnectCalendarMock.mockReset()
-    getCreditCardsMock.mockReset()
+    getAccountsMock.mockReset()
     getCalendarSyncStatusesMock.mockReset()
     resyncCreditCardCalendarMock.mockReset()
     buildCalendarConnectUrlMock.mockReset()
     buildCalendarConnectUrlMock.mockReturnValue('https://api.example.com/api/v1/financial/integrations/calendar/connect')
-    getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     getCalendarSyncStatusesMock.mockResolvedValue(SYNC_STATUSES)
     vi.spyOn(window, 'open').mockImplementation(() => null)
   })

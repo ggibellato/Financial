@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { isConflict } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
-import type { AccountStatementDto, BankDto } from '../api/types'
+import type { AccountStatementDto, BankOption } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
+import { billPayingAccounts } from './useAccountFormOptions'
 import { useAsyncResource } from './useAsyncResource'
 import { useStatementDueDateForm } from './useStatementDueDateForm'
 
 export const STATEMENTS_LOAD_ERROR = 'Unable to load the statements'
 export const PAYERS_LOAD_ERROR = 'Unable to load the banks'
 
-const NO_PAYERS: BankDto[] = []
+const NO_PAYERS: BankOption[] = []
 
 export type PayStatementField = 'bankId' | 'date'
 
@@ -55,7 +56,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     STATEMENTS_LOAD_ERROR,
     { initialLoading: cardId !== null, keepDataWhileLoading: true },
   )
-  const payers = useAsyncResource(() => (cardId ? apiClient.getBanks() : null), [cardId], PAYERS_LOAD_ERROR)
+  const payers = useAsyncResource(() => (cardId ? apiClient.getAccounts().then(billPayingAccounts) : null), [cardId], PAYERS_LOAD_ERROR)
   const [payForm, setPayForm] = useState<PayForm | null>(null)
   const [unmark, setUnmark] = useState<UnmarkRequest | null>(null)
   const [savedCount, setSavedCount] = useState(0)

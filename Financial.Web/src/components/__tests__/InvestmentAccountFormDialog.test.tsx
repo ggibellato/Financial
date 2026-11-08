@@ -1,26 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
-import type { CreditCardDto } from '../../api/types'
-import { account, potsAccount } from '../../test/account'
+import { account, cardAccount, potsAccount } from '../../test/account'
 
-const activeCard: CreditCardDto = {
-  id: 'cc1',
-  name: 'Platinum Visa 8003',
-  isActive: true,
-  hasReferences: true,
-  nextInvoiceDueDate: null,
-  latestInvoiceDate: null,
-}
-
-const inactiveCard: CreditCardDto = {
-  id: 'cc2',
-  name: 'Retired Card',
-  isActive: false,
-  hasReferences: true,
-  nextInvoiceDueDate: null,
-  latestInvoiceDate: null,
-}
+const activeCard = cardAccount({ id: 'cc1', name: 'Platinum Visa 8003' })
+const inactiveCard = cardAccount({ id: 'cc2', name: 'Retired Card', isActive: false })
 
 const RESERVA = potsAccount({ id: 'p1', name: 'Reserva' })
 const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })

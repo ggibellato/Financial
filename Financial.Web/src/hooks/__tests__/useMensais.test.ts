@@ -1,7 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
+import type { CategoryDto, RecurringBillDto } from '../../api/types'
+import { account, cardAccount } from '../../test/account'
 import { useMensais } from '../useMensais'
 
 const NOW = new Date()
@@ -19,7 +20,7 @@ const {
   updateMensaisBillStatusMock,
   deleteMensaisBillMock,
   resetMensaisToUnsetMock,
-  getBanksMock,
+  getAccountsMock,
   getCategoriesMock,
   markMensaisBillPaidMock,
 } = vi.hoisted(() => ({
@@ -29,7 +30,7 @@ const {
   updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
   deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
 }))
@@ -42,7 +43,7 @@ vi.mock('../../api/financialApiClient', () => ({
     updateMensaisBillStatus: updateMensaisBillStatusMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
-    getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     getCategories: getCategoriesMock,
     markMensaisBillPaid: markMensaisBillPaidMock,
   } as Partial<FinancialApiClient>,
@@ -73,17 +74,9 @@ const BILLS: RecurringBillDto[] = [
   },
 ]
 
-const BANKS: BankDto[] = [
-  {
-    id: 'bank-1',
-    name: 'Barclays',
-    roundUpEnabled: false,
-    openingBalance: 0,
-    openingBalanceDate: '2026-01-01',
-    hasReferences: false,
-    isActive: true,
-  },
-]
+const BARCLAYS = account({ id: 'bank-1', name: 'Barclays' })
+const CLOSED = account({ id: 'bank-2', name: 'Closed', isActive: false })
+const ACCOUNTS = [BARCLAYS, cardAccount({ id: 'card-1', name: 'Amex' }), CLOSED]
 
 const CATEGORIES: CategoryDto[] = [
   { id: 'cat-1', name: 'Bills', active: true, isInvestment: false, isTithe: false, hasReferences: false },
@@ -97,13 +90,21 @@ describe('useMensais', () => {
     updateMensaisBillStatusMock.mockReset()
     deleteMensaisBillMock.mockReset()
     resetMensaisToUnsetMock.mockReset()
-    getBanksMock.mockReset()
+    getAccountsMock.mockReset()
     getCategoriesMock.mockReset()
     markMensaisBillPaidMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)
-    getBanksMock.mockResolvedValue(BANKS)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     sessionStorage.clear()
+  })
+
+  it('lists every account that can pay bills, inactive included', async () => {
+    const { result } = renderHook(() => useMensais())
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    expect(result.current.banks).toEqual([BARCLAYS, CLOSED])
   })
 
   it('fetches the bill list once on mount, defaulting the display month to today', async () => {

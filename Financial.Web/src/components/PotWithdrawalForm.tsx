@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Button, Field, InfoLabel, Input, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
-import type { BankDto } from '../api/types'
+import type { BankOption } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
@@ -16,7 +16,7 @@ import PotFormFooter from './PotFormFooter'
 
 interface PotWithdrawalFormProps {
   form: PotWithdrawalFormModel
-  banks: BankDto[]
+  banks: BankOption[]
   lockedBank?: LockedBank
   onDelete: () => void
   onCancel: () => void

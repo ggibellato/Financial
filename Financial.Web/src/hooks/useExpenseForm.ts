@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
-import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
+import type { BankOption, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -29,7 +29,7 @@ function notAfterToday(date: string): string {
   return date > today ? today : date
 }
 
-function suggestRoundUpAmount(banks: BankDto[], bankId: string, value: string): string | null {
+function suggestRoundUpAmount(banks: BankOption[], bankId: string, value: string): string | null {
   const bank = banks.find((b) => b.id === bankId)
   if (!bank?.roundUpEnabled) return null
 
@@ -239,7 +239,7 @@ export interface UseExpenseFormResult {
 }
 
 export function useExpenseForm(
-  banks: BankDto[],
+  banks: BankOption[],
   categories: CategoryDto[],
   creditCards: CreditCardDto[],
   onSaved: (isEdit: boolean, isRefund: boolean) => void,

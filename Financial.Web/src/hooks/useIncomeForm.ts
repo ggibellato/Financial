@@ -1,7 +1,7 @@
 import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeFormField } from '../components/IncomeForm'
-import type { AccountDto, BankDto, IncomeDto, IncomeSourceDto } from '../api/types'
+import type { AccountDto, BankOption, IncomeDto, IncomeSourceDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { accountsWith } from '../utils/accountCapabilities'
@@ -329,7 +329,7 @@ export interface UseIncomeFormResult {
 
 export function useIncomeForm(
   incomeSources: IncomeSourceDto[],
-  banks: BankDto[],
+  banks: BankOption[],
   onSaved: (saved: IncomeDto, isEdit: boolean, potsAccountName: string | null) => void,
   { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseIncomeFormResult {

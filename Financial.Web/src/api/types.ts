@@ -18,6 +18,8 @@ type DeepRequired<T> = T extends (infer Item)[]
 
 export type NodeType = 'Asset' | 'Portfolio' | 'Broker'
 
+export type BankOption = Pick<AccountDto, 'id' | 'name' | 'isActive' | 'roundUpEnabled'>
+
 export type PositionType = Schema<'PositionType'>
 
 export type InvestmentScope = 'active' | 'historic'

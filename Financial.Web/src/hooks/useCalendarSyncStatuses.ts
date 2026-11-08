@@ -48,16 +48,16 @@ function resyncReducer(state: ResyncState, action: ResyncAction): ResyncState {
 }
 
 function fetchRows(): Promise<CalendarSyncStatusRow[]> {
-  return Promise.all([apiClient.getCreditCards(), apiClient.getCalendarSyncStatuses()]).then(([creditCards, statuses]) => {
+  return Promise.all([apiClient.getAccounts(), apiClient.getCalendarSyncStatuses()]).then(([accounts, statuses]) => {
     const statusByCardId = new Map(statuses.map((status) => [status.creditCardId, status]))
-    return creditCards
-      .filter((card) => card.isActive && card.nextInvoiceDueDate != null)
+    return accounts
+      .filter((account) => account.capabilities.includes('HasStatements') && account.isActive && account.dueDate != null)
       .map((card): CalendarSyncStatusRow => {
         const status = statusByCardId.get(card.id)
         return {
           creditCardId: card.id,
           name: card.name,
-          dueDate: card.nextInvoiceDueDate as string,
+          dueDate: card.dueDate as string,
           state: status?.state ?? 'Pending',
           lastSuccessfulSyncUtc: status?.lastSuccessfulSyncUtc ?? null,
           lastError: status?.lastError ?? null,

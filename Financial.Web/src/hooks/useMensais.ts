@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { BankDto, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
+import type { BankOption, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { useMonthSelection } from './useMonthSelection'
+import { billPayingAccounts } from './useAccountFormOptions'
 import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
 
 export type EditField = 'editStatus' | 'editValue'
@@ -28,7 +29,7 @@ function defaultArea(): string {
 
 interface MensaisState {
   bills: RecurringBillDto[]
-  banks: BankDto[]
+  banks: BankOption[]
   categories: CategoryDto[]
   isLoading: boolean
   error: string | null
@@ -59,7 +60,7 @@ interface MensaisState {
 
 type MensaisAction =
   | { type: 'FETCH_START' }
-  | { type: 'FETCH_SUCCESS'; payload: { bills: RecurringBillDto[]; banks: BankDto[]; categories: CategoryDto[] } }
+  | { type: 'FETCH_SUCCESS'; payload: { bills: RecurringBillDto[]; banks: BankOption[]; categories: CategoryDto[] } }
   | { type: 'FETCH_ERROR'; payload: string }
   | { type: 'RETRY' }
   | { type: 'SHOW_EDIT_FORM'; payload: RecurringBillDto }
@@ -235,7 +236,7 @@ export interface MensaisData {
   updatingStatusBillId: string | null
   statusUpdateError: string | null
   updateBillStatus: (id: string, status: string) => void
-  banks: BankDto[]
+  banks: BankOption[]
   categories: CategoryDto[]
   expensePromptBill: RecurringBillDto | null
   confirmExpensePrompt: (values: ExpensePromptValues) => void
@@ -248,8 +249,8 @@ export function useMensais(): MensaisData {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
   const fetchMensaisData = useCallback(() => {
-    return Promise.all([apiClient.getMensaisBills(), apiClient.getBanks(), apiClient.getCategories()])
-      .then(([bills, banks, categories]) => dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks, categories } }))
+    return Promise.all([apiClient.getMensaisBills(), apiClient.getAccounts(), apiClient.getCategories()])
+      .then(([bills, accounts, categories]) => dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks: billPayingAccounts(accounts), categories } }))
       .catch((err: unknown) => {
         dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
       })

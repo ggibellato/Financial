@@ -1,12 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CategoryDto, IncomeSourceDto } from '../../api/types'
+import type { CategoryDto, IncomeSourceDto } from '../../api/types'
+import { account, cardAccount, potsAccount } from '../../test/account'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../useAccountFormOptions'
 
-const { getBanksMock, getCategoriesMock, getIncomeSourcesMock, getTransferDestinationsMock, getTransferSourcesMock } =
+const { getAccountsMock, getCategoriesMock, getIncomeSourcesMock, getTransferDestinationsMock, getTransferSourcesMock } =
   vi.hoisted(() => ({
-    getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+    getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
     getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
     getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
     getTransferDestinationsMock: vi.fn<FinancialApiClient['getTransferDestinations']>(),
@@ -15,7 +16,7 @@ const { getBanksMock, getCategoriesMock, getIncomeSourcesMock, getTransferDestin
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
-    getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     getCategories: getCategoriesMock,
     getIncomeSources: getIncomeSourcesMock,
     getTransferDestinations: getTransferDestinationsMock,
@@ -23,7 +24,9 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const BANKS = [{ id: 'barclays', name: 'Barclays' }] as BankDto[]
+const BARCLAYS = account({ id: 'barclays', name: 'Barclays' })
+const CLOSED = account({ id: 'closed', name: 'Closed', isActive: false })
+const ACCOUNTS = [BARCLAYS, cardAccount({ id: 'amex', name: 'Amex' }), CLOSED, potsAccount({ id: 'reserva', name: 'Reserva' })]
 const GROCERIES = { id: 'groceries', name: 'Groceries', active: true } as CategoryDto
 const RETIRED = { id: 'retired', name: 'Retired', active: false } as CategoryDto
 const SALARY = [{ id: 'salary', name: 'Salary' }] as IncomeSourceDto[]
@@ -32,10 +35,10 @@ const WISE = { id: 'wise', name: 'Wise', currency: 'EUR' }
 
 describe('useAccountFormOptions', () => {
   beforeEach(() => {
-    for (const mock of [getBanksMock, getCategoriesMock, getIncomeSourcesMock, getTransferDestinationsMock, getTransferSourcesMock]) {
+    for (const mock of [getAccountsMock, getCategoriesMock, getIncomeSourcesMock, getTransferDestinationsMock, getTransferSourcesMock]) {
       mock.mockReset()
     }
-    getBanksMock.mockResolvedValue(BANKS)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     getCategoriesMock.mockResolvedValue([GROCERIES, RETIRED])
     getIncomeSourcesMock.mockResolvedValue(SALARY)
     getTransferDestinationsMock.mockResolvedValue([CHASE])
@@ -45,19 +48,19 @@ describe('useAccountFormOptions', () => {
   it('loads nothing and is not ready while no form needs the options', () => {
     const { result } = renderHook(() => useAccountFormOptions(false, null))
 
-    expect(getBanksMock).not.toHaveBeenCalled()
+    expect(getAccountsMock).not.toHaveBeenCalled()
     expect(getTransferDestinationsMock).not.toHaveBeenCalled()
     expect(result.current.isReady).toBe(false)
     expect(result.current.areCounterpartsReady).toBe(false)
     expect(result.current.options).toEqual({ banks: [], categories: [], incomeSources: [], destinations: [], sources: [] })
   })
 
-  it('loads the shared options and keeps only the active categories', async () => {
+  it('loads the shared options, with every account that can pay bills (inactive included) and only the active categories', async () => {
     const { result } = renderHook(() => useAccountFormOptions(true, null))
 
     await waitFor(() => expect(result.current.isReady).toBe(true))
 
-    expect(result.current.options.banks).toEqual(BANKS)
+    expect(result.current.options.banks).toEqual([BARCLAYS, CLOSED])
     expect(result.current.options.categories).toEqual([GROCERIES])
     expect(result.current.options.incomeSources).toEqual(SALARY)
     expect(result.current.areCounterpartsReady).toBe(false)
@@ -77,7 +80,7 @@ describe('useAccountFormOptions', () => {
   })
 
   it('reports the load error and retries only the failed request', async () => {
-    getBanksMock.mockRejectedValueOnce({ status: 503 })
+    getAccountsMock.mockRejectedValueOnce({ status: 503 })
     const { result } = renderHook(() => useAccountFormOptions(true, 'barclays'))
 
     await waitFor(() => expect(result.current.error).toBe(FORM_OPTIONS_LOAD_ERROR))
@@ -86,7 +89,7 @@ describe('useAccountFormOptions', () => {
 
     await waitFor(() => expect(result.current.isReady).toBe(true))
     expect(result.current.error).toBeNull()
-    expect(getBanksMock).toHaveBeenCalledTimes(2)
+    expect(getAccountsMock).toHaveBeenCalledTimes(2)
     expect(getTransferDestinationsMock).toHaveBeenCalledTimes(1)
   })
 
@@ -101,6 +104,6 @@ describe('useAccountFormOptions', () => {
     await waitFor(() => expect(result.current.areCounterpartsReady).toBe(true))
     expect(result.current.error).toBeNull()
     expect(getTransferSourcesMock).toHaveBeenCalledTimes(2)
-    expect(getBanksMock).toHaveBeenCalledTimes(1)
+    expect(getAccountsMock).toHaveBeenCalledTimes(1)
   })
 })

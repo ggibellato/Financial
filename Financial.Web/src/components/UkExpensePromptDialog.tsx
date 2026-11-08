@@ -11,7 +11,7 @@ import {
   MessageBarBody,
   tokens,
 } from '@fluentui/react-components'
-import type { BankDto, CategoryDto, RecurringBillDto } from '../api/types'
+import type { BankOption, CategoryDto, RecurringBillDto } from '../api/types'
 import type { ExpensePromptValues } from '../hooks/useMensais'
 import { todayIsoDate } from '../utils/formatters'
 import BillExpenseFields from './BillExpenseFields'
@@ -40,7 +40,7 @@ const useDialogStyles = makeStyles({
 
 interface UkExpensePromptDialogProps {
   bill: RecurringBillDto
-  banks: BankDto[]
+  banks: BankOption[]
   categories: CategoryDto[]
   isSaving: boolean
   error: string | null

@@ -2,13 +2,14 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CardStatementDto } from '../../api/types'
+import type { CardStatementDto } from '../../api/types'
+import { account, cardAccount } from '../../test/account'
 import { pinDate } from '../../test-utils/pinDate'
 import { STATEMENTS_LOAD_ERROR, useCardStatements, type StoredStatement } from '../useCardStatements'
 
-const { getAccountStatementsMock, getBanksMock, markCardStatementPaidMock, unmarkCardStatementPaidMock } = vi.hoisted(() => ({
+const { getAccountStatementsMock, getAccountsMock, markCardStatementPaidMock, unmarkCardStatementPaidMock } = vi.hoisted(() => ({
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   markCardStatementPaidMock: vi.fn<FinancialApiClient['markCardStatementPaid']>(),
   unmarkCardStatementPaidMock: vi.fn<FinancialApiClient['unmarkCardStatementPaid']>(),
 }))
@@ -16,7 +17,7 @@ const { getAccountStatementsMock, getBanksMock, markCardStatementPaidMock, unmar
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getAccountStatements: getAccountStatementsMock,
-    getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     markCardStatementPaid: markCardStatementPaidMock,
     unmarkCardStatementPaid: unmarkCardStatementPaidMock,
   } as Partial<FinancialApiClient>,
@@ -31,9 +32,10 @@ const SEPTEMBER: StoredStatement = {
   creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: null, paidOn: '2026-10-12', paidFromAccountName: 'Barclays',
 }
 
-const BANKS: BankDto[] = [
-  { id: 'barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
-  { id: 'closed', name: 'Closed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false },
+const ACCOUNTS = [
+  account({ id: 'barclays', name: 'Barclays' }),
+  cardAccount({ id: CARD_ID, name: 'BA Amex' }),
+  account({ id: 'closed', name: 'Closed', isActive: false }),
 ]
 
 const PAID_STATEMENT: CardStatementDto = {
@@ -50,7 +52,7 @@ describe('useCardStatements', () => {
   beforeEach(() => {
     pinDate('2026-10-15T12:00:00+01:00')
     getAccountStatementsMock.mockReset().mockResolvedValue([OCTOBER, SEPTEMBER])
-    getBanksMock.mockReset().mockResolvedValue(BANKS)
+    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     markCardStatementPaidMock.mockReset()
     unmarkCardStatementPaidMock.mockReset()
   })
@@ -64,7 +66,7 @@ describe('useCardStatements', () => {
 
     expect(result.current.isLoading).toBe(false)
     expect(getAccountStatementsMock).not.toHaveBeenCalled()
-    expect(getBanksMock).not.toHaveBeenCalled()
+    expect(getAccountsMock).not.toHaveBeenCalled()
   })
 
   it('loads the statements and the banks that may pay', async () => {

@@ -1,6 +1,6 @@
 import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
-import type { BankDto } from '../api/types'
+import type { BankOption } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
 import { formatCurrency } from '../utils/formatters'
@@ -11,7 +11,7 @@ interface BalanceAdjustmentFormProps {
   isEditing: boolean
   bankName: string
   bankDisplayName: string
-  banks: BankDto[]
+  banks: BankOption[]
   currentBalance: number
   date: string
   targetBalance: string

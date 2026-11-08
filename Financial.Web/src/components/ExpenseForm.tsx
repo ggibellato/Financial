@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
-import type { BankDto, CategoryDto, CreditCardDto } from '../api/types'
+import type { BankOption, CategoryDto, CreditCardDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
@@ -36,7 +36,7 @@ interface ExpenseFormProps {
   roundUpAmount: string
   countsAsTithe: boolean
   paymentMode: PaymentMode
-  banks: BankDto[]
+  banks: BankOption[]
   categories: CategoryDto[]
   creditCards: CreditCardDto[]
   isRefund?: boolean

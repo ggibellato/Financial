@@ -2,22 +2,20 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentAccountsPage from '../InvestmentAccountsPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { CreditCardDto, InvestmentAccountDto } from '../../api/types'
-import { potsAccount } from '../../test/account'
+import type { InvestmentAccountDto } from '../../api/types'
+import { account, cardAccount, potsAccount } from '../../test/account'
 
 const {
   getInvestmentAccountsMock,
   createInvestmentAccountMock,
   updateInvestmentAccountMock,
   deleteInvestmentAccountMock,
-  getCreditCardsMock,
   getAccountsMock,
 } = vi.hoisted(() => ({
   getInvestmentAccountsMock: vi.fn<FinancialApiClient['getInvestmentAccounts']>(),
   createInvestmentAccountMock: vi.fn<FinancialApiClient['createInvestmentAccount']>(),
   updateInvestmentAccountMock: vi.fn<FinancialApiClient['updateInvestmentAccount']>(),
   deleteInvestmentAccountMock: vi.fn<FinancialApiClient['deleteInvestmentAccount']>(),
-  getCreditCardsMock: vi.fn<FinancialApiClient['getCreditCards']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
 }))
 
@@ -27,14 +25,9 @@ vi.mock('../../api/financialApiClient', () => ({
     createInvestmentAccount: createInvestmentAccountMock,
     updateInvestmentAccount: updateInvestmentAccountMock,
     deleteInvestmentAccount: deleteInvestmentAccountMock,
-    getCreditCards: getCreditCardsMock,
     getAccounts: getAccountsMock,
   } as Partial<FinancialApiClient>,
 }))
-
-const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'cc1', name: 'Platinum Visa 8003', isActive: true, hasReferences: true, nextInvoiceDueDate: null, latestInvoiceDate: null },
-]
 
 const INVESTMENT_ACCOUNTS: InvestmentAccountDto[] = [
   { id: 'a1', name: 'ChaseSave', isActive: true, isLiability: false, hasNonZeroInvestmentSnapshot: false, source: 'None', creditCardId: null, potsAccountId: null },
@@ -48,11 +41,13 @@ describe('InvestmentAccountsPage', () => {
     createInvestmentAccountMock.mockReset()
     updateInvestmentAccountMock.mockReset()
     deleteInvestmentAccountMock.mockReset()
-    getCreditCardsMock.mockReset()
     getAccountsMock.mockReset()
     getInvestmentAccountsMock.mockResolvedValue(INVESTMENT_ACCOUNTS)
-    getCreditCardsMock.mockResolvedValue(CREDIT_CARDS)
-    getAccountsMock.mockResolvedValue([potsAccount({ id: 'p1', name: 'Reserva' })])
+    getAccountsMock.mockResolvedValue([
+      potsAccount({ id: 'p1', name: 'Reserva' }),
+      cardAccount({ id: 'cc1', name: 'Platinum Visa 8003' }),
+      account({ id: 'b1', name: 'Barclays' }),
+    ])
   })
 
   it('renders every investment account', async () => {
@@ -60,6 +55,17 @@ describe('InvestmentAccountsPage', () => {
 
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
     expect(screen.getByText('PlatinumVisa8003')).toBeInTheDocument()
+  })
+
+  it('offers only the accounts with statements in the credit card picker', async () => {
+    render(<InvestmentAccountsPage />)
+    await waitFor(() => expect(screen.getByText('Platinum Visa 8003')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Create Investment Account' }))
+    fireEvent.change(await screen.findByLabelText('Source'), { target: { value: 'CreditCard' } })
+    const picker = (await screen.findByLabelText(/^Credit Card/)) as HTMLSelectElement
+
+    expect(Array.from(picker.options).map((option) => option.textContent)).toEqual(['Select card…', 'Platinum Visa 8003'])
   })
 
   it('shows the empty state when there are no investment accounts', async () => {
@@ -74,15 +80,6 @@ describe('InvestmentAccountsPage', () => {
     render(<InvestmentAccountsPage />)
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
-  })
-
-  it('shows a warning and keeps the account list usable when credit cards fail to load', async () => {
-    getCreditCardsMock.mockRejectedValue(new Error('Unable to load credit cards'))
-    render(<InvestmentAccountsPage />)
-
-    await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
-    expect(screen.getByText(/couldn.t load credit cards/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
   })
 
   it('shows a warning and keeps the account list usable when accounts fail to load', async () => {
