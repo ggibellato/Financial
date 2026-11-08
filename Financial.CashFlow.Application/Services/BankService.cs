@@ -3,7 +3,6 @@ using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
-using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
@@ -175,7 +174,7 @@ public sealed class BankService : IBankService
         try
         {
             var endOfMonth = new DateOnly(year, month, DateTime.DaysInMonth(year, month));
-            var records = ReadAccountTransactions(excludingAdjustmentId: null);
+            var records = AccountTransactionReader.Read(_repository);
 
             var result = BankAccounts()
                 .Select(bank => new BankBalanceDTO
@@ -196,39 +195,10 @@ public sealed class BankService : IBankService
         }
     }
 
-    public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null)
-    {
-        using var span = StartSpan("GetBankBalanceAsOf");
-        span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
-        try
-        {
-            var bank = FindBankOrThrow(bankId);
-
-            var result = AccountBalanceRule.Balance(bank, asOfDate, ReadAccountTransactions(excludingAdjustmentId));
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetBankBalanceAsOf");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
     private IEnumerable<Account> BankAccounts() =>
         _repository.GetAccounts().Where(account => account.Template == AccountTemplate.Bank);
 
     private Account FindBankOrThrow(Guid id) => BankAccounts().FirstOrThrow(b => b.Id == id, "Bank", id);
-
-    private List<IAccountTransaction> ReadAccountTransactions(Guid? excludingAdjustmentId) =>
-    [
-        .. _repository.GetIncomes(),
-        .. _repository.GetExpenses(),
-        .. _repository.GetTransfers(),
-        .. _repository.GetBalanceAdjustments().Where(a => a.Id != excludingAdjustmentId)
-    ];
 
     private void EnsureNotReferenced(Guid accountId)
     {

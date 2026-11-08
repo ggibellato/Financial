@@ -67,8 +67,6 @@ public class ThrowingApiHost : IDisposable
         public Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request) => throw new NotSupportedException();
 
         public IReadOnlyList<BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => throw new NotSupportedException();
-
-        public decimal GetBankBalanceAsOf(Guid bankId, DateOnly asOfDate, Guid? excludingAdjustmentId = null) => throw new NotSupportedException();
     }
 }
 

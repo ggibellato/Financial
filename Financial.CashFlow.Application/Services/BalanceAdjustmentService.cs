@@ -3,6 +3,7 @@ using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -13,31 +14,29 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
     private const string EntityType = "BalanceAdjustment";
 
     private readonly ICashFlowRepository _repository;
-    private readonly IBankService _bankService;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<BalanceAdjustmentService> _logger;
 
-    public BalanceAdjustmentService(ICashFlowRepository repository, IBankService bankService, ITelemetryTracer tracer, ILogger<BalanceAdjustmentService> logger)
+    public BalanceAdjustmentService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<BalanceAdjustmentService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _bankService = bankService ?? throw new ArgumentNullException(nameof(bankService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid bankId, BalanceAdjustmentCreateDTO request)
+    public async Task<BalanceAdjustmentDTO> AddAdjustmentAsync(Guid accountId, BalanceAdjustmentCreateDTO request)
     {
         using var span = StartSpan("AddAdjustment");
-        span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
+        span.SetAttribute(TelemetryAttributeKeys.EntityId, accountId.ToString());
         try
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var bank = ResolveBank(bankId);
-            var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date);
+            var account = FindAccountOrThrow(accountId);
+            var currentBalance = AccountBalanceRule.Balance(account, request.Date, AccountTransactionReader.Read(_repository));
             var delta = request.TargetBalance - currentBalance;
 
-            var adjustment = BalanceAdjustment.Create(request.Date, bank, request.TargetBalance, delta, request.Note);
+            var adjustment = BalanceAdjustment.Create(request.Date, account, request.TargetBalance, delta, request.Note);
             await _repository.ApplyAndSaveAsync(() =>
             {
                 _repository.AddBalanceAdjustment(adjustment);
@@ -55,7 +54,7 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         }
     }
 
-    public async Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid bankId, Guid id, BalanceAdjustmentUpdateDTO request)
+    public async Task<BalanceAdjustmentDTO> UpdateAdjustmentAsync(Guid accountId, Guid id, BalanceAdjustmentUpdateDTO request)
     {
         using var span = StartSpan("UpdateAdjustment");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
@@ -63,9 +62,10 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var bank = ResolveBank(bankId);
-            var adjustment = FindAdjustmentOrThrow(bank, id);
-            var currentBalance = _bankService.GetBankBalanceAsOf(bank.Id, request.Date, excludingAdjustmentId: id);
+            var account = FindAccountOrThrow(accountId);
+            var adjustment = FindAdjustmentOrThrow(account, id);
+            var otherTransactions = AccountTransactionReader.Read(_repository).Where(transaction => !ReferenceEquals(transaction, adjustment));
+            var currentBalance = AccountBalanceRule.Balance(account, request.Date, otherTransactions);
             var delta = request.TargetBalance - currentBalance;
 
             await _repository.ApplyAndSaveAsync(() =>
@@ -86,14 +86,13 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         }
     }
 
-    public async Task DeleteAdjustmentAsync(Guid bankId, Guid id)
+    public async Task DeleteAdjustmentAsync(Guid accountId, Guid id)
     {
         using var span = StartSpan("DeleteAdjustment");
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            var bank = ResolveBank(bankId);
-            FindAdjustmentOrThrow(bank, id);
+            FindAdjustmentOrThrow(FindAccountOrThrow(accountId), id);
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -146,12 +145,12 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         return _tracer.StartServiceSpan("CashFlow", nameof(BalanceAdjustmentService), operationName, EntityType);
     }
 
-    private Account ResolveBank(Guid bankId) =>
-        _repository.GetAccounts().FirstOrThrow(b => b.Id == bankId, "Bank", bankId);
+    private Account FindAccountOrThrow(Guid accountId) =>
+        _repository.GetAccounts().FirstOrThrow(account => account.Id == accountId, "Account", accountId);
 
-    private BalanceAdjustment FindAdjustmentOrThrow(Account bank, Guid id) =>
+    private BalanceAdjustment FindAdjustmentOrThrow(Account account, Guid id) =>
         _repository.GetBalanceAdjustments()
-            .FirstOrThrow(a => a.Id == id && a.Account.Id == bank.Id, "Balance adjustment", id);
+            .FirstOrThrow(a => a.Id == id && a.Account.Id == account.Id, "Balance adjustment", id);
 
     internal static BalanceAdjustmentDTO ToDto(BalanceAdjustment adjustment) => new()
     {

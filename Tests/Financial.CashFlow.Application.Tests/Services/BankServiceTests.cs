@@ -476,39 +476,6 @@ public class BankServiceTests
     }
 
     [Fact]
-    public void GetBankBalanceAsOf_ComputesBalanceForAnArbitraryDateIndependentOfMonthBoundaries()
-    {
-        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
-        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Accounts.Add(bank);
-        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 10), Gleison, null, 200m, bank));
-        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 20), Gleison, null, 300m, bank));
-
-        var result = _sut.GetBankBalanceAsOf(bank.Id, new DateOnly(2026, 7, 15));
-
-        result.Should().Be(300m);
-    }
-
-    [Fact]
-    public void GetBankBalanceAsOf_WithExcludingAdjustmentId_OmitsOnlyThatAdjustment()
-    {
-        var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
-        bank.SetOpeningBalance(100m, new DateOnly(2026, 1, 1));
-        _repository.Accounts.Add(bank);
-        var chase = TestAccounts.Bank("Chase", roundUpEnabled: false);
-        _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 7, 1), bank, chase, 20m, destinationAmount: null, null, today: TestClock.Today));
-        var excluded = BalanceAdjustment.Create(new DateOnly(2026, 7, 1), bank, 500m, 400m, null);
-        var included = BalanceAdjustment.Create(new DateOnly(2026, 7, 2), bank, 50m, -30m, null);
-        _repository.BalanceAdjustments.Add(excluded);
-        _repository.BalanceAdjustments.Add(included);
-
-        var result = _sut.GetBankBalanceAsOf(bank.Id, new DateOnly(2026, 7, 15), excludingAdjustmentId: excluded.Id);
-
-        // 100 (opening) - 20 (transfer out) - 30 (included adjustment delta) = 50; excluded adjustment's +400 is omitted
-        result.Should().Be(50m);
-    }
-
-    [Fact]
     public void GetBankBalancesByMonth_ExcludesBankLessIncome()
     {
         var bank = TestAccounts.Bank("Barclays", roundUpEnabled: false);
@@ -519,14 +486,6 @@ public class BankServiceTests
         var result = _sut.GetBankBalancesByMonth(2026, 7);
 
         result.Should().ContainSingle(b => b.Bank == "Barclays" && b.Balance == 100m);
-    }
-
-    [Fact]
-    public void GetBankBalanceAsOf_WithUnresolvableBank_ThrowsKeyNotFoundException()
-    {
-        var act = () => _sut.GetBankBalanceAsOf(Guid.NewGuid(), new DateOnly(2026, 7, 15));
-
-        act.Should().Throw<KeyNotFoundException>();
     }
 
     [Fact]

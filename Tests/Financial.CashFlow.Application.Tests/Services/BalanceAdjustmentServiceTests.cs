@@ -6,6 +6,8 @@ using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
+using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -16,7 +18,6 @@ namespace Financial.CashFlow.Application.Tests.Services;
 public class BalanceAdjustmentServiceTests
 {
     private static readonly Microsoft.Extensions.Logging.ILogger<BalanceAdjustmentService> Logger = NullLogger<BalanceAdjustmentService>.Instance;
-    private static readonly Microsoft.Extensions.Logging.ILogger<BankService> BankLogger = NullLogger<BankService>.Instance;
 
     private static IncomeSource Lottery => IncomeSource.Create("Lottery", IncomeGroup.NonReportable);
 
@@ -31,8 +32,7 @@ public class BalanceAdjustmentServiceTests
         _sut = CreateService();
     }
 
-    private BalanceAdjustmentService CreateService(StubCashFlowRepository? repository = null, BankService? bankService = null) =>
-        new(repository ?? _repository, bankService ?? new BankService(repository ?? _repository, _tracer, BankLogger), _tracer, Logger);
+    private BalanceAdjustmentService CreateService() => new(_repository, _tracer, Logger);
 
     private static Account BankOf(StubCashFlowRepository repository, string name) =>
         repository.Accounts.First(b => b.Name == name);
@@ -134,7 +134,69 @@ public class BalanceAdjustmentServiceTests
             TargetBalance = 100m
         });
 
-        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownBankId}' was not found*");
+    }
+
+    [Fact]
+    public async Task AddAdjustmentAsync_OnAnAccountThatCannotBeReconciled_ThrowsArgumentException()
+    {
+        var card = TestAccounts.CreditCard("Amex");
+        _repository.Accounts.Add(card);
+
+        var act = async () => await _sut.AddAdjustmentAsync(card.Id, new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 100m
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Account 'Amex' cannot be reconciled.");
+    }
+
+    [Fact]
+    public async Task AddAdjustmentAsync_OnAnAccountWithoutTheBankTemplate_UsesThatAccountsBalance()
+    {
+        var account = TestAccounts.Bank("Itau", currency: Currency.BRL);
+        account.SetOpeningBalance(70m, new DateOnly(2026, 1, 1));
+        _repository.Accounts.Add(account);
+
+        var result = await _sut.AddAdjustmentAsync(account.Id, new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 100m
+        });
+
+        result.Delta.Should().Be(30m);
+    }
+
+    [Fact]
+    public async Task UpdateAdjustmentAsync_WithAnAdjustmentOfAnotherAccount_ThrowsKeyNotFoundException()
+    {
+        var added = await _sut.AddAdjustmentAsync(BankIdOf(_repository, "Barclays"), new BalanceAdjustmentCreateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 150m
+        });
+
+        var act = async () => await _sut.UpdateAdjustmentAsync(BankIdOf(_repository, "Chase"), added.Id, new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 120m
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Balance adjustment '{added.Id}' was not found*");
+    }
+
+    [Fact]
+    public async Task UpdateAdjustmentAsync_WhenAccountIsUnknown_RecordsFailedSpan()
+    {
+        var act = async () => await _sut.UpdateAdjustmentAsync(Guid.NewGuid(), Guid.NewGuid(), new BalanceAdjustmentUpdateDTO
+        {
+            Date = new DateOnly(2026, 7, 25),
+            TargetBalance = 120m
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.BalanceAdjustmentService.UpdateAdjustment");
     }
 
     [Fact]
@@ -166,7 +228,7 @@ public class BalanceAdjustmentServiceTests
             TargetBalance = 120m
         });
 
-        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Bank '{unknownBankId}' was not found*");
+        await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownBankId}' was not found*");
     }
 
     [Fact]
@@ -205,16 +267,15 @@ public class BalanceAdjustmentServiceTests
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
         var barclays = BankOf(_repository, "Barclays");
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 37m, barclays));
-        var bankService = new BankService(_repository, _tracer, BankLogger);
-        var service = CreateService(bankService: bankService);
 
-        await service.AddAdjustmentAsync(barclays.Id, new BalanceAdjustmentCreateDTO
+        await _sut.AddAdjustmentAsync(barclays.Id, new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 25),
             TargetBalance = 240m
         });
 
-        bankService.GetBankBalanceAsOf(barclays.Id, new DateOnly(2026, 7, 25)).Should().Be(240m);
+        IEnumerable<IAccountTransaction> records = [.. _repository.Incomes, .. _repository.BalanceAdjustments];
+        AccountBalanceRule.Balance(barclays, new DateOnly(2026, 7, 25), records).Should().Be(240m);
     }
 
     [Fact]
