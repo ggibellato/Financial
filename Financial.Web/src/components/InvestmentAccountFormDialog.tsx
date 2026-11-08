@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Field, Input, Select, Switch } from '@fluentui/react-components'
-import type { AccountDto, CreditCardDto, InvestmentAccountDto } from '../api/types'
+import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { accountsWith } from '../utils/accountCapabilities'
@@ -9,7 +9,7 @@ export type InvestmentAccountSourceOption = 'None' | 'CreditCard' | 'PotsAccount
 
 interface InvestmentAccountFormDialogProps {
   investmentAccount: InvestmentAccountDto | null
-  creditCards: CreditCardDto[]
+  creditCards: AccountDto[]
   accounts: AccountDto[]
   onCancel: () => void
   onSubmit: (

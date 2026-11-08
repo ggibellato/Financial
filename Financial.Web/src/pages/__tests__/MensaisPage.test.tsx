@@ -2,7 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
+import type { CategoryDto, RecurringBillDto } from '../../api/types'
+import { account } from '../../test/account'
 
 const {
   getMensaisBillsMock,
@@ -11,7 +12,7 @@ const {
   updateMensaisBillStatusMock,
   deleteMensaisBillMock,
   resetMensaisToUnsetMock,
-  getBanksMock,
+  getAccountsMock,
   getCategoriesMock,
   markMensaisBillPaidMock,
 } = vi.hoisted(() => ({
@@ -21,7 +22,7 @@ const {
   updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
   deleteMensaisBillMock: vi.fn<FinancialApiClient['deleteMensaisBill']>(),
   resetMensaisToUnsetMock: vi.fn<FinancialApiClient['resetMensaisToUnset']>(),
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   markMensaisBillPaidMock: vi.fn<FinancialApiClient['markMensaisBillPaid']>(),
 }))
@@ -34,7 +35,7 @@ vi.mock('../../api/financialApiClient', () => ({
     updateMensaisBillStatus: updateMensaisBillStatusMock,
     deleteMensaisBill: deleteMensaisBillMock,
     resetMensaisToUnset: resetMensaisToUnsetMock,
-    getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     getCategories: getCategoriesMock,
     markMensaisBillPaid: markMensaisBillPaidMock,
   } as Partial<FinancialApiClient>,
@@ -65,17 +66,7 @@ const BILLS: RecurringBillDto[] = [
   },
 ]
 
-const BANKS: BankDto[] = [
-  {
-    id: 'bank-1',
-    name: 'Barclays',
-    roundUpEnabled: false,
-    openingBalance: 0,
-    openingBalanceDate: '2026-01-01',
-    hasReferences: false,
-    isActive: true,
-  },
-]
+const ACCOUNTS = [account({ id: 'bank-1', name: 'Barclays' })]
 
 const CATEGORIES: CategoryDto[] = [
   { id: 'cat-1', name: 'Bills', active: true, isInvestment: false, isTithe: false, hasReferences: false },
@@ -88,10 +79,10 @@ describe('MensaisPage', () => {
     updateMensaisBillMock.mockReset()
     updateMensaisBillStatusMock.mockReset()
     deleteMensaisBillMock.mockReset()
-    getBanksMock.mockReset()
+    getAccountsMock.mockReset()
     getCategoriesMock.mockReset()
     markMensaisBillPaidMock.mockReset()
-    getBanksMock.mockResolvedValue(BANKS)
+    getAccountsMock.mockResolvedValue(ACCOUNTS)
     getCategoriesMock.mockResolvedValue(CATEGORIES)
     resetMensaisToUnsetMock.mockReset()
     getMensaisBillsMock.mockResolvedValue(BILLS)

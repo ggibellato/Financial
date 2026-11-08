@@ -13,7 +13,7 @@ import {
   TableRow,
   Text,
 } from '@fluentui/react-components'
-import type { BankDto, IncomeSourceDto, PotBalanceDto } from '../api/types'
+import type { BankOption, IncomeSourceDto, PotBalanceDto } from '../api/types'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
@@ -77,7 +77,7 @@ function PotSplitPreview({ pots, amount, currency }: PotSplitPreviewProps) {
 
 interface PotDepositFormProps {
   form: PotDepositFormModel
-  banks: BankDto[]
+  banks: BankOption[]
   incomeSources: IncomeSourceDto[]
   onFromIncome: () => void
   onDelete: () => void

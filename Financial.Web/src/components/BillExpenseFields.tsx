@@ -1,5 +1,5 @@
 import { Field, Input, Select, Text } from '@fluentui/react-components'
-import type { BankDto, CategoryDto } from '../api/types'
+import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { BillExpenseErrors, BillExpenseField, BillExpenseValues } from './billExpenseValues'
@@ -7,7 +7,7 @@ import { useFormPanelStyles } from './formPanelStyles'
 
 interface BillExpenseFieldsProps {
   values: BillExpenseValues
-  banks?: BankDto[]
+  banks?: BankOption[]
   categories: CategoryDto[]
   errors?: BillExpenseErrors
   disabled?: boolean

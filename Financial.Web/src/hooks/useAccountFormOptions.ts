@@ -1,5 +1,5 @@
 import { apiClient } from '../api/financialApiClient'
-import type { BankDto, CategoryDto, IncomeSourceDto, TransferAccountOptionDto } from '../api/types'
+import type { AccountDto, BankOption, CategoryDto, IncomeSourceDto, TransferAccountOptionDto } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
 
 export const FORM_OPTIONS_LOAD_ERROR = 'Unable to load the form options'
@@ -10,7 +10,7 @@ export interface TransferCounterparts {
 }
 
 export interface AccountFormOptions extends TransferCounterparts {
-  banks: BankDto[]
+  banks: BankOption[]
   categories: CategoryDto[]
   incomeSources: IncomeSourceDto[]
 }
@@ -20,10 +20,14 @@ type SharedFormOptions = Omit<AccountFormOptions, keyof TransferCounterparts>
 const NO_COUNTERPARTS: TransferCounterparts = { destinations: [], sources: [] }
 const NO_SHARED_OPTIONS: SharedFormOptions = { banks: [], categories: [], incomeSources: [] }
 
+export function billPayingAccounts(accounts: AccountDto[]): AccountDto[] {
+  return accounts.filter((account) => account.capabilities.includes('CanPayBills'))
+}
+
 function loadSharedFormOptions(): Promise<SharedFormOptions> {
-  return Promise.all([apiClient.getBanks(), apiClient.getCategories(), apiClient.getIncomeSources()]).then(
-    ([banks, categories, incomeSources]) => ({
-      banks,
+  return Promise.all([apiClient.getAccounts(), apiClient.getCategories(), apiClient.getIncomeSources()]).then(
+    ([accounts, categories, incomeSources]) => ({
+      banks: billPayingAccounts(accounts),
       categories: categories.filter((category) => category.active),
       incomeSources,
     }),

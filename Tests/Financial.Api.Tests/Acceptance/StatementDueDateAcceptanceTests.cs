@@ -83,6 +83,20 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task GetAccounts_AfterSettingAStatementDueDate_ShowsItOnTheCardOnly()
+    {
+        (await PutDueDateAsync(AmexId, 2026, 11, new DateOnly(2026, 11, 18))).StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var accounts = await Client.GetFromJsonAsync<List<AccountDTO>>($"{Api}/accounts");
+
+        using (new AssertionScope())
+        {
+            accounts!.Single(account => account.Id == Guid.Parse(AmexId)).DueDate.Should().Be(new DateOnly(2026, 11, 18));
+            accounts!.Single(account => account.Id == Guid.Parse(BarclaysId)).DueDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
     [Trait("AC", "P60-F13-consolidated-navigation-and-retirement-03")]
     public async Task SetAndClear_OneStatement_LeavesTheOthersAndSyncsTheCalendarEachTime()
     {

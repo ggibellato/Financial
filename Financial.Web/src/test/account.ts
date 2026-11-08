@@ -25,6 +25,7 @@ export function account(fields: RequiredAccountFields & Partial<AccountDto>): Ac
     balanceStartDate: '2026-01-01',
     roundUpEnabled: false,
     categoryId: null,
+    dueDate: null,
     capabilities: BANK_CAPABILITIES,
     ...fields,
   }

@@ -11,7 +11,7 @@ import {
   Spinner,
   Text,
 } from '@fluentui/react-components'
-import type { AccountDto, BankDto, IncomeSourceDto } from '../api/types'
+import type { AccountDto, BankOption, IncomeSourceDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import type { AccountsStatus } from '../hooks/useAccounts'
 import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources, type IncomeFunding } from '../hooks/useIncomeForm'
@@ -45,7 +45,7 @@ interface IncomeFormProps {
   potsAccountsStatus: AccountsStatus
   onRetryPotsAccounts: () => void
   funding: IncomeFunding
-  banks: BankDto[]
+  banks: BankOption[]
   incomeSources: IncomeSourceDto[]
   isSaving: boolean
   lockedBank?: LockedBank

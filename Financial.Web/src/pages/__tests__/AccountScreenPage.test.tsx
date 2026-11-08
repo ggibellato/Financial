@@ -12,7 +12,6 @@ import type {
   AccountTransactionDto,
   AccountTransferDto,
   BalanceAdjustmentDto,
-  BankDto,
   CardCreditDto,
   CategoryDto,
   ExpenseDto,
@@ -36,7 +35,6 @@ const {
   getAccountsMock,
   getAccountMock,
   getAccountTransactionsMock,
-  getBanksMock,
   getCategoriesMock,
   getIncomeSourcesMock,
   createExpenseMock,
@@ -82,7 +80,6 @@ const {
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getAccountMock: vi.fn<FinancialApiClient['getAccount']>(),
   getAccountTransactionsMock: vi.fn<FinancialApiClient['getAccountTransactions']>(),
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
   getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
@@ -128,7 +125,6 @@ vi.mock('../../api/financialApiClient', () => ({
     getAccounts: getAccountsMock,
     getAccount: getAccountMock,
     getAccountTransactions: getAccountTransactionsMock,
-    getBanks: getBanksMock,
     getCategories: getCategoriesMock,
     getIncomeSources: getIncomeSourcesMock,
     createExpense: createExpenseMock,
@@ -173,7 +169,7 @@ const CHASE_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
 const WISE_EUR_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000004'
 
 const ACCOUNTS: AccountDto[] = [
-  account({ id: BARCLAYS_ID, name: 'Barclays' }),
+  account({ id: BARCLAYS_ID, name: 'Barclays', roundUpEnabled: true }),
   account({ id: CHASE_ID, name: 'Chase' }),
   cardAccount({ id: AMEX_ID, name: 'BA Amex' }),
 ]
@@ -193,11 +189,6 @@ const CARD_STATEMENTS: AccountStatementDto[] = [
   { creditIn: 0, creditCarried: 0, status: 'NothingDue', paidAmount: null, id: 's-nov', year: 2026, month: 11, total: 0, outstandingTotal: 0, isPaid: false, dueDate: null, paidOn: null, paidFromAccountName: null },
   { creditIn: 0, creditCarried: 0, status: 'Unpaid', paidAmount: null, id: 's-oct', year: 2026, month: 10, total: 210.45, outstandingTotal: 210.45, isPaid: false, dueDate: '2026-11-03', paidOn: null, paidFromAccountName: null },
   { creditIn: 0, creditCarried: 0, status: 'Paid', paidAmount: 512.3, id: 's-sep', year: 2026, month: 9, total: 512.3, outstandingTotal: 0, isPaid: true, dueDate: '2026-10-03', paidOn: '2026-10-12', paidFromAccountName: 'Barclays' },
-]
-
-const BANKS: BankDto[] = [
-  { id: BARCLAYS_ID, name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
-  { id: CHASE_ID, name: 'Chase', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
 ]
 
 const CATEGORIES: CategoryDto[] = [
@@ -359,7 +350,6 @@ beforeEach(() => {
   createCardCreditRefundMock.mockReset()
   getCardsInCreditMock.mockReset().mockResolvedValue([])
   deleteCardCreditRefundMock.mockReset()
-  getBanksMock.mockReset().mockResolvedValue(BANKS)
   getCategoriesMock.mockReset().mockResolvedValue(CATEGORIES)
   getIncomeSourcesMock.mockReset().mockResolvedValue(INCOME_SOURCES)
   createExpenseMock.mockReset()
@@ -749,7 +739,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
 
     expect(await operationForm('Edit deposit')).toBeInTheDocument()
-    expect(getBanksMock).toHaveBeenCalled()
+    expect(getIncomeSourcesMock).toHaveBeenCalled()
   })
 
   it.each([
@@ -883,7 +873,7 @@ describe('AccountScreenPage on a Pots account', () => {
     expect(actions[1]).toHaveAttribute('aria-expanded', 'false')
     expect(actions[2]).toHaveAttribute('aria-haspopup', 'dialog')
     expect(actions[2]).not.toHaveAttribute('aria-expanded')
-    await waitFor(() => expect(getBanksMock).toHaveBeenCalled())
+    await waitFor(() => expect(getIncomeSourcesMock).toHaveBeenCalled())
   })
 
   it('keeps Manage pots disabled while the pots cannot be read', async () => {
@@ -1244,7 +1234,7 @@ describe('AccountScreenPage on a Settlement account', () => {
 
   it('[AC P60-F12-settlement-screen-04] adds an entry, stays open with the kept fields, focus on Description and a toast', async () => {
     const user = await openMaeScreen()
-    expect(getBanksMock).not.toHaveBeenCalled()
+    expect(getIncomeSourcesMock).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: 'Add entry' }))
     const form = screen.getByRole('form', { name: 'Add entry' })
@@ -1704,7 +1694,7 @@ describe('AccountScreenPage actions', () => {
     await screen.findByRole('heading', { level: 1, name: 'Barclays' })
 
     expect(screen.queryByRole('group', { name: 'Account actions' })).not.toBeInTheDocument()
-    expect(getBanksMock).not.toHaveBeenCalled()
+    expect(getIncomeSourcesMock).not.toHaveBeenCalled()
   })
 
   it('[AC P60-F05-bank-account-screen-06] opens one inline form above the grid, and switching with unsaved changes asks to discard', async () => {
@@ -1954,7 +1944,7 @@ describe('AccountScreenPage actions', () => {
   })
 
   it('disables the actions and offers Try again when the form options fail to load', async () => {
-    getBanksMock.mockRejectedValueOnce(new Error('boom'))
+    getIncomeSourcesMock.mockRejectedValueOnce(new Error('boom'))
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 

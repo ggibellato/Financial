@@ -93,6 +93,13 @@
           "currency": {
             "type": "string"
           },
+          "dueDate": {
+            "format": "date",
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "hasRecords": {
             "type": "boolean"
           },

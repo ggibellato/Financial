@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
 import { Button, Text } from '@fluentui/react-components'
-import type { BankDto } from '../api/types'
+import type { BankOption } from '../api/types'
 import type { IncomeFunding } from '../hooks/useIncomeForm'
 import { formatCurrency } from '../utils/formatters'
 import FundingLinesField from './FundingLinesField'
@@ -8,7 +8,7 @@ import './FundingLinesField.css'
 
 interface FundedFromSectionProps {
   funding: IncomeFunding
-  banks: BankDto[]
+  banks: BankOption[]
 }
 
 export default function FundedFromSection({ funding, banks }: FundedFromSectionProps) {

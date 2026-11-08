@@ -8,16 +8,16 @@ import type { DueDateFormState, StatementDueDateFormHandle } from '../../hooks/u
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import CardStatementsTab from '../CardStatementsTab'
 
-const { getAccountStatementsMock, getBanksMock, setStatementDueDateMock } = vi.hoisted(() => ({
+const { getAccountStatementsMock, getAccountsMock, setStatementDueDateMock } = vi.hoisted(() => ({
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   setStatementDueDateMock: vi.fn<FinancialApiClient['setStatementDueDate']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getAccountStatements: getAccountStatementsMock,
-    getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     setStatementDueDate: setStatementDueDateMock,
   } as Partial<FinancialApiClient>,
 }))
@@ -50,8 +50,8 @@ function cardStatements(overrides: Partial<CardStatements> = {}): CardStatements
     error: null,
     retry: vi.fn(),
     payers: [
-      { id: 'barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
-      { id: 'closed', name: 'Closed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: false },
+      { id: 'barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
+      { id: 'closed', name: 'Closed', roundUpEnabled: false, isActive: false },
     ],
     isLoadingPayers: false,
     payersError: null,
@@ -336,7 +336,7 @@ describe('CardStatementsTab', () => {
 
     beforeEach(() => {
       getAccountStatementsMock.mockReset().mockResolvedValue([IN_MONTH])
-      getBanksMock.mockReset().mockResolvedValue([])
+      getAccountsMock.mockReset().mockResolvedValue([])
       setStatementDueDateMock.mockReset().mockResolvedValue(undefined)
     })
 

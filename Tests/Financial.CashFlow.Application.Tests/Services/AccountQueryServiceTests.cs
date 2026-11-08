@@ -42,6 +42,13 @@ public class AccountQueryServiceTests
         _sut = new AccountQueryService(_repository, TestClock.At(new DateTimeOffset(2026, 11, 15, 12, 0, 0, TimeSpan.Zero)), _tracer, _logger);
     }
 
+    private CardStatement AmexStatement(int month, DateOnly? dueDate)
+    {
+        var statement = CardStatement.Create(_amex, 2026, month);
+        statement.SetDueDate(dueDate);
+        return statement;
+    }
+
     [Fact]
     public void GetAccounts_MixedCaseNames_ListsEveryAccountByNameIgnoringCase()
     {
@@ -77,6 +84,32 @@ public class AccountQueryServiceTests
             bank.Currencies.Should().Equal("GBP");
             bank.OtherParticipant.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public void GetAccounts_CardWithDatedStatements_CarriesTheLatestDueDate()
+    {
+        _repository.Accounts.Add(_amex);
+        _repository.CardStatements.AddRange([
+            AmexStatement(9, new DateOnly(2026, 9, 20)),
+            AmexStatement(10, new DateOnly(2026, 10, 25)),
+            AmexStatement(11, null)]);
+
+        var accounts = _sut.GetAccounts();
+
+        using (new AssertionScope())
+        {
+            accounts.Single(account => account.Id == _amex.Id).DueDate.Should().Be(new DateOnly(2026, 10, 25));
+            accounts.Single(account => account.Id == _barclays.Id).DueDate.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void GetAccounts_CardWithoutADatedStatement_HasNoDueDate()
+    {
+        _repository.Accounts.Add(_amex);
+
+        _sut.GetAccounts().Single(account => account.Id == _amex.Id).DueDate.Should().BeNull();
     }
 
     [Fact]

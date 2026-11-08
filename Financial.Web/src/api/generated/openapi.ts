@@ -8390,6 +8390,8 @@ export interface components {
             categoryId?: null | string;
             currencies: string[];
             currency: string;
+            /** Format: date */
+            dueDate?: null | string;
             hasRecords: boolean;
             /** Format: uuid */
             id: string;

@@ -14,5 +14,6 @@ public sealed class AccountDTO
     public DateOnly? BalanceStartDate { get; init; }
     public bool? RoundUpEnabled { get; init; }
     public Guid? CategoryId { get; init; }
+    public DateOnly? DueDate { get; init; }
     public required IReadOnlyList<string> Capabilities { get; init; }
 }

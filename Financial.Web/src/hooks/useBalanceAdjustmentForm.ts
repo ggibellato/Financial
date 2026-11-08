@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { BalanceAdjustmentDto, BankDto } from '../api/types'
+import type { BalanceAdjustmentDto, BankOption } from '../api/types'
 import type { BankTotal } from './useMonthly'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
@@ -87,7 +87,7 @@ export interface UseBalanceAdjustmentFormResult {
  */
 export function useBalanceAdjustmentForm(
   bankTotals: BankBalance[],
-  banks: BankDto[],
+  banks: BankOption[],
   onSaved: (isEdit: boolean) => void,
   { lockedBank, viewedMonth }: AccountFormSettings = {},
 ): UseBalanceAdjustmentFormResult {
