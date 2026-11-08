@@ -80,7 +80,7 @@ function settlementColumns(otherParticipant: string): TransactionColumn[] {
   return [
     DATE_COLUMN,
     DESCRIPTION_COLUMN,
-    { key: 'paidBy', header: 'Paid by', accessor: paidByLabel, render: paidByLabel },
+    { key: 'paidBy', header: 'Paid by', accessor: paidByLabel, render: (row) => <TruncatedText text={paidByLabel(row)} /> },
     {
       ...AMOUNT_COLUMN,
       accessor: (row) => Math.abs(row.amount),
@@ -96,7 +96,7 @@ function settlementColumns(otherParticipant: string): TransactionColumn[] {
           ? formatCurrency(settlement.convertedValue, settlement.convertedCurrency)
           : NO_CONVERTED_VALUE,
     },
-    { key: 'note', header: 'Note', accessor: (row) => row.settlement?.note, render: (row) => <TruncatedText text={row.settlement?.note} /> },
+    { key: 'note', header: 'Note', accessor: (row) => row.settlement?.note || null, render: (row) => <TruncatedText text={row.settlement?.note} /> },
   ]
 }
 

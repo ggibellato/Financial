@@ -116,7 +116,7 @@ describe('AccountTransactionsGrid', () => {
       ['Paid by', 'Taxa'],
       ['Amount', 'Taxa'],
       ['Converted', 'Farmácia'],
-      ['Note', 'Taxa'],
+      ['Note', 'Farmácia'],
     ])('sorts ascending by %s, putting %s first', (header, firstDescription) => {
       renderSettlement()
 
