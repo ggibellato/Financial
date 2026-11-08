@@ -231,12 +231,20 @@ describe('AccountsPage', () => {
     expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots', 'Settlement'])
     expect(headers(settlement)).toEqual(['Account', 'Balance'])
     expect(accountNames(settlement)).toEqual(['Mãe', 'SamuelInactive', 'Tia'])
-    expect(within(settlement).queryByRole('link')).not.toBeInTheDocument()
     const [mae, samuel, tia] = bodyRows(settlement)
     expect(within(mae).getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
     expect(within(samuel).getByText('Settled')).toBeInTheDocument()
     expect(within(tia).getByText('You owe Tia £15.00')).toBeInTheDocument()
     expect(footer(settlement)).toBeFalsy()
+  })
+
+  it('links a Settlement row to its account screen for the month, without a tab', async () => {
+    getAccountTemplateGroupsMock.mockResolvedValue([SETTLEMENT])
+
+    renderPage()
+
+    const settlement = await screen.findByRole('table', { name: 'Settlement' })
+    expect(within(settlement).getByRole('link', { name: 'Mãe' })).toHaveAttribute('href', '/cashflow/accounts/mae?month=2026-10')
   })
 
   it('sorts the Settlement grid by the main-currency balance', async () => {
