@@ -95,8 +95,8 @@ export default function InvestmentAccountsPage() {
         accountsError && (
           <MessageBar intent="warning">
             <MessageBarBody>
-              Couldn&rsquo;t load accounts, so the Source dropdown won&rsquo;t list any cards or Pots accounts and the
-              list can&rsquo;t name them right now.{' '}
+              Couldn&rsquo;t load accounts, so the Credit Card and Pots account pickers are empty and the Source column
+              shows — for linked accounts.{' '}
               <Button appearance="transparent" size="small" aria-label="Retry loading accounts" onClick={retryAccounts}>
                 Retry
               </Button>
