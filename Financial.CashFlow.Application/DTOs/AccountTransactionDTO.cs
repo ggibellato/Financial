@@ -9,6 +9,7 @@ public sealed class AccountTransactionDTO
     public string? CategoryName { get; init; }
     public string? Counterpart { get; init; }
     public required decimal Amount { get; init; }
+    public required string Currency { get; init; }
     public decimal? RoundUp { get; init; }
     public required bool CanEdit { get; init; }
     public AccountTransactionStatementDTO? Statement { get; init; }
@@ -18,4 +19,5 @@ public sealed class AccountTransactionDTO
     public AccountTransferDTO? Transfer { get; init; }
     public BalanceAdjustmentDTO? Adjustment { get; init; }
     public ReserveMovementDTO? Movement { get; init; }
+    public SettlementEntryDTO? Settlement { get; init; }
 }

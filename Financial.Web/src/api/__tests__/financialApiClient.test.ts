@@ -2483,6 +2483,17 @@ describe('financialApiClient', () => {
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
+  it('deletes a settlement entry through its account route, accepting the empty 204', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await expect(client.deleteSettlementEntry('mae', 'e7')).resolves.toBeUndefined()
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/mae/settlement-entries/e7`)
+    expect(init?.method).toBe('DELETE')
+  })
+
   it('deletes a card credit refund through its own route, accepting the empty 204', async () => {
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

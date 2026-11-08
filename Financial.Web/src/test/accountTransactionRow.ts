@@ -4,6 +4,7 @@ type RequiredRowFields = Pick<AccountTransactionDto, 'id' | 'kind' | 'date' | 'a
 
 export function accountTransactionRow(fields: RequiredRowFields & Partial<AccountTransactionDto>): AccountTransactionDto {
   return {
+    currency: 'GBP',
     description: null,
     categoryName: null,
     counterpart: null,
@@ -16,6 +17,7 @@ export function accountTransactionRow(fields: RequiredRowFields & Partial<Accoun
     statement: null,
     operation: null,
     movement: null,
+    settlement: null,
     ...fields,
   }
 }

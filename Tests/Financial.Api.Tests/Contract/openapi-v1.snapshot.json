@@ -587,6 +587,9 @@
               "string"
             ]
           },
+          "currency": {
+            "type": "string"
+          },
           "date": {
             "format": "date",
             "type": "string"
@@ -651,6 +654,16 @@
               "number"
             ]
           },
+          "settlement": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/SettlementEntryDTO"
+              }
+            ]
+          },
           "statement": {
             "oneOf": [
               {
@@ -677,6 +690,7 @@
           "kind",
           "date",
           "amount",
+          "currency",
           "canEdit"
         ],
         "type": "object"

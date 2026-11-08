@@ -100,6 +100,20 @@ describe('isOlderIncomeLine', () => {
   })
 })
 
+describe('a settlement entry row', () => {
+  const ENTRY = accountTransactionRow({ id: 's1', kind: 'SettlementEntry', date: '2026-10-11', amount: 80 })
+
+  it('is labelled as an entry', () => {
+    expect(kindLabel('SettlementEntry')).toBe('Settlement entry')
+    expect(recordNoun('SettlementEntry')).toBe('entry')
+  })
+
+  it('asks and reports its delete as an entry', () => {
+    expect(deleteConfirmation(ENTRY)).toBe('Delete this entry? This cannot be undone.')
+    expect(deletedMessage(ENTRY)).toBe('Entry deleted')
+  })
+})
+
 describe('deleteConfirmation', () => {
   it("states the server's count for a line of a split", () => {
     expect(deleteConfirmation(movementRow('m1', { splitLineCount: 4 }))).toBe(

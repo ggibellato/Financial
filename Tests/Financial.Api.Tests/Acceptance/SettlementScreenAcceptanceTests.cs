@@ -311,6 +311,37 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         edit.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    [Trait("AC", "P60-F12-settlement-screen-03")]
+    public async Task Transactions_SettlementEntries_AreOneRowEachInTheirOwnCurrency_OnTheAccountAndInMonthTransactions()
+    {
+        (await Client.PostAsJsonAsync(EntriesUrl(MaeId), NewEntry("GBP", 10m, "Other"))).EnsureSuccessStatusCode();
+
+        var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{MaeId}/transactions/2026/9");
+        var monthRows = await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/9");
+        var maeMonthRows = monthRows!.Where(row => row.AccountName == "Mãe").ToList();
+
+        using (new AssertionScope())
+        {
+            rows!.Select(row => (row.Kind, row.Amount, row.Currency, row.CategoryName)).Should().Equal(
+                ("SettlementEntry", -10m, "GBP", (string?)null),
+                ("SettlementEntry", 150m, "BRL", (string?)null));
+            rows![1].Settlement!.ConvertedValue.Should().Be(21.94m);
+            rows![1].Settlement!.Warning.Should().BeNull();
+            maeMonthRows.Select(row => (row.Transaction.Amount, row.Transaction.Currency, row.AccountCurrency)).Should().Equal(
+                (-10m, "GBP", "BRL"),
+                (150m, "BRL", "BRL"));
+        }
+    }
+
+    [Fact]
+    public async Task MonthTransactions_SettlementEntries_AddNoCategorisedRow()
+    {
+        var monthRows = await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/9");
+
+        monthRows.Should().HaveCount(3).And.OnlyContain(row => row.Transaction.CategoryName == null);
+    }
+
     private static string SettleUrl(string accountId) => $"{Api}/accounts/{accountId}/settlements";
 
     private static SettleRequestDTO Settlement(decimal amount, decimal? convertedValue, string? currency = "BRL", DateOnly? date = null) => new()

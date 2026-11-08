@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest'
 import type { MonthTransactionDto } from '../../api/types'
 import { monthTransactionTotals } from '../monthTransactionTotals'
 
-function row(currency: string, amount: number): MonthTransactionDto {
+function row(currency: string, amount: number, accountCurrency = currency): MonthTransactionDto {
   return {
-    accountId: `account-${currency}`,
-    accountName: currency,
-    accountCurrency: currency,
+    accountId: `account-${accountCurrency}`,
+    accountName: accountCurrency,
+    accountCurrency,
     accountIsActive: true,
-    transaction: { amount } as MonthTransactionDto['transaction'],
+    transaction: { amount, currency } as MonthTransactionDto['transaction'],
   }
 }
 
@@ -19,6 +19,15 @@ describe('monthTransactionTotals', () => {
     expect(totals).toEqual([
       { currency: 'BRL', total: -100, spend: 100 },
       { currency: 'GBP', total: -50.25, spend: 50.25 },
+    ])
+  })
+
+  it('[AC P60-F12-settlement-screen-03] totals a settlement entry in its own currency, not its account currency', () => {
+    const totals = monthTransactionTotals([row('BRL', 150), row('GBP', -10, 'BRL')])
+
+    expect(totals).toEqual([
+      { currency: 'BRL', total: 150, spend: -150 },
+      { currency: 'GBP', total: -10, spend: 10 },
     ])
   })
 

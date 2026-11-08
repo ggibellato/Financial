@@ -10,8 +10,8 @@ export interface CurrencyTotal {
 export function monthTransactionTotals(rows: MonthTransactionDto[]): CurrencyTotal[] {
   const penceByCurrency = new Map<string, number>()
   for (const row of rows) {
-    const pence = penceByCurrency.get(row.accountCurrency) ?? 0
-    penceByCurrency.set(row.accountCurrency, pence + toPence(row.transaction.amount))
+    const { amount, currency } = row.transaction
+    penceByCurrency.set(currency, (penceByCurrency.get(currency) ?? 0) + toPence(amount))
   }
   return [...penceByCurrency.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
