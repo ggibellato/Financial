@@ -121,7 +121,7 @@ public class BanksEndpointsTests : ApiEndpointTests
     [Fact]
     public async Task DeleteBank_ReferencedByBalanceAdjustment_ReturnsConflictWithMessage()
     {
-        await Client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
+        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             TargetBalance = 150m
@@ -191,7 +191,7 @@ public class BanksEndpointsTests : ApiEndpointTests
         var before = await (await Client.GetAsync("/api/v1/financial/banks")).Content.ReadFromJsonAsync<List<BankDTO>>();
         before.Should().ContainSingle(b => b.Id == BarclaysId && !b.HasReferences);
 
-        await Client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
+        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             TargetBalance = 150m
@@ -338,7 +338,7 @@ public class BanksEndpointsTests : ApiEndpointTests
             OpeningBalance = 100m,
             OpeningBalanceDate = new DateOnly(2026, 1, 1)
         });
-        await Client.PostAsJsonAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
+        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 5),
             TargetBalance = 150m

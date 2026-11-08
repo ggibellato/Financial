@@ -305,16 +305,16 @@ export interface FinancialApiClient {
   deleteIncome: (id: string) => Promise<void>
   createTransfer: (request: TransferCreateDto) => Promise<TransferDto>
   updateTransfer: (id: string, request: TransferUpdateDto) => Promise<TransferDto>
-  createBalanceAdjustment: (bankId: string, request: BalanceAdjustmentCreateDto) => Promise<BalanceAdjustmentDto>
+  createBalanceAdjustment: (accountId: string, request: BalanceAdjustmentCreateDto) => Promise<BalanceAdjustmentDto>
   updateBalanceAdjustment: (
-    bankId: string,
+    accountId: string,
     id: string,
     request: BalanceAdjustmentUpdateDto,
   ) => Promise<BalanceAdjustmentDto>
   getTransfersByMonth: (year: number, month: number) => Promise<TransferDto[]>
   deleteTransfer: (id: string) => Promise<void>
   getAdjustmentsByBank: (bankId: string) => Promise<BalanceAdjustmentDto[]>
-  deleteBalanceAdjustment: (bankId: string, id: string) => Promise<void>
+  deleteBalanceAdjustment: (accountId: string, id: string) => Promise<void>
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
@@ -863,13 +863,13 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
-    createBalanceAdjustment: (bankId, requestBody) =>
-      request<BalanceAdjustmentDto>(`/banks/${encodeURIComponent(bankId)}/adjustments`, {
+    createBalanceAdjustment: (accountId, requestBody) =>
+      request<BalanceAdjustmentDto>(`/accounts/${encodeURIComponent(accountId)}/adjustments`, {
         method: 'POST',
         body: JSON.stringify(requestBody),
       }),
-    updateBalanceAdjustment: (bankId, id, requestBody) =>
-      request<BalanceAdjustmentDto>(`/banks/${encodeURIComponent(bankId)}/adjustments/${encodeURIComponent(id)}`, {
+    updateBalanceAdjustment: (accountId, id, requestBody) =>
+      request<BalanceAdjustmentDto>(`/accounts/${encodeURIComponent(accountId)}/adjustments/${encodeURIComponent(id)}`, {
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
@@ -877,8 +877,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     deleteTransfer: (id) => requestVoid(`/transfers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getAdjustmentsByBank: (bankId) =>
       request<BalanceAdjustmentDto[]>(`/banks/${encodeURIComponent(bankId)}/adjustments`),
-    deleteBalanceAdjustment: (bankId, id) =>
-      requestVoid(`/banks/${encodeURIComponent(bankId)}/adjustments/${encodeURIComponent(id)}`, {
+    deleteBalanceAdjustment: (accountId, id) =>
+      requestVoid(`/accounts/${encodeURIComponent(accountId)}/adjustments/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       }),
     getCardStatementsByMonth: (year, month) =>

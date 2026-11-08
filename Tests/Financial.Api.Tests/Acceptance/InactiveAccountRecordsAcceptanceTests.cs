@@ -167,7 +167,7 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
         await DeactivateChaseAsync();
 
         var response = await Client.PostAsJsonAsync(
-            $"{Api}/banks/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO { Date = Date, TargetBalance = 10m });
+            $"{Api}/accounts/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO { Date = Date, TargetBalance = 10m });
 
         await ShouldBeRefusedAsInactive(response);
     }
@@ -177,10 +177,10 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
     public async Task DeleteAdjustment_OnAnInactiveBank_Succeeds()
     {
         var adjustment = await CreateAsync<BalanceAdjustmentDTO>(
-            $"banks/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO { Date = Date, TargetBalance = 10m });
+            $"accounts/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO { Date = Date, TargetBalance = 10m });
         await DeactivateChaseAsync();
 
-        var delete = await Client.DeleteAsync($"{Api}/banks/{ChaseId}/adjustments/{adjustment.Id}");
+        var delete = await Client.DeleteAsync($"{Api}/accounts/{ChaseId}/adjustments/{adjustment.Id}");
 
         delete.IsSuccessStatusCode.Should().BeTrue();
     }
