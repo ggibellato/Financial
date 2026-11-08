@@ -131,6 +131,12 @@
   gap: 12px;
 }
 
+@media (min-width: 600px) {
+  .account-screen__grid-scroll .data-table {
+    min-width: 720px;
+  }
+}
+
 @media (max-width: 599px) {
   .account-screen {
     padding: 16px 16px 0;
