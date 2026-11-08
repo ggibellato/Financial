@@ -467,7 +467,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Kind = TransactionKind.SettlementEntry.ToString(),
         Date = entry.Date,
         Description = entry.Description,
-        Amount = entry.SignedValueIn(entry.Currency)!.Value,
+        Amount = entry.ContributionTo(account, entry.Currency),
         Currency = entry.Currency.ToString(),
         CanEdit = account.IsActive,
         Settlement = SettlementService.ToDto(entry, null)
