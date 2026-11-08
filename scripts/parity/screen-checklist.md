@@ -52,5 +52,7 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly → All transactions (after only) | M1, M3 | **S6:** filtered to Mãe: one row per entry, amount in the entry's currency, footer totals per currency; Spend for every category unchanged | — | | |
 | Settlement screen (after only) | M1 | **S7:** at 320 px the Settlement header, actions and grid stack with no horizontal page scroll; on a wide screen Tab reaches the picker, month, Add entry, Settle, the row actions and every form field with visible focus | — | | |
 | Settlement screen (after only, on the after side's copy) | M1 | **S8:** Mãe → Settle → BRL pre-fills paid by Mãe, R$167.88, £7.94 and "1 GBP = R$21.14"; Save settlement → "Both totals become zero." → header "Settled", Settle disabled with "Nothing to settle." | — | | |
+| Card screen → Statements (after only, on the after side's copy) | M1 | **N1:** Amex → Statements → Due date on October 2026 → 25 Oct → the column and Settings → Integrations show it; Clear due date on November 2026 leaves October's | — | | |
+| Card screen → Statements (after only) | M1 | **N6:** at 320 px the Statements tab with the due-date form open has no horizontal page scroll; Tab reaches Due date, the field, Save due date, Clear due date and Cancel | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.

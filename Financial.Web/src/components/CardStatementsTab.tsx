@@ -27,6 +27,7 @@ import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import StatementDueDateForm from './StatementDueDateForm'
 import TruncatedText from './TruncatedText'
 import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
@@ -217,11 +218,11 @@ export default function CardStatementsTab({
   canAct,
   guardChange,
 }: CardStatementsTabProps) {
-  const { statements, isLoading, error, retry, payForm, savedCount, openPayForm, closePayForm, requestUnmark, unmark, cancelUnmark, confirmUnmark } =
+  const { statements, isLoading, error, retry, payForm, dueDateForm, savedCount, openPayForm, closePayForm, requestUnmark, unmark, cancelUnmark, confirmUnmark } =
     cardStatements
   const headingRef = useRef<HTMLHeadingElement | null>(null)
   const viewedRowRef = useRef<HTMLTableRowElement | null>(null)
-  const payOpenerRef = useRef<HTMLButtonElement | null>(null)
+  const formOpenerRef = useRef<HTMLButtonElement | null>(null)
   const { sortedRows, sortState, requestSort } = useSortableRows(statements, ACCESSORS, MONTH_DESC_SORT)
 
   useEffect(() => {
@@ -232,10 +233,25 @@ export default function CardStatementsTab({
     if (savedCount > 0) headingRef.current?.focus()
   }, [savedCount])
 
+  const returnFocusToOpener = () => {
+    if (formOpenerRef.current?.isConnected) formOpenerRef.current.focus()
+  }
+
   const cancelPayForm = () => {
     closePayForm()
-    if (payOpenerRef.current?.isConnected) payOpenerRef.current.focus()
+    returnFocusToOpener()
   }
+
+  const cancelDueDateForm = () => {
+    dueDateForm.close()
+    returnFocusToOpener()
+  }
+
+  const openFormFrom = (button: HTMLButtonElement, openForm: () => void) =>
+    guardChange(() => {
+      formOpenerRef.current = button
+      openForm()
+    })
 
   const isViewed = (statement: AccountStatementDto) => statement.year === viewedYear && statement.month === viewedMonth
 
@@ -246,7 +262,7 @@ export default function CardStatementsTab({
       </Text>
       {!canAct && (
         <MessageBar intent="info">
-          <MessageBarBody>This card is inactive, so its statements can't be paid or unmarked here.</MessageBarBody>
+          <MessageBarBody>This card is inactive, so its statements can't be paid, unmarked or given a due date here.</MessageBarBody>
         </MessageBar>
       )}
       {error ? (
@@ -254,6 +270,14 @@ export default function CardStatementsTab({
       ) : (
         <>
           {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelPayForm} />}
+          {dueDateForm.form && (
+            <StatementDueDateForm
+              key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
+              form={dueDateForm.form}
+              dueDateForm={dueDateForm}
+              onCancel={cancelDueDateForm}
+            />
+          )}
           <div className="account-screen__grid-scroll">
             <Table className="data-table" aria-label="Statements">
               <TableHeader>
@@ -309,29 +333,33 @@ export default function CardStatementsTab({
                           </DataTableCell>
                         ))}
                         <TableCell className="data-table__col--action-wide">
-                          {canAct &&
-                            isStoredStatement(statement) &&
-                            (statement.isPaid ? (
-                              <Button appearance="primary" aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
-                                Unmark
-                              </Button>
-                            ) : (
-                              statement.status === UNPAID_STATEMENT_STATUS && (
+                          {canAct && (
+                            <div className="data-table__actions-cell">
+                              {isStoredStatement(statement) && statement.isPaid && (
+                                <Button appearance="primary" aria-label={`Unmark ${month} statement`} onClick={() => requestUnmark(statement)}>
+                                  Unmark
+                                </Button>
+                              )}
+                              {isStoredStatement(statement) && !statement.isPaid && statement.status === UNPAID_STATEMENT_STATUS && (
                                 <Button
                                   appearance="primary"
                                   aria-label={`Pay ${month} statement`}
-                                  onClick={(event) => {
-                                    const button = event.currentTarget
-                                    guardChange(() => {
-                                      payOpenerRef.current = button
-                                      openPayForm(statement)
-                                    })
-                                  }}
+                                  onClick={(event) => openFormFrom(event.currentTarget, () => openPayForm(statement))}
                                 >
                                   Pay
                                 </Button>
-                              )
-                            ))}
+                              )}
+                              {!statement.isPaid && (
+                                <Button
+                                  appearance="secondary"
+                                  aria-label={`Set the ${month} due date`}
+                                  onClick={(event) => openFormFrom(event.currentTarget, () => dueDateForm.open(statement))}
+                                >
+                                  Due date
+                                </Button>
+                              )}
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )

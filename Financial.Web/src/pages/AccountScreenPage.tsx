@@ -67,7 +67,7 @@ export default function AccountScreenPage() {
       notifySaved(message)
       cardStatements.retry()
     },
-    { isDirty: cardStatements.isPayFormDirty, close: cardStatements.closePayForm },
+    { isDirty: cardStatements.isFormDirty, close: cardStatements.closeForms },
     { accounts: screen.accounts, hasPots },
   )
   const {
