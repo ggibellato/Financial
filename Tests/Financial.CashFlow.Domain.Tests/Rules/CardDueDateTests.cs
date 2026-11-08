@@ -18,6 +18,9 @@ public class CardDueDateTests
         return statement;
     }
 
+    private static CardStatementLedgerMonth LedgerMonth(CardStatementLedgerStatus status) =>
+        new(2026, 10, null, 0m, 0m, 0m, 0m, null, status);
+
     [Fact]
     public void For_SeveralDatedStatements_ReturnsTheLatestByYearThenMonth()
     {
@@ -61,6 +64,53 @@ public class CardDueDateTests
         var statements = new[] { Statement(_amex, 2026, 11), Statement(_visa, 2026, 11, new DateOnly(2026, 11, 5)) };
 
         CardDueDate.For(_amex, statements).Should().BeNull();
+    }
+
+    [Fact]
+    public void SetOn_DateInTheStatementsMonth_SetsItClearsTheCardsLaterDatesAndLeavesEarlierOnes()
+    {
+        var september = Statement(_amex, 2026, 9, new DateOnly(2026, 9, 18));
+        var october = Statement(_amex, 2026, 10, new DateOnly(2026, 10, 18));
+        var november = Statement(_amex, 2026, 11, new DateOnly(2026, 11, 18));
+        var otherCard = Statement(_visa, 2026, 11, new DateOnly(2026, 11, 5));
+
+        CardDueDate.SetOn(_amex, [september, october, november, otherCard], october, new DateOnly(2026, 10, 25));
+
+        new[] { september.DueDate, october.DueDate, november.DueDate, otherCard.DueDate }.Should().Equal(
+            new DateOnly(2026, 9, 18), new DateOnly(2026, 10, 25), null, new DateOnly(2026, 11, 5));
+    }
+
+    [Theory]
+    [InlineData(2026, 11, 1)]
+    [InlineData(2026, 9, 30)]
+    [InlineData(2025, 10, 25)]
+    public void SetOn_DateOutsideTheStatementsMonth_IsRefusedAndChangesNothing(int year, int month, int day)
+    {
+        var october = Statement(_amex, 2026, 10, new DateOnly(2026, 10, 18));
+        var november = Statement(_amex, 2026, 11, new DateOnly(2026, 11, 18));
+
+        var act = () => CardDueDate.SetOn(_amex, [october, november], october, new DateOnly(year, month, day));
+
+        act.Should().Throw<ArgumentException>().WithMessage("The due date must be in October 2026.");
+        new[] { october.DueDate, november.DueDate }.Should().Equal(new DateOnly(2026, 10, 18), new DateOnly(2026, 11, 18));
+    }
+
+    [Theory]
+    [InlineData(CardStatementLedgerStatus.Unpaid)]
+    [InlineData(CardStatementLedgerStatus.NothingDue)]
+    public void EnsureCanChange_RowThatIsNotPaid_IsAccepted(CardStatementLedgerStatus status)
+    {
+        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(status));
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureCanChange_PaidRow_IsRefused()
+    {
+        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(CardStatementLedgerStatus.Paid));
+
+        act.Should().Throw<ArgumentException>().WithMessage("The October 2026 statement is paid, so its due date can't change.");
     }
 
     [Fact]
