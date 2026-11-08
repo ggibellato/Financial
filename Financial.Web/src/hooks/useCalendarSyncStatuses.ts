@@ -1,6 +1,7 @@
 import { useCallback, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { CreditCardCalendarSyncStatusDto } from '../api/types'
+import { accountsWith } from '../utils/accountCapabilities'
 import { getErrorMessage } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
 
@@ -50,8 +51,8 @@ function resyncReducer(state: ResyncState, action: ResyncAction): ResyncState {
 function fetchRows(): Promise<CalendarSyncStatusRow[]> {
   return Promise.all([apiClient.getAccounts(), apiClient.getCalendarSyncStatuses()]).then(([accounts, statuses]) => {
     const statusByCardId = new Map(statuses.map((status) => [status.creditCardId, status]))
-    return accounts
-      .filter((account) => account.capabilities.includes('HasStatements') && account.isActive && account.dueDate != null)
+    return accountsWith(accounts, 'HasStatements')
+      .filter((card) => card.dueDate != null)
       .map((card): CalendarSyncStatusRow => {
         const status = statusByCardId.get(card.id)
         return {
