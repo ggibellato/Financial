@@ -17,6 +17,7 @@ import type { OperationToOpen } from './useOperationRoute'
 import { usePotDepositForm } from './usePotDepositForm'
 import { usePotTransactionEditForm } from './usePotTransactionEditForm'
 import { usePotWithdrawalForm } from './usePotWithdrawalForm'
+import { useSettlementEntryForm } from './useSettlementEntryForm'
 import type { YearMonth } from './useMonthSelection'
 
 export const NO_CREDIT_CARDS: CreditCardDto[] = []
@@ -131,6 +132,7 @@ export function useAccountActionForms(
   const potTransactionForm = usePotTransactionEditForm(() => saved('Pot transaction updated'))
   const depositForm = usePotDepositForm(hasPots ? currentAccountOption : undefined, viewedMonth, () => saved('Deposit saved'))
   const withdrawalForm = usePotWithdrawalForm(accounts, options.categories, viewedMonth, () => saved('Withdrawal saved'))
+  const settlementEntryForm = useSettlementEntryForm(currentAccount, viewedMonth, saved)
   const [isManagePotsOpen, setIsManagePotsOpen] = useState(false)
 
   const openers: Record<AccountFormAction, () => void> = {
@@ -149,6 +151,7 @@ export function useAccountActionForms(
     Withdraw: () => withdrawalForm.openFromPotsAccount(routeAccountId),
     ManagePots: () => setIsManagePotsOpen(true),
     WithdrawFromPots: () => withdrawalForm.openFromBank(routeAccountId),
+    AddEntry: () => settlementEntryForm.openAdd(),
   }
 
   const createAction = (): AccountFormAction | null => {
@@ -161,6 +164,7 @@ export function useAccountActionForms(
     if (payBillForm.isOpen) return 'PayRecurringBill'
     if (payStatementForm.isOpen) return 'PayCardStatement'
     if (creditRefundForm.isOpen) return creditRefundForm.mode === 'card' ? 'RefundCreditToBank' : 'ReceiveCardCredit'
+    if (settlementEntryForm.isOpen && !settlementEntryForm.isEditing) return 'AddEntry'
     if (isManagePotsOpen) return 'ManagePots'
     return null
   }
@@ -173,7 +177,8 @@ export function useAccountActionForms(
     moveForm.isOpen ||
     potTransactionForm.isOpen ||
     depositForm.isOpen ||
-    withdrawalForm.isOpen
+    withdrawalForm.isOpen ||
+    settlementEntryForm.isOpen
   const [editedRowKey, setEditedRowKey] = useState<string | null>(null)
   const editingRowKey = activeAction === null && isAnyFormOpen ? editedRowKey : null
   const activeFormKey = activeAction
@@ -192,6 +197,7 @@ export function useAccountActionForms(
     potTransactionForm.isDirty ||
     depositForm.isDirty ||
     withdrawalForm.isDirty ||
+    settlementEntryForm.isDirty ||
     screenForm.isDirty
   const discardPrompt = useDiscardPrompt(isDirty)
   const openerRef = useRef<HTMLElement | null>(null)
@@ -209,6 +215,7 @@ export function useAccountActionForms(
     if (potTransactionForm.isOpen) potTransactionForm.cancel()
     if (depositForm.isOpen) depositForm.cancel()
     if (withdrawalForm.isOpen) withdrawalForm.cancel()
+    if (settlementEntryForm.isOpen) settlementEntryForm.cancel()
     setIsManagePotsOpen(false)
     screenForm.close()
   }
@@ -274,6 +281,7 @@ export function useAccountActionForms(
       else if (row.transfer) transferForm.openEditForm(row.transfer)
       else if (row.adjustment) adjustmentForm.openEditForm(row.adjustment)
       else if (row.movement) potTransactionForm.open(row.movement)
+      else if (row.settlement) settlementEntryForm.openEdit(row.settlement)
     })
   }
 
@@ -321,7 +329,7 @@ export function useAccountActionForms(
   }
 
   const closeFormOfRemovedRow = (rows: readonly AccountTransactionDto[]) => {
-    if (editingRowKey && !isOperationRowKey(editingRowKey) && !rows.some((row) => rowKey(row) === editingRowKey)) closeActiveForm()
+    if (editingRowKey && !isOperationRowKey(editingRowKey) && !settlementEntryForm.warning && !rows.some((row) => rowKey(row) === editingRowKey)) closeActiveForm()
   }
 
   const guardChange = (change: () => void) =>
@@ -342,6 +350,7 @@ export function useAccountActionForms(
     potTransactionForm,
     depositForm,
     withdrawalForm,
+    settlementEntryForm,
     operationDelete,
     isOperationFormOpen,
     isManagePotsOpen,

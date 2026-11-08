@@ -95,6 +95,9 @@ import type {
   PortfolioReferenceDto,
   PortfolioUpdateDto,
   RecurringBillDto,
+  SettlementEntryCreateDto,
+  SettlementEntryDto,
+  SettlementEntryUpdateDto,
   ReportingCurrencySettingDto,
   SetCostBasisMethodRequestDto,
   SetReportingCurrencyEnabledRequestDto,
@@ -284,6 +287,8 @@ export interface FinancialApiClient {
   deleteAccountTransfer: (id: string) => Promise<void>
   createCardCreditRefund: (request: AccountTransferCreateDto) => Promise<AccountTransferDto>
   deleteCardCreditRefund: (id: string) => Promise<void>
+  createSettlementEntry: (accountId: string, requestBody: SettlementEntryCreateDto) => Promise<SettlementEntryDto>
+  updateSettlementEntry: (accountId: string, entryId: string, requestBody: SettlementEntryUpdateDto) => Promise<SettlementEntryDto>
   deleteSettlementEntry: (accountId: string, entryId: string) => Promise<void>
   getCardsInCredit: () => Promise<CardCreditDto[]>
   createExpense: (request: ExpenseCreateDto) => Promise<ExpenseDto>
@@ -794,6 +799,16 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteCardCreditRefund: (id) => requestVoid(`/accounts/credit-refunds/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    createSettlementEntry: (accountId, requestBody) =>
+      request<SettlementEntryDto>(`/accounts/${encodeURIComponent(accountId)}/settlement-entries`, {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      }),
+    updateSettlementEntry: (accountId, entryId, requestBody) =>
+      request<SettlementEntryDto>(`/accounts/${encodeURIComponent(accountId)}/settlement-entries/${encodeURIComponent(entryId)}`, {
+        method: 'PUT',
+        body: JSON.stringify(requestBody),
+      }),
     deleteSettlementEntry: (accountId, entryId) =>
       requestVoid(`/accounts/${encodeURIComponent(accountId)}/settlement-entries/${encodeURIComponent(entryId)}`, { method: 'DELETE' }),
     getCardsInCredit: () => request<CardCreditDto[]>('/accounts/cards-in-credit'),

@@ -8,7 +8,8 @@ import { pinDate } from '../../test-utils/pinDate'
 import type { AccountFormOptions } from '../useAccountFormOptions'
 import { useAccountActionForms } from '../useAccountActionForms'
 
-const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMock } = vi.hoisted(() => ({
+const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMock, updateSettlementEntryMock } = vi.hoisted(() => ({
+  updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
@@ -17,6 +18,7 @@ const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMoc
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
+    updateSettlementEntry: updateSettlementEntryMock,
     createExpense: createExpenseMock,
     createIncome: createIncomeMock,
     getMensaisBills: getMensaisBillsMock,
@@ -174,6 +176,84 @@ describe('useAccountActionForms', () => {
     expect(isOpen(result.current)).toBe(true)
     expect(result.current.activeAction).toBe(action)
     expect(document.activeElement).toBe(formArea.querySelector('input[name="date"]'))
+  })
+
+  describe('on a Settlement account', () => {
+    const MAE: AccountDetailDto = {
+      ...BARCLAYS,
+      id: 'mae',
+      name: 'Mãe',
+      currency: 'BRL',
+      templateName: 'Settlement',
+      allowedActions: ['AddEntry', 'Settle'],
+      currentBalances: [{ currency: 'BRL', balance: 10 }, { currency: 'GBP', balance: 2 }],
+      otherParticipant: 'Mãe',
+    }
+    const ENTRY_ROW = accountTransactionRow({
+      id: 's1',
+      kind: 'SettlementEntry',
+      date: '2026-10-05',
+      amount: 80,
+      settlement: { id: 's1', accountId: 'mae', date: '2026-10-05', description: 'Taxa', note: '', paidBy: 'You', currency: 'GBP', amount: 80, convertedCurrency: 'BRL', convertedValue: null, warning: null },
+    })
+    const renderSettlementForms = () => renderHook(() => useAccountActionForms('mae', MAE, OPTIONS, { year: 2026, month: 10 }, vi.fn()))
+
+    it('opens Add entry as the active action', () => {
+      const { result } = renderSettlementForms()
+
+      act(() => result.current.openAction('AddEntry', openerButton()))
+
+      expect(result.current.settlementEntryForm.isOpen).toBe(true)
+      expect(result.current.activeAction).toBe('AddEntry')
+    })
+
+    it('opens an entry row for editing without an active action', () => {
+      const { result } = renderSettlementForms()
+
+      act(() => result.current.openRowEdit(ENTRY_ROW, openerButton()))
+
+      expect(result.current.settlementEntryForm.isEditing).toBe(true)
+      expect(result.current.settlementEntryForm.values.description).toBe('Taxa')
+      expect(result.current.activeAction).toBeNull()
+    })
+
+    it('prompts before leaving a dirty entry, then closes it on discard', () => {
+      const { result } = renderSettlementForms()
+      act(() => result.current.openAction('AddEntry', openerButton()))
+      act(() => result.current.settlementEntryForm.setField('description', 'Mercado'))
+      const change = vi.fn()
+
+      act(() => result.current.guardChange(change))
+      expect(result.current.discardPrompt.isPromptOpen).toBe(true)
+      expect(change).not.toHaveBeenCalled()
+
+      act(() => result.current.discardPrompt.discard())
+      expect(change).toHaveBeenCalledTimes(1)
+      expect(result.current.settlementEntryForm.isOpen).toBe(false)
+    })
+
+    it('keeps an edit showing a warning open when its row left the viewed month', async () => {
+      updateSettlementEntryMock.mockResolvedValue({ ...ENTRY_ROW.settlement!, warning: 'The BRL value rounds to 0.00, so it was left empty.' })
+      const { result } = renderSettlementForms()
+      act(() => result.current.openRowEdit(ENTRY_ROW, openerButton()))
+
+      act(() => {
+        result.current.settlementEntryForm.submit()
+      })
+      await waitFor(() => expect(result.current.settlementEntryForm.warning).not.toBeNull())
+      act(() => result.current.closeFormOfRemovedRow([]))
+
+      expect(result.current.settlementEntryForm.isOpen).toBe(true)
+    })
+
+    it('closes the edit when its row disappears after a refresh', () => {
+      const { result } = renderSettlementForms()
+      act(() => result.current.openRowEdit(ENTRY_ROW, openerButton()))
+
+      act(() => result.current.closeFormOfRemovedRow([]))
+
+      expect(result.current.settlementEntryForm.isOpen).toBe(false)
+    })
   })
 
   it('closes the open form when another action is opened', () => {
