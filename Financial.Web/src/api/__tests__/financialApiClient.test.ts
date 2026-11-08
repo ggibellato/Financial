@@ -2295,6 +2295,18 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/accounts/a1/statements`)
   })
 
+  it('puts a statement due date by account, year and month', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 204 }))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    await client.setStatementDueDate('a1', 2026, 10, { dueDate: null })
+
+    const [url, init] = fetchMock.mock.calls[0]
+    expect(url).toBe(`${API_BASE_URL}/accounts/a1/statements/2026/10/due-date`)
+    expect(init?.method).toBe('PUT')
+    expect(init?.body).toBe(JSON.stringify({ dueDate: null }))
+  })
+
   it('reads every account\'s rows of a month', async () => {
     const responseBody = [{ accountId: 'a1', accountName: 'Barclays', accountCurrency: 'GBP', accountIsActive: true, transaction: { id: 'e1' } }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

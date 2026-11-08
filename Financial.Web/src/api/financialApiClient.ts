@@ -8,6 +8,7 @@ import type {
   AccountTemplateGroupDto,
   AccountTransactionDto,
   AccountStatementDto,
+  StatementDueDateUpdateDto,
   AccountTransferCreateDto,
   AccountTransferDto,
   AccountTransferUpdateDto,
@@ -271,6 +272,7 @@ export interface FinancialApiClient {
   getAccount: (id: string, year: number, month: number) => Promise<AccountDetailDto>
   getAccountTransactions: (id: string, year: number, month: number) => Promise<AccountTransactionDto[]>
   getAccountStatements: (id: string) => Promise<AccountStatementDto[]>
+  setStatementDueDate: (accountId: string, year: number, month: number, request: StatementDueDateUpdateDto) => Promise<void>
   getMonthTransactions: (year: number, month: number) => Promise<MonthTransactionDto[]>
   getPots: (potsAccountId: string, year: number, month: number) => Promise<PotsSummaryDto>
   updatePots: (potsAccountId: string, request: PotsUpdateDto) => Promise<void>
@@ -758,6 +760,8 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
     getAccountTransactions: (id, year, month) =>
       request<AccountTransactionDto[]>(`/accounts/${encodeURIComponent(id)}/transactions/${year}/${month}`),
     getAccountStatements: (id) => request<AccountStatementDto[]>(`/accounts/${encodeURIComponent(id)}/statements`),
+    setStatementDueDate: (accountId, year, month, requestBody) =>
+      requestVoid(`/accounts/${encodeURIComponent(accountId)}/statements/${year}/${month}/due-date`, { method: 'PUT', body: JSON.stringify(requestBody) }),
     getMonthTransactions: (year, month) => request<MonthTransactionDto[]>(`/accounts/transactions/${year}/${month}`),
     getPots: (potsAccountId, year, month) =>
       request<PotsSummaryDto>(`/accounts/${encodeURIComponent(potsAccountId)}/pots/${year}/${month}`),

@@ -167,6 +167,7 @@ export type SettlementEntryUpdateDto = Schema<'SettlementEntryUpdateDTO'>
 export type SettleRequestDto = Schema<'SettleRequestDTO'>
 export type MonthTransactionDto = Schema<'MonthTransactionDTO'>
 export type AccountStatementDto = Schema<'AccountStatementDTO'>
+export type StatementDueDateUpdateDto = Schema<'StatementDueDateUpdateDTO'>
 export type AccountTransactionStatementDto = Schema<'AccountTransactionStatementDTO'>
 export type PayableStatementDto = Schema<'PayableStatementDTO'>
 export type AccountTransferDto = Schema<'AccountTransferDTO'>
