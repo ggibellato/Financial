@@ -45,11 +45,7 @@ public sealed class StatementDueDateService : IStatementDueDateService
 
             var card = FindUsableCardOrThrow(accountId);
             var listedMonth = FindListedMonthOrThrow(card, year, month);
-            CardDueDate.EnsureCanChange(listedMonth);
-            if (request.DueDate is { } dueDate)
-            {
-                CardDueDate.EnsureWithinMonth(year, month, dueDate);
-            }
+            CardDueDate.EnsureCanChange(listedMonth, request.DueDate);
 
             await _repository.ApplyAndSaveAsync(() => ApplyDueDate(card, listedMonth, request.DueDate)).ConfigureAwait(false);
 
@@ -90,7 +86,12 @@ public sealed class StatementDueDateService : IStatementDueDateService
             return true;
         }
 
-        listedMonth.Statement?.SetDueDate(null);
-        return listedMonth.Statement is not null;
+        if (listedMonth.Statement is not { } stored)
+        {
+            return false;
+        }
+
+        stored.SetDueDate(null);
+        return true;
     }
 }

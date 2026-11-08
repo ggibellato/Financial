@@ -26,7 +26,7 @@ public static class CardDueDate
         statement.SetDueDate(dueDate);
     }
 
-    public static void EnsureWithinMonth(int year, int month, DateOnly dueDate)
+    private static void EnsureWithinMonth(int year, int month, DateOnly dueDate)
     {
         if (dueDate.Year != year || dueDate.Month != month)
         {
@@ -34,11 +34,16 @@ public static class CardDueDate
         }
     }
 
-    public static void EnsureCanChange(CardStatementLedgerMonth month)
+    public static void EnsureCanChange(CardStatementLedgerMonth month, DateOnly? newDueDate)
     {
         if (month.Status == CardStatementLedgerStatus.Paid)
         {
             throw new ArgumentException($"The {MonthLabel(month.Year, month.Month)} statement is paid, so its due date can't change.");
+        }
+
+        if (newDueDate is { } date)
+        {
+            EnsureWithinMonth(month.Year, month.Month, date);
         }
     }
 

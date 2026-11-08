@@ -100,7 +100,7 @@ public class CardDueDateTests
     [InlineData(CardStatementLedgerStatus.NothingDue)]
     public void EnsureCanChange_RowThatIsNotPaid_IsAccepted(CardStatementLedgerStatus status)
     {
-        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(status));
+        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(status), new DateOnly(2026, 10, 25));
 
         act.Should().NotThrow();
     }
@@ -108,9 +108,17 @@ public class CardDueDateTests
     [Fact]
     public void EnsureCanChange_PaidRow_IsRefused()
     {
-        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(CardStatementLedgerStatus.Paid));
+        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(CardStatementLedgerStatus.Paid), null);
 
         act.Should().Throw<ArgumentException>().WithMessage("The October 2026 statement is paid, so its due date can't change.");
+    }
+
+    [Fact]
+    public void EnsureCanChange_DateOutsideTheMonth_IsRefused()
+    {
+        var act = () => CardDueDate.EnsureCanChange(LedgerMonth(CardStatementLedgerStatus.Unpaid), new DateOnly(2026, 11, 1));
+
+        act.Should().Throw<ArgumentException>().WithMessage("The due date must be in October 2026.");
     }
 
     [Fact]

@@ -177,6 +177,7 @@ public sealed class FakeCalendarProvider : ICalendarProvider
     public Task DeleteEventAsync(string accessToken, string calendarId, string eventId, CancellationToken cancellationToken = default)
     {
         DeletedEvents.Add((calendarId, eventId));
+        EventWrites.Release();
         if (calendarId == NotFoundCalendarId)
         {
             throw new CalendarNotFoundException("Calendar not found.");
