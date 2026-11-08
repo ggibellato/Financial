@@ -110,7 +110,7 @@ function settleFill(balances: CurrencyBalances, currency: string): Pick<Settleme
 }
 
 function withSettleCurrency(state: SettlementEntryFormState, balances: CurrencyBalances, currency: string): SettlementEntryFormState {
-  return { ...state, convertedCurrency: otherCurrencyOf(balances, currency), values: { ...state.values, currency, ...settleFill(balances, currency) } }
+  return { ...state, fieldErrors: {}, convertedCurrency: otherCurrencyOf(balances, currency), values: { ...state.values, currency, ...settleFill(balances, currency) } }
 }
 
 function remainingBalances(balances: CurrencyBalances, values: SettlementEntryValues): CurrencyBalances {
@@ -246,7 +246,7 @@ export function useSettlementEntryForm(
   }
 
   const confirmSettle = () => {
-    if (account) save(account.id)
+    if (account && state.confirmation !== null) save(account.id)
   }
 
   const cancelConfirmation = () => setState((previous) => ({ ...previous, confirmation: null }))

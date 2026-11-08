@@ -425,6 +425,7 @@ export default function AccountScreenPage() {
             </Text>
             {pots.error && <ErrorState message={POTS_LOAD_ERROR} onRetry={pots.retry} />}
             <AccountTransactionsGrid
+              key={screen.accountId}
               accountId={screen.accountId}
               transactions={screen.transactions}
               {...gridColumns}

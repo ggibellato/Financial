@@ -93,6 +93,12 @@ describe('SettlementEntryForm', () => {
     expect(cancelConfirmation).toHaveBeenCalledOnce()
   })
 
+  it('has no implied rate region on a one-currency Settle', () => {
+    renderForm(settleState({ convertedCurrency: null, impliedRate: null, asksCurrency: false, currencies: ['GBP'] }))
+
+    expect(document.querySelector('[aria-live="polite"]')).toBeNull()
+  })
+
   it('shows no confirmation and no rate outside Settle', () => {
     renderForm(addState())
 

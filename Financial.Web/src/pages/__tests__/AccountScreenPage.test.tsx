@@ -1289,6 +1289,16 @@ describe('AccountScreenPage on a Settlement account', () => {
     expect(within(dialog).getByText('This leaves R$67.88 / £0.00 outstanding (Mãe owes you).')).toBeInTheDocument()
   })
 
+  it('[AC P60-F12-settlement-screen-08] puts focus on the chosen currency when Settle opens on a later one', async () => {
+    const detail = await getAccountMock(MAE_ID, 2026, 10)
+    getAccountMock.mockResolvedValue({ ...detail, currentBalances: [{ currency: 'BRL', balance: 0 }, { currency: 'GBP', balance: 5 }] })
+    const user = await openMaeScreen()
+
+    await user.click(screen.getByRole('button', { name: 'Settle' }))
+
+    expect(within(screen.getByRole('form', { name: 'Settle' })).getByRole('radio', { name: 'GBP' })).toHaveFocus()
+  })
+
   it('[AC P60-F12-settlement-screen-07] shows Settle disabled with its reason when the API disables it', async () => {
     const detail = await getAccountMock(MAE_ID, 2026, 10)
     getAccountMock.mockResolvedValue({ ...detail, disabledActions: { Settle: 'Nothing to settle.' }, currentBalances: [{ currency: 'BRL', balance: 0 }, { currency: 'GBP', balance: 0 }] })

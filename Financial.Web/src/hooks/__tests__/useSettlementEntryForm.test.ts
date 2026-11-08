@@ -208,6 +208,28 @@ describe('useSettlementEntryForm in Settle mode', () => {
     expect(onSaved).toHaveBeenCalledWith('Settlement saved')
   })
 
+  it('saves once when the confirmation is pressed twice', async () => {
+    const { result } = openSettle()
+    submit(result)
+
+    act(() => result.current.confirmSettle())
+    act(() => result.current.confirmSettle())
+
+    await waitFor(() => expect(result.current.isOpen).toBe(false))
+    expect(settleAccountMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('clears field errors when the currency change re-fills the form', () => {
+    const { result } = openSettle()
+    fill(result, { amount: '' })
+    submit(result)
+    expect(result.current.fieldErrors.amount).toBeDefined()
+
+    fill(result, { currency: 'GBP' })
+
+    expect(result.current.fieldErrors.amount).toBeUndefined()
+  })
+
   it('sends no converted value when it is left empty', async () => {
     const { result } = openSettle()
     fill(result, { convertedValue: '' })

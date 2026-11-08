@@ -229,7 +229,10 @@ export function useAccountActionForms(
 
   useEffect(() => {
     if (activeFormKey) {
-      formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD_SELECTOR)?.focus()
+      const firstField = formAreaRef.current?.querySelector<HTMLInputElement>(FIRST_FIELD_SELECTOR)
+      const checkedChoice = firstField?.type === 'radio' ? formAreaRef.current?.querySelector<HTMLElement>(`input[name="${firstField.name}"]:checked`) : null
+      const fieldToFocus = checkedChoice ?? firstField
+      fieldToFocus?.focus()
     } else if (document.activeElement === document.body) {
       openerRef.current?.focus()
     }
