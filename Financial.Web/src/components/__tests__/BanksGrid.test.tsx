@@ -101,7 +101,8 @@ describe('BanksGrid', () => {
 
   it('labels each footer total with its currency when the members hold several currencies', () => {
     render(
-      <BanksGrid viewedMonth="2026-07"
+      <BanksGrid
+        viewedMonth="2026-07"
         bankTotals={BANK_TOTALS}
         currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
       />,
@@ -125,7 +126,8 @@ describe('BanksGrid', () => {
   it('keys rows by account Id, so two accounts with the same name render without a key clash', () => {
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
     render(
-      <BanksGrid viewedMonth="2026-07"
+      <BanksGrid
+        viewedMonth="2026-07"
         bankTotals={[
           { bankId: 'bank-a', bank: 'Chase', currency: 'GBP', balance: 1, roundUpTotal: 0 },
           { bankId: 'bank-b', bank: 'Chase', currency: 'GBP', balance: 2, roundUpTotal: 0 },
@@ -140,7 +142,8 @@ describe('BanksGrid', () => {
 
   it('adds a Currency column when the members hold several currencies', () => {
     render(
-      <BanksGrid viewedMonth="2026-07"
+      <BanksGrid
+        viewedMonth="2026-07"
         bankTotals={[...BANK_TOTALS, { bankId: 'bank-itau', bank: 'Itaú', currency: 'BRL', balance: 640.5, roundUpTotal: 0 }]}
         currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 640.5, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
       />,

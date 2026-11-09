@@ -55,25 +55,22 @@ export function useMonthly(): MonthlyData {
     initialLoading: true,
   })
   const [carryForwardUpdating, setCarryForwardUpdating] = useState(false)
-  const [carryForwardError, setCarryForwardError] = useState<string | null>(null)
-
-  const selectMonth = (value: string) => {
-    setCarryForwardError(null)
-    setMonthInputValue(value)
-  }
+  const [carryForwardFailure, setCarryForwardFailure] = useState<{ monthInputValue: string; message: string } | null>(null)
 
   const retry = () => {
-    setCarryForwardError(null)
+    setCarryForwardFailure(null)
     overview.retry()
   }
 
   const updateCarryForwardInclusion = (included: boolean) => {
     setCarryForwardUpdating(true)
-    setCarryForwardError(null)
+    setCarryForwardFailure(null)
     void apiClient
       .updateTitheCarryForward(year, month, { included })
       .then(() => overview.refresh())
-      .catch((err: unknown) => setCarryForwardError(getErrorMessage(err, 'Failed to update carry-forward')))
+      .catch((err: unknown) =>
+        setCarryForwardFailure({ monthInputValue, message: getErrorMessage(err, 'Failed to update carry-forward') }),
+      )
       .finally(() => setCarryForwardUpdating(false))
   }
 
@@ -94,7 +91,7 @@ export function useMonthly(): MonthlyData {
     year,
     month,
     monthInputValue,
-    setMonthInputValue: selectMonth,
+    setMonthInputValue,
     categoryTotals: overview.data?.categoryTotals ?? [],
     categoryTotalsSum: summary?.categoryTotalsSum ?? 0,
     bankTotals,
@@ -108,6 +105,6 @@ export function useMonthly(): MonthlyData {
     titheSummary: overview.data?.titheSummary ?? null,
     carryForwardUpdating,
     updateCarryForwardInclusion,
-    carryForwardError,
+    carryForwardError: carryForwardFailure?.monthInputValue === monthInputValue ? carryForwardFailure.message : null,
   }
 }

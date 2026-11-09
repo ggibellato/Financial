@@ -166,6 +166,23 @@ describe('useMonthly', () => {
     await waitFor(() => expect(getTitheSummaryByMonthMock).toHaveBeenCalledTimes(2))
   })
 
+  it('keeps a carry-forward failure to its own month, even when it arrives after the month changed', async () => {
+    let rejectUpdate!: (reason: Error) => void
+    updateTitheCarryForwardMock.mockReturnValue(new Promise((_, reject) => { rejectUpdate = reject }))
+    const { result } = await renderLoaded()
+
+    act(() => result.current.updateCarryForwardInclusion(false))
+    act(() => result.current.setMonthInputValue('2026-08'))
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => rejectUpdate(new Error('Refused')))
+
+    await waitFor(() => expect(result.current.carryForwardUpdating).toBe(false))
+    expect(result.current.carryForwardError).toBeNull()
+
+    act(() => result.current.setMonthInputValue('2026-07'))
+    expect(result.current.carryForwardError).toBe('Refused')
+  })
+
   it('sets carryForwardUpdating while the toggle request is in flight, then clears it', async () => {
     let resolveUpdate!: (value: TitheSummaryDto) => void
     updateTitheCarryForwardMock.mockReturnValue(new Promise((resolve) => { resolveUpdate = resolve }))
