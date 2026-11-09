@@ -19,7 +19,14 @@ const FILTER_ACCESSORS = {
 
 const FOOTER_FIGURES = [{ label: 'Combined adjustment figure', pick: (total: CurrencyTotalDto) => total.cardOutstandingTotal }]
 
-const outstandingOf = (card: AccountGroupMemberDto) => card.statement?.outstandingTotal ?? 0
+const CURRENCY_COLUMN = {
+  key: 'currency',
+  header: 'Currency',
+  render: (card: AccountGroupMemberDto) => card.currency,
+  sortAccessor: (card: AccountGroupMemberDto) => card.currency,
+}
+
+const outstandingOf =(card: AccountGroupMemberDto) => card.statement?.outstandingTotal ?? 0
 
 function statusOf(card: AccountGroupMemberDto): string {
   if (card.statement?.isPaid) return 'Paid'
@@ -33,6 +40,7 @@ function formatAccumulated(card: AccountGroupMemberDto): string {
 export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(cards, FILTER_ACCESSORS)
+  const isMultiCurrency = currencyTotals.length > 1
 
   return (
     <TotalsGrid
@@ -57,6 +65,7 @@ export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsG
             />
           ),
         },
+        ...(isMultiCurrency ? [CURRENCY_COLUMN] : []),
         {
           key: 'outstanding',
           header: 'Outstanding (period)',

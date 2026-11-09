@@ -55,6 +55,23 @@ describe('CardsGrid', () => {
     )
   })
 
+  it('adds a Currency column when the totals hold several currencies', () => {
+    renderGrid(
+      [card('card-baamex', 'BaAmex', 100, 325.5), { ...card('card-itau', 'Itaú', 50, 50), currency: 'BRL' }],
+      [...GBP_TOTALS, { currency: 'BRL', balance: 0, roundUpTotal: 0, cardOutstandingTotal: 50 }],
+    )
+
+    expect(screen.getByRole('columnheader', { name: 'Currency' })).toBeInTheDocument()
+    expect(within(rowOf('Itaú')).getByText('BRL')).toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).getByText('GBP')).toBeInTheDocument()
+  })
+
+  it('has no Currency column for a single currency', () => {
+    renderGrid()
+
+    expect(screen.queryByRole('columnheader', { name: 'Currency' })).not.toBeInTheDocument()
+  })
+
   it('shows its empty message and a zero adjustment figure when the group has no card', () => {
     renderGrid([], [])
 
