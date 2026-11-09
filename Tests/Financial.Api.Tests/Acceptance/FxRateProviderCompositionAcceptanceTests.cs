@@ -22,28 +22,30 @@ public class FxRateProviderCompositionAcceptanceTests() : ApiEndpointTests(useRe
     }
 
     [Fact]
-    public async Task ControleMaeCreateEntry_UsesRateFromTheLayeredFxRateProviderChain()
+    public async Task AddSettlementEntry_UsesRateFromTheLayeredFxRateProviderChain()
     {
-        ReplaceCashFlowDataBeforeStart("""
-            { "Accounts": [ { "Id": "6d0e0000-0000-0000-0000-000000000001", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" } ], "Version": 5 }
+        const string maeId = "6d0e0000-0000-0000-0000-000000000001";
+        ReplaceCashFlowDataBeforeStart($$"""
+            { "Accounts": [ { "Id": "{{maeId}}", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" } ], "Version": 5 }
             """);
         var store = Services.GetRequiredService<IFxRateStore>();
         await store.SetRateAsync(HistoricalDate, new FxRateRecord(5.0m, 0.8m, "frankfurter", TestClock.Default));
 
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/controle-mae/entries", new MaeLedgerEntryCreateDTO
+        var response = await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{maeId}/settlement-entries", new SettlementEntryCreateDTO
         {
             Date = HistoricalDate,
             Description = "FX composition check",
             Note = "P54 F04",
-            SourceCurrency = "BRL",
-            SourceValue = 350m
+            PaidBy = "You",
+            Currency = "BRL",
+            Amount = 350m
         });
 
         response.EnsureSuccessStatusCode();
-        var entry = await response.Content.ReadFromJsonAsync<MaeLedgerEntryDTO>();
+        var entry = await response.Content.ReadFromJsonAsync<SettlementEntryDTO>();
 
         entry.Should().NotBeNull();
-        entry!.BrlValue.Should().Be(350m);
-        entry.GbpValue.Should().Be(56m, "0.8/5.0 * 350 - the rate must come from the seeded store, not a live Frankfurter call");
+        entry!.Amount.Should().Be(350m);
+        entry.ConvertedValue.Should().Be(56m, "0.8/5.0 * 350 - the rate must come from the seeded store, not a live Frankfurter call");
     }
 }
