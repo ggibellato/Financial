@@ -4,24 +4,23 @@ import { API_PATH, expect, test } from './fixtures'
 test.describe.configure({ mode: 'serial' })
 
 async function openNewExpenseForm(page: Page) {
-  await page.goto('/cashflow/monthly')
-  await page.getByRole('tab', { name: 'Bank expenses' }).click()
-  await page.getByRole('button', { name: 'New Expense' }).click()
+  await page.goto('/cashflow/accounts')
+  await page.getByRole('link', { name: 'Barclays' }).click()
+  await page.getByRole('button', { name: 'Add expense', exact: true }).click()
 }
 
 async function fillValidExpense(page: Page, description: string) {
   await page.getByLabel('Description').fill(description)
   await page.getByLabel('Value').fill('12.34')
   await page.getByRole('combobox', { name: /^Category/ }).selectOption({ label: 'Mercado' })
-  await page.getByRole('combobox', { name: /^Payment Source/ }).selectOption({ label: 'Barclays' })
 }
 
-test('@smoke an added expense appears in the monthly list', async ({ page, runId }) => {
+test('@smoke an added expense appears on the account screen', async ({ page, runId }) => {
   const description = `e2e-${runId}`
   await openNewExpenseForm(page)
 
   await fillValidExpense(page, description)
-  await page.getByRole('button', { name: 'Add Expense' }).click()
+  await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
 
   await expect(page.getByRole('cell', { name: description })).toBeVisible()
 })
@@ -34,10 +33,10 @@ test('@smoke a blank value is rejected with a validation message and nothing is 
   await openNewExpenseForm(page)
 
   await page.getByLabel('Description').fill('blank value')
-  await page.getByRole('button', { name: 'Add Expense' }).click()
+  await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
 
   await expect(page.getByText('Value must be a non-zero number')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Add Expense' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Add Expense', exact: true })).toBeVisible()
   expect(posts).toEqual([])
 })
 
@@ -51,8 +50,8 @@ test('@smoke a server error is shown and the form can be submitted again', async
   await openNewExpenseForm(page)
 
   await fillValidExpense(page, `e2e-fail-${runId}`)
-  await page.getByRole('button', { name: 'Add Expense' }).click()
+  await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
 
   await expect(page.getByText('forced failure')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Add Expense' })).toBeEnabled()
+  await expect(page.getByRole('button', { name: 'Add Expense', exact: true })).toBeEnabled()
 })
