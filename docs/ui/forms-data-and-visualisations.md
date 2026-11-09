@@ -321,8 +321,8 @@ No grid in this repo currently needs it; when one does, build the menu with
 `Menu`/`MenuTrigger`/`MenuButton`/`MenuPopover`/`MenuList`/`MenuItem` (see
 `StatusMenuButton.tsx` for the existing pattern).
 
-A status indicator that isn't clickable (e.g. Reserva's 🔒 locked-movement
-glyph) is not a row action and does not count toward this — it stays wherever
+A status indicator that isn't clickable (e.g. a lock glyph on a row that can't
+be edited) is not a row action and does not count toward this — it stays wherever
 it currently sits and never occupies the Actions cell.
 
 `CardsGrid.tsx`'s mark/unmark-paid cell is a documented exception to the

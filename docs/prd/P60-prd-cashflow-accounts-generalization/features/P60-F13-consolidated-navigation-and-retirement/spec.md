@@ -55,7 +55,7 @@ Complexity: **complex**. Two moves the account screen still needs (balance adjus
 
 *Excluded:*
 - A reimbursement transaction type; the F10–F12 UI clean-up list, except items inside files F13 deletes.
-- Carrying over Controle Mãe's list from a chosen date and its all-time totals row, and the Reserva page's split-percentage warning, "Total split" rows and all-time movement list (PRD, user Q4/Q5).
+- Carrying over Controle Mãe's list from a chosen date and its all-time totals row, and the Reserva page's split-percentage warning, "Total split" rows and all-time movement list (PRD, user Q4/Q5), and the Income Split form's itemized "posted" result (F10's deposit previews its split and ends in a toast; the split's lines show on the Transactions tab) (user decision 2026-11-09).
 - Removing `ReservaAccount` and `MaeAccount` from the Domain: `ReplacesPage` (1e) and `CashFlowSpreadsheetImport` keep using them.
 - Removing `withdrawalExpenseCategories.ts`: `usePotWithdrawalForm` uses it; its pot-name category default is a form default, not a join between balances, accounts and a category (§3 "Fixed-name lookups").
 - A data-file version change (§6).
