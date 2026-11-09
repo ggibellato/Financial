@@ -21,8 +21,8 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly | M1, M2, M3 | Income totals per source (net and gross) and total incoming | | | |
 | Monthly | M1, M2, M3 | Tithe: calculated, balance, carry-forward | | | |
 | Card statements (before: Monthly's Card tab; after: each card's Statements tab) | M1, M2 | Each card's outstanding, accumulated outstanding and paid status. In a month with no statement for a card, the after side shows 0.00, "—" for accumulated and Nothing due, with no Mark Paid | | | |
-| Reserva | — | Each pot's balance and the pots total | | | |
-| Reserva | M1, M2 | Movements listed for the month (count and total) | | | |
+| Reserva → Reserva's Pots tab | — | Each pot's balance and the pots total on the Reserva page (5291) equal Reserva's Pots tab (5292) | | | |
+| Reserva → Reserva's Transactions tab | M1, M2 | Movements of the month on the Reserva page (5291) equal Reserva's Transactions tab (5292), count and total | | | |
 | Controle Mãe → Mãe screen | — | BRL and GBP totals on Controle Mãe (5291) equal the Mãe screen header's current balances (5292) | | | |
 | Controle Mãe → Mãe screen | M3, a 2022 month with pound entries | Entries of that month on Controle Mãe (5291) equal the Mãe screen's Transactions (5292): each BRL and GBP value the same; on 5292 the paid value is in its own currency and the other is Converted (the 5 pound entries show in GBP, which Controle Mãe doesn't show) | | | |
 | Annual summary | Current year, 2024 | Category totals (annual, average), income summary, result | | | |
@@ -37,8 +37,8 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Card screen (after only) | A month with no charges | **C3:** the grid shows "No transactions in <Month Year>" | — | | |
 | Card screen (after only) | M1 | **C4:** at 320 px wide there's no horizontal page scroll on either tab | — | | |
 | Card screen (after only) | M1, M2 | **C5:** the card header's "<Month yyyy> statement" figure equals the Statements tab's To pay (or paid amount) for the viewed month, and "Total owed" equals Monthly's accumulated outstanding | — | | |
-| Pots screen (after only) | M1 | **P1:** the Pots tab's balance per pot and total equal the Reserva page's | — | | |
-| Pots screen (after only) | M1, M2 | **P2:** the Transactions tab lists the same movements as the Reserva page for that month (count and total) | — | | |
+| Pots screen (after only) | M1 | **P1:** the Pots tab's balance per pot and total equal the Reserva page's (on 5291) | — | | |
+| Pots screen (after only) | M1, M2 | **P2:** the Transactions tab lists the same movements as the Reserva page (on 5291) for that month (count and total) | — | | |
 | Pots screen (after only) | A month with no movements | **P3:** the Transactions tab shows "No transactions in <Month Year>" | — | | |
 | Pots screen (after only) | M1 | **P4:** at 320 px wide there's no horizontal page scroll on either tab | — | | |
 | Monthly → All transactions (after only) | M1, M2, M3 | **T1:** filtered to one category, Spend equals that category's Category totals figure | — | | |
@@ -52,10 +52,10 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly → All transactions (after only) | M1, M3 | **S6:** filtered to Mãe: one row per entry, amount in the entry's currency, footer totals per currency; Spend for every category unchanged | — | | |
 | Settlement screen (after only) | M1 | **S7:** at 320 px the Settlement header, actions and grid stack with no horizontal page scroll; on a wide screen Tab reaches the picker, month, Add entry, Settle, the row actions and every form field with visible focus | — | | |
 | Settlement screen (after only, on the after side's copy) | M1 | **S8:** Mãe → Settle → BRL pre-fills paid by Mãe, R$167.88, £7.94 and "1 GBP = R$21.14"; Save settlement → "Both totals become zero." → header "Settled", Settle disabled with "Nothing to settle." | — | | |
-| Old links (after only) | — | **N4:** `/admin/cashflow/reserve-buckets` opens Reserva's Pots tab; `/cashflow/controle-mae` opens the Mãe screen | — | | |
+| Old links (after only) | — | **N4:** `/admin/cashflow/reserve-buckets` and `/cashflow/reserva` open Reserva's Pots tab; `/cashflow/controle-mae` opens the Mãe screen | — | | |
 | Card screen → Statements (after only, on the after side's copy) | M1 | **N1:** Amex → Statements → Due date on October 2026 → 25 Oct → the column and Settings → Integrations show it; Clear due date on November 2026 leaves October's | — | | |
 | Landing and Monthly (after only) | M1, M3 | **N2:** with CashFlow last used, opening `/` lands on Accounts; Monthly shows Summary and All transactions only, with the before side's Summary figures; each bank and card name opens its account screen at the viewed month | — | | |
-| Menus (after only) | — | **N3:** CashFlow menu: Accounts, Monthly, Annual Summary, Mensais, Investment Snapshots (Reserva follows until its page retires); Admin CashFlow: Accounts, Categories, Income Sources, Investment Accounts, Recurring Bills (final in 3e) | — | | |
+| Menus (after only) | — | **N3:** CashFlow menu: Accounts, Monthly, Annual Summary, Mensais, Investment Snapshots; Admin CashFlow: Accounts, Categories, Income Sources, Investment Accounts, Recurring Bills (final in 3e) | — | | |
 | Monthly (after only) | M1 | **N5:** at 320 px Monthly's grids stack with no horizontal page scroll; at wide width Tab reaches the month picker, tabs, sort buttons, filters and every row link with visible focus; at 320 px Tab reaches the month picker, tabs and every row link | — | | |
 | Card screen → Statements (after only) | M1 | **N6:** at 320 px the Statements tab with the due-date form open has no horizontal page scroll; Tab reaches Due date, the field, Save due date, Cancel and Clear due date | — | | |
 
