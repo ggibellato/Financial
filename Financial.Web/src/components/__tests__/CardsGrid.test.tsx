@@ -1,41 +1,28 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import type { ReactElement } from 'react'
+import { MemoryRouter } from 'react-router-dom'
+import { describe, expect, it } from 'vitest'
 import CardsGrid from '../CardsGrid'
-import type { BankDto, CardStatementDto, CreditCardDto, CurrencyTotalDto } from '../../api/types'
-import { optionNames } from '../../test-utils/optionNames'
+import type { AccountGroupMemberDto, CurrencyTotalDto } from '../../api/types'
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-]
+function card(accountId: string, name: string, outstandingTotal: number, totalOwed: number | null, isPaid = false): AccountGroupMemberDto {
+  return { accountId, name, templateName: 'CreditCard', currency: 'GBP', balance: -(totalOwed ?? 0), currencyBalances: [{ currency: 'GBP', balance: -(totalOwed ?? 0) }], otherParticipant: null, roundUpTotal: null, statement: { outstandingTotal, isPaid }, balanceIsOwed: true, isActive: true, totalOwed, nextStatement: null }
+}
 
-const CARD_STATEMENTS: CardStatementDto[] = [
-  { id: 'c1', creditCardId: 'card-baamex', creditCardName: 'BaAmex', year: 2026, month: 7, isPaid: false, outstandingTotal: 100, accumulatedOutstandingTotal: 325.5 },
-  { id: 'c2', creditCardId: 'card-chase', creditCardName: 'ChaseMaster4023', year: 2026, month: 7, isPaid: true, outstandingTotal: 0, accumulatedOutstandingTotal: 0 },
-]
+const CARDS = [card('card-baamex', 'BaAmex', 100, 325.5), card('card-chase', 'ChaseMaster4023', 0, 0, true)]
 
 const GBP_TOTALS: CurrencyTotalDto[] = [{ currency: 'GBP', balance: 500, roundUpTotal: 0, cardOutstandingTotal: 100 }]
 
-const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
-]
+const renderInRouter = (ui: ReactElement) => render(<MemoryRouter>{ui}</MemoryRouter>)
 
-describe('CardsGrid (Summary tab, no card management columns)', () => {
-  const statementProps = {
-    cardStatements: CARD_STATEMENTS,
-    banks: BANKS,
-    currencyTotals: GBP_TOTALS,
-    markPaidSources: {},
-    setMarkPaidSource: vi.fn(),
-    markStatementPaid: vi.fn(),
-    unmarkStatementPaid: vi.fn(),
-    creditCards: CREDIT_CARDS,
-  }
+const renderGrid = (cards = CARDS, currencyTotals = GBP_TOTALS) =>
+  renderInRouter(<CardsGrid cards={cards} currencyTotals={currencyTotals} viewedMonth="2026-07" />)
 
+const rowOf = (name: string) => screen.getByRole('row', { name: new RegExp(name) })
+
+describe('CardsGrid', () => {
   it('renders a row per card with status and the footer adjustment total', () => {
-    render(<CardsGrid {...statementProps} />)
+    renderGrid()
 
     expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.getByText('Unpaid')).toBeInTheDocument()
@@ -43,357 +30,95 @@ describe('CardsGrid (Summary tab, no card management columns)', () => {
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 100.00')
   })
 
+  it('[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month', () => {
+    renderGrid()
+
+    expect(screen.getByRole('link', { name: 'BaAmex' })).toHaveAttribute('href', '/cashflow/accounts/card-baamex?month=2026-07')
+    expect(screen.getByRole('link', { name: 'ChaseMaster4023' })).toHaveAttribute('href', '/cashflow/accounts/card-chase?month=2026-07')
+  })
+
+  it('[AC P60-F13-consolidated-navigation-and-retirement-02] is read-only: no Mark Paid, Unmark, due date or Active', () => {
+    renderGrid()
+
+    expect(screen.queryByRole('button', { name: /Mark Paid|Unmark/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(screen.queryByText('Next Invoice Due Date')).not.toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Active' })).not.toBeInTheDocument()
+  })
+
   it('labels the adjustment figure of each currency with its code when the totals hold several currencies', () => {
-    render(
-      <CardsGrid
-        {...statementProps}
-        currencyTotals={[...GBP_TOTALS, { currency: 'BRL', balance: 0, roundUpTotal: 0, cardOutstandingTotal: 0 }]}
-      />,
-    )
+    renderGrid(CARDS, [...GBP_TOTALS, { currency: 'BRL', balance: 0, roundUpTotal: 0, cardOutstandingTotal: 0 }])
 
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent(
       'Combined adjustment figure GBP: 100.00 · Combined adjustment figure BRL: 0.00',
     )
   })
 
-  it('shows a zero adjustment figure before any totals exist', () => {
-    render(<CardsGrid {...statementProps} cardStatements={[]} currencyTotals={[]} />)
+  it('shows its empty message and a zero adjustment figure when the group has no card', () => {
+    renderGrid([], [])
 
+    expect(screen.getByText('No cards in the default group for this month')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 0.00')
   })
 
-  it('labels the period and accumulated outstanding columns distinctly and renders both values', () => {
-    render(<CardsGrid {...statementProps} />)
+  it('renders the period and accumulated outstanding figures in their own columns', () => {
+    renderGrid()
 
     expect(screen.getByRole('button', { name: 'Outstanding (period)' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Accumulated outstanding' })).toBeInTheDocument()
-
-    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
-    expect(baAmexRow).toHaveTextContent('100.00')
-    expect(baAmexRow).toHaveTextContent('325.50')
+    expect(within(rowOf('BaAmex')).getByText('100.00')).toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).getByText('325.50')).toBeInTheDocument()
   })
 
-  it('[AC P60-F15-card-refunds-and-credit-02] lists an active card with no statement this month as Nothing due with nothing outstanding and no Mark Paid', () => {
-    render(<CardsGrid {...statementProps} creditCards={CREDIT_CARDS.filter((card) => card.isActive)} cardStatements={[CARD_STATEMENTS[1]]} />)
+  it('[AC P60-F15-card-refunds-and-credit-02] shows an unpaid statement with nothing outstanding as Nothing due', () => {
+    renderGrid([card('card-baamex', 'BaAmex', 0, 0)])
 
-    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
-    expect(within(baAmexRow).getByText('0.00')).toBeInTheDocument()
-    expect(within(baAmexRow).getByText('—')).toBeInTheDocument()
-    expect(within(baAmexRow).getByText('Nothing due')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Paying bank for BaAmex')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Mark Paid' })).not.toBeInTheDocument()
-  })
-
-  it('[AC P60-F15-card-refunds-and-credit-02] shows an unpaid statement with nothing outstanding as Nothing due with no Mark Paid or Unmark Paid', () => {
-    const nothingDue = { ...CARD_STATEMENTS[0], outstandingTotal: 0, accumulatedOutstandingTotal: 0 }
-    render(<CardsGrid {...statementProps} cardStatements={[nothingDue]} />)
-
-    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
-    expect(within(baAmexRow).getByText('Nothing due')).toBeInTheDocument()
-    expect(within(baAmexRow).queryByText('Unpaid')).not.toBeInTheDocument()
-    expect(within(baAmexRow).queryByRole('button')).not.toBeInTheDocument()
-    expect(within(baAmexRow).queryByRole('combobox')).not.toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).getByText('Nothing due')).toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).queryByText('Unpaid')).not.toBeInTheDocument()
   })
 
   it('[AC P60-F15-card-refunds-and-credit-06] shows a card in credit as Credit x in the accumulated cell', () => {
-    const inCredit = { ...CARD_STATEMENTS[0], outstandingTotal: 0, accumulatedOutstandingTotal: -35 }
-    render(<CardsGrid {...statementProps} cardStatements={[inCredit]} />)
+    renderGrid([card('card-baamex', 'BaAmex', 0, -35)])
 
-    const baAmexRow = screen.getByText('BaAmex').closest('tr')!
-    expect(within(baAmexRow).getByText('Credit 35.00')).toBeInTheDocument()
-    expect(within(baAmexRow).getByText('Nothing due')).toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).getByText('Credit 35.00')).toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).getByText('Nothing due')).toBeInTheDocument()
   })
 
-  it('keeps Unmark Paid and the Paid status on a paid statement with nothing outstanding', () => {
-    render(<CardsGrid {...statementProps} cardStatements={[CARD_STATEMENTS[1]]} />)
+  it('shows a dash when the accumulated figure is missing', () => {
+    renderGrid([card('card-baamex', 'BaAmex', 0, null)])
 
-    const chaseRow = screen.getByText('ChaseMaster4023').closest('tr')!
-    expect(within(chaseRow).getByText('Paid')).toBeInTheDocument()
-    expect(within(chaseRow).getByRole('button', { name: 'Unmark Paid' })).toBeInTheDocument()
+    expect(within(rowOf('BaAmex')).getByText('—')).toBeInTheDocument()
   })
 
-  it('leaves out an inactive card that has no statement this month', () => {
-    render(<CardsGrid {...statementProps} />)
-
-    expect(screen.queryByText('PaypalCredit')).not.toBeInTheDocument()
-  })
-
-  it('keeps an inactive card that has a statement this month', () => {
-    const paypalStatement = { ...CARD_STATEMENTS[0], id: 'c3', creditCardId: 'card-paypal', creditCardName: 'PaypalCredit' }
-    render(<CardsGrid {...statementProps} cardStatements={[...CARD_STATEMENTS, paypalStatement]} />)
-
-    expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
-  })
-
-  it('renders a statement action error as an alert', () => {
-    render(<CardsGrid {...statementProps} statementActionError="Failed to mark statement paid" />)
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Failed to mark statement paid')
-  })
-
-  it('renders no alert when there is nothing to report', () => {
-    render(<CardsGrid {...statementProps} />)
-
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-  })
-
-  it('does not render the Next Invoice Due Date/Active columns', () => {
-    render(<CardsGrid {...statementProps} />)
-
-    expect(screen.queryByText('Next Invoice Due Date')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Active for BaAmex')).not.toBeInTheDocument()
-  })
-
-  it('disables Mark Paid until a bank is selected, then calls markStatementPaid with the chosen bank', () => {
-    const setMarkPaidSource = vi.fn()
-    const markStatementPaid = vi.fn()
-    render(
-      <CardsGrid
-        {...statementProps}
-        setMarkPaidSource={setMarkPaidSource}
-        markStatementPaid={markStatementPaid}
-      />,
-    )
-
-    const markPaidButton = screen.getByRole('button', { name: 'Mark Paid' })
-    expect(markPaidButton).toBeDisabled()
-
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
-    expect(setMarkPaidSource).toHaveBeenCalledWith('c1', 'bank-trading212')
-  })
-
-  it('disables the pending row while its mark-paid or unmark is in flight', () => {
-    render(<CardsGrid {...statementProps} markPaidSources={{ c1: 'bank-barclays' }} pendingStatementId="c1" />)
-
-    expect(screen.getByRole('button', { name: 'Marking…' })).toBeDisabled()
-    expect(screen.getByLabelText('Paying bank for BaAmex')).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Unmark Paid' })).toBeEnabled()
-  })
-
-  it('shows Unmarking… on a paid row being unmarked', () => {
-    render(<CardsGrid {...statementProps} pendingStatementId="c2" />)
-
-    expect(screen.getByRole('button', { name: 'Unmarking…' })).toBeDisabled()
-  })
-
-  it('orders rows by card name, with the Card header showing the sort', () => {
-    render(<CardsGrid {...statementProps} creditCards={CREDIT_CARDS} />)
-
-    expect(screen.getByRole('button', { name: 'Card' }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
-  })
-
-  it('calls unmarkStatementPaid for a paid card', () => {
-    const unmarkStatementPaid = vi.fn()
-    render(<CardsGrid {...statementProps} unmarkStatementPaid={unmarkStatementPaid} />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
-    expect(unmarkStatementPaid).toHaveBeenCalledWith('c2')
-  })
-})
-
-describe('CardsGrid (merged with creditCards — Credit Card tab)', () => {
-  const baseProps = {
-    cardStatements: CARD_STATEMENTS,
-    banks: BANKS,
-    currencyTotals: GBP_TOTALS,
-    markPaidSources: {},
-    setMarkPaidSource: vi.fn(),
-    markStatementPaid: vi.fn(),
-    unmarkStatementPaid: vi.fn(),
-    creditCards: CREDIT_CARDS,
-    updatingCardId: null,
-    cardsError: null,
-    onUpdateCreditCard: vi.fn(),
-  }
-
-  it('renders one row per credit card, including one with no statement this month', () => {
-    render(<CardsGrid {...baseProps} />)
-
-    expect(screen.getByText('BaAmex')).toBeInTheDocument()
-    expect(screen.getByText('ChaseMaster4023')).toBeInTheDocument()
-    expect(screen.getByText('PaypalCredit')).toBeInTheDocument()
-  })
-
-  it('shows a card with no statement this month as 0.00, a dash for accumulated, Nothing due, and no mark-paid action', () => {
-    render(<CardsGrid {...baseProps} />)
-
-    const paypalRow = screen.getByText('PaypalCredit').closest('tr')!
-    expect(within(paypalRow).getByText('0.00')).toBeInTheDocument()
-    expect(within(paypalRow).getByText('—')).toBeInTheDocument()
-    expect(within(paypalRow).getByText('Nothing due')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Paying bank for PaypalCredit')).not.toBeInTheDocument()
-  })
-
-  it('still supports Mark Paid for a card that has a statement', () => {
-    const setMarkPaidSource = vi.fn()
-    const markStatementPaid = vi.fn()
-    render(<CardsGrid {...baseProps} setMarkPaidSource={setMarkPaidSource} markStatementPaid={markStatementPaid} />)
-
-    fireEvent.change(screen.getByLabelText('Paying bank for BaAmex'), { target: { value: 'bank-trading212' } })
-    expect(setMarkPaidSource).toHaveBeenCalledWith('c1', 'bank-trading212')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Unmark Paid' }))
-    expect(baseProps.unmarkStatementPaid).toHaveBeenCalledWith('c2')
-  })
-
-  it('renders due date and active state per card', () => {
-    render(<CardsGrid {...baseProps} />)
-
-    expect(screen.getByLabelText('Next invoice due date for BaAmex')).toHaveValue('2026-09-05')
-    expect(screen.getByLabelText('Active for BaAmex')).toBeChecked()
-    expect(screen.getByLabelText('Next invoice due date for PaypalCredit')).toHaveValue('')
-    expect(screen.getByLabelText('Active for PaypalCredit')).not.toBeChecked()
-  })
-
-  it('changing the due date calls onUpdateCreditCard with the new date and the current active flag', () => {
-    const onUpdateCreditCard = vi.fn().mockResolvedValue(undefined)
-    render(<CardsGrid {...baseProps} onUpdateCreditCard={onUpdateCreditCard} />)
-
-    fireEvent.change(screen.getByLabelText('Next invoice due date for BaAmex'), { target: { value: '2026-10-01' } })
-
-    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-baamex', { name: 'BaAmex', nextInvoiceDueDate: '2026-10-01', isActive: true })
-  })
-
-  it('clearing the due date sends null', () => {
-    const onUpdateCreditCard = vi.fn().mockResolvedValue(undefined)
-    render(<CardsGrid {...baseProps} onUpdateCreditCard={onUpdateCreditCard} />)
-
-    fireEvent.change(screen.getByLabelText('Next invoice due date for BaAmex'), { target: { value: '' } })
-
-    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-baamex', { name: 'BaAmex', nextInvoiceDueDate: null, isActive: true })
-  })
-
-  it('toggling active calls onUpdateCreditCard with the flipped flag and the current due date, even for a card with no statement', () => {
-    const onUpdateCreditCard = vi.fn().mockResolvedValue(undefined)
-    render(<CardsGrid {...baseProps} onUpdateCreditCard={onUpdateCreditCard} />)
-
-    fireEvent.click(screen.getByLabelText('Active for PaypalCredit'))
-
-    expect(onUpdateCreditCard).toHaveBeenCalledWith('card-paypal', { name: 'PaypalCredit', nextInvoiceDueDate: null, isActive: true })
-  })
-
-  it('disables the row being updated', () => {
-    render(<CardsGrid {...baseProps} updatingCardId="card-baamex" />)
-
-    expect(screen.getByLabelText('Next invoice due date for BaAmex')).toBeDisabled()
-    expect(screen.getByLabelText('Active for BaAmex')).toBeDisabled()
-    expect(screen.getByLabelText('Next invoice due date for PaypalCredit')).not.toBeDisabled()
-  })
-
-  it('shows an update error as an accessible alert when present', () => {
-    render(<CardsGrid {...baseProps} cardsError="Credit card was not found." />)
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Credit card was not found.')
-  })
-
-  it('defaults to sorting by next invoice due date descending, with the header showing the active sort', () => {
-    render(<CardsGrid {...baseProps} />)
-
-    const header = screen.getByRole('button', { name: 'Next Invoice Due Date' })
-    expect(header.closest('th')).toHaveAttribute('aria-sort', 'descending')
-
-    const rows = screen.getAllByRole('row').slice(1)
-    expect(rows[0]).toHaveTextContent('BaAmex')
-  })
-
-  it('sorts rows by clicking the Card column header, keeping the footer total fixed', () => {
-    render(<CardsGrid {...baseProps} />)
-
-    const rowsBefore = screen.getAllByRole('row').slice(1)
-    expect(rowsBefore.map((r) => r.textContent)).toEqual([
-      expect.stringContaining('BaAmex'),
-      expect.stringContaining('ChaseMaster4023'),
-      expect.stringContaining('PaypalCredit'),
-    ])
-
-    fireEvent.click(screen.getByRole('button', { name: 'Card' }))
-
-    const rowsAfterAsc = screen.getAllByRole('row').slice(1)
-    expect(rowsAfterAsc.map((r) => r.textContent)).toEqual([
-      expect.stringContaining('BaAmex'),
-      expect.stringContaining('ChaseMaster4023'),
-      expect.stringContaining('PaypalCredit'),
-    ])
-
-    fireEvent.click(screen.getByRole('button', { name: 'Card' }))
-
-    const rowsAfterDesc = screen.getAllByRole('row').slice(1)
-    expect(rowsAfterDesc.map((r) => r.textContent)).toEqual([
-      expect.stringContaining('PaypalCredit'),
-      expect.stringContaining('ChaseMaster4023'),
-      expect.stringContaining('BaAmex'),
-    ])
-
-    expect(screen.getByText(/Combined adjustment figure/)).toBeInTheDocument()
-  })
-
-  it('sorts rows by outstanding, accumulated outstanding, status, due date and active columns', () => {
-    render(<CardsGrid {...baseProps} />)
-    const namesOf = () =>
-      screen
-        .getAllByRole('row')
-        .slice(1)
-        .map((r) => r.querySelector('td')!.textContent!.replace('Card:', ''))
+  it('sorts rows by the outstanding column', () => {
+    renderGrid()
 
     fireEvent.click(screen.getByRole('button', { name: 'Outstanding (period)' }))
-    expect(namesOf()).toEqual(['ChaseMaster4023', 'PaypalCredit', 'BaAmex'])
 
-    fireEvent.click(screen.getByRole('button', { name: 'Accumulated outstanding' }))
-    expect(namesOf()).toEqual(['ChaseMaster4023', 'BaAmex', 'PaypalCredit'])
-
-    fireEvent.click(screen.getByRole('button', { name: 'Status' }))
-    expect(namesOf()).toEqual(['PaypalCredit', 'ChaseMaster4023', 'BaAmex'])
-
-    fireEvent.click(screen.getByRole('button', { name: 'Next Invoice Due Date' }))
-    expect(namesOf()).toEqual(['BaAmex', 'ChaseMaster4023', 'PaypalCredit'])
-
-    fireEvent.click(screen.getByRole('button', { name: 'Active' }))
-    expect(namesOf()).toEqual(['PaypalCredit', 'BaAmex', 'ChaseMaster4023'])
+    const rows = screen.getAllByRole('row').slice(1)
+    expect(within(rows[0]).getByText('ChaseMaster4023')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('BaAmex')).toBeInTheDocument()
   })
 
   it('filters rows by Card via the header checklist', () => {
-    render(<CardsGrid {...baseProps} />)
+    renderGrid()
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Card' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
-    fireEvent.click(screen.getByRole('checkbox', { name: 'PaypalCredit' }))
 
-    // The header's own filter checklist keeps every card name in the DOM (as checkbox labels)
-    // regardless of which rows are filtered out, so assertions must be scoped to tbody.
     const tbody = within(document.querySelector('tbody')!)
     expect(tbody.queryByText('ChaseMaster4023')).not.toBeInTheDocument()
-    expect(tbody.queryByText('PaypalCredit')).not.toBeInTheDocument()
     expect(tbody.getByText('BaAmex')).toBeInTheDocument()
   })
-})
 
-describe('CardsGrid paying bank', () => {
-  const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
-  const renderGrid = (markPaidSources: Record<string, string>) =>
-    render(
-      <CardsGrid
-        cardStatements={CARD_STATEMENTS}
-        banks={[...BANKS, INACTIVE_BANK]}
-        currencyTotals={GBP_TOTALS}
-        markPaidSources={markPaidSources}
-        setMarkPaidSource={vi.fn()}
-        markStatementPaid={vi.fn()}
-        unmarkStatementPaid={vi.fn()}
-        creditCards={CREDIT_CARDS}
-      />,
-    )
-  const payingBankOptions = () => optionNames(screen.getByLabelText('Paying bank for BaAmex'))
+  it('shows the "no rows match" message when every card is filtered out', () => {
+    renderGrid()
 
-  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of the paying bank', () => {
-    renderGrid({})
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Card' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'BaAmex' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
 
-    expect(payingBankOptions()).toEqual(['Bank…', 'Barclays', 'Trading212'])
-  })
-
-  it('[AC P60-F06-admin-accounts-page-05] keeps an inactive paying bank that is already chosen', () => {
-    renderGrid({ c1: 'bank-chase' })
-
-    expect(screen.getByLabelText('Paying bank for BaAmex')).toHaveValue('bank-chase')
-    expect(payingBankOptions()).toContain('Chase')
+    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
   })
 })

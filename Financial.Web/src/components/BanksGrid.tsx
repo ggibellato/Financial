@@ -3,12 +3,14 @@ import type { BankTotal } from '../hooks/useMonthly'
 import { formatN2 } from '../utils/formatters'
 import { currencyFooterItems } from '../utils/currencyFooterItems'
 import TotalsGrid from './TotalsGrid'
+import TruncatedText from './TruncatedText'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 
 interface BanksGridProps {
   bankTotals: BankTotal[]
   currencyTotals: CurrencyTotalDto[]
+  viewedMonth: string
 }
 
 const FILTER_ACCESSORS = {
@@ -27,7 +29,7 @@ const FOOTER_FIGURES = [
   { label: 'Round-Up', pick: (total: CurrencyTotalDto) => total.roundUpTotal },
 ]
 
-export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps) {
+export default function BanksGrid({ bankTotals, currencyTotals, viewedMonth }: BanksGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
     useColumnFilters(bankTotals, FILTER_ACCESSORS)
   const isMultiCurrency = currencyTotals.length > 1
@@ -39,7 +41,7 @@ export default function BanksGrid({ bankTotals, currencyTotals }: BanksGridProps
         {
           key: 'bank',
           header: 'Bank',
-          render: (b: BankTotal) => b.bank,
+          render: (b: BankTotal) => <TruncatedText text={b.bank} to={`/cashflow/accounts/${b.bankId}?month=${viewedMonth}`} />,
           sortAccessor: (b: BankTotal) => b.bank,
           filterSlot: (
             <ColumnFilterMenu
