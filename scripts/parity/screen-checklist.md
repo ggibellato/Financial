@@ -16,11 +16,11 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Monthly | M1, M2, M3 | Each bank's balance and round-up total | | | |
 | Monthly | M1, M2, M3 | Bank totals sum and round-up totals sum | | | |
 | Monthly | M1, M2, M3 | Each card's statement outstanding and paid status; card outstanding total | | | |
-| Monthly | M1, M2, M3 | Unpaid card charges (count and total) | | | |
+| Monthly (before) / each card's Transactions tab (after) | M1, M2, M3 | Unpaid card charges (count and total): before, Monthly's Credit Card expenses list; after, each card's Transactions tab for that statement month | | | |
 | Monthly | M1, M2, M3 | Category totals and category totals sum | | | |
 | Monthly | M1, M2, M3 | Income totals per source (net and gross) and total incoming | | | |
 | Monthly | M1, M2, M3 | Tithe: calculated, balance, carry-forward | | | |
-| Card statements | M1, M2 | Each card's outstanding, accumulated outstanding and paid status. In a month with no statement for a card, the after side shows 0.00, "—" for accumulated and Nothing due, with no Mark Paid | | | |
+| Card statements (before: Monthly's Card tab; after: each card's Statements tab) | M1, M2 | Each card's outstanding, accumulated outstanding and paid status. In a month with no statement for a card, the after side shows 0.00, "—" for accumulated and Nothing due, with no Mark Paid | | | |
 | Reserva | — | Each pot's balance and the pots total | | | |
 | Reserva | M1, M2 | Movements listed for the month (count and total) | | | |
 | Controle Mãe | — | BRL and GBP totals | | | |
@@ -29,11 +29,11 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Annual summary | Current year | Investment annual result: net position monthly values and full-year change | | | |
 | Investment snapshots | M1, M2 | Suggested and current value per account; accounts not updated and why | | | |
 | Bank screen (after only) | M1, M2, M3 | **B1:** the Barclays header balance equals Monthly's Barclays balance for the month | — | | |
-| Bank screen (after only) | M1, M2, M3 | **B2:** the Barclays grid has every expense, income, transfer and adjustment Monthly shows for Barclays that month, with the same amounts, and round-ups in their own column | — | | |
+| Bank screen (after only) | M1, M2, M3 | **B2:** the Barclays grid has every expense, income, transfer and adjustment the before side's Monthly shows for Barclays that month, with the same amounts, and round-ups in their own column | — | | |
 | Bank screen (after only) | A month with no records | **B3:** the grid shows "No transactions in <Month Year>" | — | | |
 | Bank screen (after only) | M1 | **B4:** at 320 px wide there's no horizontal page scroll | — | | |
-| Card screen (after only) | M1, M2 | **C1:** the Statements tab's total and status per month equal Monthly's Card tab for the same card (outstanding when unpaid) | — | | |
-| Card screen (after only) | M1, M2 | **C2:** the Transactions tab for a month lists the same charges as Monthly's card charges for that statement month | — | | |
+| Card screen (after only) | M1, M2 | **C1:** the Statements tab's total and status per month equal the before side's Monthly Card tab for the same card (outstanding when unpaid) | — | | |
+| Card screen (after only) | M1, M2 | **C2:** the Transactions tab for a month lists the same charges as the before side's Monthly card charges for that statement month | — | | |
 | Card screen (after only) | A month with no charges | **C3:** the grid shows "No transactions in <Month Year>" | — | | |
 | Card screen (after only) | M1 | **C4:** at 320 px wide there's no horizontal page scroll on either tab | — | | |
 | Card screen (after only) | M1, M2 | **C5:** the card header's "<Month yyyy> statement" figure equals the Statements tab's To pay (or paid amount) for the viewed month, and "Total owed" equals Monthly's accumulated outstanding | — | | |
@@ -54,6 +54,9 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Settlement screen (after only, on the after side's copy) | M1 | **S8:** Mãe → Settle → BRL pre-fills paid by Mãe, R$167.88, £7.94 and "1 GBP = R$21.14"; Save settlement → "Both totals become zero." → header "Settled", Settle disabled with "Nothing to settle." | — | | |
 | Old links (after only) | — | **N4:** `/admin/cashflow/reserve-buckets` opens Reserva's Pots tab | — | | |
 | Card screen → Statements (after only, on the after side's copy) | M1 | **N1:** Amex → Statements → Due date on October 2026 → 25 Oct → the column and Settings → Integrations show it; Clear due date on November 2026 leaves October's | — | | |
+| Landing and Monthly (after only) | M1, M3 | **N2:** with CashFlow last used, opening `/` lands on Accounts; Monthly shows Summary and All transactions only, with the before side's Summary figures; each bank and card name opens its account screen at the viewed month | — | | |
+| Menus (after only) | — | **N3:** CashFlow menu: Accounts, Monthly, Annual Summary, Mensais, Investment Snapshots (Reserva and Controle Mae follow until their pages retire); Admin CashFlow: Accounts, Categories, Income Sources, Investment Accounts, Recurring Bills (final in 3e) | — | | |
+| Monthly (after only) | M1 | **N5:** at 320 px Monthly's grids stack with no horizontal page scroll; Tab reaches the month picker, tabs, sort buttons, filters and every row link with visible focus | — | | |
 | Card screen → Statements (after only) | M1 | **N6:** at 320 px the Statements tab with the due-date form open has no horizontal page scroll; Tab reaches Due date, the field, Save due date, Cancel and Clear due date | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.
