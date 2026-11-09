@@ -2,7 +2,7 @@ import type { ReserveMovementDto, ReserveMovementUpdateDto } from '../api/types'
 import type { FieldErrors } from '../hooks/inlineFormSlice'
 import { parseValidatedNumber } from './formatters'
 
-export const BUCKET_REQUIRED_ERROR = 'Bucket is required'
+const BUCKET_REQUIRED_ERROR = 'Bucket is required'
 
 export const EDIT_MOVEMENT_FIELDS = ['editMovementBucketId', 'editMovementAmount', 'editMovementDate', 'editMovementDescription'] as const
 
