@@ -10,10 +10,19 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     private const string Api = "/api/v1/financial";
     private const string MaeId = "5e771e00-0000-0000-0000-000000000002";
     private const string EntryId = "5e771e00-0000-0000-0000-000000000101";
+    private const string ReservaId = "5e771e00-0000-0000-0000-000000000003";
+    private const string PotId = "5e771e00-0000-0000-0000-000000000201";
+    private const string MovementId = "5e771e00-0000-0000-0000-000000000301";
     private const string SeededData = $$"""
         {
           "Accounts": [
-            { "Id": "{{MaeId}}", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" }
+            { "Id": "{{MaeId}}", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" },
+            { "Id": "{{ReservaId}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
+              { "Id": "{{PotId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 100 }
+            ], "CategoryId": null }
+          ],
+          "ReserveMovements": [
+            { "Id": "{{MovementId}}", "BucketId": "{{PotId}}", "Amount": 50, "Date": "2026-09-01", "Description": "Split", "IncomeId": null }
           ],
           "Version": 5
         }
@@ -34,6 +43,12 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("GET", "controle-mae/entries/totals")]
     [InlineData("PUT", $"controle-mae/entries/{EntryId}/values")]
     [InlineData("DELETE", $"controle-mae/entries/{EntryId}")]
+    [InlineData("POST", "reserve/income-split")]
+    [InlineData("POST", "reserve/withdrawals")]
+    [InlineData("GET", "reserve/balances")]
+    [InlineData("GET", "reserve/movements")]
+    [InlineData("GET", "reserve-buckets")]
+    [InlineData("GET", "reserve-buckets/split-status")]
     public async Task RetiredRoute_Returns404(string method, string path)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));
@@ -50,6 +65,11 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("POST", $"accounts/{MaeId}/settlement-entries", HttpStatusCode.BadRequest)]
     [InlineData("PUT", $"accounts/{MaeId}/settlement-entries/{EntryId}", HttpStatusCode.BadRequest)]
     [InlineData("POST", $"accounts/{MaeId}/settlements", HttpStatusCode.BadRequest)]
+    [InlineData("GET", $"accounts/{ReservaId}/pots/2026/9", HttpStatusCode.OK)]
+    [InlineData("POST", $"accounts/{ReservaId}/deposits", HttpStatusCode.BadRequest)]
+    [InlineData("POST", $"accounts/{ReservaId}/withdrawals", HttpStatusCode.BadRequest)]
+    [InlineData("PUT", $"reserve/movements/{MovementId}", HttpStatusCode.BadRequest)]
+    [InlineData("DELETE", $"reserve/movements/{MovementId}", HttpStatusCode.OK)]
     public async Task KeptRoute_StillAnswers(string method, string path, HttpStatusCode expected)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));

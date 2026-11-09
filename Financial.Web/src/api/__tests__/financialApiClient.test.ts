@@ -77,13 +77,9 @@ import type {
   TransactionUpdateDto,
   TransferCreateDto,
   CreditCardDto,
-  IncomeSplitRequestDto,
-  IncomeSplitResultDto,
   InvestmentSnapshotDto,
   RecurringBillDto,
   ReportingCurrencySettingDto,
-  ReserveBucketBalanceDto,
-  ReserveBucketDto,
   ReserveMovementDto,
   SetReportingCurrencyEnabledRequestDto,
   SyncStatusResponseDto,
@@ -97,7 +93,6 @@ import type {
   RecurringBillStatusUpdateDto,
   ReserveMovementUpdateDto,
   TransferUpdateDto,
-  WithdrawalRequestDto,
 } from '../types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { account } from '../../test/account'
@@ -522,14 +517,14 @@ describe('financialApiClient', () => {
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
     const error = await client
-      .postWithdrawal({
-        bucketId: 'b3',
+      .createPotWithdrawal('p1', {
+        potId: 'b3',
         amount: 100,
         date: '2026-07-01',
         description: 'Test',
         confirmed: false,
-        paymentSourceBankId: null,
-        expenseCategoryId: null,
+        bankId: null,
+        categoryId: null,
       })
       .catch((e: unknown) => e)
 
@@ -548,7 +543,7 @@ describe('financialApiClient', () => {
     } as Response)
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
-    const error = (await client.getReserveBalances().catch((e: unknown) => e)) as ApiError
+    const error = (await client.getPots('p1', 2026, 7).catch((e: unknown) => e)) as ApiError
 
     expect(error.message).toBe('Over the balance.')
     expect(error.code).toBe('overdraftConfirmationRequired')
@@ -562,119 +557,13 @@ describe('financialApiClient', () => {
         fetch: vi.fn().mockResolvedValue({ ok: false, status: 409, statusText: 'Conflict', text: async () => body } as Response),
       })
 
-    const wrongTypes = (await respondWith(JSON.stringify({ detail: 'x', code: 5, balance: '25.85' })).getReserveBalances().catch((e: unknown) => e)) as ApiError
+    const wrongTypes = (await respondWith(JSON.stringify({ detail: 'x', code: 5, balance: '25.85' })).getPots('p1', 2026, 7).catch((e: unknown) => e)) as ApiError
     expect(wrongTypes.code).toBeUndefined()
     expect(wrongTypes.balance).toBeUndefined()
 
-    const nullBody = (await respondWith('null').getReserveBalances().catch((e: unknown) => e)) as ApiError
+    const nullBody = (await respondWith('null').getPots('p1', 2026, 7).catch((e: unknown) => e)) as ApiError
     expect(nullBody).toBeInstanceOf(ApiError)
     expect(nullBody.message).toContain('API request failed')
-  })
-
-  it('calls reserve balances endpoint', async () => {
-    const responseBody: ReserveBucketBalanceDto[] = [{ bucketId: 'b1', bucketName: 'Investimento', balance: 654.33 }]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getReserveBalances()
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve/balances`)
-  })
-
-  it('calls reserve movements endpoint', async () => {
-    const responseBody: ReserveMovementDto[] = [
-      { id: 'm1', bucketId: 'b1', bucketName: 'Investimento', amount: 10, date: '2026-07-01', description: 'Test', incomeId: null, splitLineCount: 1 },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getReserveMovements()
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve/movements`)
-  })
-
-  it('calls reserve buckets endpoint', async () => {
-    const responseBody: ReserveBucketDto[] = [
-      { id: 'b1', name: 'Investimento', isActive: true, splitPercentage: 33.33, warning: null },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getReserveBuckets()
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve-buckets`)
-  })
-
-  it('gets the reserve split status', async () => {
-    const responseBody = { activeTotal: 90, warning: 'Active buckets currently sum to 90% — review your split percentages' }
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify(responseBody), { status: 200 }))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getReserveSplitStatus()
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/reserve-buckets/split-status`)
-  })
-
-  it('posts an income split request', async () => {
-    const requestBody: IncomeSplitRequestDto = {
-      date: '2026-07-01',
-      amount: 1963,
-      description: 'Ramsay',
-    }
-    const responseBody: IncomeSplitResultDto = {
-      buckets: [
-        { bucketId: 'b1', bucketName: 'Investimento', amount: 654.33 },
-        { bucketId: 'b2', bucketName: 'HouseTreats', amount: 654.33 },
-        { bucketId: 'b3', bucketName: 'Ariana', amount: 327.17 },
-        { bucketId: 'b4', bucketName: 'Gleison', amount: 327.17 },
-      ],
-      total: 1963,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.postIncomeSplit(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/reserve/income-split`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('posts a withdrawal request', async () => {
-    const requestBody: WithdrawalRequestDto = {
-      bucketId: 'b1',
-      amount: 30,
-      date: '2026-07-01',
-      description: 'Groceries top-up',
-      confirmed: false,
-      paymentSourceBankId: null,
-      expenseCategoryId: null,
-    }
-    const responseBody: ReserveMovementDto = {
-      id: 'm2',
-      bucketId: 'b1', bucketName: 'Investimento',
-      amount: -30,
-      date: '2026-07-01',
-      description: 'Groceries top-up',
-      incomeId: null,
-      splitLineCount: 1,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.postWithdrawal(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/reserve/withdrawals`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
   })
 
   it('puts a reserve movement update', async () => {

@@ -63,8 +63,9 @@ public class FailedSaveRollbackTests
 
     private IncomeService CreateIncomeService() => new(_repository, _tracer, NullLogger<IncomeService>.Instance);
 
-    private ReserveService CreateReserveService() =>
-        new(_repository, new PotsService(_repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance), _tracer, NullLogger<ReserveService>.Instance);
+    private PotsService CreatePotsService() => new(_repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
+
+    private Account Reserva => _repository.GetAccounts().Single(account => account.Has(Capability.HasPots));
 
     private CardStatementService CreateCardStatementService() =>
         new(_repository, TestClock.At(), NullLogger<CardStatementService>.Instance, _tracer);
@@ -123,15 +124,16 @@ public class FailedSaveRollbackTests
     }
 
     [Fact]
-    public async Task PostIncomeSplitAsync_WhenTheWriteFails_LeavesNoMovementInAnyPot()
+    public async Task DepositAsync_IntoActivePots_WhenTheWriteFails_LeavesNoMovementInAnyPot()
     {
         _storage.FailWrites = true;
 
-        var act = async () => await CreateReserveService().PostIncomeSplitAsync(new IncomeSplitRequestDTO
+        var act = async () => await CreatePotsService().DepositAsync(Reserva.Id, new PotDepositRequestDTO
         {
             Date = July1,
             Amount = 1963m,
-            Description = "Ramsay"
+            Description = "Ramsay",
+            FundingLines = []
         });
 
         await act.Should().ThrowAsync<IOException>();
@@ -139,9 +141,9 @@ public class FailedSaveRollbackTests
     }
 
     [Fact]
-    public async Task PostWithdrawalAsync_ThroughABank_WhenTheWriteFails_LeavesNoMovementAndNoExpense()
+    public async Task WithdrawAsync_ThroughABank_WhenTheWriteFails_LeavesNoMovementAndNoExpense()
     {
-        var investimento = _repository.GetReservaPots().Single(b => b.Name == "Investimento");
+        var investimento = Reserva.Pots!.Single(b => b.Name == "Investimento");
         await _repository.ApplyAndSaveAsync(() =>
         {
             _repository.AddPotTransaction(PotTransaction.Create(investimento, 100m, July1, "Seed"));
@@ -149,14 +151,14 @@ public class FailedSaveRollbackTests
         });
         _storage.FailWrites = true;
 
-        var act = async () => await CreateReserveService().PostWithdrawalAsync(new WithdrawalRequestDTO
+        var act = async () => await CreatePotsService().WithdrawAsync(Reserva.Id, new PotWithdrawalRequestDTO
         {
-            BucketId = investimento.Id,
+            PotId = investimento.Id,
             Amount = 30m,
             Date = July1,
             Description = "Dentist",
-            PaymentSourceBankId = BankId("Chase"),
-            ExpenseCategoryId = _repository.GetCategories().Single(c => c.Name == "Saude").Id
+            BankId = BankId("Chase"),
+            CategoryId = _repository.GetCategories().Single(c => c.Name == "Saude").Id
         });
 
         await act.Should().ThrowAsync<IOException>();

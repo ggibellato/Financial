@@ -502,24 +502,6 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void GetReservaPots_ReturnsPotsFromTheUnderlyingData()
-    {
-        var path = Path.GetTempFileName();
-        try
-        {
-            var data = CashFlowData.Create();
-            TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 33.33m));
-            var repository = new CashFlowJsonRepository(data, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-
-            repository.GetReservaPots().Should().ContainSingle().Which.Name.Should().Be("Investimento");
-        }
-        finally
-        {
-            File.Delete(path);
-        }
-    }
-
-    [Fact]
     public void GetAccounts_IncludesCardAccountsFromTheUnderlyingData()
     {
         var path = Path.GetTempFileName();
@@ -554,7 +536,6 @@ public class CashFlowJsonRepositoryTests
             File.Delete(path);
         }
     }
-
 
     [Fact]
     public void GetInvestmentAccounts_ReturnsInvestmentAccountsFromTheUnderlyingData()

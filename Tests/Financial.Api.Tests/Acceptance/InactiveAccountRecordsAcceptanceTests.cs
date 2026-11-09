@@ -17,6 +17,7 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
     private static readonly Guid VisaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001");
     private static readonly Guid GleisonId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000001");
     private static readonly Guid InvestimentoBucketId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000001");
+    private static readonly Guid ReservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");
     private static readonly Guid MercadoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000008");
     private static readonly DateOnly Date = new(2026, 10, 2);
 
@@ -206,19 +207,19 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F06-admin-accounts-page-06")]
-    public async Task ReserveWithdrawal_ThroughAnInactiveBank_IsRejectedWith400()
+    public async Task PotsWithdrawal_ThroughAnInactiveBank_IsRejectedWith400()
     {
         await DeactivateChaseAsync();
 
-        var response = await Client.PostAsJsonAsync($"{Api}/reserve/withdrawals", new WithdrawalRequestDTO
+        var response = await Client.PostAsJsonAsync($"{Api}/accounts/{ReservaId}/withdrawals", new PotWithdrawalRequestDTO
         {
-            BucketId = InvestimentoBucketId,
+            PotId = InvestimentoBucketId,
             Amount = 50m,
             Date = Date,
             Description = "Treat",
             Confirmed = true,
-            PaymentSourceBankId = ChaseId,
-            ExpenseCategoryId = MercadoId
+            BankId = ChaseId,
+            CategoryId = MercadoId
         });
 
         await ShouldBeRefusedAsInactive(response);

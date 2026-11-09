@@ -39,8 +39,6 @@ public interface ICashFlowRepository
     void AddIncomeSource(IncomeSource incomeSource);
     void DeleteIncomeSource(Guid id);
 
-    IEnumerable<Pot> GetReservaPots();
-
     IEnumerable<Category> GetCategories();
     void AddCategory(Category category);
     void DeleteCategory(Guid id);

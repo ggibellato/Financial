@@ -22,7 +22,7 @@ public class DomainExceptionLoggingTests
     public async Task RejectedWithdrawal_LogsTheExceptionType_WithoutTheFinancialValuesInItsMessage()
     {
         var exception = new OverdraftConfirmationRequiredException("Ariana", 654.27m);
-        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
+        var (logger, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/withdrawals");
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
 
@@ -30,7 +30,7 @@ public class DomainExceptionLoggingTests
         entry.Level.Should().Be(LogLevel.Warning);
         entry.Message.Should().Contain(nameof(OverdraftConfirmationRequiredException));
         entry.Message.Should().Contain("409");
-        entry.Message.Should().Contain("/api/v1/financial/reserve/withdrawals");
+        entry.Message.Should().Contain("/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/withdrawals");
 
         entry.Message.Should().NotContain("Ariana");
         entry.Message.Should().NotContain("654.27");
@@ -41,7 +41,7 @@ public class DomainExceptionLoggingTests
     {
         var exception = new OverdraftConfirmationRequiredException("Ariana", 654.271m);
 
-        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/reserve/withdrawals");
+        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/withdrawals");
 
         using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
         using (new AssertionScope())

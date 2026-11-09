@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -78,16 +79,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
 
     private ICashFlowRepository Repository => Services.GetRequiredService<ICashFlowRepository>();
 
-    private Task<HttpResponseMessage> WithdrawThroughBarclaysAsync() =>
-        Client.PostAsJsonAsync($"{Api}/reserve/withdrawals", new WithdrawalRequestDTO
-        {
-            BucketId = Guid.Parse(InvestimentoId),
-            Amount = 38.25m,
-            Date = new DateOnly(2026, 10, 3),
-            Description = "Boots",
-            PaymentSourceBankId = Guid.Parse(BarclaysId),
-            ExpenseCategoryId = Guid.Parse(MercadoId)
-        });
+    private IReadOnlyList<Pot> ReservaPots => Repository.GetAccounts().Single(account => account.Id == Guid.Parse(ReservaId)).Pots!;
 
     private static async Task<string?> DetailOf(HttpResponseMessage response) =>
         (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;
@@ -292,46 +284,10 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-12")]
-    public async Task ReservaRoutes_WriteLinkedRecords()
-    {
-        var split = await Client.PostAsJsonAsync($"{Api}/reserve/income-split", new IncomeSplitRequestDTO
-        {
-            Date = new DateOnly(2026, 10, 2),
-            Amount = 90m,
-            Description = "Ramsay"
-        });
-        var splitResult = await split.Content.ReadFromJsonAsync<IncomeSplitResultDTO>();
-        var splitMovements = Repository.GetPotTransactions().Where(m => m.Description == "Ramsay").ToList();
-
-        var response = await WithdrawThroughBarclaysAsync();
-        var created = await response.Content.ReadFromJsonAsync<ReserveMovementDTO>();
-
-        var movement = Repository.GetPotTransactions().Single(m => m.Id == created!.Id);
-        using (new AssertionScope())
-        {
-            split.StatusCode.Should().Be(HttpStatusCode.OK);
-            splitResult!.Total.Should().Be(90m);
-            splitResult.Buckets.Select(bucket => (bucket.BucketId, bucket.BucketName, bucket.Amount)).Should().BeEquivalentTo([
-                (Guid.Parse(InvestimentoId), "Investimento", 54m),
-                (Guid.Parse(HouseTreatsId), "HouseTreats", 36m)]);
-            splitMovements.Select(m => m.OperationId).Distinct().Should().ContainSingle().Which.Should().NotBeNull();
-            ExpensesOf(splitMovements[0].OperationId).Should().BeEmpty();
-            response.StatusCode.Should().Be(HttpStatusCode.OK);
-            movement.Amount.Should().Be(-38.25m);
-            movement.OperationId.Should().NotBeNull();
-            ExpensesOf(movement.OperationId).Select(expense => (expense.Category.Id, expense.Value, expense.PaymentSourceAccount!.Id))
-                .Should().BeEquivalentTo([
-                    (Guid.Parse(ReservaCategoryId), -38.25m, Guid.Parse(BarclaysId)),
-                    (Guid.Parse(MercadoId), 38.25m, Guid.Parse(BarclaysId))]);
-            Repository.GetExpenses().Should().HaveCount(2);
-        }
-    }
-
-    [Fact]
     public async Task LinkedRecords_EditedOrDeletedThroughTheOldRoutes_Return409AndStay()
     {
-        var created = await (await WithdrawThroughBarclaysAsync()).Content.ReadFromJsonAsync<ReserveMovementDTO>();
+        var operation = await (await WithdrawFromPotsAccountAsync(38.25m, withBank: true)).Content.ReadFromJsonAsync<PotOperationDTO>();
+        var created = Repository.GetPotTransactions().Single(m => m.OperationId == operation!.OperationId);
         var expense = Repository.GetExpenses().First();
 
         var expenseUpdate = await Client.PutAsJsonAsync($"{Api}/expenses/{expense.Id}", new ExpenseUpdateDTO
@@ -343,7 +299,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             PaymentSourceBankId = Guid.Parse(BarclaysId)
         });
         var expenseDelete = await Client.DeleteAsync($"{Api}/expenses/{expense.Id}");
-        var movementUpdate = await Client.PutAsJsonAsync($"{Api}/reserve/movements/{created!.Id}", new ReserveMovementUpdateDTO
+        var movementUpdate = await Client.PutAsJsonAsync($"{Api}/reserve/movements/{created.Id}", new ReserveMovementUpdateDTO
         {
             BucketId = Guid.Parse(HouseTreatsId),
             Amount = -1m,
@@ -477,7 +433,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await DetailOf(response)).Should().Be("Active pots must total 100% (now 95%).");
-            Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
+            ReservaPots.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
         }
     }
 
@@ -494,7 +450,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.NoContent);
-            Repository.GetReservaPots().Select(pot => (pot.Name, pot.SplitPercentage, pot.IsActive)).Should().Equal(
+            ReservaPots.Select(pot => (pot.Name, pot.SplitPercentage, pot.IsActive)).Should().Equal(
                 ("Long term", 50m, true), ("HouseTreats", 25m, true), ("Holidays", 25m, true), ("Car", 0m, false));
         }
     }
@@ -516,7 +472,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             (await DetailOf(duplicate)).Should().Be("A pot named \"HOLIDAYS\" already exists.");
             blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await DetailOf(blank)).Should().Be("Pot name is required.");
-            Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
+            ReservaPots.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
         }
     }
 
@@ -543,9 +499,9 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         {
             create.StatusCode.Should().Be(HttpStatusCode.NotFound);
             update.StatusCode.Should().Be(HttpStatusCode.NotFound);
-            list.StatusCode.Should().Be(HttpStatusCode.OK);
-            splitStatus.StatusCode.Should().Be(HttpStatusCode.OK);
-            Repository.GetReservaPots().Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
+            list.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            splitStatus.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            ReservaPots.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
         }
     }
 
