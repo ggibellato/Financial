@@ -125,7 +125,7 @@
     white-space: nowrap;
   }
 
-  /* A <colgroup>'s fixed per-column widths (e.g. ReservaPage's movements
+  /* A <colgroup>'s fixed per-column widths (e.g. InvestmentSnapshotsPage's
      table) keep sizing the table by their sum even once it's display:block -
      Chromium still uses <col> widths for intrinsic sizing regardless of the
      table's own display value. Those columns no longer exist once cells

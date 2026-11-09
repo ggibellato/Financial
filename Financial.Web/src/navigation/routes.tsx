@@ -25,7 +25,6 @@ import {
   PortfoliosPage,
   RecurringBillsPage,
   ReportingCurrencyPage,
-  ReservaPage,
   TaxPage,
   TaxRulesPage,
 } from './lazyPages'
@@ -56,7 +55,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'cashflow/monthly', element: <MonthlyPage /> },
   { path: 'cashflow/investment-snapshots', element: <InvestmentSnapshotsPage /> },
   { path: 'cashflow/annual-summary', element: <AnnualSummaryPage /> },
-  { path: 'cashflow/reserva', element: <ReservaPage /> },
   { path: 'cashflow/mensais', element: <MensaisPage /> },
   { path: 'admin/investment/assets', element: <AssetsPage /> },
   { path: 'admin/investment/brokers', element: <BrokersPage /> },
@@ -81,6 +79,7 @@ export const DETAIL_ROUTES: PageRoute[] = [
 export const REDIRECT_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/reserve-buckets', element: <MovedPageRedirect page="reserva" tab="pots" /> },
   { path: 'cashflow/controle-mae', element: <MovedPageRedirect page="controle-mae" /> },
+  { path: 'cashflow/reserva', element: <MovedPageRedirect page="reserva" tab="pots" /> },
 ]
 
 export const ALL_ROUTES: PageRoute[] = [...PAGE_ROUTES, ...DETAIL_ROUTES, ...REDIRECT_ROUTES]
