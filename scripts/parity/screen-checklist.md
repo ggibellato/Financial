@@ -56,7 +56,7 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Card screen → Statements (after only, on the after side's copy) | M1 | **N1:** Amex → Statements → Due date on October 2026 → 25 Oct → the column and Settings → Integrations show it; Clear due date on November 2026 leaves October's | — | | |
 | Landing and Monthly (after only) | M1, M3 | **N2:** with CashFlow last used, opening `/` lands on Accounts; Monthly shows Summary and All transactions only, with the before side's Summary figures; each bank and card name opens its account screen at the viewed month | — | | |
 | Menus (after only) | — | **N3:** CashFlow menu: Accounts, Monthly, Annual Summary, Mensais, Investment Snapshots (Reserva and Controle Mae follow until their pages retire); Admin CashFlow: Accounts, Categories, Income Sources, Investment Accounts, Recurring Bills (final in 3e) | — | | |
-| Monthly (after only) | M1 | **N5:** at 320 px Monthly's grids stack with no horizontal page scroll; Tab reaches the month picker, tabs, sort buttons, filters and every row link with visible focus | — | | |
+| Monthly (after only) | M1 | **N5:** at 320 px Monthly's grids stack with no horizontal page scroll; at wide width Tab reaches the month picker, tabs, sort buttons, filters and every row link with visible focus; at 320 px Tab reaches the month picker, tabs and every row link | — | | |
 | Card screen → Statements (after only) | M1 | **N6:** at 320 px the Statements tab with the due-date form open has no horizontal page scroll; Tab reaches Due date, the field, Save due date, Cancel and Clear due date | — | | |
 
 Account-screen rows (bank, card, pots, settlement) are added by the feature that builds each screen.
