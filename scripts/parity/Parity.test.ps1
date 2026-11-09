@@ -34,11 +34,12 @@ $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
 $reservaId = '44444444-4444-4444-4444-444444444444'
 $maeId = '88888888-8888-8888-8888-888888888888'
+$otherPotsId = '99999999-9999-9999-9999-999999999999'
 $responses = @{
     'banks'                                       = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`"},{`"id`":`"$chaseId`",`"name`":`"Chase`"}]"
     'reserve/movements'                           = '[{"bucketName":"Casa","amount":100.00,"date":"2026-08-31T00:00:00"},{"bucketName":"Casa","amount":50.00,"date":"2026-09-01T00:00:00"},{"bucketName":"Viagem","amount":25.50,"date":"2026-09-15T00:00:00"}]'
-    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$reservaId`",`"name`":`"Reserva`",`"templateName`":`"Pots`"},{`"id`":`"$maeId`",`"name`":`"$mae`",`"templateName`":`"Settlement`",`"replacesPage`":`"controle-mae`"}]"
-    'reserve/balances'                            = '[{"bucketName":"Casa","balance":150.00},{"bucketName":"Viagem","balance":25.50}]'
+    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$otherPotsId`",`"name`":`"Ferias`",`"templateName`":`"Pots`"},{`"id`":`"$reservaId`",`"name`":`"Reserva`",`"templateName`":`"Pots`",`"replacesPage`":`"reserva`"},{`"id`":`"$maeId`",`"name`":`"$mae`",`"templateName`":`"Settlement`",`"replacesPage`":`"controle-mae`"}]"
+    'reserve/balances'                            = '[{"bucketName":"Casa","balance":150.00},{"bucketName":"Viagem","balance":25.50},{"bucketName":"Novo","balance":0}]'
     'controle-mae/entries/totals'                 = '{"totalBrlValue":167.88,"totalGbpValue":7.94}'
     'annual-summary/2026/category-totals'         = '{"categoryTotals":[{"category":"Mercado","annualTotal":1200.00,"average":100.00,"monthlyTotals":[100.00,100.00]}],"incomeSummary":{"salaryAnnualTotal":5000.00,"salaryMonthly":[2500.00,2500.00]},"resultadoAnnualTotal":3800.00,"resultadoMonthly":[1900.00,1900.00]}'
     'annual-summary/2026/historic-summary-averages' = '[{"year":2025,"annualAverages":[{"category":"Mercado","value":95.00}]}]'
@@ -92,21 +93,23 @@ try {
     }
     $missing = [System.Collections.Generic.List[string]]::new()
     foreach ($month in '2026-08', '2026-09') {
-        foreach ($pattern in $families.Values) { $key = $pattern -f $month; if (-not $report.ContainsKey($key)) { $missing.Add($key) } }
+        foreach ($pattern in $families.Values) { $key = $pattern -f $month; if (-not $report.ContainsKey($key) -and -not $reportWithoutSummary.ContainsKey($key)) { $missing.Add($key) } }
     }
-    foreach ($key in 'current/maeAccount/totalBrl', 'current/pots/Casa/balance', '2026/annual/categories/Mercado/annualTotal', '2026/averages/2025/Mercado', '2026/investment/ISA/value/02', '2026/investment/net/fullYearNetChange') {
-        if (-not $report.ContainsKey($key)) { $missing.Add($key) }
+    foreach ($key in 'current/maeAccount/totalBrl', 'current/pots/Casa/balance', 'current/potsTab/Casa/balance', '2026/annual/categories/Mercado/annualTotal', '2026/averages/2025/Mercado', '2026/investment/ISA/value/02', '2026/investment/net/fullYearNetChange') {
+        if (-not $report.ContainsKey($key) -and -not $reportWithoutSummary.ContainsKey($key)) { $missing.Add($key) }
     }
     foreach ($family in $figureFamilies) {
-        if (-not ($report.Keys | Where-Object { $_.Split('/')[1] -eq $family -or $_.Split('/')[0] -eq $family })) { $missing.Add("family $family") }
+        if (-not (@($report.Keys) + @($reportWithoutSummary.Keys) | Where-Object { $_.Split('/')[1] -eq $family -or $_.Split('/')[0] -eq $family })) { $missing.Add("family $family") }
     }
-    Check 'report contains every figure family for every month' ($missing.Count -eq 0) ($missing -join ', ')
+    Check 'the two sides together contain every figure family for every month' ($missing.Count -eq 0) ($missing -join ', ')
 
     Check 'monthly figures are exact decimal sums' ($report['2026-09/monthly/categoryTotalsSum'] -is [decimal] -and $report['2026-09/monthly/categoryTotalsSum'] -eq [decimal]'0.3') $report['2026-09/monthly/categoryTotalsSum']
     Check 'income gross is null when no income of the source has gross' ($null -eq $report['2026-09/incomes/Dividends/gross'] -and $report['2026-09/incomes/Salary/gross'] -eq [decimal]'2500.00' -and $report['2026-09/incomes/totalIncoming'] -eq [decimal]'2112.34') ''
     Check 'round-up total follows the bank id' ($report['2026-09/banks/Barclays/roundUpTotal'] -eq [decimal]'0.17' -and $report['2026-09/banks/Chase/roundUpTotal'] -eq [decimal]'0.50' -and $report['2026-09/monthly/roundUpTotalsSum'] -eq [decimal]'0.67') ''
     Check 'card figures and unpaid total' ($report['2026-09/cards/unpaidChargesTotal'] -eq [decimal]'40.10' -and $report['2026-09/cards/Amex/isPaid'] -eq $false -and $report['2026-09/monthly/cardOutstandingTotal'] -eq [decimal]'40.10') ''
-    Check 'pots balance at month end uses movements up to the last day' ($report['2026-08/pots/Casa/balance'] -eq [decimal]'100.00' -and $report['2026-08/pots/Viagem/balance'] -eq 0 -and $report['2026-09/pots/total'] -eq [decimal]'175.50') ''
+    Check 'pots balance at month end uses movements up to the last day' ($reportWithoutSummary['2026-08/pots/Casa/balance'] -eq [decimal]'100.00' -and $reportWithoutSummary['2026-09/pots/Viagem/balance'] -eq [decimal]'25.50' -and $reportWithoutSummary['2026-09/pots/total'] -eq [decimal]'175.50') ''
+    Check 'the before side emits only non-zero pot balances and always the total' (-not $reportWithoutSummary.ContainsKey('2026-08/pots/Viagem/balance') -and $reportWithoutSummary['2026-08/pots/total'] -eq [decimal]'100.00') ''
+    Check 'pots figures are read from the retired routes only on the before side' (-not ($report.Keys | Where-Object { $_.Split('/')[1] -eq 'pots' -or $_ -like 'current/pots/*' })) ''
 
     $unfilled = $responses.Clone()
     $unfilled['accounts'] = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`",`"isActive`":true},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$chaseId`",`"name`":`"Visa`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$chaseId`",`"name`":`"Closed`",`"templateName`":`"CreditCard`",`"isActive`":false}]"
@@ -170,7 +173,7 @@ try {
 
     Check 'card members are built under cardMembers, with their balance only in the current month' ($report['2026-08/summary/cardMembers/Amex/outstandingTotal'] -eq [decimal]'40.10' -and $report['2026-08/summary/cardMembers/Amex/isPaid'] -eq $false -and $report['2026-09/summary/cardMembers/Amex/balance'] -eq [decimal]'-40.10' -and -not $report.ContainsKey('2026-08/summary/cardMembers/Amex/balance') -and -not ($report.Keys | Where-Object { $_ -like '*/summary/members/Amex/*' }) -and $report['2026-09/summary/totals/GBP/cardOutstandingTotal'] -eq [decimal]'40.10') ''
 
-    Check 'pots tab figures are built only with IncludeAccounts, from the first Pots account' ($report['2026-08/potsTab/Casa/balance'] -eq [decimal]'100.00' -and $report['2026-08/potsTab/Viagem/balance'] -eq 0 -and $report['2026-09/potsTab/Viagem/balance'] -eq [decimal]'25.50' -and $report['2026-09/potsTab/total'] -eq [decimal]'175.50' -and -not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'potsTab' })) ''
+    Check 'pots tab figures are built only with IncludeAccounts, from the account that replaces the Reserva page, non-zero pots only' ($report['2026-08/potsTab/Casa/balance'] -eq [decimal]'100.00' -and -not $report.ContainsKey('2026-08/potsTab/Viagem/balance') -and $report['2026-08/potsTab/total'] -eq [decimal]'100.00' -and $report['2026-09/potsTab/Viagem/balance'] -eq [decimal]'25.50' -and $report['2026-09/potsTab/total'] -eq [decimal]'175.50' -and -not ($reportWithoutSummary.Keys | Where-Object { $_.Split('/')[1] -eq 'potsTab' })) ''
 
     Check 'no pots tab figures without a Pots account' (-not ($filled.Keys | Where-Object { $_.Split('/')[1] -eq 'potsTab' })) ''
 
@@ -185,8 +188,14 @@ try {
     $unusedPot["accounts/$reservaId/pots/2026/9"] = $responses["accounts/$reservaId/pots/2026/9"].Replace('"name":"Novo","splitPercentage":0,"isActive":false,"balance":0', '"name":"Novo","splitPercentage":0,"isActive":false,"balance":5')
     $unusedPotFetch = { param($path) ConvertFrom-ParityJson $unusedPot[$path] }
     $unusedPotReport = Get-ParityReport -Fetch $unusedPotFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
-    $unusedPotDifferences = @(Compare-ParityReport $reportWithoutSummary $unusedPotReport $shippedMappings)
-    Check 'a pot with no movements is skipped at zero and reported when it has a balance' (-not ($report.Keys | Where-Object { $_ -like '*/potsTab/Novo/*' }) -and $unusedPotDifferences.Count -eq 1 -and $unusedPotDifferences[0].Key -eq '2026-09/potsTab/Novo/balance') (($unusedPotDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+    $unusedPotDifferences = Compare-ParityReport $reportWithoutSummary $unusedPotReport $shippedMappings
+    Check 'a pot at zero is skipped and reported, also in the current balances, when it has a balance' (-not ($report.Keys | Where-Object { $_ -like '????-??/potsTab/Novo/*' }) -and $unusedPotDifferences.Count -eq 2 -and $unusedPotDifferences[0].Key -eq '2026-09/potsTab/Novo/balance' -and $unusedPotDifferences[1].Key -eq 'current/potsTab/Novo/balance' -and $unusedPotDifferences[1].Before -eq '0') (($unusedPotDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
+    Check 'the after side reads every Reserva pot''s current balance from the Pots tab at the run''s last month' ($report['current/potsTab/Casa/balance'] -eq [decimal]'150.00' -and $report['current/potsTab/Viagem/balance'] -eq [decimal]'25.50' -and $report['current/potsTab/Novo/balance'] -eq 0 -and -not ($reportWithoutSummary.Keys | Where-Object { $_ -like 'current/potsTab/*' })) ''
+    $wrongCurrentPot = New-Report $report
+    $wrongCurrentPot['current/potsTab/Viagem/balance'] = [decimal]'25.51'
+    $wrongCurrentPotDifferences = @(Compare-ParityReport $reportWithoutSummary $wrongCurrentPot $shippedMappings)
+    Check 'shipped figure map compares the current Pots tab balance with the Reserva balance' ($wrongCurrentPotDifferences.Count -eq 1 -and $wrongCurrentPotDifferences[0].Key -eq 'current/potsTab/Viagem/balance' -and $wrongCurrentPotDifferences[0].Before -eq '25.50') (($wrongCurrentPotDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
     Check 'account figures skip accounts that are neither banks nor cards' (-not ($report.Keys | Where-Object { $_ -like '*/Reserva/*' })) ''
 
@@ -237,9 +246,11 @@ try {
     $readPaths = [System.Collections.Generic.List[string]]::new()
     $recordingFetch = { param($path) $readPaths.Add($path); & $fetch $path }
     $null = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
-    Check 'the after side reads no retired route' (-not ($readPaths | Where-Object { $_ -like 'controle-mae/*' })) ($readPaths -join ', ')
+    Check 'the after side reads no retired route' (-not ($readPaths | Where-Object { $_ -like 'controle-mae/*' -or $_ -like 'reserve/*' })) ($readPaths -join ', ')
+    Check 'the after side reads the Pots tab of the account that replaces the Reserva page only' (-not ($readPaths | Where-Object { $_ -like "accounts/$otherPotsId/*" }) -and @($readPaths | Where-Object { $_ -eq "accounts/$reservaId/pots/2026/9" }).Count -eq 2) ($readPaths -join ', ')
     $readPaths.Clear()
     $beforeSide = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -RetiredRoutes
+    Check 'RetiredRoutes reads the Reserva movements and balances once' (@($readPaths | Where-Object { $_ -eq 'reserve/movements' }).Count -eq 1 -and @($readPaths | Where-Object { $_ -eq 'reserve/balances' }).Count -eq 1) ($readPaths -join ', ')
     Check 'RetiredRoutes reads the totals route and never the entries fallback' (@($readPaths | Where-Object { $_ -eq 'controle-mae/entries/totals' }).Count -eq 1 -and -not ($readPaths | Where-Object { $_ -like 'controle-mae/entries/from/*' }) -and $beforeSide['current/mae/totalBrl'] -eq [decimal]'167.88' -and $beforeSide['current/mae/totalGbp'] -eq [decimal]'7.94') ($readPaths -join ', ')
     Check 'each side builds only its own Mae totals' (-not $report.ContainsKey('current/mae/totalBrl') -and -not $beforeSide.ContainsKey('current/maeAccount/totalBrl')) ''
     $maeAccountReads = @($readPaths | Where-Object { $_ -like "accounts/$maeId/*" }).Count
