@@ -133,7 +133,7 @@ describe('Sidebar', () => {
 
     expect(screen.getByRole('link', { name: 'Monthly' })).toHaveClass('active')
     expect(screen.getByRole('link', { name: 'Active Investments' })).not.toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Reserva' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Mensais' })).not.toHaveClass('active')
   })
 
   it('highlights the parent page and its category on a detail route nested under it', () => {

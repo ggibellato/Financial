@@ -111,8 +111,8 @@ label/value elements, since you cannot bold part of one string.
 `BalanceAdjustmentForm.tsx` is the reference.
 
 **Post-submit itemized result view:** a one-time confirmation shown after a
-form submits, itemizing what was recorded (e.g. `IncomeSplitForm`'s "posted"
-summary of amounts per bucket), uses a `MessageBar intent="success"` for the
+form submits, itemizing what was recorded (e.g. a summary of amounts per
+pot), uses a `MessageBar intent="success"` for the
 confirmation line, and Fluent's `Table` with the shared `.data-table` CSS
 class for its itemized rows — the same pattern every grid in this app uses
 (`docs/ui/react.md` "Grid row height"), even though this one is a static,
@@ -120,7 +120,6 @@ one-time confirmation snippet rather than a grid a user sorts or filters.
 Give the result its own small component-local CSS file for any table
 variant it needs (e.g. a narrower value column) rather than reaching into
 another page's stylesheet for classes it doesn't own.
-`IncomeSplitForm.tsx`/`IncomeSplitForm.css` is the reference.
 
 ### Form actions and saving
 
@@ -322,8 +321,8 @@ No grid in this repo currently needs it; when one does, build the menu with
 `Menu`/`MenuTrigger`/`MenuButton`/`MenuPopover`/`MenuList`/`MenuItem` (see
 `StatusMenuButton.tsx` for the existing pattern).
 
-A status indicator that isn't clickable (e.g. Reserva's 🔒 locked-movement
-glyph) is not a row action and does not count toward this — it stays wherever
+A status indicator that isn't clickable (e.g. a lock glyph on a row that can't
+be edited) is not a row action and does not count toward this — it stays wherever
 it currently sits and never occupies the Actions cell.
 
 `CardsGrid.tsx`'s mark/unmark-paid cell is a documented exception to the

@@ -27,10 +27,10 @@ describe('route and sidebar agreement', () => {
     expect(unreachable, `PAGE_ROUTES declares these routes, but no NAV_TREE entry links to them: ${unreachable.join(', ')}`).toEqual([])
   })
 
-  it('orders the CashFlow menu as the PRD, with the entries awaiting retirement last', () => {
+  it('orders the CashFlow menu as the PRD', () => {
     const cashFlowLabels = NAV_TREE.find((category) => category.id === 'cashflow')!.children.map((child) => child.label)
 
-    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots', 'Reserva'])
+    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots'])
   })
 
   it('declares no duplicate route paths', () => {
@@ -46,15 +46,18 @@ describe('route and sidebar agreement', () => {
   })
 
   it('keeps the retired addresses as redirects, off the sidebar', () => {
-    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets', 'cashflow/controle-mae'])
+    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets', 'cashflow/controle-mae', 'cashflow/reserva'])
     expect(navRoutes).not.toContain('/admin/cashflow/reserve-buckets')
     expect(navRoutes).not.toContain('/cashflow/controle-mae')
+    expect(navRoutes).not.toContain('/cashflow/reserva')
     expect(declaredRoutes).not.toContain('/cashflow/controle-mae')
+    expect(declaredRoutes).not.toContain('/cashflow/reserva')
   })
 
   it.each([
     ['admin/cashflow/reserve-buckets', { page: 'reserva', tab: 'pots' }],
     ['cashflow/controle-mae', { page: 'controle-mae' }],
+    ['cashflow/reserva', { page: 'reserva', tab: 'pots' }],
   ])('[AC P60-F13-consolidated-navigation-and-retirement-04] sends %s to the account that replaces its page', (path, props) => {
     const redirect = REDIRECT_ROUTES.find((route) => route.path === path)
 
