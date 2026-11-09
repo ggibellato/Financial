@@ -53,7 +53,6 @@ import type {
   CorporateActionSpinOffResultDto,
   CorporateActionSpinOffUpdateDto,
   ExpenseCreateDto,
-  MaeLedgerEntryCreateDto,
   RecurringBillCreateDto,
   CreditCardDto,
   CreditCardCreateDto,
@@ -79,10 +78,8 @@ import type {
   InvestmentScope,
   InvestmentSnapshotDto,
   InvestmentSnapshotSuggestionsDto,
-  MaeLedgerEntryDto,
   MoveAssetRequestDto,
   OpenLotDto,
-  MaeLedgerTotalsDto,
   MarkCardStatementPaidDto,
   MoveChargeToStatementDto,
   MonthTransactionDto,
@@ -137,7 +134,6 @@ import type {
   ExpenseUpdateDto,
   IncomeUpdateDto,
   InvestmentSnapshotValueUpdateDto,
-  MaeLedgerEntryValuesUpdateDto,
   RecurringBillUpdateDto,
   RecurringBillStatusUpdateDto,
   RecurringBillMarkPaidDto,
@@ -231,11 +227,6 @@ export interface FinancialApiClient {
   markMensaisBillPaid: (id: string, request: RecurringBillMarkPaidDto) => Promise<RecurringBillDto>
   deleteMensaisBill: (id: string) => Promise<void>
   resetMensaisToUnset: () => Promise<RecurringBillDto[]>
-  createMaeLedgerEntry: (request: MaeLedgerEntryCreateDto) => Promise<MaeLedgerEntryDto>
-  getMaeLedgerEntriesFromDate: (fromDate: string) => Promise<MaeLedgerEntryDto[]>
-  getMaeLedgerTotals: () => Promise<MaeLedgerTotalsDto>
-  updateMaeLedgerEntryValues: (id: string, request: MaeLedgerEntryValuesUpdateDto) => Promise<MaeLedgerEntryDto>
-  deleteMaeLedgerEntry: (id: string) => Promise<void>
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: InvestmentSnapshotValueUpdateDto) => Promise<InvestmentSnapshotDto>
   getInvestmentSnapshotSuggestions: (year: number, month: number) => Promise<InvestmentSnapshotSuggestionsDto>
@@ -668,20 +659,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     deleteMensaisBill: (id) => requestVoid(`/mensais/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     resetMensaisToUnset: () => request<RecurringBillDto[]>('/mensais/reset', { method: 'POST' }),
-    createMaeLedgerEntry: (requestBody) =>
-      request<MaeLedgerEntryDto>('/controle-mae/entries', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      }),
-    getMaeLedgerEntriesFromDate: (fromDate) =>
-      request<MaeLedgerEntryDto[]>(`/controle-mae/entries/from/${fromDate}`),
-    getMaeLedgerTotals: () => request<MaeLedgerTotalsDto>('/controle-mae/entries/totals'),
-    updateMaeLedgerEntryValues: (id, requestBody) =>
-      request<MaeLedgerEntryDto>(`/controle-mae/entries/${encodeURIComponent(id)}/values`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
-    deleteMaeLedgerEntry: (id) => requestVoid(`/controle-mae/entries/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getInvestmentSnapshots: (year, month) =>
       request<InvestmentSnapshotDto[]>(`/investment-snapshots/${year}/${month}`),
     updateInvestmentSnapshotValue: (id, requestBody) =>

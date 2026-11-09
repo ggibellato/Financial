@@ -30,7 +30,7 @@ describe('route and sidebar agreement', () => {
   it('orders the CashFlow menu as the PRD, with the entries awaiting retirement last', () => {
     const cashFlowLabels = NAV_TREE.find((category) => category.id === 'cashflow')!.children.map((child) => child.label)
 
-    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots', 'Reserva', 'Controle Mae'])
+    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots', 'Reserva'])
   })
 
   it('declares no duplicate route paths', () => {
@@ -45,16 +45,21 @@ describe('route and sidebar agreement', () => {
     expect(DETAIL_ROUTES.map((route) => `/${route.path}`).sort()).toEqual(navDetailRoutes.sort())
   })
 
-  it('keeps the retired Admin reserve buckets address as a redirect, off the sidebar', () => {
-    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets'])
+  it('keeps the retired addresses as redirects, off the sidebar', () => {
+    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets', 'cashflow/controle-mae'])
     expect(navRoutes).not.toContain('/admin/cashflow/reserve-buckets')
+    expect(navRoutes).not.toContain('/cashflow/controle-mae')
+    expect(declaredRoutes).not.toContain('/cashflow/controle-mae')
   })
 
-  it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends the reserve buckets address to the Pots tab of the account that replaces Reserva', () => {
-    const reserveBuckets = REDIRECT_ROUTES.find((route) => route.path === 'admin/cashflow/reserve-buckets')
+  it.each([
+    ['admin/cashflow/reserve-buckets', { page: 'reserva', tab: 'pots' }],
+    ['cashflow/controle-mae', { page: 'controle-mae' }],
+  ])('[AC P60-F13-consolidated-navigation-and-retirement-04] sends %s to the account that replaces its page', (path, props) => {
+    const redirect = REDIRECT_ROUTES.find((route) => route.path === path)
 
-    expect(reserveBuckets?.element.type).toBe(MovedPageRedirect)
-    expect(reserveBuckets?.element.props).toEqual({ page: 'reserva', tab: 'pots' })
+    expect(redirect?.element.type).toBe(MovedPageRedirect)
+    expect(redirect?.element.props).toEqual(props)
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

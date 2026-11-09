@@ -21,6 +21,8 @@
     { "after": "{month}/templateGroups/Pots/totals/GBP", "before": "{month}/pots/total", "negate": false, "reason": "F14 Pots grid total" },
     { "after": "{month}/potsTab/*/balance", "before": "{month}/pots/*/balance", "negate": false, "reason": "F10 Pots tab balance" },
     { "after": "{month}/potsTab/total", "before": "{month}/pots/total", "negate": false, "reason": "F10 Pots tab total" },
-    { "after": "{month}/monthTransactions/categories/*/spend", "before": "{month}/categories/*/total", "negate": false, "reason": "F16 All transactions spend per category" }
+    { "after": "{month}/monthTransactions/categories/*/spend", "before": "{month}/categories/*/total", "negate": false, "reason": "F16 All transactions spend per category" },
+    { "after": "current/maeAccount/totalBrl", "before": "current/mae/totalBrl", "negate": false, "reason": "F13 Mãe account current balance" },
+    { "after": "current/maeAccount/totalGbp", "before": "current/mae/totalGbp", "negate": false, "reason": "F13 Mãe account current balance" }
   ]
 }

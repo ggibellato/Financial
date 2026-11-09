@@ -64,7 +64,6 @@ import type {
   InvestmentAccountUpdateDto,
   InvestmentAnnualResultDto,
   InvestmentSnapshotSuggestionsDto,
-  MaeLedgerEntryCreateDto,
   MarkCardStatementPaidDto,
   PortfolioCreateDto,
   PortfolioDto,
@@ -81,8 +80,6 @@ import type {
   IncomeSplitRequestDto,
   IncomeSplitResultDto,
   InvestmentSnapshotDto,
-  MaeLedgerEntryDto,
-  MaeLedgerTotalsDto,
   RecurringBillDto,
   ReportingCurrencySettingDto,
   ReserveBucketBalanceDto,
@@ -96,7 +93,6 @@ import type {
   BalanceAdjustmentUpdateDto,
   CreditCardUpdateDto,
   InvestmentSnapshotValueUpdateDto,
-  MaeLedgerEntryValuesUpdateDto,
   RecurringBillUpdateDto,
   RecurringBillStatusUpdateDto,
   ReserveMovementUpdateDto,
@@ -990,101 +986,6 @@ describe('financialApiClient', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/mensais/reset`)
     expect(init?.method).toBe('POST')
-  })
-
-  it('posts a mae ledger entry create request', async () => {
-    const requestBody: MaeLedgerEntryCreateDto = {
-      date: '2026-07-01',
-      description: 'School supplies',
-      note: 'Term start',
-      sourceCurrency: 'BRL',
-      sourceValue: 350,
-    }
-    const responseBody: MaeLedgerEntryDto = {
-      id: 'e1',
-      date: '2026-07-01',
-      description: 'School supplies',
-      note: 'Term start',
-      sourceCurrency: 'BRL',
-      brlValue: 350,
-      gbpValue: 51.1,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.createMaeLedgerEntry(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/controle-mae/entries`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('calls the mae ledger entries-from-date endpoint', async () => {
-    const responseBody: MaeLedgerEntryDto[] = [
-      {
-        id: 'e1',
-        date: '2026-07-01',
-        description: 'School supplies',
-        note: '',
-        sourceCurrency: 'BRL',
-        brlValue: 350,
-        gbpValue: 51.1,
-      },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getMaeLedgerEntriesFromDate('2025-01-01')
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/controle-mae/entries/from/2025-01-01`)
-  })
-
-  it('calls the mae ledger totals endpoint', async () => {
-    const responseBody: MaeLedgerTotalsDto = { totalBrlValue: 1000, totalGbpValue: 145.3 }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getMaeLedgerTotals()
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/controle-mae/entries/totals`)
-  })
-
-  it('puts a mae ledger entry values update', async () => {
-    const requestBody: MaeLedgerEntryValuesUpdateDto = { brlValue: 355, gbpValue: 51.6 }
-    const responseBody: MaeLedgerEntryDto = {
-      id: 'e1',
-      date: '2026-07-01',
-      description: 'School supplies',
-      note: '',
-      sourceCurrency: 'BRL',
-      brlValue: 355,
-      gbpValue: 51.6,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.updateMaeLedgerEntryValues('e1', requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/controle-mae/entries/e1/values`)
-    expect(init?.method).toBe('PUT')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('deletes a mae ledger entry', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await client.deleteMaeLedgerEntry('e1')
-
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/controle-mae/entries/e1`)
-    expect(init?.method).toBe('DELETE')
   })
 
   it('calls the investment snapshots endpoint for a given year/month', async () => {

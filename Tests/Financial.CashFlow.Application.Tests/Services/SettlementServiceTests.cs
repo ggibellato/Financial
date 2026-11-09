@@ -58,6 +58,7 @@ public class SettlementServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P49-F01-shared-exchange-rate-provider-04")]
     public async Task AddEntryAsync_TwoCurrencies_StoresTheConvertedValueAtTheDateRateToTwoDecimals()
     {
         var result = await CreateService().AddEntryAsync(_mae.Id, NewEntry(amount: 150.005m));

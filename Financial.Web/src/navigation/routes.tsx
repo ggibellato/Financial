@@ -10,7 +10,6 @@ import {
   BanksPage,
   BrokersPage,
   CategoriesPage,
-  ControleMaePage,
   CreditCardsPage,
   CurrentValuesPage,
   DashboardPage,
@@ -59,7 +58,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'cashflow/annual-summary', element: <AnnualSummaryPage /> },
   { path: 'cashflow/reserva', element: <ReservaPage /> },
   { path: 'cashflow/mensais', element: <MensaisPage /> },
-  { path: 'cashflow/controle-mae', element: <ControleMaePage /> },
   { path: 'admin/investment/assets', element: <AssetsPage /> },
   { path: 'admin/investment/brokers', element: <BrokersPage /> },
   { path: 'admin/investment/portfolios', element: <PortfoliosPage /> },
@@ -82,6 +80,7 @@ export const DETAIL_ROUTES: PageRoute[] = [
 
 export const REDIRECT_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/reserve-buckets', element: <MovedPageRedirect page="reserva" tab="pots" /> },
+  { path: 'cashflow/controle-mae', element: <MovedPageRedirect page="controle-mae" /> },
 ]
 
 export const ALL_ROUTES: PageRoute[] = [...PAGE_ROUTES, ...DETAIL_ROUTES, ...REDIRECT_ROUTES]

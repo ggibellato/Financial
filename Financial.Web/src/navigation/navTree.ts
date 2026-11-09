@@ -62,7 +62,6 @@ export const NAV_TREE: NavCategory[] = [
       { id: 'mensais', label: 'Mensais', route: '/cashflow/mensais' },
       { id: 'investment-snapshots', label: 'Investment Snapshots', route: '/cashflow/investment-snapshots' },
       { id: 'reserva', label: 'Reserva', route: '/cashflow/reserva' },
-      { id: 'controle-mae', label: 'Controle Mae', route: '/cashflow/controle-mae' },
     ],
   },
   {

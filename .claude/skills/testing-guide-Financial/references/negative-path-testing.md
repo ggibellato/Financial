@@ -53,7 +53,7 @@ field values and shows the error under the named field
 
 (`FrankfurterExchangeRateProviderTests`.) At host level the same is proven with
 `new ApiTestFactory(new StubExchangeRateProvider(null))` →
-`CreateEntry_WhenRateLookupFails_ReturnsOkWithOnlyEnteredCurrency` (`ControleMaeEndpointsTests`):
+`AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency` (`SettlementScreenAcceptanceTests`):
 the feature degrades, it does not 500.
 
 **Rejected storage write** — `new LocalJsonStorage(Path.Combine(Path.GetTempPath(), $"cashflow-missing-dir-{Guid.NewGuid()}", "data.json"))`
@@ -106,5 +106,5 @@ frontend's own error state for that is covered at the page layer.
 ## Examples from the project
 
 - Unit: `ExpenseServiceTests`, `YahooFinanceServiceTests.GetAssetValue_UnsupportedExchange_ThrowsInvalidOperationException_WithoutCallingHttp`.
-- Integration: `FrankfurterExchangeRateProviderTests` (all four modes), `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`, `ControleMaeEndpointsTests.CreateEntry_WhenRateLookupFails_ReturnsOkWithOnlyEnteredCurrency`, `DomainExceptionLoggingTests`, `ObservabilityBackendUnreachableTests`, `BanksPage.test.tsx`.
+- Integration: `FrankfurterExchangeRateProviderTests` (all four modes), `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`, `SettlementScreenAcceptanceTests.AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `DomainExceptionLoggingTests`, `ObservabilityBackendUnreachableTests`, `BanksPage.test.tsx`.
 - E2E: none yet — the first failure journey added should follow the options above.

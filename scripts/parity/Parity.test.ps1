@@ -33,13 +33,13 @@ $barclaysId = '11111111-1111-1111-1111-111111111111'
 $chaseId = '22222222-2222-2222-2222-222222222222'
 $amexId = '33333333-3333-3333-3333-333333333333'
 $reservaId = '44444444-4444-4444-4444-444444444444'
+$maeId = '88888888-8888-8888-8888-888888888888'
 $responses = @{
     'banks'                                       = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`"},{`"id`":`"$chaseId`",`"name`":`"Chase`"}]"
     'reserve/movements'                           = '[{"bucketName":"Casa","amount":100.00,"date":"2026-08-31T00:00:00"},{"bucketName":"Casa","amount":50.00,"date":"2026-09-01T00:00:00"},{"bucketName":"Viagem","amount":25.50,"date":"2026-09-15T00:00:00"}]'
-    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$reservaId`",`"name`":`"Reserva`",`"templateName`":`"Pots`"}]"
+    'accounts'                                    = "[{`"id`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`"},{`"id`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`"},{`"id`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"isActive`":true},{`"id`":`"$reservaId`",`"name`":`"Reserva`",`"templateName`":`"Pots`"},{`"id`":`"$maeId`",`"name`":`"$mae`",`"templateName`":`"Settlement`",`"replacesPage`":`"controle-mae`"}]"
     'reserve/balances'                            = '[{"bucketName":"Casa","balance":150.00},{"bucketName":"Viagem","balance":25.50}]'
     'controle-mae/entries/totals'                 = '{"totalBrlValue":167.88,"totalGbpValue":7.94}'
-    'controle-mae/entries/from/0001-01-01'        = '[{"date":"2026-08-10","brlValue":100.50,"gbpValue":15.25},{"date":"2026-08-31","brlValue":-30.00,"gbpValue":null},{"date":"2026-09-01","brlValue":67.38,"gbpValue":-7.31}]'
     'annual-summary/2026/category-totals'         = '{"categoryTotals":[{"category":"Mercado","annualTotal":1200.00,"average":100.00,"monthlyTotals":[100.00,100.00]}],"incomeSummary":{"salaryAnnualTotal":5000.00,"salaryMonthly":[2500.00,2500.00]},"resultadoAnnualTotal":3800.00,"resultadoMonthly":[1900.00,1900.00]}'
     'annual-summary/2026/historic-summary-averages' = '[{"year":2025,"annualAverages":[{"category":"Mercado","value":95.00}]}]'
     'annual-summary/2026/investment-annual-result' = '{"accounts":[{"account":"ISA","isLiability":false,"monthlyValues":[1000.00,1100.00],"monthlyDiffs":[null,100.00]}],"netPosition":{"monthlyValues":[1000.00,1100.00],"monthlyDiffs":[null,100.00],"averageMonthResult":100.00,"fullYearNetChange":100.00,"sumOfMonthResults":100.00}}'
@@ -55,7 +55,10 @@ foreach ($month in 8, 9) {
     $responses["tithe/month/$route"] = '{"calculatedTithe":211.23,"titheBalance":11.23,"carryForward":{"amount":5.00,"included":true,"fromYear":2026,"fromMonth":7}}'
     $responses["accounts/groups/default/summary/$route"] = "{`"members`":[{`"accountId`":`"$barclaysId`",`"name`":`"Barclays`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":130.83,`"roundUpTotal`":0.17},{`"accountId`":`"$chaseId`",`"name`":`"Chase`",`"templateName`":`"Bank`",`"currency`":`"GBP`",`"balance`":10.00,`"roundUpTotal`":0.50},{`"accountId`":`"$amexId`",`"name`":`"Amex`",`"templateName`":`"CreditCard`",`"currency`":`"GBP`",`"balance`":-40.10,`"roundUpTotal`":null,`"statement`":{`"outstandingTotal`":40.10,`"isPaid`":false}}],`"totals`":[{`"currency`":`"GBP`",`"balance`":140.83,`"roundUpTotal`":0.67,`"cardOutstandingTotal`":40.10}],`"categoryTotalsSum`":0.3,`"incomeTotals`":[{`"name`":`"Salary`",`"netValue`":2100.00,`"grossValue`":2500.00},{`"name`":`"Dividends`",`"netValue`":12.34,`"grossValue`":null}],`"totalIncoming`":2112.34}"
     $potsTotal = if ($month -eq 8) { '100.00' } else { '175.50' }
-    $responses["accounts/groups/by-template/$route"] = "[{`"templateName`":`"Bank`",`"members`":[{`"name`":`"Barclays`",`"balance`":130.83,`"totalOwed`":null},{`"name`":`"Chase`",`"balance`":10.00,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":140.83},{`"currency`":`"BRL`",`"total`":500.00}]},{`"templateName`":`"CreditCard`",`"members`":[{`"name`":`"Amex`",`"balance`":-40.10,`"totalOwed`":40.10}],`"totals`":[{`"currency`":`"GBP`",`"total`":40.10}]},{`"templateName`":`"Pots`",`"members`":[{`"name`":`"Reserva`",`"balance`":$potsTotal,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":$potsTotal}]}]"
+    $maeBrl = if ($month -eq 8) { '70.50' } else { '137.88' }
+    $maeGbp = if ($month -eq 8) { '15.25' } else { '7.94' }
+    $settlementGroup = ",{`"templateName`":`"Settlement`",`"members`":[{`"name`":`"$mae`",`"balance`":$maeBrl,`"totalOwed`":null,`"currencyBalances`":[{`"currency`":`"BRL`",`"balance`":$maeBrl},{`"currency`":`"GBP`",`"balance`":$maeGbp}]}],`"totals`":[]}"
+    $responses["accounts/groups/by-template/$route"] = "[{`"templateName`":`"Bank`",`"members`":[{`"name`":`"Barclays`",`"balance`":130.83,`"totalOwed`":null},{`"name`":`"Chase`",`"balance`":10.00,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":140.83},{`"currency`":`"BRL`",`"total`":500.00}]},{`"templateName`":`"CreditCard`",`"members`":[{`"name`":`"Amex`",`"balance`":-40.10,`"totalOwed`":40.10}],`"totals`":[{`"currency`":`"GBP`",`"total`":40.10}]},{`"templateName`":`"Pots`",`"members`":[{`"name`":`"Reserva`",`"balance`":$potsTotal,`"totalOwed`":null}],`"totals`":[{`"currency`":`"GBP`",`"total`":$potsTotal}]}$settlementGroup]"
     $casaBalance = if ($month -eq 8) { '100.00' } else { '150.00' }
     $viagemBalance = if ($month -eq 8) { '0' } else { '25.50' }
     $responses["accounts/$reservaId/pots/$route"] = "{`"potsAccountId`":`"$reservaId`",`"currency`":`"GBP`",`"total`":$potsTotal,`"pots`":[{`"id`":`"55555555-5555-5555-5555-555555555555`",`"name`":`"Casa`",`"splitPercentage`":60,`"isActive`":true,`"balance`":$casaBalance},{`"id`":`"66666666-6666-6666-6666-666666666666`",`"name`":`"Viagem`",`"splitPercentage`":40,`"isActive`":true,`"balance`":$viagemBalance},{`"id`":`"77777777-7777-7777-7777-777777777777`",`"name`":`"Novo`",`"splitPercentage`":0,`"isActive`":false,`"balance`":0}]}"
@@ -63,13 +66,14 @@ foreach ($month in 8, 9) {
     $responses["accounts/$chaseId/$route"] = '{"balance":10.00}'
     $responses["accounts/$amexId/$route"] = '{"balance":-40.10,"totalOwed":40.10}'
     $responses["accounts/transactions/$route"] = "[{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Expense`",`"categoryName`":`"Mercado`",`"amount`":-0.1}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardCharge`",`"categoryName`":`"Casa`",`"amount`":-0.25}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardRefund`",`"categoryName`":`"Casa`",`"amount`":0.05}},{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Income`",`"categoryName`":null,`"amount`":2000.00}},{`"accountName`":`"Chase`",`"transaction`":{`"kind`":`"TransferIn`",`"amount`":40.00}}]"
+    $responses["accounts/$maeId/$route"] = '{"currentBalances":[{"currency":"BRL","balance":167.88},{"currency":"GBP","balance":7.94}]}'
     $responses["investment-snapshots/$route/suggestions"] = '{"suggestions":[{"accountName":"Amex card","suggestedValue":-40.10,"currentValue":0,"sourceDescription":"Invoice"}],"notUpdated":[{"accountName":"Pension","reason":"No source"}]}'
 }
 $fetch = { param($path) if (-not $responses.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $responses[$path] }
 
 try {
     $report = Get-ParityReport -Fetch $fetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
-    $reportWithoutSummary = Get-ParityReport -Fetch $fetch -First '2026-08' -Last '2026-09'
+    $reportWithoutSummary = Get-ParityReport -Fetch $fetch -First '2026-08' -Last '2026-09' -RetiredRoutes
     $families = @{
         banks      = '{0}/banks/Barclays/balance'
         cards      = '{0}/cards/Amex/outstandingTotal'
@@ -90,7 +94,7 @@ try {
     foreach ($month in '2026-08', '2026-09') {
         foreach ($pattern in $families.Values) { $key = $pattern -f $month; if (-not $report.ContainsKey($key)) { $missing.Add($key) } }
     }
-    foreach ($key in 'current/mae/totalBrl', 'current/pots/Casa/balance', '2026/annual/categories/Mercado/annualTotal', '2026/averages/2025/Mercado', '2026/investment/ISA/value/02', '2026/investment/net/fullYearNetChange') {
+    foreach ($key in 'current/maeAccount/totalBrl', 'current/pots/Casa/balance', '2026/annual/categories/Mercado/annualTotal', '2026/averages/2025/Mercado', '2026/investment/ISA/value/02', '2026/investment/net/fullYearNetChange') {
         if (-not $report.ContainsKey($key)) { $missing.Add($key) }
     }
     foreach ($family in $figureFamilies) {
@@ -214,29 +218,40 @@ try {
     $settlementKeys = { param($r) @($r.Keys | Where-Object { $_.Split('/')[1] -eq 'settlement' } | Sort-Object) }
     $expectedSettlementKeys = @(foreach ($month in '2026-08', '2026-09') { "$month/settlement/$mae/BRL", "$month/settlement/$mae/GBP" }) | Sort-Object
     Check 'settlement figures are built for every month on both sides' ((Compare-Object (& $settlementKeys $report) $expectedSettlementKeys).Count -eq 0 -and (Compare-Object (& $settlementKeys $reportWithoutSummary) $expectedSettlementKeys).Count -eq 0) ((& $settlementKeys $report) -join ', ')
-    Check 'settlement figures without a Settlement group sum the entries dated up to the month end, null as 0' ($report["2026-08/settlement/$mae/BRL"] -eq [decimal]'70.50' -and $report["2026-08/settlement/$mae/GBP"] -eq [decimal]'15.25' -and $reportWithoutSummary["2026-09/settlement/$mae/BRL"] -eq [decimal]'137.88' -and $reportWithoutSummary["2026-09/settlement/$mae/GBP"] -eq [decimal]'7.94') "$($report["2026-08/settlement/$mae/BRL"]) $($report["2026-08/settlement/$mae/GBP"]) $($reportWithoutSummary["2026-09/settlement/$mae/BRL"]) $($reportWithoutSummary["2026-09/settlement/$mae/GBP"])"
+    Check 'settlement figures come from the Settlement group members' ($report["2026-08/settlement/$mae/BRL"] -eq [decimal]'70.50' -and $report["2026-08/settlement/$mae/GBP"] -eq [decimal]'15.25' -and $reportWithoutSummary["2026-09/settlement/$mae/BRL"] -eq [decimal]'137.88' -and $reportWithoutSummary["2026-09/settlement/$mae/GBP"] -eq [decimal]'7.94') "$($report["2026-08/settlement/$mae/BRL"]) $($report["2026-08/settlement/$mae/GBP"]) $($reportWithoutSummary["2026-09/settlement/$mae/BRL"]) $($reportWithoutSummary["2026-09/settlement/$mae/GBP"])"
     Check 'settlement figures are exact decimals' ($report["2026-09/settlement/$mae/GBP"] -is [decimal]) ''
+    Check 'a Settlement group adds no template group figures' (-not ($report.Keys | Where-Object { $_ -like '*/templateGroups/Settlement/*' })) ''
 
-    $entryFetches = @{ Count = 0 }
-    $countingFetch = { param($path) if ($path -eq 'controle-mae/entries/from/0001-01-01') { $entryFetches.Count++ }; & $fetch $path }
-    $null = Get-ParityReport -Fetch $countingFetch -First '2026-08' -Last '2026-09'
-    Check 'the entries are fetched once per report' ($entryFetches.Count -eq 1) $entryFetches.Count
+    $withoutGroup = $responses.Clone()
+    $withoutGroup['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].Replace($settlementGroup, '')
+    $withoutGroupFetch = { param($path) ConvertFrom-ParityJson $withoutGroup[$path] }
+    $withoutGroupReport = Get-ParityReport -Fetch $withoutGroupFetch -First '2026-09' -Last '2026-09'
+    Check 'no settlement figures without a Settlement group' (-not (& $settlementKeys $withoutGroupReport)) ((& $settlementKeys $withoutGroupReport) -join ', ')
 
-    $settlementGroup = { param($brl, $gbp) ",{`"templateName`":`"Settlement`",`"members`":[{`"name`":`"$mae`",`"balance`":$brl,`"totalOwed`":null,`"currencyBalances`":[{`"currency`":`"BRL`",`"balance`":$brl},{`"currency`":`"GBP`",`"balance`":$gbp}]}],`"totals`":[]}]" }
-    $withGroup = $responses.Clone()
-    $withGroup.Remove('controle-mae/entries/from/0001-01-01')
-    $withGroup['accounts/groups/by-template/2026/8'] = $responses['accounts/groups/by-template/2026/8'].TrimEnd(']') + (& $settlementGroup '70.50' '15.25')
-    $withGroup['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].TrimEnd(']') + (& $settlementGroup '137.88' '7.94')
-    $withGroupFetch = { param($path) if (-not $withGroup.ContainsKey($path)) { throw "No fixture for $path" }; ConvertFrom-ParityJson $withGroup[$path] }
-    $groupReport = Get-ParityReport -Fetch $withGroupFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
-    $groupDifferences = Compare-ParityReport $reportWithoutSummary $groupReport $shippedMappings
-    Check 'settlement figures from the Settlement group members have the same keys and values as from the entries' ((Compare-Object (& $settlementKeys $groupReport) $expectedSettlementKeys).Count -eq 0 -and $groupDifferences.Count -eq 0) (($groupDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
-
-    Check 'a Settlement group adds no template group figures' (-not ($groupReport.Keys | Where-Object { $_ -like '*/templateGroups/Settlement/*' })) ''
-
-    $withGroup['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].TrimEnd(']') + (& $settlementGroup '137.88' '7.95')
-    $changedSettlement = Compare-ParityReport $reportWithoutSummary (Get-ParityReport -Fetch $withGroupFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts) $shippedMappings
+    $changedSettlementResponses = $responses.Clone()
+    $changedSettlementResponses['accounts/groups/by-template/2026/9'] = $responses['accounts/groups/by-template/2026/9'].Replace('"currency":"GBP","balance":7.94', '"currency":"GBP","balance":7.95')
+    $changedSettlementFetch = { param($path) ConvertFrom-ParityJson $changedSettlementResponses[$path] }
+    $changedSettlement = Compare-ParityReport $reportWithoutSummary (Get-ParityReport -Fetch $changedSettlementFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts) $shippedMappings
     Check 'a different settlement balance is a difference' ($changedSettlement.Count -eq 1 -and $changedSettlement[0].Key -eq "2026-09/settlement/$mae/GBP") (($changedSettlement | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
+    $readPaths = [System.Collections.Generic.List[string]]::new()
+    $recordingFetch = { param($path) $readPaths.Add($path); & $fetch $path }
+    $null = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
+    Check 'the after side reads no retired route' (-not ($readPaths | Where-Object { $_ -like 'controle-mae/*' })) ($readPaths -join ', ')
+    $readPaths.Clear()
+    $beforeSide = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -RetiredRoutes
+    Check 'RetiredRoutes reads the totals route and never the entries fallback' (@($readPaths | Where-Object { $_ -eq 'controle-mae/entries/totals' }).Count -eq 1 -and -not ($readPaths | Where-Object { $_ -like 'controle-mae/entries/from/*' }) -and $beforeSide['current/mae/totalBrl'] -eq [decimal]'167.88' -and $beforeSide['current/mae/totalGbp'] -eq [decimal]'7.94') ($readPaths -join ', ')
+    Check 'each side builds only its own Mae totals' (-not $report.ContainsKey('current/mae/totalBrl') -and -not $beforeSide.ContainsKey('current/maeAccount/totalBrl')) ''
+    $maeAccountReads = @($readPaths | Where-Object { $_ -like "accounts/$maeId/*" }).Count
+    Check 'the before side does not read the Mae account' ($maeAccountReads -eq 0) $maeAccountReads
+
+    Check 'the after side reads the Mae totals from the current balances of the account that replaces the page' ($report['current/maeAccount/totalBrl'] -eq [decimal]'167.88' -and $report['current/maeAccount/totalGbp'] -eq [decimal]'7.94') "$($report['current/maeAccount/totalBrl']) $($report['current/maeAccount/totalGbp'])"
+    Check 'no Mae totals when no account replaces the page' (-not ($filled.Keys | Where-Object { $_ -like 'current/maeAccount/*' })) ''
+
+    $wrongMae = New-Report $report
+    $wrongMae['current/maeAccount/totalGbp'] = [decimal]'7.95'
+    $wrongMaeDifferences = @(Compare-ParityReport $reportWithoutSummary $wrongMae $shippedMappings)
+    Check 'a different Mae account balance is compared with the Controle Mae total' ($wrongMaeDifferences.Count -eq 1 -and $wrongMaeDifferences[0].Key -eq 'current/maeAccount/totalGbp' -and $wrongMaeDifferences[0].Before -eq '7.94') (($wrongMaeDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
     $dataPath = Join-Path $work 'data-cashflow.json'
     Set-Content -LiteralPath $dataPath -Value '{ "Expenses": [ { "Date": "2019-03-04T00:00:00", "ChargeDate": null, "InvoiceDate": "2027-02-01T00:00:00" } ], "Incomes": [ { "Date": "2026-10-14T00:00:00" } ], "SettlementTransactions": [ { "Date": "2018-05-06" } ], "InvestmentSnapshots": [ { "Year": 2026, "Month": 12 } ], "CardStatements": [], "Version": 1 }'
