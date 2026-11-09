@@ -52,18 +52,14 @@ describe('route and sidebar agreement', () => {
     expect(declaredRoutes).not.toContain('/cashflow/controle-mae')
   })
 
-  it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends the reserve buckets address to the Pots tab of the account that replaces Reserva', () => {
-    const reserveBuckets = REDIRECT_ROUTES.find((route) => route.path === 'admin/cashflow/reserve-buckets')
+  it.each([
+    ['admin/cashflow/reserve-buckets', { page: 'reserva', tab: 'pots' }],
+    ['cashflow/controle-mae', { page: 'controle-mae' }],
+  ])('[AC P60-F13-consolidated-navigation-and-retirement-04] sends %s to the account that replaces its page', (path, props) => {
+    const redirect = REDIRECT_ROUTES.find((route) => route.path === path)
 
-    expect(reserveBuckets?.element.type).toBe(MovedPageRedirect)
-    expect(reserveBuckets?.element.props).toEqual({ page: 'reserva', tab: 'pots' })
-  })
-
-  it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends the Controle Mae address to the account that replaces it', () => {
-    const controleMae = REDIRECT_ROUTES.find((route) => route.path === 'cashflow/controle-mae')
-
-    expect(controleMae?.element.type).toBe(MovedPageRedirect)
-    expect(controleMae?.element.props).toEqual({ page: 'controle-mae' })
+    expect(redirect?.element.type).toBe(MovedPageRedirect)
+    expect(redirect?.element.props).toEqual(props)
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

@@ -246,7 +246,7 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
     public async Task AdminAccounts_MaeWithEntries_IsInUse_DeleteReturns409AndCurrenciesAreLocked()
     {
         SeedMigratedV4File();
-        var mae = (await Client.GetFromJsonAsync<List<AccountDTO>>($"{Api}/accounts"))!.Single(account => account.Name == "Mãe");
+        var mae = await MigratedMaeAccount();
 
         var deleted = await Client.DeleteAsync($"{Api}/accounts/{mae.Id}");
         var deleteProblem = await deleted.Content.ReadFromJsonAsync<ProblemDetails>();
