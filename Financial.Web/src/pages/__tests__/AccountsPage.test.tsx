@@ -97,6 +97,14 @@ function renderPage() {
   )
 }
 
+function renderPageAfterMovedRedirect() {
+  return render(
+    <MemoryRouter initialEntries={[{ pathname: '/cashflow/accounts', state: { movedNotice: true } }]}>
+      <AccountsPage />
+    </MemoryRouter>,
+  )
+}
+
 function bodyRows(table: HTMLElement) {
   return within(table).getAllByRole('row').slice(1)
 }
@@ -121,6 +129,22 @@ describe('AccountsPage', () => {
 
   afterEach(() => {
     vi.useRealTimers()
+  })
+
+  it('[AC P60-F13-consolidated-navigation-and-retirement-04] shows the moved notice above the grids when a redirect found no account', async () => {
+    renderPageAfterMovedRedirect()
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    const notice = screen.getByRole('status')
+    expect(notice).toHaveTextContent('That page moved to the account screen.')
+    expect(notice.compareDocumentPosition(banks) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows no moved notice on an ordinary visit', async () => {
+    renderPage()
+
+    expect(await screen.findByRole('table', { name: 'Banks' })).toBeInTheDocument()
+    expect(screen.queryByText('That page moved to the account screen.')).not.toBeInTheDocument()
   })
 
   it('[AC P60-F14-accounts-page-by-template-and-card-totals-01] shows one grid per template in order, each listing its accounts with the Inactive badge and a per-currency footer', async () => {

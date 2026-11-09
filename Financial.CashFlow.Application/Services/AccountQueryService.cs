@@ -15,6 +15,8 @@ namespace Financial.CashFlow.Application.Services;
 public sealed class AccountQueryService : IAccountQueryService
 {
     private const string EntityType = "Account";
+    private const string ReservaPage = "reserva";
+    private const string ControleMaePage = "controle-mae";
 
     private enum TransactionKind
     {
@@ -51,12 +53,16 @@ public sealed class AccountQueryService : IAccountQueryService
         {
             var referencedIds = AccountReferenceReader.ReferencedAccountIds(_repository);
             var statements = _repository.GetCardStatements().ToList();
-            var result = _repository.GetAccounts()
+            var accounts = _repository.GetAccounts().ToList();
+            var reservaId = ReservaAccount.Find(accounts)?.Id;
+            var maeId = MaeAccount.Find(accounts)?.Id;
+            var result = accounts
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(account => ToAccountDto(
                     account,
                     referencedIds.Contains(account.Id),
-                    account.Has(Capability.HasStatements) ? CardDueDate.For(account, statements) : null))
+                    account.Has(Capability.HasStatements) ? CardDueDate.For(account, statements) : null,
+                    ReplacedPage(account.Id, reservaId, maeId)))
                 .ToList();
 
             span.MarkSuccess();
@@ -477,7 +483,15 @@ public sealed class AccountQueryService : IAccountQueryService
         Settlement = SettlementService.ToDto(entry, null)
     };
 
-    internal static AccountDTO ToAccountDto(Account account, bool hasRecords, DateOnly? dueDate = null) => new()
+    private static string? ReplacedPage(Guid accountId, Guid? reservaId, Guid? maeId)
+    {
+        if (accountId == reservaId)
+            return ReservaPage;
+
+        return accountId == maeId ? ControleMaePage : null;
+    }
+
+    internal static AccountDTO ToAccountDto(Account account, bool hasRecords, DateOnly? dueDate = null, string? replacesPage = null) => new()
     {
         Id = account.Id,
         Name = account.Name,
@@ -492,6 +506,7 @@ public sealed class AccountQueryService : IAccountQueryService
         RoundUpEnabled = account.RoundUp?.Enabled,
         CategoryId = account.Category?.Id,
         DueDate = dueDate,
+        ReplacesPage = replacesPage,
         Capabilities = CapabilityNames(account.Has)
     };
 

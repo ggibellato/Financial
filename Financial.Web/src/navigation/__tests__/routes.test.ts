@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { MovedPageRedirect } from '../lazyPages'
 import { NAV_TREE } from '../navTree'
 import { ALL_ROUTES, DETAIL_ROUTES, PAGE_ROUTES, REDIRECT_ROUTES } from '../routes'
 
@@ -41,6 +42,13 @@ describe('route and sidebar agreement', () => {
   it('keeps the retired Admin reserve buckets address as a redirect, off the sidebar', () => {
     expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets'])
     expect(navRoutes).not.toContain('/admin/cashflow/reserve-buckets')
+  })
+
+  it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends the reserve buckets address to the Pots tab of the account that replaces Reserva', () => {
+    const reserveBuckets = REDIRECT_ROUTES.find((route) => route.path === 'admin/cashflow/reserve-buckets')
+
+    expect(reserveBuckets?.element.type).toBe(MovedPageRedirect)
+    expect(reserveBuckets?.element.props).toEqual({ page: 'reserva', tab: 'pots' })
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

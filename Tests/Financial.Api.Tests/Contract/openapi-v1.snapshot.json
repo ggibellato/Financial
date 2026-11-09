@@ -126,6 +126,12 @@
               "string"
             ]
           },
+          "replacesPage": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "roundUpEnabled": {
             "type": [
               "null",

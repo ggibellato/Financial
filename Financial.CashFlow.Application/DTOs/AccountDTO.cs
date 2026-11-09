@@ -15,5 +15,6 @@ public sealed class AccountDTO
     public bool? RoundUpEnabled { get; init; }
     public Guid? CategoryId { get; init; }
     public DateOnly? DueDate { get; init; }
+    public string? ReplacesPage { get; init; }
     public required IReadOnlyList<string> Capabilities { get; init; }
 }

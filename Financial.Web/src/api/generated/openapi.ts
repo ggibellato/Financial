@@ -8400,6 +8400,7 @@ export interface components {
             /** Format: double */
             openingBalance?: null | number;
             otherParticipant?: null | string;
+            replacesPage?: null | string;
             roundUpEnabled?: null | boolean;
             templateName: string;
         };

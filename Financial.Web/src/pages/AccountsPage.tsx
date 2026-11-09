@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { Badge, Text } from '@fluentui/react-components'
-import { Link } from 'react-router-dom'
+import { Badge, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
+import { Link, useLocation } from 'react-router-dom'
 import type { AccountGroupMemberDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -84,9 +84,16 @@ export default function AccountsPage() {
   const { year, month } = currentYearMonth()
   const monthParam = formatMonthInputValue(year, month)
   const { data: groups, isLoading, error, retry } = useAccountTemplateGroups(year, month)
+  const { state } = useLocation()
+  const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
 
   return (
     <div className="accounts-page">
+      {showMovedNotice && (
+        <MessageBar role="status" intent="info">
+          <MessageBarBody>That page moved to the account screen.</MessageBarBody>
+        </MessageBar>
+      )}
       <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
 
       {isLoading ? (
