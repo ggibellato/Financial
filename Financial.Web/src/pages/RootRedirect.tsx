@@ -5,7 +5,7 @@ function RootRedirect() {
   const domain = getStoredDomain()
 
   if (domain === 'cashflow') {
-    return <Navigate to="/cashflow/monthly" replace />
+    return <Navigate to="/cashflow/accounts" replace />
   }
 
   return <Navigate to="/investments/active-investments" replace />
