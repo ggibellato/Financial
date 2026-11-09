@@ -37,23 +37,31 @@ public class PotsServiceTests
     private Account Bank(string name) => _repository.Accounts.First(account => account.Name == name);
 
     private PotWithdrawalRequestDTO Withdrawal(
-        decimal amount = 30m, bool withBank = true, bool confirmed = false, DateOnly? date = null, string pot = "Investimento") => new()
+        decimal amount = 30m,
+        bool withBank = true,
+        bool confirmed = false,
+        DateOnly? date = null,
+        string pot = "Investimento",
+        bool? withCategory = null,
+        Guid? bankId = null,
+        Guid? categoryId = null,
+        string description = "Dentist") => new()
     {
         PotId = PotNamed(pot).Id,
         Amount = amount,
         Date = date ?? Date,
-        Description = "Dentist",
-        BankId = withBank ? Bank("Chase").Id : null,
-        CategoryId = withBank ? CategoryNamed("Saude").Id : null,
+        Description = description,
+        BankId = withBank ? bankId ?? Bank("Chase").Id : null,
+        CategoryId = withCategory ?? withBank ? categoryId ?? CategoryNamed("Saude").Id : null,
         Confirmed = confirmed
     };
 
     private PotDepositRequestDTO Deposit(
-        decimal amount = 100m, string? pot = null, DateOnly? date = null, (string Bank, decimal Amount)[]? lines = null) => new()
+        decimal amount = 100m, string? pot = null, DateOnly? date = null, (string Bank, decimal Amount)[]? lines = null, string description = "Ramsay bonus") => new()
     {
         Amount = amount,
         Date = date ?? Date,
-        Description = "Ramsay bonus",
+        Description = description,
         PotId = pot is null ? null : PotNamed(pot).Id,
         FundingLines = (lines ?? []).Select(line => new FundingLineDTO { BankId = Bank(line.Bank).Id, Amount = line.Amount }).ToList()
     };
@@ -175,17 +183,6 @@ public class PotsServiceTests
         }
     }
 
-    private PotWithdrawalRequestDTO BankWithdrawal(
-        Guid? bankId = null, Guid? categoryId = null, bool withBank = true, bool withCategory = true, string description = "Dentist") => new()
-    {
-        PotId = PotNamed("Investimento").Id,
-        Amount = 30m,
-        Date = Date,
-        Description = description,
-        BankId = withBank ? bankId ?? Bank("Chase").Id : null,
-        CategoryId = withCategory ? categoryId ?? CategoryNamed("Saude").Id : null
-    };
-
     private async Task ShouldRefuseAndSaveNothing(PotWithdrawalRequestDTO request, string message)
     {
         var act = async () => await _sut.WithdrawAsync(Reserva.Id, request);
@@ -217,27 +214,27 @@ public class PotsServiceTests
 
     [Fact]
     public async Task WithdrawAsync_BlankDescription_Throws() =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(description: "   "), "*Description is required*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(description: "   "), "*Description is required*");
 
     [Fact]
     public async Task WithdrawAsync_DescriptionTooLong_Throws() =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(description: new string('x', 201)), "*must not exceed*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(description: new string('x', 201)), "*must not exceed*");
 
     [Fact]
     public async Task WithdrawAsync_BankWithoutCategory_Throws() =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(withCategory: false), "*Category is required when a bank is selected*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(withCategory: false), "*Category is required when a bank is selected*");
 
     [Fact]
     public async Task WithdrawAsync_CategoryWithoutBank_Throws() =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(withBank: false), "*bank is required*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(withBank: false, withCategory: true), "*bank is required*");
 
     [Fact]
     public async Task WithdrawAsync_UnknownBank_Throws() =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(bankId: Guid.NewGuid()), "*Payment source*not recognized*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(bankId: Guid.NewGuid()), "*Payment source*not recognized*");
 
     [Fact]
     public async Task WithdrawAsync_UnknownCategory_Throws() =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: Guid.NewGuid()), "*Category*not recognized*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: Guid.NewGuid()), "*Category*not recognized*");
 
     [Fact]
     public async Task WithdrawAsync_InactiveCategory_Throws()
@@ -245,14 +242,14 @@ public class PotsServiceTests
         var inactive = Category.Create("Old", isActive: false);
         _repository.Categories.Add(inactive);
 
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: inactive.Id), "*inactive*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: inactive.Id), "*inactive*");
     }
 
     [Theory]
     [InlineData("Investimento")]
     [InlineData("Reserva")]
     public async Task WithdrawAsync_InvestmentOrPotsAccountCategory_Throws(string categoryName) =>
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: CategoryNamed(categoryName).Id), "*cannot be used for a withdrawal expense*");
+        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: CategoryNamed(categoryName).Id), "*cannot be used for a withdrawal expense*");
 
     [Fact]
     public async Task WithdrawAsync_CategoryOfASecondPotsAccount_Throws()
@@ -261,7 +258,7 @@ public class PotsServiceTests
         _repository.Categories.Add(holidays);
         _repository.Accounts.Add(TestAccounts.Pots("Holiday pots", category: holidays));
 
-        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: holidays.Id), "Category 'Holidays' cannot be used for a withdrawal expense.");
+        await ShouldRefuseAndSaveNothing(Withdrawal(categoryId: holidays.Id), "Category 'Holidays' cannot be used for a withdrawal expense.");
     }
 
     [Fact]
@@ -271,7 +268,7 @@ public class PotsServiceTests
         var reservaCategory = Reserva.Category!;
         reservaCategory.Update("Savings", active: true, isInvestment: false, isTithe: false);
 
-        await _sut.WithdrawAsync(Reserva.Id, BankWithdrawal());
+        await _sut.WithdrawAsync(Reserva.Id, Withdrawal());
 
         _repository.Expenses.Should().ContainSingle(e => e.Category == reservaCategory && e.Value == -30m);
     }
@@ -282,7 +279,7 @@ public class PotsServiceTests
         var reservaCategory = Reserva.Category!;
         reservaCategory.Update(reservaCategory.Name, active: false, isInvestment: false, isTithe: false);
 
-        await _sut.WithdrawAsync(Reserva.Id, BankWithdrawal());
+        await _sut.WithdrawAsync(Reserva.Id, Withdrawal());
 
         _repository.Expenses.Should().HaveCount(2);
     }
@@ -318,7 +315,7 @@ public class PotsServiceTests
     {
         _repository.ThrowOnNextSave = true;
 
-        var act = async () => await _sut.WithdrawAsync(Reserva.Id, BankWithdrawal());
+        var act = async () => await _sut.WithdrawAsync(Reserva.Id, Withdrawal());
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.PotsService.Withdraw");
@@ -330,7 +327,7 @@ public class PotsServiceTests
         var logger = new RecordingLogger<PotsService>();
         var sut = new PotsService(_repository, TestClock.At(), _tracer, logger);
 
-        var act = async () => await sut.WithdrawAsync(Reserva.Id, BankWithdrawal(withCategory: false, description: "Secret dentist"));
+        var act = async () => await sut.WithdrawAsync(Reserva.Id, Withdrawal(withCategory: false, description: "Secret dentist"));
 
         await act.Should().ThrowAsync<ArgumentException>();
         logger.Entries.Should().Contain(e => e.Message == "Withdraw started");
@@ -767,15 +764,7 @@ public class PotsServiceTests
     [InlineData("   ")]
     public async Task DepositAsync_MissingDescription_ThrowsAndSavesNothing(string? description)
     {
-        var request = Deposit();
-
-        var act = async () => await _sut.DepositAsync(Reserva.Id, new PotDepositRequestDTO
-        {
-            Amount = request.Amount,
-            Date = request.Date,
-            Description = description!,
-            FundingLines = []
-        });
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(description: description!));
 
         using (new AssertionScope())
         {

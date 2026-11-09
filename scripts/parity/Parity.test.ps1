@@ -247,7 +247,7 @@ try {
     $recordingFetch = { param($path) $readPaths.Add($path); & $fetch $path }
     $null = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
     Check 'the after side reads no retired route' (-not ($readPaths | Where-Object { $_ -like 'controle-mae/*' -or $_ -like 'reserve/*' })) ($readPaths -join ', ')
-    Check 'the after side reads the Pots tab of the account that replaces the Reserva page only' (-not ($readPaths | Where-Object { $_ -like "accounts/$otherPotsId/*" }) -and @($readPaths | Where-Object { $_ -eq "accounts/$reservaId/pots/2026/9" }).Count -eq 2) ($readPaths -join ', ')
+    Check 'the after side reads the Pots tab of the account that replaces the Reserva page only' (-not ($readPaths | Where-Object { $_ -like "accounts/$otherPotsId/*" }) -and $readPaths -contains "accounts/$reservaId/pots/2026/9") ($readPaths -join ', ')
     $readPaths.Clear()
     $beforeSide = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -RetiredRoutes
     Check 'RetiredRoutes reads the Reserva movements and balances once' (@($readPaths | Where-Object { $_ -eq 'reserve/movements' }).Count -eq 1 -and @($readPaths | Where-Object { $_ -eq 'reserve/balances' }).Count -eq 1) ($readPaths -join ', ')

@@ -253,12 +253,12 @@ function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scri
     }
 }
 
-function Get-ParityReservaAccount($Accounts) {
-    $Accounts | Where-Object { $_['replacesPage'] -eq 'reserva' } | Select-Object -First 1
+function Get-ParityReplacingAccount($Accounts, [string]$Page) {
+    $Accounts | Where-Object { $_['replacesPage'] -eq $Page } | Select-Object -First 1
 }
 
 function Add-ParityPotsTabFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts) {
-    $reserva = Get-ParityReservaAccount $Accounts
+    $reserva = Get-ParityReplacingAccount $Accounts 'reserva'
     if ($null -eq $reserva) { return }
     $summary = & $Fetch "accounts/$($reserva.id)/pots/$Route"
     foreach ($pot in $summary.pots) {
@@ -269,7 +269,7 @@ function Add-ParityPotsTabFigures($Report, [string]$Month, [string]$Route, [scri
 }
 
 function Add-ParityCurrentPotsTabFigures($Report, [string]$Last, [scriptblock]$Fetch, $Accounts) {
-    $reserva = Get-ParityReservaAccount $Accounts
+    $reserva = Get-ParityReplacingAccount $Accounts 'reserva'
     if ($null -eq $reserva) { return }
     foreach ($pot in (& $Fetch "accounts/$($reserva.id)/pots/$(Get-ParityMonthRoute $Last)").pots) {
         Add-ParityFigure $Report "current/potsTab/$($pot.name)/balance" $pot.balance
@@ -380,7 +380,7 @@ function Add-ParityRetiredRouteFigures($Report, [scriptblock]$Fetch) {
 }
 
 function Add-ParityMaeAccountFigures($Report, [string]$CurrentMonth, [scriptblock]$Fetch, $Accounts) {
-    $maeAccount = $Accounts | Where-Object { $_['replacesPage'] -eq 'controle-mae' } | Select-Object -First 1
+    $maeAccount = Get-ParityReplacingAccount $Accounts 'controle-mae'
     if ($null -eq $maeAccount) { return }
     $detail = & $Fetch "accounts/$($maeAccount.id)/$(Get-ParityMonthRoute $CurrentMonth)"
     foreach ($balance in $detail.currentBalances) {
