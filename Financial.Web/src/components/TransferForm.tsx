@@ -3,9 +3,10 @@ import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text
 import type { LockedBank } from '../hooks/formSettings'
 import type { TransferFormField } from '../hooks/mapTransferErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
-import { DIFFERENT_BANKS_ERROR } from '../hooks/useTransferForm'
 import { selectableBanks, type SelectableBank } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'
+
+const DIFFERENT_BANKS_ERROR = 'Source and destination must be different banks.'
 
 export interface LockedTransferSide {
   side: 'source' | 'destination'

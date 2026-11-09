@@ -27,6 +27,12 @@ describe('route and sidebar agreement', () => {
     expect(unreachable, `PAGE_ROUTES declares these routes, but no NAV_TREE entry links to them: ${unreachable.join(', ')}`).toEqual([])
   })
 
+  it('orders the CashFlow menu as the PRD, with the entries awaiting retirement last', () => {
+    const cashFlowLabels = NAV_TREE.find((category) => category.id === 'cashflow')!.children.map((child) => child.label)
+
+    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots', 'Reserva', 'Controle Mae'])
+  })
+
   it('declares no duplicate route paths', () => {
     const allRoutes = ALL_ROUTES.map((route) => route.path)
 

@@ -1,279 +1,97 @@
-import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import type { BankDto, CardStatementDto, CreditCardDto, CreditCardUpdateDto, CurrencyTotalDto } from '../api/types'
-import DataTableCell from './grid/DataTableCell'
-import SortableColumnHeader from './grid/SortableColumnHeader'
-import ColumnFilterMenu from './grid/ColumnFilterMenu'
-import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import type { AccountGroupMemberDto, CurrencyTotalDto } from '../api/types'
 import { useColumnFilters } from '../hooks/useColumnFilters'
-import { selectableBanks } from '../utils/selectableBanks'
-import { formatN2, formatN2OrDash } from '../utils/formatters'
 import { currencyFooterItems } from '../utils/currencyFooterItems'
+import { formatN2, formatN2OrDash } from '../utils/formatters'
 import { formatOwedOrCredit, nothingDueText } from '../utils/owedBalance'
-import SectionTotals from './SectionTotals'
+import ColumnFilterMenu from './grid/ColumnFilterMenu'
+import TotalsGrid from './TotalsGrid'
 import TruncatedText from './TruncatedText'
 
 interface CardsGridProps {
-  cardStatements: CardStatementDto[]
-  banks: BankDto[]
+  cards: AccountGroupMemberDto[]
   currencyTotals: CurrencyTotalDto[]
-  markPaidSources: Record<string, string>
-  setMarkPaidSource: (id: string, bank: string) => void
-  markStatementPaid: (id: string, paymentSource: string) => void
-  unmarkStatementPaid: (id: string) => void
-  statementActionError?: string | null
-  pendingStatementId?: string | null
-  creditCards: CreditCardDto[]
-  updatingCardId?: string | null
-  cardsError?: string | null
-  onUpdateCreditCard?: (id: string, request: CreditCardUpdateDto) => Promise<unknown>
+  viewedMonth: string
 }
 
-interface CardRow {
-  key: string
-  creditCardId: string
-  creditCardName: string
-  nextInvoiceDueDate: string | null
-  isActive: boolean
-  statement: CardStatementDto | null
+const FILTER_ACCESSORS = {
+  card: (card: AccountGroupMemberDto) => card.name,
 }
 
 const FOOTER_FIGURES = [{ label: 'Combined adjustment figure', pick: (total: CurrencyTotalDto) => total.cardOutstandingTotal }]
 
-function buildRows(cardStatements: CardStatementDto[], creditCards: CreditCardDto[], includeInactive: boolean): CardRow[] {
-  return creditCards
-    .map((c) => ({
-      key: c.id,
-      creditCardId: c.id,
-      creditCardName: c.name,
-      nextInvoiceDueDate: c.nextInvoiceDueDate,
-      isActive: c.isActive,
-      statement: cardStatements.find((s) => s.creditCardId === c.id) ?? null,
-    }))
-    .filter((row) => includeInactive || row.isActive || row.statement !== null)
+const CURRENCY_COLUMN = {
+  key: 'currency',
+  header: 'Currency',
+  render: (card: AccountGroupMemberDto) => card.currency,
+  sortAccessor: (card: AccountGroupMemberDto) => card.currency,
 }
 
-const outstandingOf = (row: CardRow) => row.statement?.outstandingTotal ?? 0
+const outstandingOf =(card: AccountGroupMemberDto) => card.statement?.outstandingTotal ?? 0
 
-const isUnpaid = (row: CardRow) => !row.statement?.isPaid && outstandingOf(row) > 0
-
-function statusOf(row: CardRow): string {
-  if (row.statement?.isPaid) return 'Paid'
-  return isUnpaid(row) ? 'Unpaid' : nothingDueText(0)
+function statusOf(card: AccountGroupMemberDto): string {
+  if (card.statement?.isPaid) return 'Paid'
+  return outstandingOf(card) > 0 ? 'Unpaid' : nothingDueText(0)
 }
 
-function formatAccumulated(row: CardRow): string {
-  const accumulated = row.statement?.accumulatedOutstandingTotal
-  return accumulated == null ? formatN2OrDash(accumulated) : formatOwedOrCredit(accumulated)
+function formatAccumulated(card: AccountGroupMemberDto): string {
+  return card.totalOwed == null ? formatN2OrDash(card.totalOwed) : formatOwedOrCredit(card.totalOwed)
 }
 
-export default function CardsGrid({
-  cardStatements,
-  banks,
-  currencyTotals,
-  markPaidSources,
-  setMarkPaidSource,
-  markStatementPaid,
-  unmarkStatementPaid,
-  statementActionError,
-  pendingStatementId,
-  creditCards,
-  updatingCardId,
-  cardsError,
-  onUpdateCreditCard,
-}: CardsGridProps) {
-  const showCardManagementColumns = onUpdateCreditCard !== undefined
-  const rows = buildRows(cardStatements, creditCards, showCardManagementColumns)
-
+export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsGridProps) {
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
-    useColumnFilters(rows, { card: (row: CardRow) => row.creditCardName })
-
-  const accessors: Record<string, SortAccessor<CardRow>> = {
-    card: (row) => row.creditCardName,
-    outstanding: outstandingOf,
-    accumulatedOutstanding: (row) => row.statement?.accumulatedOutstandingTotal,
-    status: statusOf,
-    nextInvoiceDueDate: (row) => (row.nextInvoiceDueDate ? new Date(row.nextInvoiceDueDate) : undefined),
-    active: (row) => (row.isActive ? 1 : 0),
-  }
-  const { sortedRows, sortState, requestSort } = useSortableRows(
-    filteredRows,
-    accessors,
-    showCardManagementColumns ? { columnKey: 'nextInvoiceDueDate', direction: 'descending' } : { columnKey: 'card', direction: 'ascending' },
-  )
+    useColumnFilters(cards, FILTER_ACCESSORS)
+  const isMultiCurrency = currencyTotals.length > 1
 
   return (
-    <section className="monthly-page__section monthly-page__section--grid">
-      {statementActionError && (
-        <p className="monthly-page__action-error" role="alert">
-          {statementActionError}
-        </p>
-      )}
-      <div className="monthly-page__table-scroll">
-        <Table className="monthly-page__table data-table">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Card"
-                columnKey="card"
-                sortDirection={sortState?.columnKey === 'card' ? sortState.direction : undefined}
-                onSort={requestSort}
-              >
-                <ColumnFilterMenu
-                  columnKey="card"
-                  label="Card"
-                  availableValues={availableValues.card}
-                  selectedValues={selectedValues.card}
-                  onToggleValue={toggleValue}
-                  onToggleAll={toggleAll}
-                  isFiltered={isColumnFiltered('card')}
-                />
-              </SortableColumnHeader>
-              <SortableColumnHeader
-                label="Outstanding (period)"
-                columnKey="outstanding"
-                numeric
-                sortDirection={sortState?.columnKey === 'outstanding' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Accumulated outstanding"
-                columnKey="accumulatedOutstanding"
-                numeric
-                sortDirection={sortState?.columnKey === 'accumulatedOutstanding' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Status"
-                columnKey="status"
-                sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              {showCardManagementColumns && (
-                <>
-                  <SortableColumnHeader
-                    label="Next Invoice Due Date"
-                    columnKey="nextInvoiceDueDate"
-                    sortDirection={sortState?.columnKey === 'nextInvoiceDueDate' ? sortState.direction : undefined}
-                    onSort={requestSort}
-                  />
-                  <SortableColumnHeader
-                    label="Active"
-                    columnKey="active"
-                    sortDirection={sortState?.columnKey === 'active' ? sortState.direction : undefined}
-                    onSort={requestSort}
-                  />
-                </>
-              )}
-              <TableHeaderCell className="data-table__col--action-wide" />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedRows.length === 0 && isColumnFiltered('card') && (
-              <TableRow>
-                <TableCell className="data-table__cell--message" colSpan={showCardManagementColumns ? 7 : 5}>
-                  No rows match the current filters
-                </TableCell>
-              </TableRow>
-            )}
-            {sortedRows.map((row) => {
-              const isPending = row.statement !== null && pendingStatementId === row.statement.id
-              return (
-                <TableRow key={row.key}>
-                  <DataTableCell label="Card"><TruncatedText text={row.creditCardName} /></DataTableCell>
-                  <DataTableCell label="Outstanding (period)" className="data-table__col--numeric">
-                    {formatN2(outstandingOf(row))}
-                  </DataTableCell>
-                  <DataTableCell label="Accumulated outstanding" className="data-table__col--numeric">
-                    {formatAccumulated(row)}
-                  </DataTableCell>
-                  <DataTableCell label="Status">
-                    {statusOf(row)}
-                  </DataTableCell>
-                  {showCardManagementColumns && (
-                    <>
-                      <DataTableCell label="Next Invoice Due Date">
-                        <input
-                          aria-label={`Next invoice due date for ${row.creditCardName}`}
-                          type="date"
-                          value={row.nextInvoiceDueDate ?? ''}
-                          disabled={updatingCardId === row.creditCardId}
-                          onChange={(e) =>
-                            onUpdateCreditCard
-                              ?.(row.creditCardId, {
-                                name: row.creditCardName,
-                                nextInvoiceDueDate: e.target.value === '' ? null : e.target.value,
-                                isActive: row.isActive,
-                              })
-                              .catch(() => {})
-                          }
-                        />
-                      </DataTableCell>
-                      <DataTableCell label="Active">
-                        <input
-                          aria-label={`Active for ${row.creditCardName}`}
-                          type="checkbox"
-                          checked={row.isActive}
-                          disabled={updatingCardId === row.creditCardId}
-                          onChange={(e) =>
-                            onUpdateCreditCard
-                              ?.(row.creditCardId, {
-                                name: row.creditCardName,
-                                nextInvoiceDueDate: row.nextInvoiceDueDate,
-                                isActive: e.target.checked,
-                              })
-                              .catch(() => {})
-                          }
-                        />
-                      </DataTableCell>
-                    </>
-                  )}
-                  <TableCell className="data-table__col--action-wide">
-                    {row.statement &&
-                      (row.statement.isPaid ? (
-                        <button
-                          type="button"
-                          disabled={isPending}
-                          onClick={() => unmarkStatementPaid(row.statement!.id)}
-                        >
-                          {isPending ? 'Unmarking…' : 'Unmark Paid'}
-                        </button>
-                      ) : isUnpaid(row) ? (
-                        <>
-                          <select
-                            aria-label={`Paying bank for ${row.creditCardName}`}
-                            value={markPaidSources[row.statement.id] ?? ''}
-                            disabled={isPending}
-                            onChange={(e) => setMarkPaidSource(row.statement!.id, e.target.value)}
-                          >
-                            <option value="">Bank…</option>
-                            {selectableBanks(banks, markPaidSources[row.statement.id]).map((b) => (
-                              <option key={b.id} value={b.id}>
-                                {b.name}
-                              </option>
-                            ))}
-                          </select>{' '}
-                          <button
-                            type="button"
-                            disabled={!markPaidSources[row.statement.id] || isPending}
-                            onClick={() => markStatementPaid(row.statement!.id, markPaidSources[row.statement!.id])}
-                          >
-                            {isPending ? 'Marking…' : 'Mark Paid'}
-                          </button>
-                        </>
-                      ) : null)}
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
-      <SectionTotals items={currencyFooterItems(currencyTotals, FOOTER_FIGURES)} />
-      {cardsError && (
-        <p className="monthly-page__error" role="alert">
-          {cardsError}
-        </p>
-      )}
-    </section>
+    <TotalsGrid
+      label="Card statements"
+      columns={[
+        {
+          key: 'card',
+          header: 'Card',
+          render: (card: AccountGroupMemberDto) => (
+            <TruncatedText text={card.name} to={`/cashflow/accounts/${card.accountId}?month=${viewedMonth}`} />
+          ),
+          sortAccessor: (card: AccountGroupMemberDto) => card.name,
+          filterSlot: (
+            <ColumnFilterMenu
+              columnKey="card"
+              label="Card"
+              availableValues={availableValues.card}
+              selectedValues={selectedValues.card}
+              onToggleValue={toggleValue}
+              onToggleAll={toggleAll}
+              isFiltered={isColumnFiltered('card')}
+            />
+          ),
+        },
+        ...(isMultiCurrency ? [CURRENCY_COLUMN] : []),
+        {
+          key: 'outstanding',
+          header: 'Outstanding (period)',
+          numeric: true,
+          render: (card: AccountGroupMemberDto) => formatN2(outstandingOf(card)),
+          sortAccessor: outstandingOf,
+        },
+        {
+          key: 'accumulatedOutstanding',
+          header: 'Accumulated outstanding',
+          numeric: true,
+          render: formatAccumulated,
+          sortAccessor: (card: AccountGroupMemberDto) => card.totalOwed ?? undefined,
+        },
+        {
+          key: 'status',
+          header: 'Status',
+          render: statusOf,
+          sortAccessor: statusOf,
+        },
+      ]}
+      rows={filteredRows}
+      isFiltered={isColumnFiltered('card')}
+      rowKey={(card) => card.accountId}
+      emptyMessage="No cards in the default group for this month"
+      footerItems={currencyFooterItems(currencyTotals, FOOTER_FIGURES)}
+    />
   )
 }

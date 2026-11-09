@@ -9,7 +9,7 @@ const RootRedirectWithRoutes = () => (
     <Routes>
       <Route path="/" element={<RootRedirect />} />
       <Route path="/investments/active-investments" element={<p>Investments landing</p>} />
-      <Route path="/cashflow/monthly" element={<p>CashFlow landing</p>} />
+      <Route path="/cashflow/accounts" element={<p>CashFlow landing</p>} />
     </Routes>
   </MemoryRouter>
 )
@@ -25,7 +25,7 @@ describe('RootRedirect', () => {
     expect(screen.getByText('Investments landing')).toBeInTheDocument()
   })
 
-  it('redirects to cashflow when cashflow was last selected', () => {
+  it('[AC P60-F13-consolidated-navigation-and-retirement-01] lands CashFlow on Accounts', () => {
     setStoredDomain('cashflow')
 
     render(<RootRedirectWithRoutes />)
