@@ -107,7 +107,7 @@ Recorders are instance fields — never `static readonly`, which leaks spans acr
   initializer, span success/failure assertions.
 - `Tests/Financial.CashFlow.Application.Tests/Services/PaymentsDueServiceTests.cs` — Unit;
   `FakeTimeProvider` boundaries, fail-safe empty result when the repository read throws.
-- `Tests/Financial.CashFlow.Application.Tests/Services/ControleMaeServiceTests.cs` — Unit;
+- `Tests/Financial.CashFlow.Application.Tests/Services/SettlementServiceTests.cs` — Unit;
   currency conversion branches with a stub `IExchangeRateProvider` (external provider, faked).
 - `Tests/Financial.Investment.Application.Tests/Services/TransactionServiceMutationTests.cs` and
   `TransactionServiceQueryTests.cs` — Unit; split by mutation/query to keep files scrollable.

@@ -93,7 +93,7 @@ entities per test. A test that needs a different FX rate or "today" builds its o
 ## Examples from project
 
 - `Tests/Financial.Api.Tests/ExpenseEndpointsTests.cs`, `ReserveEndpointsTests.cs`, `TransfersEndpointsTests.cs` — Integration; 200/400/404/409 through the host.
-- `Tests/Financial.Api.Tests/ControleMaeEndpointsTests.cs` — Integration with `StubExchangeRateProvider` (external) for the FX branches, including `rate == null`.
+- `Tests/Financial.Api.Tests/Acceptance/SettlementScreenAcceptanceTests.cs` — Integration with `StubExchangeRateProvider` (external) for the FX branches, including `rate == null`.
 - `Tests/Financial.Api.Tests/PaymentsDueEndpointsTests.cs` — Integration with a `FakeTimeProvider` passed to the base.
 - `Tests/Financial.Api.Tests/DomainExceptionLoggingTests.cs` — Integration; log redaction.
 - `Tests/Financial.Api.Tests/Controllers/ControllerGuardClauseTests.cs` — Unit; unreachable guards.
