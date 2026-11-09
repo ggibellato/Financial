@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useReducer } from 'react'
+import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type {
   AccountGroupMemberDto,
-  AccountGroupSummaryDto,
   CategoryTotalDto,
   CurrencyTotalDto,
   IncomeSourceTotalDto,
-  TitheCarryForwardUpdateDto,
   TitheSummaryDto,
 } from '../api/types'
 import { currentYearMonth, getErrorMessage } from '../utils/formatters'
+import { useAsyncResource } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
 
 export interface BankTotal {
@@ -18,65 +17,6 @@ export interface BankTotal {
   currency: string
   balance: number
   roundUpTotal: number
-}
-
-interface MonthlyState {
-  categoryTotals: CategoryTotalDto[]
-  summary: AccountGroupSummaryDto | null
-  titheSummary: TitheSummaryDto | null
-  carryForwardUpdating: boolean
-  carryForwardError: string | null
-  isLoading: boolean
-  error: string | null
-  retryCount: number
-}
-
-type MonthlyAction =
-  | { type: 'FETCH_START' }
-  | {
-      type: 'FETCH_SUCCESS'
-      payload: {
-        categoryTotals: CategoryTotalDto[]
-        summary: AccountGroupSummaryDto
-        titheSummary: TitheSummaryDto
-      }
-    }
-  | { type: 'FETCH_ERROR'; payload: string }
-  | { type: 'RETRY' }
-  | { type: 'CARRY_FORWARD_UPDATE_START' }
-  | { type: 'CARRY_FORWARD_UPDATE_END' }
-  | { type: 'CARRY_FORWARD_UPDATE_ERROR'; payload: string }
-
-const INITIAL_STATE: MonthlyState = {
-  categoryTotals: [],
-  summary: null,
-  titheSummary: null,
-  carryForwardUpdating: false,
-  carryForwardError: null,
-  isLoading: true,
-  error: null,
-  retryCount: 0,
-}
-
-function reducer(state: MonthlyState, action: MonthlyAction): MonthlyState {
-  switch (action.type) {
-    case 'FETCH_START':
-      return { ...state, isLoading: true, error: null, carryForwardError: null }
-    case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, ...action.payload }
-    case 'FETCH_ERROR':
-      return { ...state, isLoading: false, error: action.payload }
-    case 'RETRY':
-      return { ...state, retryCount: state.retryCount + 1 }
-    case 'CARRY_FORWARD_UPDATE_START':
-      return { ...state, carryForwardUpdating: true, carryForwardError: null }
-    case 'CARRY_FORWARD_UPDATE_END':
-      return { ...state, carryForwardUpdating: false }
-    case 'CARRY_FORWARD_UPDATE_ERROR':
-      return { ...state, carryForwardUpdating: false, carryForwardError: action.payload }
-    default:
-      return state
-  }
 }
 
 export interface MonthlyData {
@@ -100,49 +40,45 @@ export interface MonthlyData {
   carryForwardError: string | null
 }
 
+async function fetchOverview(year: number, month: number) {
+  const [categoryTotals, summary, titheSummary] = await Promise.all([
+    apiClient.getCategoryTotalsByMonth(year, month),
+    apiClient.getDefaultGroupSummary(year, month),
+    apiClient.getTitheSummaryByMonth(year, month),
+  ])
+  return { categoryTotals, summary, titheSummary }
+}
+
 export function useMonthly(): MonthlyData {
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
-  const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const overview = useAsyncResource(() => fetchOverview(year, month), [year, month], 'Unable to load Monthly data', {
+    initialLoading: true,
+  })
+  const [carryForwardUpdating, setCarryForwardUpdating] = useState(false)
+  const [carryForwardError, setCarryForwardError] = useState<string | null>(null)
 
-  const fetchMonthlyData = useCallback((year: number, month: number) => {
-    return Promise.all([
-      apiClient.getCategoryTotalsByMonth(year, month),
-      apiClient.getDefaultGroupSummary(year, month),
-      apiClient.getTitheSummaryByMonth(year, month),
-    ])
-      .then(([categoryTotals, summary, titheSummary]) =>
-        dispatch({ type: 'FETCH_SUCCESS', payload: { categoryTotals, summary, titheSummary } }),
-      )
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Monthly data') })
-      })
-  }, [])
+  const selectMonth = (value: string) => {
+    setCarryForwardError(null)
+    setMonthInputValue(value)
+  }
 
-  useEffect(() => {
-    dispatch({ type: 'FETCH_START' })
-    void fetchMonthlyData(year, month)
-  }, [fetchMonthlyData, year, month, state.retryCount])
+  const retry = () => {
+    setCarryForwardError(null)
+    overview.retry()
+  }
 
-  const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
+  const updateCarryForwardInclusion = (included: boolean) => {
+    setCarryForwardUpdating(true)
+    setCarryForwardError(null)
+    void apiClient
+      .updateTitheCarryForward(year, month, { included })
+      .then(() => overview.refresh())
+      .catch((err: unknown) => setCarryForwardError(getErrorMessage(err, 'Failed to update carry-forward')))
+      .finally(() => setCarryForwardUpdating(false))
+  }
 
-  const updateCarryForwardInclusion = useCallback(
-    (included: boolean) => {
-      dispatch({ type: 'CARRY_FORWARD_UPDATE_START' })
-      const requestBody: TitheCarryForwardUpdateDto = { included }
-      void apiClient
-        .updateTitheCarryForward(year, month, requestBody)
-        .then(() => {
-          dispatch({ type: 'CARRY_FORWARD_UPDATE_END' })
-          void fetchMonthlyData(year, month)
-        })
-        .catch((err: unknown) => {
-          dispatch({ type: 'CARRY_FORWARD_UPDATE_ERROR', payload: getErrorMessage(err, 'Failed to update carry-forward') })
-        })
-    },
-    [year, month, fetchMonthlyData],
-  )
-
-  const members = state.summary?.members ?? []
+  const summary = overview.data?.summary
+  const members = summary?.members ?? []
 
   const bankTotals: BankTotal[] = members
     .filter((member) => !member.statement)
@@ -158,20 +94,20 @@ export function useMonthly(): MonthlyData {
     year,
     month,
     monthInputValue,
-    setMonthInputValue,
-    categoryTotals: state.categoryTotals,
-    categoryTotalsSum: state.summary?.categoryTotalsSum ?? 0,
+    setMonthInputValue: selectMonth,
+    categoryTotals: overview.data?.categoryTotals ?? [],
+    categoryTotalsSum: summary?.categoryTotalsSum ?? 0,
     bankTotals,
     cardMembers: members.filter((member) => member.statement),
-    currencyTotals: state.summary?.totals ?? [],
-    isLoading: state.isLoading,
-    error: state.error,
+    currencyTotals: summary?.totals ?? [],
+    isLoading: overview.isLoading,
+    error: overview.error,
     retry,
-    incomeTotals: state.summary?.incomeTotals ?? [],
-    totalIncoming: state.summary?.totalIncoming ?? 0,
-    titheSummary: state.titheSummary,
-    carryForwardUpdating: state.carryForwardUpdating,
+    incomeTotals: summary?.incomeTotals ?? [],
+    totalIncoming: summary?.totalIncoming ?? 0,
+    titheSummary: overview.data?.titheSummary ?? null,
+    carryForwardUpdating,
     updateCarryForwardInclusion,
-    carryForwardError: state.carryForwardError,
+    carryForwardError,
   }
 }

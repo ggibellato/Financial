@@ -11,7 +11,6 @@ import LoadingState from '../components/LoadingState'
 import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
 import { useMonthly } from '../hooks/useMonthly'
 import { useMonthTransactions } from '../hooks/useMonthTransactions'
-import { formatMonthInputValue } from '../utils/formatters'
 import './MonthlyPage.css'
 
 type MonthlyTabId = 'summary' | 'transactions'
@@ -54,8 +53,6 @@ export default function MonthlyPage() {
 
   const handleTabSelect = (_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as MonthlyTabId)
 
-  const viewedMonth = formatMonthInputValue(year, month)
-
   return (
     <div className="monthly-page">
       <div className="monthly-page__header">
@@ -91,10 +88,10 @@ export default function MonthlyPage() {
           <div className="monthly-page__summary-groups">
             <div className="monthly-page__grids-row">
               <CategoryTotalsGrid categoryTotals={categoryTotals} categoryTotalsSum={categoryTotalsSum} />
-              <CardsGrid cards={cardMembers} currencyTotals={currencyTotals} viewedMonth={viewedMonth} />
+              <CardsGrid cards={cardMembers} currencyTotals={currencyTotals} viewedMonth={monthInputValue} />
             </div>
             <div className="monthly-page__grids-row">
-              <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} viewedMonth={viewedMonth} />
+              <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} viewedMonth={monthInputValue} />
               <IncomingGrid
                 incomeTotals={incomeTotals}
                 totalIncoming={totalIncoming}
