@@ -146,6 +146,7 @@ public class ReserveServiceTests
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not recognized*");
             movement.Pot.Should().BeSameAs(beach);
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.UpdateMovement");
         }
     }
 
