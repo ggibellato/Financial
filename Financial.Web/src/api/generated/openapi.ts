@@ -6614,201 +6614,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/reserve-buckets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Lists all reserve buckets. */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 200 OK with the full, unfiltered list of reserve buckets. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReserveBucketDTO"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reserve-buckets/split-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Reports whether the active buckets' split percentages sum to 100%. */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 200 OK with the active total and a warning that is null when the total is within 0.01 of 100 or there are no buckets. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReserveSplitStatusDTO"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reserve/balances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Lists the current balance of each reserve bucket. */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 200 OK with the bucket balances. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReserveBucketBalanceDTO"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reserve/income-split": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Splits an income across reserve buckets according to the configured allocation rules. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/*+json": null | components["schemas"]["IncomeSplitRequestDTO"];
-                    "application/json": null | components["schemas"]["IncomeSplitRequestDTO"];
-                    "text/json": null | components["schemas"]["IncomeSplitRequestDTO"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["IncomeSplitResultDTO"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reserve/movements": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Lists the full reserve movement history (splits and withdrawals). */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description 200 OK with the movement history. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReserveMovementDTO"][];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/reserve/movements/{id}": {
         parameters: {
             query?: never;
@@ -6897,66 +6702,6 @@ export interface paths {
                 };
             };
         };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/reserve/withdrawals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Withdraws an amount from a reserve bucket. */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/*+json": null | components["schemas"]["WithdrawalRequestDTO"];
-                    "application/json": null | components["schemas"]["WithdrawalRequestDTO"];
-                    "text/json": null | components["schemas"]["WithdrawalRequestDTO"];
-                };
-            };
-            responses: {
-                /** @description OK */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ReserveMovementDTO"];
-                    };
-                };
-                /** @description Bad Request */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-                /** @description Conflict */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ProblemDetails"];
-                    };
-                };
-            };
-        };
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -8686,13 +8431,6 @@ export interface components {
             currency: string;
             name: string;
         };
-        BucketSplitAmountDTO: {
-            /** Format: double */
-            amount: number;
-            /** Format: uuid */
-            bucketId: string;
-            bucketName: string;
-        };
         /** @enum {unknown} */
         CalculationStatus: "RequiresReview" | "Incomplete" | "Final" | null;
         CalendarConnectionStatusDTO: {
@@ -9391,18 +9129,6 @@ export interface components {
             /** Format: uuid */
             potsAccountId?: null | string;
         };
-        IncomeSplitRequestDTO: {
-            /** Format: double */
-            amount: number;
-            /** Format: date */
-            date: string;
-            description: string;
-        };
-        IncomeSplitResultDTO: {
-            buckets: components["schemas"]["BucketSplitAmountDTO"][];
-            /** Format: double */
-            total: number;
-        };
         IncomeUpdateDTO: {
             /** Format: uuid */
             bankId?: null | string;
@@ -9858,22 +9584,6 @@ export interface components {
             currency: string;
             enabled?: boolean;
         };
-        ReserveBucketBalanceDTO: {
-            /** Format: double */
-            balance: number;
-            /** Format: uuid */
-            bucketId: string;
-            bucketName: string;
-        };
-        ReserveBucketDTO: {
-            /** Format: uuid */
-            id: string;
-            isActive: boolean;
-            name: string;
-            /** Format: double */
-            splitPercentage: number;
-            warning?: null | string;
-        };
         ReserveMovementDTO: {
             /** Format: double */
             amount: number;
@@ -9898,11 +9608,6 @@ export interface components {
             /** Format: date */
             date: string;
             description: string;
-        };
-        ReserveSplitStatusDTO: {
-            /** Format: double */
-            activeTotal: number;
-            warning?: null | string;
         };
         SalesExceedPurchasesFinding: {
             assetName: string;
@@ -10266,20 +9971,6 @@ export interface components {
         WatchlistItemDTO: {
             group: string;
             name: string;
-        };
-        WithdrawalRequestDTO: {
-            /** Format: double */
-            amount: number;
-            /** Format: uuid */
-            bucketId: string;
-            confirmed?: boolean;
-            /** Format: date */
-            date: string;
-            description: string;
-            /** Format: uuid */
-            expenseCategoryId?: null | string;
-            /** Format: uuid */
-            paymentSourceBankId?: null | string;
         };
     };
     responses: never;

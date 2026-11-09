@@ -4,10 +4,6 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface IReserveService
 {
-    Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request);
-    Task<ReserveMovementDTO> PostWithdrawalAsync(WithdrawalRequestDTO request);
-    IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances();
-    IReadOnlyList<ReserveMovementDTO> GetMovementHistory();
     Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, ReserveMovementUpdateDTO request);
     Task DeleteMovementAsync(Guid id);
 }

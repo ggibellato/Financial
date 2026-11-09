@@ -291,8 +291,7 @@ public class IncomesEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var income = await response.Content.ReadFromJsonAsync<IncomeDTO>();
         income!.PotsAccountId.Should().Be(ReservaId);
-        var movements = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
-        var linkedMovements = movements!.Where(m => m.IncomeId == income.Id).ToList();
+        var linkedMovements = (await ReservaMovementsAsync()).Where(m => m.IncomeId == income.Id).ToList();
         linkedMovements.Should().HaveCount(4);
         linkedMovements.Sum(m => m.Amount).Should().Be(2205.00m);
     }
@@ -336,7 +335,7 @@ public class IncomesEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task DeleteIncome_WithLinkedMovements_RemovesThemFromMovementHistory()
+    public async Task DeleteIncome_WithLinkedMovements_RemovesThemFromThePotsAccount()
     {
         var created = await Client.PostAsJsonAsync("/api/v1/financial/incomes", new IncomeCreateDTO
         {
@@ -348,13 +347,18 @@ public class IncomesEndpointsTests : ApiEndpointTests
             PotsAccountId = ReservaId
         });
         var createdIncome = await created.Content.ReadFromJsonAsync<IncomeDTO>();
-        var movementsBeforeDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
-        movementsBeforeDelete!.Should().Contain(m => m.IncomeId == createdIncome!.Id);
+        var movementsBeforeDelete = await ReservaMovementsAsync();
+        movementsBeforeDelete.Should().Contain(m => m.IncomeId == createdIncome!.Id);
 
         var response = await Client.DeleteAsync($"/api/v1/financial/incomes/{createdIncome!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var movementsAfterDelete = await Client.GetFromJsonAsync<List<ReserveMovementDTO>>("/api/v1/financial/reserve/movements");
+        var movementsAfterDelete = await ReservaMovementsAsync();
         movementsAfterDelete.Should().NotContain(m => m.IncomeId == createdIncome.Id);
     }
+
+    private async Task<List<ReserveMovementDTO>> ReservaMovementsAsync() =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{ReservaId}/transactions/2026/7"))!
+            .Select(row => row.Movement!)
+            .ToList();
 }

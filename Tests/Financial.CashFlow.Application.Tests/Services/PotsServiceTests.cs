@@ -175,6 +175,168 @@ public class PotsServiceTests
         }
     }
 
+    private PotWithdrawalRequestDTO BankWithdrawal(
+        Guid? bankId = null, Guid? categoryId = null, bool withBank = true, bool withCategory = true, string description = "Dentist") => new()
+    {
+        PotId = PotNamed("Investimento").Id,
+        Amount = 30m,
+        Date = Date,
+        Description = description,
+        BankId = withBank ? bankId ?? Bank("Chase").Id : null,
+        CategoryId = withCategory ? categoryId ?? CategoryNamed("Saude").Id : null
+    };
+
+    private async Task ShouldRefuseAndSaveNothing(PotWithdrawalRequestDTO request, string message)
+    {
+        var act = async () => await _sut.WithdrawAsync(Reserva.Id, request);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage(message);
+            _repository.Expenses.Should().BeEmpty();
+            _repository.PotTransactions.Should().ContainSingle();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Withdraw");
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task WithdrawAsync_AmountNotAboveZero_Throws(decimal amount) =>
+        await ShouldRefuseAndSaveNothing(Withdrawal(amount: amount), "Amount must be greater than zero.");
+
+    [Fact]
+    public async Task WithdrawAsync_ZeroAmountFromAnOverdrawnPot_ThrowsTheAmountErrorNotTheOverdraft()
+    {
+        _repository.PotTransactions.Add(PotTransaction.Create(PotNamed("Investimento"), -200m, new DateOnly(2026, 1, 2), "Seed"));
+
+        var act = async () => await _sut.WithdrawAsync(Reserva.Id, Withdrawal(amount: 0m));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Amount must be greater than zero.");
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_BlankDescription_Throws() =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(description: "   "), "*Description is required*");
+
+    [Fact]
+    public async Task WithdrawAsync_DescriptionTooLong_Throws() =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(description: new string('x', 201)), "*must not exceed*");
+
+    [Fact]
+    public async Task WithdrawAsync_BankWithoutCategory_Throws() =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(withCategory: false), "*Category is required when a bank is selected*");
+
+    [Fact]
+    public async Task WithdrawAsync_CategoryWithoutBank_Throws() =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(withBank: false), "*bank is required*");
+
+    [Fact]
+    public async Task WithdrawAsync_UnknownBank_Throws() =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(bankId: Guid.NewGuid()), "*Payment source*not recognized*");
+
+    [Fact]
+    public async Task WithdrawAsync_UnknownCategory_Throws() =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: Guid.NewGuid()), "*Category*not recognized*");
+
+    [Fact]
+    public async Task WithdrawAsync_InactiveCategory_Throws()
+    {
+        var inactive = Category.Create("Old", isActive: false);
+        _repository.Categories.Add(inactive);
+
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: inactive.Id), "*inactive*");
+    }
+
+    [Theory]
+    [InlineData("Investimento")]
+    [InlineData("Reserva")]
+    public async Task WithdrawAsync_InvestmentOrPotsAccountCategory_Throws(string categoryName) =>
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: CategoryNamed(categoryName).Id), "*cannot be used for a withdrawal expense*");
+
+    [Fact]
+    public async Task WithdrawAsync_CategoryOfASecondPotsAccount_Throws()
+    {
+        var holidays = Category.Create("Holidays");
+        _repository.Categories.Add(holidays);
+        _repository.Accounts.Add(TestAccounts.Pots("Holiday pots", category: holidays));
+
+        await ShouldRefuseAndSaveNothing(BankWithdrawal(categoryId: holidays.Id), "Category 'Holidays' cannot be used for a withdrawal expense.");
+    }
+
+    [Fact]
+    [Trait("AC", "P60-F09-pots-template-and-reserva-migration-04")]
+    public async Task WithdrawAsync_AfterRenamingThePotsAccountsCategory_BooksTheBankExpenseInIt()
+    {
+        var reservaCategory = Reserva.Category!;
+        reservaCategory.Update("Savings", active: true, isInvestment: false, isTithe: false);
+
+        await _sut.WithdrawAsync(Reserva.Id, BankWithdrawal());
+
+        _repository.Expenses.Should().ContainSingle(e => e.Category == reservaCategory && e.Value == -30m);
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_PotsAccountsCategoryInactive_StillSucceeds()
+    {
+        var reservaCategory = Reserva.Category!;
+        reservaCategory.Update(reservaCategory.Name, active: false, isInvestment: false, isTithe: false);
+
+        await _sut.WithdrawAsync(Reserva.Id, BankWithdrawal());
+
+        _repository.Expenses.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_ThroughABankFromAPotsAccountWithoutACategory_Throws()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultPots: true, seedDefaultCategories: true);
+        var reserva = repository.EnsureReserva();
+        var sut = new PotsService(repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance);
+
+        var act = async () => await sut.WithdrawAsync(reserva.Id, new PotWithdrawalRequestDTO
+        {
+            PotId = repository.ReservaPots.First(pot => pot.Name == "Investimento").Id,
+            Amount = 30m,
+            Date = Date,
+            Description = "Dentist",
+            BankId = repository.Accounts.First(account => account.Name == "Chase").Id,
+            CategoryId = repository.Categories.First(category => category.Name == "Saude").Id,
+            Confirmed = true
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Set a category on Reserva first.");
+            repository.Expenses.Should().BeEmpty();
+            repository.PotTransactions.Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_WhenTheSaveFails_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnNextSave = true;
+
+        var act = async () => await _sut.WithdrawAsync(Reserva.Id, BankWithdrawal());
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.PotsService.Withdraw");
+    }
+
+    [Fact]
+    public async Task WithdrawAsync_Failure_LogsNoDescriptionOrExceptionMessage()
+    {
+        var logger = new RecordingLogger<PotsService>();
+        var sut = new PotsService(_repository, TestClock.At(), _tracer, logger);
+
+        var act = async () => await sut.WithdrawAsync(Reserva.Id, BankWithdrawal(withCategory: false, description: "Secret dentist"));
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        logger.Entries.Should().Contain(e => e.Message == "Withdraw started");
+        logger.Entries.Should().OnlyContain(e => !e.Message.Contains("Secret dentist") && !e.Message.Contains("Category is required"));
+    }
+
     [Fact]
     public async Task GetOperation_SavedWithdrawal_ReturnsItsFormValues()
     {
@@ -519,6 +681,118 @@ public class PotsServiceTests
             await act.Should().ThrowAsync<ArgumentException>().WithMessage("That pot isn't in Reserva.");
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
         }
+    }
+
+    private (StubCashFlowRepository Repository, PotsService Sut) WithReservaPots(params Pot[] pots)
+    {
+        var repository = new StubCashFlowRepository();
+        foreach (var pot in pots)
+        {
+            repository.AddPot(pot);
+        }
+
+        return (repository, new PotsService(repository, TestClock.At(), _tracer, NullLogger<PotsService>.Instance));
+    }
+
+    [Fact]
+    public async Task DepositAsync_ThirdsSplit_SavesConservedMovements()
+    {
+        var (repository, sut) = WithReservaPots(Pot.Create("Investimento", 33.33m), Pot.Create("HouseTreats", 33.33m), Pot.Create("Ariana", 33.34m));
+
+        await sut.DepositAsync(repository.EnsureReserva().Id, Deposit(amount: 100.01m));
+
+        repository.PotTransactions.Select(m => m.Amount).Should().Equal(33.33m, 33.33m, 33.35m);
+    }
+
+    [Fact]
+    public async Task DepositAsync_IntoActivePots_LeavesTheInactivePotOut()
+    {
+        PotNamed("Gleison").Update("Gleison", 16.67m, isActive: false);
+        PotNamed("Ariana").Update("Ariana", 33.34m, isActive: true);
+
+        var result = await _sut.DepositAsync(Reserva.Id, Deposit(amount: 1963m));
+
+        _repository.PotTransactions.Where(m => m.OperationId == result.OperationId).Select(m => m.Pot.Name)
+            .Should().BeEquivalentTo(["Investimento", "HouseTreats", "Ariana"]);
+    }
+
+    [Fact]
+    public async Task DepositAsync_NoActivePots_ThrowsAndSavesNothing()
+    {
+        var (repository, sut) = WithReservaPots(Pot.Create("Investimento", 33.33m, isActive: false));
+
+        var act = async () => await sut.DepositAsync(repository.EnsureReserva().Id, Deposit());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("*has no active pots.");
+            repository.PotTransactions.Should().BeEmpty();
+            repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_ActivePotsNotTotalling100_ThrowsAndSavesNothing()
+    {
+        PotNamed("Gleison").Update("Gleison", 16.67m, isActive: false);
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit());
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Active pots must total 100% (now 83.33%).");
+            _repository.PotTransactions.Should().ContainSingle();
+        }
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task DepositAsync_AmountNotAboveZero_ThrowsAndSavesNothing(decimal amount)
+    {
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit(amount: amount));
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Amount must be greater than zero.");
+            _repository.PotTransactions.Should().ContainSingle();
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.PotsService.Deposit");
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task DepositAsync_MissingDescription_ThrowsAndSavesNothing(string? description)
+    {
+        var request = Deposit();
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, new PotDepositRequestDTO
+        {
+            Amount = request.Amount,
+            Date = request.Date,
+            Description = description!,
+            FundingLines = []
+        });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Description is required.");
+            _repository.PotTransactions.Should().ContainSingle();
+        }
+    }
+
+    [Fact]
+    public async Task DepositAsync_WhenTheSaveFails_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnNextSave = true;
+
+        var act = async () => await _sut.DepositAsync(Reserva.Id, Deposit());
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.PotsService.Deposit");
     }
 
     [Fact]

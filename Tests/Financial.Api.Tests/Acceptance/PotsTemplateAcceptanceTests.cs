@@ -67,25 +67,28 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
         (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/{month}"))!.Balance;
 
     private Task<HttpResponseMessage> WithdrawThroughBarclaysAsync(string categoryId) =>
-        Client.PostAsJsonAsync($"{Api}/reserve/withdrawals", new WithdrawalRequestDTO
+        Client.PostAsJsonAsync($"{Api}/accounts/{ReservaId}/withdrawals", new PotWithdrawalRequestDTO
         {
-            BucketId = Guid.Parse(InvestimentoId),
+            PotId = Guid.Parse(InvestimentoId),
             Amount = 10m,
             Date = new DateOnly(2026, 10, 3),
             Description = "Dentist",
-            PaymentSourceBankId = Guid.Parse(BarclaysId),
-            ExpenseCategoryId = Guid.Parse(categoryId)
+            BankId = Guid.Parse(BarclaysId),
+            CategoryId = Guid.Parse(categoryId)
         });
+
+    private async Task<List<(string Name, decimal Balance)>> ReservaPotBalancesAsync() =>
+        (await Client.GetFromJsonAsync<PotsSummaryDTO>($"{Api}/accounts/{ReservaId}/pots/2026/10"))!.Pots.Select(pot => (pot.Name, pot.Balance)).ToList();
 
     [Fact]
     [Trait("AC", "P60-F09-pots-template-and-reserva-migration-02")]
     public async Task ReservaBalance_IsTheSumOfItsPotBalances_AndCountsOnlyItsOwnPotsUpToMonthEnd()
     {
-        var potBalances = (await Client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>($"{Api}/reserve/balances"))!;
+        var potBalances = await ReservaPotBalancesAsync();
 
         using (new AssertionScope())
         {
-            potBalances.Select(pot => (pot.BucketName, pot.Balance)).Should().Equal(("Investimento", 424.5m), ("Ferias", 200m));
+            potBalances.Should().Equal(("Investimento", 424.5m), ("Ferias", 200m));
             (await BalanceAsync(ReservaId, 10)).Should().Be(624.5m).And.Be(potBalances.Sum(pot => pot.Balance));
             (await BalanceAsync(ReservaId, 9)).Should().Be(700m);
             (await BalanceAsync(HolidaysId, 10)).Should().Be(900m);
@@ -114,7 +117,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             CategoryId = Guid.Parse(MercadoId)
         });
         var travel = await created.Content.ReadFromJsonAsync<AccountDTO>();
-        var potBalances = await Client.GetFromJsonAsync<List<ReserveBucketBalanceDTO>>($"{Api}/reserve/balances");
+        var potBalances = await ReservaPotBalancesAsync();
         var suggestions = await Client.GetFromJsonAsync<InvestmentSnapshotSuggestionsDTO>($"{Api}/investment-snapshots/2026/11/suggestions");
 
         using (new AssertionScope())
@@ -123,7 +126,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             created.StatusCode.Should().Be(HttpStatusCode.Created);
             travel!.Capabilities.Should().Contain("HasPots");
             travel.CategoryId.Should().Be(Guid.Parse(MercadoId));
-            potBalances!.Select(pot => (pot.BucketName, pot.Balance)).Should().Equal(("Investimento", 424.5m), ("Ferias", 200m));
+            potBalances.Should().Equal(("Investimento", 424.5m), ("Ferias", 200m));
             (await BalanceAsync(ReservaId, 10)).Should().Be(624.5m);
             (await BalanceAsync(travel.Id.ToString(), 10)).Should().Be(0m);
             suggestions!.Suggestions.Select(suggestion => suggestion.SuggestedValue).Should().Equal(624.5m, 624.5m);
@@ -281,7 +284,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             rename.StatusCode.Should().Be(HttpStatusCode.OK);
-            withdrawal.StatusCode.Should().Be(HttpStatusCode.OK);
+            withdrawal.StatusCode.Should().Be(HttpStatusCode.Created);
             expenses!.Select(expense => (expense.CategoryId, expense.CategoryName, expense.Value))
                 .Should().BeEquivalentTo([(Guid.Parse(ReservaCategoryId), "Savings", -10m), (Guid.Parse(MercadoId), "Mercado", 10m)]);
         }

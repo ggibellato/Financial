@@ -69,8 +69,6 @@ import type {
   IncomeSourceCreateDto,
   IncomeSourceDto,
   IncomeSourceUpdateDto,
-  IncomeSplitRequestDto,
-  IncomeSplitResultDto,
   InvestmentAccountCreateDto,
   InvestmentAccountDto,
   InvestmentAccountUpdateDto,
@@ -100,9 +98,6 @@ import type {
   ReportingCurrencySettingDto,
   SetCostBasisMethodRequestDto,
   SetReportingCurrencyEnabledRequestDto,
-  ReserveBucketBalanceDto,
-  ReserveBucketDto,
-  ReserveSplitStatusDto,
   PotDepositRequestDto,
   PotOperationDto,
   PotWithdrawalRequestDto,
@@ -140,7 +135,6 @@ import type {
   ReserveMovementUpdateDto,
   UpcomingIncomeDto,
   WatchlistItemDto,
-  WithdrawalRequestDto,
 } from './types'
 
 export interface FinancialApiClient {
@@ -212,12 +206,6 @@ export interface FinancialApiClient {
   getAllocationBreakdown: (displayCurrency?: Currency, brokerCurrency?: Currency) => Promise<AllocationBreakdownDto>
   getDataQualityReport: () => Promise<DataQualityReportDto>
   getUpcomingIncome: () => Promise<UpcomingIncomeDto[]>
-  getReserveBalances: () => Promise<ReserveBucketBalanceDto[]>
-  getReserveMovements: () => Promise<ReserveMovementDto[]>
-  getReserveBuckets: () => Promise<ReserveBucketDto[]>
-  getReserveSplitStatus: () => Promise<ReserveSplitStatusDto>
-  postIncomeSplit: (request: IncomeSplitRequestDto) => Promise<IncomeSplitResultDto>
-  postWithdrawal: (request: WithdrawalRequestDto) => Promise<ReserveMovementDto>
   updateReserveMovement: (id: string, request: ReserveMovementUpdateDto) => Promise<ReserveMovementDto>
   deleteReserveMovement: (id: string) => Promise<void>
   getMensaisBills: () => Promise<RecurringBillDto[]>
@@ -616,20 +604,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<AllocationBreakdownDto>(`/allocation-breakdown${buildCurrencyQuery(displayCurrency, brokerCurrency)}`),
     getDataQualityReport: () => request<DataQualityReportDto>('/data-quality-report'),
     getUpcomingIncome: () => request<UpcomingIncomeDto[]>('/upcoming-income'),
-    getReserveBalances: () => request<ReserveBucketBalanceDto[]>('/reserve/balances'),
-    getReserveMovements: () => request<ReserveMovementDto[]>('/reserve/movements'),
-    getReserveBuckets: () => request<ReserveBucketDto[]>('/reserve-buckets'),
-    getReserveSplitStatus: () => request<ReserveSplitStatusDto>('/reserve-buckets/split-status'),
-    postIncomeSplit: (requestBody) =>
-      request<IncomeSplitResultDto>('/reserve/income-split', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      }),
-    postWithdrawal: (requestBody) =>
-      request<ReserveMovementDto>('/reserve/withdrawals', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      }),
     updateReserveMovement: (id, requestBody) =>
       request<ReserveMovementDto>(`/reserve/movements/${encodeURIComponent(id)}`, {
         method: 'PUT',

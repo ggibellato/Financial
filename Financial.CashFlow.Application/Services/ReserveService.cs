@@ -2,8 +2,8 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Validation;
+using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
-using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Logging;
 
@@ -14,140 +14,14 @@ public sealed class ReserveService : IReserveService
     private const string EntityType = "ReserveMovement";
 
     private readonly ICashFlowRepository _repository;
-    private readonly IPotsService _potsService;
     private readonly ITelemetryTracer _tracer;
     private readonly ILogger<ReserveService> _logger;
 
-    public ReserveService(ICashFlowRepository repository, IPotsService potsService, ITelemetryTracer tracer, ILogger<ReserveService> logger)
+    public ReserveService(ICashFlowRepository repository, ITelemetryTracer tracer, ILogger<ReserveService> logger)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-        _potsService = potsService ?? throw new ArgumentNullException(nameof(potsService));
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    public async Task<IncomeSplitResultDTO> PostIncomeSplitAsync(IncomeSplitRequestDTO request)
-    {
-        using var span = StartSpan("PostIncomeSplit");
-        try
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            var potsAccount = ReservaAccount.Find(_repository.GetAccounts())
-                ?? throw new ArgumentException("No reserve bucket is currently active.");
-
-            var operation = await _potsService.DepositAsync(potsAccount.Id, new PotDepositRequestDTO
-            {
-                Amount = request.Amount,
-                Date = request.Date,
-                Description = request.Description
-            }).ConfigureAwait(false);
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "PostIncomeSplit");
-            return new IncomeSplitResultDTO
-            {
-                Buckets = TransactionsOf(operation.OperationId)
-                    .Select(transaction => new BucketSplitAmountDTO
-                    {
-                        BucketId = transaction.Pot.Id,
-                        BucketName = transaction.Pot.Name,
-                        Amount = transaction.Amount
-                    })
-                    .ToList(),
-                Total = operation.Amount
-            };
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
-    public async Task<ReserveMovementDTO> PostWithdrawalAsync(WithdrawalRequestDTO request)
-    {
-        using var span = StartSpan("PostWithdrawal");
-        try
-        {
-            ArgumentNullException.ThrowIfNull(request);
-
-            if (ReservaAccount.Find(_repository.GetAccounts()) is not { } potsAccount || !potsAccount.OwnsPot(request.BucketId))
-            {
-                throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
-            }
-
-            var operation = await _potsService.WithdrawAsync(potsAccount.Id, new PotWithdrawalRequestDTO
-            {
-                PotId = request.BucketId,
-                Amount = request.Amount,
-                Date = request.Date,
-                Description = request.Description,
-                BankId = request.PaymentSourceBankId,
-                CategoryId = request.ExpenseCategoryId,
-                Confirmed = request.Confirmed
-            }).ConfigureAwait(false);
-
-            var transaction = TransactionsOf(operation.OperationId).Single();
-
-            span.SetAttribute(TelemetryAttributeKeys.EntityId, transaction.Id.ToString());
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "PostWithdrawal");
-            return ToDto(transaction, _repository.GetPotTransactions());
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
-    public IReadOnlyList<ReserveBucketBalanceDTO> GetBucketBalances()
-    {
-        using var span = StartSpan("GetBucketBalances");
-        try
-        {
-            var transactions = _repository.GetPotTransactions().ToList();
-
-            var result = _repository.GetReservaPots()
-                .Select(pot => new ReserveBucketBalanceDTO
-                {
-                    BucketId = pot.Id,
-                    BucketName = pot.Name,
-                    Balance = AccountBalanceRule.PotBalance(pot, DateOnly.MaxValue, transactions)
-                })
-                .ToList();
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetBucketBalances");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
-    public IReadOnlyList<ReserveMovementDTO> GetMovementHistory()
-    {
-        using var span = StartSpan("GetMovementHistory");
-        try
-        {
-            var result = _repository.GetPotTransactions()
-                .OrderByDescending(m => m.Date)
-                .Select(transaction => ToDto(transaction, _repository.GetPotTransactions()))
-                .ToList();
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetMovementHistory");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
     }
 
     public async Task<ReserveMovementDTO> UpdateMovementAsync(Guid id, ReserveMovementUpdateDTO request)
@@ -163,14 +37,14 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("Description is required.");
             }
 
-            if (!EntityIdResolver.TryResolve(request.BucketId, _repository.GetReservaPots(), b => b.Id, out var pot))
-            {
-                throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
-            }
-
             var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
             EnsureNotLinkedToIncome(transaction);
             LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
+
+            if (!EntityIdResolver.TryResolve(request.BucketId, PotsOfAccountOwning(transaction), b => b.Id, out var pot))
+            {
+                throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
+            }
 
             await _repository.ApplyAndSaveAsync(() =>
             {
@@ -227,8 +101,8 @@ public sealed class ReserveService : IReserveService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
 
-    private IEnumerable<PotTransaction> TransactionsOf(Guid operationId) =>
-        _repository.GetPotTransactions().Where(transaction => transaction.OperationId == operationId);
+    private IEnumerable<Pot> PotsOfAccountOwning(PotTransaction transaction) =>
+        _repository.GetAccounts().FirstOrDefault(account => account.OwnsPot(transaction.Pot.Id))?.Pots ?? [];
 
     private static IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
         IsManualSplitLine(transaction)

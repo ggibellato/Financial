@@ -213,8 +213,6 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
     public void AddIncomeSource(IncomeSource incomeSource) => IncomeSources.Add(incomeSource);
     public void DeleteIncomeSource(Guid id) => IncomeSources.RemoveAll(s => s.Id == id);
 
-    public IEnumerable<Pot> GetReservaPots() => CheckThrow(ReservaPots);
-
     public void AddPot(Pot pot) => EnsureReserva().AddPot(pot);
 
     public Account EnsureReserva()

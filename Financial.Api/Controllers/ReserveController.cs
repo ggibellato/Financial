@@ -4,9 +4,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Controllers;
 
-/// <summary>
-/// Manages emergency/savings reserve buckets: income splits, withdrawals, balances and movement history.
-/// </summary>
 [ApiController]
 [Route("reserve")]
 public sealed class ReserveController : ControllerBase
@@ -16,59 +13,6 @@ public sealed class ReserveController : ControllerBase
     public ReserveController(IReserveService reserveService)
     {
         _reserveService = reserveService ?? throw new ArgumentNullException(nameof(reserveService));
-    }
-
-    /// <summary>Splits an income across reserve buckets according to the configured allocation rules.</summary>
-    /// <param name="request">The income amount to split.</param>
-    /// <returns>200 OK with the resulting split, or 400 Bad Request if the request is invalid or missing.</returns>
-    [HttpPost("income-split")]
-    [ProducesResponseType(typeof(IncomeSplitResultDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<IncomeSplitResultDTO>> PostIncomeSplit([FromBody] IncomeSplitRequestDTO? request)
-    {
-        if (request is null)
-        {
-            return BadRequest();
-        }
-
-        var result = await _reserveService.PostIncomeSplitAsync(request);
-        return Ok(result);
-    }
-
-    /// <summary>Withdraws an amount from a reserve bucket.</summary>
-    /// <param name="request">The withdrawal amount and target bucket.</param>
-    /// <returns>200 OK with the resulting movement, 400 Bad Request if the request is invalid, or 409 Conflict if the withdrawal would overdraft the bucket without confirmation.</returns>
-    [HttpPost("withdrawals")]
-    [ProducesResponseType(typeof(ReserveMovementDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status409Conflict)]
-    public async Task<ActionResult<ReserveMovementDTO>> PostWithdrawal([FromBody] WithdrawalRequestDTO? request)
-    {
-        if (request is null)
-        {
-            return BadRequest();
-        }
-
-        var result = await _reserveService.PostWithdrawalAsync(request);
-        return Ok(result);
-    }
-
-    /// <summary>Lists the current balance of each reserve bucket.</summary>
-    /// <returns>200 OK with the bucket balances.</returns>
-    [HttpGet("balances")]
-    [ProducesResponseType(typeof(IReadOnlyList<ReserveBucketBalanceDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<ReserveBucketBalanceDTO>> GetBucketBalances()
-    {
-        return Ok(_reserveService.GetBucketBalances());
-    }
-
-    /// <summary>Lists the full reserve movement history (splits and withdrawals).</summary>
-    /// <returns>200 OK with the movement history.</returns>
-    [HttpGet("movements")]
-    [ProducesResponseType(typeof(IReadOnlyList<ReserveMovementDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<ReserveMovementDTO>> GetMovementHistory()
-    {
-        return Ok(_reserveService.GetMovementHistory());
     }
 
     /// <summary>Updates an existing reserve movement.</summary>

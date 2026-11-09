@@ -1951,27 +1951,6 @@
         ],
         "type": "object"
       },
-      "BucketSplitAmountDTO": {
-        "properties": {
-          "amount": {
-            "format": "double",
-            "type": "number"
-          },
-          "bucketId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "bucketName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "bucketId",
-          "bucketName",
-          "amount"
-        ],
-        "type": "object"
-      },
       "CalculationStatus": {
         "enum": [
           "RequiresReview",
@@ -4308,46 +4287,6 @@
         ],
         "type": "object"
       },
-      "IncomeSplitRequestDTO": {
-        "properties": {
-          "amount": {
-            "format": "double",
-            "type": "number"
-          },
-          "date": {
-            "format": "date",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "date",
-          "amount",
-          "description"
-        ],
-        "type": "object"
-      },
-      "IncomeSplitResultDTO": {
-        "properties": {
-          "buckets": {
-            "items": {
-              "$ref": "#/components/schemas/BucketSplitAmountDTO"
-            },
-            "type": "array"
-          },
-          "total": {
-            "format": "double",
-            "type": "number"
-          }
-        },
-        "required": [
-          "buckets",
-          "total"
-        ],
-        "type": "object"
-      },
       "IncomeUpdateDTO": {
         "properties": {
           "bankId": {
@@ -5858,58 +5797,6 @@
         ],
         "type": "object"
       },
-      "ReserveBucketBalanceDTO": {
-        "properties": {
-          "balance": {
-            "format": "double",
-            "type": "number"
-          },
-          "bucketId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "bucketName": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "bucketId",
-          "bucketName",
-          "balance"
-        ],
-        "type": "object"
-      },
-      "ReserveBucketDTO": {
-        "properties": {
-          "id": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "name": {
-            "type": "string"
-          },
-          "splitPercentage": {
-            "format": "double",
-            "type": "number"
-          },
-          "warning": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "isActive",
-          "splitPercentage"
-        ],
-        "type": "object"
-      },
       "ReserveMovementDTO": {
         "properties": {
           "amount": {
@@ -5980,24 +5867,6 @@
           "amount",
           "date",
           "description"
-        ],
-        "type": "object"
-      },
-      "ReserveSplitStatusDTO": {
-        "properties": {
-          "activeTotal": {
-            "format": "double",
-            "type": "number"
-          },
-          "warning": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "required": [
-          "activeTotal"
         ],
         "type": "object"
       },
@@ -7194,49 +7063,6 @@
         "required": [
           "group",
           "name"
-        ],
-        "type": "object"
-      },
-      "WithdrawalRequestDTO": {
-        "properties": {
-          "amount": {
-            "format": "double",
-            "type": "number"
-          },
-          "bucketId": {
-            "format": "uuid",
-            "type": "string"
-          },
-          "confirmed": {
-            "type": "boolean"
-          },
-          "date": {
-            "format": "date",
-            "type": "string"
-          },
-          "description": {
-            "type": "string"
-          },
-          "expenseCategoryId": {
-            "format": "uuid",
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "paymentSourceBankId": {
-            "format": "uuid",
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        },
-        "required": [
-          "bucketId",
-          "amount",
-          "date",
-          "description"
         ],
         "type": "object"
       }
@@ -15564,165 +15390,6 @@
         ]
       }
     },
-    "/reserve-buckets": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ReserveBucketDTO"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "200 OK with the full, unfiltered list of reserve buckets."
-          }
-        },
-        "summary": "Lists all reserve buckets.",
-        "tags": [
-          "ReserveBuckets"
-        ]
-      }
-    },
-    "/reserve-buckets/split-status": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReserveSplitStatusDTO"
-                }
-              }
-            },
-            "description": "200 OK with the active total and a warning that is null when the total is within 0.01 of 100 or there are no buckets."
-          }
-        },
-        "summary": "Reports whether the active buckets\u0027 split percentages sum to 100%.",
-        "tags": [
-          "ReserveBuckets"
-        ]
-      }
-    },
-    "/reserve/balances": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ReserveBucketBalanceDTO"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "200 OK with the bucket balances."
-          }
-        },
-        "summary": "Lists the current balance of each reserve bucket.",
-        "tags": [
-          "Reserve"
-        ]
-      }
-    },
-    "/reserve/income-split": {
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/*\u002Bjson": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/IncomeSplitRequestDTO"
-                  }
-                ]
-              }
-            },
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/IncomeSplitRequestDTO"
-                  }
-                ]
-              }
-            },
-            "text/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/IncomeSplitRequestDTO"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/IncomeSplitResultDTO"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Bad Request"
-          }
-        },
-        "summary": "Splits an income across reserve buckets according to the configured allocation rules.",
-        "tags": [
-          "Reserve"
-        ]
-      }
-    },
-    "/reserve/movements": {
-      "get": {
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ReserveMovementDTO"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "200 OK with the movement history."
-          }
-        },
-        "summary": "Lists the full reserve movement history (splits and withdrawals).",
-        "tags": [
-          "Reserve"
-        ]
-      }
-    },
     "/reserve/movements/{id}": {
       "delete": {
         "parameters": [
@@ -15843,86 +15510,6 @@
           }
         },
         "summary": "Updates an existing reserve movement.",
-        "tags": [
-          "Reserve"
-        ]
-      }
-    },
-    "/reserve/withdrawals": {
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/*\u002Bjson": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WithdrawalRequestDTO"
-                  }
-                ]
-              }
-            },
-            "application/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WithdrawalRequestDTO"
-                  }
-                ]
-              }
-            },
-            "text/json": {
-              "schema": {
-                "oneOf": [
-                  {
-                    "type": "null"
-                  },
-                  {
-                    "$ref": "#/components/schemas/WithdrawalRequestDTO"
-                  }
-                ]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReserveMovementDTO"
-                }
-              }
-            },
-            "description": "OK"
-          },
-          "400": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Bad Request"
-          },
-          "409": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            },
-            "description": "Conflict"
-          }
-        },
-        "summary": "Withdraws an amount from a reserve bucket.",
         "tags": [
           "Reserve"
         ]
@@ -17400,9 +16987,6 @@
     },
     {
       "name": "ReportingCurrency"
-    },
-    {
-      "name": "ReserveBuckets"
     },
     {
       "name": "Reserve"

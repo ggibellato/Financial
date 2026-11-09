@@ -127,7 +127,7 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
             InvoiceDate = new DateOnly(2026, 8, 1)
         });
 
-        await Client.PostAsJsonAsync("/api/v1/financial/reserve/income-split", new IncomeSplitRequestDTO
+        await Client.PostAsJsonAsync("/api/v1/financial/accounts/8f3b1c1a-2e3a-4b1a-9a7f-900000000001/deposits", new PotDepositRequestDTO
         {
             Date = new DateOnly(2026, 7, 15),
             Amount = 100m,

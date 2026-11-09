@@ -62,7 +62,7 @@ public class CashFlowJsonRepositoryConcurrencyTests
     }
 
     [Fact]
-    public async Task GetReservaPots_EnumerationStartedBeforeSave_CompletesWhenSaveAddsPot()
+    public async Task Pots_EnumerationStartedBeforeSave_CompletesWhenSaveAddsPot()
     {
         var data = CashFlowData.Create();
         TestAccounts.ReservaIn(data).AddPot(Pot.Create("Investimento", 50m));
@@ -70,7 +70,7 @@ public class CashFlowJsonRepositoryConcurrencyTests
         var storage = new BlockingJsonStorage();
         var repository = new CashFlowJsonRepository(data, storage, new CashFlowSerializerAdapter());
 
-        using var enumerator = repository.GetReservaPots().GetEnumerator();
+        using var enumerator = ReservaAccount.Find(repository.GetAccounts())!.Pots!.GetEnumerator();
         enumerator.MoveNext().Should().BeTrue();
 
         var save = repository.ApplyAndSaveAsync(() =>
