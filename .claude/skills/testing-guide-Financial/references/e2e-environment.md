@@ -46,8 +46,9 @@ Do not use `--no-launch-profile` with `dotnet run` for a dev-server variant: it 
 is same-origin.
 
 Data is seeded by copying the test JSON files and torn down by the OS temp directory / the CI
-runner. The suite never cleans up: write specs use a per-run unique description and the one
-spec that seeds expenses skips seeding on a retry. **Restart the API on fresh copies before each
+runner. The add-expense and historic-average specs never clean up: they use a per-run unique description and
+the one that seeds expenses skips seeding on a retry. The account-screen journeys (`pay-card-statement`,
+`pots-deposit`, `settle`) undo their own change, so a retry or rerun starts from the same seed. **Restart the API on fresh copies before each
 local run** — a second run on the same data seeds the Historic Summary Average twice.
 
 ## Guard against the live data
@@ -64,7 +65,7 @@ The sentinel replaces a "which data file are you on" endpoint on purpose:
 
 ## What the suite proves
 
-Six `@smoke` specs in `Financial.Web/tests/e2e/`, each also failing on any console error:
+Seven `@smoke` specs in `Financial.Web/tests/e2e/`, each also failing on any console error:
 
 | Spec | Journey |
 |---|---|
@@ -72,6 +73,9 @@ Six `@smoke` specs in `Financial.Web/tests/e2e/`, each also failing on any conso
 | `investment-asset` | XPI → Default → BCIA11 shows the asset summary |
 | `add-expense` (3) | add an expense (`e2e-<runId>`) and see it listed; blank value → `Value must be a non-zero number`, nothing POSTed; forced 500 → error shown, form usable |
 | `historic-average` | seed three expenses → Historic Summary Average shows `Mercado` `25.00` (catches frontend/API shape drift that still compiles) |
+| `pay-card-statement` | Amex → Statements → pay October 2026 from Barclays → "from Barclays"; then Unmark |
+| `pots-deposit` | Reserva → manual deposit with no bank → the Pots total grows by the deposit and its rows list; then delete the deposit |
+| `settle` | Mãe → Settle → "Both totals become zero." → "Settled"; then delete the entry |
 
 Rules: locate by role, label or visible text; `data-testid` only with a comment saying why; no
 CSS classes, XPath, DOM position or fixed waits (`eslint-plugin-playwright` and the F11 hygiene
