@@ -10,6 +10,7 @@ interface RenderOptions {
   saveLabel?: string
   onSave?: () => void
   onCancel?: () => void
+  autoFocus?: boolean
 }
 
 const dialog = ({
@@ -19,6 +20,7 @@ const dialog = ({
   saveLabel,
   onSave = vi.fn(),
   onCancel = vi.fn(),
+  autoFocus = false,
 }: RenderOptions = {}) => (
   <EntityFormDialog
     title="Create Bank"
@@ -30,7 +32,7 @@ const dialog = ({
     onCancel={onCancel}
   >
     <label htmlFor="bank-name">Name</label>
-    <input id="bank-name" />
+    <input id="bank-name" autoFocus={autoFocus} />
   </EntityFormDialog>
 )
 
@@ -91,28 +93,14 @@ describe('EntityFormDialog', () => {
     expect(screen.queryByText('A bank named "Barclays" already exists.')).not.toBeInTheDocument()
   })
 
-  it('returns focus to the control that opened it when it closes', () => {
+  it.each([
+    { when: 'it closes', autoFocus: false },
+    { when: 'a field took focus as it opened', autoFocus: true },
+  ])('returns focus to the control that opened it when $when', ({ autoFocus }) => {
     const opener = document.createElement('button')
     document.body.appendChild(opener)
     opener.focus()
-    const { unmount } = renderDialog()
-
-    unmount()
-
-    expect(opener).toHaveFocus()
-    opener.remove()
-  })
-
-  it('returns focus to the opener even when a field takes focus as the dialog opens', () => {
-    const opener = document.createElement('button')
-    document.body.appendChild(opener)
-    opener.focus()
-    const { unmount } = render(
-      <EntityFormDialog title="Create Bank" error={null} isSaving={false} canSave onSave={vi.fn()} onCancel={vi.fn()}>
-        <label htmlFor="bank-name">Name</label>
-        <input id="bank-name" autoFocus />
-      </EntityFormDialog>,
-    )
+    const { unmount } = renderDialog({ autoFocus })
 
     unmount()
 
