@@ -46,7 +46,7 @@ export function useRowFocusRecovery(
   })
 
   return (event: FocusEvent<HTMLElement>) => {
-    const located = locate(event.target)
-    if (located) lastFocused.current = located
+    if (!event.currentTarget.contains(event.target)) return
+    lastFocused.current = locate(event.target)
   }
 }

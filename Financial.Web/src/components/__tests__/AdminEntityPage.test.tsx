@@ -103,4 +103,43 @@ describe('AdminEntityPage', () => {
 
     expect(screen.getByText('dialogs')).toBeInTheDocument()
   })
+
+  it('does not pull focus back into the list once focus has moved off a removed row', () => {
+    const rows = (names: string[]) => (
+      <table aria-label="Banks">
+        <tbody>
+          {names.map((name) => (
+            <tr key={name}>
+              <td>
+                <button>Delete {name}</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    )
+    const page = (names: string[]) => (
+      <AdminEntityPage
+        title="Banks"
+        createLabel="Create Bank"
+        onCreate={vi.fn()}
+        isLoading={false}
+        loadError={null}
+        onRetry={vi.fn()}
+        isEmpty={false}
+        emptyMessage="No banks yet"
+      >
+        {rows(names)}
+      </AdminEntityPage>
+    )
+    const { rerender } = render(page(['Barclays', 'Monzo']))
+
+    screen.getByRole('button', { name: 'Delete Monzo' }).focus()
+    screen.getByRole('button', { name: 'Create Bank' }).focus()
+    rerender(page(['Barclays']))
+    screen.getByRole('button', { name: 'Create Bank' }).blur()
+    rerender(page(['Barclays']))
+
+    expect(document.body).toHaveFocus()
+  })
 })
