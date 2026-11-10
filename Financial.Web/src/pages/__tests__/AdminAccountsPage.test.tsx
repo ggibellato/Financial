@@ -290,7 +290,7 @@ describe('AdminAccountsPage', () => {
     await waitFor(() => expect(screen.queryByRole('row', { name: /Monzo/ })).not.toBeInTheDocument())
   })
 
-  it('shows a refused delete on the page', async () => {
+  it('shows a refused delete on the page and moves focus to it', async () => {
     deleteAccountMock.mockRejectedValue(new ApiError('Monzo has transactions and cannot be deleted. Deactivate it instead.', 409))
     renderPage()
     await screen.findByRole('table', { name: 'Accounts' })
@@ -300,6 +300,9 @@ describe('AdminAccountsPage', () => {
 
     expect(await screen.findByText('Monzo has transactions and cannot be deleted. Deactivate it instead.')).toBeInTheDocument()
     expect(screen.queryByText('Account deleted')).not.toBeInTheDocument()
+    const alert = screen.getByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Monzo has transactions and cannot be deleted.')
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 
   it.each([

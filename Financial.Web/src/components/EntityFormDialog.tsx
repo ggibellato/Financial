@@ -57,7 +57,7 @@ export default function EntityFormDialog({
   }
 
   return (
-    <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
+    <Dialog open onOpenChange={(_, data) => { if (!data.open && !isSaving) onCancel() }}>
       <DialogSurface aria-describedby={undefined}>
         <form noValidate onSubmit={submit}>
           <DialogBody>

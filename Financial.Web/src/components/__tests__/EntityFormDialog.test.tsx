@@ -87,6 +87,15 @@ describe('EntityFormDialog', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
+  it('stays open on Escape while saving so a failed save is not lost', () => {
+    const onCancel = vi.fn()
+    renderDialog({ onCancel, isSaving: true, canSave: false })
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+
+    expect(onCancel).not.toHaveBeenCalled()
+  })
+
   it('shows no error message bar when there is no error', () => {
     renderDialog()
 

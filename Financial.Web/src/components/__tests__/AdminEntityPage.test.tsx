@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import AdminEntityPage from '../AdminEntityPage'
 
@@ -20,6 +20,20 @@ function renderPage(overrides: Partial<Props> = {}) {
   const { rerender } = render(<AdminEntityPage {...props} />)
   return { ...props, rerender: (changes: Partial<Props>) => rerender(<AdminEntityPage {...props} {...changes} />) }
 }
+
+const rows = (names: string[], disabled = false) => (
+  <table aria-label="Banks">
+    <tbody>
+      {names.map((name) => (
+        <tr key={name}>
+          <td>
+            <button disabled={disabled}>Delete {name}</button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)
 
 describe('AdminEntityPage', () => {
   it('renders the title heading and calls onCreate from the create button', () => {
@@ -105,19 +119,6 @@ describe('AdminEntityPage', () => {
   })
 
   it('does not pull focus back into the list once focus has moved off a removed row', () => {
-    const rows = (names: string[]) => (
-      <table aria-label="Banks">
-        <tbody>
-          {names.map((name) => (
-            <tr key={name}>
-              <td>
-                <button>Delete {name}</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    )
     const { rerender } = renderPage({ children: rows(['Barclays', 'Monzo']) })
 
     screen.getByRole('button', { name: 'Delete Monzo' }).focus()
@@ -126,5 +127,22 @@ describe('AdminEntityPage', () => {
     rerender({ children: rows(['Barclays']) })
 
     expect(document.body).toHaveFocus()
+  })
+
+  it('moves focus to the heading when the nearest row control is disabled', async () => {
+    const { rerender } = renderPage({ children: rows(['Barclays', 'Monzo']) })
+
+    screen.getByRole('button', { name: 'Delete Monzo' }).focus()
+    rerender({ children: rows(['Barclays'], true) })
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Banks' })).toHaveFocus())
+  })
+
+  it('announces an action error and moves focus to it', async () => {
+    renderPage({ actionError: 'Barclays could not be deleted.' })
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Barclays could not be deleted.')
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 })

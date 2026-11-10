@@ -26,7 +26,8 @@ function controlNear(region: HTMLElement, { rowIndex, controlIndex }: FocusedRow
   const row = rows[Math.min(rowIndex, rows.length - 1)]
   if (!row) return null
   const controls = row.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)
-  return controls[Math.min(controlIndex, controls.length - 1)] ?? null
+  const control = controls[Math.min(controlIndex, controls.length - 1)]
+  return control && !control.matches(':disabled') ? control : null
 }
 
 export function useRowFocusRecovery(
