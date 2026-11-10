@@ -153,6 +153,43 @@ describe('IntegrationsPage', () => {
     await waitFor(() => expect(screen.getAllByText('Synced')).toHaveLength(2))
   })
 
+  it('announces a failed disconnect', async () => {
+    getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
+    disconnectCalendarMock.mockRejectedValue(new Error('Google is unavailable'))
+    render(<IntegrationsPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }))
+    const dialogButtons = screen.getAllByRole('button', { name: 'Disconnect' })
+
+    fireEvent.click(dialogButtons[dialogButtons.length - 1])
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Google is unavailable')
+  })
+
+  it('a failed Retry names the card and shows the error until the next attempt', async () => {
+    getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
+    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Rate limit exceeded again')).mockReturnValue(new Promise(() => {}))
+    render(<IntegrationsPage />)
+    const retryButton = await screen.findByRole('button', { name: 'Retry calendar sync for Nubank' })
+
+    fireEvent.click(retryButton)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t retry the calendar sync for Nubank: Rate limit exceeded again')
+
+    retryButton.focus()
+    fireEvent.click(retryButton)
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+    expect(retryButton).toHaveAttribute('aria-disabled', 'true')
+    expect(retryButton).toHaveFocus()
+  })
+
+  it('shows the row Retry as an icon-only action with an accessible name', async () => {
+    getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
+    render(<IntegrationsPage />)
+
+    expect(await screen.findByRole('button', { name: 'Retry calendar sync for Nubank' })).toHaveTextContent(/^$/)
+  })
+
   it('P45-F03-integrations-settings-web-05: a failed status request shows a retry affordance instead of a blank panel', async () => {
     getCalendarStatusMock.mockRejectedValue(new Error('Network down'))
     render(<IntegrationsPage />)

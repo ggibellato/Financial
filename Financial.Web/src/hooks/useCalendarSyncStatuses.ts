@@ -14,19 +14,24 @@ export interface CalendarSyncStatusRow {
   lastError: string | null
 }
 
+export interface ResyncFailure {
+  creditCardId: string
+  message: string
+}
+
 interface ResyncState {
   retryingCardId: string | null
-  retryError: string | null
+  retryFailure: ResyncFailure | null
 }
 
 type ResyncAction =
   | { type: 'RESYNC_START'; payload: string }
   | { type: 'RESYNC_SUCCESS' }
-  | { type: 'RESYNC_ERROR'; payload: string }
+  | { type: 'RESYNC_ERROR'; payload: ResyncFailure }
 
 const INITIAL_RESYNC_STATE: ResyncState = {
   retryingCardId: null,
-  retryError: null,
+  retryFailure: null,
 }
 
 const NO_ROWS: CalendarSyncStatusRow[] = []
@@ -38,11 +43,11 @@ function mergeStatus(row: CalendarSyncStatusRow, status: CreditCardCalendarSyncS
 function resyncReducer(state: ResyncState, action: ResyncAction): ResyncState {
   switch (action.type) {
     case 'RESYNC_START':
-      return { ...state, retryingCardId: action.payload, retryError: null }
+      return { ...state, retryingCardId: action.payload, retryFailure: null }
     case 'RESYNC_SUCCESS':
       return { ...state, retryingCardId: null }
     case 'RESYNC_ERROR':
-      return { ...state, retryingCardId: null, retryError: action.payload }
+      return { ...state, retryingCardId: null, retryFailure: action.payload }
     default:
       return state
   }
@@ -73,7 +78,7 @@ export interface CalendarSyncStatusesData {
   error: string | null
   retry: () => void
   retryingCardId: string | null
-  retryError: string | null
+  retryFailure: ResyncFailure | null
   resyncCard: (id: string) => void
 }
 
@@ -98,7 +103,10 @@ export function useCalendarSyncStatuses(): CalendarSyncStatusesData {
           dispatch({ type: 'RESYNC_SUCCESS' })
         })
         .catch((err: unknown) => {
-          dispatch({ type: 'RESYNC_ERROR', payload: getErrorMessage(err, 'Failed to retry the calendar sync') })
+          dispatch({
+            type: 'RESYNC_ERROR',
+            payload: { creditCardId: id, message: getErrorMessage(err, 'Failed to retry the calendar sync') },
+          })
         })
     },
     [setData],
@@ -110,7 +118,7 @@ export function useCalendarSyncStatuses(): CalendarSyncStatusesData {
     error,
     retry,
     retryingCardId: state.retryingCardId,
-    retryError: state.retryError,
+    retryFailure: state.retryFailure,
     resyncCard,
   }
 }

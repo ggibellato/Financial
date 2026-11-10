@@ -5,6 +5,7 @@ import {
   Field,
   Input,
   MessageBar,
+  MessageBarActions,
   MessageBarBody,
   Select,
   Skeleton,
@@ -20,7 +21,7 @@ import {
 import type { AccountStatementDto } from '../api/types'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
-import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
+import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, MISSING_VALUE_PLACEHOLDER, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -31,6 +32,8 @@ import TruncatedText from './TruncatedText'
 import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+
+const STALE_STATEMENTS_MESSAGE = 'Couldn’t refresh the statements, so the list below may be out of date.'
 
 interface StatementColumn {
   key: string
@@ -62,7 +65,7 @@ const COLUMNS: StatementColumn[] = [
     header: 'Credit in',
     numeric: true,
     accessor: (statement) => statement.creditIn,
-    render: (statement) => (statement.creditIn === 0 ? '—' : formatN2(statement.creditIn)),
+    render: (statement) => (statement.creditIn === 0 ? MISSING_VALUE_PLACEHOLDER : formatN2(statement.creditIn)),
   },
   {
     key: 'toPay',
@@ -75,7 +78,7 @@ const COLUMNS: StatementColumn[] = [
     key: 'dueDate',
     header: 'Due date',
     accessor: (statement) => statement.dueDate,
-    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : '—'),
+    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : MISSING_VALUE_PLACEHOLDER),
   },
   {
     key: 'status',
@@ -246,6 +249,11 @@ export default function CardStatementsTab({
 
   const isFormSaving = (payForm?.isSaving ?? false) || Boolean(dueDateForm.form?.pendingAction)
 
+  const retryKeepingFocus = () => {
+    headingRef.current?.focus()
+    retry()
+  }
+
   const isViewed = (statement: AccountStatementDto) => statement.year === viewedYear && statement.month === viewedMonth
 
   return (
@@ -258,18 +266,28 @@ export default function CardStatementsTab({
           <MessageBarBody>This card is inactive, so its statements can't be paid, unmarked or given a due date here.</MessageBarBody>
         </MessageBar>
       )}
-      {error ? (
-        <ErrorState message={error} onRetry={retry} />
+      {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
+      {dueDateForm.form && (
+        <StatementDueDateForm
+          key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
+          form={dueDateForm.form}
+          dueDateForm={dueDateForm}
+          onCancel={cancelForm}
+        />
+      )}
+      {error && statements.length === 0 ? (
+        <ErrorState message={error} onRetry={retryKeepingFocus} />
       ) : (
         <>
-          {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
-          {dueDateForm.form && (
-            <StatementDueDateForm
-              key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
-              form={dueDateForm.form}
-              dueDateForm={dueDateForm}
-              onCancel={cancelForm}
-            />
+          {error && (
+            <MessageBar role="alert" intent="error">
+              <MessageBarBody>{STALE_STATEMENTS_MESSAGE}</MessageBarBody>
+              <MessageBarActions>
+                <Button appearance="primary" aria-label="Try again to load the statements" onClick={retryKeepingFocus}>
+                  Try again
+                </Button>
+              </MessageBarActions>
+            </MessageBar>
           )}
           <div className="account-screen__grid-scroll">
             <Table className="data-table" aria-label="Statements">

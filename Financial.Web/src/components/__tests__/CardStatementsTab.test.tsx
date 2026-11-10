@@ -205,6 +205,7 @@ describe('CardStatementsTab', () => {
 
     expect(screen.getByText('Unable to load the statements')).toBeInTheDocument()
     expect(statements.retry).toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Statements' })).toHaveFocus()
   })
 
   it('offers Pay on unpaid rows and Unmark on paid rows', async () => {
@@ -262,6 +263,27 @@ describe('CardStatementsTab', () => {
     expect(screen.getByLabelText('Amount')).toHaveValue('£210.45')
     expect(screen.getByLabelText('Amount')).toHaveAttribute('readonly')
     expect(screen.getByLabelText(/^Bank/)).toHaveFocus()
+  })
+
+  it('keeps the pay form and its error in view when the statements then fail to reload', () => {
+    renderTab({
+      error: 'Unable to load the statements',
+      payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-16', isSaving: false, error: 'Failed to pay the statement', fieldErrors: {} },
+    })
+
+    expect(screen.getByRole('heading', { name: 'Pay October 2026 statement' })).toBeInTheDocument()
+    expect(screen.getByText('Failed to pay the statement')).toBeInTheDocument()
+    expect(screen.getByText('Couldn’t refresh the statements, so the list below may be out of date.')).toBeInTheDocument()
+  })
+
+  it('keeps the statements on screen, says they may be out of date and retries from the heading when a reload fails', async () => {
+    const statements = renderTab({ error: 'Unable to load the statements' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Couldn’t refresh the statements, so the list below may be out of date.')
+    expect(rowOf('October 2026')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Try again to load the statements' }))
+    expect(statements.retry).toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Statements' })).toHaveFocus()
   })
 
   it('moves focus to the first invalid field after a failed submit', () => {

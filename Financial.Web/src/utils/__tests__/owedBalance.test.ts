@@ -44,11 +44,21 @@ describe('statementStatusText', () => {
     id: 's1', year: 2026, month: 11, total: 0, creditIn: 0, outstandingTotal: 0, creditCarried: 0, status: 'NothingDue', isPaid: false, dueDate: null, paidOn: null, paidAmount: null, paidFromAccountName: null, ...overrides,
   })
 
-  it('names each status', () => {
+  it('names an unpaid statement Unpaid', () => {
     expect(statementStatusText(statement({ status: 'Unpaid' }))).toBe('Unpaid')
+  })
+
+  it('names a statement with nothing due, with any credit carried', () => {
     expect(statementStatusText(statement({ creditCarried: 35 }))).toBe('Nothing due · 35.00 credit carried')
+  })
+
+  it('names a paid statement Paid, with the date when known', () => {
     expect(statementStatusText(statement({ status: 'Paid', isPaid: true, paidOn: '2026-11-12' }))).toBe('Paid 12 Nov 2026')
     expect(statementStatusText(statement({ status: 'Paid', isPaid: true }))).toBe('Paid')
+  })
+
+  it('shows an unknown status as a dash, never as Paid', () => {
+    expect(statementStatusText(statement({ status: 'Disputed', paidOn: '2026-11-12' }))).toBe('—')
   })
 })
 

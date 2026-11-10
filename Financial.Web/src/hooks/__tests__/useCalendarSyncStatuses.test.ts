@@ -91,14 +91,27 @@ describe('useCalendarSyncStatuses', () => {
     expect(untouched?.state).toBe('Synced')
   })
 
-  it('surfaces a resync error without touching the row', async () => {
+  it('surfaces a resync error for the card it belongs to without touching the row', async () => {
     resyncCreditCardCalendarMock.mockRejectedValue(new Error('Sync failed'))
     const { result } = renderHook(() => useCalendarSyncStatuses())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.resyncCard('card-due'))
 
-    await waitFor(() => expect(result.current.retryError).toBe('Sync failed'))
+    await waitFor(() => expect(result.current.retryFailure).toEqual({ creditCardId: 'card-due', message: 'Sync failed' }))
     expect(result.current.retryingCardId).toBeNull()
+  })
+
+  it('clears the previous resync error when the next attempt starts', async () => {
+    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Sync failed')).mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useCalendarSyncStatuses())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.resyncCard('card-due'))
+    await waitFor(() => expect(result.current.retryFailure).not.toBeNull())
+
+    act(() => result.current.resyncCard('card-due'))
+
+    expect(result.current.retryFailure).toBeNull()
+    expect(result.current.retryingCardId).toBe('card-due')
   })
 })

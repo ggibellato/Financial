@@ -16,6 +16,7 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@fluentui/react-components'
+import { ArrowSyncRegular } from '@fluentui/react-icons'
 import CalendarSyncStatusBadge from '../components/CalendarSyncStatusBadge'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -36,6 +37,8 @@ export default function IntegrationsPage() {
   const connection = useCalendarConnection()
   const syncStatuses = useCalendarSyncStatuses()
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false)
+  const { retryFailure } = syncStatuses
+  const failedResyncRow = retryFailure && syncStatuses.rows.find((row) => row.creditCardId === retryFailure.creditCardId)
 
   const handleConfirmDisconnect = () => {
     setConfirmingDisconnect(false)
@@ -94,7 +97,7 @@ export default function IntegrationsPage() {
             </dl>
 
             {connection.disconnectError && (
-              <MessageBar intent="error">
+              <MessageBar role="alert" intent="error">
                 <MessageBarBody>{connection.disconnectError}</MessageBarBody>
               </MessageBar>
             )}
@@ -112,40 +115,48 @@ export default function IntegrationsPage() {
             ) : syncStatuses.rows.length === 0 ? (
               <p className="integrations-page__empty">No active credit cards with a due date yet.</p>
             ) : (
-              <Table aria-label="Credit card calendar sync status" className="data-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHeaderCell>Card</TableHeaderCell>
-                    <TableHeaderCell>Due Date</TableHeaderCell>
-                    <TableHeaderCell>Sync Status</TableHeaderCell>
-                    <ActionsColumnHeader />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {syncStatuses.rows.map((row) => (
-                    <TableRow key={row.creditCardId}>
-                      <DataTableCell label="Card">{row.name}</DataTableCell>
-                      <DataTableCell label="Due Date">{formatShortDateUtc(row.dueDate)}</DataTableCell>
-                      <DataTableCell label="Sync Status">
-                        <CalendarSyncStatusBadge state={row.state} lastError={row.lastError} />
-                      </DataTableCell>
-                      <TableCell className="data-table__col--action">
-                        {row.state === 'Error' && (
-                          <Button
-                            appearance="subtle"
-                            size="small"
-                            aria-label={`Retry calendar sync for ${row.name}`}
-                            disabled={syncStatuses.retryingCardId === row.creditCardId}
-                            onClick={() => syncStatuses.resyncCard(row.creditCardId)}
-                          >
-                            Retry
-                          </Button>
-                        )}
-                      </TableCell>
+              <>
+                {retryFailure && failedResyncRow && (
+                  <MessageBar role="alert" intent="error">
+                    <MessageBarBody>
+                      Couldn&rsquo;t retry the calendar sync for {failedResyncRow.name}: {retryFailure.message}
+                    </MessageBarBody>
+                  </MessageBar>
+                )}
+                <Table aria-label="Credit card calendar sync status" className="data-table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHeaderCell>Card</TableHeaderCell>
+                      <TableHeaderCell>Due Date</TableHeaderCell>
+                      <TableHeaderCell>Sync Status</TableHeaderCell>
+                      <ActionsColumnHeader />
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {syncStatuses.rows.map((row) => (
+                      <TableRow key={row.creditCardId}>
+                        <DataTableCell label="Card">{row.name}</DataTableCell>
+                        <DataTableCell label="Due Date">{formatShortDateUtc(row.dueDate)}</DataTableCell>
+                        <DataTableCell label="Sync Status">
+                          <CalendarSyncStatusBadge state={row.state} lastError={row.lastError} />
+                        </DataTableCell>
+                        <TableCell className="data-table__col--action">
+                          {row.state === 'Error' && (
+                            <Button
+                              appearance="subtle"
+                              size="small"
+                              icon={<ArrowSyncRegular />}
+                              aria-label={`Retry calendar sync for ${row.name}`}
+                              disabledFocusable={syncStatuses.retryingCardId === row.creditCardId}
+                              onClick={() => syncStatuses.resyncCard(row.creditCardId)}
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </div>
         )}
