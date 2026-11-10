@@ -246,7 +246,7 @@ public sealed class PotsService : IPotsService
 
         var accounts = _repository.GetAccounts().ToList();
         var potsAccount = FindPotsAccount(accounts, potsAccountId);
-        var pot = FindPot(potsAccount, request.PotId);
+        var pot = potsAccount.FindPot(request.PotId);
         var (bank, category) = PotWithdrawalValidator.ResolveBankAndCategory(
             request.BankId, request.CategoryId, request.Description, accounts, _repository.GetCategories());
         var operation = PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId);
@@ -261,7 +261,7 @@ public sealed class PotsService : IPotsService
 
         var accounts = _repository.GetAccounts().ToList();
         var potsAccount = FindPotsAccount(accounts, potsAccountId);
-        var pot = request.PotId is Guid potId ? FindPot(potsAccount, potId) : null;
+        var pot = request.PotId is Guid potId ? potsAccount.FindPot(potId) : null;
         var fundingLines = request.FundingLines
             .Select(line => new PotFundingLine(CashFlowReferenceResolver.ResolvePaymentSource(accounts, line.BankId), line.Amount))
             .ToList();
@@ -284,10 +284,6 @@ public sealed class PotsService : IPotsService
 
     private static Account FindPotsAccount(IEnumerable<Account> accounts, Guid potsAccountId) =>
         accounts.FirstOrThrow(account => account.Id == potsAccountId && account.Pots is not null, "Pots account", potsAccountId);
-
-    private static Pot FindPot(Account potsAccount, Guid potId) =>
-        potsAccount.Pots!.FirstOrDefault(candidate => candidate.Id == potId)
-            ?? throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
 
     private static void EnsureNotAnIncomeDeposit(PotOperation operation)
     {

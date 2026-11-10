@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
@@ -50,6 +51,31 @@ public class ReserveServiceTests
         });
 
         result.SplitLineCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task UpdateMovementAsync_ExistingId_RecordsASuccessfulPotTransactionSpan()
+    {
+        _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
+        var movement = _repository.PotTransactions[0];
+
+        await _sut.UpdateMovementAsync(movement.Id, new ReserveMovementUpdateDTO
+        {
+            BucketId = BucketId("HouseTreats"),
+            Amount = 150m,
+            Date = new DateOnly(2026, 7, 5),
+            Description = "Corrected"
+        });
+
+        var span = _tracer.Spans.Should().ContainSingle().Which;
+        using (new AssertionScope())
+        {
+            span.Name.Should().Be("CashFlow.ReserveService.UpdateMovement");
+            span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
+            span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("PotTransaction");
+            span.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(movement.Id.ToString());
+            span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        }
     }
 
     [Fact]

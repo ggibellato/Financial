@@ -345,11 +345,12 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_ToATemplateWithMoreCapabilities_DefaultsTheGainedFields()
+    public void ChangeSetup_ToATemplateWithMoreCapabilities_DefaultsTheGainedFields()
     {
-        var account = CreateMinimal(Capability.ReceivesIncome);
+        var account = Account.CreateWithCapabilities(
+            "Minimal", Currency.GBP, new HashSet<Capability> { Capability.ReceivesIncome }, template: AccountTemplate.Pots);
 
-        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+        account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: false);
 
         using (new AssertionScope())
         {
@@ -361,12 +362,12 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_ToAnUndefinedTemplate_ThrowsAndLeavesTheAccountUntouched()
+    public void ChangeSetup_ToAnUndefinedTemplate_ThrowsAndLeavesTheAccountUntouched()
     {
         var account = Account.CreateWithCapabilities(
             "Pots", Currency.GBP, new HashSet<Capability> { Capability.HasOpeningBalance, Capability.SupportsRoundUp });
 
-        var act = () => account.ChangeTemplate((AccountTemplate)99, Currency.GBP);
+        var act = () => account.ChangeSetup((AccountTemplate)99, [Currency.GBP], hasRecords: false);
 
         using (new AssertionScope())
         {
@@ -377,13 +378,13 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_ToTheSameTemplate_KeepsOpeningBalanceAndRoundUp()
+    public void ChangeSetup_ToTheSameSetup_KeepsOpeningBalanceAndRoundUp()
     {
         var account = CreateBank();
         account.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
         account.SetRoundUp(true);
 
-        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+        account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: false);
 
         using (new AssertionScope())
         {
@@ -393,16 +394,191 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_ToANotAllowedCurrency_ThrowsAndLeavesTheAccountUntouched()
+    public void ChangeSetup_ToANotAllowedCurrency_ThrowsAndLeavesTheAccountUntouched()
     {
         var account = CreateBank();
 
-        var act = () => account.ChangeTemplate(AccountTemplate.Bank, Currency.BRL);
+        var act = () => account.ChangeSetup(AccountTemplate.Bank, [Currency.BRL], hasRecords: false);
 
         using (new AssertionScope())
         {
             act.Should().Throw<ArgumentException>().WithMessage("Bank accounts must be GBP.");
             account.Currency.Should().Be(Currency.GBP);
+        }
+    }
+
+    [Fact]
+    public void ChangeSetup_ToSettlementWithSeveralCurrencies_SetsThemAll()
+    {
+        var account = CreateBank();
+
+        account.ChangeSetup(AccountTemplate.Settlement, [Currency.BRL, Currency.GBP], hasRecords: false);
+
+        using (new AssertionScope())
+        {
+            account.Template.Should().Be(AccountTemplate.Settlement);
+            account.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+            account.Currency.Should().Be(Currency.BRL);
+        }
+    }
+
+    [Fact]
+    public void ChangeSetup_WithRecordsToAnotherTemplate_ThrowsAndChangesNothing()
+    {
+        var account = CreateBank();
+        account.SetOpeningBalance(100m, new DateOnly(2026, 7, 1));
+
+        var act = () => account.ChangeSetup(AccountTemplate.Pots, [Currency.GBP], hasRecords: true);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Template and currency can't change once the account has transactions.");
+            account.Template.Should().Be(AccountTemplate.Bank);
+            account.OpeningBalance.Should().Be(OpeningBalance.Create(100m, new DateOnly(2026, 7, 1)));
+        }
+    }
+
+    [Fact]
+    public void ChangeSetup_WithRecordsToAnotherCurrency_ThrowsAndChangesNothing()
+    {
+        var account = CreateSettlement();
+        account.SetCurrencies([Currency.GBP]);
+
+        var act = () => account.ChangeSetup(AccountTemplate.Settlement, [Currency.BRL, Currency.GBP], hasRecords: true);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Template and currency can't change once the account has transactions.");
+            account.Currencies.Should().Equal(Currency.GBP);
+        }
+    }
+
+    [Fact]
+    public void ChangeSetup_WithRecordsToTheSameSetup_KeepsTheAccountAsItWas()
+    {
+        var account = CreateBank();
+        account.SetRoundUp(true);
+
+        account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: true);
+
+        using (new AssertionScope())
+        {
+            account.Template.Should().Be(AccountTemplate.Bank);
+            account.RoundUp.Should().Be(new RoundUpSetting(true));
+        }
+    }
+
+    [Fact]
+    public void ApplyCurrencies_MultiCurrencyAccount_SetsThem()
+    {
+        var account = CreateSettlement();
+
+        account.ApplyCurrencies([Currency.GBP, Currency.BRL]);
+
+        account.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+    }
+
+    [Fact]
+    public void ApplyCurrencies_SingleCurrencyAccount_KeepsItsCurrency()
+    {
+        var account = CreateBank();
+
+        account.ApplyCurrencies([Currency.BRL]);
+
+        using (new AssertionScope())
+        {
+            account.Currencies.Should().Equal(Currency.GBP);
+            account.Currency.Should().Be(Currency.GBP);
+        }
+    }
+
+    [Fact]
+    public void EnsureMultiCurrency_SingleCurrencyCapabilities_Throws()
+    {
+        var act = () => Account.EnsureMultiCurrency(_ => false, "Monzo");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Monzo has one currency.");
+    }
+
+    [Fact]
+    public void EnsureMultiCurrency_MultiCurrencyCapabilities_DoesNotThrow()
+    {
+        var act = () => Account.EnsureMultiCurrency(capability => capability == Capability.MultiCurrency, "Mãe");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ChosenCurrencies_RepeatedAndUnordered_AreDistinctAndOrdered()
+    {
+        Account.ChosenCurrencies([Currency.GBP, Currency.BRL, Currency.GBP]).Should().Equal(Currency.BRL, Currency.GBP);
+    }
+
+    [Fact]
+    public void ChosenCurrencies_None_Throws()
+    {
+        var act = () => Account.ChosenCurrencies([]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Choose at least one currency.");
+    }
+
+    [Fact]
+    public void EnsureHasParticipants_WithoutTheCapability_Throws()
+    {
+        var act = () => Account.EnsureHasParticipants(_ => false, "Barclays");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays has no participants.");
+    }
+
+    [Fact]
+    public void EnsureHasParticipants_WithTheCapability_DoesNotThrow()
+    {
+        var act = () => Account.EnsureHasParticipants(capability => capability == Capability.HasParticipants, "Mãe");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureHasCategorySetting_WithoutPots_Throws()
+    {
+        var act = () => Account.EnsureHasCategorySetting(_ => false, "Monzo");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Monzo has no category setting.");
+    }
+
+    [Fact]
+    public void EnsureHasCategorySetting_WithPots_DoesNotThrow()
+    {
+        var act = () => Account.EnsureHasCategorySetting(capability => capability == Capability.HasPots, "Reserva");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureSetupCanChange_WithRecordsToAnotherTemplate_ThrowsAndChangesNothing()
+    {
+        var account = CreateBank();
+
+        var act = () => account.EnsureSetupCanChange(AccountTemplate.Pots, [Currency.GBP], hasRecords: true);
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("Template and currency can't change once the account has transactions.");
+            account.Template.Should().Be(AccountTemplate.Bank);
+        }
+    }
+
+    [Fact]
+    public void EnsureSetupCanChange_WithoutRecordsToAnotherTemplate_DoesNotThrowOrChangeAnything()
+    {
+        var account = CreateBank();
+
+        var act = () => account.EnsureSetupCanChange(AccountTemplate.Pots, [Currency.GBP], hasRecords: false);
+
+        using (new AssertionScope())
+        {
+            act.Should().NotThrow();
+            account.Template.Should().Be(AccountTemplate.Bank);
         }
     }
 
@@ -619,6 +795,44 @@ public class AccountTests
         act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
     }
 
+    [Fact]
+    public void FindPot_OwnPot_ReturnsIt()
+    {
+        var (reserva, _, ariana) = ReservaWithTwoPots();
+
+        reserva.FindPot(ariana.Id).Should().BeSameAs(ariana);
+    }
+
+    [Fact]
+    public void FindPot_PotOfAnotherAccount_Throws()
+    {
+        var (reserva, _, _) = ReservaWithTwoPots();
+
+        var act = () => reserva.FindPot(Guid.NewGuid());
+
+        act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+    }
+
+    [Fact]
+    public void EnsureOwnsPot_OwnPot_DoesNotThrow()
+    {
+        var (reserva, investimento, _) = ReservaWithTwoPots();
+
+        var act = () => reserva.EnsureOwnsPot(investimento.Id);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureOwnsPot_PotOfAnotherAccount_Throws()
+    {
+        var (reserva, _, _) = ReservaWithTwoPots();
+
+        var act = () => reserva.EnsureOwnsPot(Guid.NewGuid());
+
+        act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+    }
+
     [Theory]
     [InlineData("ARIANA")]
     [InlineData(" ariana ")]
@@ -670,17 +884,17 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_AwayFromPots_DropsThePots()
+    public void ChangeSetup_AwayFromPots_DropsThePots()
     {
         var account = Account.Create("Holiday", AccountTemplate.Pots, Currency.GBP);
         account.AddPot(Pot.Create("Trip", 100m));
 
-        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+        account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: false);
 
         using (new AssertionScope())
         {
             account.Pots.Should().BeNull();
-            account.ChangeTemplate(AccountTemplate.Pots, Currency.GBP);
+            account.ChangeSetup(AccountTemplate.Pots, [Currency.GBP], hasRecords: false);
             account.Pots.Should().BeEmpty();
         }
     }
@@ -711,12 +925,12 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_AwayFromPots_DropsTheCategory()
+    public void ChangeSetup_AwayFromPots_DropsTheCategory()
     {
         var account = Account.Create("Holiday", AccountTemplate.Pots, Currency.GBP);
         account.SetCategory(Category.Create("Holidays"));
 
-        account.ChangeTemplate(AccountTemplate.Bank, Currency.GBP);
+        account.ChangeSetup(AccountTemplate.Bank, [Currency.GBP], hasRecords: false);
 
         account.Category.Should().BeNull();
     }
@@ -856,13 +1070,13 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_AwayFromSettlement_ClearsTheCurrenciesAndTheOtherParticipant()
+    public void ChangeSetup_AwayFromSettlement_ClearsTheCurrenciesAndTheOtherParticipant()
     {
         var account = CreateSettlement();
         account.SetCurrencies([Currency.BRL, Currency.GBP]);
         account.SetOtherParticipant("Mãe");
 
-        account.ChangeTemplate(AccountTemplate.Pots, Currency.GBP);
+        account.ChangeSetup(AccountTemplate.Pots, [Currency.GBP], hasRecords: false);
 
         using (new AssertionScope())
         {
@@ -873,11 +1087,11 @@ public class AccountTests
     }
 
     [Fact]
-    public void ChangeTemplate_ToSettlement_StartsWithTheGivenCurrencyAndNoOtherParticipant()
+    public void ChangeSetup_ToSettlement_StartsWithTheGivenCurrencyAndNoOtherParticipant()
     {
         var account = CreateBank();
 
-        account.ChangeTemplate(AccountTemplate.Settlement, Currency.BRL);
+        account.ChangeSetup(AccountTemplate.Settlement, [Currency.BRL], hasRecords: false);
 
         using (new AssertionScope())
         {

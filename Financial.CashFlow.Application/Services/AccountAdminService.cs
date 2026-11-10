@@ -63,14 +63,14 @@ public sealed class AccountAdminService : IAccountAdminService
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var currency = ParseCurrency(request.Currency);
+            var currency = CurrencyParser.Parse(request.Currency);
             var account = Account.Create(request.Name, ParseTemplate(request.TemplateName), currency);
             _repository.GetAccounts().EnsureAccountNameIsUnique(account.Name, null, DisplayName);
             var currencies = RequestedCurrencies(account.Has, account.Name, currency, request.Currencies);
             EnsureOtherParticipantFits(account.Has, account.Name, request.OtherParticipant);
             EnsureCapabilityFieldsArePresent(account.Has, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             var category = ResolveCategory(account.Has, account.Name, request.CategoryId, currentCategory: null);
-            ApplyCurrencies(account, currencies);
+            account.ApplyCurrencies(currencies);
             ApplyOtherParticipant(account, request.OtherParticipant);
             ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
             ApplyCategory(account, category);
@@ -105,21 +105,17 @@ public sealed class AccountAdminService : IAccountAdminService
 
             var account = FindAccountOrThrow(id);
             var template = ParseTemplate(request.TemplateName);
-            var currency = ParseCurrency(request.Currency);
+            var currency = CurrencyParser.Parse(request.Currency);
             var hasRecords = AccountReferenceReader.IsReferenced(_repository, id);
             var trimmedName = request.Name.Trim();
             Func<Capability, bool> templateHas = AccountTemplates.CapabilitiesOf(template).Contains;
             var currencies = RequestedCurrencies(templateHas, trimmedName, currency, request.Currencies);
-            var changesTemplate = !account.IsSetUpAs(template, currencies);
+            var changesSetup = !account.IsSetUpAs(template, currencies);
             var wasCard = account.Has(Capability.HasStatements);
-
-            if (changesTemplate && hasRecords)
-            {
-                throw new ArgumentException("Template and currency can't change once the account has transactions.");
-            }
+            account.EnsureSetupCanChange(template, currencies, hasRecords);
 
             _repository.GetAccounts().EnsureAccountNameIsUnique(request.Name, id, DisplayName);
-            var targetHas = changesTemplate ? templateHas : account.Has;
+            var targetHas = changesSetup ? templateHas : account.Has;
             EnsureOtherParticipantFits(targetHas, trimmedName, request.OtherParticipant);
             EnsureTemplateFieldsAreValid(trimmedName, template, currencies, request.OtherParticipant);
             EnsureCapabilityFieldsArePresent(targetHas, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
@@ -128,11 +124,7 @@ public sealed class AccountAdminService : IAccountAdminService
             await _repository.ApplyAndSaveAsync(() =>
             {
                 account.Update(request.Name);
-                if (changesTemplate)
-                {
-                    account.ChangeTemplate(template, currencies[0]);
-                    ApplyCurrencies(account, currencies);
-                }
+                account.ChangeSetup(template, currencies, hasRecords);
                 ApplyOtherParticipant(account, request.OtherParticipant);
                 ApplyCapabilityFields(account, request.OpeningBalance, request.BalanceStartDate, request.RoundUpEnabled);
                 ApplyCategory(account, category);
@@ -214,18 +206,13 @@ public sealed class AccountAdminService : IAccountAdminService
     private static IReadOnlyList<Currency> RequestedCurrencies(
         Func<Capability, bool> has, string accountName, Currency currency, IReadOnlyList<string>? codes)
     {
-        if (!has(Capability.MultiCurrency))
+        if (!has(Capability.MultiCurrency) && (codes is null || codes.Select(CurrencyParser.Parse).Distinct().SequenceEqual([currency])))
         {
-            return codes is null || codes.Select(ParseCurrency).Distinct().SequenceEqual([currency])
-                ? [currency]
-                : throw new ArgumentException($"{accountName} has one currency.");
+            return [currency];
         }
 
-        var requested = (codes ?? []).Select(ParseCurrency).Distinct().Order().ToList();
-        if (requested.Count == 0)
-        {
-            throw new ArgumentException("Choose at least one currency.");
-        }
+        Account.EnsureMultiCurrency(has, accountName);
+        var requested = Account.ChosenCurrencies((codes ?? []).Select(CurrencyParser.Parse));
 
         return requested.Contains(currency)
             ? requested
@@ -234,9 +221,9 @@ public sealed class AccountAdminService : IAccountAdminService
 
     private static void EnsureOtherParticipantFits(Func<Capability, bool> has, string accountName, string? otherParticipant)
     {
-        if (!has(Capability.HasParticipants) && otherParticipant is not null)
+        if (otherParticipant is not null)
         {
-            throw new ArgumentException($"{accountName} has no participants.");
+            Account.EnsureHasParticipants(has, accountName);
         }
     }
 
@@ -244,16 +231,8 @@ public sealed class AccountAdminService : IAccountAdminService
         string accountName, AccountTemplate template, IReadOnlyList<Currency> currencies, string? otherParticipant)
     {
         var preview = Account.Create(accountName, template, currencies[0]);
-        ApplyCurrencies(preview, currencies);
+        preview.ApplyCurrencies(currencies);
         ApplyOtherParticipant(preview, otherParticipant);
-    }
-
-    private static void ApplyCurrencies(Account account, IReadOnlyList<Currency> currencies)
-    {
-        if (account.Has(Capability.MultiCurrency))
-        {
-            account.SetCurrencies(currencies);
-        }
     }
 
     private static void ApplyOtherParticipant(Account account, string? otherParticipant)
@@ -279,11 +258,12 @@ public sealed class AccountAdminService : IAccountAdminService
 
     private Category? ResolveCategory(Func<Capability, bool> has, string accountName, Guid? categoryId, Category? currentCategory)
     {
-        if (!has(Capability.HasPots))
+        if (categoryId is null && !has(Capability.HasPots))
         {
-            return categoryId is null ? null : throw new ArgumentException($"{accountName} has no category setting.");
+            return null;
         }
 
+        Account.EnsureHasCategorySetting(has, accountName);
         if (categoryId is not { } id)
         {
             throw new ArgumentException("Choose the category for this account's bank expenses.");
@@ -307,11 +287,6 @@ public sealed class AccountAdminService : IAccountAdminService
         EnumParser.TryParseEnum<AccountTemplate>(name, out var template) && AccountTemplates.Available.Contains(template)
             ? template
             : throw new ArgumentException($"Unknown account template '{name}'.");
-
-    private static Currency ParseCurrency(string? code) =>
-        CurrencyParser.TryParse(code, out var currency)
-            ? currency
-            : throw new ArgumentException($"Unknown currency '{code}'.");
 
     private static AccountTemplateDTO ToTemplateDto(AccountTemplate template)
     {
