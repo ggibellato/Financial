@@ -37,10 +37,30 @@ describe('ErrorState', () => {
     expect(onRetry).toHaveBeenCalledOnce()
   })
 
-  it('moves focus to the error when focus would otherwise be lost', () => {
-    render(<ErrorState message="An error occurred" onRetry={vi.fn()} />)
+  it('leaves focus where it is when the error first appears, so the page does not jump', async () => {
+    vi.resetModules()
+    const { default: FreshErrorState } = await import('../ErrorState')
+    render(<FreshErrorState message="An error occurred" onRetry={vi.fn()} />)
 
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(screen.getByRole('alert')).not.toHaveFocus()
+  })
+
+  it('stops waiting for the retry outcome once the user moves focus elsewhere', () => {
+    function RetryThenMoveOn() {
+      const [phase, setPhase] = useState<'error' | 'working' | 'later-error'>('error')
+      if (phase === 'error') return <ErrorState message="Failed" onRetry={() => setPhase('working')} />
+      if (phase === 'working') return <button onClick={() => setPhase('later-error')}>Carry on</button>
+      return <ErrorState message="A later, unrelated failure" />
+    }
+    render(<RetryThenMoveOn />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    const carryOn = screen.getByRole('button', { name: 'Carry on' })
+    carryOn.focus()
+    carryOn.blur()
+    fireEvent.click(carryOn)
+
+    expect(screen.getByRole('alert')).not.toHaveFocus()
   })
 
   it('takes focus again after a failed retry unmounts the Try again button', () => {

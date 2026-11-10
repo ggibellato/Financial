@@ -19,8 +19,8 @@ function Breadcrumb() {
   return (
     <nav className="breadcrumb" aria-label="Breadcrumb">
       <ol className="breadcrumb__list">
-        {trail.map((label) => (
-          <li key={label}>{label}</li>
+        {trail.map((label, index) => (
+          <li key={index}>{label}</li>
         ))}
         {detail ? (
           <>

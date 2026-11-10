@@ -299,6 +299,10 @@ after the data columns — not leading. `AccountTransactionsGrid.tsx` (through
 `TableCell`, using `EditRegular`/`DeleteRegular` from `@fluentui/react-icons`.
 This keeps the action affordance in a fixed,
 predictable place regardless of how many data columns a given grid has.
+The column's header cell is `grid/ActionsColumnHeader.tsx`: it stays visually
+blank but carries the accessible name "Actions", so screen readers name the
+column; pass the action column's class when it is not the default
+`.data-table__col--action`.
 
 Show up to **two** actions as direct icon buttons in the Actions cell (e.g.
 Edit and Delete, the pair every grid in this repo has today). This is one

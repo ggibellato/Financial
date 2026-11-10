@@ -1,4 +1,4 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
 import { EditRegular } from '@fluentui/react-icons'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
@@ -12,6 +12,7 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
 import { useSuggestedValues } from '../hooks/useSuggestedValues'
 import { formatN2 } from '../utils/formatters'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import './InvestmentSnapshotsPage.css'
 
 function SnapshotColumns() {
@@ -193,7 +194,7 @@ export default function InvestmentSnapshotsPage() {
                     sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                     onSort={requestSort}
                   />
-                  <TableHeaderCell />
+                  <ActionsColumnHeader />
                 </TableRow>
               </TableHeader>
               <TableBody>

@@ -18,7 +18,7 @@ describe('RouteAnnouncer', () => {
   it('titles the document with the current page', async () => {
     renderAt('/investments/dashboard')
 
-    await waitFor(() => expect(document.title).toBe('Dashboard - Financial'))
+    await waitFor(() => expect(document.title).toBe('Dashboard - Investments - Financial'))
   })
 
   it('announces the new page in a polite status region after navigation', async () => {
@@ -27,7 +27,7 @@ describe('RouteAnnouncer', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Go to Monthly' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Monthly')
-    await waitFor(() => expect(document.title).toBe('Monthly - Financial'))
+    await waitFor(() => expect(document.title).toBe('Monthly - CashFlow - Financial'))
   })
 
   it('covers admin pages nested under a group', async () => {
@@ -36,6 +36,7 @@ describe('RouteAnnouncer', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Go to Tax Rules' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Tax Rules')
+    await waitFor(() => expect(document.title).toBe('Tax Rules - Investment - Admin - Financial'))
   })
 
   it('uses the detail label for a detail page', async () => {
@@ -44,7 +45,7 @@ describe('RouteAnnouncer', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Go to an account' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Account')
-    await waitFor(() => expect(document.title).toBe('Account - Financial'))
+    await waitFor(() => expect(document.title).toBe('Account - CashFlow - Financial'))
   })
 
   it('falls back to the app name and an empty announcement for an unknown route', async () => {

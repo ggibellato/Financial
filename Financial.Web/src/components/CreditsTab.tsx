@@ -525,7 +525,7 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'yieldOnMarket' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell />
+              <TableHeaderCell aria-label="Yield details" />
               <TableHeaderCell>FX</TableHeaderCell>
               <ActionsColumnHeader />
             </TableRow>

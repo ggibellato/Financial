@@ -77,7 +77,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Monthly')
-    await waitFor(() => expect(document.title).toBe('Monthly - Financial'))
+    await waitFor(() => expect(document.title).toBe('Monthly - CashFlow - Financial'))
   })
 
   it('renders_in_light_mode_by_default_regardless_of_os_preference', () => {
