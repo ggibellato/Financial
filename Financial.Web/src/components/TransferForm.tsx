@@ -173,7 +173,6 @@ export default function TransferForm({
             <Input value={note} onChange={(e) => onFieldChange('note', e.target.value)} />
           </Field>
         </div>
-
       </fieldset>
       <FormSaveActions
         saveLabel={isEditing ? 'Save' : 'Add Transfer'}

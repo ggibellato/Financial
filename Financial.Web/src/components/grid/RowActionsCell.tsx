@@ -6,6 +6,7 @@ interface RowActionsCellProps {
   itemName: string
   editDisabled?: boolean
   deleteDisabled?: boolean
+  isDeleting?: boolean
   onEdit?: (button: HTMLButtonElement) => void
   onDelete?: () => void
   children?: ReactNode
@@ -16,6 +17,7 @@ export default function RowActionsCell({
   itemName,
   editDisabled,
   deleteDisabled,
+  isDeleting = false,
   onEdit,
   onDelete,
   children,
@@ -40,8 +42,9 @@ export default function RowActionsCell({
             appearance="subtle"
             size="small"
             icon={<DeleteRegular />}
-            aria-label={`Delete ${itemName}`}
+            aria-label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
             disabled={deleteDisabled}
+            disabledFocusable={isDeleting}
             onClick={onDelete}
           />
         )}

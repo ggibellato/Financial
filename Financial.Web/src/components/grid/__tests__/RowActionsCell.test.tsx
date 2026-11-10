@@ -43,6 +43,27 @@ describe('RowActionsCell', () => {
     expect(screen.getByRole('button', { name: 'Edit Chase' })).toBeEnabled()
   })
 
+  it('announces a delete in progress and keeps the button focusable but inert', () => {
+    const onDelete = vi.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="bill INSS" isDeleting onEdit={vi.fn()} onDelete={onDelete} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    const deleting = screen.getByRole('button', { name: 'Deleting bill INSS' })
+    deleting.focus()
+    fireEvent.click(deleting)
+
+    expect(deleting).toHaveFocus()
+    expect(deleting).toHaveAttribute('aria-disabled', 'true')
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
   it('shows only Edit for a row that cannot be deleted', () => {
     render(
       <Table>

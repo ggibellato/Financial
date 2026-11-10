@@ -237,7 +237,6 @@ export default function ExpenseForm({
             </div>
           )}
         </div>
-
       </fieldset>
       <FormSaveActions saveLabel={isEditing ? 'Save' : `Add ${noun}`} isSaving={isSaving} onCancel={onCancel} />
     </form>

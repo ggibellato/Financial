@@ -169,7 +169,6 @@ export default function BalanceAdjustmentForm({
             </div>
           </>
         )}
-
       </fieldset>
       <FormSaveActions
         saveLabel={isEditing ? 'Save' : 'Adjust balance'}

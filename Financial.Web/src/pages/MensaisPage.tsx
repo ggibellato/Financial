@@ -80,7 +80,7 @@ function BillRow({
       </DataTableCell>
       <RowActionsCell
         itemName={`bill ${bill.description}`}
-        deleteDisabled={isDeleting}
+        isDeleting={isDeleting}
         onEdit={() => onEdit(bill)}
         onDelete={() => confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))}
       />

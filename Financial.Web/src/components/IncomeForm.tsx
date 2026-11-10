@@ -246,7 +246,6 @@ export default function IncomeForm({
         )}
 
         {funding.isShown && <FundedFromSection funding={funding} banks={banks} />}
-
       </fieldset>
       <FormSaveActions
         saveLabel={isEditing ? 'Save' : 'Add Income'}
