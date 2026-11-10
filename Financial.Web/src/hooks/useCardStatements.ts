@@ -64,7 +64,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
 
   const afterSave = (message: string) => {
     setSavedCount((count) => count + 1)
-    void statements.refresh()
+    statements.retry()
     onChanged(message)
   }
 
@@ -112,7 +112,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       })
       .catch((err: unknown) => {
         setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement') })
-        void statements.refresh()
+        statements.retry()
       })
   }
 
@@ -131,7 +131,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       })
       .catch((err: unknown) => {
         setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement') })
-        void statements.refresh()
+        statements.retry()
       })
   }
 

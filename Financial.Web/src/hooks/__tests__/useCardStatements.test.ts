@@ -167,6 +167,27 @@ describe('useCardStatements', () => {
     expect(result.current.payForm?.bankId).toBe('barclays')
   })
 
+  it('clears the reload error once a later payment and its reload succeed', async () => {
+    const { result } = await renderLoaded()
+    markCardStatementPaidMock.mockRejectedValueOnce(new ApiError('Something went wrong on the server.', 500))
+    getAccountStatementsMock.mockRejectedValueOnce(new Error('Network down'))
+    act(() => result.current.openPayForm(OCTOBER))
+    act(() => result.current.setPayField('bankId', 'barclays'))
+
+    act(() => result.current.submitPayForm())
+
+    await waitFor(() => expect(result.current.error).not.toBeNull())
+    expect(result.current.statements).toHaveLength(2)
+
+    markCardStatementPaidMock.mockResolvedValueOnce(PAID_STATEMENT)
+    getAccountStatementsMock.mockResolvedValueOnce([{ ...OCTOBER, status: 'Paid', isPaid: true }, SEPTEMBER])
+    act(() => result.current.submitPayForm())
+
+    await waitFor(() => expect(result.current.statements[0].status).toBe('Paid'))
+    expect(result.current.payForm).toBeNull()
+    expect(result.current.error).toBeNull()
+  })
+
   it('ignores opening another payment while one is saving', async () => {
     markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
     const { result } = await renderLoaded()
