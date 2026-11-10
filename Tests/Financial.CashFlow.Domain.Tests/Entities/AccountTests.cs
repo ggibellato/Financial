@@ -89,6 +89,37 @@ public class AccountTests
     }
 
     [Fact]
+    public void IsSetUpAs_WithTheOwnTemplateAndCurrencies_IsTrue()
+    {
+        CreateBank().IsSetUpAs(AccountTemplate.Bank, [Currency.GBP]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsSetUpAs_WithAnotherTemplate_IsFalse()
+    {
+        CreateBank().IsSetUpAs(AccountTemplate.Settlement, [Currency.GBP]).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(Currency.BRL)]
+    [InlineData(Currency.GBP, Currency.BRL)]
+    public void IsSetUpAs_WithOtherCurrencies_IsFalse(params Currency[] currencies)
+    {
+        CreateBank().IsSetUpAs(AccountTemplate.Bank, currencies).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(new[] { Currency.BRL, Currency.GBP }, true)]
+    [InlineData(new[] { Currency.GBP, Currency.BRL }, false)]
+    public void IsSetUpAs_WithSeveralCurrencies_ComparesThemInOrder(Currency[] currencies, bool expected)
+    {
+        var account = CreateSettlement();
+        account.SetCurrencies([Currency.GBP, Currency.BRL]);
+
+        account.IsSetUpAs(AccountTemplate.Settlement, currencies).Should().Be(expected);
+    }
+
+    [Fact]
     public void CreateWithCapabilities_WithTemplateOutsideTheDefaultGroup_DoesNotJoinIt()
     {
         var account = Account.CreateWithCapabilities("Pots", Currency.GBP, new HashSet<Capability>(), template: (AccountTemplate)99);

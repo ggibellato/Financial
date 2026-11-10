@@ -110,7 +110,7 @@ public sealed class AccountAdminService : IAccountAdminService
             var trimmedName = request.Name.Trim();
             Func<Capability, bool> templateHas = AccountTemplates.CapabilitiesOf(template).Contains;
             var currencies = RequestedCurrencies(templateHas, trimmedName, currency, request.Currencies);
-            var changesTemplate = template != account.Template || !currencies.SequenceEqual(account.Currencies);
+            var changesTemplate = !account.IsSetUpAs(template, currencies);
             var wasCard = account.Has(Capability.HasStatements);
 
             if (changesTemplate && hasRecords)
