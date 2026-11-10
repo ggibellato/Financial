@@ -14,6 +14,9 @@ namespace Financial.CashFlow.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class ReserveServiceTests
 {
+    private const string LinkedToIncomeMessage = "This pot transaction is linked to an income and can only be changed by editing that income.";
+    private const string LinkedOperationMessage = "This pot transaction belongs to a pot deposit or withdrawal; edit it from the Pots account.";
+
     private readonly StubCashFlowRepository _repository;
     private readonly RecordingTelemetryTracer _tracer;
     private readonly ReserveService _sut;
@@ -88,6 +91,7 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"Pot transaction '{unknownId}' was not found.");
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.ReserveService.UpdateMovement");
     }
 
     [Fact]
@@ -105,6 +109,7 @@ public class ReserveServiceTests
         });
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Pot '{unknownPotId}' is not recognized.");
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.UpdateMovement");
     }
 
     [Fact]
@@ -173,6 +178,7 @@ public class ReserveServiceTests
             await act.Should().ThrowAsync<ArgumentException>().WithMessage($"Pot '{orphan.Id}' is not recognized.");
             movement.Amount.Should().Be(40m);
             _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ReserveService.UpdateMovement");
         }
     }
 
@@ -266,6 +272,7 @@ public class ReserveServiceTests
         var act = async () => await service.DeleteMovementAsync(unknownId);
 
         await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"Pot transaction '{unknownId}' was not found.");
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.ReserveService.DeleteMovement");
     }
 
     private static Income LinkedIncome()
@@ -290,7 +297,7 @@ public class ReserveServiceTests
             Description = "Corrected"
         });
 
-        await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage("This pot transaction is linked to an income and can only be changed by editing that income.");
+        await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage(LinkedToIncomeMessage);
         linked.Amount.Should().Be(100m);
     }
 
@@ -303,7 +310,7 @@ public class ReserveServiceTests
 
         var act = async () => await _sut.DeleteMovementAsync(linked.Id);
 
-        await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage("This pot transaction is linked to an income and can only be changed by editing that income.");
+        await act.Should().ThrowAsync<ReserveMovementLinkedToIncomeException>().WithMessage(LinkedToIncomeMessage);
         _repository.PotTransactions.Should().ContainSingle();
     }
 
@@ -342,7 +349,7 @@ public class ReserveServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<LinkedOperationConflictException>()
-                .WithMessage("This pot transaction belongs to a pot deposit or withdrawal; edit it from the Pots account.");
+                .WithMessage(LinkedOperationMessage);
             linked.Amount.Should().Be(-30m);
             linked.Description.Should().Be("Boots");
             _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.UpdateMovement");
@@ -359,7 +366,7 @@ public class ReserveServiceTests
         using (new AssertionScope())
         {
             await act.Should().ThrowAsync<LinkedOperationConflictException>()
-                .WithMessage("This pot transaction belongs to a pot deposit or withdrawal; edit it from the Pots account.");
+                .WithMessage(LinkedOperationMessage);
             _repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(linked);
             _tracer.ShouldHaveFailedSpan<LinkedOperationConflictException>("CashFlow.ReserveService.DeleteMovement");
         }

@@ -1006,7 +1006,7 @@ describe('AccountScreenPage on a Pots account', () => {
   it('keeps the values and shows the server message when a movement edit fails', async () => {
     const user = userEvent.setup()
     withPotsAccount()
-    updateReserveMovementMock.mockRejectedValue(new ApiError('This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.', 409))
+    updateReserveMovementMock.mockRejectedValue(new ApiError('This pot transaction belongs to a pot deposit or withdrawal; edit it from the Pots account.', 409))
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
 
     const edit = within((await screen.findByText('Boots')).closest('tr') as HTMLElement).getByRole('button', { name: 'Edit pot transaction' })

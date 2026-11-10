@@ -61,9 +61,7 @@ public class PotTransactionTests
     public void Update_PotOfAnotherAccount_ThrowsAndChangesNothing()
     {
         var (reserva, investimento, _) = ReservaWithTwoPots();
-        var holidays = TestAccounts.Pots("Holidays");
-        var beach = Pot.Create("Beach", 100m);
-        holidays.AddPot(beach);
+        var (_, beach) = HolidaysWithBeach();
         var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
 
         var act = () => movement.Update(reserva, beach, 25m, new DateOnly(2026, 7, 5), "Corrected");
@@ -82,9 +80,7 @@ public class PotTransactionTests
     public void Update_AccountThatDoesNotOwnTheTransaction_ThrowsAndChangesNothing()
     {
         var (_, investimento, _) = ReservaWithTwoPots();
-        var holidays = TestAccounts.Pots("Holidays");
-        var beach = Pot.Create("Beach", 100m);
-        holidays.AddPot(beach);
+        var (holidays, beach) = HolidaysWithBeach();
         var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
 
         var act = () => movement.Update(holidays, beach, 25m, new DateOnly(2026, 7, 5), "Corrected");
@@ -94,6 +90,8 @@ public class PotTransactionTests
             act.Should().Throw<ArgumentException>().WithMessage("This pot transaction isn't in Holidays.");
             movement.Pot.Should().BeSameAs(investimento);
             movement.Amount.Should().Be(10m);
+            movement.Date.Should().Be(new DateOnly(2026, 7, 1));
+            movement.Description.Should().Be("Original");
         }
     }
 
@@ -101,7 +99,7 @@ public class PotTransactionTests
     public void OwningAccount_IsTheAccountThatOwnsThePot()
     {
         var (reserva, _, ariana) = ReservaWithTwoPots();
-        var holidays = TestAccounts.Pots("Holidays");
+        var (holidays, _) = HolidaysWithBeach();
 
         PotTransaction.Create(ariana, 10m, new DateOnly(2026, 7, 1), "Split").OwningAccount([holidays, reserva]).Should().BeSameAs(reserva);
     }
@@ -110,18 +108,9 @@ public class PotTransactionTests
     public void OwningAccount_PotOfNoAccount_IsNull()
     {
         var (reserva, _, _) = ReservaWithTwoPots();
+        var stray = Pot.Create("Stray", 10m);
 
-        PotTransaction.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "Split").OwningAccount([reserva]).Should().BeNull();
-    }
-
-    private static (Account Reserva, Pot Investimento, Pot Ariana) ReservaWithTwoPots()
-    {
-        var reserva = TestAccounts.Pots("Reserva");
-        var investimento = Pot.Create("Investimento", 50m);
-        var ariana = Pot.Create("Ariana", 50m);
-        reserva.AddPot(investimento);
-        reserva.AddPot(ariana);
-        return (reserva, investimento, ariana);
+        PotTransaction.Create(stray, 10m, new DateOnly(2026, 7, 1), "Split").OwningAccount([reserva]).Should().BeNull();
     }
 
     [Fact]
@@ -195,5 +184,23 @@ public class PotTransactionTests
         var account = Account.Create("Other", template, Currency.GBP);
 
         PotTransaction.Create(Investimento, 100m, new DateOnly(2026, 7, 1), "Split").ContributionTo(account).Should().Be(0m);
+    }
+
+    private static (Account Reserva, Pot Investimento, Pot Ariana) ReservaWithTwoPots()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var investimento = Pot.Create("Investimento", 50m);
+        var ariana = Pot.Create("Ariana", 50m);
+        reserva.AddPot(investimento);
+        reserva.AddPot(ariana);
+        return (reserva, investimento, ariana);
+    }
+
+    private static (Account Holidays, Pot Beach) HolidaysWithBeach()
+    {
+        var holidays = TestAccounts.Pots("Holidays");
+        var beach = Pot.Create("Beach", 100m);
+        holidays.AddPot(beach);
+        return (holidays, beach);
     }
 }
