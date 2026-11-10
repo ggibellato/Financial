@@ -276,7 +276,7 @@ export default function CardStatementsTab({
         />
       )}
       {error && statements.length === 0 ? (
-        <ErrorState message={error} onRetry={retry} />
+        <ErrorState message={error} onRetry={retryKeepingFocus} />
       ) : (
         <>
           {error && (

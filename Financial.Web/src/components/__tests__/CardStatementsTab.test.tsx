@@ -205,6 +205,7 @@ describe('CardStatementsTab', () => {
 
     expect(screen.getByText('Unable to load the statements')).toBeInTheDocument()
     expect(statements.retry).toHaveBeenCalled()
+    expect(screen.getByRole('heading', { name: 'Statements' })).toHaveFocus()
   })
 
   it('offers Pay on unpaid rows and Unmark on paid rows', async () => {
