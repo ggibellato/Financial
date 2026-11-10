@@ -11792,53 +11792,6 @@
         ]
       }
     },
-    "/expenses/month/{year}/{month}": {
-      "get": {
-        "parameters": [
-          {
-            "description": "The year.",
-            "in": "path",
-            "name": "year",
-            "required": true,
-            "schema": {
-              "format": "int32",
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The month (1-12).",
-            "in": "path",
-            "name": "month",
-            "required": true,
-            "schema": {
-              "format": "int32",
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ExpenseDTO"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "200 OK with the matching expenses."
-          }
-        },
-        "summary": "Lists expenses recorded in a given month.",
-        "tags": [
-          "Expenses"
-        ]
-      }
-    },
     "/expenses/month/{year}/{month}/category-totals": {
       "get": {
         "parameters": [
@@ -11881,53 +11834,6 @@
           }
         },
         "summary": "Returns expense totals grouped by category for a given month.",
-        "tags": [
-          "Expenses"
-        ]
-      }
-    },
-    "/expenses/month/{year}/{month}/unpaid-card-charges": {
-      "get": {
-        "parameters": [
-          {
-            "description": "The year.",
-            "in": "path",
-            "name": "year",
-            "required": true,
-            "schema": {
-              "format": "int32",
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer"
-            }
-          },
-          {
-            "description": "The month (1-12).",
-            "in": "path",
-            "name": "month",
-            "required": true,
-            "schema": {
-              "format": "int32",
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": "integer"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/ExpenseDTO"
-                  },
-                  "type": "array"
-                }
-              }
-            },
-            "description": "200 OK with the matching expenses."
-          }
-        },
-        "summary": "Lists unpaid credit card charges (unsettled) recorded in a given month.",
         "tags": [
           "Expenses"
         ]

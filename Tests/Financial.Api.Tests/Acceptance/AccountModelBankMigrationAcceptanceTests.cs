@@ -25,14 +25,14 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         await AddBankExpenseAsync(new DateOnly(2026, 9, 2), "After the start date", 15m, BarclaysId);
 
         var augustTotals = await GetAsync<List<CategoryTotalDTO>>("/api/v1/financial/expenses/month/2026/8/category-totals");
-        var augustExpenses = await GetAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/8");
+        var augustRows = await GetAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{BarclaysId}/transactions/2026/8");
         var august = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysId}/2026/8");
         var september = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysId}/2026/9");
 
         using (new AssertionScope())
         {
             augustTotals.Should().ContainSingle(t => t.Category == "Mercado").Which.TotalValue.Should().Be(40m);
-            augustExpenses.Should().ContainSingle(e => e.Description == "Before the start date");
+            augustRows.Should().ContainSingle(row => row.Description == "Before the start date");
             august.Balance.Should().Be(500m);
             september.Balance.Should().Be(485m);
         }
@@ -45,13 +45,13 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         await SetOpeningBalanceAsync(ChaseId, 100.50m, new DateOnly(2026, 9, 1));
         var expenseId = await AddBankExpenseAsync(new DateOnly(2026, 9, 3), "Coffee", 2.30m, ChaseId);
 
-        var expenses = await GetRawAsync("/api/v1/financial/expenses/month/2026/9");
+        var expense = await ExpenseOfRowAsync(ChaseId, 9, expenseId);
         var chase = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{ChaseId}/2026/9");
 
         using (new AssertionScope())
         {
-            expenses.Should().Be(
-                $$"""[{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}]""");
+            expense.Should().Be(
+                $$"""{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}""");
             chase.Balance.Should().Be(98.20m);
         }
     }
@@ -132,11 +132,12 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         return (await response.Content.ReadFromJsonAsync<T>())!;
     }
 
-    private async Task<string> GetRawAsync(string route)
+    private async Task<string> ExpenseOfRowAsync(string accountId, int month, Guid expenseId)
     {
-        var response = await Client.GetAsync(route);
+        var response = await Client.GetAsync($"/api/v1/financial/accounts/{accountId}/transactions/2026/{month}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
-        return JsonSerializer.Serialize(document.RootElement);
+        var row = document.RootElement.EnumerateArray().Single(row => row.GetProperty("id").GetGuid() == expenseId);
+        return JsonSerializer.Serialize(row.GetProperty("expense"));
     }
 }

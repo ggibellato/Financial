@@ -72,14 +72,14 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     private async Task<AccountDetailDTO> AccountAsync(string accountId, int year = 2026, int month = 10) =>
         (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/{year}/{month}"))!;
 
-    private async Task<List<AccountTransactionDTO>> TransactionsAsync(string accountId) =>
-        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/10"))!;
+    private async Task<List<AccountTransactionDTO>> TransactionsAsync(string accountId, int month = 10) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/{month}"))!;
 
     private async Task<List<PayableStatementDTO>> PayableStatementsAsync() =>
         (await Client.GetFromJsonAsync<List<PayableStatementDTO>>($"{Api}/accounts/payable-statements"))!;
 
     private async Task<List<ExpenseDTO>> UnpaidChargesAsync(int month) =>
-        (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/{month}/unpaid-card-charges"))!;
+        (await TransactionsAsync(AmexId, month)).Select(row => row.Expense!).Where(expense => expense.PaymentStatus == "CreditCardCharge").ToList();
 
     private Task<HttpResponseMessage> UpdateChargeAsync(string chargeId, DateOnly date, DateOnly invoiceDate, decimal value = 10m,
         string description = "September taxi", string categoryId = MercadoId, bool countsAsTithe = true, string creditCardId = AmexId) =>
@@ -212,8 +212,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         var response = await MarkPaidAsync(OctoberStatementId, new DateOnly(2026, 10, 12));
 
         var statement = await response.Content.ReadFromJsonAsync<CardStatementDTO>();
-        var charge = (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10"))!
-            .Single(expense => expense.Id == Guid.Parse(OctoberChargeId));
+        var charge = (await TransactionsAsync(AmexId)).Single(row => row.Id == Guid.Parse(OctoberChargeId)).Expense!;
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.OK);

@@ -117,16 +117,14 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
     public async Task GetDefaultGroupSummary_AnyMonth_BalancesAndRoundUpsEqualTodaysEndpoints(int month)
     {
         var summary = await SummaryAsync(month);
-        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"/api/v1/financial/expenses/month/2026/{month}");
-
         using (new AssertionScope())
         {
             foreach (var member in BankMembers(summary))
             {
                 var account = await Client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{member.AccountId}/2026/{month}");
+                var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{member.AccountId}/transactions/2026/{month}");
                 member.Balance.Should().Be(account!.Balance, member.Name);
-                member.RoundUpTotal.Should().Be(
-                    expenses!.Where(expense => expense.PaymentSourceBankId == member.AccountId).Sum(expense => expense.RoundUpAmount ?? 0m), member.Name);
+                member.RoundUpTotal.Should().Be(-rows!.Sum(row => row.RoundUp ?? 0m), member.Name);
             }
         }
     }
