@@ -6,7 +6,7 @@ interface RowActionsCellProps {
   itemName: string
   editDisabled?: boolean
   deleteDisabled?: boolean
-  onEdit: (button: HTMLButtonElement) => void
+  onEdit?: (button: HTMLButtonElement) => void
   onDelete?: () => void
   children?: ReactNode
   className?: string
@@ -25,14 +25,16 @@ export default function RowActionsCell({
     <TableCell className={className}>
       <div className="data-table__actions-cell">
         {children}
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label={`Edit ${itemName}`}
-          disabled={editDisabled}
-          onClick={(event) => onEdit(event.currentTarget)}
-        />
+        {onEdit && (
+          <Button
+            appearance="subtle"
+            size="small"
+            icon={<EditRegular />}
+            aria-label={`Edit ${itemName}`}
+            disabled={editDisabled}
+            onClick={(event) => onEdit(event.currentTarget)}
+          />
+        )}
         {onDelete && (
           <Button
             appearance="subtle"

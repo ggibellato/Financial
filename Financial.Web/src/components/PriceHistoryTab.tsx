@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { DefaultLegendContentProps } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableHeader, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
@@ -80,15 +80,11 @@ function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
       >
         <span title={entry.sourceReference ?? undefined}>{SOURCE_LABELS[entry.source]}</span>
       </DataTableCell>
-      {entry.isManual ? (
-        <RowActionsCell
-          itemName={`price ${formatShortDate(entry.date)}`}
-          onEdit={() => onEdit(entry)}
-          onDelete={() => onDelete(entry.date)}
-        />
-      ) : (
-        <TableCell className="data-table__col--action" />
-      )}
+      <RowActionsCell
+        itemName={`price ${formatShortDate(entry.date)}`}
+        onEdit={entry.isManual ? () => onEdit(entry) : undefined}
+        onDelete={entry.isManual ? () => onDelete(entry.date) : undefined}
+      />
     </TableRow>
   )
 }

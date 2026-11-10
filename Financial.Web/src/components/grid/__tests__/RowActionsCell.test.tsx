@@ -56,4 +56,21 @@ describe('RowActionsCell', () => {
 
     expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Edit snapshot Chase'])
   })
+
+  it('shows only Delete for a row that cannot be edited, and nothing for a row with no actions', () => {
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="refund Chase" onDelete={vi.fn()} />
+          </TableRow>
+          <TableRow>
+            <RowActionsCell itemName="price 15/03/2024" />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Delete refund Chase'])
+  })
 })

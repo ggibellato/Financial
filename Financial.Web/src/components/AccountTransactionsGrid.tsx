@@ -11,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@fluentui/react-components'
-import { CalendarArrowRightRegular, DeleteRegular } from '@fluentui/react-icons'
+import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
@@ -186,11 +186,12 @@ export default function AccountTransactionsGrid({
     open()
   }
   const renderActions = (row: AccountTransactionDto) => {
+    const name = rowName(row)
     if (row.canEdit) {
       return (
         <RowActionsCell
           className={actionClassName}
-          itemName={rowName(row)}
+          itemName={name}
           editDisabled={isEditDisabled?.(row) ?? false}
           onEdit={(button) => onEdit(row, button)}
           onDelete={() => onDelete(row)}
@@ -201,7 +202,7 @@ export default function AccountTransactionsGrid({
                 appearance="subtle"
                 size="small"
                 icon={<CalendarArrowRightRegular />}
-                aria-label={`Move ${rowName(row)} to a later statement`}
+                aria-label={`Move ${name} to a later statement`}
                 disabled={isMoveDisabled}
                 onClick={(event) => onMove(row, event.currentTarget)}
               />
@@ -211,13 +212,7 @@ export default function AccountTransactionsGrid({
       )
     }
     if (isCreditRefund(row) && canDeleteCreditRefunds) {
-      return (
-        <TableCell className={actionClassName}>
-          <div className="data-table__actions-cell">
-            <Button appearance="subtle" size="small" icon={<DeleteRegular />} aria-label={`Delete ${rowName(row)}`} onClick={() => onDelete(row)} />
-          </div>
-        </TableCell>
-      )
+      return <RowActionsCell className={actionClassName} itemName={name} onDelete={() => onDelete(row)} />
     }
     return <TableCell className={actionClassName}>{isOlderIncomeLine(row) && <Text size={200}>Edit from the income</Text>}</TableCell>
   }
