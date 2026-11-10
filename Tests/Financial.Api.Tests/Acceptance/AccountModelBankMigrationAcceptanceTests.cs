@@ -95,6 +95,21 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         }
     }
 
+    [Theory]
+    [Trait("AC", "P60-F13-consolidated-navigation-and-retirement-08")]
+    [InlineData("TestData", "data-cashflow.test.json")]
+    [InlineData("ExampleData", "data-cashflow.example.json")]
+    public async Task ExampleData_HasOneAccountPerTemplate(string folder, string fileName)
+    {
+        ReplaceCashFlowDataBeforeStart(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, folder, fileName)));
+
+        var templates = await GetAsync<List<AccountTemplateDTO>>("/api/v1/financial/accounts/templates");
+        var accounts = await GetAsync<List<AccountDTO>>("/api/v1/financial/accounts");
+
+        accounts.Select(account => account.TemplateName)
+            .Should().BeEquivalentTo(templates.Select(template => template.Name));
+    }
+
     private async Task SetOpeningBalanceAsync(string bankId, decimal amount, DateOnly startDate)
     {
         var bank = (await GetAsync<List<AccountDTO>>("/api/v1/financial/accounts")).Single(account => account.Id == Guid.Parse(bankId));

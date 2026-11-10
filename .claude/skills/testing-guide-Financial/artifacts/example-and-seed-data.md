@@ -7,7 +7,7 @@ Test-data contract tests: a committed JSON file that a real loader must keep par
 | File | Who loads it | Guard |
 |---|---|---|
 | `data/data-investment.example.json` | README first-run copy | `Tests/Financial.Investment.Infrastructure.Tests/Persistence/ExampleDataFileTests.cs` |
-| `data/data-cashflow.example.json` | README first-run copy (empty shell by design) | `Tests/Financial.CashFlow.Infrastructure.Tests/Persistence/ExampleDataFileTests.cs` |
+| `data/data-cashflow.example.json` | README first-run copy (one account per template; `AccountModelBankMigrationAcceptanceTests.ExampleData_HasOneAccountPerTemplate` pins it, with the seed) | `Tests/Financial.CashFlow.Infrastructure.Tests/Persistence/ExampleDataFileTests.cs` |
 | `Tests/Financial.TestUtilities/TestData/data.test.json` (+ per-project copies) | `TestDataPaths.DataJsonFile`; `ApiTestFactory` temp copy; Investment repository tests | every Investment Infrastructure / Api test |
 | `Tests/Financial.Api.Tests/TestData/data-cashflow.test.json` | CI `web-e2e` job seed | the web-e2e run; `ApiTestFactory.SeededBanksJson` mirrors its ids; its inactive `E2E-TEST-DATA` category is the sentinel the E2E global setup requires before it runs |
 
