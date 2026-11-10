@@ -3,7 +3,7 @@
 # React Hooks (`Financial.Web/src/hooks/use*.ts`)
 
 Two shapes exist: data hooks built on `useAsyncResource(fetcher, deps, errorFallback)`
-(returns `{ data, isLoading, error, retry }`) — `useBanks`, `useMensais`, `useAnnualSummary`,
+(returns `{ data, isLoading, error, retry }`) — `useCategories`, `useMensais`, `useAnnualSummary`,
 `useAggregatedSummary`, … — and form/state hooks (`useExpenseForm`, `useTransferForm`,
 `useBalanceAdjustmentForm`, `useFieldError`, `useColumnFilters`, `useSortableRows`) plus the
 error-to-field mappers (`mapTransferErrorToField.ts`, `mapBalanceAdjustmentErrorToField.ts`).
@@ -16,7 +16,7 @@ error-to-field mappers (`mapTransferErrorToField.ts`, `mapBalanceAdjustmentError
   the `errorFallback`) and `data` null; `retry()` re-fetches; a `null` fetcher (no selection)
   → idle state; deps change → refetch with the new argument; selection-driven hooks via
   `createSelectedNodeWrapper()` from `src/test-utils/selectedNodeTestWrapper.tsx`.
-- **Mutation hooks** (`create*`/`update*`/`delete*` in `useBanks` etc.): the client method is
+- **Mutation hooks** (`create*`/`update*`/`delete*` in `useCategories` etc.): the client method is
   called with the DTO, the list is refreshed or patched, a failure surfaces `saveError` /
   `saveErrorFields` and leaves the list untouched.
 - **Form hooks**: defaults (`createFormDefaults`, remembered last bank —
@@ -40,51 +40,51 @@ error-to-field mappers (`mapTransferErrorToField.ts`, `mapBalanceAdjustmentError
 
 ## Setup pattern
 
-From `Financial.Web/src/hooks/__tests__/useBanks.test.ts`:
+From `Financial.Web/src/hooks/__tests__/useCategories.test.ts`:
 
 ```ts
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto } from '../../api/types'
-import { useBanks } from '../useBanks'
+import type { CategoryDto } from '../../api/types'
+import { useCategories } from '../useCategories'
 
-const { getBanksMock, createBankMock, updateBankMock, deleteBankMock } = vi.hoisted(() => ({
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
-  createBankMock: vi.fn<FinancialApiClient['createBank']>(),
-  updateBankMock: vi.fn<FinancialApiClient['updateBank']>(),
-  deleteBankMock: vi.fn<FinancialApiClient['deleteBank']>(),
+const { getCategoriesMock, createCategoryMock, updateCategoryMock, deleteCategoryMock } = vi.hoisted(() => ({
+  getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
+  createCategoryMock: vi.fn<FinancialApiClient['createCategory']>(),
+  updateCategoryMock: vi.fn<FinancialApiClient['updateCategory']>(),
+  deleteCategoryMock: vi.fn<FinancialApiClient['deleteCategory']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
-    getBanks: getBanksMock,
-    createBank: createBankMock,
-    updateBank: updateBankMock,
-    deleteBank: deleteBankMock,
+    getCategories: getCategoriesMock,
+    createCategory: createCategoryMock,
+    updateCategory: updateCategoryMock,
+    deleteCategory: deleteCategoryMock,
   } as Partial<FinancialApiClient>,
 }))
 
-describe('useBanks', () => {
+describe('useCategories', () => {
   beforeEach(() => {
-    getBanksMock.mockReset()
-    getBanksMock.mockResolvedValue(BANKS)
+    getCategoriesMock.mockReset()
+    getCategoriesMock.mockResolvedValue(CATEGORIES)
   })
 
-  it('fetches the bank list once on mount', async () => {
-    const { result } = renderHook(() => useBanks())
+  it('fetches the category list once on mount', async () => {
+    const { result } = renderHook(() => useCategories())
 
     expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(getBanksMock).toHaveBeenCalledTimes(1)
-    expect(result.current.banks).toEqual(BANKS)
+    expect(getCategoriesMock).toHaveBeenCalledTimes(1)
+    expect(result.current.categories).toEqual(CATEGORIES)
   })
 })
 ```
 
 `vi.hoisted` is what lets the mocks be referenced inside the hoisted `vi.mock` factory. Typing
-each mock as `vi.fn<FinancialApiClient['getBanks']>()` makes a renamed client method a type
+each mock as `vi.fn<FinancialApiClient['getCategories']>()` makes a renamed client method a type
 error in the test too. Re-read `result.current` after every `waitFor`; do not destructure it
 once at render time.
 
@@ -96,7 +96,7 @@ once at render time.
 
 ## Examples from project
 
-- `Financial.Web/src/hooks/__tests__/useBanks.test.ts` — Unit; CRUD + list refresh.
+- `Financial.Web/src/hooks/__tests__/useCategories.test.ts` — Unit; CRUD + list refresh.
 - `Financial.Web/src/hooks/__tests__/usePaymentsDue.test.ts` — Unit; fake timers, no polling, auto-dismiss.
 - `Financial.Web/src/hooks/__tests__/useAggregatedSummary.test.ts` — Unit; `createSelectedNodeWrapper` for node-type branching.
 - `Financial.Web/src/hooks/__tests__/useTransferForm.test.ts` + `mapTransferErrorToField.test.ts` — Unit; validation and backend-error mapping.
