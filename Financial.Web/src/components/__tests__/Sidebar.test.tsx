@@ -97,6 +97,26 @@ describe('Sidebar', () => {
     }
   })
 
+  it('[AC P60-F13-consolidated-navigation-and-retirement-01] shows the F13 CashFlow and Admin CashFlow menus', () => {
+    renderSidebar()
+
+    const cashFlowLinks = within(screen.getByRole('navigation', { name: 'Main' }))
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('href')?.startsWith('/cashflow/'))
+    expect(cashFlowLinks.map((link) => link.textContent)).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots'])
+
+    fireEvent.click(screen.getAllByText('CashFlow').find((el) => el.closest('.sidebar__group-header'))!)
+
+    const adminCashFlowLinks = screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/admin/cashflow/'))
+    expect(adminCashFlowLinks.map((link) => link.textContent)).toEqual([
+      'Accounts',
+      'Categories',
+      'Income Sources',
+      'Investment Accounts',
+      'Recurring Bills',
+    ])
+  })
+
   it('toggling collapses and expands the sidebar', () => {
     renderSidebar()
 
