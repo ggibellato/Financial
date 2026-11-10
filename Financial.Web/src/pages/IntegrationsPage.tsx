@@ -38,7 +38,7 @@ export default function IntegrationsPage() {
   const syncStatuses = useCalendarSyncStatuses()
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false)
   const { retryFailure } = syncStatuses
-  const failedResyncCardName = retryFailure && syncStatuses.rows.find((row) => row.creditCardId === retryFailure.creditCardId)?.name
+  const failedResyncRow = retryFailure && syncStatuses.rows.find((row) => row.creditCardId === retryFailure.creditCardId)
 
   const handleConfirmDisconnect = () => {
     setConfirmingDisconnect(false)
@@ -116,10 +116,10 @@ export default function IntegrationsPage() {
               <p className="integrations-page__empty">No active credit cards with a due date yet.</p>
             ) : (
               <>
-                {retryFailure && failedResyncCardName && (
+                {retryFailure && failedResyncRow && (
                   <MessageBar role="alert" intent="error">
                     <MessageBarBody>
-                      Couldn&rsquo;t retry the calendar sync for {failedResyncCardName}: {retryFailure.message}
+                      Couldn&rsquo;t retry the calendar sync for {failedResyncRow.name}: {retryFailure.message}
                     </MessageBarBody>
                   </MessageBar>
                 )}

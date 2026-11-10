@@ -5,6 +5,7 @@ import {
   Field,
   Input,
   MessageBar,
+  MessageBarActions,
   MessageBarBody,
   Select,
   Skeleton,
@@ -20,7 +21,7 @@ import {
 import type { AccountStatementDto } from '../api/types'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
-import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
+import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, MISSING_VALUE_PLACEHOLDER, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -62,7 +63,7 @@ const COLUMNS: StatementColumn[] = [
     header: 'Credit in',
     numeric: true,
     accessor: (statement) => statement.creditIn,
-    render: (statement) => (statement.creditIn === 0 ? '—' : formatN2(statement.creditIn)),
+    render: (statement) => (statement.creditIn === 0 ? MISSING_VALUE_PLACEHOLDER : formatN2(statement.creditIn)),
   },
   {
     key: 'toPay',
@@ -75,7 +76,7 @@ const COLUMNS: StatementColumn[] = [
     key: 'dueDate',
     header: 'Due date',
     accessor: (statement) => statement.dueDate,
-    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : '—'),
+    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : MISSING_VALUE_PLACEHOLDER),
   },
   {
     key: 'status',
@@ -246,6 +247,8 @@ export default function CardStatementsTab({
 
   const isFormSaving = (payForm?.isSaving ?? false) || Boolean(dueDateForm.form?.pendingAction)
 
+  const hasRows = statements.length > 0
+
   const isViewed = (statement: AccountStatementDto) => statement.year === viewedYear && statement.month === viewedMonth
 
   return (
@@ -267,7 +270,17 @@ export default function CardStatementsTab({
           onCancel={cancelForm}
         />
       )}
-      {error ? (
+      {error && hasRows && (
+        <MessageBar role="alert" intent="error">
+          <MessageBarBody>{error}</MessageBarBody>
+          <MessageBarActions>
+            <Button appearance="primary" onClick={retry}>
+              Try again
+            </Button>
+          </MessageBarActions>
+        </MessageBar>
+      )}
+      {error && !hasRows ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <>

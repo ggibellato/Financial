@@ -275,6 +275,15 @@ describe('CardStatementsTab', () => {
     expect(screen.getByText('Unable to load the statements')).toBeInTheDocument()
   })
 
+  it('keeps the statements on screen with an inline Try again when a reload fails', async () => {
+    const statements = renderTab({ error: 'Unable to load the statements' })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to load the statements')
+    expect(rowOf('October 2026')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(statements.retry).toHaveBeenCalled()
+  })
+
   it('moves focus to the first invalid field after a failed submit', () => {
     const payForm = { statement: OCTOBER, bankId: 'barclays', date: '', isSaving: false, error: null, fieldErrors: { date: 'Enter a date.' } }
     const statements = renderTab({ payForm })
