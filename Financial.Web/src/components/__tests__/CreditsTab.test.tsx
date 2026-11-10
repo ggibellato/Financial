@@ -286,7 +286,7 @@ describe('CreditsTab', () => {
 
   it('edit_icon_shows_the_edit_form_prefilled_with_the_credit', async () => {
     await renderAssetTab([CREDIT_DIVIDEND])
-    fireEvent.click(screen.getByRole('button', { name: 'Edit credit' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit credit\b/ }))
 
     expect(await screen.findByRole('heading', { name: 'Edit credit' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-03-15')
@@ -341,7 +341,7 @@ describe('CreditsTab', () => {
     updateCreditMock.mockResolvedValue(
       assetDetails([{ ...CREDIT_DIVIDEND, value: 130, netAmount: 130 }]),
     )
-    fireEvent.click(screen.getByRole('button', { name: 'Edit credit' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit credit\b/ }))
     await screen.findByRole('heading', { name: 'Edit credit' })
 
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '130' } })
@@ -403,7 +403,7 @@ describe('CreditsTab', () => {
     deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_JCP]))
 
     const dividendRow = screen.getByText('15/03/2024').closest('tr, [role="row"]') as HTMLElement
-    fireEvent.click(within(dividendRow).getByRole('button', { name: 'Delete credit' }))
+    fireEvent.click(within(dividendRow).getByRole('button', { name: 'Delete credit Dividend 120.50, 15/03/2024' }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
     expect(deleteCreditMock).toHaveBeenCalledWith({
@@ -419,7 +419,7 @@ describe('CreditsTab', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     await renderAssetTab([CREDIT_DIVIDEND])
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete credit' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete credit\b/ }))
 
     expect(deleteCreditMock).not.toHaveBeenCalled()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
@@ -429,7 +429,7 @@ describe('CreditsTab', () => {
     await renderAssetTab([CREDIT_DIVIDEND])
     deleteCreditMock.mockRejectedValue(new Error('Failed to delete'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete credit' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete credit\b/ }))
 
     expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()

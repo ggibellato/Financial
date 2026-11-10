@@ -12,7 +12,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular } from '@fluentui/react-icons'
 import type { CreditDto } from '../api/types'
 import DividendYieldTooltip from './DividendYieldTooltip'
 import ErrorState from './ErrorState'
@@ -30,6 +30,7 @@ import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatPercent1OrDash, formatShortDate } from '../utils/formatters'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+import RowActionsCell from './grid/RowActionsCell'
 import './CreditsTab.css'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
@@ -127,24 +128,11 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
       <DataTableCell label="FX">
         <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
       </DataTableCell>
-      <DataTableCell label="Actions" className="data-table__col--action">
-        <div className="data-table__actions-cell">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<EditRegular />}
-            aria-label="Edit credit"
-            onClick={() => onEdit(credit)}
-          />
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<DeleteRegular />}
-            aria-label="Delete credit"
-            onClick={() => onDelete(credit.id)}
-          />
-        </div>
-      </DataTableCell>
+      <RowActionsCell
+        itemName={`credit ${typeLabel(credit.type)} ${formatN2(credit.value)}, ${formatShortDate(credit.date)}`}
+        onEdit={() => onEdit(credit)}
+        onDelete={() => onDelete(credit.id)}
+      />
     </TableRow>
   )
 }

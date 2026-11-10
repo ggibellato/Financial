@@ -291,7 +291,7 @@ describe('ExpenseForm', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
 
     rerender(<ExpenseForm {...baseProps} isEditing isSaving />)
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('names the raw payment source and card id in the settlement note when no name is known', () => {

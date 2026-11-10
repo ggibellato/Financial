@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular } from '@fluentui/react-icons'
 import type { CorporateActionDto } from '../api/types'
 import CorporateActionForm from './CorporateActionForm'
 import ErrorState from './ErrorState'
@@ -16,6 +16,7 @@ import { formatN2, formatShortDate } from '../utils/formatters'
 import './CorporateActionsTab.css'
 import TruncatedText from './TruncatedText'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+import RowActionsCell from './grid/RowActionsCell'
 
 function formatRatioFactor(factor: number): string {
   return `×${factor.toFixed(4).replace(/\.?0+$/, '')}`
@@ -77,24 +78,11 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, onEdit, 
       <DataTableCell label="Tax Status">
         {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}
       </DataTableCell>
-      <DataTableCell label="Actions" className="data-table__col--action">
-        <div className="data-table__actions-cell">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<EditRegular />}
-            aria-label="Edit corporate action"
-            onClick={() => onEdit(record)}
-          />
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<DeleteRegular />}
-            aria-label="Delete corporate action"
-            onClick={() => onDelete(record.id)}
-          />
-        </div>
-      </DataTableCell>
+      <RowActionsCell
+        itemName={`corporate action ${corporateActionTypeLabel(record.type)} ${record.linkedAssetName ?? affectedAssetName}, ${formatShortDate(record.effectiveDate)}`}
+        onEdit={() => onEdit(record)}
+        onDelete={() => onDelete(record.id)}
+      />
     </TableRow>
   )
 }

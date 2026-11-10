@@ -112,8 +112,7 @@ describe('TransferForm', () => {
   it('shows Saving... and disables the button while isSaving', () => {
     render(<TransferForm {...baseProps} isSaving />)
 
-    const button = screen.getByRole('button', { name: 'Saving...' })
-    expect(button).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('disables every field and Cancel while saving', () => {
@@ -198,5 +197,37 @@ describe('TransferForm', () => {
     rerender(<TransferForm {...props} sourceBank="bank-chase" />)
 
     expect(optionNames(screen.getByLabelText(/^From/))).toContain('Monzo')
+  })
+
+  it('focuses the first invalid field after a failed save', () => {
+    const { rerender } = render(<TransferForm {...baseProps} />)
+
+    rerender(
+      <TransferForm
+        {...baseProps}
+        saveError="Enter the transfer date."
+        saveErrorFields={{ date: 'Enter the transfer date.', amount: 'Transfer amount must be greater than zero.' }}
+      />,
+    )
+
+    expect(screen.getByLabelText(/^Date/)).toHaveFocus()
+  })
+
+  it('announces a server error and moves focus to Save', () => {
+    const { rerender } = render(<TransferForm {...baseProps} />)
+
+    rerender(<TransferForm {...baseProps} saveError="The service is unavailable." />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('The service is unavailable.')
+    expect(screen.getByRole('button', { name: 'Add Transfer' })).toHaveFocus()
+  })
+
+  it('does not save again while a save is in flight', () => {
+    const onSave = vi.fn()
+    render(<TransferForm {...baseProps} isSaving onSave={onSave} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Saving...' }))
+
+    expect(onSave).not.toHaveBeenCalled()
   })
 })

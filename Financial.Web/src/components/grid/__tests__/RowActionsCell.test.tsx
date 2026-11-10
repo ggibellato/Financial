@@ -42,4 +42,18 @@ describe('RowActionsCell', () => {
     expect(screen.getByRole('button', { name: 'Delete Chase' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Edit Chase' })).toBeEnabled()
   })
+
+  it('shows only Edit for a row that cannot be deleted', () => {
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="snapshot Chase" onEdit={vi.fn()} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Edit snapshot Chase'])
+  })
 })

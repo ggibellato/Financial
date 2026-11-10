@@ -1,10 +1,12 @@
-import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankOption } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
 import { useFieldError } from '../hooks/useFieldError'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { formatCurrency } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface BalanceAdjustmentFormProps {
@@ -50,6 +52,8 @@ export default function BalanceAdjustmentForm({
 }: BalanceAdjustmentFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
+  const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
+  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, generalError)
 
   if (savedDelta !== null) {
     return (
@@ -69,13 +73,11 @@ export default function BalanceAdjustmentForm({
     )
   }
 
-  const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
-
   const bankChosen = bankName !== ''
-  const saveDisabled = isSaving || (!isEditing && !bankChosen)
 
   return (
     <form
+      ref={formRef}
       className={styles.panel}
       data-testid="balance-adjustment-form-panel"
       noValidate
@@ -89,7 +91,7 @@ export default function BalanceAdjustmentForm({
           {isEditing ? 'Edit balance adjustment' : 'Adjust balance'}
         </Text>
         {generalError && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{generalError}</MessageBarBody>
           </MessageBar>
         )}
@@ -168,15 +170,14 @@ export default function BalanceAdjustmentForm({
           </>
         )}
 
-        <div className={styles.actions}>
-          <Button type="submit" appearance="primary" disabled={saveDisabled} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Adjust balance'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions
+        saveRef={saveRef}
+        saveLabel={isEditing ? 'Save' : 'Adjust balance'}
+        isSaving={isSaving}
+        isSaveDisabled={!isEditing && !bankChosen}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

@@ -41,7 +41,7 @@ describe('AccountTransactionsGrid', () => {
 
       const [row] = bodyRows()
       expect(within(row).getAllByRole('button')).toHaveLength(1)
-      fireEvent.click(within(row).getByRole('button', { name: 'Delete credit refund' }))
+      fireEvent.click(within(row).getByRole('button', { name: /^Delete credit refund\b/ }))
       expect(onDelete).toHaveBeenCalledWith(CREDIT_REFUND)
     })
 
@@ -115,8 +115,8 @@ describe('AccountTransactionsGrid', () => {
     it('offers Edit and Delete on an entry row', () => {
       renderSettlement()
 
-      expect(screen.getAllByRole('button', { name: 'Edit entry' })).toHaveLength(2)
-      expect(screen.getAllByRole('button', { name: 'Delete entry' })).toHaveLength(2)
+      expect(screen.getAllByRole('button', { name: /^Edit entry\b/ })).toHaveLength(2)
+      expect(screen.getAllByRole('button', { name: /^Delete entry\b/ })).toHaveLength(2)
     })
 
     it.each([
@@ -154,8 +154,8 @@ describe('AccountTransactionsGrid', () => {
 
     expect(screen.getAllByRole('columnheader').map((header) => header.textContent)).toEqual(['Date', 'Pot', 'Description', 'Amount', ''])
     const [legacyRow, linkedRow] = bodyRows()
-    expect(within(legacyRow).getByRole('button', { name: 'Edit pot transaction' })).toBeInTheDocument()
-    expect(within(legacyRow).getByRole('button', { name: 'Delete pot transaction' })).toBeInTheDocument()
+    expect(within(legacyRow).getByRole('button', { name: /^Edit pot transaction\b/ })).toBeInTheDocument()
+    expect(within(legacyRow).getByRole('button', { name: /^Delete pot transaction\b/ })).toBeInTheDocument()
     expect(within(legacyRow).getByText('Trips')).toBeInTheDocument()
     expect(within(legacyRow).getByText('-20.00')).toBeInTheDocument()
     expect(within(linkedRow).queryByRole('button')).not.toBeInTheDocument()
@@ -225,22 +225,22 @@ describe('AccountTransactionsGrid', () => {
     render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} onEdit={onEdit} onDelete={onDelete} />)
 
     const expenseCells = within(bodyRows()[0]).getAllByRole('cell')
-    const editExpense = within(expenseCells[expenseCells.length - 1]).getByRole('button', { name: 'Edit expense' })
+    const editExpense = within(expenseCells[expenseCells.length - 1]).getByRole('button', { name: /^Edit expense\b/ })
     fireEvent.click(editExpense)
-    fireEvent.click(within(bodyRows()[3]).getByRole('button', { name: 'Delete transfer' }))
+    fireEvent.click(within(bodyRows()[3]).getByRole('button', { name: /^Delete transfer\b/ }))
 
     expect(onEdit).toHaveBeenCalledWith(ROWS[0], editExpense)
     expect(onDelete).toHaveBeenCalledWith(ROWS[3])
-    expect(within(bodyRows()[1]).getByRole('button', { name: 'Edit income' })).toBeInTheDocument()
-    expect(within(bodyRows()[4]).getByRole('button', { name: 'Delete balance adjustment' })).toBeInTheDocument()
+    expect(within(bodyRows()[1]).getByRole('button', { name: /^Edit income\b/ })).toBeInTheDocument()
+    expect(within(bodyRows()[4]).getByRole('button', { name: /^Delete balance adjustment\b/ })).toBeInTheDocument()
     expect(within(bodyRows()[2]).queryByRole('button')).not.toBeInTheDocument()
   })
 
   it('disables Edit, but not Delete, while editing is unavailable', () => {
     render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
 
-    expect(within(bodyRows()[0]).getByRole('button', { name: 'Edit expense' })).toBeDisabled()
-    expect(within(bodyRows()[0]).getByRole('button', { name: 'Delete expense' })).toBeEnabled()
+    expect(within(bodyRows()[0]).getByRole('button', { name: /^Edit expense\b/ })).toBeDisabled()
+    expect(within(bodyRows()[0]).getByRole('button', { name: /^Delete expense\b/ })).toBeEnabled()
   })
 
   it('labels the date column as asked and card payments by their kind', () => {
@@ -307,14 +307,14 @@ describe('AccountTransactionsGrid', () => {
 
     const [taxi, paidLunch, payment] = bodyRows()
     expect(within(taxi).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      'Move card charge to a later statement',
-      'Edit card charge',
-      'Delete card charge',
+      'Move card charge Taxi, 10/10/2026 to a later statement',
+      'Edit card charge Taxi, 10/10/2026',
+      'Delete card charge Taxi, 10/10/2026',
     ])
     expect(within(paidLunch).queryByRole('button')).not.toBeInTheDocument()
     expect(within(payment).queryByRole('button')).not.toBeInTheDocument()
 
-    fireEvent.click(within(taxi).getByRole('button', { name: 'Move card charge to a later statement' }))
+    fireEvent.click(within(taxi).getByRole('button', { name: /^Move card charge\b.* to a later statement$/ }))
     expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }), expect.any(HTMLButtonElement))
   })
 

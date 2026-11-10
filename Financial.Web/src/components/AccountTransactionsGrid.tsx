@@ -22,6 +22,11 @@ import TruncatedText from './TruncatedText'
 import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, PAID_BY_YOU, recordNoun, rowKey, statementPath } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 
+function rowName(row: AccountTransactionDto): string {
+  const noun = row.description ? `${recordNoun(row.kind)} ${row.description}` : recordNoun(row.kind)
+  return `${noun}, ${formatShortDateUtc(row.date)}`
+}
+
 interface TransactionColumn {
   key: string
   header: string
@@ -185,7 +190,7 @@ export default function AccountTransactionsGrid({
       return (
         <RowActionsCell
           className={actionClassName}
-          itemName={recordNoun(row.kind)}
+          itemName={rowName(row)}
           editDisabled={isEditDisabled?.(row) ?? false}
           onEdit={(button) => onEdit(row, button)}
           onDelete={() => onDelete(row)}
@@ -196,7 +201,7 @@ export default function AccountTransactionsGrid({
                 appearance="subtle"
                 size="small"
                 icon={<CalendarArrowRightRegular />}
-                aria-label={`Move ${recordNoun(row.kind)} to a later statement`}
+                aria-label={`Move ${rowName(row)} to a later statement`}
                 disabled={isMoveDisabled}
                 onClick={(event) => onMove(row, event.currentTarget)}
               />
@@ -209,7 +214,7 @@ export default function AccountTransactionsGrid({
       return (
         <TableCell className={actionClassName}>
           <div className="data-table__actions-cell">
-            <Button appearance="subtle" size="small" icon={<DeleteRegular />} aria-label={`Delete ${recordNoun(row.kind)}`} onClick={() => onDelete(row)} />
+            <Button appearance="subtle" size="small" icon={<DeleteRegular />} aria-label={`Delete ${rowName(row)}`} onClick={() => onDelete(row)} />
           </div>
         </TableCell>
       )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
@@ -8,6 +8,7 @@ import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { todayIsoDate } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 const SETTLED_FIELD_HINT = 'Locked: its card statement is paid'
@@ -237,15 +238,8 @@ export default function ExpenseForm({
           )}
         </div>
 
-        <div className={styles.actions}>
-          <Button ref={saveRef} type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : `Add ${noun}`}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions saveRef={saveRef} saveLabel={isEditing ? 'Save' : `Add ${noun}`} isSaving={isSaving} onCancel={onCancel} />
     </form>
   )
 }

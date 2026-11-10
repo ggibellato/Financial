@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { LockedBank } from '../hooks/formSettings'
 import type { TransferFormField } from '../hooks/transferFormField'
 import { useFieldError } from '../hooks/useFieldError'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks, type SelectableBank } from '../utils/selectableBanks'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 const DIFFERENT_BANKS_ERROR = 'Source and destination must be different banks.'
@@ -71,6 +73,7 @@ export default function TransferForm({
   }
 
   const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
+  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, generalError)
 
   const accountField = (side: LockedTransferSide['side'], label: string) => {
     const field: TransferFormField = side === 'source' ? 'sourceBank' : 'destinationBank'
@@ -104,6 +107,7 @@ export default function TransferForm({
 
   return (
     <form
+      ref={formRef}
       className={styles.panel}
       data-testid="transfer-form-panel"
       noValidate
@@ -117,7 +121,7 @@ export default function TransferForm({
           {isEditing ? 'Edit Transfer' : 'New Transfer'}
         </Text>
         {generalError && (
-          <MessageBar intent="error">
+          <MessageBar role="alert" intent="error">
             <MessageBarBody>{generalError}</MessageBarBody>
           </MessageBar>
         )}
@@ -170,15 +174,14 @@ export default function TransferForm({
           </Field>
         </div>
 
-        <div className={styles.actions}>
-          <Button type="submit" appearance="primary" disabled={isSaving || sameBankError !== null} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Transfer'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions
+        saveRef={saveRef}
+        saveLabel={isEditing ? 'Save' : 'Add Transfer'}
+        isSaving={isSaving}
+        isSaveDisabled={sameBankError !== null}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

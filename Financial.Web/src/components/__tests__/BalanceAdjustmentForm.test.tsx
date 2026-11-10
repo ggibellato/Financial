@@ -128,7 +128,7 @@ describe('BalanceAdjustmentForm', () => {
   it('shows Saving... and disables the button while isSaving', () => {
     render(<BalanceAdjustmentForm {...baseProps} isSaving />)
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('only the Bank dropdown is enabled before a bank is chosen', () => {
@@ -215,5 +215,22 @@ describe('BalanceAdjustmentForm', () => {
     render(<BalanceAdjustmentForm {...baseProps} bankName="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
 
     expect(screen.getByLabelText(/^Bank/)).toHaveValue('bank-chase')
+  })
+
+  it('focuses the first invalid field after a failed save', () => {
+    const { rerender } = render(<BalanceAdjustmentForm {...baseProps} />)
+
+    rerender(<BalanceAdjustmentForm {...baseProps} saveError="Enter a target balance." saveErrorFields={{ targetBalance: 'Enter a target balance.' }} />)
+
+    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveFocus()
+  })
+
+  it('announces a server error and moves focus to Save', () => {
+    const { rerender } = render(<BalanceAdjustmentForm {...baseProps} />)
+
+    rerender(<BalanceAdjustmentForm {...baseProps} saveError="The service is unavailable." />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('The service is unavailable.')
+    expect(screen.getByRole('button', { name: 'Adjust balance' })).toHaveFocus()
   })
 })
