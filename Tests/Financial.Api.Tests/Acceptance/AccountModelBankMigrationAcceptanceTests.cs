@@ -40,22 +40,18 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-10")]
-    public async Task TransfersExpenses_ShapesUnchanged()
+    public async Task Expenses_ShapeUnchanged()
     {
         await SetOpeningBalanceAsync(ChaseId, 100.50m, new DateOnly(2026, 9, 1));
         var expenseId = await AddBankExpenseAsync(new DateOnly(2026, 9, 3), "Coffee", 2.30m, ChaseId);
-        var transferId = await AddTransferAsync(new DateOnly(2026, 9, 4), BarclaysId, Trading212Id, 25m);
 
         var expenses = await GetRawAsync("/api/v1/financial/expenses/month/2026/9");
-        var transfers = await GetRawAsync("/api/v1/financial/transfers/month/2026/9");
         var chase = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{ChaseId}/2026/9");
 
         using (new AssertionScope())
         {
             expenses.Should().Be(
                 $$"""[{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}]""");
-            transfers.Should().Be(
-                $$"""[{"id":"{{transferId}}","date":"2026-09-04","sourceBankId":"{{BarclaysId}}","sourceBankName":"Barclays","destinationBankId":"{{Trading212Id}}","destinationBankName":"Trading212","amount":25,"note":null}]""");
             chase.Balance.Should().Be(98.20m);
         }
     }
@@ -127,19 +123,6 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         });
         response.IsSuccessStatusCode.Should().BeTrue();
         return (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!.Id;
-    }
-
-    private async Task<Guid> AddTransferAsync(DateOnly date, string sourceId, string destinationId, decimal amount)
-    {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
-        {
-            Date = date,
-            SourceBankId = Guid.Parse(sourceId),
-            DestinationBankId = Guid.Parse(destinationId),
-            Amount = amount
-        });
-        response.IsSuccessStatusCode.Should().BeTrue();
-        return (await response.Content.ReadFromJsonAsync<TransferDTO>())!.Id;
     }
 
     private async Task<T> GetAsync<T>(string route)

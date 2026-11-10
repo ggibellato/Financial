@@ -411,7 +411,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
         var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
-        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
+        var statement = await GetVisaStatementAsync(Client);
 
         await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
@@ -434,7 +434,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
-        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
+        var statement = await GetVisaStatementAsync(Client);
         await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
             new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
@@ -490,7 +490,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
             PaymentSourceBankId = null,
             CreditCardId = BarclaysPlatinumVisa8003Id
         });
-        var statement = await GetStatementAsync(Client, "BarclaysPlatinumVisa8003");
+        var statement = await GetVisaStatementAsync(Client);
         await Client.PostAsJsonAsync(
             $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
             new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
@@ -501,11 +501,8 @@ public class ExpenseEndpointsTests : ApiEndpointTests
         items.Should().BeEmpty();
     }
 
-    private static async Task<CardStatementDTO> GetStatementAsync(HttpClient client, string card)
-    {
-        var statements = await client.GetFromJsonAsync<List<CardStatementDTO>>("/api/v1/financial/card-statements/2026/7");
-        return statements!.First(s => s.CreditCardName == card);
-    }
+    private static async Task<AccountStatementDTO> GetVisaStatementAsync(HttpClient client) =>
+        (await client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysPlatinumVisa8003Id}/2026/7"))!.ViewedStatement!;
 
     [Fact]
     public async Task GetCategoryTotalsByMonth_ReturnsSummedTotalsPerCategory()

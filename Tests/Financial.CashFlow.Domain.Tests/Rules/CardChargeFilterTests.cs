@@ -50,6 +50,7 @@ public class CardChargeFilterTests
     }
 
     [Fact]
+    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public void TotalOwed_CountsEveryUnpaidChargeWhateverItsDate()
     {
         var october = Charge(_amex, new DateOnly(2026, 10, 3), 30m);

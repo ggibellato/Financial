@@ -131,35 +131,33 @@ public class CardStatementServiceTests
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
-    public void GetStatementsForMonth_OutstandingTotalSumsThatMonthsChargesForTheCard()
+    public void GetAmountDueForPeriod_SumsThatMonthsChargesForTheCard()
     {
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        AddCharge(_repository, new DateOnly(2026, 7, 15), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, visa);
+        AddCharge(_repository, new DateOnly(2026, 7, 15), 20m, visa);
+        AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, visa);
         AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
 
         SeedStatements(2026, 7);
 
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.OutstandingTotal == 50m);
+        _sut.GetAmountDueForPeriod(visa.Id, 2026, 7).Should().Be(50m);
     }
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
-    public void GetStatementsForMonth_ExcludesSettledAndImmediateExpensesFromOutstandingTotal()
+    public void GetAmountDueForPeriod_ExcludesSettledAndImmediateExpenses()
     {
         var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
-        var settled = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        var settled = AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, visa);
         settled.Settle(barclays, new DateOnly(2026, 7, 20));
-        AddCharge(_repository, new DateOnly(2026, 7, 11), 20m, Card(_repository, "BarclaysPlatinumVisa8003"));
+        AddCharge(_repository, new DateOnly(2026, 7, 11), 20m, visa);
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Immediate", 5m, Category.Create("Casa"), barclays, null));
 
         SeedStatements(2026, 7);
 
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.OutstandingTotal == 20m);
+        _sut.GetAmountDueForPeriod(visa.Id, 2026, 7).Should().Be(20m);
     }
 
     [Fact]

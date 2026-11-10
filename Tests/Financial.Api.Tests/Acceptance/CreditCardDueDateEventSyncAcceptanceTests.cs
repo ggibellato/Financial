@@ -15,7 +15,7 @@ namespace Financial.Api.Tests.Acceptance;
 public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
 {
     private const string CalendarRoute = "/api/v1/financial/integrations/calendar";
-    private const string CreditCardsRoute = "/api/v1/financial/credit-cards";
+    private const string AccountsRoute = "/api/v1/financial/accounts";
     private const string ExpensesRoute = "/api/v1/financial/expenses";
     private const string MercadoCategoryId = "8f3b1c1a-2e3a-4b1a-9a7f-600000000008";
     private static readonly DateTimeOffset Now = new(2026, 9, 7, 12, 0, 0, TimeSpan.Zero);
@@ -58,10 +58,25 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         return status;
     }
 
-    private async Task SetDueDateAsync(Guid cardId, string name, bool isActive, DateOnly? dueDate)
+    private Task<HttpResponseMessage> PutDueDateAsync(Guid cardId, int year, int month, DateOnly? dueDate) =>
+        Client.PutAsJsonAsync($"{AccountsRoute}/{cardId}/statements/{year}/{month}/due-date", new StatementDueDateUpdateDTO { DueDate = dueDate });
+
+    private async Task SetDueDateAsync(Guid cardId, DateOnly dueDate)
     {
-        var response = await Client.PutAsJsonAsync($"{CreditCardsRoute}/{cardId}",
-            new CreditCardUpdateDTO { Name = name, IsActive = isActive, NextInvoiceDueDate = dueDate });
+        var response = await PutDueDateAsync(cardId, dueDate.Year, dueDate.Month, dueDate);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task ClearDueDateAsync(Guid cardId, int year, int month)
+    {
+        var response = await PutDueDateAsync(cardId, year, month, null);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private async Task DeactivateAsync(Guid cardId, string name)
+    {
+        var response = await Client.PutAsJsonAsync($"{AccountsRoute}/{cardId}",
+            new AccountUpdateDTO { TemplateName = "CreditCard", Name = name, Currency = "GBP", IsActive = false });
         response.EnsureSuccessStatusCode();
     }
 
@@ -87,7 +102,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
         await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
 
-        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await SetDueDateAsync(cardId, new DateOnly(2026, 9, 10));
         var status = await WaitForResolvedSyncStatusAsync(cardId);
 
         status!.State.Should().Be("Synced");
@@ -104,10 +119,10 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         Connect();
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
         await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
-        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await SetDueDateAsync(cardId, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(cardId);
 
-        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 20));
+        await SetDueDateAsync(cardId, new DateOnly(2026, 9, 20));
         await WaitForResolvedSyncStatusAsync(cardId);
 
         _provider.CreatedEvents.Should().ContainSingle();
@@ -123,22 +138,22 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         var deactivatedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003"); // ChaseMaster4023
         var datedCardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000005");
 
-        foreach (var (id, name) in new[] { (clearedCardId, "BaAmex"), (deactivatedCardId, "ChaseMaster4023"), (datedCardId, "PaypalCredit") })
+        foreach (var id in new[] { clearedCardId, deactivatedCardId, datedCardId })
         {
-            await SetDueDateAsync(id, name, isActive: true, new DateOnly(2026, 9, 10));
             await AddChargeAsync(id, new DateOnly(2026, 9, 10), 55.5m);
+            await SetDueDateAsync(id, new DateOnly(2026, 9, 10));
             await WaitForResolvedSyncStatusAsync(id);
         }
 
         _provider.CreatedEvents.Should().HaveCount(3);
 
-        await SetDueDateAsync(clearedCardId, "BaAmex", isActive: true, dueDate: null);
+        await ClearDueDateAsync(clearedCardId, 2026, 9);
         await WaitForResolvedSyncStatusAsync(clearedCardId);
 
-        await SetDueDateAsync(deactivatedCardId, "ChaseMaster4023", isActive: false, new DateOnly(2026, 9, 10));
+        await DeactivateAsync(deactivatedCardId, "ChaseMaster4023");
         await WaitForResolvedSyncStatusAsync(deactivatedCardId);
 
-        var deleteResponse = await Client.DeleteAsync($"{CreditCardsRoute}/{datedCardId}");
+        var deleteResponse = await Client.DeleteAsync($"{AccountsRoute}/{datedCardId}");
 
         deleteResponse.StatusCode.Should().Be(HttpStatusCode.Conflict);
         _provider.DeletedEvents.Should().HaveCount(2);
@@ -149,9 +164,10 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     public async Task ACardWithNoPostedChargesForThePeriod_IsNothingDueAndHasNoEvent()
     {
         Connect();
-        var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000002"); // BarclaysPlatinumVisa6007, no charges added
+        var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000002"); // BarclaysPlatinumVisa6007
+        await AddChargeAsync(cardId, new DateOnly(2026, 8, 10), 20m);
 
-        await SetDueDateAsync(cardId, "BarclaysPlatinumVisa6007", isActive: true, new DateOnly(2026, 9, 10));
+        await SetDueDateAsync(cardId, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(cardId);
 
         _provider.CreatedEvents.Should().BeEmpty();
@@ -164,7 +180,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         Connect();
         var baAmexId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004");
         await AddChargeAsync(baAmexId, new DateOnly(2026, 9, 5), 55.5m);
-        await SetDueDateAsync(baAmexId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await SetDueDateAsync(baAmexId, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(baAmexId);
         _provider.CreatedEvents.Should().ContainSingle();
 
@@ -183,8 +199,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
         _provider.CreateEventThrows = true;
 
-        var response = await Client.PutAsJsonAsync($"{CreditCardsRoute}/{cardId}",
-            new CreditCardUpdateDTO { Name = "BaAmex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 9, 10) });
+        var response = await PutDueDateAsync(cardId, 2026, 9, new DateOnly(2026, 9, 10));
         response.EnsureSuccessStatusCode();
         var status = await WaitForResolvedSyncStatusAsync(cardId);
 
@@ -207,9 +222,9 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
         var card2 = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001"); // BarclaysPlatinumVisa8003
         await AddChargeAsync(card1, new DateOnly(2026, 9, 10), 55.5m);
         await AddChargeAsync(card2, new DateOnly(2026, 9, 12), 20m);
-        await SetDueDateAsync(card1, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await SetDueDateAsync(card1, new DateOnly(2026, 9, 10));
         await WaitForResolvedSyncStatusAsync(card1);
-        await SetDueDateAsync(card2, "BarclaysPlatinumVisa8003", isActive: true, new DateOnly(2026, 9, 12));
+        await SetDueDateAsync(card2, new DateOnly(2026, 9, 12));
         await WaitForResolvedSyncStatusAsync(card2);
 
         _provider.NotFoundCalendarId = "old-cal";
@@ -229,7 +244,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     {
         var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000004"); // BaAmex
         await AddChargeAsync(cardId, new DateOnly(2026, 9, 10), 55.5m);
-        await SetDueDateAsync(cardId, "BaAmex", isActive: true, new DateOnly(2026, 9, 10));
+        await SetDueDateAsync(cardId, new DateOnly(2026, 9, 10));
         // Not connected yet at save time, so this save alone never triggered a sync.
 
         using var noRedirectClient = CreateClient(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false });

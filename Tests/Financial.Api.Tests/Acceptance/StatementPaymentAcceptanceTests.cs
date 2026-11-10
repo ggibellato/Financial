@@ -60,8 +60,10 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         ReplaceCashFlowDataBeforeStart(SeededData);
     }
 
-    private Task<List<CardStatementDTO>?> StatementsAsync(int year, int month) =>
-        Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/{year}/{month}");
+    private async Task<AccountStatementDTO?> StoredStatementAsync(int year, int month) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{AmexId}/{year}/{month}"))!.ViewedStatement is { Id: not null } statement
+            ? statement
+            : null;
 
     private Task<HttpResponseMessage> MarkPaidAsync(string statementId, DateOnly? date = null) =>
         Client.PostAsJsonAsync(
@@ -114,8 +116,8 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         await ShouldBeRefused(empty, HttpStatusCode.BadRequest, "There is nothing to pay on this statement.");
         using (new AssertionScope())
         {
-            (await StatementsAsync(2026, 9))!.Should().ContainSingle().Which.IsPaid.Should().BeTrue();
-            (await StatementsAsync(2026, 11))!.Should().ContainSingle().Which.IsPaid.Should().BeFalse();
+            (await StoredStatementAsync(2026, 9))!.IsPaid.Should().BeTrue();
+            (await StoredStatementAsync(2026, 11))!.IsPaid.Should().BeFalse();
             Services.GetRequiredService<ICashFlowRepository>().GetTransfers().Should().BeEmpty();
         }
     }
@@ -130,19 +132,19 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-08")]
-    public async Task StatementsGet_WritesNothing_AndReturnsStoredStatementsOnly()
+    public async Task StatementsGet_WritesNothing_AndOnlyStoredStatementsHaveAnId()
     {
         var repository = Services.GetRequiredService<ICashFlowRepository>();
         var storedBefore = repository.GetCardStatements().Count();
 
-        var october = await StatementsAsync(2026, 10);
-        var december = await StatementsAsync(2026, 12);
+        var october = await StoredStatementAsync(2026, 10);
+        var december = await StoredStatementAsync(2026, 12);
 
         using (new AssertionScope())
         {
-            october!.Select(statement => (statement.Id.ToString(), statement.CreditCardName, statement.OutstandingTotal))
-                .Should().Equal((OctoberStatementId, "BA Amex", 30m));
-            december.Should().BeEmpty();
+            october!.Id.Should().Be(Guid.Parse(OctoberStatementId));
+            october.OutstandingTotal.Should().Be(30m);
+            december.Should().BeNull();
             repository.GetCardStatements().Count().Should().Be(storedBefore);
         }
     }
@@ -170,7 +172,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         var movedOut = await UpdateChargeAsync(SeptemberChargeId, chargeDate, october);
         var movedIn = await UpdateChargeAsync(OctoberChargeId, new DateOnly(2026, 10, 3), september, value: 30m, description: "Taxi");
         var deleted = await Client.DeleteAsync($"{Api}/expenses/{SeptemberChargeId}");
-        var septemberStatement = (await StatementsAsync(2026, 9))!.Single();
+        var septemberStatement = (await StoredStatementAsync(2026, 9))!;
         var edited = await UpdateChargeAsync(SeptemberChargeId, chargeDate, september, description: "Airport taxi", categoryId: CasaId, countsAsTithe: false);
 
         foreach (var refused in new[] { added, valueChanged, dateChanged, cardChanged, movedOut, movedIn, deleted })
@@ -375,21 +377,14 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-10")]
-    public async Task PaymentTransfer_HiddenFromTransfers_AndEditOrDeleteReturns409()
+    public async Task PaymentTransfer_EditOrDeleteReturns409()
     {
         var repository = Services.GetRequiredService<ICashFlowRepository>();
         await MarkPaidAsync(OctoberStatementId);
         var paymentId = repository.GetTransfers().Single().Id;
 
-        var monthList = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/month/2026/10");
-        var bankList = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/bank/{BarclaysId}");
         var refusals = new[]
         {
-            await Client.PutAsJsonAsync($"{Api}/transfers/{paymentId}", new TransferUpdateDTO
-            {
-                Date = new DateOnly(2026, 10, 15), SourceBankId = Guid.Parse(BarclaysId), DestinationBankId = Guid.Parse(AmexId), Amount = 1m
-            }),
-            await Client.DeleteAsync($"{Api}/transfers/{paymentId}"),
             await Client.PutAsJsonAsync($"{Api}/accounts/transfers/{paymentId}", new AccountTransferUpdateDTO
             {
                 Date = new DateOnly(2026, 10, 15), SourceAccountId = Guid.Parse(BarclaysId), DestinationAccountId = Guid.Parse(AmexId), Amount = 1m
@@ -402,12 +397,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
             await ShouldBeRefused(refused, HttpStatusCode.Conflict, PaymentTransferMessage);
         }
 
-        using (new AssertionScope())
-        {
-            monthList.Should().BeEmpty();
-            bankList.Should().BeEmpty();
-            repository.GetTransfers().Should().ContainSingle().Which.Amount.Should().Be(30m);
-        }
+        repository.GetTransfers().Should().ContainSingle().Which.Amount.Should().Be(30m);
     }
 
     private async Task<(Dictionary<string, decimal> October, Dictionary<string, decimal> September, decimal OctoberTithe)> StatementMonthFiguresAsync()
@@ -497,7 +487,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         {
             intoLater.StatusCode.Should().Be(HttpStatusCode.OK);
             (await intoLater.Content.ReadFromJsonAsync<ExpenseDTO>())!.InvoiceDate.Should().Be(new DateOnly(2027, 1, 1));
-            (await StatementsAsync(2027, 1))!.Should().ContainSingle(statement => statement.CreditCardId == Guid.Parse(AmexId));
+            (await StoredStatementAsync(2027, 1)).Should().NotBeNull();
         }
     }
 }

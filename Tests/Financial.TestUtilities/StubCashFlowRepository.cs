@@ -152,7 +152,10 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public void SetCardDueDate(Account card, DateOnly? dueDate)
     {
-        CardDueDate.ClearSupersededBy(card, CardStatements, dueDate);
+        foreach (var dated in CardStatements.Where(existing => existing.CreditCard.Id == card.Id))
+        {
+            dated.SetDueDate(null);
+        }
 
         if (dueDate is not { } date)
         {
