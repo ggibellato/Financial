@@ -17,8 +17,8 @@ function renderPage(overrides: Partial<Props> = {}) {
     children: <table aria-label="Banks" />,
     ...overrides,
   }
-  render(<AdminEntityPage {...props} />)
-  return props
+  const { rerender } = render(<AdminEntityPage {...props} />)
+  return { ...props, rerender: (changes: Partial<Props>) => rerender(<AdminEntityPage {...props} {...changes} />) }
 }
 
 describe('AdminEntityPage', () => {
@@ -118,27 +118,12 @@ describe('AdminEntityPage', () => {
         </tbody>
       </table>
     )
-    const page = (names: string[]) => (
-      <AdminEntityPage
-        title="Banks"
-        createLabel="Create Bank"
-        onCreate={vi.fn()}
-        isLoading={false}
-        loadError={null}
-        onRetry={vi.fn()}
-        isEmpty={false}
-        emptyMessage="No banks yet"
-      >
-        {rows(names)}
-      </AdminEntityPage>
-    )
-    const { rerender } = render(page(['Barclays', 'Monzo']))
+    const { rerender } = renderPage({ children: rows(['Barclays', 'Monzo']) })
 
     screen.getByRole('button', { name: 'Delete Monzo' }).focus()
     screen.getByRole('button', { name: 'Create Bank' }).focus()
-    rerender(page(['Barclays']))
     screen.getByRole('button', { name: 'Create Bank' }).blur()
-    rerender(page(['Barclays']))
+    rerender({ children: rows(['Barclays']) })
 
     expect(document.body).toHaveFocus()
   })
