@@ -30,37 +30,6 @@ public sealed class CardStatementService : ICardStatementService
         _tracer = tracer ?? throw new ArgumentNullException(nameof(tracer));
     }
 
-    public IReadOnlyList<CardStatementDTO> GetStatementsForMonth(int year, int month)
-    {
-        using var span = StartSpan("GetStatementsForMonth");
-        try
-        {
-            var statements = _repository.GetCardStatements().ToList();
-            var existingStatements = statements
-                .Where(s => s.Year == year && s.Month == month)
-                .ToList();
-
-            var expenses = _repository.GetExpenses().ToList();
-            var transfers = _repository.GetTransfers().ToList();
-            var records = AccountTransactionReader.Read(_repository);
-            var accumulatedByCard = existingStatements
-                .Select(s => s.CreditCard)
-                .Distinct()
-                .ToDictionary(card => card.Id, card => CardChargeFilter.TotalOwed(card, records));
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetStatementsForMonth");
-            return existingStatements
-                .Select(s => ToDto(s, AmountToPay(s, expenses, statements, transfers), accumulatedByCard[s.CreditCard.Id]))
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
     public async Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkCardStatementPaidDTO request)
     {
         using var span = StartSpan("MarkStatementPaid");

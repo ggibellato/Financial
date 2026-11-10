@@ -4,7 +4,6 @@ namespace Financial.CashFlow.Application.Interfaces;
 
 public interface ICardStatementService
 {
-    IReadOnlyList<CardStatementDTO> GetStatementsForMonth(int year, int month);
     Task<CardStatementDTO> MarkStatementPaidAsync(Guid id, MarkCardStatementPaidDTO request);
     Task<CardStatementDTO> UnmarkStatementPaidAsync(Guid id);
 

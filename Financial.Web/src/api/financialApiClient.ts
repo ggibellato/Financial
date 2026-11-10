@@ -51,8 +51,6 @@ import type {
   CorporateActionSpinOffUpdateDto,
   ExpenseCreateDto,
   RecurringBillCreateDto,
-  CreditCardDto,
-  CreditCardCreateDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -115,10 +113,6 @@ import type {
   TransactionSummaryItemDto,
   TransactionTypeEffectDto,
   TransactionUpdateDto,
-  TransferDto,
-  TransferCreateDto,
-  CreditCardUpdateDto,
-  TransferUpdateDto,
   BalanceAdjustmentDto,
   BalanceAdjustmentCreateDto,
   BalanceAdjustmentUpdateDto,
@@ -226,10 +220,6 @@ export interface FinancialApiClient {
   createCategory: (request: CategoryCreateDto) => Promise<CategoryDto>
   updateCategory: (id: string, request: CategoryUpdateDto) => Promise<CategoryDto>
   deleteCategory: (id: string) => Promise<void>
-  getCreditCards: () => Promise<CreditCardDto[]>
-  createCreditCard: (request: CreditCardCreateDto) => Promise<CreditCardDto>
-  updateCreditCard: (id: string, request: CreditCardUpdateDto) => Promise<CreditCardDto>
-  deleteCreditCard: (id: string) => Promise<void>
   getInvestmentAccounts: () => Promise<InvestmentAccountDto[]>
   createInvestmentAccount: (request: InvestmentAccountCreateDto) => Promise<InvestmentAccountDto>
   updateInvestmentAccount: (id: string, request: InvestmentAccountUpdateDto) => Promise<InvestmentAccountDto>
@@ -277,18 +267,13 @@ export interface FinancialApiClient {
   createIncome: (request: IncomeCreateDto) => Promise<IncomeDto>
   updateIncome: (id: string, request: IncomeUpdateDto) => Promise<IncomeDto>
   deleteIncome: (id: string) => Promise<void>
-  createTransfer: (request: TransferCreateDto) => Promise<TransferDto>
-  updateTransfer: (id: string, request: TransferUpdateDto) => Promise<TransferDto>
   createBalanceAdjustment: (accountId: string, request: BalanceAdjustmentCreateDto) => Promise<BalanceAdjustmentDto>
   updateBalanceAdjustment: (
     accountId: string,
     id: string,
     request: BalanceAdjustmentUpdateDto,
   ) => Promise<BalanceAdjustmentDto>
-  getTransfersByMonth: (year: number, month: number) => Promise<TransferDto[]>
-  deleteTransfer: (id: string) => Promise<void>
   deleteBalanceAdjustment: (accountId: string, id: string) => Promise<void>
-  getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
   unmarkCardStatementPaid: (id: string) => Promise<CardStatementDto>
   getCategoryTotalsAnnualForYear: (year: number) => Promise<CategoryTotalsAnnualDto>
@@ -657,15 +642,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteCategory: (id) => requestVoid(`/categories/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    getCreditCards: () => request<CreditCardDto[]>('/credit-cards'),
-    createCreditCard: (requestBody) =>
-      request<CreditCardDto>('/credit-cards', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateCreditCard: (id, requestBody) =>
-      request<CreditCardDto>(`/credit-cards/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
-    deleteCreditCard: (id) => requestVoid(`/credit-cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getInvestmentAccounts: () => request<InvestmentAccountDto[]>('/investment-accounts'),
     createInvestmentAccount: (requestBody) =>
       request<InvestmentAccountDto>('/investment-accounts', { method: 'POST', body: JSON.stringify(requestBody) }),
@@ -791,16 +767,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         body: JSON.stringify(requestBody),
       }),
     deleteIncome: (id) => requestVoid(`/incomes/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    createTransfer: (requestBody) =>
-      request<TransferDto>('/transfers', {
-        method: 'POST',
-        body: JSON.stringify(requestBody),
-      }),
-    updateTransfer: (id, requestBody) =>
-      request<TransferDto>(`/transfers/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
     createBalanceAdjustment: (accountId, requestBody) =>
       request<BalanceAdjustmentDto>(`/accounts/${encodeURIComponent(accountId)}/adjustments`, {
         method: 'POST',
@@ -811,14 +777,10 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
         method: 'PUT',
         body: JSON.stringify(requestBody),
       }),
-    getTransfersByMonth: (year, month) => request<TransferDto[]>(`/transfers/month/${year}/${month}`),
-    deleteTransfer: (id) => requestVoid(`/transfers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     deleteBalanceAdjustment: (accountId, id) =>
       requestVoid(`/accounts/${encodeURIComponent(accountId)}/adjustments/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       }),
-    getCardStatementsByMonth: (year, month) =>
-      request<CardStatementDto[]>(`/card-statements/${year}/${month}`),
     markCardStatementPaid: (id, requestBody) =>
       request<CardStatementDto>(`/card-statements/${encodeURIComponent(id)}/mark-paid`, {
         method: 'POST',

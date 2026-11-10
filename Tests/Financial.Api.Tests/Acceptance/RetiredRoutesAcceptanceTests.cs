@@ -15,10 +15,16 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     private const string MovementId = "5e771e00-0000-0000-0000-000000000301";
     private const string BankId = "5e771e00-0000-0000-0000-000000000004";
     private const string AdjustmentId = "5e771e00-0000-0000-0000-000000000401";
+    private const string CardId = "5e771e00-0000-0000-0000-000000000005";
+    private const string StatementId = "5e771e00-0000-0000-0000-000000000501";
+    private const string ChaseId = "5e771e00-0000-0000-0000-000000000006";
+    private const string TransferId = "5e771e00-0000-0000-0000-000000000601";
     private const string SeededData = $$"""
         {
           "Accounts": [
             { "Id": "{{BankId}}", "Name": "Barclays", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
+            { "Id": "{{ChaseId}}", "Name": "Chase", "Template": "Bank", "Currency": "GBP", "IsActive": true, "OpeningBalance": { "Amount": 0, "StartDate": "2026-01-01" }, "RoundUp": { "Enabled": false } },
+            { "Id": "{{CardId}}", "Name": "BA Amex", "Template": "CreditCard", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null },
             { "Id": "{{MaeId}}", "Name": "Mãe", "Template": "Settlement", "Currency": "BRL", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": null, "CategoryId": null, "Currencies": ["BRL", "GBP"], "OtherParticipant": "Mãe" },
             { "Id": "{{ReservaId}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
               { "Id": "{{PotId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 100 }
@@ -26,6 +32,12 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
           ],
           "BalanceAdjustments": [
             { "Id": "{{AdjustmentId}}", "Date": "2026-09-10", "AccountId": "{{BankId}}", "TargetBalance": 10, "Delta": 10, "Note": null }
+          ],
+          "CardStatements": [
+            { "Id": "{{StatementId}}", "CreditCardId": "{{CardId}}", "Year": 2026, "Month": 9, "IsPaid": false, "DueDate": null }
+          ],
+          "Transfers": [
+            { "Id": "{{TransferId}}", "Date": "2026-09-05", "SourceAccountId": "{{BankId}}", "DestinationAccountId": "{{ChaseId}}", "Amount": 20 }
           ],
           "ReserveMovements": [
             { "Id": "{{MovementId}}", "BucketId": "{{PotId}}", "Amount": 50, "Date": "2026-09-01", "Description": "Split", "IncomeId": null }
@@ -65,6 +77,16 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("POST", $"banks/{BankId}/adjustments")]
     [InlineData("PUT", $"banks/{BankId}/adjustments/{AdjustmentId}")]
     [InlineData("DELETE", $"banks/{BankId}/adjustments/{AdjustmentId}")]
+    [InlineData("GET", "credit-cards")]
+    [InlineData("POST", "credit-cards")]
+    [InlineData("PUT", $"credit-cards/{CardId}")]
+    [InlineData("DELETE", $"credit-cards/{CardId}")]
+    [InlineData("POST", "transfers")]
+    [InlineData("PUT", $"transfers/{TransferId}")]
+    [InlineData("DELETE", $"transfers/{TransferId}")]
+    [InlineData("GET", "transfers/month/2026/9")]
+    [InlineData("GET", $"transfers/bank/{BankId}")]
+    [InlineData("GET", "card-statements/2026/9")]
     public async Task RetiredRoute_Returns404(string method, string path)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));
@@ -92,6 +114,14 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("POST", $"accounts/{BankId}/adjustments", HttpStatusCode.BadRequest)]
     [InlineData("PUT", $"accounts/{BankId}/adjustments/{AdjustmentId}", HttpStatusCode.BadRequest)]
     [InlineData("DELETE", $"accounts/{BankId}/adjustments/{AdjustmentId}", HttpStatusCode.NoContent)]
+    [InlineData("GET", $"accounts/{CardId}/2026/9", HttpStatusCode.OK)]
+    [InlineData("GET", $"accounts/{CardId}/statements", HttpStatusCode.OK)]
+    [InlineData("PUT", $"accounts/{CardId}/statements/2026/9/due-date", HttpStatusCode.BadRequest)]
+    [InlineData("POST", $"card-statements/{StatementId}/mark-paid", HttpStatusCode.BadRequest)]
+    [InlineData("POST", $"card-statements/{StatementId}/unmark-paid", HttpStatusCode.Conflict)]
+    [InlineData("POST", "accounts/transfers", HttpStatusCode.BadRequest)]
+    [InlineData("PUT", $"accounts/transfers/{TransferId}", HttpStatusCode.BadRequest)]
+    [InlineData("DELETE", $"accounts/transfers/{TransferId}", HttpStatusCode.OK)]
     public async Task KeptRoute_StillAnswers(string method, string path, HttpStatusCode expected)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));

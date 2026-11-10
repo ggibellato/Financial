@@ -74,62 +74,6 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    [Trait("AC", "P60-F08-statement-payment-and-card-screen-08")]
-    public void GetStatementsForMonth_ReturnsStoredStatementsOfThatMonthOnly_AndWritesNothing()
-    {
-        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
-        var july = SeedStatement(visa, 2026, 7);
-        SeedStatement(visa, 2026, 8);
-        SeedStatement(Card(_repository, "BaAmex"), 2026, 6);
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        using (new AssertionScope())
-        {
-            result.Select(s => s.Id).Should().Equal(july.Id);
-            _repository.CardStatements.Should().HaveCount(3);
-            _repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_ActiveCardWithNoStoredStatement_IsNotCreated()
-    {
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        using (new AssertionScope())
-        {
-            result.Should().BeEmpty();
-            _repository.CardStatements.Should().BeEmpty();
-            _repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_InactiveCardsStoredStatement_IsReturned()
-    {
-        var retired = TestAccounts.CreditCard("RetiredCard", isActive: false);
-        _repository.Accounts.Add(retired);
-        SeedStatement(retired, 2026, 7);
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        result.Should().ContainSingle(s => s.CreditCardName == "RetiredCard");
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_PaidStatement_HasNoOutstandingTotal()
-    {
-        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, visa);
-        SeedStatement(visa, 2026, 7).MarkLegacyPaid();
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        result.Should().ContainSingle(s => s.IsPaid && s.OutstandingTotal == 0m);
-    }
-
-    [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
     public void GetAmountDueForPeriod_SumsThatMonthsChargesForTheCard()
     {
@@ -158,42 +102,6 @@ public class CardStatementServiceTests
         SeedStatements(2026, 7);
 
         _sut.GetAmountDueForPeriod(visa.Id, 2026, 7).Should().Be(20m);
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_AccumulatedOutstandingTotalSumsUnpaidChargesAcrossAllPeriodsForTheCard()
-    {
-        AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        AddCharge(_repository, new DateOnly(2026, 8, 1), 100m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
-
-        SeedStatements(2026, 7);
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        using (new AssertionScope())
-        {
-            var barclays = result.Single(s => s.CreditCardName == "BarclaysPlatinumVisa8003");
-            barclays.OutstandingTotal.Should().Be(30m, "only July's charge belongs to this statement's period");
-            barclays.AccumulatedOutstandingTotal.Should().Be(145m, "June, July and August unpaid charges all count toward the card's total");
-        }
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_AccumulatedOutstandingTotalExcludesSettledChargesAndOtherCards()
-    {
-        var barclays = _repository.Accounts.First(b => b.Name == "Barclays");
-        var settled = AddCharge(_repository, new DateOnly(2026, 6, 5), 15m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        settled.Settle(barclays, new DateOnly(2026, 6, 20));
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, Card(_repository, "BarclaysPlatinumVisa8003"));
-        AddCharge(_repository, new DateOnly(2026, 7, 12), 999m, Card(_repository, "BaAmex"));
-
-        SeedStatements(2026, 7);
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        result.Should().ContainSingle(s => s.CreditCardName == "BarclaysPlatinumVisa8003" && s.AccumulatedOutstandingTotal == 30m);
     }
 
     [Fact]
@@ -600,48 +508,6 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public void GetStatementsForMonth_StatementWithCreditFromAnEarlierMonth_OutstandingIsTheAmountToPay()
-    {
-        var card = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 3), new DateOnly(2026, 8, 1), -35m, card);
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 50m, card);
-        SeedStatement(card, 2026, 9);
-
-        var result = _sut.GetStatementsForMonth(2026, 9);
-
-        result.Should().ContainSingle(s => s.OutstandingTotal == 15m && !s.IsPaid);
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_RefundLargerThanTheCharges_OutstandingIsZero()
-    {
-        var card = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 25m, card);
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 8), new DateOnly(2026, 9, 1), -60m, card);
-        SeedStatement(card, 2026, 9);
-
-        var result = _sut.GetStatementsForMonth(2026, 9);
-
-        using (new AssertionScope())
-        {
-            result.Should().ContainSingle(s => s.OutstandingTotal == 0m && !s.IsPaid);
-            result[0].AccumulatedOutstandingTotal.Should().Be(-35m);
-        }
-    }
-
-    [Fact]
-    public void GetStatementsForMonth_StoredStatementBeforeTheFirstCharge_OutstandingIsZero()
-    {
-        var card = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 25m, card);
-        SeedStatement(card, 2026, 7);
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        result.Should().ContainSingle(s => s.OutstandingTotal == 0m);
-    }
-
-    [Fact]
     public void GetAmountDueForPeriod_UnpaidMonth_IsTheAmountToPayAfterCredit()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
@@ -717,17 +583,6 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public void GetStatementsForMonth_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
-    {
-        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
-
-        var act = () => _sut.GetStatementsForMonth(2026, 9);
-
-        act.Should().Throw<InvalidOperationException>();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CardStatementService.GetStatementsForMonth");
-    }
-
-    [Fact]
     public async Task MarkStatementPaidAsync_CardAccountAsPaymentSource_ThrowsAndSavesNothing()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
@@ -742,29 +597,6 @@ public class CardStatementServiceTests
             statement.IsPaid.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
-        }
-    }
-
-    [Fact]
-    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-06")]
-    public void GetStatementsForMonth_AccumulatedOutstanding_CountsEveryUnpaidChargeOfTheCardWhateverItsMonth()
-    {
-        var card = Card(_repository, "BaAmex");
-        AddCharge(_repository, new DateOnly(2026, 6, 10), 15m, card);
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 25m, card);
-        AddCharge(_repository, new DateOnly(2026, 9, 10), 40m, card);
-        var paid = AddCharge(_repository, new DateOnly(2026, 7, 12), 100m, card);
-        paid.Settle(_repository.Accounts.First(a => a.Name == "Barclays"), new DateOnly(2026, 7, 31));
-
-        SeedStatements(2026, 7);
-
-        var result = _sut.GetStatementsForMonth(2026, 7);
-
-        var amex = result.Single(s => s.CreditCardName == "BaAmex");
-        using (new AssertionScope())
-        {
-            amex.OutstandingTotal.Should().Be(25m);
-            amex.AccumulatedOutstandingTotal.Should().Be(80m);
         }
     }
 }
