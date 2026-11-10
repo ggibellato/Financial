@@ -15,6 +15,7 @@ import { corporateActionTypeLabel } from '../utils/corporateActionTypeLabel'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './CorporateActionsTab.css'
 import TruncatedText from './TruncatedText'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 
 function formatRatioFactor(factor: number): string {
   return `×${factor.toFixed(4).replace(/\.?0+$/, '')}`
@@ -234,7 +235,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
                 <TableHeaderCell>Affected/Linked Asset</TableHeaderCell>
                 <TableHeaderCell>Resulting Change</TableHeaderCell>
                 <TableHeaderCell>Tax Status</TableHeaderCell>
-                <TableHeaderCell className="data-table__col--action" />
+                <ActionsColumnHeader />
               </TableRow>
             </TableHeader>
             <TableBody>

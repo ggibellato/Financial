@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Button, Checkbox, Popover, PopoverSurface, PopoverTrigger, SearchBox } from '@fluentui/react-components'
 import { FilterFilled, FilterRegular } from '@fluentui/react-icons'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
+import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
 import './ColumnFilterMenu.css'
 
 const SEARCH_BOX_THRESHOLD = 10
@@ -25,6 +27,7 @@ export default function ColumnFilterMenu({
   isFiltered,
 }: ColumnFilterMenuProps) {
   const [searchText, setSearchText] = useState('')
+  const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
 
   const isChecked = (value: string) => selectedValues === undefined || selectedValues.has(value)
   const allChecked = availableValues.every((value) => isChecked(value))
@@ -39,6 +42,7 @@ export default function ColumnFilterMenu({
           className={`column-filter-menu__trigger${isFiltered ? ' column-filter-menu__trigger--active' : ''}`}
           icon={isFiltered ? <FilterFilled /> : <FilterRegular />}
           aria-label={`Filter by ${label}`}
+          tabIndex={isStackedLayout ? -1 : undefined}
         />
       </PopoverTrigger>
       <PopoverSurface className="column-filter-menu__surface">

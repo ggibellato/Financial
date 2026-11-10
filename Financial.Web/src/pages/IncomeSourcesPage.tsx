@@ -18,6 +18,7 @@ import { type AccountsStatus, useAccounts } from '../hooks/useAccounts'
 import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { AccountDto, IncomeSourceDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 function splitsToDisplay(incomeSource: IncomeSourceDto, accounts: AccountDto[], accountsStatus: AccountsStatus): string {
   if (incomeSource.potsAccountId == null) return '—'
@@ -125,7 +126,7 @@ export default function IncomeSourcesPage() {
             <TableHeaderCell>Group</TableHeaderCell>
             <TableHeaderCell>Active</TableHeaderCell>
             <TableHeaderCell>Splits to</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

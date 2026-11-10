@@ -8,6 +8,7 @@ import RowActionsCell from '../components/grid/RowActionsCell'
 import { useBrokers } from '../hooks/useBrokers'
 import { portfolioKey, usePortfolios } from '../hooks/usePortfolios'
 import type { PortfolioDto } from '../api/types'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 export default function PortfoliosPage() {
   const {
@@ -102,7 +103,7 @@ export default function PortfoliosPage() {
             <TableHeaderCell>Broker</TableHeaderCell>
             <TableHeaderCell>Broker Status</TableHeaderCell>
             <TableHeaderCell>Assets</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

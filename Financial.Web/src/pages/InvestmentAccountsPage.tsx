@@ -18,6 +18,7 @@ import { useAccounts } from '../hooks/useAccounts'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): string {
   if (account.source === 'CreditCard') {
@@ -145,7 +146,7 @@ export default function InvestmentAccountsPage() {
             <TableHeaderCell>Active</TableHeaderCell>
             <TableHeaderCell>Liability</TableHeaderCell>
             <TableHeaderCell>Source</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

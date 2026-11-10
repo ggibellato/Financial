@@ -29,6 +29,7 @@ import { useCredits } from '../hooks/useCredits'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatPercent1OrDash, formatShortDate } from '../utils/formatters'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import './CreditsTab.css'
 
 const CHART_TYPE_OPTIONS: { value: ChartType; label: string }[] = [
@@ -524,9 +525,9 @@ export default function CreditsTab() {
                 sortDirection={sortState?.columnKey === 'yieldOnMarket' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell />
+              <TableHeaderCell aria-label="Yield details" />
               <TableHeaderCell>FX</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
+              <ActionsColumnHeader />
             </TableRow>
           </TableHeader>
           <TableBody>

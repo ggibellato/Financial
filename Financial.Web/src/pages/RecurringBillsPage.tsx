@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import { Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import AdminEntityPage from '../components/AdminEntityPage'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import RecurringBillFormDialog, { type RecurringBillFormValues } from '../components/RecurringBillFormDialog'
@@ -10,6 +10,7 @@ import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useRecurringBills } from '../hooks/useRecurringBills'
 import type { RecurringBillDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 export default function RecurringBillsPage() {
   const {
@@ -134,7 +135,7 @@ export default function RecurringBillsPage() {
               sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
               onSort={requestSort}
             />
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

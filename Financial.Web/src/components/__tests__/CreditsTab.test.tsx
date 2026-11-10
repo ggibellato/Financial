@@ -220,6 +220,12 @@ describe('CreditsTab', () => {
     expect(screen.getByText('Value')).toBeInTheDocument()
   })
 
+  it('names_the_yield_details_and_actions_columns_for_assistive_technology', async () => {
+    await renderAssetTab([CREDIT_DIVIDEND])
+    expect(screen.getByRole('columnheader', { name: 'Yield details' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument()
+  })
+
   it('renders_date_in_dd_MM_yyyy_format', async () => {
     await renderAssetTab([CREDIT_DIVIDEND])
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()

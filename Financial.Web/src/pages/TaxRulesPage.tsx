@@ -8,6 +8,7 @@ import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { useTaxRules } from '../hooks/useTaxRules'
 import type { TaxRuleDto } from '../api/types'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 export default function TaxRulesPage() {
   const {
@@ -90,7 +91,7 @@ export default function TaxRulesPage() {
             <TableHeaderCell>Label</TableHeaderCell>
             <TableHeaderCell>Effective From</TableHeaderCell>
             <TableHeaderCell>Effective To</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

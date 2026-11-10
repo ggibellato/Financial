@@ -7,6 +7,7 @@ import Breadcrumb from './components/Breadcrumb'
 import LoadingState from './components/LoadingState'
 import SyncStatusBanner from './components/SyncStatusBanner'
 import PaymentDueBanner from './components/PaymentDueBanner'
+import RouteAnnouncer from './components/RouteAnnouncer'
 import ColourModeToggleButton from './components/ColourModeToggleButton'
 import { ColourModeProvider, useColourMode } from './context/ColourModeContext'
 import { APP_TOASTER_ID } from './hooks/useSuccessToast'
@@ -76,6 +77,7 @@ function AppShell() {
 
   return (
     <FluentProvider theme={colourMode === 'dark' ? financialDarkTheme : financialLightTheme}>
+      <RouteAnnouncer />
       <PaymentDueBanner />
       <Toaster toasterId={APP_TOASTER_ID} position="bottom-end" pauseOnHover pauseOnWindowBlur />
       <div className="app">

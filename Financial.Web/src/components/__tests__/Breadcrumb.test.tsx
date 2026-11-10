@@ -31,6 +31,23 @@ describe('Breadcrumb', () => {
     }
   })
 
+  it('renders "Category › Group › Child" for every admin page nested under a group', () => {
+    for (const category of NAV_TREE) {
+      for (const group of category.groups ?? []) {
+        for (const child of group.children) {
+          const { unmount } = renderBreadcrumb(child.route)
+
+          expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent(
+            `${category.label}${group.label}${child.label}`,
+          )
+          expect(screen.getByText(child.label)).toHaveAttribute('aria-current', 'page')
+
+          unmount()
+        }
+      }
+    }
+  })
+
   it('renders a detail page as the current segment after a link to its parent page', () => {
     renderBreadcrumb('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
 

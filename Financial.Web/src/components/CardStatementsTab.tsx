@@ -14,7 +14,6 @@ import {
   TableBody,
   TableCell,
   TableHeader,
-  TableHeaderCell,
   TableRow,
   Text,
 } from '@fluentui/react-components'
@@ -31,6 +30,7 @@ import StatementDueDateForm from './StatementDueDateForm'
 import TruncatedText from './TruncatedText'
 import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 
 interface StatementColumn {
   key: string
@@ -285,7 +285,7 @@ export default function CardStatementsTab({
                       onSort={requestSort}
                     />
                   ))}
-                  <TableHeaderCell className="data-table__col--action-wide" />
+                  <ActionsColumnHeader className="data-table__col--action-wide" />
                 </TableRow>
               </TableHeader>
               <TableBody>

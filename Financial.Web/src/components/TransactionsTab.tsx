@@ -31,6 +31,7 @@ import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { formatN2, formatN8, formatShortDate, parseValidatedNumber } from '../utils/formatters'
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import './TransactionsTab.css'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
@@ -540,7 +541,7 @@ export default function TransactionsTab() {
                 onSort={requestSort}
               />
               <TableHeaderCell>FX</TableHeaderCell>
-              <TableHeaderCell className="data-table__col--action" />
+              <ActionsColumnHeader />
             </TableRow>
           </TableHeader>
           <TableBody>

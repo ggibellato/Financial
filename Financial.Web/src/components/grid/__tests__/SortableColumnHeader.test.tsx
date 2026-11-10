@@ -1,6 +1,7 @@
-import { fireEvent, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../../../test/renderWithFluent'
+import { mockMatchMedia } from '../../../test/mockMatchMedia'
 import SortableColumnHeader from '../SortableColumnHeader'
 
 describe('SortableColumnHeader', () => {
@@ -91,5 +92,40 @@ describe('SortableColumnHeader', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Value' }).tagName).toBe('BUTTON')
+  })
+
+  describe('in the stacked narrow layout, where the header row is clipped', () => {
+    const originalMatchMedia = window.matchMedia
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    const renderHeader = () =>
+      render(
+        <table>
+          <thead>
+            <tr>
+              <SortableColumnHeader label="Value" columnKey="value" onSort={vi.fn()} />
+            </tr>
+          </thead>
+        </table>,
+      )
+
+    it('takes the sort button out of the tab order', () => {
+      mockMatchMedia(true)
+      renderHeader()
+
+      expect(screen.getByRole('button', { name: 'Value' })).toHaveAttribute('tabindex', '-1')
+    })
+
+    it('puts the sort button back in the tab order when the viewport widens', () => {
+      const viewport = mockMatchMedia(true)
+      renderHeader()
+
+      act(() => viewport.setMatches(false))
+
+      expect(screen.getByRole('button', { name: 'Value' })).not.toHaveAttribute('tabindex')
+    })
   })
 })

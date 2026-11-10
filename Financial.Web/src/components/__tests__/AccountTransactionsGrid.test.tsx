@@ -378,7 +378,7 @@ describe('AccountTransactionsGrid', () => {
       render(<AccountTransactionsGrid accountId="bank-1" transactions={[readOnly]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
       expect(screen.queryByText('Edit from the income')).not.toBeInTheDocument()
-      expect(screen.getByRole('columnheader', { name: '' })).not.toHaveClass('data-table__col--action-wide')
+      expect(screen.getByRole('columnheader', { name: 'Actions' })).not.toHaveClass('data-table__col--action-wide')
     })
   })
 

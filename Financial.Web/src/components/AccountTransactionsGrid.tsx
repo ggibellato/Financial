@@ -7,7 +7,6 @@ import {
   TableBody,
   TableCell,
   TableHeader,
-  TableHeaderCell,
   TableRow,
   Text,
   Tooltip,
@@ -21,6 +20,7 @@ import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, PAID_BY_YOU, recordNoun, rowKey, statementPath } from './accountActions'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 
 interface TransactionColumn {
   key: string
@@ -232,7 +232,7 @@ export default function AccountTransactionsGrid({
                 onSort={requestSort}
               />
             ))}
-            <TableHeaderCell className={actionClassName} />
+            <ActionsColumnHeader className={actionClassName} />
           </TableRow>
         </TableHeader>
         <TableBody>

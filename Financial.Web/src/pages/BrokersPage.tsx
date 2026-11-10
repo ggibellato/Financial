@@ -9,6 +9,7 @@ import { useBrokers } from '../hooks/useBrokers'
 import type { BrokerDto, CostBasisMethod } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 import TruncatedText from '../components/TruncatedText'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 function deleteMessage(broker: BrokerDto) {
   if (broker.portfolioCount > 0) {
@@ -121,7 +122,7 @@ export default function BrokersPage() {
             <TableHeaderCell>Currency</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
             <TableHeaderCell>Portfolios</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

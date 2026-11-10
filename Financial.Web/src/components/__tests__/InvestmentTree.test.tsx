@@ -615,8 +615,7 @@ describe('InvestmentTree', () => {
     renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' })
 
     await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('Asset:XPI:Acoes:KLBN4'))
-    const assetItem = screen.getByText('KLBN4').closest('[role="treeitem"]')
-    expect(assetItem).toHaveFocus()
+    await waitFor(() => expect(screen.getByText('KLBN4').closest('[role="treeitem"]')).toHaveFocus())
   })
 
   it('a pendingSelection for a node not present in the loaded tree is a no-op', async () => {
