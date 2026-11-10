@@ -1,6 +1,7 @@
 import { fireEvent, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render } from '../../../test/renderWithFluent'
+import { mockMatchMedia } from '../../../test/mockMatchMedia'
 import ColumnFilterMenu from '../ColumnFilterMenu'
 
 const TEN_VALUES = Array.from({ length: 10 }, (_, i) => `Category ${i + 1}`)
@@ -138,5 +139,40 @@ describe('ColumnFilterMenu', () => {
 
     expect(screen.getByRole('checkbox', { name: 'Category 1' })).toBeInTheDocument()
     expect(screen.queryByRole('checkbox', { name: 'Category 2' })).not.toBeInTheDocument()
+  })
+
+  describe('in the stacked narrow layout, where the header row is clipped', () => {
+    const originalMatchMedia = window.matchMedia
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    const renderMenu = () =>
+      render(
+        <ColumnFilterMenu
+          columnKey="category"
+          label="Category"
+          availableValues={['Casa']}
+          selectedValues={undefined}
+          onToggleValue={vi.fn()}
+          onToggleAll={vi.fn()}
+          isFiltered={false}
+        />,
+      )
+
+    it('takes the filter trigger out of the tab order', () => {
+      mockMatchMedia(true)
+      renderMenu()
+
+      expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveAttribute('tabindex', '-1')
+    })
+
+    it('keeps the filter trigger in the tab order at wider widths', () => {
+      mockMatchMedia(false)
+      renderMenu()
+
+      expect(screen.getByRole('button', { name: 'Filter by Category' })).not.toHaveAttribute('tabindex', '-1')
+    })
   })
 })

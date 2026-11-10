@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
@@ -69,6 +69,15 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
 
     expect(sessionStorage.getItem('financial.selectedDomain')).toBe('cashflow')
+  })
+
+  it('announces the page the user navigated to and titles the document with it', async () => {
+    render(<AppWithRoutes />)
+
+    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Monthly')
+    await waitFor(() => expect(document.title).toBe('Monthly - Financial'))
   })
 
   it('renders_in_light_mode_by_default_regardless_of_os_preference', () => {

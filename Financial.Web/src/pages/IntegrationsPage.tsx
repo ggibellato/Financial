@@ -24,6 +24,7 @@ import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useCalendarConnection } from '../hooks/useCalendarConnection'
 import { useCalendarSyncStatuses } from '../hooks/useCalendarSyncStatuses'
 import { formatDateTime, formatShortDateUtc } from '../utils/formatters'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import './IntegrationsPage.css'
 
 function buildCalendarLink(calendarId: string): string {
@@ -117,7 +118,7 @@ export default function IntegrationsPage() {
                     <TableHeaderCell>Card</TableHeaderCell>
                     <TableHeaderCell>Due Date</TableHeaderCell>
                     <TableHeaderCell>Sync Status</TableHeaderCell>
-                    <TableHeaderCell className="data-table__col--action" />
+                    <ActionsColumnHeader />
                   </TableRow>
                 </TableHeader>
                 <TableBody>

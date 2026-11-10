@@ -8,6 +8,7 @@ import RowActionsCell from '../components/grid/RowActionsCell'
 import { useCategories } from '../hooks/useCategories'
 import type { CategoryDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 export default function CategoriesPage() {
   const {
@@ -98,7 +99,7 @@ export default function CategoriesPage() {
             <TableHeaderCell>Active</TableHeaderCell>
             <TableHeaderCell>Investment</TableHeaderCell>
             <TableHeaderCell>Tithe</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -10,6 +10,7 @@ import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
 import { assetKey, useAssets } from '../hooks/useAssets'
 import type { AssetAdminDto } from '../api/types'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 export default function AssetsPage() {
   const { assets, isLoading, error, retry, createAsset, updateAsset, deletingKey, deleteError, deleteAsset } =
@@ -189,7 +190,7 @@ export default function AssetsPage() {
             <TableHeaderCell>Portfolio</TableHeaderCell>
             <TableHeaderCell>Class</TableHeaderCell>
             <TableHeaderCell>Quantity</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -12,6 +12,7 @@ import { useSuccessToast } from '../hooks/useSuccessToast'
 import type { AccountDto, AccountUpdateDto } from '../api/types'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { getSaveErrorMessage } from '../utils/formatters'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 type FormTarget = { mode: 'create' } | { mode: 'edit'; account: AccountDto }
 
@@ -147,7 +148,7 @@ export default function AdminAccountsPage() {
             <TableHeaderCell>Template</TableHeaderCell>
             <TableHeaderCell>Currency</TableHeaderCell>
             <TableHeaderCell>Active</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--action" />
+            <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
         <TableBody>

@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { DefaultLegendContentProps } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
@@ -29,6 +29,7 @@ import { confirmThenRun } from '../utils/confirmThenRun'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import './PriceHistoryTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
@@ -363,7 +364,7 @@ export default function PriceHistoryTab() {
                 sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell className="data-table__col--action" />
+              <ActionsColumnHeader />
             </TableRow>
           </TableHeader>
           <TableBody>

@@ -9,7 +9,6 @@ import {
   TableBody,
   TableCell,
   TableHeader,
-  TableHeaderCell,
   TableRow,
   Text,
 } from '@fluentui/react-components'
@@ -28,6 +27,7 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useMensais } from '../hooks/useMensais'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2 } from '../utils/formatters'
+import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import './MensaisPage.css'
 
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
@@ -187,7 +187,7 @@ function BillTable({
                 sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
                 onSort={requestSort}
               />
-              <TableHeaderCell className="data-table__col--action" />
+              <ActionsColumnHeader />
             </TableRow>
           </TableHeader>
           <TableBody>

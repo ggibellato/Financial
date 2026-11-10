@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { ArrowSortDownRegular, ArrowSortUpRegular } from '@fluentui/react-icons'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { SortDirection } from '../../hooks/useSortableRows'
+import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
 import './SortableColumnHeader.css'
 
 interface SortableColumnHeaderProps {
@@ -27,6 +29,8 @@ export default function SortableColumnHeader({
   rowSpan,
   className,
 }: SortableColumnHeaderProps) {
+  const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
+
   return (
     <th
       rowSpan={rowSpan}
@@ -35,7 +39,12 @@ export default function SortableColumnHeader({
         .join(' ')}
       aria-sort={sortDirection ?? 'none'}
     >
-      <button type="button" className="sortable-column-header__button" onClick={() => onSort(columnKey)}>
+      <button
+        type="button"
+        className="sortable-column-header__button"
+        tabIndex={isStackedLayout ? -1 : undefined}
+        onClick={() => onSort(columnKey)}
+      >
         <span className="sortable-column-header__label">{label}</span>
         {sortDirection === 'ascending' && (
           <ArrowSortUpRegular className="sortable-column-header__icon" aria-hidden="true" />

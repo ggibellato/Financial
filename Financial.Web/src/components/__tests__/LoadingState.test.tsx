@@ -14,4 +14,10 @@ describe('LoadingState', () => {
 
     expect(screen.getByText('Please wait...')).toBeInTheDocument()
   })
+
+  it('announces the loading message as a polite status', () => {
+    render(<LoadingState message="Loading accounts..." />)
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading accounts...')
+  })
 })

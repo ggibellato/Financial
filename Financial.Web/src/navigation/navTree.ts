@@ -101,3 +101,16 @@ export const NAV_TREE: NavCategory[] = [
     ],
   },
 ]
+
+export function findNavPageTitle(pathname: string): string | null {
+  const leaves = NAV_TREE.flatMap((category) => [
+    ...category.children,
+    ...(category.groups ?? []).flatMap((group) => group.children),
+  ])
+  for (const child of leaves) {
+    const match = matchNavChild(pathname, child)
+    if (match === 'page') return child.label
+    if (match === 'detail' && child.detail) return child.detail.label
+  }
+  return null
+}
