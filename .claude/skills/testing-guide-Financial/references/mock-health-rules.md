@@ -42,7 +42,7 @@ louder failure than a silent default.
 
 `Financial.Web` and `Financial.Api` live in one repo and one Docker image, but at test time
 the SPA is a single process and the API is a separate deployable reached only over HTTP. So
-`vi.mock('../../api/financialApiClient', () => ({ apiClient: { getBanks: getBanksMock, … } as Partial<FinancialApiClient> }))`
+`vi.mock('../../api/financialApiClient', () => ({ apiClient: { getCategories: getCategoriesMock, … } as Partial<FinancialApiClient> }))`
 in a page test is **not** a "mock something owned" violation — it is the same
 single-process / no-cross-service-deployment boundary the layer table uses. The backend has its
 own Integration tests against real storage (`Tests/Financial.Api.Tests`), and the web-e2e job

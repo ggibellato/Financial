@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
-import type { BalanceAdjustmentDto, BankDto } from '../../api/types'
+import type { BalanceAdjustmentDto, BankOption } from '../../api/types'
 import type { BankTotal } from '../useMonthly'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
 import { pinDate } from '../../test-utils/pinDate'
@@ -20,9 +20,9 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
 ]
 
 const BANK_TOTALS: BankTotal[] = [

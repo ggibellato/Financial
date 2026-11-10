@@ -50,7 +50,7 @@ public class ExceptionMappingTests(ThrowingApiHost host) : IClassFixture<Throwin
     {
         var (exception, status) = MappedExceptions[index];
 
-        var response = await host.GetBanksFailingWith(exception);
+        var response = await host.GetAccountsFailingWith(exception);
 
         response.StatusCode.Should().Be(status, because: exception.GetType().Name);
         var retryAfter = response.Headers.RetryAfter?.Delta;

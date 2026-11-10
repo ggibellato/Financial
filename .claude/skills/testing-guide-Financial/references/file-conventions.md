@@ -82,11 +82,11 @@ there is no `vitest.config.ts` and no `playwright.config.ts`.
 
 | Element | Convention | Example |
 |---|---|---|
-| File | `{Name}.test.tsx` / `.test.ts` | `PaymentDueBanner.test.tsx`, `useBanks.test.ts` |
+| File | `{Name}.test.tsx` / `.test.ts` | `PaymentDueBanner.test.tsx`, `useCategories.test.ts` |
 | `describe` | subject name | `describe('usePaymentsDue', …)` |
 | `it` | either `snake_case_scenario` or a behaviour sentence — both exist; pick the file's own style | `it('no_banner_when_payments_is_empty_array')`, `it('shows an error state with retry on load failure')` |
 | AC-tracing `it` | `'[AC <id>] <sentence>'` | `it('[AC P42-F02-payment-due-banner-web-03] renders nothing when the list is empty')` |
-| Mocks | `{method}Mock` from `vi.hoisted`, typed `vi.fn<FinancialApiClient['method']>()` | `getBanksMock` |
+| Mocks | `{method}Mock` from `vi.hoisted`, typed `vi.fn<FinancialApiClient['method']>()` | `getCategoriesMock` |
 
 ### Commands
 

@@ -58,7 +58,7 @@ public class SpaFallbackTests(SpaFallbackFixture fixture) : IClassFixture<SpaFal
     [Fact]
     public async Task RealApiRoute_StillReturnsJson()
     {
-        var response = await _client.GetAsync("/api/v1/financial/banks");
+        var response = await _client.GetAsync("/api/v1/financial/accounts");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/json");

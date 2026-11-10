@@ -2,14 +2,14 @@ import { fireEvent, screen } from '@testing-library/react'
 import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import IncomeForm from '../IncomeForm'
-import type { BankDto, IncomeSourceDto } from '../../api/types'
+import type { BankOption, IncomeSourceDto } from '../../api/types'
 import type { IncomeFunding } from '../../hooks/useIncomeForm'
 import { optionNames } from '../../test-utils/optionNames'
 import { potsAccount } from '../../test/account'
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [
@@ -22,7 +22,7 @@ const INCOME_SOURCES: IncomeSourceDto[] = [
 const RESERVA = potsAccount({ id: 'p1', name: 'Reserva' })
 const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })
 
-const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
+const INACTIVE_BANK: BankOption = { ...BANKS[0], id: 'bank-chase', name: 'Chase', isActive: false }
 
 const FUNDING: IncomeFunding = {
   isShown: false,

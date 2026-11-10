@@ -35,7 +35,7 @@ and, for swallowed exceptions, `logger.Entries.Should().ContainSingle(e => e.Lev
 `0.99m`: test `0.99m` accepted and `1.00m` rejected; `PaymentsDueService` window: due in 5 days
 included, 6 days excluded; overdue excluded).
 
-**React hooks/components** — `getBanksMock.mockRejectedValue(new Error('Network down'))` →
+**React hooks/components** — `getCategoriesMock.mockRejectedValue(new Error('Network down'))` →
 `result.current.error` set, `data` null; a component given `onSave` that rejects keeps its
 field values and shows the error under the named field
 (`TransferForm.test.tsx: renders a backend error under the field named in saveErrorFields`).
@@ -79,7 +79,7 @@ fail `openapiFreshness.test.ts`; a DTO rename must fail `OpenApiContractTests` n
 endpoint.
 
 **Frontend page** — the faked client rejects → `role="alert"` with "Try again"; clicking it
-calls the client again (`BanksPage.test.tsx: shows an error state with retry on load failure`).
+calls the client again (`CategoriesPage.test.tsx: shows an error state with retry on load failure`).
 An `ApiError` 409 on save → message shown, form kept open with values.
 
 **AC-tracing** — every negative §9 bullet ("… are excluded", "fails silently", "returns 409")
@@ -106,5 +106,5 @@ frontend's own error state for that is covered at the page layer.
 ## Examples from the project
 
 - Unit: `ExpenseServiceTests`, `YahooFinanceServiceTests.GetAssetValue_UnsupportedExchange_ThrowsInvalidOperationException_WithoutCallingHttp`.
-- Integration: `FrankfurterExchangeRateProviderTests` (all four modes), `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`, `SettlementScreenAcceptanceTests.AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `DomainExceptionLoggingTests`, `ObservabilityBackendUnreachableTests`, `BanksPage.test.tsx`.
+- Integration: `FrankfurterExchangeRateProviderTests` (all four modes), `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`, `SettlementScreenAcceptanceTests.AddEntry_NoRate_SavesItEmptyWithWarningNamingTheOtherCurrency`, `DomainExceptionLoggingTests`, `ObservabilityBackendUnreachableTests`, `CategoriesPage.test.tsx`.
 - E2E: none yet — the first failure journey added should follow the options above.

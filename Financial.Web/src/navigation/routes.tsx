@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { Navigate } from 'react-router-dom'
 import {
   AccountScreenPage,
   AccountsPage,
@@ -7,7 +8,6 @@ import {
   AnnualSummaryPage,
   AppearancePage,
   AssetsPage,
-  BanksPage,
   BrokersPage,
   CategoriesPage,
   CreditCardsPage,
@@ -61,7 +61,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/investment/portfolios', element: <PortfoliosPage /> },
   { path: 'admin/investment/tax-rules', element: <TaxRulesPage /> },
   { path: 'admin/cashflow/accounts', element: <AdminAccountsPage /> },
-  { path: 'admin/cashflow/banks', element: <BanksPage /> },
   { path: 'admin/cashflow/categories', element: <CategoriesPage /> },
   { path: 'admin/cashflow/credit-cards', element: <CreditCardsPage /> },
   { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },
@@ -77,6 +76,7 @@ export const DETAIL_ROUTES: PageRoute[] = [
 ]
 
 export const REDIRECT_ROUTES: PageRoute[] = [
+  { path: 'admin/cashflow/banks', element: <Navigate replace to="/admin/cashflow/accounts" /> },
   { path: 'admin/cashflow/reserve-buckets', element: <MovedPageRedirect page="reserva" tab="pots" /> },
   { path: 'cashflow/controle-mae', element: <MovedPageRedirect page="controle-mae" /> },
   { path: 'cashflow/reserva', element: <MovedPageRedirect page="reserva" tab="pots" /> },

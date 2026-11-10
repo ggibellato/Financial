@@ -125,8 +125,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var list = await Client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>($"/api/v1/financial/banks/{BarclaysId}/adjustments");
-        list.Should().NotContain(a => a.Id == createdAdjustment.Id);
+        (await AdjustmentIdsAsync(BarclaysId, createdAdjustment.Date)).Should().NotContain(createdAdjustment.Id);
     }
 
     [Fact]
@@ -211,54 +210,12 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
         var response = await Client.DeleteAsync($"/api/v1/financial/accounts/{ChaseId}/adjustments/{createdAdjustment!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        var list = await Client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>($"/api/v1/financial/banks/{BarclaysId}/adjustments");
-        list.Should().Contain(a => a.Id == createdAdjustment.Id);
+        (await AdjustmentIdsAsync(BarclaysId, createdAdjustment.Date)).Should().Contain(createdAdjustment.Id);
     }
 
-    [Theory]
-    [InlineData("POST", "")]
-    [InlineData("PUT", "/8f3b1c1a-2e3a-4b1a-9a7f-900000000001")]
-    [InlineData("DELETE", "/8f3b1c1a-2e3a-4b1a-9a7f-900000000001")]
-    public async Task BankScopedAdjustmentWrites_AreGone(string method, string suffix)
-    {
-        var request = new HttpRequestMessage(new HttpMethod(method), $"/api/v1/financial/banks/{BarclaysId}/adjustments{suffix}");
-
-        var response = await Client.SendAsync(request);
-
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed);
-    }
-
-    [Fact]
-    public async Task GetAdjustmentsByBank_ReturnsOnlyThatBanksAdjustments()
-    {
-        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 1),
-            TargetBalance = 100m
-        });
-        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 1),
-            TargetBalance = 50m
-        });
-
-        var response = await Client.GetAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
-        items.Should().ContainSingle();
-        var item = items!.Single();
-        item.BankId.Should().Be(BarclaysId);
-        item.BankName.Should().Be("Barclays");
-    }
-
-    [Fact]
-    public async Task GetAdjustmentsByBank_UnknownBankId_ReturnsEmptyList()
-    {
-        var response = await Client.GetAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/adjustments");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
-        items.Should().BeEmpty();
-    }
+    private async Task<List<Guid>> AdjustmentIdsAsync(Guid accountId, DateOnly date) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{accountId}/transactions/{date.Year}/{date.Month}"))!
+            .Where(row => row.Adjustment is not null)
+            .Select(row => row.Adjustment!.Id)
+            .ToList();
 }

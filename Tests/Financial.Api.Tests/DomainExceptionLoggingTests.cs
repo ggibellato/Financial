@@ -58,7 +58,7 @@ public class DomainExceptionLoggingTests
     [Fact]
     public async Task OtherConflict_WritesNoOverdraftData()
     {
-        var (_, context) = await InvokeWithAsync(new DuplicateNameException("duplicate"), "POST", "/api/v1/financial/banks");
+        var (_, context) = await InvokeWithAsync(new DuplicateNameException("duplicate"), "POST", "/api/v1/financial/accounts");
 
         using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
         using (new AssertionScope())
@@ -154,7 +154,7 @@ public class DomainExceptionLoggingTests
     public async Task SuccessfulRequest_LogsNothing()
     {
         var logger = new RecordingLogger<DomainExceptionMappingMiddleware>();
-        var context = CreateHttpContext("GET", "/api/v1/financial/banks");
+        var context = CreateHttpContext("GET", "/api/v1/financial/accounts");
         var middleware = new DomainExceptionMappingMiddleware(_ => Task.CompletedTask, logger);
 
         await middleware.InvokeAsync(context);
@@ -170,7 +170,7 @@ public class DomainExceptionLoggingTests
         // case matters doubly now: Infrastructure throws InvalidOperationException for real upstream
         // faults, and mapping it here would hide them behind a 409.
         var logger = new RecordingLogger<DomainExceptionMappingMiddleware>();
-        var context = CreateHttpContext("GET", "/api/v1/financial/banks");
+        var context = CreateHttpContext("GET", "/api/v1/financial/accounts");
         var middleware = new DomainExceptionMappingMiddleware(
             _ => throw new InvalidOperationException("boom"), logger);
 

@@ -64,7 +64,7 @@
 - **`ResizeObserver` and `matchMedia` are shimmed once in `setupTests.ts`** (recharts and
   Fluent need them) — a second shim in a test file conflicts.
 - **`vi.mock` is hoisted above imports; use `vi.hoisted` for the mocks it references**
-  (`const { getBanksMock } = vi.hoisted(() => ({ getBanksMock: vi.fn<FinancialApiClient['getBanks']>() }))`).
+  (`const { getCategoriesMock } = vi.hoisted(() => ({ getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>() }))`).
   Importing inside `vi.hoisted` is discouraged.
 - **`--tagsFilter` requires tags declared in `test.tags`** (`strictTags` defaults to true;
   undeclared → "The Vitest config does't define any tags"). Tag names cannot contain spaces or

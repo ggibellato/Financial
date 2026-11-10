@@ -10,7 +10,7 @@ AC-tracing tests draw their setup from.
 
 - **Full state matrix** (`docs/rules/ui.md`, `docs/ui/review-checklist.md`): initial render,
   loading (`shows a loading state before data arrives`), empty, error with retry
-  (`getBanksMock.mockRejectedValue(new Error('Network down'))` → `role="alert"` + "Try again"
+  (`getCategoriesMock.mockRejectedValue(new Error('Network down'))` → `role="alert"` + "Try again"
   re-fetches), saving (submit disabled), success (list updated), disabled actions, unsaved
   changes (`closes an open create form when switching tabs away and back`).
 - **Workflow semantics**: default tab, tab order, month/year scope re-fetching every grid
@@ -47,19 +47,19 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
+import type { CategoryDto, RecurringBillDto } from '../../api/types'
 
 const {
   getMensaisBillsMock,
   createMensaisBillMock,
   updateMensaisBillStatusMock,
-  getBanksMock,
+  getAccountsMock,
   getCategoriesMock,
 } = vi.hoisted(() => ({
   getMensaisBillsMock: vi.fn<FinancialApiClient['getMensaisBills']>(),
   createMensaisBillMock: vi.fn<FinancialApiClient['createMensaisBill']>(),
   updateMensaisBillStatusMock: vi.fn<FinancialApiClient['updateMensaisBillStatus']>(),
-  getBanksMock: vi.fn<FinancialApiClient['getBanks']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
   getCategoriesMock: vi.fn<FinancialApiClient['getCategories']>(),
 }))
 
@@ -68,7 +68,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getMensaisBills: getMensaisBillsMock,
     createMensaisBill: createMensaisBillMock,
     updateMensaisBillStatus: updateMensaisBillStatusMock,
-    getBanks: getBanksMock,
+    getAccounts: getAccountsMock,
     getCategories: getCategoriesMock,
   } as Partial<FinancialApiClient>,
 }))
@@ -92,6 +92,6 @@ interact with `fireEvent`/`userEvent`, assert with `within(row)`. For routed pag
 
 - `Financial.Web/src/pages/__tests__/MonthlyPage.test.tsx` — Integration; the richest state/tab matrix in the suite.
 - `Financial.Web/src/pages/__tests__/MensaisPage.test.tsx` — Integration; CRUD + status actions + UK expense prompt (P41).
-- `Financial.Web/src/pages/__tests__/BanksPage.test.tsx` — Integration; error state with retry on load failure.
+- `Financial.Web/src/pages/__tests__/CategoriesPage.test.tsx` — Integration; error state with retry on load failure.
 - `Financial.Web/src/__tests__/App.test.tsx` — Integration; shell, sidebar landmark, breadcrumb, storage cleanup.
 - `Financial.Web/src/pages/__tests__/RootRedirect.test.tsx` — Integration; default route.

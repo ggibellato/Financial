@@ -39,7 +39,7 @@ pattern or an explicit "not applicable".
   → nothing rendered).
 - **Web, Integration (page)**: `MonthlyPage.test.tsx` (`shows a loading state before data arrives`,
   `shows an error state with retry when the fetch fails`, `closes an open create form when switching tabs away and back`,
-  `does not unmark a paid statement when the user cancels the confirmation`), `BanksPage.test.tsx`.
+  `does not unmark a paid statement when the user cancels the confirmation`), `CategoriesPage.test.tsx`.
 - **E2E**: no full state-transition journey yet — add with the smoke failure journey
   (`negative-path-testing.md`).
 - **Rule for new views**: one test per applicable state, named for the state, before the

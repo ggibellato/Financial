@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { Navigate } from 'react-router-dom'
 import { MovedPageRedirect } from '../lazyPages'
 import { NAV_TREE } from '../navTree'
 import { ALL_ROUTES, DETAIL_ROUTES, PAGE_ROUTES, REDIRECT_ROUTES } from '../routes'
@@ -46,10 +47,12 @@ describe('route and sidebar agreement', () => {
   })
 
   it('keeps the retired addresses as redirects, off the sidebar', () => {
-    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/reserve-buckets', 'cashflow/controle-mae', 'cashflow/reserva'])
+    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/banks', 'admin/cashflow/reserve-buckets', 'cashflow/controle-mae', 'cashflow/reserva'])
+    expect(navRoutes).not.toContain('/admin/cashflow/banks')
     expect(navRoutes).not.toContain('/admin/cashflow/reserve-buckets')
     expect(navRoutes).not.toContain('/cashflow/controle-mae')
     expect(navRoutes).not.toContain('/cashflow/reserva')
+    expect(declaredRoutes).not.toContain('/admin/cashflow/banks')
     expect(declaredRoutes).not.toContain('/cashflow/controle-mae')
     expect(declaredRoutes).not.toContain('/cashflow/reserva')
   })
@@ -63,6 +66,13 @@ describe('route and sidebar agreement', () => {
 
     expect(redirect?.element.type).toBe(MovedPageRedirect)
     expect(redirect?.element.props).toEqual(props)
+  })
+
+  it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends admin/cashflow/banks to Admin Accounts, replacing the history entry', () => {
+    const redirect = REDIRECT_ROUTES.find((route) => route.path === 'admin/cashflow/banks')
+
+    expect(redirect?.element.type).toBe(Navigate)
+    expect(redirect?.element.props).toEqual({ replace: true, to: '/admin/cashflow/accounts' })
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

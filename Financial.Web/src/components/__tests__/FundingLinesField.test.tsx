@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import type { BankDto } from '../../api/types'
+import type { BankOption } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { fundingLineErrorKey, type FundingLineValues } from '../../utils/fundingLines'
 import FundingLinesField from '../FundingLinesField'
 
-const bank = (id: string, name: string, isActive = true): BankDto => ({
+const bank = (id: string, name: string, isActive = true): BankOption => ({
   id,
   name,
   roundUpEnabled: false,
-  openingBalance: 0,
-  openingBalanceDate: '2026-01-01',
-  hasReferences: false,
   isActive,
 })
 

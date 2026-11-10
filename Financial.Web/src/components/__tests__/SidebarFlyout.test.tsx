@@ -79,7 +79,7 @@ describe('SidebarFlyout', () => {
         {
           id: 'cashflow',
           label: 'CashFlow',
-          children: [{ id: 'banks', label: 'Banks', route: '/admin/cashflow/banks' }],
+          children: [{ id: 'categories', label: 'Categories', route: '/admin/cashflow/categories' }],
         },
       ],
     }
@@ -106,7 +106,7 @@ describe('SidebarFlyout', () => {
       expect(screen.getByText('Investment')).toBeInTheDocument()
       expect(screen.getByText('CashFlow')).toBeInTheDocument()
       expect(screen.getByRole('link', { name: 'Brokers' })).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'Banks' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Categories' })).toBeInTheDocument()
     })
 
     it('clicking a grouped child link calls onClose', () => {

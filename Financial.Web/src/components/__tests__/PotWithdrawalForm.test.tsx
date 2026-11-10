@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, overdraftBalance } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDto, BankDto, CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
+import type { AccountDto, BankOption, CategoryDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
 import { overdraftMessage, usePotWithdrawalForm } from '../../hooks/usePotWithdrawalForm'
 import { account, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
@@ -48,9 +48,9 @@ const ACCOUNTS: AccountDto[] = [
   potsAccount({ id: 'closed', name: 'Closed', isActive: false }),
 ]
 
-const BANKS: BankDto[] = [
-  { id: 'b1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'b9', name: 'Old bank', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: false },
+const BANKS: BankOption[] = [
+  { id: 'b1', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'b9', name: 'Old bank', roundUpEnabled: false, isActive: false },
 ]
 
 const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}): CategoryDto => ({
