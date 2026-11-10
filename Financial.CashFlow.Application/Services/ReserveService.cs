@@ -11,7 +11,8 @@ namespace Financial.CashFlow.Application.Services;
 
 public sealed class ReserveService : IReserveService
 {
-    private const string EntityType = "ReserveMovement";
+    private const string EntityType = "PotTransaction";
+    private const string EntityDisplayName = "Pot transaction";
 
     private readonly ICashFlowRepository _repository;
     private readonly ITelemetryTracer _tracer;
@@ -37,18 +38,19 @@ public sealed class ReserveService : IReserveService
                 throw new ArgumentException("Description is required.");
             }
 
-            var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, EntityDisplayName, id);
             EnsureNotLinkedToIncome(transaction);
-            LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
+            LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "pot transaction");
 
-            if (!EntityIdResolver.TryResolve(request.BucketId, PotsOfAccountOwning(transaction), b => b.Id, out var pot))
+            var potsAccount = transaction.OwningAccount(_repository.GetAccounts());
+            if (potsAccount is null || !EntityIdResolver.TryResolve(request.BucketId, potsAccount.Pots ?? [], b => b.Id, out var pot))
             {
-                throw new ArgumentException($"Reserve bucket '{request.BucketId}' is not recognized.");
+                throw new ArgumentException($"Pot '{request.BucketId}' is not recognized.");
             }
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                transaction.Update(pot!, request.Amount, request.Date, request.Description);
+                transaction.Update(potsAccount, pot!, request.Amount, request.Date, request.Description);
                 return true;
             }).ConfigureAwait(false);
 
@@ -69,9 +71,9 @@ public sealed class ReserveService : IReserveService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, id.ToString());
         try
         {
-            var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, "Reserve movement", id);
+            var transaction = _repository.GetPotTransactions().FirstOrThrow(m => m.Id == id, EntityDisplayName, id);
             EnsureNotLinkedToIncome(transaction);
-            LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "movement");
+            LinkedOperationConflictException.ThrowIfLinked(transaction.OperationId, "pot transaction");
 
             var lines = LinesToDeleteWith(transaction, _repository.GetPotTransactions());
 
@@ -101,9 +103,6 @@ public sealed class ReserveService : IReserveService
         return _tracer.StartServiceSpan("CashFlow", nameof(ReserveService), operationName, EntityType);
     }
 
-    private IEnumerable<Pot> PotsOfAccountOwning(PotTransaction transaction) =>
-        _repository.GetAccounts().FirstOrDefault(account => account.OwnsPot(transaction.Pot.Id))?.Pots ?? [];
-
     private static IReadOnlyList<PotTransaction> LinesToDeleteWith(PotTransaction transaction, IEnumerable<PotTransaction> transactions) =>
         IsManualSplitLine(transaction)
             ? transactions.Where(line => IsLineOfSameManualSplit(line, transaction)).ToList()
@@ -124,7 +123,7 @@ public sealed class ReserveService : IReserveService
         if (transaction.Income is not null)
         {
             throw new ReserveMovementLinkedToIncomeException(
-                "This reserve movement is linked to an income and can only be changed by editing that income.");
+                "This pot transaction is linked to an income and can only be changed by editing that income.");
         }
     }
 

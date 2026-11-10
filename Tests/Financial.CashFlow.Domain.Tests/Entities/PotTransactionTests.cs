@@ -43,17 +43,85 @@ public class PotTransactionTests
     [Fact]
     public void Update_ChangesAllFields()
     {
-        var movement = PotTransaction.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "Original");
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+        var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
 
-        movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
+        movement.Update(reserva, ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
 
         using (new AssertionScope())
         {
-            movement.Pot.Should().BeSameAs(Ariana);
+            movement.Pot.Should().BeSameAs(ariana);
             movement.Amount.Should().Be(25m);
             movement.Date.Should().Be(new DateOnly(2026, 7, 5));
             movement.Description.Should().Be("Corrected");
         }
+    }
+
+    [Fact]
+    public void Update_PotOfAnotherAccount_ThrowsAndChangesNothing()
+    {
+        var (reserva, investimento, _) = ReservaWithTwoPots();
+        var holidays = TestAccounts.Pots("Holidays");
+        var beach = Pot.Create("Beach", 100m);
+        holidays.AddPot(beach);
+        var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
+
+        var act = () => movement.Update(reserva, beach, 25m, new DateOnly(2026, 7, 5), "Corrected");
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
+            movement.Pot.Should().BeSameAs(investimento);
+            movement.Amount.Should().Be(10m);
+            movement.Date.Should().Be(new DateOnly(2026, 7, 1));
+            movement.Description.Should().Be("Original");
+        }
+    }
+
+    [Fact]
+    public void Update_AccountThatDoesNotOwnTheTransaction_ThrowsAndChangesNothing()
+    {
+        var (_, investimento, _) = ReservaWithTwoPots();
+        var holidays = TestAccounts.Pots("Holidays");
+        var beach = Pot.Create("Beach", 100m);
+        holidays.AddPot(beach);
+        var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
+
+        var act = () => movement.Update(holidays, beach, 25m, new DateOnly(2026, 7, 5), "Corrected");
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentException>().WithMessage("This pot transaction isn't in Holidays.");
+            movement.Pot.Should().BeSameAs(investimento);
+            movement.Amount.Should().Be(10m);
+        }
+    }
+
+    [Fact]
+    public void OwningAccount_IsTheAccountThatOwnsThePot()
+    {
+        var (reserva, _, ariana) = ReservaWithTwoPots();
+        var holidays = TestAccounts.Pots("Holidays");
+
+        PotTransaction.Create(ariana, 10m, new DateOnly(2026, 7, 1), "Split").OwningAccount([holidays, reserva]).Should().BeSameAs(reserva);
+    }
+
+    [Fact]
+    public void OwningAccount_PotOfNoAccount_IsNull()
+    {
+        var (reserva, _, _) = ReservaWithTwoPots();
+
+        PotTransaction.Create(Investimento, 10m, new DateOnly(2026, 7, 1), "Split").OwningAccount([reserva]).Should().BeNull();
+    }
+
+    private static (Account Reserva, Pot Investimento, Pot Ariana) ReservaWithTwoPots()
+    {
+        var reserva = TestAccounts.Pots("Reserva");
+        var investimento = Pot.Create("Investimento", 50m);
+        var ariana = Pot.Create("Ariana", 50m);
+        reserva.AddPot(investimento);
+        reserva.AddPot(ariana);
+        return (reserva, investimento, ariana);
     }
 
     [Fact]
@@ -85,9 +153,10 @@ public class PotTransactionTests
     public void Update_LeavesIncomeUntouched()
     {
         var income = SplitIncome();
-        var movement = PotTransaction.Create(Investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
+        var (reserva, investimento, ariana) = ReservaWithTwoPots();
+        var movement = PotTransaction.Create(investimento, 815.05m, new DateOnly(2026, 7, 1), "August salary", income);
 
-        movement.Update(Ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
+        movement.Update(reserva, ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
 
         movement.Income.Should().BeSameAs(income);
     }

@@ -49,9 +49,7 @@ public sealed record PotOperation(
         Guid operationId, IEnumerable<PotTransaction> transactions, IEnumerable<Expense> expenses, IEnumerable<Account> accounts)
     {
         var operationTransactions = transactions.Where(transaction => transaction.OperationId == operationId).ToList();
-        var potsAccount = operationTransactions.Count == 0
-            ? null
-            : accounts.FirstOrDefault(account => account.OwnsPot(operationTransactions[0].Pot.Id));
+        var potsAccount = operationTransactions.Count == 0 ? null : operationTransactions[0].OwningAccount(accounts);
         if (potsAccount is null)
         {
             return null;

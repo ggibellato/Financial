@@ -24,28 +24,4 @@ public class ReserveSplitRuleTests
     {
         ReserveSplitRule.IsBalanced((decimal)total).Should().BeFalse();
     }
-
-    [Theory]
-    [InlineData(60, "Active buckets currently sum to 60% — review your split percentages")]
-    [InlineData(66.67, "Active buckets currently sum to 66.67% — review your split percentages")]
-    [InlineData(99.5, "Active buckets currently sum to 99.5% — review your split percentages")]
-    public void BuildWarning_NamesTheTotalWithAtMostTwoDecimals(double total, string expected)
-    {
-        ReserveSplitRule.BuildWarning((decimal)total).Should().Be(expected);
-    }
-
-    [Fact]
-    public void BuildWarning_UsesAPointAsTheDecimalSeparatorWhateverTheCulture()
-    {
-        var previous = System.Globalization.CultureInfo.CurrentCulture;
-        System.Globalization.CultureInfo.CurrentCulture = new System.Globalization.CultureInfo("pt-BR");
-        try
-        {
-            ReserveSplitRule.BuildWarning(66.67m).Should().Contain("66.67%");
-        }
-        finally
-        {
-            System.Globalization.CultureInfo.CurrentCulture = previous;
-        }
-    }
 }

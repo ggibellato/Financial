@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Financial.CashFlow.Domain.Entities.Transactions;
 
@@ -26,13 +28,28 @@ public class PotTransaction : IAccountTransaction
             OperationId = operationId
         };
 
-    public void Update(Pot pot, decimal amount, DateOnly date, string description)
+    public void Update(Account potsAccount, Pot pot, decimal amount, DateOnly date, string description)
     {
+        ArgumentNullException.ThrowIfNull(potsAccount);
+        ArgumentNullException.ThrowIfNull(pot);
+
+        if (!potsAccount.OwnsPot(Pot.Id))
+        {
+            throw new ArgumentException($"This pot transaction isn't in {potsAccount.Name}.");
+        }
+
+        if (!potsAccount.OwnsPot(pot.Id))
+        {
+            throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
+        }
+
         Pot = pot;
         Amount = amount;
         Date = date;
         Description = description;
     }
+
+    public Account? OwningAccount(IEnumerable<Account> accounts) => accounts.FirstOrDefault(account => account.OwnsPot(Pot.Id));
 
     public decimal ContributionTo(Account account) => account.OwnsPot(Pot.Id) ? Amount : 0m;
 }
