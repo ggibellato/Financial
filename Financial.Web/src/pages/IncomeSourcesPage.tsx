@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Button,
   MessageBar,
+  MessageBarActions,
   MessageBarBody,
   Table,
   TableBody,
@@ -77,11 +78,13 @@ export default function IncomeSourcesPage() {
           <MessageBar intent="warning">
             <MessageBarBody>
               Couldn&rsquo;t load accounts, so the Pots account list and the Splits to column can&rsquo;t name them
-              right now.{' '}
-              <Button appearance="transparent" size="small" aria-label="Retry loading accounts" onClick={retryAccounts}>
+              right now.
+            </MessageBarBody>
+            <MessageBarActions>
+              <Button appearance="primary" aria-label="Retry loading accounts" onClick={retryAccounts}>
                 Retry
               </Button>
-            </MessageBarBody>
+            </MessageBarActions>
           </MessageBar>
         )
       }

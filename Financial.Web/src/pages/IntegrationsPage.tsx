@@ -36,6 +36,7 @@ export default function IntegrationsPage() {
   const connection = useCalendarConnection()
   const syncStatuses = useCalendarSyncStatuses()
   const [confirmingDisconnect, setConfirmingDisconnect] = useState(false)
+  const failedResyncRow = syncStatuses.rows.find((row) => row.creditCardId === syncStatuses.retryFailure?.creditCardId)
 
   const handleConfirmDisconnect = () => {
     setConfirmingDisconnect(false)
@@ -94,7 +95,7 @@ export default function IntegrationsPage() {
             </dl>
 
             {connection.disconnectError && (
-              <MessageBar intent="error">
+              <MessageBar role="alert" intent="error">
                 <MessageBarBody>{connection.disconnectError}</MessageBarBody>
               </MessageBar>
             )}
@@ -112,7 +113,15 @@ export default function IntegrationsPage() {
             ) : syncStatuses.rows.length === 0 ? (
               <p className="integrations-page__empty">No active credit cards with a due date yet.</p>
             ) : (
-              <Table aria-label="Credit card calendar sync status" className="data-table">
+              <>
+                {failedResyncRow && (
+                  <MessageBar role="alert" intent="error">
+                    <MessageBarBody>
+                      Couldn&rsquo;t retry the calendar sync for {failedResyncRow.name}: {syncStatuses.retryFailure?.message}
+                    </MessageBarBody>
+                  </MessageBar>
+                )}
+                <Table aria-label="Credit card calendar sync status" className="data-table">
                 <TableHeader>
                   <TableRow>
                     <TableHeaderCell>Card</TableHeaderCell>
@@ -145,7 +154,8 @@ export default function IntegrationsPage() {
                     </TableRow>
                   ))}
                 </TableBody>
-              </Table>
+                </Table>
+              </>
             )}
           </div>
         )}

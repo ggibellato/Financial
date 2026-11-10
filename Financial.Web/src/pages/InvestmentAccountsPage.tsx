@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Button,
   MessageBar,
+  MessageBarActions,
   MessageBarBody,
   Table,
   TableBody,
@@ -97,11 +98,13 @@ export default function InvestmentAccountsPage() {
           <MessageBar intent="warning">
             <MessageBarBody>
               Couldn&rsquo;t load accounts, so the Credit Card and Pots account pickers are empty and the Source column
-              shows — for linked accounts.{' '}
-              <Button appearance="transparent" size="small" aria-label="Retry loading accounts" onClick={retryAccounts}>
+              shows — for linked accounts.
+            </MessageBarBody>
+            <MessageBarActions>
+              <Button appearance="primary" aria-label="Retry loading accounts" onClick={retryAccounts}>
                 Retry
               </Button>
-            </MessageBarBody>
+            </MessageBarActions>
           </MessageBar>
         )
       }

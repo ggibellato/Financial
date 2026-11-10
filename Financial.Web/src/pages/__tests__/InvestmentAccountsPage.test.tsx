@@ -99,7 +99,10 @@ describe('InvestmentAccountsPage', () => {
 
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
     expect(screen.getByText(/couldn.t load accounts/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry loading accounts' })).toBeInTheDocument()
+    const retryButton = screen.getByRole('button', { name: 'Retry loading accounts' })
+    expect(retryButton).toHaveTextContent('Retry')
+    fireEvent.click(retryButton)
+    await waitFor(() => expect(getAccountsMock).toHaveBeenCalledTimes(2))
   })
 
   it('[AC P60-F09-pots-template-and-reserva-migration-03] shows the dash, card name, or Pots account total per account source', async () => {

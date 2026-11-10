@@ -117,7 +117,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       })
       .catch((err: unknown) => {
         setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement') })
-        refreshOnConflict(err)
+        void statements.refresh()
       })
   }
 

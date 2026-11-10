@@ -150,16 +150,21 @@ describe('useCardStatements', () => {
     await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
   })
 
-  it('keeps the list as it is when a payment fails for another reason', async () => {
-    markCardStatementPaidMock.mockRejectedValue(new ApiError('The paying account must be in the card\'s currency (GBP).', 400))
+  it.each([
+    ['a refused payment', new ApiError('The paying account must be in the card\'s currency (GBP).', 400)],
+    ['a server error', new ApiError('Something went wrong on the server.', 500)],
+  ])('reloads the statements after %s and keeps the reason on the form', async (_, failure) => {
+    markCardStatementPaidMock.mockRejectedValue(failure)
     const { result } = await renderLoaded()
     act(() => result.current.openPayForm(OCTOBER))
     act(() => result.current.setPayField('bankId', 'barclays'))
 
     act(() => result.current.submitPayForm())
 
-    await waitFor(() => expect(result.current.payForm?.error).toBe('The paying account must be in the card\'s currency (GBP).'))
-    expect(getAccountStatementsMock).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.payForm?.isSaving).toBe(false))
+    expect(result.current.payForm?.error).toBe(failure.message)
+    expect(result.current.payForm?.bankId).toBe('barclays')
   })
 
   it('ignores opening another payment while one is saving', async () => {

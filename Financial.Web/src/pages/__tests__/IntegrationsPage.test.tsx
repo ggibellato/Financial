@@ -153,6 +153,33 @@ describe('IntegrationsPage', () => {
     await waitFor(() => expect(screen.getAllByText('Synced')).toHaveLength(2))
   })
 
+  it('announces a failed disconnect', async () => {
+    getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
+    disconnectCalendarMock.mockRejectedValue(new Error('Google is unavailable'))
+    render(<IntegrationsPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect' }))
+    const dialogButtons = screen.getAllByRole('button', { name: 'Disconnect' })
+
+    fireEvent.click(dialogButtons[dialogButtons.length - 1])
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Google is unavailable')
+  })
+
+  it('a failed Retry names the card and shows the error until the next attempt', async () => {
+    getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
+    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Rate limit exceeded again')).mockReturnValue(new Promise(() => {}))
+    render(<IntegrationsPage />)
+    const retryButton = await screen.findByRole('button', { name: 'Retry calendar sync for Nubank' })
+
+    fireEvent.click(retryButton)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t retry the calendar sync for Nubank: Rate limit exceeded again')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Retry calendar sync for Nubank' }))
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
   it('P45-F03-integrations-settings-web-05: a failed status request shows a retry affordance instead of a blank panel', async () => {
     getCalendarStatusMock.mockRejectedValue(new Error('Network down'))
     render(<IntegrationsPage />)
