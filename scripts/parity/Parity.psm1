@@ -312,7 +312,6 @@ function Add-ParityYearFigures($Report, [int]$Year, [scriptblock]$Fetch) {
     Add-ParityScalarsAndSeries $Report "$Year/investment/net" $net @('monthlyValues', 'monthlyDiffs')
 }
 
-
 function Add-ParityMaeAccountFigures($Report, [string]$CurrentMonth, [scriptblock]$Fetch, $Accounts) {
     $maeAccount = Get-ParityReplacingAccount $Accounts 'controle-mae'
     if ($null -eq $maeAccount) { return }
@@ -348,7 +347,6 @@ function Get-ParityReport {
     catch { throw "$($_.Exception.Message) on the $Side side" }
     , $report
 }
-
 
 function Format-ParityValue($Value) {
     if ($null -eq $Value) { return 'null' }

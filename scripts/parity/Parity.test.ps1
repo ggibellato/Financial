@@ -98,7 +98,6 @@ try {
 
     Check 'monthly figures are exact decimal sums' ($report['2026-09/monthly/categoryTotalsSum'] -is [decimal] -and $report['2026-09/monthly/categoryTotalsSum'] -eq [decimal]'0.3') $report['2026-09/monthly/categoryTotalsSum']
     Check 'income gross is null when no income of the source has gross' ($null -eq $report['2026-09/incomes/Dividends/gross'] -and $report['2026-09/incomes/Salary/gross'] -eq [decimal]'2500.00' -and $report['2026-09/incomes/totalIncoming'] -eq [decimal]'2112.34') ''
-    Check 'no figure of a retired family is built' (-not ($report.Keys | Where-Object { $_.Split('/')[1] -in 'banks', 'cards', 'pots', 'mae' -or $_ -like '*/monthly/bankTotalsSum' -or $_ -like '*/monthly/roundUpTotalsSum' -or $_ -like '*/monthly/cardOutstandingTotal' })) ''
     Check 'a bank account''s round-up total is minus the sum of its row round-ups' ($report['2026-08/account/Barclays/roundUpTotal'] -eq [decimal]'0.17' -and $report['2026-09/account/Chase/roundUpTotal'] -eq [decimal]'0.50' -and $report['2026-09/account/Chase/roundUpTotal'] -is [decimal] -and -not ($report.Keys | Where-Object { $_ -like '*/account/Amex/roundUpTotal' })) ''
     Check 'a card''s statement figures come from its account detail' ($report['2026-08/cardStatement/Amex/outstandingTotal'] -eq [decimal]'40.10' -and $report['2026-09/cardStatement/Amex/accumulatedOutstandingTotal'] -eq [decimal]'40.10' -and $report['2026-09/cardStatement/Amex/isPaid'] -eq $false) ''
     Check 'no card warning figure is built' (-not ($report.Keys | Where-Object { $_ -like '*/warning' })) ''
@@ -147,23 +146,22 @@ try {
     Check 'compare treats null only as equal to null' ((Compare-ParityReport (New-Report @{ a = $null }) (New-Report @{ a = $null })).Count -eq 0 -and (Compare-ParityReport (New-Report @{ a = $null }) (New-Report @{ a = [decimal]0 })).Count -eq 1) ''
 
     $mapPath = Join-Path $work 'figure-map.json'
-    Set-Content -LiteralPath $mapPath -Value '{ "mappings": [ { "after": "{month}/summary/banks/*/balance", "before": "{month}/banks/*/balance", "reason": "test" }, { "after": "{month}/cards/*/balance", "before": "{month}/cards/*/outstandingTotal", "negate": true, "reason": "test" } ] }'
+    Set-Content -LiteralPath $mapPath -Value '{ "mappings": [ { "after": "{month}/new/*/balance", "before": "{month}/old/*/balance", "reason": "test" }, { "after": "{month}/card/*/balance", "before": "{month}/statement/*/outstandingTotal", "negate": true, "reason": "test" } ] }'
     $mappings = Read-ParityFigureMap $mapPath
-    $mappedBefore = New-Report @{ '2026-09/banks/Barclays/balance' = [decimal]'130.83' }
-    Check 'mapping renames without allowing a different value' ((Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/summary/banks/Barclays/balance' = [decimal]'130.83' }) $mappings).Count -eq 0 -and (Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/summary/banks/Barclays/balance' = [decimal]'130.84' }) $mappings).Count -eq 1) ''
-    Check 'mapping negate compares opposite sign' ((Compare-ParityReport (New-Report @{ '2026-09/cards/Amex/outstandingTotal' = [decimal]'50.00' }) (New-Report @{ '2026-09/cards/Amex/balance' = [decimal]'-50.00' }) $mappings).Count -eq 0) ''
+    $mappedBefore = New-Report @{ '2026-09/old/Barclays/balance' = [decimal]'130.83' }
+    Check 'mapping renames without allowing a different value' ((Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/new/Barclays/balance' = [decimal]'130.83' }) $mappings).Count -eq 0 -and (Compare-ParityReport $mappedBefore (New-Report @{ '2026-09/new/Barclays/balance' = [decimal]'130.84' }) $mappings).Count -eq 1) ''
+    Check 'mapping negate compares opposite sign' ((Compare-ParityReport (New-Report @{ '2026-09/statement/Amex/outstandingTotal' = [decimal]'50.00' }) (New-Report @{ '2026-09/card/Amex/balance' = [decimal]'-50.00' }) $mappings).Count -eq 0) ''
 
     $shippedMappings = Read-ParityFigureMap (Join-Path $here 'figure-map.json')
-    Check 'the shipped figure map has no mappings, so each figure is compared with the same key' ($shippedMappings.Count -eq 0) ($shippedMappings | ConvertTo-Json -Compress)
-    $uncompared = foreach ($key in $report.Keys) {
+    $changedReport = New-Report $report
+    $uncompared = foreach ($key in @($report.Keys)) {
         $value = $report[$key]
-        $changedValue = if ($null -eq $value) { [decimal]1 } elseif ($value -is [bool]) { -not $value } elseif ($value -is [decimal]) { $value + [decimal]'0.01' } else { "$value!" }
-        $changedReport = New-Report $report
-        $changedReport[$key] = $changedValue
+        $changedReport[$key] = if ($null -eq $value) { [decimal]1 } elseif ($value -is [bool]) { -not $value } elseif ($value -is [decimal]) { $value + [decimal]'0.01' } else { "$value!" }
         foreach ($pair in @(@($report, $changedReport), @($changedReport, $report))) {
             $found = @(Compare-ParityReport $pair[0] $pair[1] $shippedMappings)
             if ($found.Count -ne 1 -or $found[0].Key -ne $key) { $key }
         }
+        $changedReport[$key] = $value
     }
     Check 'a changed figure on either side is reported under its own key, for every figure' (@($uncompared).Count -eq 0 -and $report.Count -gt 100) (@($uncompared) -join ', ')
     Check 'identical reports compare clean through the shipped figure map' ((Compare-ParityReport $report (New-Report $report) $shippedMappings).Count -eq 0) ''

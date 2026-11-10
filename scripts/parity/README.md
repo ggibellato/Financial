@@ -69,8 +69,8 @@ difference(s)` means exit 1, and the work folder is kept for inspection.
 The month range runs from the first month with any record in the input to the later of the
 current month and the last month with any record (`SettlementTransactions` and the V4 `MaeLedgerEntries` included), so future invoice months are included. It is
 computed once from the input, before migration, and both sides use it. Both sides read the same
-routes and build the same keys: from `p60-deployed-f13` on, neither build serves the pages F13 retired
-(Banks, Cards, Reserva, Controle Mãe), so no family reads them. Keys use display names.
+routes and build the same keys; no family reads a route of the pages F13 retired (Banks, Cards,
+Reserva, Controle Mãe). Keys use display names.
 Two figures with the same key stop the run. Income sources are keyed by name, so two sources sharing a name would stop it too. Names are assumed not to contain `/`, which separates
 key segments; none do in the live data.
 
@@ -101,12 +101,11 @@ key segments; none do in the live data.
   from `Add-ParityMonthFigures`, add the family to `$figureFamilies` in `Parity.test.ps1` and
   the table above, and add a case to `Parity.test.ps1`.
 - **Figure moved to a new source:** when a feature serves a figure from a new endpoint or key, add
-  a mapping to `figure-map.json`. The compare then checks the new key against the old one. The map
-  is empty from `p60-deployed-f13` on; when the baseline moves to a build that emits the new key,
-  remove the mapping so every figure compares with its own key again:
+  a mapping to `figure-map.json`. The compare then checks the new key against the old one. Once
+  the baseline emits the new key too, remove the mapping so every figure compares with its own key:
 
   ```json
-  { "mappings": [ { "after": "{month}/summary/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F04 group summary" } ] }
+  { "mappings": [ { "after": "{month}/<new family>/*/balance", "before": "{month}/<old family>/*/balance", "negate": false, "reason": "<feature>: <what moved>" } ] }
   ```
 
   `*` matches one key segment and `{month}` matches a `yyyy-MM` segment; their values fill the
