@@ -284,6 +284,14 @@ function Add-ParityCurrentPotsTabFigures($Report, [string]$Last, [scriptblock]$F
     }
 }
 
+function Add-ParityMonthUnpaidCardChargeFigures($Report, [string]$Month, $MonthRows) {
+    $unpaidCardCharges = foreach ($row in $MonthRows) {
+        $expense = $row.transaction['expense']
+        if ($null -ne $expense -and $null -ne $expense['creditCardId'] -and $expense['paymentStatus'] -eq 'CreditCardCharge') { $expense }
+    }
+    Add-ParityFigure $Report "$Month/monthTransactions/unpaidCardChargesTotal" (Get-ParitySum $unpaidCardCharges { param($e) $e.value })
+}
+
 function Add-ParityMonthTransactionFigures($Report, [string]$Month, $MonthRows, $CategoryTotals) {
     $spendByCategory = [System.Collections.Generic.SortedDictionary[string, decimal]]::new([System.StringComparer]::Ordinal)
     foreach ($category in $CategoryTotals) { $spendByCategory[$category.category] = 0 }
@@ -302,8 +310,10 @@ function Get-ParityMonthRoute([string]$Month) {
 
 function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances, [bool]$IncludeSummary, $Accounts, [string]$CurrentMonth, [bool]$RetiredRoutes) {
     $route = Get-ParityMonthRoute $Month
-    Add-ParityUnpaidChargeFigures $Report $Month $route $Fetch
-    if ($RetiredRoutes) { Add-ParityCardStatementFigures $Report $Month $route $Fetch }
+    if ($RetiredRoutes) {
+        Add-ParityUnpaidChargeFigures $Report $Month $route $Fetch
+        Add-ParityCardStatementFigures $Report $Month $route $Fetch
+    }
     $categoryTotals = Add-ParityCategoryFigures $Report $Month $route $Fetch
     Add-ParityIncomeFigures $Report $Month $route $Fetch
     Add-ParityTitheFigures $Report $Month $route $Fetch
@@ -326,6 +336,7 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
         Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth) $monthRows
         Add-ParityPotsTabFigures $Report $Month $route $Fetch $Accounts
         Add-ParityMonthTransactionFigures $Report $Month $monthRows $categoryTotals
+        Add-ParityMonthUnpaidCardChargeFigures $Report $Month $monthRows
     }
 }
 

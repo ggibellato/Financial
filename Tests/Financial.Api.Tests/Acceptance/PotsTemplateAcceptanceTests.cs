@@ -77,6 +77,13 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
             CategoryId = Guid.Parse(categoryId)
         });
 
+    private async Task<List<ExpenseDTO>> OctoberExpensesAsync() =>
+        (await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/10"))!
+            .Select(row => row.Transaction.Expense)
+            .OfType<ExpenseDTO>()
+            .DistinctBy(expense => expense.Id)
+            .ToList();
+
     private async Task<List<(string Name, decimal Balance)>> ReservaPotBalancesAsync() =>
         (await Client.GetFromJsonAsync<PotsSummaryDTO>($"{Api}/accounts/{ReservaId}/pots/2026/10"))!.Pots.Select(pot => (pot.Name, pot.Balance)).ToList();
 
@@ -279,7 +286,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
         });
 
         var withdrawal = await WithdrawThroughBarclaysAsync(MercadoId);
-        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10");
+        var expenses = await OctoberExpensesAsync();
 
         using (new AssertionScope())
         {
@@ -295,7 +302,7 @@ public class PotsTemplateAcceptanceTests : ApiEndpointTests
     {
         var withdrawal = await WithdrawThroughBarclaysAsync(HolidaysCategoryId);
         var problem = await withdrawal.Content.ReadFromJsonAsync<ProblemDetails>();
-        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10");
+        var expenses = await OctoberExpensesAsync();
 
         using (new AssertionScope())
         {

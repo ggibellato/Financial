@@ -61,8 +61,8 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
     private async Task<AccountGroupSummaryDTO> OctoberSummaryAsync() =>
         (await Client.GetFromJsonAsync<AccountGroupSummaryDTO>($"{Api}/accounts/groups/default/summary/2026/10"))!;
 
-    private async Task<List<ExpenseDTO>> OctoberExpensesAsync() =>
-        (await Client.GetFromJsonAsync<List<ExpenseDTO>>($"{Api}/expenses/month/2026/10"))!;
+    private async Task<List<MonthTransactionDTO>> OctoberTransactionsAsync() =>
+        (await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/10"))!;
 
     private static async Task ShouldBeRefusedAsCardPayer(HttpResponseMessage response)
     {
@@ -91,7 +91,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
     public async Task CardAccount_OffersOnlyAddChargeAndAddRefund_AndIsRefusedAsPayerWith400()
     {
         var detail = await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{AmexId}/2026/10");
-        var expensesBefore = await OctoberExpensesAsync();
+        var transactionsBefore = await OctoberTransactionsAsync();
         var billResponse = await Client.PostAsJsonAsync($"{Api}/mensais", new RecurringBillCreateDTO
         {
             DueDay = 15,
@@ -131,7 +131,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
             await ShouldBeRefusedAsCardPayer(expense);
             await ShouldBeRefusedAsCardPayer(billPaid);
             await ShouldBeRefusedAsCardPayer(statementPaid);
-            (await OctoberExpensesAsync()).Should().HaveCount(expensesBefore.Count);
+            (await OctoberTransactionsAsync()).Should().HaveCount(transactionsBefore.Count);
             var bills = await Client.GetFromJsonAsync<List<RecurringBillDTO>>($"{Api}/mensais");
             bills.Should().ContainSingle(b => b.Id == bill.Id).Which.Status.Should().NotBe("Paid");
             var statements = await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements");

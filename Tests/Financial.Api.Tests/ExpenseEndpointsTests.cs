@@ -11,7 +11,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid Trading212Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000002");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
-    private static readonly Guid BarclaysPlatinumVisa8003Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000001");
     private static readonly Guid ChaseMaster4023Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000003");
     private static readonly Guid CasaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000003");
     private static readonly Guid ExtrasId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000005");
@@ -318,8 +317,8 @@ public class ExpenseEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var list = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
-        list.Should().NotContain(e => e.Id == createdExpense.Id);
+        var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{ChaseId}/transactions/2026/7");
+        rows.Should().NotContain(row => row.Id == createdExpense.Id);
     }
 
     [Fact]
@@ -329,180 +328,6 @@ public class ExpenseEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
-
-    [Fact]
-    public async Task GetExpensesByMonth_ReturnsOnlyExpensesForThatMonth()
-    {
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "July expense",
-            Value = 10m,
-            CategoryId = CasaId,
-            PaymentSourceBankId = ChaseId,
-            CreditCardId = null
-        });
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 8, 10),
-            Description = "August expense",
-            Value = 10m,
-            CategoryId = CasaId,
-            PaymentSourceBankId = ChaseId,
-            CreditCardId = null
-        });
-
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().ContainSingle(e => e.Description == "July expense");
-    }
-
-    [Fact]
-    public async Task GetExpensesByMonth_UnpaidCardCharge_IsExcludedFromResponse()
-    {
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Card charge",
-            Value = 45m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = null,
-            CreditCardId = BarclaysPlatinumVisa8003Id
-        });
-
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().NotContain(e => e.Description == "Card charge");
-    }
-
-    [Fact]
-    public async Task GetExpensesByMonth_BankPaidExpense_StillIncludedInResponse()
-    {
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Bank expense",
-            Value = 20m,
-            CategoryId = CasaId,
-            PaymentSourceBankId = ChaseId,
-            CreditCardId = null
-        });
-
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
-
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().ContainSingle(e => e.Description == "Bank expense");
-    }
-
-    [Fact]
-    public async Task GetExpensesByMonth_AfterMarkStatementPaid_CardChargeReappears()
-    {
-        var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Card charge",
-            Value = 45m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = null,
-            CreditCardId = BarclaysPlatinumVisa8003Id
-        });
-        var createdExpense = await created.Content.ReadFromJsonAsync<ExpenseDTO>();
-        var statement = await GetVisaStatementAsync(Client);
-
-        await Client.PostAsJsonAsync(
-            $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
-
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().ContainSingle(e => e.Id == createdExpense!.Id && e.PaymentStatus == "CreditCardStatementPaid");
-    }
-
-    [Fact]
-    public async Task GetExpensesByMonth_AfterUnmarkStatementPaid_CardChargeIsExcludedAgain()
-    {
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Card charge",
-            Value = 45m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = null,
-            CreditCardId = BarclaysPlatinumVisa8003Id
-        });
-        var statement = await GetVisaStatementAsync(Client);
-        await Client.PostAsJsonAsync(
-            $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
-
-        await Client.PostAsync($"/api/v1/financial/card-statements/{statement.Id}/unmark-paid", null);
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
-
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().NotContain(e => e.Description == "Card charge");
-    }
-
-    [Fact]
-    public async Task GetUnpaidCardChargesByMonth_ReturnsOnlyUnsettledCardCharges()
-    {
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Bank expense",
-            Value = 20m,
-            CategoryId = CasaId,
-            PaymentSourceBankId = ChaseId,
-            CreditCardId = null
-        });
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Card charge",
-            Value = 45m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = null,
-            CreditCardId = BarclaysPlatinumVisa8003Id
-        });
-
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().ContainSingle();
-        items![0].Description.Should().Be("Card charge");
-        items[0].CreditCardName.Should().Be("BarclaysPlatinumVisa8003");
-        items[0].PaymentStatus.Should().Be("CreditCardCharge");
-    }
-
-    [Fact]
-    public async Task GetUnpaidCardChargesByMonth_AfterMarkStatementPaid_ExcludesSettledCharge()
-    {
-        await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 10),
-            Description = "Card charge",
-            Value = 45m,
-            CategoryId = MercadoId,
-            PaymentSourceBankId = null,
-            CreditCardId = BarclaysPlatinumVisa8003Id
-        });
-        var statement = await GetVisaStatementAsync(Client);
-        await Client.PostAsJsonAsync(
-            $"/api/v1/financial/card-statements/{statement.Id}/mark-paid",
-            new MarkCardStatementPaidDTO { PaymentSourceBankId = Trading212Id });
-
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7/unpaid-card-charges");
-
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().BeEmpty();
-    }
-
-    private static async Task<AccountStatementDTO> GetVisaStatementAsync(HttpClient client) =>
-        (await client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysPlatinumVisa8003Id}/2026/7"))!.ViewedStatement!;
 
     [Fact]
     public async Task GetCategoryTotalsByMonth_ReturnsSummedTotalsPerCategory()
@@ -598,7 +423,7 @@ public class ExpenseEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetExpensesByMonth_EligibleExpenseWithNoSavedRoundUp_IncludesSuggestion()
+    public async Task GetAccountTransactions_EligibleExpenseWithNoSavedRoundUp_IncludesSuggestion()
     {
         await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
         {
@@ -610,10 +435,10 @@ public class ExpenseEndpointsTests : ApiEndpointTests
             CreditCardId = null
         });
 
-        var response = await Client.GetAsync("/api/v1/financial/expenses/month/2026/7");
+        var response = await Client.GetAsync($"/api/v1/financial/accounts/{Trading212Id}/transactions/2026/7");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        items.Should().ContainSingle(e => e.Description == "TfL" && e.SuggestedRoundUpAmount == 0.60m);
+        var rows = await response.Content.ReadFromJsonAsync<List<AccountTransactionDTO>>();
+        rows.Should().ContainSingle(row => row.Description == "TfL" && row.Expense!.SuggestedRoundUpAmount == 0.60m);
     }
 }

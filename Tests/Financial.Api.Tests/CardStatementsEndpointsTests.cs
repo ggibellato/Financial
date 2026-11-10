@@ -36,8 +36,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
         updated!.IsPaid.Should().BeTrue();
         updated.OutstandingTotal.Should().Be(0m);
 
-        var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
-        var paid = expenses!.Single(e => e.Description == "Card charge");
+        var paid = (await GetVisaChargeAsync()).Expense!;
         paid.PaymentStatus.Should().Be("CreditCardStatementPaid");
         paid.PaymentSourceBankId.Should().BeNull();
         paid.Date.Should().Be(new DateOnly(2026, 7, 10));
@@ -111,8 +110,7 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
         updated!.IsPaid.Should().BeFalse();
         updated.OutstandingTotal.Should().Be(45m);
 
-        var reExpenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/7");
-        reExpenses.Should().NotContain(e => e.Description == "Card charge");
+        (await GetVisaChargeAsync()).Expense!.PaymentStatus.Should().Be("CreditCardCharge");
     }
 
     [Fact]
@@ -137,6 +135,10 @@ public class CardStatementsEndpointsTests : ApiEndpointTests
 
     private async Task<AccountStatementDTO> GetVisaStatementAsync() =>
         (await Client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysPlatinumVisa8003Id}/2026/7"))!.ViewedStatement!;
+
+    private async Task<AccountTransactionDTO> GetVisaChargeAsync() =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{BarclaysPlatinumVisa8003Id}/transactions/2026/7"))!
+            .Single(row => row.Description == "Card charge");
 
     private Task<HttpResponseMessage> AddChargeAsync(decimal value) =>
         Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO

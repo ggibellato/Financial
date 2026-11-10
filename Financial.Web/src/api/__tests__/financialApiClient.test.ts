@@ -1501,28 +1501,6 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/investment-snapshots/2026/7/suggestions`)
   })
 
-  it('gets expenses by month', async () => {
-    const responseBody: ExpenseDto[] = []
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getExpensesByMonth(2026, 7)
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7`)
-  })
-
-  it('gets unpaid card charges by month', async () => {
-    const responseBody: ExpenseDto[] = []
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getUnpaidCardChargesByMonth(2026, 7)
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7/unpaid-card-charges`)
-  })
-
   it('gets category totals by month', async () => {
     const responseBody: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 250 }]
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))

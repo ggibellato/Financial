@@ -209,8 +209,6 @@ export interface FinancialApiClient {
   getInvestmentSnapshots: (year: number, month: number) => Promise<InvestmentSnapshotDto[]>
   updateInvestmentSnapshotValue: (id: string, request: InvestmentSnapshotValueUpdateDto) => Promise<InvestmentSnapshotDto>
   getInvestmentSnapshotSuggestions: (year: number, month: number) => Promise<InvestmentSnapshotSuggestionsDto>
-  getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
-  getUnpaidCardChargesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
   getIncomeSources: () => Promise<IncomeSourceDto[]>
   createIncomeSource: (request: IncomeSourceCreateDto) => Promise<IncomeSourceDto>
@@ -619,9 +617,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     getInvestmentSnapshotSuggestions: (year, month) =>
       request<InvestmentSnapshotSuggestionsDto>(`/investment-snapshots/${year}/${month}/suggestions`),
-    getExpensesByMonth: (year, month) => request<ExpenseDto[]>(`/expenses/month/${year}/${month}`),
-    getUnpaidCardChargesByMonth: (year, month) =>
-      request<ExpenseDto[]>(`/expenses/month/${year}/${month}/unpaid-card-charges`),
     getCategoryTotalsByMonth: (year, month) =>
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
     getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),

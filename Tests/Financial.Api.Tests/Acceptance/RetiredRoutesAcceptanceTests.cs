@@ -19,6 +19,7 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     private const string StatementId = "5e771e00-0000-0000-0000-000000000501";
     private const string ChaseId = "5e771e00-0000-0000-0000-000000000006";
     private const string TransferId = "5e771e00-0000-0000-0000-000000000601";
+    private const string ExpenseId = "5e771e00-0000-0000-0000-000000000701";
     private const string SeededData = $$"""
         {
           "Accounts": [
@@ -87,6 +88,8 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("GET", "transfers/month/2026/9")]
     [InlineData("GET", $"transfers/bank/{BankId}")]
     [InlineData("GET", "card-statements/2026/9")]
+    [InlineData("GET", "expenses/month/2026/9")]
+    [InlineData("GET", "expenses/month/2026/9/unpaid-card-charges")]
     public async Task RetiredRoute_Returns404(string method, string path)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));
@@ -122,6 +125,11 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("POST", "accounts/transfers", HttpStatusCode.BadRequest)]
     [InlineData("PUT", $"accounts/transfers/{TransferId}", HttpStatusCode.BadRequest)]
     [InlineData("DELETE", $"accounts/transfers/{TransferId}", HttpStatusCode.OK)]
+    [InlineData("GET", "accounts/transactions/2026/9", HttpStatusCode.OK)]
+    [InlineData("GET", "expenses/month/2026/9/category-totals", HttpStatusCode.OK)]
+    [InlineData("POST", "expenses", HttpStatusCode.BadRequest)]
+    [InlineData("PUT", $"expenses/{ExpenseId}", HttpStatusCode.BadRequest)]
+    [InlineData("POST", $"expenses/{ExpenseId}/move-to-statement", HttpStatusCode.BadRequest)]
     public async Task KeptRoute_StillAnswers(string method, string path, HttpStatusCode expected)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));

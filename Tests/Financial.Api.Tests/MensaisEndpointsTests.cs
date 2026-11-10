@@ -192,9 +192,9 @@ public class MensaisEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var updated = await response.Content.ReadFromJsonAsync<RecurringBillDTO>();
         updated!.Status.Should().Be("Paid");
-        var expenses = await (await Client.GetAsync("/api/v1/financial/expenses/month/2026/7"))
-            .Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        expenses.Should().ContainSingle(e => e.Description == "Council Tax" && e.Value == 120m && e.PaymentSourceBankId == BarclaysId);
+        var rows = await Client.GetFromJsonAsync<List<MonthTransactionDTO>>("/api/v1/financial/accounts/transactions/2026/7");
+        rows.Should().ContainSingle(row => row.Transaction.Description == "Council Tax"
+            && row.Transaction.Expense!.Value == 120m && row.AccountId == BarclaysId);
     }
 
     [Fact]
@@ -207,9 +207,8 @@ public class MensaisEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         (await response.Content.ReadFromJsonAsync<RecurringBillDTO>())!.Status.Should().Be("Paid");
-        var expenses = await (await Client.GetAsync("/api/v1/financial/expenses/month/2026/7"))
-            .Content.ReadFromJsonAsync<List<ExpenseDTO>>();
-        expenses.Should().BeEmpty();
+        var rows = await Client.GetFromJsonAsync<List<MonthTransactionDTO>>("/api/v1/financial/accounts/transactions/2026/7");
+        rows.Should().NotContain(row => row.Transaction.Expense != null);
     }
 
     [Fact]
