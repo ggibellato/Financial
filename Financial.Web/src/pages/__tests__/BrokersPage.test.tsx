@@ -208,4 +208,18 @@ describe('BrokersPage', () => {
 
     await waitFor(() => expect(deleteBrokerMock).toHaveBeenCalledWith('Avenue'))
   })
+
+  it('keeps focus on the list after a delete reloads it', async () => {
+    deleteBrokerMock.mockResolvedValue(undefined)
+    render(<BrokersPage />)
+    const deleteAvenue = await screen.findByRole('button', { name: 'Delete Avenue' })
+    getAdminBrokersMock.mockResolvedValue([BROKERS[0]])
+
+    deleteAvenue.focus()
+    fireEvent.click(deleteAvenue)
+    const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
+    fireEvent.click(confirmButtons[confirmButtons.length - 1])
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete XPI', hidden: true })).toHaveFocus())
+  })
 })

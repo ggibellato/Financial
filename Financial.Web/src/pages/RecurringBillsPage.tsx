@@ -76,7 +76,7 @@ export default function RecurringBillsPage() {
 
   return (
     <AdminEntityPage
-      title="Recurring Bills"
+      title="Recurring bills"
       createLabel="Create Recurring Bill"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
@@ -101,7 +101,7 @@ export default function RecurringBillsPage() {
         </>
       }
     >
-      <Table className="data-table" aria-label="Recurring Bills">
+      <Table className="data-table" aria-label="Recurring bills">
         <TableHeader>
           <TableRow>
             <SortableColumnHeader

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import EntityFormDialog from '../EntityFormDialog'
 
@@ -120,5 +121,44 @@ describe('EntityFormDialog', () => {
     renderDialog({ error: 'A bank named "Barclays" already exists.' })
 
     expect(screen.getByRole('dialog')).toHaveTextContent('A bank named "Barclays" already exists.')
+  })
+
+  it('saves when Enter is pressed in a field', async () => {
+    const onSave = vi.fn()
+    renderDialog({ onSave })
+
+    await userEvent.type(screen.getByLabelText('Name'), 'Barclays{Enter}')
+
+    expect(onSave).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not save on Enter while the form cannot be saved', async () => {
+    const onSave = vi.fn()
+    renderDialog({ onSave, canSave: false })
+
+    await userEvent.type(screen.getByLabelText('Name'), '{Enter}')
+
+    expect(onSave).not.toHaveBeenCalled()
+  })
+
+  it('makes Save the submit button and leaves Cancel as a plain button', () => {
+    renderDialog()
+
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveAttribute('type', 'submit')
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveAttribute('type', 'button')
+  })
+
+  it('moves focus to the error summary when a save fails', async () => {
+    const { rerender } = renderDialog()
+
+    rerender(
+      <EntityFormDialog title="Create Bank" error="The bank could not be saved." isSaving={false} canSave onSave={vi.fn()} onCancel={vi.fn()}>
+        <label htmlFor="bank-name">Name</label>
+        <input id="bank-name" />
+      </EntityFormDialog>,
+    )
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    expect(screen.getByRole('alert')).toHaveTextContent('The bank could not be saved.')
   })
 })

@@ -134,6 +134,10 @@ function validateAccountForm(
   return errors
 }
 
+function isDuplicateNameConflict(status: number | null, message: string | null, name: string | null): boolean {
+  return status === CONFLICT_STATUS && name !== null && message?.toLowerCase().includes(`"${name.toLowerCase()}"`) === true
+}
+
 function categoryOptions(categories: CategoryDto[], keptId: string): CategoryDto[] {
   return categories
     .filter((category) => (category.active && !category.isInvestment) || category.id === keptId)
@@ -176,8 +180,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
   const trimmedName = values.name.trim()
-  const isConflict = errorStatus === CONFLICT_STATUS
-  const isNameConflict = isConflict && submittedName === trimmedName
+  const isDuplicateName = isDuplicateNameConflict(errorStatus, error, submittedName)
+  const isNameConflict = isDuplicateName && submittedName === trimmedName
   const errors = validateAccountForm(values, template, keepsUnsetStartDate)
 
   useEffect(() => {
@@ -265,7 +269,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     <EntityFormDialog
       title={isEditing ? 'Edit account' : 'New account'}
       saveLabel={isEditing ? 'Save' : 'Add account'}
-      error={isConflict ? null : error}
+      error={isDuplicateName ? null : error}
       isSaving={isSaving}
       canSave={!isSaving}
       onSave={handleSave}

@@ -127,7 +127,10 @@ describe('AdminAccountsPage', () => {
     renderPage()
 
     expect(screen.getByText('Loading...')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New account' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New account', description: 'Loading account templates.' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     expect(await screen.findByText('No accounts yet')).toBeInTheDocument()
   })
 
@@ -136,11 +139,11 @@ describe('AdminAccountsPage', () => {
     renderPage()
 
     expect(await screen.findByText('Network down')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New account' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New account' })).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('table', { name: 'Accounts' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New account' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'New account' })).not.toHaveAttribute('aria-disabled')
   })
 
   it('returns focus to New account when the dialog is cancelled', async () => {
@@ -297,5 +300,73 @@ describe('AdminAccountsPage', () => {
 
     expect(await screen.findByText('Monzo has transactions and cannot be deleted. Deactivate it instead.')).toBeInTheDocument()
     expect(screen.queryByText('Account deleted')).not.toBeInTheDocument()
+  })
+
+  it('moves focus to the next row after deleting an account', async () => {
+    getAccountsMock.mockResolvedValue([MONZO, BARCLAYS])
+    deleteAccountMock.mockResolvedValue(undefined)
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+    getAccountsMock.mockResolvedValue([BARCLAYS])
+
+    const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
+    deleteMonzo.focus()
+    fireEvent.click(deleteMonzo)
+    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Barclays', hidden: true })).toHaveFocus())
+  })
+
+  it('moves focus to the previous row after deleting the last account in the list', async () => {
+    getAccountsMock.mockResolvedValue([BARCLAYS, MONZO])
+    deleteAccountMock.mockResolvedValue(undefined)
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+    getAccountsMock.mockResolvedValue([BARCLAYS])
+
+    const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
+    deleteMonzo.focus()
+    fireEvent.click(deleteMonzo)
+    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Barclays', hidden: true })).toHaveFocus())
+  })
+
+  it('moves focus to the page heading after deleting the only account', async () => {
+    getAccountsMock.mockResolvedValue([MONZO])
+    deleteAccountMock.mockResolvedValue(undefined)
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+    getAccountsMock.mockResolvedValue([])
+
+    const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
+    deleteMonzo.focus()
+    fireEvent.click(deleteMonzo)
+    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
+
+    expect(await screen.findByText('No accounts yet')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Accounts', hidden: true })).toHaveFocus())
+  })
+
+  it("explains why New account is unavailable when the templates couldn't be loaded", async () => {
+    getAccountTemplatesMock.mockRejectedValue(new Error('Server unavailable'))
+    renderPage()
+
+    const newAccount = await screen.findByRole('button', {
+      name: 'New account',
+      description: "Account templates couldn't be loaded. Try again to add an account.",
+    })
+    expect(newAccount).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(newAccount)
+    expect(screen.queryByRole('dialog', { name: 'New account' })).not.toBeInTheDocument()
+  })
+
+  it('gives New account no disabled reason once templates have loaded', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+
+    const newAccount = screen.getByRole('button', { name: 'New account' })
+    expect(newAccount).not.toHaveAttribute('aria-disabled')
+    expect(newAccount).not.toHaveAccessibleDescription()
   })
 })

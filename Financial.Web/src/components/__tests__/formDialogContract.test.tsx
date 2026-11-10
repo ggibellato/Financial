@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { BrokerDto, PortfolioDto } from '../../api/types'
 import AssetFormDialog from '../AssetFormDialog'
@@ -141,7 +142,7 @@ describe('form dialog contract: invalid input', () => {
 })
 
 describe('form dialog contract: server rejection', () => {
-  it.each(CASES)('$name shows the server error and re-enables Save when the submit rejects', async ({ renderDialog, fillValid, serverError }) => {
+  it.each(CASES)('$name shows the server error, focuses it and re-enables Save when the submit rejects', async ({ renderDialog, fillValid, serverError }) => {
     renderDialog(handlers({ onSubmit: vi.fn().mockRejectedValue(new Error(serverError)) }))
 
     fillValid()
@@ -150,7 +151,19 @@ describe('form dialog contract: server rejection', () => {
     expect(await screen.findByText(serverError)).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent(serverError)
     expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+  })
+})
+
+describe('form dialog contract: keyboard submit', () => {
+  it.each(CASES)('$name saves when Enter is pressed in a text field', async ({ renderDialog, fillValid }) => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    renderDialog(handlers({ onSubmit }))
+
+    fillValid()
+    await userEvent.type(screen.getAllByRole('textbox')[0], '{Enter}')
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
   })
 })
 

@@ -89,7 +89,7 @@ export default function InvestmentAccountsPage() {
 
   return (
     <AdminEntityPage
-      title="Investment Accounts"
+      title="Investment accounts"
       createLabel="Create Investment Account"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
@@ -142,7 +142,7 @@ export default function InvestmentAccountsPage() {
         </>
       }
     >
-      <Table aria-label="Investment Accounts" className="data-table">
+      <Table aria-label="Investment accounts" className="data-table">
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Name</TableHeaderCell>

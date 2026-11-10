@@ -30,10 +30,14 @@ describe('AdminEntityPage', () => {
     expect(onCreate).toHaveBeenCalledOnce()
   })
 
-  it('disables the create button when asked', () => {
-    renderPage({ createDisabled: true })
+  it('keeps a disabled create button focusable and describes why it is disabled', () => {
+    const { onCreate } = renderPage({ createDisabledReason: 'Add a broker first.' })
 
-    expect(screen.getByRole('button', { name: 'Create Bank' })).toBeDisabled()
+    const create = screen.getByRole('button', { name: 'Create Bank', description: 'Add a broker first.' })
+    expect(create).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByText('Add a broker first.')).toBeVisible()
+    fireEvent.click(create)
+    expect(onCreate).not.toHaveBeenCalled()
   })
 
   it('renders the content when loaded and not empty', () => {
