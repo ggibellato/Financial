@@ -25,8 +25,8 @@ internally consistent button/form implementation on both platforms.
 ## Decision
 
 Admin lookup-entity CRUD — flat reference-data lists with no associated chart:
-Bank, Broker, Category, CreditCard, IncomeSource, InvestmentAccount, Portfolio,
-RecurringBill, Pots (Manage pots), Asset, Account — is **exempt** from the "New X create
+Broker, Category, IncomeSource, InvestmentAccount, Portfolio, RecurringBill,
+Pots (Manage pots), Asset, Account — is **exempt** from the "New X create
 actions are inline forms" rule and may use a modal `Dialog` (Web) / popup
 `Window` (WPF) for create and edit instead of an inline panel.
 

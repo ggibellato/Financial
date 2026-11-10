@@ -43,15 +43,21 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
     public async Task Expenses_ShapeUnchanged()
     {
         await SetOpeningBalanceAsync(ChaseId, 100.50m, new DateOnly(2026, 9, 1));
-        var expenseId = await AddBankExpenseAsync(new DateOnly(2026, 9, 3), "Coffee", 2.30m, ChaseId);
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", BankExpense(new DateOnly(2026, 9, 3), "Coffee", 2.30m, ChaseId));
+        created.IsSuccessStatusCode.Should().BeTrue();
+        var createdJson = await created.Content.ReadAsStringAsync();
+        using var createdDocument = JsonDocument.Parse(createdJson);
+        var expenseId = createdDocument.RootElement.GetProperty("id").GetGuid();
 
         var expense = await ExpenseOfRowAsync(ChaseId, 9, expenseId);
         var chase = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{ChaseId}/2026/9");
 
+        var expectedShape =
+            $$"""{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}""";
         using (new AssertionScope())
         {
-            expense.Should().Be(
-                $$"""{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}""");
+            createdJson.Should().Be(expectedShape);
+            expense.Should().Be(expectedShape);
             chase.Balance.Should().Be(98.20m);
         }
     }
@@ -95,6 +101,21 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
         }
     }
 
+    [Theory]
+    [Trait("AC", "P60-F13-consolidated-navigation-and-retirement-08")]
+    [InlineData("TestData", "data-cashflow.test.json")]
+    [InlineData("ExampleData", "data-cashflow.example.json")]
+    public async Task ExampleData_HasOneAccountPerTemplate(string folder, string fileName)
+    {
+        ReplaceCashFlowDataBeforeStart(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, folder, fileName)));
+
+        var templates = await GetAsync<List<AccountTemplateDTO>>("/api/v1/financial/accounts/templates");
+        var accounts = await GetAsync<List<AccountDTO>>("/api/v1/financial/accounts");
+
+        accounts.Select(account => account.TemplateName)
+            .Should().BeEquivalentTo(templates.Select(template => template.Name));
+    }
+
     private async Task SetOpeningBalanceAsync(string bankId, decimal amount, DateOnly startDate)
     {
         var bank = (await GetAsync<List<AccountDTO>>("/api/v1/financial/accounts")).Single(account => account.Id == Guid.Parse(bankId));
@@ -113,17 +134,19 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
     private async Task<Guid> AddBankExpenseAsync(DateOnly date, string description, decimal value, string bankId)
     {
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", new ExpenseCreateDTO
-        {
-            Date = date,
-            Description = description,
-            Value = value,
-            CategoryId = Guid.Parse(MercadoCategoryId),
-            PaymentSourceBankId = Guid.Parse(bankId)
-        });
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/expenses", BankExpense(date, description, value, bankId));
         response.IsSuccessStatusCode.Should().BeTrue();
         return (await response.Content.ReadFromJsonAsync<ExpenseDTO>())!.Id;
     }
+
+    private static ExpenseCreateDTO BankExpense(DateOnly date, string description, decimal value, string bankId) => new()
+    {
+        Date = date,
+        Description = description,
+        Value = value,
+        CategoryId = Guid.Parse(MercadoCategoryId),
+        PaymentSourceBankId = Guid.Parse(bankId)
+    };
 
     private async Task<T> GetAsync<T>(string route)
     {

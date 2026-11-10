@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
-using Financial.TestUtilities;
+using Financial.Architecture.Tests.Infrastructure;
 using FluentAssertions;
 
 namespace Financial.Architecture.Tests;
@@ -24,7 +24,7 @@ public partial class ProductionClockReadsTests
     [Fact]
     public void Production_Code_Reads_Time_Only_Through_An_Injected_TimeProvider()
     {
-        var violations = ProductionSourceFiles()
+        var violations = ProductionSourceFiles.Backend()
             .SelectMany(file => FindViolations(file.RelativePath, File.ReadAllText(file.FullPath)))
             .ToList();
 
@@ -76,16 +76,5 @@ public partial class ProductionClockReadsTests
                 yield return $"{normalized}:{i + 1} uses TimeProvider.System outside a composition root - take a TimeProvider";
             }
         }
-    }
-
-    private static IEnumerable<(string RelativePath, string FullPath)> ProductionSourceFiles()
-    {
-        var root = RepoRoot.Find();
-        return Directory.EnumerateDirectories(root, "Financial.*")
-            .Where(directory => !Path.GetFileName(directory).EndsWith(".Web", StringComparison.Ordinal))
-            .SelectMany(directory => Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
-                        && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
-            .Select(path => (Path.GetRelativePath(root, path), path));
     }
 }

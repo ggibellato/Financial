@@ -241,10 +241,11 @@ floating in an unrelated toolbar elsewhere on the page.
 The "New X" trigger button, the form it opens, and that form's own confirm
 action must all name the same thing, so cause and effect are traceable
 without re-reading anything: **trigger button → form title → confirm
-button**. `ExpensesSection.tsx`/`ExpenseForm.tsx` is the reference: the
-trigger reads "New Expense", the form's own title reads "New Expense" (and
-"Edit Expense" once populated from an existing row), and the confirm button
-reads "Add Expense" (and "Save" once editing) — never a generic
+button**. The account screen's expense action (`AccountActionBar.tsx` →
+`ExpenseForm.tsx`) is the reference: the trigger reads "Add expense", the
+form's own title reads "New Expense" (and "Edit Expense" once populated from
+an existing row), and the confirm button reads "Add Expense" (and "Save" once
+editing) — never a generic
 "Submit"/"Confirm"/"OK" that drops the entity name.
 
 Do not let the form re-title itself into different wording once open (e.g.
@@ -292,8 +293,8 @@ gap reads as an unfinished/broken grid, not intentional whitespace.
 
 Row-level actions (Edit, Delete, and similar per-row commands) live in a
 single **Actions** column at the **trailing (rightmost)** edge of the grid,
-after the data columns — not leading. `ExpensesSection.tsx`/`IncomeSection.tsx`
-are the reference: each row's action `Button`s (`appearance="subtle"`,
+after the data columns — not leading. `AccountTransactionsGrid.tsx` (through
+`grid/RowActionsCell.tsx`) is the reference: each row's action `Button`s (`appearance="subtle"`,
 `size="small"`, an explicit `aria-label`, no visible text) share one trailing
 `TableCell`, using `EditRegular`/`DeleteRegular` from `@fluentui/react-icons`.
 This keeps the action affordance in a fixed,
@@ -325,21 +326,14 @@ A status indicator that isn't clickable (e.g. a lock glyph on a row that can't
 be edited) is not a row action and does not count toward this — it stays wherever
 it currently sits and never occupies the Actions cell.
 
-`CardsGrid.tsx`'s mark/unmark-paid cell is a documented exception to the
-icon-button shape above: marking a statement paid needs a bank picked first,
-so the cell is a native `select` (bank) plus a native text `button` ("Mark
-Paid"/"Unmark Paid"), not a stateless icon command. It still follows the
-trailing-column and fixed-width parts of this rule (`.data-table__col--action-
-wide`, 200px — sized for this content instead of the icon-button `72px`
-`.data-table__col--action`), just not the icon-only visual (fixed 2026-09-05).
-
-`AccountTransactionsGrid.tsx`'s Pots rows of an older split income are a second
-exception: the row can only be changed through its income, so its Actions cell
+`AccountTransactionsGrid.tsx`'s Pots rows of an older split income are a
+documented exception to the icon-button shape above: the row can only be changed through its income, so its Actions cell
 says "Edit from the income" instead of staying empty, and the column uses the
-same `.data-table__col--action-wide` while the month has such a row (user
-decision 2026-11-04).
+same `.data-table__col--action-wide` (200px, sized for this content instead of
+the icon-button `72px` `.data-table__col--action`) while the month has such a
+row (user decision 2026-11-04).
 
-`CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are a third
+`CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are a second
 exception: they are named text buttons in `.data-table__col--action-wide`, as
 the P60 F08 and F13 specs define them.
 
@@ -359,11 +353,10 @@ component — a 3-state cycle (unsorted -> ascending -> descending ->
 unsorted), null-last in both directions.
 
 A grid with a genuine per-row date/month/year column — whether that's the
-row's primary identity (Transactions, Credits, Price History, Disposals,
-Corporate Actions, Expenses, Income, Bank operations, Controle Mãe,
-Dividend History and its by-year totals, Reserva's Movements) or a
-secondary column (Portfolio Holdings' "first investment", the Cards
-grid's "next invoice due") — defaults to **descending by that column**,
+row's primary identity (Transactions, the account screen's Transactions
+tab, Credits, Price History, Disposals, Corporate Actions, Dividend History
+and its by-year totals) or a secondary column (Portfolio Holdings' "first
+investment") — defaults to **descending by that column**,
 with the header showing the same active-sort indicator it would after the
 user clicked it — `useSortableRows`' `defaultSort` parameter (seeded with
 the exported `DATE_DESC_SORT` constant, or an equivalent literal for a
@@ -571,10 +564,9 @@ A "New X" / "+ New X" button (New Expense, New Income, New Transfer, New
 Transaction, New Credit, New Price, etc.) creating one row for the grid
 immediately below it **always expands an inline form in place on the same
 tab/page** — it never opens a separate modal dialog.
-`ExpensesSection.tsx`/`IncomeSection.tsx`/
-`BankOperationsSection.tsx` are the reference: they toggle a boolean
-(`isFormVisible`-style) that shows/hides a form component positioned between the
-action button and the grid it feeds, so the user keeps the grid, chart, and
+The account screen (`AccountScreenPage.tsx` with `AccountActionBar.tsx`) is
+the reference: each action opens its form inline, positioned between the
+action bar and the Transactions grid it feeds, so the user keeps the grid, chart, and
 totals in view while filling it in.
 
 Do not use a modal popup for this class of action: it blocks the rest of the
@@ -589,8 +581,7 @@ self-contained, blocking interaction unrelated to populating a specific grid
 row may still use a real dialog — this rule is specifically about the
 create/edit-a-row action, not dialogs in general.
 
-**Exception — Admin lookup-entity CRUD:** Bank, Broker, Category, CreditCard,
-IncomeSource, InvestmentAccount, Portfolio, RecurringBill, Pots (Manage pots),
+**Exception — Admin lookup-entity CRUD:** Broker, Category, IncomeSource, InvestmentAccount, Portfolio, RecurringBill, Pots (Manage pots),
 Asset, and Account create/edit forms are exempt from this rule and may use a modal
 `Dialog` instead of an inline panel — see
 `decisions/ADR-006-admin-crud-modal-dialogs.md` for the rationale (no

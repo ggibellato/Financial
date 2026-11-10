@@ -8,6 +8,12 @@ concrete starting punch list instead of having to re-derive it. Update this
 file if the audited state materially changes before the refactor begins;
 otherwise treat it as a snapshot, not a living document.
 
+Since this snapshot, P60 F13 removed the Reserva, Controle Mãe, Admin Banks
+and Admin Credit cards pages and Monthly's entry sections
+(`ExpensesSection`, `IncomeSection`, `BankOperationsSection`): their tasks
+live on the account screen (`AccountScreenPage`) and Admin → Accounts. The
+file names below that point at those components are history.
+
 ## Financial.Web (React)
 
 ### Component library

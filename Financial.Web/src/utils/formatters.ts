@@ -103,10 +103,6 @@ export function parseMonthInputValue(value: string): { year: number; month: numb
   return match ? { year: Number(match[1]), month: Number(match[2]) } : null
 }
 
-export function previousYearJanuaryFirst(): string {
-  return `${new Date().getFullYear() - 1}-01-01`
-}
-
 export function lastDayOfMonthIsoDate(year: number, month: number): string {
   return `${formatMonthInputValue(year, month)}-${pad(new Date(year, month, 0).getDate())}`
 }

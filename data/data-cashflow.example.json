@@ -1,7 +1,41 @@
 {
+  "Categories": [
+    { "Id": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e21", "Name": "Savings", "Active": true, "IsInvestment": false, "IsTithe": false }
+  ],
   "Expenses": [],
   "Incomes": [],
   "Accounts": [
+    {
+      "Id": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e01",
+      "Name": "Current account",
+      "Template": "Bank",
+      "Currency": "GBP",
+      "IsActive": true,
+      "OpeningBalance": { "Amount": 0, "StartDate": "0001-01-01" },
+      "RoundUp": { "Enabled": false }
+    },
+    {
+      "Id": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e02",
+      "Name": "Credit card",
+      "Template": "CreditCard",
+      "Currency": "GBP",
+      "IsActive": true,
+      "OpeningBalance": null,
+      "RoundUp": null
+    },
+    {
+      "Id": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e03",
+      "Name": "Savings",
+      "Template": "Pots",
+      "Currency": "GBP",
+      "IsActive": true,
+      "OpeningBalance": null,
+      "RoundUp": null,
+      "Pots": [
+        { "Id": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e11", "Name": "Rainy day", "IsActive": true, "SplitPercentage": 100 }
+      ],
+      "CategoryId": "b6f0c1d2-5a4e-4c3b-9e21-0a1b2c3d4e21"
+    },
     {
       "Id": "3cd771bd-1cb3-4455-b83b-cd1d4e93ff6a",
       "Name": "Mãe",

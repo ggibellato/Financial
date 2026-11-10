@@ -20,7 +20,6 @@ import {
   lastDayOfMonthIsoDate,
   pad,
   parseMonthInputValue,
-  previousYearJanuaryFirst,
   toInputDate,
   todayIsoDate,
 } from '../formatters'
@@ -235,21 +234,6 @@ describe('parseMonthInputValue', () => {
 
   it('parseMonthInputValue_MonthOutOfRange_ReturnsNull', () => {
     expect(parseMonthInputValue('2026-13')).toBeNull()
-  })
-})
-
-describe('previousYearJanuaryFirst', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date(2026, 6, 15)) // 2026-07-15
-  })
-
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('previousYearJanuaryFirst_ReturnsJanuaryFirstOfPriorYear', () => {
-    expect(previousYearJanuaryFirst()).toBe('2025-01-01')
   })
 })
 

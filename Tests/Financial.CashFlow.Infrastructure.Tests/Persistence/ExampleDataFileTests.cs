@@ -26,11 +26,6 @@ public class ExampleDataFileTests
             "the README tells a new install to copy this file");
     }
 
-    /// <summary>
-    /// Unlike the Investment example this one is an empty shell by design - every collection is `[]`,
-    /// confirmed as intended when the missing ReserveBuckets seed was raised - so the assertion here is
-    /// only that it loads and yields a usable document.
-    /// </summary>
     [Fact]
     public void ExampleFile_DeserializesThroughTheRealSerializer()
     {
