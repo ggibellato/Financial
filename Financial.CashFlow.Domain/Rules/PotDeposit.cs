@@ -39,7 +39,7 @@ public static class PotDeposit
         Allocate(ActivePots(income.PotsAccount), IncomeAmount(income.NetValue), income.Date, income.Description ?? string.Empty, income, operationId: null);
 
     private static decimal IncomeAmount(decimal netValue) =>
-        Math.Round(TitheRule.NetOfTithe(netValue), 2, MidpointRounding.AwayFromZero);
+        MoneyRounding.ToCents(TitheRule.NetOfTithe(netValue));
 
     private static PotOperation Build(
         Account potsAccount,

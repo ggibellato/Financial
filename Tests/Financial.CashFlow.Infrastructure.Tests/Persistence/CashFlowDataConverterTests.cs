@@ -273,6 +273,32 @@ public class CashFlowDataConverterTests
         act.Should().Throw<JsonException>().WithMessage("Account '5db5c88d-0000-0000-0000-000000000999' referenced but not found*");
     }
 
+    [Theory]
+    [InlineData("\"AccountId\":\"" + MaeId + "\"", "\"AccountId\":\"" + BarclaysId + "\"", "Barclays is not a Settlement account.")]
+    [InlineData("\"Currency\":\"GBP\",\"Amount\":80", "\"Currency\":\"USD\",\"Amount\":80", "Mãe doesn't use USD.")]
+    [InlineData("\"Amount\":80,", "\"Amount\":0,", "Amount must be greater than zero.")]
+    [InlineData("\"Amount\":80,", "\"Amount\":-80,", "Amount must be greater than zero.")]
+    [InlineData("\"Amount\":80,", "\"Amount\":0.004,", "Amount must be greater than zero.")]
+    public void Load_SettlementTransactionThatDoesNotFitItsAccount_FailsTheLoad(string original, string replacement, string rule)
+    {
+        var file = V5FileWithMaeEntry.Replace(original, replacement);
+
+        var act = () => _serializer.Deserialize(file);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage("SettlementTransaction 5db5c88d-0000-0000-0000-000000000b02 does not fit its account: " + rule);
+    }
+
+    [Fact]
+    public void LoadAndSave_SettlementTransactionWithAFractionOfACentAboveZero_IsByteIdentical()
+    {
+        var file = V5FileWithMaeEntry.Replace("\"Amount\":80,", "\"Amount\":0.005,");
+
+        var saved = _serializer.Serialize(_serializer.Deserialize(file));
+
+        saved.Should().Be(file);
+    }
+
     [Fact]
     public void Load_UnknownPotsAccountId_FailsTheLoad()
     {

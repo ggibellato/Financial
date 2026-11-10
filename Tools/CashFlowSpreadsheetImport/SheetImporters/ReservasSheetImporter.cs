@@ -1,6 +1,7 @@
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.CashFlow.Domain.Rules;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
 
@@ -56,7 +57,7 @@ public static class ReservasSheetImporter
                     continue;
                 }
 
-                movements.Add(PotTransaction.Create(bucket, Math.Round(amount.Value, 2, MidpointRounding.AwayFromZero), date, description));
+                movements.Add(PotTransaction.Create(bucket, MoneyRounding.ToCents(amount.Value), date, description));
             }
         }
 
