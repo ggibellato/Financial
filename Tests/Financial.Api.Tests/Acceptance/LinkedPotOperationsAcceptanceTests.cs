@@ -31,7 +31,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
     private const string IncomeDepositMessage = "This deposit belongs to an income; edit the income.";
     private static readonly DateOnly IncomeDate = new(2026, 10, 1);
     private const string ExpenseMessage = "This expense belongs to a pot deposit or withdrawal; edit it from the Pots account.";
-    private const string MovementMessage = "This movement belongs to a pot deposit or withdrawal; edit it from the Pots account.";
+    private const string MovementMessage = "This pot transaction belongs to a pot deposit or withdrawal; edit it from the Pots account.";
 
     private const string SeededData = $$"""
         {
