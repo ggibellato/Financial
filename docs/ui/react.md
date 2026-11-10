@@ -44,10 +44,10 @@ table (a post-submit result summary, a chart's accessible-data-table legend)
 alike — uses Fluent's `<Table>`/`<TableHeader>`/`<TableBody>`/`<TableRow>`/
 `<TableCell>` components, consistently across the whole app since 2026-09
 (the handful of grids that still used a plain `<table>` — `TotalsGrid`,
-`CardsGrid`, `ControleMaePage`, `ReservaPage`, `MensaisPage`,
-`CurrentValuesPage`, `DividendCheckPage`, `RecurringBillsPage`,
-`AnnualSummaryPage`, `PortfolioSummaryTab`, `UpcomingIncomePanel`,
-`IncomeSplitForm`, `AllocationPieChart` — were migrated to Fluent's `Table`
+`CardsGrid`, `MensaisPage`, `CurrentValuesPage`, `DividendCheckPage`,
+`RecurringBillsPage`, `AnnualSummaryPage`, `PortfolioSummaryTab`,
+`UpcomingIncomePanel`, `IncomeSplitForm`, `AllocationPieChart`, and pages
+P60 F13 later retired — were migrated to Fluent's `Table`
 for consistency). No exceptions: a raw `<table>` is never correct here,
 even for a static, one-time or non-interactive table — always reach for
 Fluent's `Table` components instead. Every `<Table>` carries the shared
@@ -69,8 +69,8 @@ Never let a table/grid cell wrap (`white-space: normal`, or CSS missing
 no-op without it) — an occasional long value then silently grows just that
 row to double height while every other row stays single-line, an
 inconsistent, jarring result rather than a deliberate design (fixed across
-`ExpensesSection`, `ControleMaePage`, `ReservaPage`, `MensaisPage`, and
-`TaxRulesPage` in 2026-09). Instead, use `TruncatedText`
+`MensaisPage`, `TaxRulesPage` and the pages P60 F13 later retired in
+2026-09). Instead, use `TruncatedText`
 (`Financial.Web/src/components/TruncatedText.tsx`) for any free-text
 description/note/label cell: it truncates to one line with an ellipsis via
 the shared `.truncated-text` class (`Financial.Web/src/styles/data-table.css`)

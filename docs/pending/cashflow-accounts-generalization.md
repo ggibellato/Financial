@@ -1,6 +1,6 @@
 # CashFlow accounts generalization — discussion summary
 
-Status: **design agreed; F00 (WPF removal) done; PRD written: `docs/prd/P60-prd-cashflow-accounts-generalization/` (13 features in 5 stages, one stage per slice F01–F05).** Where checking this design against the code and live data changed a statement, the PRD wins; those statements are corrected below and marked *(corrected by P60)*.
+Status: **implemented by P60 F01–F16** (PRD: `docs/prd/P60-prd-cashflow-accounts-generalization/`; F00, the WPF removal, came first). Where checking this design against the code and live data changed a statement, the PRD wins; those statements are corrected below and marked *(corrected by P60)*.
 Scope: **CashFlow becomes account-centred, and the WPF front end is removed** from the whole application (F00, done 2026-10-16). Everything else raised during the discussion is listed under [Future features](#future-features-not-in-this-project). Discussion date: 2026-10-08 to 2026-10-15.
 
 Terminology: a **transaction** is anything that touched an account (expense, income, transfer, card charge, card payment, pot deposit or withdrawal, settlement entry). When one action writes transactions on several accounts, they are **linked transactions**.

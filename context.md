@@ -18,10 +18,11 @@ The Investment domain must allow users to:
 
 The CashFlow domain must allow users to:
 
+* Keep every money place as an account built from a template: Bank, Credit card, Pots and Settlement.
 * Record monthly expenses.
 * Record incomes.
-* Control Reserve buckets — a separate running balance for each of the specified buckets (Investimento, HouseTreats, Ariana, Gleison, Samuel).
-* Control borrowed money between myself and my mother (an informal personal loan between us).
+* Split savings into the pots of a Pots account (Reserva), each with its own running balance.
+* Control borrowed money between myself and my mother (an informal personal loan between us) on a Settlement account.
 * Record investments of quick access; these are not the same investments controlled by the Investment domain — they are more like reserve funds.
 * Record and control credit card expenses.
 * Track recurring bills.
@@ -70,9 +71,9 @@ The solution must be extensible so that new asset classes can be added in the fu
 
 ## CashFlow Domain
 
-A second, fully independent domain that tracks household finances — income, expenses, bank/card balances, a savings-split reserve ledger, recurring bills, and a household ledger with my mother — separate from investment tracking. It was migrated from a personal Excel workbook (`Despesas.xlsx`) and has no cross-domain references to the Investment side — see `docs/prd/P11-prd-cashflow-tracking/cashflow-context.md`. See [Implemented Features (CashFlow Domain)](#implemented-features-cashflow-domain) below for the full feature breakdown.
+A second, fully independent domain that tracks household finances — income, expenses, bank/card balances, savings pots, recurring bills, and a household ledger with my mother — separate from investment tracking. It was migrated from a personal Excel workbook (`Despesas.xlsx`) and has no cross-domain references to the Investment side — see `docs/prd/P11-prd-cashflow-tracking/cashflow-context.md`. See [Implemented Features (CashFlow Domain)](#implemented-features-cashflow-domain) below for the full feature breakdown.
 
-Core entities: `Bank`, `Expense`, `Income`, `CardStatement`, `RecurringBill`, `ReserveMovement`, `InvestmentSnapshot`, `SettlementTransaction`.
+Core entities: `Account` (built from a template — `Bank`, `CreditCard`, `Pots` or `Settlement` — whose capabilities decide what it can hold), `Expense`, `Income`, `Transfer`, `BalanceAdjustment`, `CardStatement`, `PotTransaction`, `SettlementTransaction`, `RecurringBill`, `InvestmentSnapshot`.
 
 Storage mirrors the Investment domain's pattern but is entirely separate: a dedicated `data-cashflow.json` file, with its own independent LocalJson/GoogleDrive repository selection and its own configuration keys.
 
@@ -119,13 +120,13 @@ The following features are currently built and available in the React web app. (
 
 The following features are built as React pages.
 
-* **Monthly (Mensais)** — primary month-by-month view of income vs. expenses, with a category totals grid, gross/net income breakdown, and a dynamic credit-card-area scope.
-* **Banks & Cards** — tracks bank account balances and credit card statement balances per month.
-* **Reserve** — tracks movements in and out of five fixed savings-split buckets (`Investimento`, `HouseTreats`, `Ariana`, `Gleison`, `Samuel`), each with its own running balance.
+* **Accounts** — the CashFlow landing page: every account grouped by template with its balance. Each account opens its account screen, where all entry happens for that account: expenses, card charges and refunds, incomes, transfers, balance adjustments, card statements (pay, unmark, due date), pot deposits and withdrawals, and settlement entries. Admin → Accounts creates and edits accounts.
+* **Monthly** — the month overview: a Summary tab (category totals, cards, banks, income and tithe, each bank and card linking to its account screen at that month) and an All transactions tab with a category filter. It has no entry forms.
+* **Mensais** — the monthly recurring-bill checklist.
 * **Recurring Bills** — CRUD management of fixed recurring monthly bills.
 * **Investment Snapshots** — monthly snapshot of quick-access accounts (savings, ISAs, Trading 212 brokerage balance, etc.) for net-worth tracking; lighter-weight than the Investment domain's full transaction-level tracking.
 * **Annual Summary** — yearly rollups including gross-vs-net/after-tax salary comparisons (`SalaryAfterTaxes`/`TaxDifference`) and server-side Category Totals averages scoped to the correct months.
-* **Controle Mãe** — household ledger tracking informal borrowed money between myself and my mother, kept on the "Mãe" Settlement account (BRL and GBP): each entry records who paid, its currency, the amount and, when a rate was found, the value converted to the other currency.
+* **Settlement accounts** — the household ledger with my mother is the "Mãe" Settlement account (BRL and GBP): each entry records who paid, its currency, the amount and, when a rate was found, the value converted to the other currency; Settle zeroes both totals. The old Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are gone; their addresses redirect to the account screen or Admin → Accounts.
 * **Tithe calculation** — computes 10% of a month's net income on demand (not persisted), read fresh whenever income or tithe-tagged expenses change.
 
 ---
@@ -151,7 +152,7 @@ The architecture should follow Domain-Driven Design (DDD) principles while remai
 The solution is split into **two independent bounded contexts**, each with its own Domain/Application/Infrastructure projects:
 
 * `Financial.Investment.{Domain,Application,Infrastructure}` — concepts: Broker, Portfolio, Asset, Transaction, Credit.
-* `Financial.CashFlow.{Domain,Application,Infrastructure}` — concepts: Bank, Expense, Income, CardStatement, RecurringBill, ReserveMovement, InvestmentSnapshot, SettlementTransaction.
+* `Financial.CashFlow.{Domain,Application,Infrastructure}` — concepts: Account (and its template), Expense, Income, Transfer, BalanceAdjustment, CardStatement, PotTransaction, SettlementTransaction, RecurringBill, InvestmentSnapshot.
 
 `Financial.Shared.Infrastructure` holds cross-cutting infrastructure used by both contexts (e.g. `GoogleDriveJsonStorage`).
 

@@ -97,7 +97,7 @@ still usable. Further options with the published API on seeded JSON:
   the 409 problem-details message is shown, the form keeps its values, and no console error is
   logged.
 - **Degraded dependency**: the FX provider is unreachable in CI already (no network to
-  Frankfurter is guaranteed) — a Controle Mãe entry must still save with only the entered
+  Frankfurter is guaranteed) — a Settlement entry must still save with only the entered
   currency, which is exactly the fail-safe the API promises.
 
 Stopping the API mid-journey is not a useful E2E negative here (single process); the
