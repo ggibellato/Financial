@@ -246,7 +246,7 @@ function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scri
         $detail = & $Fetch "accounts/$($account.id)/$Route"
         if (-not $isCard) {
             Add-ParityFigure $Report "$Month/account/$($account.name)/balance" $detail.balance
-            $roundUpTotal = Get-ParitySum (& $Fetch "accounts/$($account.id)/transactions/$Route") { param($row) [decimal]$row['roundUp'] }
+            $roundUpTotal = -(Get-ParitySum (& $Fetch "accounts/$($account.id)/transactions/$Route") { param($row) [decimal]$row['roundUp'] })
             Add-ParityFigure $Report "$Month/account/$($account.name)/roundUpTotal" $roundUpTotal
             continue
         }
