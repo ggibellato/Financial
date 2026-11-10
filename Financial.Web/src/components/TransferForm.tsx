@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { LockedBank } from '../hooks/formSettings'
-import type { TransferFormField } from '../hooks/mapTransferErrorToField'
+import type { TransferFormField } from '../hooks/transferFormField'
 import { useFieldError } from '../hooks/useFieldError'
 import { selectableBanks, type SelectableBank } from '../utils/selectableBanks'
 import { useFormPanelStyles } from './formPanelStyles'

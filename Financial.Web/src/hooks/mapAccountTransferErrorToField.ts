@@ -1,4 +1,4 @@
-import type { TransferFormField } from './mapTransferErrorToField'
+import type { TransferFormField } from './transferFormField'
 
 export type TransferDirection = 'to' | 'from'
 

@@ -24,15 +24,11 @@
 .monthly-page__content {
   flex: 1;
   min-height: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 32px;
-}
-
-.monthly-page__section h2 {
-  color: var(--text-h);
-  margin-bottom: 12px;
 }
 
 .monthly-page__table {
@@ -61,10 +57,6 @@
   min-height: 0;
 }
 
-/* The equal-height stretch only makes sense when grids sit side by side (the
-   Summary tab's grids-row). A grid used standalone (e.g. the Expense tab's
-   BanksGrid) should size to its content instead of stretching to fill a
-   height meant for a multi-grid row it isn't part of. */
 .monthly-page__grids-row .monthly-page__section--grid {
   flex: 1 1 260px;
   min-width: 260px;
@@ -86,13 +78,6 @@
   margin-top: 12px;
 }
 
-.monthly-page__error {
-  margin-top: 6px;
-  color: var(--error, #c0392b);
-}
-
-/* Outcome of a mark/unmark action, shown above the cards grid so it sits next to the buttons that
-   produced it. */
 .monthly-page__action-error {
   margin: 0 0 8px;
   padding: 8px 12px;
@@ -112,9 +97,6 @@
     overflow: visible;
   }
 
-  /* The side-by-side stretch and its 320px cap only make sense once the
-     grids sit in a row; stacked single-column on mobile they should size to
-     their own content instead of clipping it. */
   .monthly-page__grids-row .monthly-page__section--grid {
     max-height: none;
   }

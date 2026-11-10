@@ -9,9 +9,6 @@ interface IncomingGridProps {
   titheSummary: TitheSummaryDto | null
   carryForwardUpdating: boolean
   onToggleCarryForward: (included: boolean) => void
-  /** Outcome of the last carry-forward toggle. Shares useMonthly's single "last action" slot with
-   * other grids' actions, so it can also reflect an unrelated action - an accepted trade-off of
-   * reusing that shared state rather than introducing a dedicated field. */
   carryForwardActionError?: string | null
 }
 
