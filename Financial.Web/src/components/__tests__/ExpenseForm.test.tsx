@@ -428,13 +428,13 @@ describe('ExpenseForm with a locked card', () => {
       expect(screen.getByLabelText(/^Date/)).toHaveFocus()
     })
 
-    it('shows a server error in the message bar and moves focus to the save button', () => {
+    it('shows a server error in the message bar and moves focus to it', () => {
       const { rerender } = render(<ExpenseForm {...refundProps} />)
 
       rerender(<ExpenseForm {...refundProps} saveError="This charge's statement is paid; unmark it first." />)
 
       expect(screen.getByRole('alert')).toHaveTextContent("This charge's statement is paid; unmark it first.")
-      expect(screen.getByRole('button', { name: 'Add Refund' })).toHaveFocus()
+      expect(screen.getByRole('alert')).toHaveFocus()
     })
   })
 

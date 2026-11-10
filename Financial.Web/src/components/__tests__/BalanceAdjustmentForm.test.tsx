@@ -225,12 +225,12 @@ describe('BalanceAdjustmentForm', () => {
     expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveFocus()
   })
 
-  it('announces a server error and moves focus to Save', () => {
+  it('announces a server error and moves focus to it', () => {
     const { rerender } = render(<BalanceAdjustmentForm {...baseProps} />)
 
     rerender(<BalanceAdjustmentForm {...baseProps} saveError="The service is unavailable." />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('The service is unavailable.')
-    expect(screen.getByRole('button', { name: 'Adjust balance' })).toHaveFocus()
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 })

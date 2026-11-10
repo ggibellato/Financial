@@ -53,7 +53,7 @@ export default function BalanceAdjustmentForm({
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
   const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
-  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, generalError)
+  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, generalError)
 
   if (savedDelta !== null) {
     return (
@@ -91,7 +91,7 @@ export default function BalanceAdjustmentForm({
           {isEditing ? 'Edit balance adjustment' : 'Adjust balance'}
         </Text>
         {generalError && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{generalError}</MessageBarBody>
           </MessageBar>
         )}
@@ -172,7 +172,6 @@ export default function BalanceAdjustmentForm({
 
       </fieldset>
       <FormSaveActions
-        saveRef={saveRef}
         saveLabel={isEditing ? 'Save' : 'Adjust balance'}
         isSaving={isSaving}
         isSaveDisabled={!isEditing && !bankChosen}

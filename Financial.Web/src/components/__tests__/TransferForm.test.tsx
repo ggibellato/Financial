@@ -213,13 +213,13 @@ describe('TransferForm', () => {
     expect(screen.getByLabelText(/^Date/)).toHaveFocus()
   })
 
-  it('announces a server error and moves focus to Save', () => {
+  it('announces a server error and moves focus to it', () => {
     const { rerender } = render(<TransferForm {...baseProps} />)
 
     rerender(<TransferForm {...baseProps} saveError="The service is unavailable." />)
 
     expect(screen.getByRole('alert')).toHaveTextContent('The service is unavailable.')
-    expect(screen.getByRole('button', { name: 'Add Transfer' })).toHaveFocus()
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 
   it('does not save again while a save is in flight', () => {

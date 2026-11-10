@@ -91,7 +91,7 @@ export default function IncomeForm({
   const [openedBank] = useState(bank)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0 || Object.keys(funding.errors).length > 0
-  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
+  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
@@ -116,7 +116,7 @@ export default function IncomeForm({
           {isEditing ? 'Edit Income' : 'New Income'}
         </Text>
         {!hasFieldErrors && saveError && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -249,7 +249,6 @@ export default function IncomeForm({
 
       </fieldset>
       <FormSaveActions
-        saveRef={saveRef}
         saveLabel={isEditing ? 'Save' : 'Add Income'}
         isSaving={isSaving}
         isSaveDisabled={funding.mismatch !== null}

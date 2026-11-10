@@ -73,7 +73,7 @@ export default function TransferForm({
   }
 
   const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
-  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, generalError)
+  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, generalError)
 
   const accountField = (side: LockedTransferSide['side'], label: string) => {
     const field: TransferFormField = side === 'source' ? 'sourceBank' : 'destinationBank'
@@ -121,7 +121,7 @@ export default function TransferForm({
           {isEditing ? 'Edit Transfer' : 'New Transfer'}
         </Text>
         {generalError && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{generalError}</MessageBarBody>
           </MessageBar>
         )}
@@ -176,7 +176,6 @@ export default function TransferForm({
 
       </fieldset>
       <FormSaveActions
-        saveRef={saveRef}
         saveLabel={isEditing ? 'Save' : 'Add Transfer'}
         isSaving={isSaving}
         isSaveDisabled={sameBankError !== null}

@@ -128,13 +128,13 @@ describe('IncomeForm funded from', () => {
     expect(screen.getByRole('combobox', { name: 'Bank' })).toHaveFocus()
   })
 
-  it('moves focus to Save after a failed save', () => {
+  it('moves focus to the announced error after a failed save', () => {
     const { rerender } = render(<IncomeForm {...baseProps} />)
 
     rerender(<IncomeForm {...baseProps} saveError="Barclays is inactive." saveErrorFields={{}} />)
 
-    expect(screen.getByRole('button', { name: 'Add Income' })).toHaveFocus()
     expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 
   it('does not mark a locked bank as required', () => {
