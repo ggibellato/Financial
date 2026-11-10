@@ -88,13 +88,24 @@ public class AccountTests
         Account.Create("Account", template, Currency.GBP).TemplateOrder.Should().Be(expected);
     }
 
-    [Theory]
-    [InlineData(AccountTemplate.Bank, true)]
-    [InlineData(AccountTemplate.CreditCard, false)]
-    [InlineData(AccountTemplate.Settlement, false)]
-    public void IsBuiltFrom_IsTrueOnlyForTheAccountsOwnTemplate(AccountTemplate template, bool expected)
+    [Fact]
+    public void HasSetup_WithTheOwnTemplateAndCurrencies_IsTrue()
     {
-        CreateBank().IsBuiltFrom(template).Should().Be(expected);
+        CreateBank().HasSetup(AccountTemplate.Bank, [Currency.GBP]).Should().BeTrue();
+    }
+
+    [Fact]
+    public void HasSetup_WithAnotherTemplate_IsFalse()
+    {
+        CreateBank().HasSetup(AccountTemplate.Settlement, [Currency.GBP]).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(Currency.BRL)]
+    [InlineData(Currency.GBP, Currency.BRL)]
+    public void HasSetup_WithOtherCurrencies_IsFalse(params Currency[] currencies)
+    {
+        CreateBank().HasSetup(AccountTemplate.Bank, currencies).Should().BeFalse();
     }
 
     [Fact]
