@@ -89,23 +89,34 @@ public class AccountTests
     }
 
     [Fact]
-    public void HasSetup_WithTheOwnTemplateAndCurrencies_IsTrue()
+    public void IsSetUpAs_WithTheOwnTemplateAndCurrencies_IsTrue()
     {
-        CreateBank().HasSetup(AccountTemplate.Bank, [Currency.GBP]).Should().BeTrue();
+        CreateBank().IsSetUpAs(AccountTemplate.Bank, [Currency.GBP]).Should().BeTrue();
     }
 
     [Fact]
-    public void HasSetup_WithAnotherTemplate_IsFalse()
+    public void IsSetUpAs_WithAnotherTemplate_IsFalse()
     {
-        CreateBank().HasSetup(AccountTemplate.Settlement, [Currency.GBP]).Should().BeFalse();
+        CreateBank().IsSetUpAs(AccountTemplate.Settlement, [Currency.GBP]).Should().BeFalse();
     }
 
     [Theory]
     [InlineData(Currency.BRL)]
     [InlineData(Currency.GBP, Currency.BRL)]
-    public void HasSetup_WithOtherCurrencies_IsFalse(params Currency[] currencies)
+    public void IsSetUpAs_WithOtherCurrencies_IsFalse(params Currency[] currencies)
     {
-        CreateBank().HasSetup(AccountTemplate.Bank, currencies).Should().BeFalse();
+        CreateBank().IsSetUpAs(AccountTemplate.Bank, currencies).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(new[] { Currency.BRL, Currency.GBP }, true)]
+    [InlineData(new[] { Currency.GBP, Currency.BRL }, false)]
+    public void IsSetUpAs_WithSeveralCurrencies_ComparesThemInOrder(Currency[] currencies, bool expected)
+    {
+        var account = CreateSettlement();
+        account.SetCurrencies([Currency.GBP, Currency.BRL]);
+
+        account.IsSetUpAs(AccountTemplate.Settlement, currencies).Should().Be(expected);
     }
 
     [Fact]

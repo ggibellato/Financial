@@ -57,7 +57,7 @@ public class Account
     public bool Has(Capability capability) =>
         (_capabilitiesOverride ?? AccountTemplates.CapabilitiesOf(Template)).Contains(capability);
 
-    public bool HasSetup(AccountTemplate template, IEnumerable<Currency> currencies) =>
+    public bool IsSetUpAs(AccountTemplate template, IEnumerable<Currency> currencies) =>
         Template == template && currencies.SequenceEqual(Currencies);
 
     public void Update(string name)
