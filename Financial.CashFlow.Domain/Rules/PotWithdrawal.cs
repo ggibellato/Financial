@@ -23,10 +23,7 @@ public static class PotWithdrawal
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
-        if (!potsAccount.OwnsPot(pot.Id))
-        {
-            throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
-        }
+        potsAccount.EnsureOwnsPot(pot.Id);
 
         var movement = PotTransaction.Create(pot, -amount, date, description, operationId: operationId);
         if (bank is null)

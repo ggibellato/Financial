@@ -57,9 +57,9 @@ public static class PotDeposit
             throw new ArgumentException("Amount must be greater than zero.");
         }
 
-        if (pot is not null && !potsAccount.OwnsPot(pot.Id))
+        if (pot is not null)
         {
-            throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
+            potsAccount.EnsureOwnsPot(pot.Id);
         }
 
         EnsureFundingLinesAddUp(potsAccount, amount, fundingLines);

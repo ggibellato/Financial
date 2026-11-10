@@ -40,4 +40,20 @@ public class CurrencyParserTests
 
         result.Should().BeFalse();
     }
+
+    [Fact]
+    public void Parse_ValidName_ReturnsTheCurrency()
+    {
+        CurrencyParser.Parse("BRL").Should().Be(Currency.BRL);
+    }
+
+    [Theory]
+    [InlineData("EUR", "Unknown currency 'EUR'.")]
+    [InlineData(null, "Unknown currency ''.")]
+    public void Parse_UnknownOrBlank_ThrowsUnknownCurrency(string? code, string expectedMessage)
+    {
+        var act = () => CurrencyParser.Parse(code);
+
+        act.Should().Throw<ArgumentException>().WithMessage(expectedMessage);
+    }
 }

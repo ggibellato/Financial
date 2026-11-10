@@ -236,6 +236,6 @@ public sealed class SettlementService : ISettlementService
             return account.Currencies.Count == 1 ? account.Currency : throw new ArgumentException("Choose the currency.");
         }
 
-        return CurrencyParser.TryParse(code, out var currency) ? currency : throw new ArgumentException($"Unknown currency '{code}'.");
+        return CurrencyParser.Parse(code);
     }
 }

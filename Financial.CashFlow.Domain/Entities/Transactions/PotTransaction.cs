@@ -38,10 +38,7 @@ public class PotTransaction : IAccountTransaction
             throw new ArgumentException($"This pot transaction isn't in {potsAccount.Name}.");
         }
 
-        if (!potsAccount.OwnsPot(pot.Id))
-        {
-            throw new ArgumentException($"That pot isn't in {potsAccount.Name}.");
-        }
+        potsAccount.EnsureOwnsPot(pot.Id);
 
         Pot = pot;
         Amount = amount;

@@ -95,6 +95,38 @@ public class PotTransactionTests
     }
 
     [Fact]
+    public void Update_WithoutAnAccount_ThrowsAndChangesNothing()
+    {
+        var (_, investimento, ariana) = ReservaWithTwoPots();
+        var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
+
+        var act = () => movement.Update(null!, ariana, 25m, new DateOnly(2026, 7, 5), "Corrected");
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentNullException>().WithParameterName("potsAccount");
+            movement.Pot.Should().BeSameAs(investimento);
+            movement.Amount.Should().Be(10m);
+        }
+    }
+
+    [Fact]
+    public void Update_WithoutAPot_ThrowsAndChangesNothing()
+    {
+        var (reserva, investimento, _) = ReservaWithTwoPots();
+        var movement = PotTransaction.Create(investimento, 10m, new DateOnly(2026, 7, 1), "Original");
+
+        var act = () => movement.Update(reserva, null!, 25m, new DateOnly(2026, 7, 5), "Corrected");
+
+        using (new AssertionScope())
+        {
+            act.Should().Throw<ArgumentNullException>().WithParameterName("pot");
+            movement.Pot.Should().BeSameAs(investimento);
+            movement.Amount.Should().Be(10m);
+        }
+    }
+
+    [Fact]
     public void OwningAccount_IsTheAccountThatOwnsThePot()
     {
         var (reserva, _, ariana) = ReservaWithTwoPots();
