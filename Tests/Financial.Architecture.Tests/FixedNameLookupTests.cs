@@ -8,10 +8,6 @@ namespace Financial.Architecture.Tests;
 [Trait("Category", "Unit")]
 public partial class FixedNameLookupTests
 {
-    private static readonly string[] WebSourceExtensions = [".ts", ".tsx"];
-
-    private static readonly string[] WebTestPathFragments = ["/__tests__/", "/test/", "/test-utils/", ".test."];
-
     [GeneratedRegex(@"\bCategory\.ReservaName\b|\bRESERVA_CATEGORY_NAME\b")]
     private static partial Regex FixedNameLookup();
 
@@ -19,8 +15,8 @@ public partial class FixedNameLookupTests
     [Trait("AC", "P60-F13-consolidated-navigation-and-retirement-06")]
     public void Production_Source_Has_No_Fixed_Name_Lookups()
     {
-        var backendFiles = BackendSourceFiles().ToList();
-        var webFiles = WebSourceFiles().ToList();
+        var backendFiles = ProductionSourceFiles.Backend().ToList();
+        var webFiles = ProductionSourceFiles.Web().ToList();
 
         var violations = backendFiles.Concat(webFiles)
             .SelectMany(file => FindViolations(file.RelativePath, File.ReadAllText(file.FullPath)))
@@ -47,28 +43,4 @@ public partial class FixedNameLookupTests
             .Select((line, index) => (line, number: index + 1))
             .Where(entry => FixedNameLookup().IsMatch(entry.line))
             .Select(entry => $"{relativePath.Replace(Path.DirectorySeparatorChar, '/')}:{entry.number} looks an account up by a fixed name");
-
-    private static IEnumerable<(string RelativePath, string FullPath)> BackendSourceFiles()
-    {
-        var root = RepoRoot.Find();
-        return Directory.EnumerateDirectories(root, "Financial.*")
-            .Where(directory => !Path.GetFileName(directory).EndsWith(".Web", StringComparison.Ordinal))
-            .SelectMany(directory => Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories))
-            .Where(path => !IsBuildOutput(path))
-            .Select(path => (Path.GetRelativePath(root, path), path));
-    }
-
-    private static IEnumerable<(string RelativePath, string FullPath)> WebSourceFiles()
-    {
-        var root = RepoRoot.Find();
-        var webSource = Path.Combine(root, "Financial.Web", "src");
-        return Directory.EnumerateFiles(webSource, "*", SearchOption.AllDirectories)
-            .Where(path => WebSourceExtensions.Contains(Path.GetExtension(path)))
-            .Where(path => !WebTestPathFragments.Any(fragment => path.Replace(Path.DirectorySeparatorChar, '/').Contains(fragment, StringComparison.Ordinal)))
-            .Select(path => (Path.GetRelativePath(root, path), path));
-    }
-
-    private static bool IsBuildOutput(string path) =>
-        path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
-        || path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}");
 }
