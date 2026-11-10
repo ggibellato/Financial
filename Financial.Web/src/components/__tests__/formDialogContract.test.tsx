@@ -4,7 +4,6 @@ import type { BrokerDto, PortfolioDto } from '../../api/types'
 import AssetFormDialog from '../AssetFormDialog'
 import BrokerFormDialog from '../BrokerFormDialog'
 import CategoryFormDialog from '../CategoryFormDialog'
-import CreditCardFormDialog from '../CreditCardFormDialog'
 import IncomeSourceFormDialog from '../IncomeSourceFormDialog'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import PortfolioFormDialog from '../PortfolioFormDialog'
@@ -64,12 +63,6 @@ const CASES: FormDialogCase[] = [
     (h) => render(<CategoryFormDialog category={null} {...h} />),
     'Mercado',
     'A category named "Mercado" already exists.',
-  ),
-  nameDialog(
-    'CreditCardFormDialog',
-    (h) => render(<CreditCardFormDialog creditCard={null} {...h} />),
-    'BaAmex',
-    'A credit card named "BaAmex" already exists.',
   ),
   nameDialog(
     'IncomeSourceFormDialog',

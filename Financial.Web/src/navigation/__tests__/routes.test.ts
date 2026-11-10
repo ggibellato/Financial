@@ -47,32 +47,30 @@ describe('route and sidebar agreement', () => {
   })
 
   it('keeps the retired addresses as redirects, off the sidebar', () => {
-    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual(['admin/cashflow/banks', 'admin/cashflow/reserve-buckets', 'cashflow/controle-mae', 'cashflow/reserva'])
-    expect(navRoutes).not.toContain('/admin/cashflow/banks')
-    expect(navRoutes).not.toContain('/admin/cashflow/reserve-buckets')
-    expect(navRoutes).not.toContain('/cashflow/controle-mae')
-    expect(navRoutes).not.toContain('/cashflow/reserva')
-    expect(declaredRoutes).not.toContain('/admin/cashflow/banks')
-    expect(declaredRoutes).not.toContain('/cashflow/controle-mae')
-    expect(declaredRoutes).not.toContain('/cashflow/reserva')
+    expect(REDIRECT_ROUTES.map((route) => route.path)).toEqual([
+      'admin/cashflow/banks',
+      'admin/cashflow/credit-cards',
+      'admin/cashflow/reserve-buckets',
+      'cashflow/controle-mae',
+      'cashflow/reserva',
+    ])
+    for (const route of REDIRECT_ROUTES) {
+      expect(navRoutes).not.toContain(`/${route.path}`)
+      expect(declaredRoutes).not.toContain(`/${route.path}`)
+    }
   })
 
   it.each([
-    ['admin/cashflow/reserve-buckets', { page: 'reserva', tab: 'pots' }],
-    ['cashflow/controle-mae', { page: 'controle-mae' }],
-    ['cashflow/reserva', { page: 'reserva', tab: 'pots' }],
-  ])('[AC P60-F13-consolidated-navigation-and-retirement-04] sends %s to the account that replaces its page', (path, props) => {
+    ['admin/cashflow/banks', Navigate, { replace: true, to: '/admin/cashflow/accounts' }],
+    ['admin/cashflow/credit-cards', Navigate, { replace: true, to: '/admin/cashflow/accounts' }],
+    ['admin/cashflow/reserve-buckets', MovedPageRedirect, { page: 'reserva', tab: 'pots' }],
+    ['cashflow/controle-mae', MovedPageRedirect, { page: 'controle-mae' }],
+    ['cashflow/reserva', MovedPageRedirect, { page: 'reserva', tab: 'pots' }],
+  ])('[AC P60-F13-consolidated-navigation-and-retirement-04] redirects every retired page address: %s', (path, element, props) => {
     const redirect = REDIRECT_ROUTES.find((route) => route.path === path)
 
-    expect(redirect?.element.type).toBe(MovedPageRedirect)
+    expect(redirect?.element.type).toBe(element)
     expect(redirect?.element.props).toEqual(props)
-  })
-
-  it('[AC P60-F13-consolidated-navigation-and-retirement-04] sends admin/cashflow/banks to Admin Accounts, replacing the history entry', () => {
-    const redirect = REDIRECT_ROUTES.find((route) => route.path === 'admin/cashflow/banks')
-
-    expect(redirect?.element.type).toBe(Navigate)
-    expect(redirect?.element.props).toEqual({ replace: true, to: '/admin/cashflow/accounts' })
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

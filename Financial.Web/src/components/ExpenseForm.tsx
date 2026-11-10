@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
-import type { BankOption, CategoryDto, CreditCardDto } from '../api/types'
+import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
 import { useFieldError } from '../hooks/useFieldError'
@@ -38,7 +38,6 @@ interface ExpenseFormProps {
   paymentMode: PaymentMode
   banks: BankOption[]
   categories: CategoryDto[]
-  creditCards: CreditCardDto[]
   isRefund?: boolean
   isSettled: boolean
   isSaving: boolean
@@ -66,7 +65,6 @@ export default function ExpenseForm({
   paymentMode,
   banks,
   categories,
-  creditCards,
   isRefund = false,
   isSettled,
   isSaving,
@@ -87,8 +85,8 @@ export default function ExpenseForm({
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
   const showCountsAsTitheField = selectedCategory?.isTithe === true
-  const settledCardName = creditCardName || creditCards.find((card) => card.id === creditCardId)?.name || creditCardId
-  const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date, creditCardId, creditCards)
+  const cardName = lockedCard?.name || creditCardName || creditCardId
+  const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date)
   const noun = isRefund ? 'Refund' : lockedCard ? 'Charge' : 'Expense'
 
   return (
@@ -142,19 +140,15 @@ export default function ExpenseForm({
             <div className={styles.spanTwo}>
               <Text as="p" size={200}>
                 {paymentSource
-                  ? `Paid by ${selectedBank?.name ?? paymentSource} via card ${settledCardName}. Date, value, payment source and invoice month are locked while its card statement is paid — unmark the statement to change them.`
-                  : `Paid through ${settledCardName}'s statement. Date, value, card and invoice month are locked while the statement is paid — unmark the statement to change them.`}
+                  ? `Paid by ${selectedBank?.name ?? paymentSource} via card ${cardName}. Date, value, payment source and invoice month are locked while its card statement is paid — unmark the statement to change them.`
+                  : `Paid through ${cardName}'s statement. Date, value, card and invoice month are locked while the statement is paid — unmark the statement to change them.`}
               </Text>
             </div>
           ) : lockedBank ? (
             <Field label="Payment Source">
               <Text weight="semibold">{lockedBank.name}</Text>
             </Field>
-          ) : lockedCard ? (
-            <Field label="Card">
-              <Text weight="semibold">{lockedCard.name}</Text>
-            </Field>
-          ) : paymentMode === 'bank' ? (
+          ) : paymentMode === 'bank' && !lockedCard ? (
             <Field
               label="Payment Source"
               required
@@ -172,18 +166,10 @@ export default function ExpenseForm({
           ) : (
             <Field
               label="Card"
-              required
               validationState={fieldError('creditCardId') ? 'error' : 'none'}
               validationMessage={fieldError('creditCardId')}
             >
-              <Select value={creditCardId} onChange={(e) => onFieldChange('creditCardId', e.target.value)}>
-                <option value="">Select card…</option>
-                {creditCards.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </Select>
+              <Text weight="semibold">{cardName}</Text>
             </Field>
           )}
 

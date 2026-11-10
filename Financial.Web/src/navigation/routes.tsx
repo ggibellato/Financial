@@ -10,7 +10,6 @@ import {
   AssetsPage,
   BrokersPage,
   CategoriesPage,
-  CreditCardsPage,
   CurrentValuesPage,
   DashboardPage,
   DividendCheckPage,
@@ -62,7 +61,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/investment/tax-rules', element: <TaxRulesPage /> },
   { path: 'admin/cashflow/accounts', element: <AdminAccountsPage /> },
   { path: 'admin/cashflow/categories', element: <CategoriesPage /> },
-  { path: 'admin/cashflow/credit-cards', element: <CreditCardsPage /> },
   { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },
   { path: 'admin/cashflow/investment-accounts', element: <InvestmentAccountsPage /> },
   { path: 'admin/cashflow/recurring-bills', element: <RecurringBillsPage /> },
@@ -77,6 +75,7 @@ export const DETAIL_ROUTES: PageRoute[] = [
 
 export const REDIRECT_ROUTES: PageRoute[] = [
   { path: 'admin/cashflow/banks', element: <Navigate replace to="/admin/cashflow/accounts" /> },
+  { path: 'admin/cashflow/credit-cards', element: <Navigate replace to="/admin/cashflow/accounts" /> },
   { path: 'admin/cashflow/reserve-buckets', element: <MovedPageRedirect page="reserva" tab="pots" /> },
   { path: 'cashflow/controle-mae', element: <MovedPageRedirect page="controle-mae" /> },
   { path: 'cashflow/reserva', element: <MovedPageRedirect page="reserva" tab="pots" /> },

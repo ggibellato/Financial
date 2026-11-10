@@ -23,7 +23,7 @@ import PotWithdrawalForm from '../components/PotWithdrawalForm'
 import PotsTab from '../components/PotsTab'
 import SettlementEntryForm from '../components/SettlementEntryForm'
 import TransferForm from '../components/TransferForm'
-import { NO_CREDIT_CARDS, useAccountActionForms } from '../hooks/useAccountActionForms'
+import { useAccountActionForms } from '../hooks/useAccountActionForms'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
 import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../hooks/useAccountScreen'
@@ -246,7 +246,6 @@ export default function AccountScreenPage() {
             paymentMode={expenseForm.paymentMode}
             banks={formOptions.options.banks}
             categories={formOptions.options.categories}
-            creditCards={NO_CREDIT_CARDS}
             isRefund={expenseForm.isRefund}
             isSettled={expenseForm.isSettled}
             isSaving={expenseForm.isSaving}

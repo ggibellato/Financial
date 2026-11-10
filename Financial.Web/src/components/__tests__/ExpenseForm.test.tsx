@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
 import ExpenseForm from '../ExpenseForm'
-import type { BankOption, CategoryDto, CreditCardDto } from '../../api/types'
+import type { BankOption, CategoryDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
 import { todayIsoDate } from '../../utils/formatters'
 
@@ -15,11 +15,6 @@ const CATEGORIES: CategoryDto[] = [
   { id: 'category-mercado', name: 'Mercado', active: true, isInvestment: false, isTithe: false, hasReferences: false },
   { id: 'category-casa', name: 'Casa', active: true, isInvestment: false, isTithe: false, hasReferences: false },
   { id: 'category-dizimo', name: 'Dizimo', active: true, isInvestment: false, isTithe: true, hasReferences: false },
-]
-
-const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
-  { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
 const INACTIVE_BANK: BankOption = { ...BANKS[0], id: 'bank-chase', name: 'Chase', isActive: false }
@@ -39,7 +34,6 @@ const baseProps = {
   paymentMode: 'bank' as const,
   banks: BANKS,
   categories: CATEGORIES,
-  creditCards: CREDIT_CARDS,
   isSettled: false,
   isSaving: false,
   saveError: null,
@@ -97,10 +91,11 @@ describe('ExpenseForm', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
-  it('shows the card picker and no toggle in card mode', () => {
-    render(<ExpenseForm {...baseProps} paymentMode="card" />)
+  it("shows the charge's card as read-only text and no toggle in card mode", () => {
+    render(<ExpenseForm {...baseProps} paymentMode="card" creditCardId="card-baamex" creditCardName="BaAmex" />)
     expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
-    expect(screen.getByLabelText(/^Card/)).toBeInTheDocument()
+    expect(screen.getByText('BaAmex')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^Card/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
@@ -120,24 +115,6 @@ describe('ExpenseForm', () => {
     fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'category-casa' } })
 
     expect(onFieldChange).toHaveBeenCalledWith('categoryId', 'category-casa')
-  })
-
-  it('lists exactly the cards passed in via the creditCards prop, by name', () => {
-    render(<ExpenseForm {...baseProps} paymentMode="card" />)
-
-    const cardSelect = screen.getByLabelText(/^Card/)
-    expect(within(cardSelect).getByRole('option', { name: 'BaAmex' })).toBeInTheDocument()
-    expect(within(cardSelect).getByRole('option', { name: 'ChaseMaster4023' })).toBeInTheDocument()
-    expect(within(cardSelect).getAllByRole('option')).toHaveLength(CREDIT_CARDS.length + 1)
-  })
-
-  it('submits the selected card id, not its name', () => {
-    const onFieldChange = vi.fn()
-    render(<ExpenseForm {...baseProps} paymentMode="card" onFieldChange={onFieldChange} />)
-
-    fireEvent.change(screen.getByLabelText(/^Card/), { target: { value: 'card-chase' } })
-
-    expect(onFieldChange).toHaveBeenCalledWith('creditCardId', 'card-chase')
   })
 
   it('shows an editable invoice month field pre-filled from the date when card mode is selected', () => {
@@ -203,36 +180,8 @@ describe('ExpenseForm', () => {
     expect(screen.getByLabelText(/^Value/)).not.toHaveAttribute('readonly')
   })
 
-  it("defaults the invoice month to the selected card's latest invoice month when it's ahead of the date", () => {
-    const cardsWithFutureInvoice: CreditCardDto[] = [
-      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-09-01', hasReferences: false },
-    ]
-    render(
-      <ExpenseForm
-        {...baseProps}
-        paymentMode="card"
-        date="2026-07-15"
-        creditCardId="card-baamex"
-        creditCards={cardsWithFutureInvoice}
-      />,
-    )
-
-    expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-09')
-  })
-
-  it("falls back to the date-derived default when the selected card's latest invoice month is not ahead of the date", () => {
-    const cardsWithPastInvoice: CreditCardDto[] = [
-      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-06-01', hasReferences: false },
-    ]
-    render(
-      <ExpenseForm
-        {...baseProps}
-        paymentMode="card"
-        date="2026-07-15"
-        creditCardId="card-baamex"
-        creditCards={cardsWithPastInvoice}
-      />,
-    )
+  it("defaults the invoice month to the date's month", () => {
+    render(<ExpenseForm {...baseProps} paymentMode="card" date="2026-07-15" creditCardId="card-baamex" />)
 
     expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-07')
   })
@@ -427,7 +376,7 @@ describe('ExpenseForm with a locked bank', () => {
 })
 
 describe('ExpenseForm with a locked card', () => {
-  const cardProps = { ...baseProps, paymentMode: 'card' as const, paymentSource: '', creditCardId: 'card-baamex', creditCards: [] }
+  const cardProps = { ...baseProps, paymentMode: 'card' as const, paymentSource: '', creditCardId: 'card-baamex' }
 
   it('shows the locked card as read-only text and names the record a charge', () => {
     render(<ExpenseForm {...cardProps} date="2026-10-14" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)

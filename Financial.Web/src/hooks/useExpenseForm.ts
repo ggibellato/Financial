@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
-import type { BankOption, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
+import type { BankOption, CategoryDto, ExpenseDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -17,7 +17,7 @@ const MAX_ROUND_UP_AMOUNT = 0.99
 
 const DATE_KEY = 'expense.date'
 const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
-const CREDIT_CARD_KEY = 'expense.creditCardId'
+const MISSING_CARD_MESSAGE = "Add charges from the card's account screen."
 const CATEGORY_KEY = 'expense.categoryId'
 
 export function computeRoundUpSuggestion(value: number): number {
@@ -241,7 +241,6 @@ export interface UseExpenseFormResult {
 export function useExpenseForm(
   banks: BankOption[],
   categories: CategoryDto[],
-  creditCards: CreditCardDto[],
   onSaved: (isEdit: boolean, isRefund: boolean) => void,
   { lockedBank, lockedCard, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseExpenseFormResult {
@@ -259,7 +258,7 @@ export function useExpenseForm(
     const mode = lockedBank ? 'bank' : lockedCard ? 'card' : requestedMode
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
-    const creditCardId = mode === 'card' ? (lockedCard?.id ?? getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
+    const creditCardId = mode === 'card' ? (lockedCard?.id ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
     const storedCategoryId = getStoredDefault(CATEGORY_KEY)
     const categoryId =
@@ -288,11 +287,8 @@ export function useExpenseForm(
       const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
       dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestion ?? '' } })
     }
-    if ((field === 'date' || field === 'creditCardId') && state.paymentMode === 'card' && !state.invoiceDateTouched) {
-      const date = field === 'date' ? value : state.date
-      const creditCardId = field === 'creditCardId' ? value : state.creditCardId
-      const defaultMonth = computeDefaultInvoiceMonth(date, creditCardId, creditCards)
-      dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: defaultMonth } })
+    if (field === 'date' && state.paymentMode === 'card' && !state.invoiceDateTouched) {
+      dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: computeDefaultInvoiceMonth(value) } })
     }
   }
 
@@ -315,10 +311,6 @@ export function useExpenseForm(
       errors.value = state.isRefund ? 'Amount must be greater than zero.' : 'Value must be a non-zero number'
     }
 
-    if (!state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === '') {
-      errors.creditCardId = 'Card is required'
-    }
-
     const selectedBank = banks.find((b) => b.id === state.paymentSource)
     const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
 
@@ -330,8 +322,9 @@ export function useExpenseForm(
       }
     }
 
-    if (Object.keys(errors).length > 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
+    const isMissingCard = !state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === ''
+    if (Object.keys(errors).length > 0 || isMissingCard) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? MISSING_CARD_MESSAGE, fields: errors } })
       return
     }
 
@@ -358,7 +351,7 @@ export function useExpenseForm(
       ...paymentFields,
       invoiceDate:
         state.paymentMode === 'card'
-          ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date, state.creditCardId, creditCards)}-01`
+          ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date)}-01`
           : null,
       roundUpAmount,
       countsAsTithe: state.countsAsTithe === 'true',
@@ -370,9 +363,7 @@ export function useExpenseForm(
     void request
       .then(() => {
         setStoredDefault(DATE_KEY, state.date)
-        if (state.paymentMode === 'card') {
-          if (!lockedCard) setStoredDefault(CREDIT_CARD_KEY, state.creditCardId)
-        } else if (!lockedBank) {
+        if (state.paymentMode === 'bank' && !lockedBank) {
           setStoredDefault(PAYMENT_SOURCE_KEY, state.paymentSource)
         }
         setStoredDefault(CATEGORY_KEY, state.categoryId)
