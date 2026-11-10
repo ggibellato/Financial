@@ -26,6 +26,7 @@
     { "after": "{month}/potsTab/*/balance", "before": "{month}/pots/*/balance", "negate": false, "reason": "F10 Pots tab balance" },
     { "after": "{month}/potsTab/total", "before": "{month}/pots/total", "negate": false, "reason": "F10 Pots tab total" },
     { "after": "{month}/monthTransactions/categories/*/spend", "before": "{month}/categories/*/total", "negate": false, "reason": "F16 All transactions spend per category" },
+    { "after": "{month}/monthTransactions/unpaidCardChargesTotal", "before": "{month}/cards/unpaidChargesTotal", "negate": false, "reason": "F13 unpaid card charges, from the month's transactions" },
     { "after": "current/potsTab/*/balance", "before": "current/pots/*/balance", "negate": false, "reason": "F13 Reserva Pots tab balance at the run's last month" },
     { "after": "current/maeAccount/totalBrl", "before": "current/mae/totalBrl", "negate": false, "reason": "F13 Mãe account current balance" },
     { "after": "current/maeAccount/totalGbp", "before": "current/mae/totalGbp", "negate": false, "reason": "F13 Mãe account current balance" }
