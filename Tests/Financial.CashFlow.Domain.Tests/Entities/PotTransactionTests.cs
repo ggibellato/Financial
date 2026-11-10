@@ -39,7 +39,6 @@ public class PotTransactionTests
         movement.Amount.Should().Be(-50m);
     }
 
-
     [Fact]
     public void Update_ChangesAllFields()
     {
