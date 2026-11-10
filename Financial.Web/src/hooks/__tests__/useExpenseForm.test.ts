@@ -237,7 +237,8 @@ describe('useExpenseForm', () => {
     act(() => result.current.setField('value', '9.99'))
     await act(() => result.current.submit())
 
-    expect(result.current.saveError).toBe('Card is required')
+    expect(result.current.saveError).toBe("Add charges from the card's account screen.")
+    expect(result.current.saveErrorFields).toEqual({})
     expect(createExpenseMock).not.toHaveBeenCalled()
   })
 

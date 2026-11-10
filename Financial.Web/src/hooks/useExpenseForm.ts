@@ -17,6 +17,7 @@ const MAX_ROUND_UP_AMOUNT = 0.99
 
 const DATE_KEY = 'expense.date'
 const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
+const MISSING_CARD_MESSAGE = "Add charges from the card's account screen."
 const CATEGORY_KEY = 'expense.categoryId'
 
 export function computeRoundUpSuggestion(value: number): number {
@@ -310,10 +311,6 @@ export function useExpenseForm(
       errors.value = state.isRefund ? 'Amount must be greater than zero.' : 'Value must be a non-zero number'
     }
 
-    if (!state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === '') {
-      errors.creditCardId = 'Card is required'
-    }
-
     const selectedBank = banks.find((b) => b.id === state.paymentSource)
     const roundUpEligible = !state.isSettled && state.paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
 
@@ -325,8 +322,9 @@ export function useExpenseForm(
       }
     }
 
-    if (Object.keys(errors).length > 0) {
-      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? null, fields: errors } })
+    const isMissingCard = !state.isSettled && state.paymentMode === 'card' && state.creditCardId.trim() === ''
+    if (Object.keys(errors).length > 0 || isMissingCard) {
+      dispatch({ type: 'SAVE_ERROR', payload: { message: Object.values(errors)[0] ?? MISSING_CARD_MESSAGE, fields: errors } })
       return
     }
 
