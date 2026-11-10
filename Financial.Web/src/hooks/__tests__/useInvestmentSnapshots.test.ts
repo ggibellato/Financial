@@ -96,6 +96,28 @@ describe('useInvestmentSnapshots', () => {
     expect(result.current.snapshots).toEqual([])
   })
 
+  it('reloads the month shown when a save started on another month finishes', async () => {
+    const nextMonthSnapshots: InvestmentSnapshotDto[] = [{ ...SNAPSHOTS[0], id: 'n1', year: NEXT_MONTH_YEAR, month: NEXT_MONTH, value: 1200 }]
+    getInvestmentSnapshotsMock.mockImplementation((year, month) =>
+      Promise.resolve(year === NEXT_MONTH_YEAR && month === NEXT_MONTH ? nextMonthSnapshots : SNAPSHOTS),
+    )
+    let finishSave!: () => void
+    updateInvestmentSnapshotValueMock.mockReturnValue(new Promise((resolve) => (finishSave = () => resolve(SNAPSHOTS[0]))))
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.snapshots).toEqual(SNAPSHOTS))
+    act(() => result.current.showEditForm(SNAPSHOTS[0]))
+    act(() => result.current.setEditValue('1500'))
+    act(() => result.current.saveEdit())
+
+    act(() => result.current.setMonthInputValue(NEXT_MONTH_INPUT))
+    await waitFor(() => expect(result.current.snapshots).toEqual(nextMonthSnapshots))
+    await act(async () => finishSave())
+
+    await waitFor(() => expect(getInvestmentSnapshotsMock).toHaveBeenLastCalledWith(NEXT_MONTH_YEAR, NEXT_MONTH))
+    expect(getInvestmentSnapshotsMock).toHaveBeenCalledTimes(3)
+    expect(result.current.snapshots).toEqual(nextMonthSnapshots)
+  })
+
   it('surfaces a fetch error', async () => {
     getInvestmentSnapshotsMock.mockRejectedValue(new Error('Network down'))
     const { result } = renderHook(() => useInvestmentSnapshots())

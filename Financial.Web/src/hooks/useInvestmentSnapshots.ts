@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
@@ -103,6 +103,11 @@ export interface InvestmentSnapshotsData {
 export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const selectedMonth = useRef({ year, month })
+
+  useEffect(() => {
+    selectedMonth.current = { year, month }
+  })
 
   const beginRequest = useLatestRequestGuard()
 
@@ -131,8 +136,8 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   // Re-fetches after a mutation without flipping isLoading, so the table's own sort state
   // (owned by useSortableRows in the page component) survives the refresh.
   const refreshSilently = useCallback(
-    () => fetchSnapshots(year, month),
-    [fetchSnapshots, year, month],
+    () => fetchSnapshots(selectedMonth.current.year, selectedMonth.current.month),
+    [fetchSnapshots],
   )
 
   const totalValue = useMemo(
