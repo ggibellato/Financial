@@ -1,6 +1,8 @@
-namespace Financial.TestUtilities;
+using Financial.TestUtilities;
 
-public static class ProductionSourceFiles
+namespace Financial.Architecture.Tests.Infrastructure;
+
+internal static class ProductionSourceFiles
 {
     private static readonly string[] BuildOutputFolders = ["bin", "obj"];
 

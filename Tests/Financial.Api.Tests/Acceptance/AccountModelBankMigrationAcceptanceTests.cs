@@ -44,8 +44,10 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
     {
         await SetOpeningBalanceAsync(ChaseId, 100.50m, new DateOnly(2026, 9, 1));
         var created = await Client.PostAsJsonAsync("/api/v1/financial/expenses", BankExpense(new DateOnly(2026, 9, 3), "Coffee", 2.30m, ChaseId));
+        created.IsSuccessStatusCode.Should().BeTrue();
         var createdJson = await created.Content.ReadAsStringAsync();
-        var expenseId = JsonDocument.Parse(createdJson).RootElement.GetProperty("id").GetGuid();
+        using var createdDocument = JsonDocument.Parse(createdJson);
+        var expenseId = createdDocument.RootElement.GetProperty("id").GetGuid();
 
         var expense = await ExpenseOfRowAsync(ChaseId, 9, expenseId);
         var chase = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{ChaseId}/2026/9");
@@ -54,7 +56,6 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
             $$"""{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}""";
         using (new AssertionScope())
         {
-            created.IsSuccessStatusCode.Should().BeTrue();
             createdJson.Should().Be(expectedShape);
             expense.Should().Be(expectedShape);
             chase.Balance.Should().Be(98.20m);

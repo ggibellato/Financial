@@ -1,6 +1,6 @@
 using System.IO;
 using System.Text.RegularExpressions;
-using Financial.TestUtilities;
+using Financial.Architecture.Tests.Infrastructure;
 using FluentAssertions;
 
 namespace Financial.Architecture.Tests;

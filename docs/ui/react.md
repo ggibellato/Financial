@@ -46,8 +46,8 @@ alike — uses Fluent's `<Table>`/`<TableHeader>`/`<TableBody>`/`<TableRow>`/
 (the handful of grids that still used a plain `<table>` — `TotalsGrid`,
 `CardsGrid`, `MensaisPage`, `CurrentValuesPage`, `DividendCheckPage`,
 `RecurringBillsPage`, `AnnualSummaryPage`, `PortfolioSummaryTab`,
-`UpcomingIncomePanel`, `IncomeSplitForm`, `AllocationPieChart`, and pages
-P60 F13 later retired — were migrated to Fluent's `Table`
+`UpcomingIncomePanel`, `AllocationPieChart`, and components P60 later
+retired (`IncomeSplitForm` and the F13 pages) — were migrated to Fluent's `Table`
 for consistency). No exceptions: a raw `<table>` is never correct here,
 even for a static, one-time or non-interactive table — always reach for
 Fluent's `Table` components instead. Every `<Table>` carries the shared
