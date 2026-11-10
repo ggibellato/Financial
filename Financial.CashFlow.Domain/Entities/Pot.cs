@@ -1,4 +1,5 @@
 using System;
+using Financial.CashFlow.Domain.Rules;
 
 namespace Financial.CashFlow.Domain.Entities;
 
@@ -36,7 +37,7 @@ public class Pot
     }
 
     public decimal CalculateSplitAmount(decimal totalAmount) =>
-        Math.Round(totalAmount * SplitPercentage / 100m, 2, MidpointRounding.AwayFromZero);
+        MoneyRounding.ToCents(totalAmount * SplitPercentage / 100m);
 
     internal static void Validate(string name, decimal splitPercentage)
     {

@@ -17,7 +17,7 @@ public static class PotSplitAllocator
         }
 
         var amounts = pots.Select(pot => pot.CalculateSplitAmount(baseAmount)).ToArray();
-        var target = Math.Round(baseAmount * pots.Sum(pot => pot.SplitPercentage) / 100m, 2, MidpointRounding.AwayFromZero);
+        var target = MoneyRounding.ToCents(baseAmount * pots.Sum(pot => pot.SplitPercentage) / 100m);
         var residual = target - amounts.Sum();
 
         if (residual != 0m)

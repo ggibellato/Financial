@@ -72,6 +72,8 @@ public class CashFlowDataConverterTests
             "\"SettlementTransactions\":[]",
             "\"SettlementTransactions\":[{\"Id\":\"5db5c88d-0000-0000-0000-000000000b02\",\"AccountId\":\"" + MaeId + "\",\"Date\":\"2022-05-18\",\"Description\":\"Taxa\",\"Note\":\"libras\",\"PaidBy\":\"You\",\"Currency\":\"GBP\",\"Amount\":80,\"ConvertedValue\":491.04}]");
 
+    private const string SettlementLoadFailurePrefix = "SettlementTransaction 5db5c88d-0000-0000-0000-000000000b02 does not fit its account: ";
+
     private readonly CashFlowSerializerAdapter _serializer = new();
 
     [Fact]
@@ -271,6 +273,58 @@ public class CashFlowDataConverterTests
         var act = () => _serializer.Deserialize(file);
 
         act.Should().Throw<JsonException>().WithMessage("Account '5db5c88d-0000-0000-0000-000000000999' referenced but not found*");
+    }
+
+    [Theory]
+    [InlineData("\"AccountId\":\"" + MaeId + "\"", "\"AccountId\":\"" + BarclaysId + "\"", "Barclays is not a Settlement account.")]
+    [InlineData("\"Currency\":\"GBP\",\"Amount\":80", "\"Currency\":\"USD\",\"Amount\":80", "Mãe doesn't use USD.")]
+    [InlineData("\"Amount\":80,", "\"Amount\":0,", "Amount must be greater than zero.")]
+    [InlineData("\"Amount\":80,", "\"Amount\":-80,", "Amount must be greater than zero.")]
+    [InlineData("\"Amount\":80,", "\"Amount\":0.004,", "Amount must be greater than zero.")]
+    [InlineData("\"ConvertedValue\":491.04", "\"ConvertedValue\":-491.04", "The converted value must be greater than zero.")]
+    public void Load_SettlementTransactionThatDoesNotFitItsAccount_FailsTheLoad(string original, string replacement, string rule)
+    {
+        var file = V5FileWithMaeEntry.Replace(original, replacement);
+
+        var act = () => _serializer.Deserialize(file);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage(SettlementLoadFailurePrefix + rule);
+    }
+
+    [Fact]
+    public void Load_ConvertedValueOnAOneCurrencySettlementAccount_FailsTheLoad()
+    {
+        var file = V5FileWithMaeEntry
+            .Replace("\"Currencies\":[\"BRL\",\"GBP\"]", "\"Currencies\":[\"BRL\"]")
+            .Replace("\"Currency\":\"GBP\",\"Amount\":80", "\"Currency\":\"BRL\",\"Amount\":80");
+
+        var act = () => _serializer.Deserialize(file);
+
+        act.Should().Throw<JsonException>()
+            .WithMessage(SettlementLoadFailurePrefix + "Mãe has one currency, so an entry has no converted value.");
+    }
+
+    [Fact]
+    public void LoadAndSave_OneCurrencySettlementEntryWithoutAConvertedValue_IsByteIdentical()
+    {
+        var file = V5FileWithMaeEntry
+            .Replace("\"Currencies\":[\"BRL\",\"GBP\"]", "\"Currencies\":[\"BRL\"]")
+            .Replace("\"Currency\":\"GBP\",\"Amount\":80,\"ConvertedValue\":491.04", "\"Currency\":\"BRL\",\"Amount\":80,\"ConvertedValue\":null");
+
+        var saved = _serializer.Serialize(_serializer.Deserialize(file));
+
+        saved.Should().Be(file);
+    }
+
+    [Fact]
+    public void LoadAndSave_SettlementTransactionWithAFractionOfACentAboveZero_IsByteIdentical()
+    {
+        var file = V5FileWithMaeEntry.Replace("\"Amount\":80,", "\"Amount\":0.005,");
+
+        var saved = _serializer.Serialize(_serializer.Deserialize(file));
+
+        saved.Should().Be(file);
     }
 
     [Fact]

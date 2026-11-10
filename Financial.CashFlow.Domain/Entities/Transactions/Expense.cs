@@ -32,7 +32,7 @@ public class Expense : IAccountTransaction
     public decimal RoundUpSuggestion => ComputeRoundUpSuggestion(Value);
 
     public static decimal ComputeRoundUpSuggestion(decimal value) =>
-        value <= 0 ? 0m : Math.Round(Math.Ceiling(value) - value, 2, MidpointRounding.AwayFromZero);
+        value <= 0 ? 0m : MoneyRounding.ToCents(Math.Ceiling(value) - value);
 
     /// <summary>
     /// <see cref="RoundUpSuggestion"/>, but only when it is actually offerable: no round-up already

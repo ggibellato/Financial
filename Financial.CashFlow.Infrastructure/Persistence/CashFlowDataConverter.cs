@@ -47,7 +47,12 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         foreach (var movement in DeserializeCollection<PotTransaction>(root, "ReserveMovements", resolvedOptions)) data.AddPotTransaction(movement);
         foreach (var statement in DeserializeCollection<CardStatement>(root, "CardStatements", resolvedOptions)) data.AddCardStatement(statement);
         foreach (var bill in DeserializeCollection<RecurringBill>(root, "RecurringBills", resolvedOptions)) data.AddRecurringBill(bill);
-        foreach (var entry in DeserializeCollection<SettlementTransaction>(root, "SettlementTransactions", resolvedOptions)) data.AddSettlementTransaction(entry);
+        foreach (var entry in DeserializeCollection<SettlementTransaction>(root, "SettlementTransactions", resolvedOptions))
+        {
+            EnsureLoadedSettlementFits(entry);
+            data.AddSettlementTransaction(entry);
+        }
+
         foreach (var snapshot in DeserializeCollection<InvestmentSnapshot>(root, "InvestmentSnapshots", resolvedOptions)) data.AddInvestmentSnapshot(snapshot);
         foreach (var transfer in DeserializeCollection<Transfer>(root, "Transfers", resolvedOptions)) data.AddTransfer(transfer);
         foreach (var adjustment in DeserializeCollection<BalanceAdjustment>(root, "BalanceAdjustments", resolvedOptions)) data.AddBalanceAdjustment(adjustment);
@@ -93,6 +98,18 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
         }
 
         writer.WriteEndObject();
+    }
+
+    private static void EnsureLoadedSettlementFits(SettlementTransaction entry)
+    {
+        try
+        {
+            entry.EnsureConsistentWithAccount();
+        }
+        catch (ArgumentException ex)
+        {
+            throw new JsonException($"SettlementTransaction {entry.Id} does not fit its account: {ex.Message}", ex);
+        }
     }
 
     private static List<T> DeserializeCollection<T>(JsonElement root, string propertyName, JsonSerializerOptions options)

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 
 namespace Financial.CashFlow.Domain.Entities;
@@ -31,12 +32,7 @@ public class SettlementTransaction : IAccountTransaction
         decimal? convertedValue)
     {
         EnsureSettlementAccount(account);
-
-        if (!account.Currencies.Contains(currency))
-        {
-            throw new ArgumentException($"{account.Name} doesn't use {currency}.");
-        }
-
+        EnsureAccountUses(account, currency);
         EnsureDescription(description);
 
         var entry = new SettlementTransaction
@@ -64,30 +60,18 @@ public class SettlementTransaction : IAccountTransaction
 
     public void UpdateValues(SettlementPayer paidBy, decimal amount, decimal? convertedValue)
     {
-        var roundedAmount = RoundToTwoDecimals(amount);
-        var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? RoundToTwoDecimals(value) : (decimal?)null;
+        var roundedAmount = MoneyRounding.ToCents(amount);
+        var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? MoneyRounding.ToCents(value) : (decimal?)null;
 
-        if (roundedAmount <= 0)
-        {
-            throw new ArgumentException("Amount must be greater than zero.");
-        }
-
-        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
-        {
-            throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
-        }
-
-        if (roundedConvertedValue < 0)
-        {
-            throw new ArgumentException("The converted value must be greater than zero.");
-        }
+        EnsurePositiveAmount(amount);
+        EnsureConvertedValueFits(convertedValue);
 
         PaidBy = paidBy;
         Amount = roundedAmount;
         ConvertedValue = roundedConvertedValue;
     }
 
-    public static bool RoundsToZero(decimal value) => RoundToTwoDecimals(value) == 0;
+    public static bool RoundsToZero(decimal value) => MoneyRounding.ToCents(value) == 0;
 
     public static void EnsureSettlementAccount(Account account)
     {
@@ -96,6 +80,43 @@ public class SettlementTransaction : IAccountTransaction
         if (!account.Has(Capability.HasParticipants))
         {
             throw new ArgumentException($"{account.Name} is not a Settlement account.");
+        }
+    }
+
+    public void EnsureConsistentWithAccount()
+    {
+        EnsureSettlementAccount(Account);
+        EnsureAccountUses(Account, Currency);
+        EnsurePositiveAmount(Amount);
+        EnsureConvertedValueFits(ConvertedValue);
+    }
+
+    private void EnsureConvertedValueFits(decimal? convertedValue)
+    {
+        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
+        {
+            throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
+        }
+
+        if (convertedValue is { } value && MoneyRounding.ToCents(value) < 0)
+        {
+            throw new ArgumentException("The converted value must be greater than zero.");
+        }
+    }
+
+    private static void EnsureAccountUses(Account account, Currency currency)
+    {
+        if (!account.Currencies.Contains(currency))
+        {
+            throw new ArgumentException($"{account.Name} doesn't use {currency}.");
+        }
+    }
+
+    private static void EnsurePositiveAmount(decimal amount)
+    {
+        if (MoneyRounding.ToCents(amount) <= 0)
+        {
+            throw new ArgumentException("Amount must be greater than zero.");
         }
     }
 
@@ -129,9 +150,7 @@ public class SettlementTransaction : IAccountTransaction
         return account.Currencies.Where(currency => currency != paidCurrency).Select(currency => (Currency?)currency).FirstOrDefault();
     }
 
-    public static decimal ConvertedValueAt(decimal amount, decimal rate) => RoundToTwoDecimals(RoundToTwoDecimals(amount) * rate);
-
-    private static decimal RoundToTwoDecimals(decimal value) => Math.Round(value, 2, MidpointRounding.AwayFromZero);
+    public static decimal ConvertedValueAt(decimal amount, decimal rate) => MoneyRounding.ToCents(MoneyRounding.ToCents(amount) * rate);
 
     private static void EnsureDescription(string description)
     {
