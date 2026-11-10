@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { isConflict } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto, BankOption } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
@@ -90,10 +89,6 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
     dueDateForm.close()
   }
 
-  const refreshOnConflict = (err: unknown) => {
-    if (isConflict(err)) void statements.refresh()
-  }
-
   const setPayField = (field: PayStatementField, value: string) =>
     setPayForm((current) =>
       current && { ...current, [field]: value, fieldErrors: { ...current.fieldErrors, [field]: undefined } },
@@ -136,7 +131,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
       })
       .catch((err: unknown) => {
         setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement') })
-        refreshOnConflict(err)
+        void statements.refresh()
       })
   }
 

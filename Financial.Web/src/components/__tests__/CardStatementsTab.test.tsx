@@ -264,6 +264,17 @@ describe('CardStatementsTab', () => {
     expect(screen.getByLabelText(/^Bank/)).toHaveFocus()
   })
 
+  it('keeps the pay form and its error in view when the statements then fail to reload', () => {
+    renderTab({
+      error: 'Unable to load the statements',
+      payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-16', isSaving: false, error: 'Failed to pay the statement', fieldErrors: {} },
+    })
+
+    expect(screen.getByRole('heading', { name: 'Pay October 2026 statement' })).toBeInTheDocument()
+    expect(screen.getByText('Failed to pay the statement')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load the statements')).toBeInTheDocument()
+  })
+
   it('moves focus to the first invalid field after a failed submit', () => {
     const payForm = { statement: OCTOBER, bankId: 'barclays', date: '', isSaving: false, error: null, fieldErrors: { date: 'Enter a date.' } }
     const statements = renderTab({ payForm })

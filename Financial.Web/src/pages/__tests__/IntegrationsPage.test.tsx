@@ -175,9 +175,19 @@ describe('IntegrationsPage', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Couldn’t retry the calendar sync for Nubank: Rate limit exceeded again')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Retry calendar sync for Nubank' }))
+    retryButton.focus()
+    fireEvent.click(retryButton)
 
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+    expect(retryButton).toHaveAttribute('aria-disabled', 'true')
+    expect(retryButton).toHaveFocus()
+  })
+
+  it('shows the row Retry as an icon-only action with an accessible name', async () => {
+    getCalendarStatusMock.mockResolvedValue(CONNECTED_STATUS)
+    render(<IntegrationsPage />)
+
+    expect(await screen.findByRole('button', { name: 'Retry calendar sync for Nubank' })).toHaveTextContent(/^$/)
   })
 
   it('P45-F03-integrations-settings-web-05: a failed status request shows a retry affordance instead of a blank panel', async () => {

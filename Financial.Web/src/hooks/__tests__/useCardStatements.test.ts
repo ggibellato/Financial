@@ -218,4 +218,16 @@ describe('useCardStatements', () => {
 
     expect(result.current.unmark).toBeNull()
   })
+
+  it('reloads the statements after an unmark fails for a reason other than a conflict', async () => {
+    unmarkCardStatementPaidMock.mockRejectedValue(new ApiError('Something went wrong on the server.', 500))
+    const { result } = await renderLoaded()
+    act(() => result.current.requestUnmark(SEPTEMBER))
+
+    act(() => result.current.confirmUnmark())
+
+    await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(result.current.unmark?.isBusy).toBe(false))
+    expect(result.current.unmark?.error).toBe('Something went wrong on the server.')
+  })
 })

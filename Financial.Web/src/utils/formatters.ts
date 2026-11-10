@@ -43,7 +43,7 @@ export function formatPercent1(value: number): string {
   return `${percent1Formatter.format(value)}%`
 }
 
-const MISSING_VALUE_PLACEHOLDER = '—'
+export const MISSING_VALUE_PLACEHOLDER = '—'
 
 function formatOrDash(value: number | null | undefined, format: (value: number) => string): string {
   return value == null ? MISSING_VALUE_PLACEHOLDER : format(value)

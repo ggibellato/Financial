@@ -258,19 +258,19 @@ export default function CardStatementsTab({
           <MessageBarBody>This card is inactive, so its statements can't be paid, unmarked or given a due date here.</MessageBarBody>
         </MessageBar>
       )}
+      {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
+      {dueDateForm.form && (
+        <StatementDueDateForm
+          key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
+          form={dueDateForm.form}
+          dueDateForm={dueDateForm}
+          onCancel={cancelForm}
+        />
+      )}
       {error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <>
-          {payForm && <PayStatementForm key={payForm.statement.id} payForm={payForm} cardStatements={cardStatements} currency={currency} onCancel={cancelForm} />}
-          {dueDateForm.form && (
-            <StatementDueDateForm
-              key={`${dueDateForm.form.statement.year}-${dueDateForm.form.statement.month}`}
-              form={dueDateForm.form}
-              dueDateForm={dueDateForm}
-              onCancel={cancelForm}
-            />
-          )}
           <div className="account-screen__grid-scroll">
             <Table className="data-table" aria-label="Statements">
               <TableHeader>
