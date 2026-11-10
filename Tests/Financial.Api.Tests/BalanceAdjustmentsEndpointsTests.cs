@@ -225,7 +225,8 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed);
     }
-
+
+
     private async Task<List<Guid>> AdjustmentIdsAsync(Guid accountId) =>
         (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{accountId}/transactions/2026/7"))!
             .Where(row => row.Adjustment is not null)
