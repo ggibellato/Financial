@@ -3,9 +3,6 @@ using Financial.CashFlow.Application.Interfaces;
 
 namespace Financial.TestUtilities;
 
-/// <summary>Hand-written ICreditCardCalendarSyncService test double for consumers (e.g.
-/// CreditCardService) that only need to observe whether/how TriggerSync was called - it never
-/// performs a real sync.</summary>
 public sealed class FakeCreditCardCalendarSyncService : ICreditCardCalendarSyncService
 {
     public List<Guid> TriggeredCreditCardIds { get; } = new();

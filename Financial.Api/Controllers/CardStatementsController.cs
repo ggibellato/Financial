@@ -18,15 +18,6 @@ public sealed class CardStatementsController : ControllerBase
         _cardStatementService = cardStatementService ?? throw new ArgumentNullException(nameof(cardStatementService));
     }
 
-    /// <summary>Lists card statements due in a given month.</summary>
-    /// <param name="year">The year.</param>
-    /// <param name="month">The month (1-12).</param>
-    /// <returns>200 OK with the matching statements.</returns>
-    [HttpGet("{year:int}/{month:int}")]
-    [ProducesResponseType(typeof(IReadOnlyList<CardStatementDTO>), StatusCodes.Status200OK)]
-    public ActionResult<IReadOnlyList<CardStatementDTO>> GetStatementsForMonth(int year, int month) =>
-        Ok(_cardStatementService.GetStatementsForMonth(year, month));
-
     /// <summary>Marks a card statement as paid.</summary>
     /// <param name="id">The statement's identifier.</param>
     /// <param name="request">Details of the payment.</param>

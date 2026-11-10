@@ -253,19 +253,21 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task MonthlyCardStatements_OutstandingIsTheAmountToPay_ZeroWhileCreditCoversIt()
+    public async Task CardStatement_OutstandingIsTheAmountToPay_ZeroWhileCreditCoversIt()
     {
         await AddCardChargeAsync(10, 3, 25m);
         await AddCardChargeAsync(10, 8, -60m);
         await AddCardChargeAsync(11, 2, 20m);
 
-        var october = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
-        var november = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/11");
+        var october = await AmexDetailAsync(10);
+        var november = await AmexDetailAsync(11);
 
         using (new AssertionScope())
         {
-            october.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OutstandingTotal = 0m, AccumulatedOutstandingTotal = -15m, IsPaid = false });
-            november.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OutstandingTotal = 0m, AccumulatedOutstandingTotal = -15m, IsPaid = false });
+            october.ViewedStatement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
+            november.ViewedStatement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
+            october.TotalOwed.Should().Be(-15m);
+            november.TotalOwed.Should().Be(-15m);
         }
     }
 
@@ -273,7 +275,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-02")]
     public async Task PaymentsDue_NothingDueMonthHasNoReminder_UntilAChargeRaisesIt()
     {
-        var update = await Client.PutAsJsonAsync($"{Api}/credit-cards/{AmexId}", new CreditCardUpdateDTO { Name = "BA Amex", IsActive = true, NextInvoiceDueDate = new DateOnly(2026, 11, 18) });
+        var update = await Client.PutAsJsonAsync($"{Api}/accounts/{AmexId}/statements/2026/11/due-date", new StatementDueDateUpdateDTO { DueDate = new DateOnly(2026, 11, 18) });
         update.EnsureSuccessStatusCode();
 
         var nothingDue = await Client.GetFromJsonAsync<List<PaymentDueDTO>>($"{Api}/payments-due");
@@ -322,14 +324,9 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         var card = await AmexDetailAsync(11);
         var bankAfter = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!.Balance;
         var november = Month(await StatementsAsync(), 11);
-        var byMonth = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/month/2026/11");
-        var byBank = await Client.GetFromJsonAsync<List<TransferDTO>>($"{Api}/transfers/bank/{BarclaysId}");
         var bankRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{BarclaysId}/transactions/2026/11");
 
-        var update = new TransferUpdateDTO { Date = refund.Date, SourceBankId = Guid.Parse(BarclaysId), DestinationBankId = Guid.Parse(BarclaysId), Amount = 1m };
         var accountUpdate = new AccountTransferUpdateDTO { Date = refund.Date, SourceAccountId = Guid.Parse(BarclaysId), DestinationAccountId = Guid.Parse(BarclaysId), Amount = 1m };
-        await ShouldBeRefusedAsync(await Client.PutAsJsonAsync($"{Api}/transfers/{refund.Id}", update), HttpStatusCode.Conflict, RefundsCreditMessage);
-        await ShouldBeRefusedAsync(await Client.DeleteAsync($"{Api}/transfers/{refund.Id}"), HttpStatusCode.Conflict, RefundsCreditMessage);
         await ShouldBeRefusedAsync(await Client.PutAsJsonAsync($"{Api}/accounts/transfers/{refund.Id}", accountUpdate), HttpStatusCode.Conflict, RefundsCreditMessage);
         await ShouldBeRefusedAsync(await Client.DeleteAsync($"{Api}/accounts/transfers/{refund.Id}"), HttpStatusCode.Conflict, RefundsCreditMessage);
         await ShouldBeRefusedAsync(await PostCreditRefundAsync(25.01m), HttpStatusCode.BadRequest, "The card's credit is 25.00 GBP.");
@@ -341,8 +338,6 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
             bankAfter.Should().Be(bankBefore + 35m);
             november.Id.Should().NotBeNull();
             november.Should().BeEquivalentTo(new { Total = 35m, CreditIn = 60m, OutstandingTotal = 0m, CreditCarried = 25m, Status = "NothingDue" });
-            byMonth.Should().BeEmpty();
-            byBank.Should().NotContain(transfer => transfer.Id == refund.Id);
             bankRows.Should().ContainSingle(row => row.Id == refund.Id).Which.Amount.Should().Be(35m);
         }
     }
@@ -447,26 +442,26 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         await AddCardChargeAsync(10, 9, 50m);
         var november = Month(await StatementsAsync(), 11);
         var paid = await MarkPaidAsync(november.Id!.Value);
-        var monthly = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/11");
+        var afterPayment = Month(await StatementsAsync(), 11);
 
         using (new AssertionScope())
         {
             november.Should().BeEquivalentTo(new { CreditIn = 10m, OutstandingTotal = 25m, Status = "Unpaid" });
             paid.StatusCode.Should().Be(HttpStatusCode.OK);
-            monthly.Should().ContainSingle().Which.IsPaid.Should().BeTrue();
+            afterPayment.IsPaid.Should().BeTrue();
         }
     }
 
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
-    public async Task CreditRefund_MonthWithNoCharges_ShowsOnMonthlyAsNothingToPay()
+    public async Task CreditRefund_MonthWithNoCharges_ShowsAsNothingToPay()
     {
         await AddCardChargeAsync(10, 8, -60m);
         (await PostCreditRefundAsync(35m)).EnsureSuccessStatusCode();
 
-        var monthly = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/11");
+        var november = Month(await StatementsAsync(), 11);
 
-        monthly.Should().ContainSingle().Which.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
+        november.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
     }
 
     [Fact]

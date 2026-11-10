@@ -230,27 +230,34 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
     public async Task MarkCardStatementPaid_FromAnInactiveBank_IsRejectedWith400()
     {
         await CreateAsync<ExpenseDTO>("expenses", Expense(bankId: null, creditCardId: VisaId));
-        var statements = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
-        var statement = statements!.First(s => s.CreditCardName == "BarclaysPlatinumVisa8003");
+        var statementId = (await VisaOctoberStatementAsync()).Id;
         await DeactivateChaseAsync();
 
         var response = await Client.PostAsJsonAsync(
-            $"{Api}/card-statements/{statement.Id}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = ChaseId });
-        var after = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
+            $"{Api}/card-statements/{statementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = ChaseId });
+        var after = await VisaOctoberStatementAsync();
 
         await ShouldBeRefusedAsInactive(response);
-        after!.Single(s => s.Id == statement.Id).IsPaid.Should().BeFalse();
+        using (new AssertionScope())
+        {
+            statementId.Should().NotBeNull();
+            after.Id.Should().Be(statementId);
+            after.IsPaid.Should().BeFalse();
+        }
     }
+
+    private async Task<AccountStatementDTO> VisaOctoberStatementAsync() =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{VisaId}/2026/10"))!.ViewedStatement!;
 
     [Fact]
     [Trait("AC", "P60-F06-admin-accounts-page-06")]
-    public async Task PostTransfer_ToAnInactiveBank_IsRejectedWith400()
+    public async Task PostAccountTransfer_ToAnInactiveBank_IsRejectedWith400()
     {
         await DeactivateChaseAsync();
 
-        var response = await Client.PostAsJsonAsync($"{Api}/transfers", new TransferCreateDTO
+        var response = await Client.PostAsJsonAsync($"{Api}/accounts/transfers", new AccountTransferCreateDTO
         {
-            Date = Date, SourceBankId = BarclaysId, DestinationBankId = ChaseId, Amount = 10m
+            Date = Date, SourceAccountId = BarclaysId, DestinationAccountId = ChaseId, Amount = 10m
         });
 
         await ShouldBeRefusedAsInactive(response);

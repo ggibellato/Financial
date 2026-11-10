@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
+using Financial.CashFlow.Application.Interfaces;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
 
@@ -147,7 +149,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
         });
         var updated = await put.Content.ReadFromJsonAsync<AccountTransferDTO>();
         var delete = await Client.DeleteAsync($"/api/v1/financial/accounts/transfers/{ExistingTransferId}");
-        var remaining = await Client.GetFromJsonAsync<List<TransferDTO>>("/api/v1/financial/transfers/month/2026/10");
+        var remaining = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{BarclaysId}/transactions/2026/10");
 
         using (new AssertionScope())
         {
@@ -155,7 +157,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             updated!.DestinationAccountName.Should().Be("Itaú");
             updated.DestinationAmount.Should().Be(480m);
             delete.StatusCode.Should().Be(HttpStatusCode.OK);
-            remaining.Should().BeEmpty();
+            remaining.Should().NotContain(row => row.Id == Guid.Parse(ExistingTransferId));
         }
     }
 
@@ -175,83 +177,19 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F03-generic-account-to-account-transfer-06")]
-    public async Task GetTransfersByMonth_ExistingTransfer_ReturnsSameDataAsBefore()
+    public async Task ExistingTransfer_KeepsItsDateAmountAndNote()
     {
-        var transfers = await Client.GetStringAsync("/api/v1/financial/transfers/month/2026/10");
+        var rows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{BarclaysId}/transactions/2026/10");
         var balances = await BalancesAsync(10);
 
         using (new AssertionScope())
         {
-            transfers.Should().Be(
-                $$"""[{"id":"{{ExistingTransferId}}","date":"2026-10-03","sourceBankId":"{{BarclaysId}}","sourceBankName":"Barclays","destinationBankId":"{{ChaseId}}","destinationBankName":"Chase","amount":75.25,"note":"Top-up"}]""");
+            rows.Should().ContainSingle(row => row.Id == Guid.Parse(ExistingTransferId)).Which.Should().BeEquivalentTo(
+                new { Date = new DateOnly(2026, 10, 3), Counterpart = "Chase", Amount = -75.25m, Transfer = new { Amount = 75.25m, Note = "Top-up" } });
             balances["Barclays"].Should().Be(-75.25m);
             balances["Chase"].Should().Be(75.25m);
         }
     }
-
-    [Fact]
-    [Trait("AC", "P60-F03-generic-account-to-account-transfer-08")]
-    public async Task PostTransfers_FutureDate_Returns400WithSameMessage()
-    {
-        var response = await PostTransferAsync(new DateOnly(2026, 10, 16), BarclaysId, ChaseId, note: null);
-
-        await ShouldBeRejectedAsync(response, "Date must not be in the future.");
-    }
-
-    [Fact]
-    [Trait("AC", "P60-F03-generic-account-to-account-transfer-08")]
-    public async Task PostTransfers_DatedToday_Returns200()
-    {
-        var response = await PostTransferAsync(new DateOnly(2026, 10, 15), BarclaysId, ChaseId, note: null);
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-    }
-
-    [Fact]
-    [Trait("AC", "P60-F03-generic-account-to-account-transfer-08")]
-    public async Task PostTransfers_NoteOver200_Returns400WithSameMessage()
-    {
-        var response = await PostTransferAsync(new DateOnly(2026, 10, 10), BarclaysId, ChaseId, new string('a', 201));
-
-        await ShouldBeRejectedAsync(response, "Note must be 200 characters or fewer.");
-    }
-
-    [Fact]
-    [Trait("AC", "P60-F03-generic-account-to-account-transfer-08")]
-    public async Task PostTransfers_InactiveAccount_Returns400WithSameMessage()
-    {
-        var response = await PostTransferAsync(new DateOnly(2026, 10, 10), BarclaysId, ClosedId, note: null);
-
-        await ShouldBeRejectedAsync(response, "Closed is inactive.");
-    }
-
-    [Fact]
-    [Trait("AC", "P60-F03-generic-account-to-account-transfer-08")]
-    public async Task PutTransfers_FutureDate_Returns400AndKeepsTheStoredTransfer()
-    {
-        var response = await Client.PutAsJsonAsync($"/api/v1/financial/transfers/{ExistingTransferId}", new TransferUpdateDTO
-        {
-            Date = new DateOnly(2026, 10, 16),
-            SourceBankId = Guid.Parse(BarclaysId),
-            DestinationBankId = Guid.Parse(ChaseId),
-            Amount = 75.25m,
-            Note = "Top-up"
-        });
-
-        var stored = await ShouldBeRejectedAsync(response, "Date must not be in the future.");
-
-        stored.Single().Date.Should().Be(new DateOnly(2026, 10, 3));
-    }
-
-    private Task<HttpResponseMessage> PostTransferAsync(DateOnly date, string sourceId, string destinationId, string? note) =>
-        Client.PostAsJsonAsync("/api/v1/financial/transfers", new TransferCreateDTO
-        {
-            Date = date,
-            SourceBankId = Guid.Parse(sourceId),
-            DestinationBankId = Guid.Parse(destinationId),
-            Amount = 10m,
-            Note = note
-        });
 
     private Task<HttpResponseMessage> PostAccountTransferAsync(string sourceId, string destinationId, decimal? destinationAmount = null) =>
         Client.PostAsJsonAsync("/api/v1/financial/accounts/transfers", new AccountTransferCreateDTO
@@ -277,10 +215,10 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
         return balances;
     }
 
-    private async Task<List<TransferDTO>> ShouldBeRejectedAsync(HttpResponseMessage response, string message)
+    private async Task ShouldBeRejectedAsync(HttpResponseMessage response, string message)
     {
         var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        var stored = await Client.GetFromJsonAsync<List<TransferDTO>>("/api/v1/financial/transfers/month/2026/10");
+        var stored = Services.GetRequiredService<ICashFlowRepository>().GetTransfers().ToList();
 
         using (new AssertionScope())
         {
@@ -288,7 +226,5 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             problem!.Detail.Should().Be(message);
             stored.Should().ContainSingle().Which.Id.Should().Be(Guid.Parse(ExistingTransferId));
         }
-
-        return stored!;
     }
 }

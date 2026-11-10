@@ -23,12 +23,10 @@ public static class CashFlowApplicationServiceCollectionExtensions
         services.AddSingleton<IInvestmentAnnualResultService, InvestmentAnnualResultService>();
         services.AddSingleton<IHistoricAverageService, HistoricAverageService>();
         services.AddSingleton<IIncomeSourceService, IncomeSourceService>();
-        services.AddSingleton<ICreditCardService, CreditCardService>();
         services.AddSingleton<ICategoryService, CategoryService>();
         services.AddSingleton<IInvestmentAccountService, InvestmentAccountService>();
         services.AddSingleton<IIncomeService, IncomeService>();
         services.AddSingleton<ITitheService, TitheService>();
-        services.AddSingleton<ITransferService, TransferService>();
         services.AddSingleton<IAccountTransferService, AccountTransferService>();
         services.AddSingleton<IAccountGroupSummaryService, AccountGroupSummaryService>();
         services.AddSingleton<IAccountQueryService, AccountQueryService>();

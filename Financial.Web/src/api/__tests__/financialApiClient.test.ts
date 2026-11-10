@@ -40,7 +40,6 @@ import type {
   CorporateActionSplitUpdateDto,
   CreditCardCalendarSyncStatusDto,
   BalanceAdjustmentCreateDto,
-  CreditCardCreateDto,
   CreditCreateDto,
   CreditDeleteDto,
   CreditDto,
@@ -72,8 +71,6 @@ import type {
   TransactionDeleteDto,
   TransactionSummaryItemDto,
   TransactionUpdateDto,
-  TransferCreateDto,
-  CreditCardDto,
   InvestmentSnapshotDto,
   RecurringBillDto,
   ReportingCurrencySettingDto,
@@ -81,15 +78,12 @@ import type {
   SetReportingCurrencyEnabledRequestDto,
   SyncStatusResponseDto,
   TransferAccountOptionDto,
-  TransferDto,
   TreeNodeDto,
   BalanceAdjustmentUpdateDto,
-  CreditCardUpdateDto,
   InvestmentSnapshotValueUpdateDto,
   RecurringBillUpdateDto,
   RecurringBillStatusUpdateDto,
   ReserveMovementUpdateDto,
-  TransferUpdateDto,
 } from '../types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { account } from '../../test/account'
@@ -925,88 +919,6 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/categories`)
   })
 
-  it('gets the credit card list', async () => {
-    const responseBody: CreditCardDto[] = [
-      { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
-      { id: 'card-paypal', name: 'PaypalCredit', isActive: false, nextInvoiceDueDate: '2026-09-05', latestInvoiceDate: '2026-08-01', hasReferences: false },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getCreditCards()
-
-    expect(result).toEqual(responseBody)
-    const [url] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/credit-cards`)
-  })
-
-  it('puts a credit card update', async () => {
-    const requestBody: CreditCardUpdateDto = { name: 'BaAmex', nextInvoiceDueDate: '2026-09-05', isActive: false }
-    const responseBody: CreditCardDto = { id: 'card-baamex', hasReferences: false, latestInvoiceDate: null, ...requestBody }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.updateCreditCard('card-baamex', requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/credit-cards/card-baamex`)
-    expect(init?.method).toBe('PUT')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('posts a transfer create request', async () => {
-    const requestBody: TransferCreateDto = {
-      date: '2026-07-25',
-      sourceBankId: 'bank-barclays',
-      destinationBankId: 'bank-trading212',
-      amount: 500,
-      note: 'Round-up top-up',
-    }
-    const responseBody: TransferDto = {
-      id: 't1',
-      sourceBankName: 'Barclays',
-      destinationBankName: 'Trading212',
-      ...requestBody,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.createTransfer(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/transfers`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('puts a transfer update', async () => {
-    const requestBody: TransferUpdateDto = {
-      date: '2026-07-25',
-      sourceBankId: 'bank-chase',
-      destinationBankId: 'bank-trading212',
-      amount: 250,
-      note: null,
-    }
-    const responseBody: TransferDto = {
-      id: 't1',
-      sourceBankName: 'Chase',
-      destinationBankName: 'Trading212',
-      ...requestBody,
-    }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.updateTransfer('t1', requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/transfers/t1`)
-    expect(init?.method).toBe('PUT')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
   it('posts a balance adjustment create request', async () => {
     const requestBody: BalanceAdjustmentCreateDto = {
       date: '2026-07-25',
@@ -1055,40 +967,6 @@ describe('financialApiClient', () => {
     expect(url).toBe(`${API_BASE_URL}/accounts/Barclays/adjustments/a1`)
     expect(init?.method).toBe('PUT')
     expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('calls the transfers-by-month endpoint', async () => {
-    const responseBody: TransferDto[] = [
-      {
-        id: 't1',
-        date: '2026-07-05',
-        sourceBankId: 'bank-barclays',
-        sourceBankName: 'Barclays',
-        destinationBankId: 'bank-trading212',
-        destinationBankName: 'Trading212',
-        amount: 500,
-        note: null,
-      },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getTransfersByMonth(2026, 7)
-
-    expect(result).toEqual(responseBody)
-    const [url] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/transfers/month/2026/7`)
-  })
-
-  it('deletes a transfer', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await client.deleteTransfer('t1')
-
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/transfers/t1`)
-    expect(init?.method).toBe('DELETE')
   })
 
   it('deletes a balance adjustment', async () => {
@@ -1746,32 +1624,6 @@ describe('financialApiClient', () => {
 
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/categories/category-lazer`)
-    expect(init?.method).toBe('DELETE')
-  })
-
-  it('posts a credit card create request', async () => {
-    const requestBody: CreditCardCreateDto = { name: 'BaAmex', isActive: true }
-    const responseBody: CreditCardDto = { id: 'card-baamex', ...requestBody, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.createCreditCard(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/credit-cards`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('deletes a credit card', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await client.deleteCreditCard('card-baamex')
-
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/credit-cards/card-baamex`)
     expect(init?.method).toBe('DELETE')
   })
 
@@ -2477,17 +2329,6 @@ describe('financialApiClient', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe(`${API_BASE_URL}/incomes/i1`)
     expect(init?.method).toBe('DELETE')
-  })
-
-  it('gets card statements by month', async () => {
-    const responseBody: CardStatementDto[] = []
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getCardStatementsByMonth(2026, 7)
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/card-statements/2026/7`)
   })
 
   it('posts a mark-card-statement-paid request', async () => {

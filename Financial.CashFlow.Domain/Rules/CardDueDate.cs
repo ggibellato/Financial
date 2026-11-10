@@ -39,19 +39,6 @@ public static class CardDueDate
         }
     }
 
-    public static void ClearSupersededBy(Account card, IEnumerable<CardStatement> statements, DateOnly? newDueDate)
-    {
-        var superseded = statements
-            .Where(statement => statement.CreditCard.Id == card.Id
-                && (newDueDate is not { } date || statement.IsAfter(date.Year, date.Month)))
-            .ToList();
-
-        foreach (var statement in superseded)
-        {
-            statement.SetDueDate(null);
-        }
-    }
-
     private static void EnsureWithinMonth(int year, int month, DateOnly dueDate)
     {
         if (dueDate.Year != year || dueDate.Month != month)

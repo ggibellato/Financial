@@ -90,8 +90,8 @@ public class InvestmentSnapshotsEndpointsTests : ApiEndpointTests
         var reservasPessoais = accounts!.First(a => a.Name == "ReservasPessoais");
         var chaseSave = accounts!.First(a => a.Name == "ChaseSave");
 
-        var cards = await (await Client.GetAsync("/api/v1/financial/credit-cards"))
-            .Content.ReadFromJsonAsync<List<CreditCardDTO>>();
+        var cards = await (await Client.GetAsync("/api/v1/financial/accounts"))
+            .Content.ReadFromJsonAsync<List<AccountDTO>>();
         var card = cards!.First(c => c.Name == "BarclaysPlatinumVisa8003");
 
         var categories = await (await Client.GetAsync("/api/v1/financial/categories"))

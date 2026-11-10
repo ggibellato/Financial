@@ -134,36 +134,36 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
             (await OctoberExpensesAsync()).Should().HaveCount(expensesBefore.Count);
             var bills = await Client.GetFromJsonAsync<List<RecurringBillDTO>>($"{Api}/mensais");
             bills.Should().ContainSingle(b => b.Id == bill.Id).Which.Status.Should().NotBe("Paid");
-            var statements = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
+            var statements = await Client.GetFromJsonAsync<List<AccountStatementDTO>>($"{Api}/accounts/{AmexId}/statements");
             statements.Should().ContainSingle(s => s.Id == Guid.Parse(AmexOctoberStatementId)).Which.IsPaid.Should().BeFalse();
         }
     }
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-05")]
-    public async Task UsedCard_DeleteReturns409_OnBothRoutes()
+    public async Task UsedCard_DeleteReturns409()
     {
-        var chargedThroughAccounts = await Client.DeleteAsync($"{Api}/accounts/{AmexId}");
-        var linkedThroughAccounts = await Client.DeleteAsync($"{Api}/accounts/{LinkedId}");
-        var linkedThroughCreditCards = await Client.DeleteAsync($"{Api}/credit-cards/{LinkedId}");
-        var chargedThroughCreditCards = await Client.DeleteAsync($"{Api}/credit-cards/{VisaId}");
+        var charged = await Client.DeleteAsync($"{Api}/accounts/{AmexId}");
+        var linked = await Client.DeleteAsync($"{Api}/accounts/{LinkedId}");
+        var chargedOnly = await Client.DeleteAsync($"{Api}/accounts/{VisaId}");
         var unused = await Client.DeleteAsync($"{Api}/accounts/{UnusedId}");
 
         using (new AssertionScope())
         {
-            await ShouldBeInUse(chargedThroughAccounts, "BA Amex has transactions and cannot be deleted. Deactivate it instead.");
-            await ShouldBeInUse(linkedThroughAccounts, "Linked has transactions and cannot be deleted. Deactivate it instead.");
-            await ShouldBeInUse(linkedThroughCreditCards, "Cannot delete a credit card that is still referenced by a statement or expense.");
-            await ShouldBeInUse(chargedThroughCreditCards, "Cannot delete a credit card that is still referenced by a statement or expense.");
+            await ShouldBeInUse(charged, "BA Amex has transactions and cannot be deleted. Deactivate it instead.");
+            await ShouldBeInUse(linked, "Linked has transactions and cannot be deleted. Deactivate it instead.");
+            await ShouldBeInUse(chargedOnly, "Platinum Visa 8003 has transactions and cannot be deleted. Deactivate it instead.");
             unused.StatusCode.Should().Be(HttpStatusCode.NoContent);
-            var cards = await Client.GetFromJsonAsync<List<CreditCardDTO>>($"{Api}/credit-cards");
-            cards!.Select(card => card.Name).Should().Equal("BA Amex", "Platinum Visa 8003", "Linked");
+            (await CardsAsync()).Select(card => card.Name).Should().Equal("BA Amex", "Linked", "Platinum Visa 8003");
         }
     }
 
+    private async Task<List<AccountDTO>> CardsAsync() =>
+        (await Client.GetFromJsonAsync<List<AccountDTO>>($"{Api}/accounts"))!.Where(account => account.TemplateName == "CreditCard").ToList();
+
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-11")]
-    public async Task CreateCardThroughAccounts_ListedOnCreditCards_AndInTheSummary()
+    public async Task CreateCardThroughAccounts_ListedOnAccounts_AndInTheSummary()
     {
         var response = await Client.PostAsJsonAsync($"{Api}/accounts", new AccountCreateDTO
         {
@@ -173,7 +173,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
         });
         var created = await response.Content.ReadFromJsonAsync<AccountDTO>();
 
-        var cards = await Client.GetFromJsonAsync<List<CreditCardDTO>>($"{Api}/credit-cards");
+        var cards = await CardsAsync();
         var summary = await OctoberSummaryAsync();
 
         using (new AssertionScope())
@@ -183,32 +183,11 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
             var nubank = cards.Should().ContainSingle(card => card.Name == "Nubank").Which;
             nubank.Id.Should().Be(created.Id);
             nubank.IsActive.Should().BeTrue();
-            nubank.HasReferences.Should().BeFalse();
+            nubank.HasRecords.Should().BeFalse();
             var member = summary.Members.Should().ContainSingle(member => member.Name == "Nubank").Which;
             member.AccountId.Should().Be(created.Id);
             member.BalanceIsOwed.Should().BeTrue();
             member.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = false });
-        }
-    }
-
-    [Fact]
-    [Trait("AC", "P60-F07-credit-card-template-and-card-migration-12")]
-    public async Task CreditCardsAndCardStatements_ReturnTheSameValues()
-    {
-        var cards = await Client.GetFromJsonAsync<List<CreditCardDTO>>($"{Api}/credit-cards");
-        var statements = await Client.GetFromJsonAsync<List<CardStatementDTO>>($"{Api}/card-statements/2026/10");
-
-        using (new AssertionScope())
-        {
-            cards!.Select(card => (card.Id.ToString(), card.Name, card.IsActive, card.NextInvoiceDueDate, card.LatestInvoiceDate, card.HasReferences))
-                .Should().Equal(
-                    (AmexId, "BA Amex", true, new DateOnly(2026, 11, 18), new DateOnly(2026, 10, 1), true),
-                    (VisaId, "Platinum Visa 8003", true, (DateOnly?)null, new DateOnly(2026, 10, 1), true),
-                    (UnusedId, "Unused", true, (DateOnly?)null, (DateOnly?)null, false),
-                    (LinkedId, "Linked", true, (DateOnly?)null, (DateOnly?)null, true));
-            statements!.Select(s => (s.CreditCardName, s.Year, s.Month, s.IsPaid, s.OutstandingTotal, s.AccumulatedOutstandingTotal))
-                .Should().Equal(("BA Amex", 2026, 10, false, 30m, 40m));
-            statements.Single(s => s.CreditCardName == "BA Amex").Id.Should().Be(Guid.Parse(AmexOctoberStatementId));
         }
     }
 
