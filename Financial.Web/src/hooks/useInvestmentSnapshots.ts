@@ -49,7 +49,7 @@ function reducer(state: InvestmentSnapshotsState, action: InvestmentSnapshotsAct
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, snapshots: action.payload }
+      return { ...state, isLoading: false, error: null, snapshots: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':

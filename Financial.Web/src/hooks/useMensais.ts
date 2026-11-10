@@ -125,6 +125,7 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return {
         ...state,
         isLoading: false,
+        error: null,
         bills: action.payload.bills,
         banks: action.payload.banks,
         categories: action.payload.categories,

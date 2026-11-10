@@ -332,6 +332,20 @@ describe('useMensais', () => {
     await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
   })
 
+  it('clears a previous load error once a reload after a later delete succeeds', async () => {
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    getMensaisBillsMock.mockRejectedValueOnce(new Error('Network down'))
+    act(() => result.current.deleteBill('b1'))
+    await waitFor(() => expect(result.current.error).toBe('Network down'))
+
+    act(() => result.current.deleteBill('b2'))
+
+    await waitFor(() => expect(result.current.error).toBeNull())
+    expect(getMensaisBillsMock).toHaveBeenCalledTimes(3)
+  })
+
   it('surfaces a delete error without crashing', async () => {
     deleteMensaisBillMock.mockRejectedValue(new Error('Recurring bill not found.'))
     const { result } = renderHook(() => useMensais())

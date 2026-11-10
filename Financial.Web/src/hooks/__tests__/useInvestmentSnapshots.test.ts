@@ -63,6 +63,23 @@ describe('useInvestmentSnapshots', () => {
     await waitFor(() => expect(getInvestmentSnapshotsMock).toHaveBeenCalledWith(NEXT_MONTH_YEAR, NEXT_MONTH))
   })
 
+  it('clears a previous load error once a refresh succeeds', async () => {
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    getInvestmentSnapshotsMock.mockRejectedValueOnce(new Error('Network down'))
+    await act(async () => {
+      await result.current.refresh()
+    })
+    expect(result.current.error).toBe('Network down')
+
+    await act(async () => {
+      await result.current.refresh()
+    })
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.snapshots).toEqual(SNAPSHOTS)
+  })
+
   it('surfaces a fetch error', async () => {
     getInvestmentSnapshotsMock.mockRejectedValue(new Error('Network down'))
     const { result } = renderHook(() => useInvestmentSnapshots())
