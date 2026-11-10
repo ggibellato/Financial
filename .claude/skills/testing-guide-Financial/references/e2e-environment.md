@@ -65,7 +65,7 @@ The sentinel replaces a "which data file are you on" endpoint on purpose:
 
 ## What the suite proves
 
-Seven `@smoke` specs in `Financial.Web/tests/e2e/`, each also failing on any console error:
+Nine `@smoke` tests in seven spec files in `Financial.Web/tests/e2e/`, each also failing on any console error:
 
 | Spec | Journey |
 |---|---|

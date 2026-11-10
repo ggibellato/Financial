@@ -68,9 +68,9 @@ Never let a table/grid cell wrap (`white-space: normal`, or CSS missing
 `white-space: nowrap` while relying on `text-overflow: ellipsis`, which is a
 no-op without it) — an occasional long value then silently grows just that
 row to double height while every other row stays single-line, an
-inconsistent, jarring result rather than a deliberate design (fixed across
-`MensaisPage`, `TaxRulesPage` and the pages P60 F13 later retired in
-2026-09). Instead, use `TruncatedText`
+inconsistent, jarring result rather than a deliberate design (fixed in
+2026-09 across `MensaisPage`, `TaxRulesPage` and the pages P60 F13 later
+retired). Instead, use `TruncatedText`
 (`Financial.Web/src/components/TruncatedText.tsx`) for any free-text
 description/note/label cell: it truncates to one line with an ellipsis via
 the shared `.truncated-text` class (`Financial.Web/src/styles/data-table.css`)
