@@ -33,6 +33,8 @@ import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalan
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 
+const STALE_STATEMENTS_MESSAGE = 'Couldn’t refresh the statements, so the list below may be out of date.'
+
 interface StatementColumn {
   key: string
   header: string
@@ -247,7 +249,10 @@ export default function CardStatementsTab({
 
   const isFormSaving = (payForm?.isSaving ?? false) || Boolean(dueDateForm.form?.pendingAction)
 
-  const hasRows = statements.length > 0
+  const retryKeepingFocus = () => {
+    headingRef.current?.focus()
+    retry()
+  }
 
   const isViewed = (statement: AccountStatementDto) => statement.year === viewedYear && statement.month === viewedMonth
 
@@ -270,20 +275,20 @@ export default function CardStatementsTab({
           onCancel={cancelForm}
         />
       )}
-      {error && hasRows && (
-        <MessageBar role="alert" intent="error">
-          <MessageBarBody>{error}</MessageBarBody>
-          <MessageBarActions>
-            <Button appearance="primary" onClick={retry}>
-              Try again
-            </Button>
-          </MessageBarActions>
-        </MessageBar>
-      )}
-      {error && !hasRows ? (
+      {error && statements.length === 0 ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
         <>
+          {error && (
+            <MessageBar role="alert" intent="error">
+              <MessageBarBody>{STALE_STATEMENTS_MESSAGE}</MessageBarBody>
+              <MessageBarActions>
+                <Button appearance="primary" aria-label="Try again to load the statements" onClick={retryKeepingFocus}>
+                  Try again
+                </Button>
+              </MessageBarActions>
+            </MessageBar>
+          )}
           <div className="account-screen__grid-scroll">
             <Table className="data-table" aria-label="Statements">
               <TableHeader>
