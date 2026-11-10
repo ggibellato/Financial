@@ -64,16 +64,7 @@ public class SettlementTransaction : IAccountTransaction
         var roundedConvertedValue = convertedValue is { } value && !RoundsToZero(value) ? MoneyRounding.ToCents(value) : (decimal?)null;
 
         EnsurePositiveAmount(amount);
-
-        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
-        {
-            throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
-        }
-
-        if (roundedConvertedValue < 0)
-        {
-            throw new ArgumentException("The converted value must be greater than zero.");
-        }
+        EnsureConvertedValueFits(convertedValue);
 
         PaidBy = paidBy;
         Amount = roundedAmount;
@@ -97,6 +88,20 @@ public class SettlementTransaction : IAccountTransaction
         EnsureSettlementAccount(Account);
         EnsureAccountUses(Account, Currency);
         EnsurePositiveAmount(Amount);
+        EnsureConvertedValueFits(ConvertedValue);
+    }
+
+    private void EnsureConvertedValueFits(decimal? convertedValue)
+    {
+        if (convertedValue.HasValue && ConvertedCurrencyOf(Account, Currency) is null)
+        {
+            throw new ArgumentException($"{Account.Name} has one currency, so an entry has no converted value.");
+        }
+
+        if (convertedValue is { } value && MoneyRounding.ToCents(value) < 0)
+        {
+            throw new ArgumentException("The converted value must be greater than zero.");
+        }
     }
 
     private static void EnsureAccountUses(Account account, Currency currency)
