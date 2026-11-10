@@ -17,7 +17,6 @@ const MAX_ROUND_UP_AMOUNT = 0.99
 
 const DATE_KEY = 'expense.date'
 const PAYMENT_SOURCE_KEY = 'expense.paymentSource'
-const CREDIT_CARD_KEY = 'expense.creditCardId'
 const CATEGORY_KEY = 'expense.categoryId'
 
 export function computeRoundUpSuggestion(value: number): number {
@@ -258,7 +257,7 @@ export function useExpenseForm(
     const mode = lockedBank ? 'bank' : lockedCard ? 'card' : requestedMode
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
-    const creditCardId = mode === 'card' ? (lockedCard?.id ?? getStoredDefault(CREDIT_CARD_KEY) ?? '') : ''
+    const creditCardId = mode === 'card' ? (lockedCard?.id ?? '') : ''
     const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
     const storedCategoryId = getStoredDefault(CATEGORY_KEY)
     const categoryId =
@@ -366,9 +365,7 @@ export function useExpenseForm(
     void request
       .then(() => {
         setStoredDefault(DATE_KEY, state.date)
-        if (state.paymentMode === 'card') {
-          if (!lockedCard) setStoredDefault(CREDIT_CARD_KEY, state.creditCardId)
-        } else if (!lockedBank) {
+        if (state.paymentMode === 'bank' && !lockedBank) {
           setStoredDefault(PAYMENT_SOURCE_KEY, state.paymentSource)
         }
         setStoredDefault(CATEGORY_KEY, state.categoryId)

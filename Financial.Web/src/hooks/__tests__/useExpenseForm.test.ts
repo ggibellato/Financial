@@ -610,7 +610,8 @@ describe('useExpenseForm', () => {
     expect(result.current.value).toBe('')
   })
 
-  it('persists the credit card, not the payment source, after a successful card-mode create', async () => {
+  it('remembers neither the card nor the payment source after a successful card-mode create', async () => {
+    setStoredDefault('expense.paymentSource', 'bank-trading212')
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e12' })
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
@@ -621,8 +622,9 @@ describe('useExpenseForm', () => {
     await act(() => result.current.submit())
 
     act(() => result.current.showCreateForm('card'))
-
-    expect(result.current.creditCardId).toBe('card-chase')
+    expect(result.current.creditCardId).toBe('')
+    act(() => result.current.showCreateForm('bank'))
+    expect(result.current.paymentSource).toBe('bank-trading212')
   })
 })
 
