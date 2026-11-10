@@ -20,6 +20,7 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     private const string ChaseId = "5e771e00-0000-0000-0000-000000000006";
     private const string TransferId = "5e771e00-0000-0000-0000-000000000601";
     private const string ExpenseId = "5e771e00-0000-0000-0000-000000000701";
+    private const string CategoryId = "5e771e00-0000-0000-0000-000000000801";
     private const string SeededData = $$"""
         {
           "Accounts": [
@@ -30,6 +31,12 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
             { "Id": "{{ReservaId}}", "Name": "Reserva", "Template": "Pots", "Currency": "GBP", "IsActive": true, "OpeningBalance": null, "RoundUp": null, "Pots": [
               { "Id": "{{PotId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 100 }
             ], "CategoryId": null }
+          ],
+          "Categories": [
+            { "Id": "{{CategoryId}}", "Name": "Mercado", "Active": true, "IsInvestment": false, "IsTithe": false }
+          ],
+          "Expenses": [
+            { "Id": "{{ExpenseId}}", "Date": "2026-09-04", "Description": "Coffee", "Value": 3, "CategoryId": "{{CategoryId}}", "PaymentSourceAccountId": "{{ChaseId}}", "CreditCardId": null, "ChargeDate": null, "InvoiceDate": null, "RoundUpAmount": null, "CountsAsTithe": true }
           ],
           "BalanceAdjustments": [
             { "Id": "{{AdjustmentId}}", "Date": "2026-09-10", "AccountId": "{{BankId}}", "TargetBalance": 10, "Delta": 10, "Note": null }
@@ -130,6 +137,7 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("POST", "expenses", HttpStatusCode.BadRequest)]
     [InlineData("PUT", $"expenses/{ExpenseId}", HttpStatusCode.BadRequest)]
     [InlineData("POST", $"expenses/{ExpenseId}/move-to-statement", HttpStatusCode.BadRequest)]
+    [InlineData("DELETE", $"expenses/{ExpenseId}", HttpStatusCode.OK)]
     public async Task KeptRoute_StillAnswers(string method, string path, HttpStatusCode expected)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));
