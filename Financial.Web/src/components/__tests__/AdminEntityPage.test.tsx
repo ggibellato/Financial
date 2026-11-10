@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import AdminEntityPage from '../AdminEntityPage'
 
@@ -17,9 +17,23 @@ function renderPage(overrides: Partial<Props> = {}) {
     children: <table aria-label="Banks" />,
     ...overrides,
   }
-  render(<AdminEntityPage {...props} />)
-  return props
+  const { rerender } = render(<AdminEntityPage {...props} />)
+  return { ...props, rerender: (changes: Partial<Props>) => rerender(<AdminEntityPage {...props} {...changes} />) }
 }
+
+const rows = (names: string[], disabled = false) => (
+  <table aria-label="Banks">
+    <tbody>
+      {names.map((name) => (
+        <tr key={name}>
+          <td>
+            <button disabled={disabled}>Delete {name}</button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+)
 
 describe('AdminEntityPage', () => {
   it('renders the title heading and calls onCreate from the create button', () => {
@@ -30,10 +44,14 @@ describe('AdminEntityPage', () => {
     expect(onCreate).toHaveBeenCalledOnce()
   })
 
-  it('disables the create button when asked', () => {
-    renderPage({ createDisabled: true })
+  it('keeps a disabled create button focusable and describes why it is disabled', () => {
+    const { onCreate } = renderPage({ createDisabledReason: 'Add a broker first.' })
 
-    expect(screen.getByRole('button', { name: 'Create Bank' })).toBeDisabled()
+    const create = screen.getByRole('button', { name: 'Create Bank', description: 'Add a broker first.' })
+    expect(create).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByText('Add a broker first.')).toBeVisible()
+    fireEvent.click(create)
+    expect(onCreate).not.toHaveBeenCalled()
   })
 
   it('renders the content when loaded and not empty', () => {
@@ -98,5 +116,33 @@ describe('AdminEntityPage', () => {
     renderPage({ isLoading: true, dialogs: <p>dialogs</p> })
 
     expect(screen.getByText('dialogs')).toBeInTheDocument()
+  })
+
+  it('does not pull focus back into the list once focus has moved off a removed row', () => {
+    const { rerender } = renderPage({ children: rows(['Barclays', 'Monzo']) })
+
+    screen.getByRole('button', { name: 'Delete Monzo' }).focus()
+    screen.getByRole('button', { name: 'Create Bank' }).focus()
+    screen.getByRole('button', { name: 'Create Bank' }).blur()
+    rerender({ children: rows(['Barclays']) })
+
+    expect(document.body).toHaveFocus()
+  })
+
+  it('moves focus to the heading when the nearest row control is disabled', async () => {
+    const { rerender } = renderPage({ children: rows(['Barclays', 'Monzo']) })
+
+    screen.getByRole('button', { name: 'Delete Monzo' }).focus()
+    rerender({ children: rows(['Barclays'], true) })
+
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Banks' })).toHaveFocus())
+  })
+
+  it('announces an action error and moves focus to it', async () => {
+    renderPage({ actionError: 'Barclays could not be deleted.' })
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Barclays could not be deleted.')
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 })

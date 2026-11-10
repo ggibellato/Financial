@@ -1,15 +1,16 @@
-import type { ReactNode } from 'react'
-import { Button, MessageBar, MessageBarBody } from '@fluentui/react-components'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
+import { Button, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import './AdminEntityPage.css'
 
 interface AdminEntityPageProps {
   title: string
   createLabel: string
   onCreate: () => void
-  createDisabled?: boolean
+  createDisabledReason?: string
   belowHeader?: ReactNode
   actionError?: string | null
   belowActionError?: ReactNode
@@ -26,7 +27,7 @@ export default function AdminEntityPage({
   title,
   createLabel,
   onCreate,
-  createDisabled,
+  createDisabledReason,
   belowHeader,
   actionError,
   belowActionError,
@@ -38,19 +39,40 @@ export default function AdminEntityPage({
   dialogs,
   children,
 }: AdminEntityPageProps) {
+  const sectionRef = useRef<HTMLElement | null>(null)
+  const headingRef = useRef<HTMLHeadingElement | null>(null)
+  const actionErrorRef = useRef<HTMLDivElement | null>(null)
+  const reasonId = useId()
+  const recordRowFocus = useRowFocusRecovery(sectionRef, headingRef, isLoading)
+
+  useEffect(() => {
+    if (actionError) actionErrorRef.current?.focus()
+  }, [actionError])
+
   return (
-    <section className="admin-entity-page">
+    <section ref={sectionRef} className="admin-entity-page" onFocus={recordRowFocus}>
       <header className="admin-entity-page__header">
-        <h2>{title}</h2>
-        <Button appearance="primary" icon={<AddRegular />} onClick={onCreate} disabled={createDisabled}>
+        <h2 ref={headingRef} tabIndex={-1}>
+          {title}
+        </h2>
+        <Button
+          appearance="primary"
+          icon={<AddRegular />}
+          onClick={onCreate}
+          disabledFocusable={createDisabledReason !== undefined}
+          aria-describedby={createDisabledReason === undefined ? undefined : reasonId}
+        >
           {createLabel}
         </Button>
+        {createDisabledReason !== undefined && (
+          <Text id={reasonId}>{createDisabledReason}</Text>
+        )}
       </header>
 
       {belowHeader}
 
       {actionError && (
-        <MessageBar intent="error">
+        <MessageBar ref={actionErrorRef} role="alert" intent="error" tabIndex={-1}>
           <MessageBarBody>{actionError}</MessageBarBody>
         </MessageBar>
       )}

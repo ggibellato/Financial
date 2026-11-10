@@ -111,9 +111,9 @@ describe('Sidebar', () => {
     expect(adminCashFlowLinks.map((link) => link.textContent)).toEqual([
       'Accounts',
       'Categories',
-      'Income Sources',
-      'Investment Accounts',
-      'Recurring Bills',
+      'Income sources',
+      'Investment accounts',
+      'Recurring bills',
     ])
   })
 

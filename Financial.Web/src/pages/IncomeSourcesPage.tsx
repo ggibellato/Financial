@@ -69,7 +69,7 @@ export default function IncomeSourcesPage() {
 
   return (
     <AdminEntityPage
-      title="Income Sources"
+      title="Income sources"
       createLabel="Create Income Source"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
@@ -122,7 +122,7 @@ export default function IncomeSourcesPage() {
         </>
       }
     >
-      <Table aria-label="Income Sources" className="data-table">
+      <Table aria-label="Income sources" className="data-table">
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Name</TableHeaderCell>

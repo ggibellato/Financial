@@ -127,7 +127,10 @@ describe('AdminAccountsPage', () => {
     renderPage()
 
     expect(screen.getByText('Loading...')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New account' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New account', description: 'Loading account templates.' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    )
     expect(await screen.findByText('No accounts yet')).toBeInTheDocument()
   })
 
@@ -136,11 +139,11 @@ describe('AdminAccountsPage', () => {
     renderPage()
 
     expect(await screen.findByText('Network down')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New account' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New account' })).toHaveAttribute('aria-disabled', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('table', { name: 'Accounts' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New account' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'New account' })).not.toHaveAttribute('aria-disabled')
   })
 
   it('returns focus to New account when the dialog is cancelled', async () => {
@@ -287,7 +290,7 @@ describe('AdminAccountsPage', () => {
     await waitFor(() => expect(screen.queryByRole('row', { name: /Monzo/ })).not.toBeInTheDocument())
   })
 
-  it('shows a refused delete on the page', async () => {
+  it('shows a refused delete on the page and moves focus to it', async () => {
     deleteAccountMock.mockRejectedValue(new ApiError('Monzo has transactions and cannot be deleted. Deactivate it instead.', 409))
     renderPage()
     await screen.findByRole('table', { name: 'Accounts' })
@@ -297,5 +300,49 @@ describe('AdminAccountsPage', () => {
 
     expect(await screen.findByText('Monzo has transactions and cannot be deleted. Deactivate it instead.')).toBeInTheDocument()
     expect(screen.queryByText('Account deleted')).not.toBeInTheDocument()
+    const alert = screen.getByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Monzo has transactions and cannot be deleted.')
+    await waitFor(() => expect(alert).toHaveFocus())
+  })
+
+  it.each([
+    { position: 'the next row', before: [MONZO, BARCLAYS], after: [BARCLAYS], target: ['button', 'Delete Barclays'] },
+    { position: 'the previous row', before: [BARCLAYS, MONZO], after: [BARCLAYS], target: ['button', 'Delete Barclays'] },
+    { position: 'the page heading', before: [MONZO], after: [], target: ['heading', 'Accounts'] },
+  ] as const)('moves focus to $position after deleting an account', async ({ before, after, target: [role, name] }) => {
+    getAccountsMock.mockResolvedValue([...before])
+    deleteAccountMock.mockResolvedValue(undefined)
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+    getAccountsMock.mockResolvedValue([...after])
+
+    const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
+    deleteMonzo.focus()
+    fireEvent.click(deleteMonzo)
+    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.getByRole(role, { name, hidden: true })).toHaveFocus())
+  })
+
+  it("explains why New account is unavailable when the templates couldn't be loaded", async () => {
+    getAccountTemplatesMock.mockRejectedValue(new Error('Server unavailable'))
+    renderPage()
+
+    const newAccount = await screen.findByRole('button', {
+      name: 'New account',
+      description: "Account templates couldn't be loaded. Try again to add an account.",
+    })
+    expect(newAccount).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(newAccount)
+    expect(screen.queryByRole('dialog', { name: 'New account' })).not.toBeInTheDocument()
+  })
+
+  it('gives New account no disabled reason once templates have loaded', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Accounts' })
+
+    const newAccount = screen.getByRole('button', { name: 'New account' })
+    expect(newAccount).not.toHaveAttribute('aria-disabled')
+    expect(newAccount).not.toHaveAccessibleDescription()
   })
 })

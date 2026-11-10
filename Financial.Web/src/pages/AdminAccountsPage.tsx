@@ -16,6 +16,13 @@ import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
 type FormTarget = { mode: 'create' } | { mode: 'edit'; account: AccountDto }
 
+function newAccountDisabledReason(hasTemplates: boolean, isLoading: boolean, loadError: string | null): string | undefined {
+  if (hasTemplates) return undefined
+  if (isLoading) return 'Loading account templates.'
+  if (loadError) return "Account templates couldn't be loaded. Try again to add an account."
+  return 'No account templates are available.'
+}
+
 export default function AdminAccountsPage() {
   const {
     accounts,
@@ -98,7 +105,7 @@ export default function AdminAccountsPage() {
       title="Accounts"
       createLabel="New account"
       onCreate={() => setFormTarget({ mode: 'create' })}
-      createDisabled={templates.length === 0}
+      createDisabledReason={newAccountDisabledReason(templates.length > 0, isLoading, error)}
       actionError={deleteError}
       isLoading={isLoading}
       loadError={error}

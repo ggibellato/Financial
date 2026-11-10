@@ -58,7 +58,7 @@ export default function TaxRulesPage() {
 
   return (
     <AdminEntityPage
-      title="Tax Rules"
+      title="Tax rules"
       createLabel="Create Tax Rule"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
@@ -83,7 +83,7 @@ export default function TaxRulesPage() {
         </>
       }
     >
-      <Table aria-label="Tax Rules" className="data-table">
+      <Table aria-label="Tax rules" className="data-table">
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Jurisdiction</TableHeaderCell>

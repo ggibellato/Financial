@@ -239,6 +239,18 @@ describe('AccountFormDialog', () => {
     expect(screen.queryByText(message)).not.toBeInTheDocument()
   })
 
+  it('shows a 409 that is not about the name in the message bar, leaving Name valid', async () => {
+    const message = `"Monzo" can't be changed while a statement payment is pending.`
+    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409)) })
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
+    save()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(screen.getByLabelText(/Name/)).not.toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getAllByText(message)).toHaveLength(1)
+  })
+
   it('[AC P60-F06-admin-accounts-page-07] shows any other server error in the message bar and keeps the entered values', async () => {
     renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError('Bank accounts must be GBP.', 400)) })
 
@@ -248,7 +260,7 @@ describe('AccountFormDialog', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Bank accounts must be GBP.')
     expect(screen.getByLabelText(/Name/)).toHaveValue('Monzo')
     expect(screen.getByRole('button', { name: 'Add account' })).toBeEnabled()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add account' })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
   })
 
   it('[AC P60-F06-admin-accounts-page-07] disables the fields and the buttons while saving', async () => {

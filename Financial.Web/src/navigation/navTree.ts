@@ -75,7 +75,7 @@ export const NAV_TREE: NavCategory[] = [
           { id: 'assets', label: 'Assets', route: '/admin/investment/assets' },
           { id: 'brokers', label: 'Brokers', route: '/admin/investment/brokers' },
           { id: 'portfolios', label: 'Portfolios', route: '/admin/investment/portfolios' },
-          { id: 'tax-rules', label: 'Tax Rules', route: '/admin/investment/tax-rules' },
+          { id: 'tax-rules', label: 'Tax rules', route: '/admin/investment/tax-rules' },
         ],
       },
       {
@@ -84,9 +84,9 @@ export const NAV_TREE: NavCategory[] = [
         children: [
           { id: 'accounts', label: 'Accounts', route: '/admin/cashflow/accounts' },
           { id: 'categories', label: 'Categories', route: '/admin/cashflow/categories' },
-          { id: 'income-sources', label: 'Income Sources', route: '/admin/cashflow/income-sources' },
-          { id: 'investment-accounts', label: 'Investment Accounts', route: '/admin/cashflow/investment-accounts' },
-          { id: 'recurring-bills', label: 'Recurring Bills', route: '/admin/cashflow/recurring-bills' },
+          { id: 'income-sources', label: 'Income sources', route: '/admin/cashflow/income-sources' },
+          { id: 'investment-accounts', label: 'Investment accounts', route: '/admin/cashflow/investment-accounts' },
+          { id: 'recurring-bills', label: 'Recurring bills', route: '/admin/cashflow/recurring-bills' },
         ],
       },
     ],

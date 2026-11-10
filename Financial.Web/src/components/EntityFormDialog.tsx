@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Button,
   Dialog,
@@ -34,51 +34,58 @@ export default function EntityFormDialog({
   children,
 }: EntityFormDialogProps) {
   const styles = useFormPanelStyles()
-  const saveButton = useRef<HTMLButtonElement | null>(null)
   const errorBar = useRef<HTMLDivElement | null>(null)
 
-  useLayoutEffect(() => {
-    const opener = document.activeElement as HTMLElement | null
-    return () => {
+  const [opener] = useState(() => document.activeElement as HTMLElement | null)
+
+  useEffect(
+    () => () => {
       if (opener?.isConnected) opener.focus()
-    }
-  }, [])
+    },
+    [opener],
+  )
 
   useEffect(() => {
     if (!error) return
     errorBar.current?.scrollIntoView?.({ block: 'nearest' })
-    saveButton.current?.focus()
+    errorBar.current?.focus()
   }, [error])
 
-  return (
-    <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
-      <DialogSurface aria-describedby={undefined}>
-        <DialogBody>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogContent>
-            {children}
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (canSave) onSave()
+  }
 
-            {error && (
-              <MessageBar ref={errorBar} role="alert" intent="error">
-                <MessageBarBody>{error}</MessageBarBody>
-              </MessageBar>
-            )}
-          </DialogContent>
-          <div className={styles.actions}>
-            <Button
-              ref={saveButton}
-              appearance="primary"
-              onClick={onSave}
-              disabled={!canSave}
-              icon={isSaving ? <Spinner size="tiny" /> : undefined}
-            >
-              {saveLabel}
-            </Button>
-            <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
-              Cancel
-            </Button>
-          </div>
-        </DialogBody>
+  return (
+    <Dialog open onOpenChange={(_, data) => { if (!data.open && !isSaving) onCancel() }}>
+      <DialogSurface aria-describedby={undefined}>
+        <form noValidate onSubmit={submit}>
+          <DialogBody>
+            <DialogTitle>{title}</DialogTitle>
+            <DialogContent>
+              {children}
+
+              {error && (
+                <MessageBar ref={errorBar} role="alert" intent="error" tabIndex={-1}>
+                  <MessageBarBody>{error}</MessageBarBody>
+                </MessageBar>
+              )}
+            </DialogContent>
+            <div className={styles.actions}>
+              <Button
+                type="submit"
+                appearance="primary"
+                disabled={!canSave}
+                icon={isSaving ? <Spinner size="tiny" /> : undefined}
+              >
+                {saveLabel}
+              </Button>
+              <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
+                Cancel
+              </Button>
+            </div>
+          </DialogBody>
+        </form>
       </DialogSurface>
     </Dialog>
   )

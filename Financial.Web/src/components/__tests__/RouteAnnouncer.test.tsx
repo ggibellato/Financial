@@ -8,7 +8,7 @@ const renderAt = (initialEntry: string) =>
     <MemoryRouter initialEntries={[initialEntry]}>
       <RouteAnnouncer />
       <Link to="/cashflow/monthly">Go to Monthly</Link>
-      <Link to="/admin/investment/tax-rules">Go to Tax Rules</Link>
+      <Link to="/admin/investment/tax-rules">Go to Tax rules</Link>
       <Link to="/cashflow/accounts/acc-1">Go to an account</Link>
       <Link to="/not-a-page">Go nowhere</Link>
     </MemoryRouter>,
@@ -33,10 +33,10 @@ describe('RouteAnnouncer', () => {
   it('covers admin pages nested under a group', async () => {
     renderAt('/investments/dashboard')
 
-    fireEvent.click(screen.getByRole('link', { name: 'Go to Tax Rules' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Go to Tax rules' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Tax Rules')
-    await waitFor(() => expect(document.title).toBe('Tax Rules - Investment - Admin - Financial'))
+    expect(await screen.findByRole('status')).toHaveTextContent('Tax rules')
+    await waitFor(() => expect(document.title).toBe('Tax rules - Investment - Admin - Financial'))
   })
 
   it('uses the detail label for a detail page', async () => {
