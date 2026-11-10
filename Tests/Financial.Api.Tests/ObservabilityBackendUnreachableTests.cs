@@ -33,10 +33,10 @@ public class ObservabilityBackendUnreachableTests
         await using var factory = CreateFactory();
         using var client = factory.CreateClient();
 
-        var banks = await client.GetAsync("/api/v1/financial/banks");
+        var accounts = await client.GetAsync("/api/v1/financial/accounts");
         var syncStatus = await client.GetAsync("/api/v1/financial/sync-status");
 
-        banks.StatusCode.Should().Be(HttpStatusCode.OK);
+        accounts.StatusCode.Should().Be(HttpStatusCode.OK);
         syncStatus.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

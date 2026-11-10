@@ -3,7 +3,7 @@ import { findInAncestors } from '../../test-utils/findInAncestors'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
+import type { BankOption, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
 import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
@@ -21,10 +21,10 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
+  { id: 'bank-chase', name: 'Chase', roundUpEnabled: true, isActive: true },
 ]
 
 const CREDIT_CARDS: CreditCardDto[] = [

@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDetailDto, BankDto, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto } from '../../api/types'
+import type { AccountDetailDto, BankOption, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto } from '../../api/types'
 import { potsAccount } from '../../test/account'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { pinDate } from '../../test-utils/pinDate'
@@ -45,8 +45,8 @@ const BARCLAYS: AccountDetailDto = {
   month: 10,
 }
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
 ]
 const CATEGORIES: CategoryDto[] = [
   { id: 'category-extras', name: 'Extras', active: true, isInvestment: false, isTithe: false, hasReferences: false },

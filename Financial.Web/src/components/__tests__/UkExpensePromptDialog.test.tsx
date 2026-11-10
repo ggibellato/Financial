@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import UkExpensePromptDialog from '../UkExpensePromptDialog'
-import type { BankDto, CategoryDto, RecurringBillDto } from '../../api/types'
+import type { BankOption, CategoryDto, RecurringBillDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 
 const BILL: RecurringBillDto = {
@@ -16,8 +16,8 @@ const BILL: RecurringBillDto = {
   status: 'Unset',
 }
 
-const BANKS: BankDto[] = [
-  { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-1', name: 'Barclays', roundUpEnabled: false, isActive: true },
 ]
 
 const CATEGORIES: CategoryDto[] = [

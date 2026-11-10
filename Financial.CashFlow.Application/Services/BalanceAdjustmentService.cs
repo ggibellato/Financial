@@ -107,35 +107,6 @@ public sealed class BalanceAdjustmentService : IBalanceAdjustmentService
         }
     }
 
-    public IReadOnlyList<BalanceAdjustmentDTO> GetAdjustmentsByBank(Guid bankId)
-    {
-        using var span = StartSpan("GetAdjustmentsByBank");
-        span.SetAttribute(TelemetryAttributeKeys.EntityId, bankId.ToString());
-        try
-        {
-            if (!EntityIdResolver.TryResolve(bankId, _repository.GetAccounts(), b => b.Id, out var bank))
-            {
-                span.MarkSuccess();
-                _logger.LogInformation("{Operation} completed", "GetAdjustmentsByBank");
-                return Array.Empty<BalanceAdjustmentDTO>();
-            }
-
-            var result = _repository.GetBalanceAdjustments()
-                .Where(a => a.Account.Id == bank!.Id)
-                .Select(ToDto)
-                .ToList();
-
-            span.MarkSuccess();
-            _logger.LogInformation("{Operation} completed", "GetAdjustmentsByBank");
-            return result;
-        }
-        catch (Exception ex)
-        {
-            span.MarkFailed(ex);
-            throw;
-        }
-    }
-
     private ITelemetrySpan StartSpan(string operationName)
     {
         _logger.LogInformation("{Operation} started", operationName);

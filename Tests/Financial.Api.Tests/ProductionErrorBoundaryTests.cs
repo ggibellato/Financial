@@ -11,7 +11,7 @@ public class ProductionErrorBoundaryTests(ProductionThrowingApiHost host) : ICla
     [Fact]
     public async Task UnmappedException_Returns500ProblemDetailsThatLeaksNothing()
     {
-        var response = await host.GetBanksFailingWith(new InvalidOperationException("Ledger for Ariana is off by 1234.56"));
+        var response = await host.GetAccountsFailingWith(new InvalidOperationException("Ledger for Ariana is off by 1234.56"));
 
         response.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
         response.Content.Headers.ContentType?.MediaType.Should().Be("application/problem+json");

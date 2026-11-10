@@ -355,36 +355,4 @@ public class BalanceAdjustmentServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
-
-    [Fact]
-    public async Task GetAdjustmentsByBank_ReturnsOnlyThatBanksAdjustments()
-    {
-        _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        _repository.SetOpeningBalance("Chase", 100m, new DateOnly(2026, 1, 1));
-        await _sut.AddAdjustmentAsync(BankIdOf(_repository, "Barclays"), new BalanceAdjustmentCreateDTO { Date = new DateOnly(2026, 7, 1), TargetBalance = 150m });
-        await _sut.AddAdjustmentAsync(BankIdOf(_repository, "Chase"), new BalanceAdjustmentCreateDTO { Date = new DateOnly(2026, 7, 1), TargetBalance = 120m });
-
-        var result = _sut.GetAdjustmentsByBank(BankIdOf(_repository, "Barclays"));
-
-        result.Should().ContainSingle().Which.BankName.Should().Be("Barclays");
-    }
-
-    [Fact]
-    public void GetAdjustmentsByBank_WithUnrecognizedBank_ReturnsEmptyList()
-    {
-        var result = _sut.GetAdjustmentsByBank(Guid.NewGuid());
-
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetAdjustmentsByBank_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
-    {
-        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
-
-        Action act = () => _sut.GetAdjustmentsByBank(Guid.NewGuid());
-
-        act.Should().Throw<InvalidOperationException>();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.BalanceAdjustmentService.GetAdjustmentsByBank");
-    }
 }

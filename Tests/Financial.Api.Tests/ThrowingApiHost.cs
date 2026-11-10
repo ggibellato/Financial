@@ -10,11 +10,11 @@ namespace Financial.Api.Tests;
 
 public class ThrowingApiHost : IDisposable
 {
-    private const string BanksPath = "/api/v1/financial/banks";
+    private const string AccountsPath = "/api/v1/financial/accounts";
 
     private readonly ApiTestFactory _baseFactory = new();
     private readonly WebApplicationFactory<Program> _factory;
-    private readonly ThrowingBankService _banks = new();
+    private readonly ThrowingAccountQueryService _accounts = new();
     private readonly HttpClient _client;
 
     protected ThrowingApiHost(string? environment)
@@ -28,8 +28,8 @@ public class ThrowingApiHost : IDisposable
 
             builder.ConfigureTestServices(services =>
             {
-                services.RemoveAll<IBankService>();
-                services.AddSingleton<IBankService>(_banks);
+                services.RemoveAll<IAccountQueryService>();
+                services.AddSingleton<IAccountQueryService>(_accounts);
             });
         });
         _client = _factory.CreateClient();
@@ -39,10 +39,10 @@ public class ThrowingApiHost : IDisposable
     {
     }
 
-    public async Task<HttpResponseMessage> GetBanksFailingWith(Exception failure)
+    public async Task<HttpResponseMessage> GetAccountsFailingWith(Exception failure)
     {
-        _banks.Failure = failure;
-        return await _client.GetAsync(BanksPath);
+        _accounts.Failure = failure;
+        return await _client.GetAsync(AccountsPath);
     }
 
     public void Dispose()
@@ -52,21 +52,21 @@ public class ThrowingApiHost : IDisposable
         _baseFactory.Dispose();
     }
 
-    private sealed class ThrowingBankService : IBankService
+    private sealed class ThrowingAccountQueryService : IAccountQueryService
     {
         public Exception Failure { get; set; } = new InvalidOperationException();
 
-        public IReadOnlyList<BankDTO> GetBanks() => throw Failure;
+        public IReadOnlyList<AccountDTO> GetAccounts() => throw Failure;
 
-        public Task<BankDTO> CreateBankAsync(BankCreateDTO request) => throw new NotSupportedException();
+        public AccountDetailDTO GetAccount(Guid id, int year, int month) => throw new NotSupportedException();
 
-        public Task<BankDTO> UpdateBankAsync(Guid id, BankUpdateDTO request) => throw new NotSupportedException();
+        public IReadOnlyList<AccountTransactionDTO> GetTransactions(Guid id, int year, int month) => throw new NotSupportedException();
 
-        public Task DeleteBankAsync(Guid id) => throw new NotSupportedException();
+        public IReadOnlyList<MonthTransactionDTO> GetMonthTransactions(int year, int month) => throw new NotSupportedException();
 
-        public Task<BankDTO> UpdateOpeningBalanceAsync(Guid id, BankOpeningBalanceUpdateDTO request) => throw new NotSupportedException();
+        public IReadOnlyList<AccountStatementDTO> GetStatements(Guid id) => throw new NotSupportedException();
 
-        public IReadOnlyList<BankBalanceDTO> GetBankBalancesByMonth(int year, int month) => throw new NotSupportedException();
+        public IReadOnlyList<PayableStatementDTO> GetPayableStatements() => throw new NotSupportedException();
     }
 }
 

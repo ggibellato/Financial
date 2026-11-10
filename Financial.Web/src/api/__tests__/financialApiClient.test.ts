@@ -21,9 +21,6 @@ import type {
   AssetDetailsDto,
   AssetPriceDto,
   BalanceAdjustmentDto,
-  BankCreateDto,
-  BankDto,
-  BankUpdateDto,
   BrokerCreateDto,
   BrokerDto,
   BrokerNodeDto,
@@ -1094,28 +1091,6 @@ describe('financialApiClient', () => {
     expect(init?.method).toBe('DELETE')
   })
 
-  it('calls the adjustments-by-bank endpoint', async () => {
-    const responseBody: BalanceAdjustmentDto[] = [
-      {
-        id: 'a1',
-        date: '2026-07-05',
-        bankId: 'Barclays',
-        bankName: 'Barclays',
-        targetBalance: 150,
-        delta: 50,
-        note: null,
-      },
-    ]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getAdjustmentsByBank('Barclays')
-
-    expect(result).toEqual(responseBody)
-    const [url] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks/Barclays/adjustments`)
-  })
-
   it('deletes a balance adjustment', async () => {
     const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -1679,58 +1654,6 @@ describe('financialApiClient', () => {
 
     expect(result).toEqual(responseBody)
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/expenses/month/2026/7/category-totals`)
-  })
-
-  it('gets the bank list', async () => {
-    const responseBody: BankDto[] = [{ id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true }]
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.getBanks()
-
-    expect(result).toEqual(responseBody)
-    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/banks`)
-  })
-
-  it('posts a bank create request', async () => {
-    const requestBody: BankCreateDto = { name: 'Barclays', roundUpEnabled: true }
-    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.createBank(requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks`)
-    expect(init?.method).toBe('POST')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('puts a bank update', async () => {
-    const requestBody: BankUpdateDto = { name: 'Barclays Renamed', roundUpEnabled: false }
-    const responseBody: BankDto = { id: 'bank-barclays', name: 'Barclays Renamed', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true }
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    const result = await client.updateBank('bank-barclays', requestBody)
-
-    expect(result).toEqual(responseBody)
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks/bank-barclays`)
-    expect(init?.method).toBe('PUT')
-    expect(JSON.parse(init?.body as string)).toEqual(requestBody)
-  })
-
-  it('deletes a bank', async () => {
-    const fetchMock = vi.fn().mockResolvedValue(okResponse(undefined))
-    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
-
-    await client.deleteBank('bank-barclays')
-
-    const [url, init] = fetchMock.mock.calls[0]
-    expect(url).toBe(`${API_BASE_URL}/banks/bank-barclays`)
-    expect(init?.method).toBe('DELETE')
   })
 
   it('gets the income source list', async () => {

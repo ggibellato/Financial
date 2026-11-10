@@ -178,14 +178,14 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
     public async Task GetTransfersByMonth_ExistingTransfer_ReturnsSameDataAsBefore()
     {
         var transfers = await Client.GetStringAsync("/api/v1/financial/transfers/month/2026/10");
-        var balances = await Client.GetFromJsonAsync<List<BankBalanceDTO>>("/api/v1/financial/banks/month/2026/10/balances");
+        var balances = await BalancesAsync(10);
 
         using (new AssertionScope())
         {
             transfers.Should().Be(
                 $$"""[{"id":"{{ExistingTransferId}}","date":"2026-10-03","sourceBankId":"{{BarclaysId}}","sourceBankName":"Barclays","destinationBankId":"{{ChaseId}}","destinationBankName":"Chase","amount":75.25,"note":"Top-up"}]""");
-            balances.Should().ContainSingle(b => b.Bank == "Barclays").Which.Balance.Should().Be(-75.25m);
-            balances.Should().ContainSingle(b => b.Bank == "Chase").Which.Balance.Should().Be(75.25m);
+            balances["Barclays"].Should().Be(-75.25m);
+            balances["Chase"].Should().Be(75.25m);
         }
     }
 
@@ -264,9 +264,18 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
             Note = "Send"
         });
 
-    private async Task<Dictionary<string, decimal>> BalancesAsync(int month) =>
-        (await Client.GetFromJsonAsync<List<BankBalanceDTO>>($"/api/v1/financial/banks/month/2026/{month}/balances"))!
-            .ToDictionary(balance => balance.Bank, balance => balance.Balance);
+    private async Task<Dictionary<string, decimal>> BalancesAsync(int month)
+    {
+        var accounts = await Client.GetFromJsonAsync<List<AccountDTO>>("/api/v1/financial/accounts");
+        var balances = new Dictionary<string, decimal>();
+        foreach (var bank in accounts!.Where(account => account.TemplateName == "Bank"))
+        {
+            var detail = await Client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{bank.Id}/2026/{month}");
+            balances[bank.Name] = detail!.Balance;
+        }
+
+        return balances;
+    }
 
     private async Task<List<TransferDTO>> ShouldBeRejectedAsync(HttpResponseMessage response, string message)
     {

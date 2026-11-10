@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import type { BrokerDto, PortfolioDto } from '../../api/types'
 import AssetFormDialog from '../AssetFormDialog'
-import BankFormDialog from '../BankFormDialog'
 import BrokerFormDialog from '../BrokerFormDialog'
 import CategoryFormDialog from '../CategoryFormDialog'
 import CreditCardFormDialog from '../CreditCardFormDialog'
@@ -54,12 +53,6 @@ const nameDialog = (
 })
 
 const CASES: FormDialogCase[] = [
-  nameDialog(
-    'BankFormDialog',
-    (h) => render(<BankFormDialog bank={null} {...h} />),
-    'Barclays',
-    'A bank named "Barclays" already exists.',
-  ),
   nameDialog(
     'BrokerFormDialog',
     (h) => render(<BrokerFormDialog broker={null} {...h} />),

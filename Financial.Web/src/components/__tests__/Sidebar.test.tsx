@@ -79,7 +79,7 @@ describe('Sidebar', () => {
       .find((el) => el.closest('.sidebar__group-header'))!
     fireEvent.click(cashflowGroupHeader)
 
-    expect(screen.getByRole('link', { name: 'Banks' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Categories' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'Brokers' })).not.toBeInTheDocument()
   })
 

@@ -2,7 +2,7 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { useEffect } from 'react'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankDto, IncomeSourceDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
+import type { BankOption, IncomeSourceDto, PotOperationDto, PotsSummaryDto } from '../../api/types'
 import { usePotDepositForm } from '../../hooks/usePotDepositForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
@@ -36,9 +36,9 @@ const POTS: PotsSummaryDto = {
   ],
 }
 
-const BANKS: BankDto[] = [
-  { id: 'b1', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'b2', name: 'Trading 212', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'b1', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'b2', name: 'Trading 212', roundUpEnabled: false, isActive: true },
 ]
 
 const SOURCES: IncomeSourceDto[] = [{ id: 's1', name: 'Gleison', isActive: true, group: 'Salary', potsAccountId: 'reserva', hasReferences: true }]

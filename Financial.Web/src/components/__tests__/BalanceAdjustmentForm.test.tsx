@@ -2,15 +2,15 @@ import { fireEvent, screen } from '@testing-library/react'
 import { render } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BalanceAdjustmentForm from '../BalanceAdjustmentForm'
-import type { BankDto } from '../../api/types'
+import type { BankOption } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: false, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
 ]
 
-const INACTIVE_BANK: BankDto = { ...BANKS[0], id: 'bank-chase', name: 'Chase', hasReferences: true, isActive: false }
+const INACTIVE_BANK: BankOption = { ...BANKS[0], id: 'bank-chase', name: 'Chase', isActive: false }
 
 const baseProps = {
   isEditing: false,

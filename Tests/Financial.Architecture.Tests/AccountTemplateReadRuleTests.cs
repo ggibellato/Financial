@@ -1,7 +1,6 @@
 using System.Reflection;
 using Financial.Architecture.Tests.Fixtures;
 using Financial.Architecture.Tests.Infrastructure;
-using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Infrastructure.Persistence;
 using FluentAssertions;
@@ -16,7 +15,6 @@ public class AccountTemplateReadRuleTests
     private static readonly IReadOnlyDictionary<string, string> AllowList = new Dictionary<string, string>
     {
         [typeof(Account).FullName!] = "Capabilities come from the account's own template",
-        [typeof(BankService).FullName!] = "Removed in F13 with /banks",
         [typeof(AccountJsonConverter).FullName!] = "Persists the template"
     };
 

@@ -88,15 +88,23 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
 
     [Fact]
     [Trait("AC", "P60-F04-default-account-group-and-summary-query-02")]
-    public async Task GetDefaultGroupSummary_BankCreatedThroughBanks_JoinsWithNoOtherChange()
+    public async Task GetDefaultGroupSummary_BankCreatedThroughAccounts_JoinsWithNoOtherChange()
     {
-        var created = await Client.PostAsJsonAsync("/api/v1/financial/banks", new BankCreateDTO { Name = "Halifax", RoundUpEnabled = false });
+        var created = await Client.PostAsJsonAsync("/api/v1/financial/accounts", new AccountCreateDTO
+        {
+            TemplateName = "Bank",
+            Name = "Halifax",
+            Currency = "GBP",
+            OpeningBalance = 0m,
+            BalanceStartDate = new DateOnly(2026, 1, 1),
+            RoundUpEnabled = false
+        });
 
         var summary = await SummaryAsync(9);
 
         using (new AssertionScope())
         {
-            created.StatusCode.Should().Be(HttpStatusCode.OK);
+            created.StatusCode.Should().Be(HttpStatusCode.Created);
             BankMembers(summary).Select(member => member.Name).Should().Equal("Barclays", "Chase", "Closed Savings", "Halifax", "Itaú");
             summary.Members.Single(member => member.Name == "Halifax").TemplateName.Should().Be("Bank");
         }
@@ -109,14 +117,14 @@ public class DefaultAccountGroupSummaryAcceptanceTests : ApiEndpointTests
     public async Task GetDefaultGroupSummary_AnyMonth_BalancesAndRoundUpsEqualTodaysEndpoints(int month)
     {
         var summary = await SummaryAsync(month);
-        var balances = await Client.GetFromJsonAsync<List<BankBalanceDTO>>($"/api/v1/financial/banks/month/2026/{month}/balances");
         var expenses = await Client.GetFromJsonAsync<List<ExpenseDTO>>($"/api/v1/financial/expenses/month/2026/{month}");
 
         using (new AssertionScope())
         {
             foreach (var member in BankMembers(summary))
             {
-                member.Balance.Should().Be(balances!.Single(balance => balance.Bank == member.Name).Balance, member.Name);
+                var account = await Client.GetFromJsonAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{member.AccountId}/2026/{month}");
+                member.Balance.Should().Be(account!.Balance, member.Name);
                 member.RoundUpTotal.Should().Be(
                     expenses!.Where(expense => expense.PaymentSourceBankId == member.AccountId).Sum(expense => expense.RoundUpAmount ?? 0m), member.Name);
             }

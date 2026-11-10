@@ -26,41 +26,35 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
         var augustTotals = await GetAsync<List<CategoryTotalDTO>>("/api/v1/financial/expenses/month/2026/8/category-totals");
         var augustExpenses = await GetAsync<List<ExpenseDTO>>("/api/v1/financial/expenses/month/2026/8");
-        var augustBalances = await GetAsync<List<BankBalanceDTO>>("/api/v1/financial/banks/month/2026/8/balances");
-        var septemberBalances = await GetAsync<List<BankBalanceDTO>>("/api/v1/financial/banks/month/2026/9/balances");
+        var august = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysId}/2026/8");
+        var september = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{BarclaysId}/2026/9");
 
         using (new AssertionScope())
         {
             augustTotals.Should().ContainSingle(t => t.Category == "Mercado").Which.TotalValue.Should().Be(40m);
             augustExpenses.Should().ContainSingle(e => e.Description == "Before the start date");
-            augustBalances.Should().ContainSingle(b => b.Bank == "Barclays").Which.Balance.Should().Be(500m);
-            septemberBalances.Should().ContainSingle(b => b.Bank == "Barclays").Which.Balance.Should().Be(485m);
+            august.Balance.Should().Be(500m);
+            september.Balance.Should().Be(485m);
         }
     }
 
     [Fact]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-10")]
-    public async Task BanksTransfersExpenses_ShapesUnchanged()
+    public async Task TransfersExpenses_ShapesUnchanged()
     {
         await SetOpeningBalanceAsync(ChaseId, 100.50m, new DateOnly(2026, 9, 1));
         var expenseId = await AddBankExpenseAsync(new DateOnly(2026, 9, 3), "Coffee", 2.30m, ChaseId);
         var transferId = await AddTransferAsync(new DateOnly(2026, 9, 4), BarclaysId, Trading212Id, 25m);
 
-        var banks = await GetRawAsync("/api/v1/financial/banks");
         var expenses = await GetRawAsync("/api/v1/financial/expenses/month/2026/9");
         var transfers = await GetRawAsync("/api/v1/financial/transfers/month/2026/9");
-        var balances = await GetRawAsync("/api/v1/financial/banks/month/2026/9/balances");
 
         using (new AssertionScope())
         {
-            banks.Should().Be(
-                $$"""[{"id":"{{BarclaysId}}","name":"Barclays","roundUpEnabled":false,"openingBalance":0,"openingBalanceDate":"0001-01-01","hasReferences":true,"isActive":true},{"id":"{{Trading212Id}}","name":"Trading212","roundUpEnabled":true,"openingBalance":0,"openingBalanceDate":"0001-01-01","hasReferences":true,"isActive":true},{"id":"{{ChaseId}}","name":"Chase","roundUpEnabled":true,"openingBalance":100.50,"openingBalanceDate":"2026-09-01","hasReferences":true,"isActive":true}]""");
             expenses.Should().Be(
                 $$"""[{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}]""");
             transfers.Should().Be(
                 $$"""[{"id":"{{transferId}}","date":"2026-09-04","sourceBankId":"{{BarclaysId}}","sourceBankName":"Barclays","destinationBankId":"{{Trading212Id}}","destinationBankName":"Trading212","amount":25,"note":null}]""");
-            balances.Should().Be(
-                """[{"bank":"Barclays","balance":-25},{"bank":"Trading212","balance":25},{"bank":"Chase","balance":98.20}]""");
         }
     }
 
@@ -81,7 +75,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F02-account-model-and-bank-migration-05")]
     public async Task ApiHost_CurrentVersionFile_Starts()
     {
-        var response = await Client.GetAsync("/api/v1/financial/banks");
+        var response = await Client.GetAsync("/api/v1/financial/accounts");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -105,9 +99,17 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
     private async Task SetOpeningBalanceAsync(string bankId, decimal amount, DateOnly startDate)
     {
-        var response = await Client.PutAsJsonAsync(
-            $"/api/v1/financial/banks/{bankId}/opening-balance",
-            new BankOpeningBalanceUpdateDTO { OpeningBalance = amount, OpeningBalanceDate = startDate });
+        var bank = (await GetAsync<List<AccountDTO>>("/api/v1/financial/accounts")).Single(account => account.Id == Guid.Parse(bankId));
+        var response = await Client.PutAsJsonAsync($"/api/v1/financial/accounts/{bankId}", new AccountUpdateDTO
+        {
+            TemplateName = bank.TemplateName,
+            Name = bank.Name,
+            Currency = bank.Currency,
+            OpeningBalance = amount,
+            BalanceStartDate = startDate,
+            RoundUpEnabled = bank.RoundUpEnabled,
+            IsActive = bank.IsActive
+        });
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 

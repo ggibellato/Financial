@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
-import type { BankDto, IncomeDto, IncomeSourceDto } from '../../api/types'
+import type { BankOption, IncomeDto, IncomeSourceDto } from '../../api/types'
 import { setStoredDefault } from '../../utils/createFormDefaults'
 import { potsAccount } from '../../test/account'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
@@ -27,9 +27,9 @@ const ACCOUNTS = [
   potsAccount({ id: 'p3', name: 'Old pots', isActive: false }),
 ]
 
-const BANKS: BankDto[] = [
-  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
-  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, openingBalance: 0, openingBalanceDate: '2026-01-01', hasReferences: true, isActive: true },
+const BANKS: BankOption[] = [
+  { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
+  { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
 ]
 
 const INCOME_SOURCES: IncomeSourceDto[] = [

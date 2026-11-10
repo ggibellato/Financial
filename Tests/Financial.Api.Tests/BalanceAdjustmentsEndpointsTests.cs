@@ -125,8 +125,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var list = await Client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>($"/api/v1/financial/banks/{BarclaysId}/adjustments");
-        list.Should().NotContain(a => a.Id == createdAdjustment.Id);
+        (await AdjustmentIdsAsync(BarclaysId)).Should().NotContain(createdAdjustment.Id);
     }
 
     [Fact]
@@ -211,8 +210,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
         var response = await Client.DeleteAsync($"/api/v1/financial/accounts/{ChaseId}/adjustments/{createdAdjustment!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        var list = await Client.GetFromJsonAsync<List<BalanceAdjustmentDTO>>($"/api/v1/financial/banks/{BarclaysId}/adjustments");
-        list.Should().Contain(a => a.Id == createdAdjustment.Id);
+        (await AdjustmentIdsAsync(BarclaysId)).Should().Contain(createdAdjustment.Id);
     }
 
     [Theory]
@@ -227,38 +225,10 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed);
     }
-
-    [Fact]
-    public async Task GetAdjustmentsByBank_ReturnsOnlyThatBanksAdjustments()
-    {
-        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 1),
-            TargetBalance = 100m
-        });
-        await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{ChaseId}/adjustments", new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 1),
-            TargetBalance = 50m
-        });
-
-        var response = await Client.GetAsync($"/api/v1/financial/banks/{BarclaysId}/adjustments");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
-        items.Should().ContainSingle();
-        var item = items!.Single();
-        item.BankId.Should().Be(BarclaysId);
-        item.BankName.Should().Be("Barclays");
-    }
-
-    [Fact]
-    public async Task GetAdjustmentsByBank_UnknownBankId_ReturnsEmptyList()
-    {
-        var response = await Client.GetAsync($"/api/v1/financial/banks/{Guid.NewGuid()}/adjustments");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var items = await response.Content.ReadFromJsonAsync<List<BalanceAdjustmentDTO>>();
-        items.Should().BeEmpty();
-    }
+
+    private async Task<List<Guid>> AdjustmentIdsAsync(Guid accountId) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{accountId}/transactions/2026/7"))!
+            .Where(row => row.Adjustment is not null)
+            .Select(row => row.Adjustment!.Id)
+            .ToList();
 }

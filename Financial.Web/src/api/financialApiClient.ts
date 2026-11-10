@@ -24,9 +24,6 @@ import type {
   AssetDetailsDto,
   ArchiveAssetRequestDto,
   AssetPriceDto,
-  BankCreateDto,
-  BankDto,
-  BankUpdateDto,
   BrokerCreateDto,
   BrokerDto,
   BrokerNodeDto,
@@ -221,10 +218,6 @@ export interface FinancialApiClient {
   getExpensesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getUnpaidCardChargesByMonth: (year: number, month: number) => Promise<ExpenseDto[]>
   getCategoryTotalsByMonth: (year: number, month: number) => Promise<CategoryTotalDto[]>
-  getBanks: () => Promise<BankDto[]>
-  createBank: (request: BankCreateDto) => Promise<BankDto>
-  updateBank: (id: string, request: BankUpdateDto) => Promise<BankDto>
-  deleteBank: (id: string) => Promise<void>
   getIncomeSources: () => Promise<IncomeSourceDto[]>
   createIncomeSource: (request: IncomeSourceCreateDto) => Promise<IncomeSourceDto>
   updateIncomeSource: (id: string, request: IncomeSourceUpdateDto) => Promise<IncomeSourceDto>
@@ -294,7 +287,6 @@ export interface FinancialApiClient {
   ) => Promise<BalanceAdjustmentDto>
   getTransfersByMonth: (year: number, month: number) => Promise<TransferDto[]>
   deleteTransfer: (id: string) => Promise<void>
-  getAdjustmentsByBank: (bankId: string) => Promise<BalanceAdjustmentDto[]>
   deleteBalanceAdjustment: (accountId: string, id: string) => Promise<void>
   getCardStatementsByMonth: (year: number, month: number) => Promise<CardStatementDto[]>
   markCardStatementPaid: (id: string, request: MarkCardStatementPaidDto) => Promise<CardStatementDto>
@@ -647,15 +639,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       request<ExpenseDto[]>(`/expenses/month/${year}/${month}/unpaid-card-charges`),
     getCategoryTotalsByMonth: (year, month) =>
       request<CategoryTotalDto[]>(`/expenses/month/${year}/${month}/category-totals`),
-    getBanks: () => request<BankDto[]>('/banks'),
-    createBank: (requestBody) =>
-      request<BankDto>('/banks', { method: 'POST', body: JSON.stringify(requestBody) }),
-    updateBank: (id, requestBody) =>
-      request<BankDto>(`/banks/${encodeURIComponent(id)}`, {
-        method: 'PUT',
-        body: JSON.stringify(requestBody),
-      }),
-    deleteBank: (id) => requestVoid(`/banks/${encodeURIComponent(id)}`, { method: 'DELETE' }),
     getIncomeSources: () => request<IncomeSourceDto[]>('/income-sources'),
     createIncomeSource: (requestBody) =>
       request<IncomeSourceDto>('/income-sources', { method: 'POST', body: JSON.stringify(requestBody) }),
@@ -830,8 +813,6 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     getTransfersByMonth: (year, month) => request<TransferDto[]>(`/transfers/month/${year}/${month}`),
     deleteTransfer: (id) => requestVoid(`/transfers/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    getAdjustmentsByBank: (bankId) =>
-      request<BalanceAdjustmentDto[]>(`/banks/${encodeURIComponent(bankId)}/adjustments`),
     deleteBalanceAdjustment: (accountId, id) =>
       requestVoid(`/accounts/${encodeURIComponent(accountId)}/adjustments/${encodeURIComponent(id)}`, {
         method: 'DELETE',
