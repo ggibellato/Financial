@@ -1009,7 +1009,7 @@ graph TD
 - [x] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins (test: `FixedNameLookupTests.Production_Source_Has_No_Fixed_Name_Lookups`; bank-name joins: the grep for `.bank ===` / `bankName ===` in `Financial.Web/src` finds only `useIncomeForm.ts`, which compares ids)
 - [x] The E2E smoke journeys (add expense on the account screen, pay a card statement, manual pots deposit, settle) pass in the `web-e2e` job (test: `add-expense.spec.ts`, `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts` in the `web-e2e` job)
 - [x] `context.md`, README, example data and `docs/ui/` describe the account model (test: `AccountModelBankMigrationAcceptanceTests.ExampleData_HasOneAccountPerTemplate`; doc review in PR 4)
-- [ ] Final parity run on the latest live copy, through any migration step it still needs (none once it is V5): 0 differences and the full screen checklist ticked
+- [x] Final parity run on the latest live copy, through any migration step it still needs (none once it is V5): 0 differences and the full screen checklist ticked (test: final `Invoke-Parity.ps1 -Step All -LiveCopy …` run on the 2026-11-10 Drive download, V5: "Parity OK: 0 differences in 13,551 figures across 122 months", SHA-256 unchanged; screen checklist: rows browsed in #1218, B2, C2 and S5 browsed in the final-ticks PR, T1, T2 and S6 by `MonthTransactionsViewAcceptanceTests` and `monthTransactionTotals.test.ts`, N1 by AC 03's tests and #1207's browse, S2 by the Admin tests, C1 by the "Card statements" row)
 - [x] `/simplify` run; architecture-reviewer and ui-reviewer passed (Definition of Done of every F13 PR)
 
 ### F14. Accounts Page by Template and Card Totals
@@ -1037,7 +1037,7 @@ graph TD
 - [x] Parity: 0 differences, including the new per-category spend figure for every month; `/simplify` run; architecture-reviewer and ui-reviewer passed (test: `Parity.test.ps1` monthTransactions cases; parity run 0 differences in 14,452 figures across 122 months)
 
 ### Cross-Feature Integration
-- [ ] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map
+- [x] The parity commands and report from F01 run unchanged at the end of every later feature, extended only through the report and figure map (test: every feature's Definition-of-Done run of `Invoke-Parity.ps1 -Step All -LiveCopy …` with the same command line; figures added only through `Parity.psm1` and `figure-map.json`, pinned by `Parity.test.ps1`)
 - [x] Bank accounts and references created by F02 are the ones F03 transfers between, F04 summarises, F06 edits and F07 extends
 - [x] The shared balance calculation from F02 gives the balances shown by F04's summary and F05's header for the same account and month
 - [x] Records written by F03's transfer appear in F05's Transactions grid for both accounts and move both balances
