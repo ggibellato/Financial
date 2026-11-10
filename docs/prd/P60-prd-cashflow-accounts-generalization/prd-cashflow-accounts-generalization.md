@@ -1001,16 +1001,16 @@ graph TD
 - [x] Parity: 0 differences and Settlement screen checklist rows ticked; `/simplify` run; architecture-reviewer and ui-reviewer passed
 
 ### F13. Consolidated Navigation and Retirement
-- [ ] Opening CashFlow lands on Accounts; the menus match the F13 lists
-- [ ] Monthly shows only the overview (group summary, category totals, income totals, tithe, banks and cards grids, All transactions) with no entry forms; each bank and card row links to its account screen at the viewed month
-- [ ] A card statement's due date is set and cleared from the card's Statements tab; clearing one statement's date leaves the others, and the calendar sync runs on each save
-- [ ] Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are removed (Admin Reserve buckets in F10); their old routes redirect as specified
-- [ ] The API endpoints only those pages used are removed, while the routes the account screen uses stay; the OpenAPI snapshot and generated types are updated
-- [ ] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins
-- [ ] The E2E smoke journeys (add expense on the account screen, pay a card statement, manual pots deposit, settle) pass in the `web-e2e` job
-- [ ] `context.md`, README, example data and `docs/ui/` describe the account model
+- [x] Opening CashFlow lands on Accounts; the menus match the F13 lists (test: `RootRedirect.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-01] lands CashFlow on Accounts", `Sidebar.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-01] shows the F13 CashFlow and Admin CashFlow menus")
+- [x] Monthly shows only the overview (group summary, category totals, income totals, tithe, banks and cards grids, All transactions) with no entry forms; each bank and card row links to its account screen at the viewed month (test: `MonthlyPage.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-02] shows Summary and All transactions with no entry forms", `CardsGrid.test.tsx` and `BanksGrid.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month", `useMonthly.test.ts`)
+- [x] A card statement's due date is set and cleared from the card's Statements tab; clearing one statement's date leaves the others, and the calendar sync runs on each save (test: `StatementDueDateAcceptanceTests.SetAndClear_OneStatement_LeavesTheOthersAndSyncsTheCalendarEachTime`, `StatementDueDateAcceptanceTests.Set_MonthWithoutAStatement_CreatesItWithTheDate`, `CardStatementsTab.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-03] sets and clears a statement's due date")
+- [x] Reserva, Controle Mãe, Admin Banks and Admin Credit cards pages are removed (Admin Reserve buckets in F10); their old routes redirect as specified (test: `routes.test.ts` "[AC P60-F13-consolidated-navigation-and-retirement-04] redirects every retired page address", `MovedPageRedirect.test.tsx` "[AC P60-F13-consolidated-navigation-and-retirement-04]" cases, `NavigationRetirementAcceptanceTests.Accounts_ReplacesPage_FirstPotsAndSettlementInFileOrder`)
+- [x] The API endpoints only those pages used are removed, while the routes the account screen uses stay; the OpenAPI snapshot and generated types are updated (test: `RetiredRoutesAcceptanceTests.RetiredRoute_Returns404`, `RetiredRoutesAcceptanceTests.KeptRoute_StillAnswers`, `OpenApiContractTests`, `openapiFreshness.test.ts`)
+- [x] No production code contains `Category.ReservaName`, `RESERVA_CATEGORY_NAME` or bank-name joins (test: `FixedNameLookupTests.Production_Source_Has_No_Fixed_Name_Lookups`; bank-name joins: the grep for `.bank ===` / `bankName ===` in `Financial.Web/src` finds only `useIncomeForm.ts`, which compares ids)
+- [x] The E2E smoke journeys (add expense on the account screen, pay a card statement, manual pots deposit, settle) pass in the `web-e2e` job (test: `add-expense.spec.ts`, `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts` in the `web-e2e` job)
+- [x] `context.md`, README, example data and `docs/ui/` describe the account model (test: `AccountModelBankMigrationAcceptanceTests.ExampleData_HasOneAccountPerTemplate`; doc review in PR 4)
 - [ ] Final parity run on the latest live copy, through any migration step it still needs (none once it is V5): 0 differences and the full screen checklist ticked
-- [ ] `/simplify` run; architecture-reviewer and ui-reviewer passed
+- [x] `/simplify` run; architecture-reviewer and ui-reviewer passed (Definition of Done of every F13 PR)
 
 ### F14. Accounts Page by Template and Card Totals
 - [x] The Accounts page shows one grid per template in the order Banks, Credit cards, Pots, with no grid for a template without listed accounts; each grid lists its accounts by name with the Inactive badge and its per-currency footer
@@ -1052,4 +1052,4 @@ graph TD
 - [x] F10's deposits and withdrawals carry one operation id each: editing or deleting one edits or deletes all its records in one save
 - [x] The V4 → V5 step from F11 runs only after F09's V3 → V4 step, which runs only after F07's V2 → V3 step
 - [x] F11's participants and currencies drive F12's paid-by choice, currency prompt and Settle pre-fill (test: `SettlementEntryForm.test.tsx`, `useSettlementEntryForm.test.ts`)
-- [ ] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it
+- [x] After F13, every task that F08, F10 and F12 moved onto the account screen is no longer reachable from a retired page, and the old links redirect to it (test: `routes.test.ts`, `RetiredRoutesAcceptanceTests`, the E2E journeys `pay-card-statement.spec.ts`, `pots-deposit.spec.ts`, `settle.spec.ts`, checklist row N4)
