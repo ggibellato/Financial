@@ -48,6 +48,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
 
         var expenses = await GetRawAsync("/api/v1/financial/expenses/month/2026/9");
         var transfers = await GetRawAsync("/api/v1/financial/transfers/month/2026/9");
+        var chase = await GetAsync<AccountDetailDTO>($"/api/v1/financial/accounts/{ChaseId}/2026/9");
 
         using (new AssertionScope())
         {
@@ -55,6 +56,7 @@ public class AccountModelBankMigrationAcceptanceTests : ApiEndpointTests
                 $$"""[{"id":"{{expenseId}}","date":"2026-09-03","description":"Coffee","value":2.30,"categoryId":"{{MercadoCategoryId}}","categoryName":"Mercado","paymentSourceBankId":"{{ChaseId}}","paymentSourceBankName":"Chase","creditCardId":null,"creditCardName":null,"chargeDate":null,"invoiceDate":null,"paymentStatus":"ImmediatePayment","roundUpAmount":null,"suggestedRoundUpAmount":0.70,"countsAsTithe":true}]""");
             transfers.Should().Be(
                 $$"""[{"id":"{{transferId}}","date":"2026-09-04","sourceBankId":"{{BarclaysId}}","sourceBankName":"Barclays","destinationBankId":"{{Trading212Id}}","destinationBankName":"Trading212","amount":25,"note":null}]""");
+            chase.Balance.Should().Be(98.20m);
         }
     }
 

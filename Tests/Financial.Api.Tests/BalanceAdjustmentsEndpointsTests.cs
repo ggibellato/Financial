@@ -125,7 +125,7 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        (await AdjustmentIdsAsync(BarclaysId)).Should().NotContain(createdAdjustment.Id);
+        (await AdjustmentIdsAsync(BarclaysId, createdAdjustment.Date)).Should().NotContain(createdAdjustment.Id);
     }
 
     [Fact]
@@ -210,11 +210,11 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
         var response = await Client.DeleteAsync($"/api/v1/financial/accounts/{ChaseId}/adjustments/{createdAdjustment!.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-        (await AdjustmentIdsAsync(BarclaysId)).Should().Contain(createdAdjustment.Id);
+        (await AdjustmentIdsAsync(BarclaysId, createdAdjustment.Date)).Should().Contain(createdAdjustment.Id);
     }
 
-    private async Task<List<Guid>> AdjustmentIdsAsync(Guid accountId) =>
-        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{accountId}/transactions/2026/7"))!
+    private async Task<List<Guid>> AdjustmentIdsAsync(Guid accountId, DateOnly date) =>
+        (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{accountId}/transactions/{date.Year}/{date.Month}"))!
             .Where(row => row.Adjustment is not null)
             .Select(row => row.Adjustment!.Id)
             .ToList();

@@ -24,6 +24,9 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
               { "Id": "{{PotId}}", "Name": "Investimento", "IsActive": true, "SplitPercentage": 100 }
             ], "CategoryId": null }
           ],
+          "BalanceAdjustments": [
+            { "Id": "{{AdjustmentId}}", "Date": "2026-09-10", "AccountId": "{{BankId}}", "TargetBalance": 10, "Delta": 10, "Note": null }
+          ],
           "ReserveMovements": [
             { "Id": "{{MovementId}}", "BucketId": "{{PotId}}", "Amount": 50, "Date": "2026-09-01", "Description": "Split", "IncomeId": null }
           ],
@@ -88,7 +91,7 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("PUT", $"accounts/{BankId}", HttpStatusCode.BadRequest)]
     [InlineData("POST", $"accounts/{BankId}/adjustments", HttpStatusCode.BadRequest)]
     [InlineData("PUT", $"accounts/{BankId}/adjustments/{AdjustmentId}", HttpStatusCode.BadRequest)]
-    [InlineData("DELETE", $"accounts/{BankId}/adjustments/{AdjustmentId}", HttpStatusCode.NotFound)]
+    [InlineData("DELETE", $"accounts/{BankId}/adjustments/{AdjustmentId}", HttpStatusCode.NoContent)]
     public async Task KeptRoute_StillAnswers(string method, string path, HttpStatusCode expected)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));
