@@ -4,7 +4,7 @@ param(
     [string]$WorkFolder,
     [int]$BeforePort = 5291,
     [int]$AfterPort = 5292,
-    [string]$BaselineTag = 'p60-deployed-f12',
+    [string]$BaselineTag = 'p60-deployed-f13',
     [switch]$KeepRunning,
     [string]$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 )
@@ -137,7 +137,7 @@ function Export-ParitySide([string]$Side, [string]$Folder, [string]$AppFolder, [
         $hashBeforeRead = Get-ParitySha256 $dataFile
         $baseUrl = $api.BaseUrl
         $fetch = { param($path) ConvertFrom-ParityJson $client.GetStringAsync("$baseUrl/$path").GetAwaiter().GetResult() }.GetNewClosure()
-        $report = Get-ParityReport -Fetch $fetch -First $RunInfo.range.first -Last $RunInfo.range.last -Side $sideKey -CurrentMonth $RunInfo.range.currentMonth -IncludeSummary:($sideKey -eq 'after') -IncludeAccounts:($sideKey -eq 'after') -FillMissingStatements -RetiredRoutes:($sideKey -eq 'before')
+        $report = Get-ParityReport -Fetch $fetch -First $RunInfo.range.first -Last $RunInfo.range.last -Side $sideKey -CurrentMonth $RunInfo.range.currentMonth
     }
     finally { $client.Dispose() }
     Set-Content -LiteralPath (Join-Path $Folder "$sideKey-report.json") -Value (ConvertTo-ParityReportJson $report) -NoNewline -Encoding utf8

@@ -1,34 +1,3 @@
 {
-  "mappings": [
-    { "after": "{month}/summary/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/members/*/roundUpTotal", "before": "{month}/banks/*/roundUpTotal", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/totals/GBP/balance", "before": "{month}/monthly/bankTotalsSum", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/totals/GBP/roundUpTotal", "before": "{month}/monthly/roundUpTotalsSum", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/categoryTotalsSum", "before": "{month}/monthly/categoryTotalsSum", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/incomes/*/net", "before": "{month}/incomes/*/net", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/incomes/*/gross", "before": "{month}/incomes/*/gross", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/summary/totalIncoming", "before": "{month}/incomes/totalIncoming", "negate": false, "reason": "F04 group summary" },
-    { "after": "{month}/account/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F05 account balance" },
-    { "after": "{month}/account/*/roundUpTotal", "before": "{month}/banks/*/roundUpTotal", "negate": false, "reason": "F13 bank account round-ups, from its transaction rows" },
-    { "after": "{month}/cardAccount/*/balance", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": true, "reason": "F07 card balance, current month only" },
-    { "after": "{month}/cardAccount/*/totalOwed", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": false, "reason": "F14 card total owed" },
-    { "after": "{month}/cardStatement/*/outstandingTotal", "before": "{month}/cards/*/outstandingTotal", "negate": false, "reason": "F13 card statement, from the card's account detail" },
-    { "after": "{month}/cardStatement/*/accumulatedOutstandingTotal", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": false, "reason": "F13 card statement, from the card's account detail" },
-    { "after": "{month}/cardStatement/*/isPaid", "before": "{month}/cards/*/isPaid", "negate": false, "reason": "F13 card statement, from the card's account detail" },
-    { "after": "{month}/summary/cardMembers/*/outstandingTotal", "before": "{month}/cards/*/outstandingTotal", "negate": false, "reason": "F07 summary card member" },
-    { "after": "{month}/summary/cardMembers/*/isPaid", "before": "{month}/cards/*/isPaid", "negate": false, "reason": "F07 summary card member" },
-    { "after": "{month}/summary/cardMembers/*/balance", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": true, "reason": "F07 summary card member, current month only" },
-    { "after": "{month}/summary/totals/GBP/cardOutstandingTotal", "before": "{month}/monthly/cardOutstandingTotal", "negate": false, "reason": "F07 summary card total" },
-    { "after": "{month}/templateGroups/Bank/members/*/balance", "before": "{month}/banks/*/balance", "negate": false, "reason": "F14 Banks grid member" },
-    { "after": "{month}/templateGroups/Bank/totals/GBP", "before": "{month}/monthly/bankTotalsSum", "negate": false, "reason": "F14 Banks grid total" },
-    { "after": "{month}/templateGroups/CreditCard/members/*/totalOwed", "before": "{month}/cards/*/accumulatedOutstandingTotal", "negate": false, "reason": "F14 Credit cards grid member" },
-    { "after": "{month}/templateGroups/Pots/totals/GBP", "before": "{month}/pots/total", "negate": false, "reason": "F14 Pots grid total" },
-    { "after": "{month}/potsTab/*/balance", "before": "{month}/pots/*/balance", "negate": false, "reason": "F10 Pots tab balance" },
-    { "after": "{month}/potsTab/total", "before": "{month}/pots/total", "negate": false, "reason": "F10 Pots tab total" },
-    { "after": "{month}/monthTransactions/categories/*/spend", "before": "{month}/categories/*/total", "negate": false, "reason": "F16 All transactions spend per category" },
-    { "after": "{month}/monthTransactions/unpaidCardChargesTotal", "before": "{month}/cards/unpaidChargesTotal", "negate": false, "reason": "F13 unpaid card charges, from the month's transactions" },
-    { "after": "current/potsTab/*/balance", "before": "current/pots/*/balance", "negate": false, "reason": "F13 Reserva Pots tab balance at the run's last month" },
-    { "after": "current/maeAccount/totalBrl", "before": "current/mae/totalBrl", "negate": false, "reason": "F13 Mãe account current balance" },
-    { "after": "current/maeAccount/totalGbp", "before": "current/mae/totalGbp", "negate": false, "reason": "F13 Mãe account current balance" }
-  ]
+  "mappings": []
 }
