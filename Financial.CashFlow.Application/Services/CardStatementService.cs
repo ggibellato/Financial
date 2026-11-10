@@ -171,6 +171,11 @@ public sealed class CardStatementService : ICardStatementService
         };
     }
 
+    private decimal AmountToPay(CardStatement statement) =>
+        CardStatementLedger.MonthOf(
+            statement.CreditCard, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), statement.Year, statement.Month)
+            ?.AmountToPay ?? 0m;
+
     private CardStatementDTO ToDto(CardStatement statement) => new()
     {
         Id = statement.Id,
@@ -179,8 +184,7 @@ public sealed class CardStatementService : ICardStatementService
         Year = statement.Year,
         Month = statement.Month,
         IsPaid = statement.IsPaid,
-        OutstandingTotal = CardStatementLedger.MonthOf(
-            statement.CreditCard, _repository.GetExpenses(), _repository.GetCardStatements(), _repository.GetTransfers(), statement.Year, statement.Month)?.AmountToPay ?? 0m,
+        OutstandingTotal = AmountToPay(statement),
         AccumulatedOutstandingTotal = CardChargeFilter.TotalOwed(statement.CreditCard, AccountTransactionReader.Read(_repository))
     };
 }

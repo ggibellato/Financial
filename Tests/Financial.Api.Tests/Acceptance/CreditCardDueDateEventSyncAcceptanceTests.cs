@@ -19,6 +19,7 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     private const string ExpensesRoute = "/api/v1/financial/expenses";
     private const string MercadoCategoryId = "8f3b1c1a-2e3a-4b1a-9a7f-600000000008";
     private static readonly DateTimeOffset Now = new(2026, 9, 7, 12, 0, 0, TimeSpan.Zero);
+    private static readonly Guid BarclaysPlatinumVisa6007Id = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000002");
 
     private readonly FakeCalendarProvider _provider;
 
@@ -164,11 +165,10 @@ public class CreditCardDueDateEventSyncAcceptanceTests : ApiEndpointTests
     public async Task ACardWithNoPostedChargesForThePeriod_IsNothingDueAndHasNoEvent()
     {
         Connect();
-        var cardId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-500000000002"); // BarclaysPlatinumVisa6007
-        await AddChargeAsync(cardId, new DateOnly(2026, 8, 10), 20m);
+        await AddChargeAsync(BarclaysPlatinumVisa6007Id, new DateOnly(2026, 8, 10), 20m);
 
-        await SetDueDateAsync(cardId, new DateOnly(2026, 9, 10));
-        await WaitForResolvedSyncStatusAsync(cardId);
+        await SetDueDateAsync(BarclaysPlatinumVisa6007Id, new DateOnly(2026, 9, 10));
+        await WaitForResolvedSyncStatusAsync(BarclaysPlatinumVisa6007Id);
 
         _provider.CreatedEvents.Should().BeEmpty();
     }
