@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
-import type { AccountDetailDto, AccountDto, AccountTransactionDto, CreditCardDto } from '../api/types'
+import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api/types'
 import { rowKey, type AccountFormAction } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
@@ -19,8 +19,6 @@ import { usePotTransactionEditForm } from './usePotTransactionEditForm'
 import { usePotWithdrawalForm } from './usePotWithdrawalForm'
 import { useSettlementEntryForm } from './useSettlementEntryForm'
 import type { YearMonth } from './useMonthSelection'
-
-export const NO_CREDIT_CARDS: CreditCardDto[] = []
 
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
@@ -94,7 +92,6 @@ export function useAccountActionForms(
   const expenseForm = useExpenseForm(
     options.banks,
     options.categories,
-    NO_CREDIT_CARDS,
     (isEdit, isRefund) => {
       const noun = isRefund ? 'Refund' : expenseNoun
       saved(isEdit ? `${noun} updated` : `${noun} added`)

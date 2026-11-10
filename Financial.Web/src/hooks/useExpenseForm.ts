@@ -1,7 +1,7 @@
 import { useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { ExpenseFormField } from '../components/ExpenseForm'
-import type { BankOption, CategoryDto, CreditCardDto, ExpenseDto } from '../api/types'
+import type { BankOption, CategoryDto, ExpenseDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber, positiveAmount, todayIsoDate } from '../utils/formatters'
 import { getCreateFormDate, getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
@@ -241,7 +241,6 @@ export interface UseExpenseFormResult {
 export function useExpenseForm(
   banks: BankOption[],
   categories: CategoryDto[],
-  creditCards: CreditCardDto[],
   onSaved: (isEdit: boolean, isRefund: boolean) => void,
   { lockedBank, lockedCard, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
 ): UseExpenseFormResult {
@@ -288,11 +287,8 @@ export function useExpenseForm(
       const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
       dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestion ?? '' } })
     }
-    if ((field === 'date' || field === 'creditCardId') && state.paymentMode === 'card' && !state.invoiceDateTouched) {
-      const date = field === 'date' ? value : state.date
-      const creditCardId = field === 'creditCardId' ? value : state.creditCardId
-      const defaultMonth = computeDefaultInvoiceMonth(date, creditCardId, creditCards)
-      dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: defaultMonth } })
+    if (field === 'date' && state.paymentMode === 'card' && !state.invoiceDateTouched) {
+      dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: computeDefaultInvoiceMonth(value) } })
     }
   }
 
@@ -358,7 +354,7 @@ export function useExpenseForm(
       ...paymentFields,
       invoiceDate:
         state.paymentMode === 'card'
-          ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date, state.creditCardId, creditCards)}-01`
+          ? `${state.invoiceDate || computeDefaultInvoiceMonth(state.date)}-01`
           : null,
       roundUpAmount,
       countsAsTithe: state.countsAsTithe === 'true',

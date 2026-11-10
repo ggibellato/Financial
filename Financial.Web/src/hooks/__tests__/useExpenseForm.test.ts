@@ -3,7 +3,7 @@ import { findInAncestors } from '../../test-utils/findInAncestors'
 import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { BankOption, CategoryDto, CreditCardDto, ExpenseDto } from '../../api/types'
+import type { BankOption, CategoryDto, ExpenseDto } from '../../api/types'
 import { computeRoundUpSuggestion, useExpenseForm } from '../useExpenseForm'
 import { ApiError } from '../../api/apiError'
 import { pinDate } from '../../test-utils/pinDate'
@@ -25,10 +25,6 @@ const BANKS: BankOption[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
   { id: 'bank-chase', name: 'Chase', roundUpEnabled: true, isActive: true },
-]
-
-const CREDIT_CARDS: CreditCardDto[] = [
-  { id: 'card-baamex', name: 'BaAmex', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: null, hasReferences: false },
 ]
 
 const CATEGORIES: CategoryDto[] = [
@@ -72,7 +68,7 @@ describe('useExpenseForm', () => {
   })
 
   it('defaults the new-expense category field to the first active category once the form opens', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
 
@@ -81,7 +77,7 @@ describe('useExpenseForm', () => {
 
   it('creates an expense and calls onSaved on success', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'Waitrose'))
@@ -97,7 +93,7 @@ describe('useExpenseForm', () => {
 
   it('creates an expense with countsAsTithe defaulting to true', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'Tithe payment'))
@@ -110,7 +106,7 @@ describe('useExpenseForm', () => {
 
   it('creates an expense with countsAsTithe unchecked', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'Charitable offer'))
@@ -124,7 +120,7 @@ describe('useExpenseForm', () => {
 
   it('populates countsAsTithe from the edited expense', () => {
     const offer: ExpenseDto = { ...EXPENSE, id: 'e5', categoryId: 'category-dizimo', countsAsTithe: false }
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(offer))
 
@@ -134,7 +130,7 @@ describe('useExpenseForm', () => {
   it('saves an edit toggling countsAsTithe to false', async () => {
     const dizimoExpense: ExpenseDto = { ...EXPENSE, id: 'e6', categoryId: 'category-dizimo' }
     updateExpenseMock.mockResolvedValue({ ...dizimoExpense, countsAsTithe: false })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(dizimoExpense))
     act(() => result.current.setField('countsAsTithe', 'false'))
@@ -145,7 +141,7 @@ describe('useExpenseForm', () => {
 
   it('surfaces a backend validation error on create failure without crashing', async () => {
     createExpenseMock.mockRejectedValue(new Error('Unrecognized category.'))
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'Waitrose'))
@@ -158,7 +154,7 @@ describe('useExpenseForm', () => {
 
   it('saves an edit and calls onSaved on success', async () => {
     updateExpenseMock.mockResolvedValue({ ...EXPENSE, value: 50 })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(EXPENSE))
     act(() => result.current.setField('value', '50'))
@@ -173,7 +169,7 @@ describe('useExpenseForm', () => {
 
   it('creates in bank mode with a null card tag by default', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'Waitrose'))
@@ -189,7 +185,7 @@ describe('useExpenseForm', () => {
 
   it('creates in card mode with a null payment source', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('date', '2026-07-16'))
@@ -203,29 +199,9 @@ describe('useExpenseForm', () => {
     )
   })
 
-  it("sends the selected card's latest invoice month when untouched and ahead of the date", async () => {
+  it('sends the date-derived invoice month when untouched', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const cardsWithFutureInvoice: CreditCardDto[] = [
-      { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-09-01', hasReferences: false },
-    ]
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, cardsWithFutureInvoice, onSaved))
-
-    act(() => result.current.showCreateForm('card'))
-    act(() => result.current.setField('date', '2026-07-16'))
-    act(() => result.current.setField('description', 'Amazon'))
-    act(() => result.current.setField('value', '9.99'))
-    act(() => result.current.setField('creditCardId', 'card-chase'))
-    await act(() => result.current.submit())
-
-    expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ invoiceDate: '2026-09-01' }))
-  })
-
-  it("falls back to the date-derived invoice month when the card's latest invoice is not ahead of the date", async () => {
-    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const cardsWithPastInvoice: CreditCardDto[] = [
-      { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-06-01', hasReferences: false },
-    ]
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, cardsWithPastInvoice, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('date', '2026-07-16'))
@@ -237,12 +213,9 @@ describe('useExpenseForm', () => {
     expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ invoiceDate: '2026-07-01' }))
   })
 
-  it('sends the manually-typed invoice month even when the card has a later latest invoice', async () => {
+  it('sends the manually-typed invoice month instead of the date-derived one', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const cardsWithFutureInvoice: CreditCardDto[] = [
-      { id: 'card-chase', name: 'ChaseMaster4023', isActive: true, nextInvoiceDueDate: null, latestInvoiceDate: '2026-09-01', hasReferences: false },
-    ]
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, cardsWithFutureInvoice, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('date', '2026-07-16'))
@@ -256,7 +229,7 @@ describe('useExpenseForm', () => {
   })
 
   it('rejects card-mode create without a card before calling the API', async () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('date', '2026-07-16'))
@@ -269,7 +242,7 @@ describe('useExpenseForm', () => {
   })
 
   it("showCreateForm('bank') defaults to the first bank and an empty card tag", () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
 
@@ -281,7 +254,7 @@ describe('useExpenseForm', () => {
   it("[AC P60-F06-admin-accounts-page-05] showCreateForm('bank') skips an inactive bank, remembered or first", () => {
     setStoredDefault('expense.paymentSource', 'bank-barclays')
     const banks = [{ ...BANKS[0], isActive: false }, ...BANKS.slice(1)]
-    const { result } = renderHook(() => useExpenseForm(banks, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(banks, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
 
@@ -289,7 +262,7 @@ describe('useExpenseForm', () => {
   })
 
   it("showCreateForm('card') defaults to an empty payment source and card tag", () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
 
@@ -308,7 +281,7 @@ describe('useExpenseForm', () => {
       creditCardName: 'BaAmex',
       paymentStatus: 'CreditCardCharge',
     }
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(charge))
 
@@ -330,7 +303,7 @@ describe('useExpenseForm', () => {
       paymentStatus: 'CreditCardCharge',
     }
     updateExpenseMock.mockResolvedValue(charge)
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(charge))
     act(() => result.current.setField('date', '2026-08-24'))
@@ -353,7 +326,7 @@ describe('useExpenseForm', () => {
       paymentStatus: 'CreditCardCharge',
     }
     updateExpenseMock.mockResolvedValue(charge)
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(charge))
     act(() => result.current.setField('invoiceDate', '2026-11'))
@@ -376,7 +349,7 @@ describe('useExpenseForm', () => {
       paymentStatus: 'CreditCardSettled',
     }
     updateExpenseMock.mockResolvedValue(settled)
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(settled))
     expect(result.current.isSettled).toBe(true)
@@ -403,7 +376,7 @@ describe('useExpenseForm', () => {
       paymentStatus: 'CreditCardStatementPaid',
     }
     updateExpenseMock.mockResolvedValue(statementPaid)
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(statementPaid))
     expect(result.current.isSettled).toBe(true)
@@ -425,7 +398,7 @@ describe('useExpenseForm', () => {
   })
 
   it('picking a round-up-enabled bank auto-suggests when the field is blank', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('value', '9.40'))
     act(() => result.current.setField('paymentSource', 'bank-trading212'))
@@ -434,7 +407,7 @@ describe('useExpenseForm', () => {
   })
 
   it('picking a round-up-enabled bank does not overwrite an amount the user already typed', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('value', '9.40'))
     act(() => result.current.setField('roundUpAmount', '0.10'))
@@ -444,7 +417,7 @@ describe('useExpenseForm', () => {
   })
 
   it('typing a value auto-suggests when the round-up-enabled bank was already pre-selected', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
     act(() => result.current.setField('paymentSource', 'bank-trading212'))
@@ -454,7 +427,7 @@ describe('useExpenseForm', () => {
   })
 
   it('typing a value does not overwrite an amount the user already typed', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('paymentSource', 'bank-trading212'))
     act(() => result.current.setField('roundUpAmount', '0.10'))
@@ -464,7 +437,7 @@ describe('useExpenseForm', () => {
   })
 
   it('keeps recalculating as typed until manually edited', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('paymentSource', 'bank-trading212'))
 
@@ -480,7 +453,7 @@ describe('useExpenseForm', () => {
   })
 
   it('picking a non-round-up bank does not fill a suggestion', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('value', '9.40'))
     act(() => result.current.setField('paymentSource', 'bank-barclays'))
@@ -489,7 +462,7 @@ describe('useExpenseForm', () => {
   })
 
   it('a negative (reimbursement) value does not fill a round-up suggestion', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('value', '-9.40'))
     act(() => result.current.setField('paymentSource', 'bank-trading212'))
@@ -499,7 +472,7 @@ describe('useExpenseForm', () => {
 
   it('sends the round-up amount on create for a round-up-enabled bank', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'TfL'))
@@ -512,7 +485,7 @@ describe('useExpenseForm', () => {
 
   it('sends a null round-up amount when charging to card', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('date', '2026-07-16'))
@@ -525,7 +498,7 @@ describe('useExpenseForm', () => {
   })
 
   it('rejects a round-up amount outside £0.00-£0.99 before calling the API', async () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.setField('date', '2026-07-16'))
     act(() => result.current.setField('description', 'TfL'))
@@ -548,7 +521,7 @@ describe('useExpenseForm', () => {
       roundUpAmount: 0.1,
       suggestedRoundUpAmount: null,
     }
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(expense))
 
@@ -566,7 +539,7 @@ describe('useExpenseForm', () => {
       suggestedRoundUpAmount: null,
     }
     updateExpenseMock.mockResolvedValue(expense)
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(expense))
     act(() => result.current.setField('value', '20'))
@@ -585,7 +558,7 @@ describe('useExpenseForm', () => {
       suggestedRoundUpAmount: null,
     }
     updateExpenseMock.mockResolvedValue(expense)
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(expense))
     act(() => result.current.setField('roundUpAmount', ''))
@@ -596,7 +569,7 @@ describe('useExpenseForm', () => {
 
   it('defaults a first-ever create form to the local date just after midnight BST, with no persisted date yet', () => {
     pinDate('2026-07-01T00:30:00+01:00')
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
 
@@ -605,7 +578,7 @@ describe('useExpenseForm', () => {
 
   it('persists date, payment source, and category after a successful create, for the next create form', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e10' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
     act(() => result.current.setField('date', '2026-03-15'))
@@ -624,7 +597,7 @@ describe('useExpenseForm', () => {
 
   it('always starts amount and description blank on a new create form, even after a persisted save', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e11' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('bank'))
     act(() => result.current.setField('description', 'Groceries'))
@@ -639,7 +612,7 @@ describe('useExpenseForm', () => {
 
   it('persists the credit card, not the payment source, after a successful card-mode create', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e12' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('creditCardId', 'card-chase'))
@@ -689,7 +662,7 @@ describe('useExpenseForm account settings', () => {
   it('fixes the locked bank as the payment source in the request', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
     const { result } = renderHook(() =>
-      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE }),
+      useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedBank: LOCKED_CHASE }),
     )
 
     act(() => result.current.showCreateForm('card'))
@@ -706,10 +679,10 @@ describe('useExpenseForm account settings', () => {
 
   it('does not remember the locked bank as the default payment source', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const locked = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE }))
+    const locked = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedBank: LOCKED_CHASE }))
     await addExpense(locked.result)
 
-    const monthly = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const monthly = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
     act(() => monthly.result.current.showCreateForm('bank'))
 
     expect(monthly.result.current.paymentSource).toBe('bank-barclays')
@@ -718,7 +691,7 @@ describe('useExpenseForm account settings', () => {
   it('keeps the form open after a create with the same date and category, clearing the rest', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
     const { result } = renderHook(() =>
-      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE, keepOpenAfterSave: true }),
+      useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedBank: LOCKED_CHASE, keepOpenAfterSave: true }),
     )
 
     await addExpense(result)
@@ -737,7 +710,7 @@ describe('useExpenseForm account settings', () => {
 
   it('closes the form after a create when keep-open is not set', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     await addExpense(result)
 
@@ -748,7 +721,7 @@ describe('useExpenseForm account settings', () => {
     pinDate('2026-10-15T12:00:00+01:00')
     setStoredDefault('expense.date', '2026-08-30')
     const { result } = renderHook(() =>
-      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 9 } }),
+      useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedBank: LOCKED_CHASE, viewedMonth: { year: 2026, month: 9 } }),
     )
 
     act(() => result.current.showCreateForm('bank'))
@@ -760,7 +733,7 @@ describe('useExpenseForm account settings', () => {
     pinDate('2026-10-15T12:00:00+01:00')
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
     const { result } = renderHook(() =>
-      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, {
+      useExpenseForm(BANKS, CATEGORIES, onSaved, {
         lockedBank: LOCKED_CHASE,
         keepOpenAfterSave: true,
         viewedMonth: { year: 2026, month: 9 },
@@ -780,7 +753,7 @@ describe('useExpenseForm account settings', () => {
   it('closes the form after an edit even when keep-open is set', async () => {
     updateExpenseMock.mockResolvedValue(EXPENSE)
     const { result } = renderHook(() =>
-      useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved, { keepOpenAfterSave: true }),
+      useExpenseForm(BANKS, CATEGORIES, onSaved, { keepOpenAfterSave: true }),
     )
 
     act(() => result.current.showEditForm(EXPENSE))
@@ -790,7 +763,7 @@ describe('useExpenseForm account settings', () => {
   })
 
   it('reports dirty only while the values differ from those the form opened with', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     expect(result.current.isDirty).toBe(false)
     act(() => result.current.showCreateForm('bank'))
@@ -805,7 +778,7 @@ describe('useExpenseForm account settings', () => {
 
   it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
     createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     await addExpense(result)
 
@@ -827,7 +800,7 @@ describe('useExpenseForm with a locked card', () => {
   })
 
   it('opens in card mode on the locked card whatever mode is asked for', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX }))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedCard: LOCKED_AMEX }))
 
     act(() => result.current.showCreateForm('bank'))
 
@@ -838,7 +811,7 @@ describe('useExpenseForm with a locked card', () => {
 
   it('sends the locked card with the invoice month of the date and does not remember it as the default card', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX }))
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedCard: LOCKED_AMEX }))
     act(() => result.current.showCreateForm('card'))
     act(() => result.current.setField('date', '2026-10-14'))
     act(() => result.current.setField('description', 'Taxi'))
@@ -848,14 +821,14 @@ describe('useExpenseForm with a locked card', () => {
     expect(createExpenseMock).toHaveBeenCalledWith(
       expect.objectContaining({ creditCardId: 'card-baamex', paymentSourceBankId: null, invoiceDate: '2026-10-01', roundUpAmount: null }),
     )
-    const monthly = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+    const monthly = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
     act(() => monthly.result.current.showCreateForm('card'))
     expect(monthly.result.current.creditCardId).toBe('')
   })
 
   describe('refund mode', () => {
     const REFUND = { ...EXPENSE, id: 'r1', value: -40, date: '2026-10-08', creditCardId: 'card-baamex', paymentSourceBankId: null, invoiceDate: '2026-11-01', paymentStatus: 'CreditCardCharge' }
-    const lockedCardForm = () => renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX, keepOpenAfterSave: true }))
+    const lockedCardForm = () => renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedCard: LOCKED_AMEX, keepOpenAfterSave: true }))
 
     beforeEach(() => {
       pinDate('2026-10-15T12:00:00+01:00')
@@ -931,7 +904,7 @@ describe('useExpenseForm with a locked card', () => {
       ['a last-used past date in the viewed month', 10, '2026-10-03', '2026-10-03'],
     ])('opens on the viewed-month date capped at today for %s', (_, month, lastUsed, expected) => {
       if (lastUsed) setStoredDefault('expense.date', lastUsed)
-      const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX, viewedMonth: { year: 2026, month } }))
+      const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedCard: LOCKED_AMEX, viewedMonth: { year: 2026, month } }))
 
       act(() => result.current.showCreateRefundForm())
 
@@ -940,7 +913,7 @@ describe('useExpenseForm with a locked card', () => {
 
     it('leaves a charge opened on a later last-used date uncapped', () => {
       setStoredDefault('expense.date', '2026-10-20')
-      const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, [], onSaved, { lockedCard: LOCKED_AMEX, viewedMonth: { year: 2026, month: 10 } }))
+      const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved, { lockedCard: LOCKED_AMEX, viewedMonth: { year: 2026, month: 10 } }))
 
       act(() => result.current.showCreateForm('card'))
 
@@ -986,7 +959,7 @@ describe('useExpenseForm with a locked card', () => {
     })
 
     it('keeps signed values on Monthly, which has no locked card', () => {
-      const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, CREDIT_CARDS, onSaved))
+      const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
       act(() => result.current.showEditForm(REFUND))
 
