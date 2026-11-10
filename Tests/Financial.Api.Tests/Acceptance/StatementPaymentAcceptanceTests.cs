@@ -79,7 +79,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         (await Client.GetFromJsonAsync<List<PayableStatementDTO>>($"{Api}/accounts/payable-statements"))!;
 
     private async Task<List<ExpenseDTO>> UnpaidChargesAsync(int month) =>
-        (await TransactionsAsync(AmexId, month)).Select(row => row.Expense!).Where(expense => expense.PaymentStatus == "CreditCardCharge").ToList();
+        (await TransactionsAsync(AmexId, month)).Select(row => row.Expense).OfType<ExpenseDTO>().Where(expense => expense.PaymentStatus == "CreditCardCharge").ToList();
 
     private Task<HttpResponseMessage> UpdateChargeAsync(string chargeId, DateOnly date, DateOnly invoiceDate, decimal value = 10m,
         string description = "September taxi", string categoryId = MercadoId, bool countsAsTithe = true, string creditCardId = AmexId) =>
