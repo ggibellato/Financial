@@ -52,11 +52,20 @@
     "vitest": "^4.1.12"
   },
   "overrides": {
+    "@stryker-mutator/core": {
+      "minimatch": "11.0.1"
+    },
+    "eslint": {
+      "minimatch": "11.0.1"
+    },
     "openapi-typescript": {
       "typescript": "$typescript"
     },
     "typed-rest-client": {
-      "qs": "6.16.0"
+      "qs": "6.16.2"
+    },
+    "typescript-eslint": {
+      "minimatch": "11.0.1"
     }
   }
 }
