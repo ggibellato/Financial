@@ -152,13 +152,13 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
 
     public void SetCardDueDate(Account card, DateOnly? dueDate)
     {
-        foreach (var dated in CardStatements.Where(existing => existing.CreditCard.Id == card.Id))
-        {
-            dated.SetDueDate(null);
-        }
-
         if (dueDate is not { } date)
         {
+            foreach (var dated in CardStatements.Where(existing => existing.CreditCard.Id == card.Id))
+            {
+                dated.SetDueDate(null);
+            }
+
             return;
         }
 
@@ -169,7 +169,7 @@ public sealed class StubCashFlowRepository : ICashFlowRepository
             CardStatements.Add(statement);
         }
 
-        statement.SetDueDate(date);
+        CardDueDate.SetOn(card, CardStatements, statement, date);
     }
 
     public IEnumerable<Expense> GetExpenses() => CheckThrow(Expenses);

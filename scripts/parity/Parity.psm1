@@ -110,10 +110,12 @@ function Add-ParityStatementFigures($Report, [string]$Prefix, $Statement) {
     Add-ParityFigure $Report "$Prefix/isPaid" $Statement.isPaid
 }
 
-function Add-ParityCardFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, [bool]$RetiredRoutes) {
+function Add-ParityUnpaidChargeFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
     $unpaid = & $Fetch "expenses/month/$Route/unpaid-card-charges"
     Add-ParityFigure $Report "$Month/cards/unpaidChargesTotal" (Get-ParitySum $unpaid { param($e) $e.value })
-    if (-not $RetiredRoutes) { return }
+}
+
+function Add-ParityCardStatementFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch) {
     $statements = & $Fetch "card-statements/$Route"
     foreach ($statement in $statements) {
         Add-ParityStatementFigures $Report "$Month/cards/$($statement.creditCardName)" $statement
@@ -300,7 +302,8 @@ function Get-ParityMonthRoute([string]$Month) {
 
 function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $Banks, $PotBalances, [bool]$IncludeSummary, $Accounts, [string]$CurrentMonth, [bool]$RetiredRoutes) {
     $route = Get-ParityMonthRoute $Month
-    Add-ParityCardFigures $Report $Month $route $Fetch $RetiredRoutes
+    Add-ParityUnpaidChargeFigures $Report $Month $route $Fetch
+    if ($RetiredRoutes) { Add-ParityCardStatementFigures $Report $Month $route $Fetch }
     $categoryTotals = Add-ParityCategoryFigures $Report $Month $route $Fetch
     Add-ParityIncomeFigures $Report $Month $route $Fetch
     Add-ParityTitheFigures $Report $Month $route $Fetch
@@ -418,7 +421,8 @@ function Get-ParityReport {
         foreach ($month in $months) {
             Add-ParityMonthFigures $report $month $Fetch $banks $potBalancesByMonth[$month] $IncludeSummary.IsPresent $figureAccounts $CurrentMonth $RetiredRoutes.IsPresent
         }
-        if ($FillMissingStatements) { Add-ParityMissingCardStatementFigures $report $months $accounts $(if ($RetiredRoutes) { 'cards' } else { 'cardStatement' }) }
+        $statementFamily = if ($RetiredRoutes) { 'cards' } elseif ($IncludeAccounts) { 'cardStatement' } else { $null }
+        if ($FillMissingStatements -and $null -ne $statementFamily) { Add-ParityMissingCardStatementFigures $report $months $accounts $statementFamily }
 
         if ($RetiredRoutes) { Add-ParityRetiredRouteFigures $report $Fetch }
         if ($null -ne $figureAccounts) {

@@ -61,7 +61,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     }
 
     private async Task<AccountStatementDTO?> StoredStatementAsync(int year, int month) =>
-        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{AmexId}/{year}/{month}"))!.ViewedStatement is { Id: not null } statement
+        (await AccountAsync(AmexId, year, month)).ViewedStatement is { Id: not null } statement
             ? statement
             : null;
 
@@ -69,8 +69,8 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         Client.PostAsJsonAsync(
             $"{Api}/card-statements/{statementId}/mark-paid", new MarkCardStatementPaidDTO { PaymentSourceBankId = Guid.Parse(BarclaysId), Date = date });
 
-    private async Task<AccountDetailDTO> AccountAsync(string accountId) =>
-        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/2026/10"))!;
+    private async Task<AccountDetailDTO> AccountAsync(string accountId, int year = 2026, int month = 10) =>
+        (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{accountId}/{year}/{month}"))!;
 
     private async Task<List<AccountTransactionDTO>> TransactionsAsync(string accountId) =>
         (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{accountId}/transactions/2026/10"))!;
