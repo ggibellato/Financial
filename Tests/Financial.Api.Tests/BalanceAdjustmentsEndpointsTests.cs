@@ -213,20 +213,6 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
         (await AdjustmentIdsAsync(BarclaysId)).Should().Contain(createdAdjustment.Id);
     }
 
-    [Theory]
-    [InlineData("POST", "")]
-    [InlineData("PUT", "/8f3b1c1a-2e3a-4b1a-9a7f-900000000001")]
-    [InlineData("DELETE", "/8f3b1c1a-2e3a-4b1a-9a7f-900000000001")]
-    public async Task BankScopedAdjustmentWrites_AreGone(string method, string suffix)
-    {
-        var request = new HttpRequestMessage(new HttpMethod(method), $"/api/v1/financial/banks/{BarclaysId}/adjustments{suffix}");
-
-        var response = await Client.SendAsync(request);
-
-        response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.MethodNotAllowed);
-    }
-
-
     private async Task<List<Guid>> AdjustmentIdsAsync(Guid accountId) =>
         (await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"/api/v1/financial/accounts/{accountId}/transactions/2026/7"))!
             .Where(row => row.Adjustment is not null)

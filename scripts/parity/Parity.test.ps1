@@ -45,6 +45,7 @@ $responses = @{
     'annual-summary/2026/historic-summary-averages' = '[{"year":2025,"annualAverages":[{"category":"Mercado","value":95.00}]}]'
     'annual-summary/2026/investment-annual-result' = '{"accounts":[{"account":"ISA","isLiability":false,"monthlyValues":[1000.00,1100.00],"monthlyDiffs":[null,100.00]}],"netPosition":{"monthlyValues":[1000.00,1100.00],"monthlyDiffs":[null,100.00],"averageMonthResult":100.00,"fullYearNetChange":100.00,"sumOfMonthResults":100.00}}'
 }
+$roundUpRows = "{`"accountId`":`"$barclaysId`",`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Expense`",`"categoryName`":null,`"amount`":-9.83,`"roundUp`":-0.17}},{`"accountId`":`"$barclaysId`",`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Income`",`"categoryName`":null,`"amount`":2000.00,`"roundUp`":null}},{`"accountId`":`"$chaseId`",`"accountName`":`"Chase`",`"transaction`":{`"kind`":`"Expense`",`"categoryName`":null,`"amount`":-4.50,`"roundUp`":-0.50}}"
 foreach ($month in 8, 9) {
     $route = "2026/$month"
     $responses["banks/month/$route/balances"] = '[{"bank":"Barclays","balance":130.83},{"bank":"Chase","balance":10.00}]'
@@ -65,10 +66,8 @@ foreach ($month in 8, 9) {
     $responses["accounts/$reservaId/pots/$route"] = "{`"potsAccountId`":`"$reservaId`",`"currency`":`"GBP`",`"total`":$potsTotal,`"pots`":[{`"id`":`"55555555-5555-5555-5555-555555555555`",`"name`":`"Casa`",`"splitPercentage`":60,`"isActive`":true,`"balance`":$casaBalance},{`"id`":`"66666666-6666-6666-6666-666666666666`",`"name`":`"Viagem`",`"splitPercentage`":40,`"isActive`":true,`"balance`":$viagemBalance},{`"id`":`"77777777-7777-7777-7777-777777777777`",`"name`":`"Novo`",`"splitPercentage`":0,`"isActive`":false,`"balance`":0}]}"
     $responses["accounts/$barclaysId/$route"] = '{"balance":130.83}'
     $responses["accounts/$chaseId/$route"] = '{"balance":10.00}'
-    $responses["accounts/$barclaysId/transactions/$route"] = '[{"kind":"Expense","amount":-9.83,"roundUp":-0.17},{"kind":"Income","amount":2000.00,"roundUp":null},{"kind":"Expense","amount":-5.00}]'
-    $responses["accounts/$chaseId/transactions/$route"] = '[{"kind":"Expense","amount":-4.50,"roundUp":-0.50}]'
     $responses["accounts/$amexId/$route"] = '{"balance":-40.10,"totalOwed":40.10}'
-    $responses["accounts/transactions/$route"] = "[{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Expense`",`"categoryName`":`"Mercado`",`"amount`":-0.1}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardCharge`",`"categoryName`":`"Casa`",`"amount`":-0.25}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardRefund`",`"categoryName`":`"Casa`",`"amount`":0.05}},{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Income`",`"categoryName`":null,`"amount`":2000.00}},{`"accountName`":`"Chase`",`"transaction`":{`"kind`":`"TransferIn`",`"amount`":40.00}}]"
+    $responses["accounts/transactions/$route"] = "[{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Expense`",`"categoryName`":`"Mercado`",`"amount`":-0.1}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardCharge`",`"categoryName`":`"Casa`",`"amount`":-0.25}},{`"accountName`":`"Amex`",`"transaction`":{`"kind`":`"CardRefund`",`"categoryName`":`"Casa`",`"amount`":0.05}},{`"accountName`":`"Barclays`",`"transaction`":{`"kind`":`"Income`",`"categoryName`":null,`"amount`":2000.00}},{`"accountName`":`"Chase`",`"transaction`":{`"kind`":`"TransferIn`",`"amount`":40.00}},$roundUpRows]"
     $responses["accounts/$maeId/$route"] = '{"currentBalances":[{"currency":"BRL","balance":167.88},{"currency":"GBP","balance":7.94}]}'
     $responses["investment-snapshots/$route/suggestions"] = '{"suggestions":[{"accountName":"Amex card","suggestedValue":-40.10,"currentValue":0,"sourceDescription":"Invoice"}],"notUpdated":[{"accountName":"Pension","reason":"No source"}]}'
 }
@@ -221,7 +220,7 @@ try {
 
     $compareGridVariant = { param($rows)
         $variant = $responses.Clone()
-        $variant['accounts/transactions/2026/9'] = $rows
+        $variant['accounts/transactions/2026/9'] = $rows.TrimEnd(']') + ",$roundUpRows]"
         $variantFetch = { param($path) ConvertFrom-ParityJson $variant[$path] }.GetNewClosure()
         $variantReport = Get-ParityReport -Fetch $variantFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
         , @(Compare-ParityReport $reportWithoutSummary $variantReport $shippedMappings)
@@ -256,6 +255,7 @@ try {
     $recordingFetch = { param($path) $readPaths.Add($path); & $fetch $path }
     $null = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -IncludeSummary -IncludeAccounts
     Check 'the after side reads no retired route' (-not ($readPaths | Where-Object { $_ -like 'controle-mae/*' -or $_ -like 'reserve/*' -or $_ -eq 'banks' -or $_ -like 'banks/*' -or $_ -match '^expenses/month/\d+/\d+$' })) ($readPaths -join ', ')
+    Check 'the after side reads each month''s transaction rows once and no account''s own rows' (@($readPaths | Where-Object { $_ -eq 'accounts/transactions/2026/9' }).Count -eq 1 -and -not ($readPaths | Where-Object { $_ -match '^accounts/[^/]+/transactions/' })) ($readPaths -join ', ')
     Check 'the after side reads the Pots tab of the account that replaces the Reserva page only' (-not ($readPaths | Where-Object { $_ -like "accounts/$otherPotsId/*" }) -and $readPaths -contains "accounts/$reservaId/pots/2026/9") ($readPaths -join ', ')
     $readPaths.Clear()
     $beforeSide = Get-ParityReport -Fetch $recordingFetch -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09' -RetiredRoutes

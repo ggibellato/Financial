@@ -238,7 +238,7 @@ function Add-ParitySettlementFigures($Report, [string]$Month, $Groups) {
     }
 }
 
-function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts, [bool]$IsCurrentMonth) {
+function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $Accounts, [bool]$IsCurrentMonth, $MonthRows) {
     foreach ($account in @($Accounts | Where-Object { $_['templateName'] -in 'Bank', 'CreditCard' })) {
         $isCard = $account['templateName'] -eq 'CreditCard'
         $isActive = $account['isActive'] -eq $true
@@ -246,7 +246,8 @@ function Add-ParityAccountFigures($Report, [string]$Month, [string]$Route, [scri
         $detail = & $Fetch "accounts/$($account.id)/$Route"
         if (-not $isCard) {
             Add-ParityFigure $Report "$Month/account/$($account.name)/balance" $detail.balance
-            $roundUpTotal = -(Get-ParitySum (& $Fetch "accounts/$($account.id)/transactions/$Route") { param($row) [decimal]$row['roundUp'] })
+            $accountRows = @($MonthRows | Where-Object { $_['accountId'] -eq $account.id })
+            $roundUpTotal = -(Get-ParitySum $accountRows { param($row) [decimal]$row.transaction['roundUp'] })
             Add-ParityFigure $Report "$Month/account/$($account.name)/roundUpTotal" $roundUpTotal
             continue
         }
@@ -278,10 +279,10 @@ function Add-ParityCurrentPotsTabFigures($Report, [string]$Last, [scriptblock]$F
     }
 }
 
-function Add-ParityMonthTransactionFigures($Report, [string]$Month, [string]$Route, [scriptblock]$Fetch, $CategoryTotals) {
+function Add-ParityMonthTransactionFigures($Report, [string]$Month, $MonthRows, $CategoryTotals) {
     $spendByCategory = [System.Collections.Generic.SortedDictionary[string, decimal]]::new([System.StringComparer]::Ordinal)
     foreach ($category in $CategoryTotals) { $spendByCategory[$category.category] = 0 }
-    $categorizedRows = foreach ($row in (& $Fetch "accounts/transactions/$Route")) { if ($null -ne $row.transaction['categoryName']) { $row } }
+    $categorizedRows = foreach ($row in $MonthRows) { if ($null -ne $row.transaction['categoryName']) { $row } }
     foreach ($group in ($categorizedRows | Group-Object -CaseSensitive { $_.transaction['categoryName'] })) {
         $spendByCategory[$group.Name] = -(Get-ParitySum $group.Group { param($r) $r.transaction.amount })
     }
@@ -316,9 +317,10 @@ function Add-ParityMonthFigures($Report, [string]$Month, [scriptblock]$Fetch, $B
         Add-ParityTemplateGroupFigures $Report $Month $groups
     }
     if ($null -ne $Accounts) {
-        Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth)
+        $monthRows = & $Fetch "accounts/transactions/$route"
+        Add-ParityAccountFigures $Report $Month $route $Fetch $Accounts ($Month -eq $CurrentMonth) $monthRows
         Add-ParityPotsTabFigures $Report $Month $route $Fetch $Accounts
-        Add-ParityMonthTransactionFigures $Report $Month $route $Fetch $categoryTotals
+        Add-ParityMonthTransactionFigures $Report $Month $monthRows $categoryTotals
     }
 }
 

@@ -59,6 +59,9 @@ public class RetiredRoutesAcceptanceTests : ApiEndpointTests
     [InlineData("PUT", $"banks/{BankId}/opening-balance")]
     [InlineData("GET", "banks/month/2026/9/balances")]
     [InlineData("GET", $"banks/{BankId}/adjustments")]
+    [InlineData("POST", $"banks/{BankId}/adjustments")]
+    [InlineData("PUT", $"banks/{BankId}/adjustments/{AdjustmentId}")]
+    [InlineData("DELETE", $"banks/{BankId}/adjustments/{AdjustmentId}")]
     public async Task RetiredRoute_Returns404(string method, string path)
     {
         var response = await Client.SendAsync(EmptyBodyRequest(method, path));
