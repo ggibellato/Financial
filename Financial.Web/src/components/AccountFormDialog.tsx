@@ -4,6 +4,7 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
+import { isDuplicateNameConflict } from '../api/apiError'
 import { useFormPanelStyles } from './formPanelStyles'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
@@ -15,7 +16,6 @@ const UNSET_START_DATE = '0001-01-01'
 const NAME_MAX_LENGTH = 60
 const OTHER_PARTICIPANT_MAX_LENGTH = 60
 const SELF_PARTICIPANT_NAME = 'You'
-const CONFLICT_STATUS = 409
 const LOCKED_HINT = "Can't change once the account has transactions."
 const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
@@ -134,10 +134,6 @@ function validateAccountForm(
   return errors
 }
 
-function isDuplicateNameConflict(status: number | null, message: string | null, name: string | null): boolean {
-  return status === CONFLICT_STATUS && name !== null && message?.toLowerCase().includes(`"${name.toLowerCase()}"`) === true
-}
-
 function categoryOptions(categories: CategoryDto[], keptId: string): CategoryDto[] {
   return categories
     .filter((category) => (category.active && !category.isInvestment) || category.id === keptId)
@@ -180,7 +176,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
   const trimmedName = values.name.trim()
-  const isDuplicateName = isDuplicateNameConflict(errorStatus, error, submittedName)
+  const isDuplicateName = submittedName !== null && isDuplicateNameConflict(errorStatus, error, submittedName)
   const isNameConflict = isDuplicateName && submittedName === trimmedName
   const errors = validateAccountForm(values, template, keepsUnsetStartDate)
 

@@ -29,8 +29,14 @@ export function isNotFound(err: unknown): boolean {
   return err instanceof ApiError && err.status === 404
 }
 
+const CONFLICT_STATUS = 409
+
 export function isConflict(err: unknown): err is ApiError {
-  return err instanceof ApiError && err.status === 409
+  return err instanceof ApiError && err.status === CONFLICT_STATUS
+}
+
+export function isDuplicateNameConflict(status: number | null, message: string | null, name: string): boolean {
+  return status === CONFLICT_STATUS && message?.toLowerCase().includes(`named "${name.toLowerCase()}" already exists`) === true
 }
 
 export function overdraftBalance(err: ApiError): number | null {

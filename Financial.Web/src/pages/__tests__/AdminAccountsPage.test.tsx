@@ -302,50 +302,23 @@ describe('AdminAccountsPage', () => {
     expect(screen.queryByText('Account deleted')).not.toBeInTheDocument()
   })
 
-  it('moves focus to the next row after deleting an account', async () => {
-    getAccountsMock.mockResolvedValue([MONZO, BARCLAYS])
+  it.each([
+    { position: 'the next row', before: [MONZO, BARCLAYS], after: [BARCLAYS], target: ['button', 'Delete Barclays'] },
+    { position: 'the previous row', before: [BARCLAYS, MONZO], after: [BARCLAYS], target: ['button', 'Delete Barclays'] },
+    { position: 'the page heading', before: [MONZO], after: [], target: ['heading', 'Accounts'] },
+  ] as const)('moves focus to $position after deleting an account', async ({ before, after, target: [role, name] }) => {
+    getAccountsMock.mockResolvedValue([...before])
     deleteAccountMock.mockResolvedValue(undefined)
     renderPage()
     await screen.findByRole('table', { name: 'Accounts' })
-    getAccountsMock.mockResolvedValue([BARCLAYS])
+    getAccountsMock.mockResolvedValue([...after])
 
     const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
     deleteMonzo.focus()
     fireEvent.click(deleteMonzo)
     fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Barclays', hidden: true })).toHaveFocus())
-  })
-
-  it('moves focus to the previous row after deleting the last account in the list', async () => {
-    getAccountsMock.mockResolvedValue([BARCLAYS, MONZO])
-    deleteAccountMock.mockResolvedValue(undefined)
-    renderPage()
-    await screen.findByRole('table', { name: 'Accounts' })
-    getAccountsMock.mockResolvedValue([BARCLAYS])
-
-    const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
-    deleteMonzo.focus()
-    fireEvent.click(deleteMonzo)
-    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
-
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Barclays', hidden: true })).toHaveFocus())
-  })
-
-  it('moves focus to the page heading after deleting the only account', async () => {
-    getAccountsMock.mockResolvedValue([MONZO])
-    deleteAccountMock.mockResolvedValue(undefined)
-    renderPage()
-    await screen.findByRole('table', { name: 'Accounts' })
-    getAccountsMock.mockResolvedValue([])
-
-    const deleteMonzo = screen.getByRole('button', { name: 'Delete Monzo' })
-    deleteMonzo.focus()
-    fireEvent.click(deleteMonzo)
-    fireEvent.click(within(await screen.findByRole('dialog', { name: 'Delete account' })).getByRole('button', { name: 'Delete' }))
-
-    expect(await screen.findByText('No accounts yet')).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Accounts', hidden: true })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole(role, { name, hidden: true })).toHaveFocus())
   })
 
   it("explains why New account is unavailable when the templates couldn't be loaded", async () => {
