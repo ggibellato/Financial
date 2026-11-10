@@ -469,6 +469,92 @@ public class AccountTests
     }
 
     [Fact]
+    public void ApplyCurrencies_MultiCurrencyAccount_SetsThem()
+    {
+        var account = CreateSettlement();
+
+        account.ApplyCurrencies([Currency.GBP, Currency.BRL]);
+
+        account.Currencies.Should().Equal(Currency.BRL, Currency.GBP);
+    }
+
+    [Fact]
+    public void ApplyCurrencies_SingleCurrencyAccount_KeepsItsCurrency()
+    {
+        var account = CreateBank();
+
+        account.ApplyCurrencies([Currency.BRL]);
+
+        using (new AssertionScope())
+        {
+            account.Currencies.Should().Equal(Currency.GBP);
+            account.Currency.Should().Be(Currency.GBP);
+        }
+    }
+
+    [Fact]
+    public void EnsureMultiCurrency_SingleCurrencyCapabilities_Throws()
+    {
+        var act = () => Account.EnsureMultiCurrency(_ => false, "Monzo");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Monzo has one currency.");
+    }
+
+    [Fact]
+    public void EnsureMultiCurrency_MultiCurrencyCapabilities_DoesNotThrow()
+    {
+        var act = () => Account.EnsureMultiCurrency(capability => capability == Capability.MultiCurrency, "Mãe");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ChosenCurrencies_RepeatedAndUnordered_AreDistinctAndOrdered()
+    {
+        Account.ChosenCurrencies([Currency.GBP, Currency.BRL, Currency.GBP]).Should().Equal(Currency.BRL, Currency.GBP);
+    }
+
+    [Fact]
+    public void ChosenCurrencies_None_Throws()
+    {
+        var act = () => Account.ChosenCurrencies([]);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Choose at least one currency.");
+    }
+
+    [Fact]
+    public void EnsureHasParticipants_WithoutTheCapability_Throws()
+    {
+        var act = () => Account.EnsureHasParticipants(_ => false, "Barclays");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Barclays has no participants.");
+    }
+
+    [Fact]
+    public void EnsureHasParticipants_WithTheCapability_DoesNotThrow()
+    {
+        var act = () => Account.EnsureHasParticipants(capability => capability == Capability.HasParticipants, "Mãe");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void EnsureHasCategorySetting_WithoutPots_Throws()
+    {
+        var act = () => Account.EnsureHasCategorySetting(_ => false, "Monzo");
+
+        act.Should().Throw<ArgumentException>().WithMessage("Monzo has no category setting.");
+    }
+
+    [Fact]
+    public void EnsureHasCategorySetting_WithPots_DoesNotThrow()
+    {
+        var act = () => Account.EnsureHasCategorySetting(capability => capability == Capability.HasPots, "Reserva");
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
     public void EnsureSetupCanChange_WithRecordsToAnotherTemplate_ThrowsAndChangesNothing()
     {
         var account = CreateBank();

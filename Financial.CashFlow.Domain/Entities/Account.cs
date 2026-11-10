@@ -14,7 +14,7 @@ public class Account
     public const int MaxOtherParticipantLength = 60;
     public const string SelfParticipantName = "You";
     public const decimal RequiredActiveSplitTotal = 100m;
-    public const string NoCurrencyChosenMessage = "Choose at least one currency.";
+    private const string SetupLockedMessage = "Template and currency can't change once the account has transactions.";
 
     private IReadOnlySet<Capability>? _capabilitiesOverride;
     private IReadOnlyList<Pot> _pots = [];
@@ -75,19 +75,28 @@ public class Account
     {
         if (hasRecords && !IsSetUpAs(template, currencies))
         {
-            throw new ArgumentException("Template and currency can't change once the account has transactions.");
+            throw new ArgumentException(SetupLockedMessage);
         }
     }
 
     public void ChangeSetup(AccountTemplate template, IReadOnlyList<Currency> currencies, bool hasRecords)
     {
-        EnsureSetupCanChange(template, currencies, hasRecords);
         if (IsSetUpAs(template, currencies))
         {
             return;
         }
 
+        if (hasRecords)
+        {
+            throw new ArgumentException(SetupLockedMessage);
+        }
+
         ChangeTemplate(template, currencies[0]);
+        ApplyCurrencies(currencies);
+    }
+
+    public void ApplyCurrencies(IReadOnlyList<Currency> currencies)
+    {
         if (Has(Capability.MultiCurrency))
         {
             SetCurrencies(currencies);
@@ -107,32 +116,21 @@ public class Account
     {
         ArgumentNullException.ThrowIfNull(currencies);
 
-        if (!Has(Capability.MultiCurrency))
-        {
-            throw new ArgumentException(OneCurrencyMessage(Name));
-        }
-
-        var ordered = currencies.Distinct().Order().ToList();
-        if (ordered.Count == 0)
-        {
-            throw new ArgumentException(NoCurrencyChosenMessage);
-        }
+        EnsureMultiCurrency(Has, Name);
+        var ordered = ChosenCurrencies(currencies);
 
         foreach (var currency in ordered)
         {
             EnsureCurrencyIsAllowed(Template, currency);
         }
 
-        _currencies = ordered.AsReadOnly();
+        _currencies = ordered;
         Currency = ordered[0];
     }
 
     public void SetOtherParticipant(string otherParticipant)
     {
-        if (!Has(Capability.HasParticipants))
-        {
-            throw new ArgumentException(NoParticipantsMessage(Name));
-        }
+        EnsureHasParticipants(Has, Name);
 
         var trimmed = ValidText(
             otherParticipant,
@@ -203,12 +201,9 @@ public class Account
         ArgumentNullException.ThrowIfNull(changes);
         EnsureHasPots();
 
-        foreach (var change in changes)
+        foreach (var id in changes.Select(change => change.Id).OfType<Guid>())
         {
-            if (change.Id is Guid id)
-            {
-                EnsureOwnsPot(id);
-            }
+            EnsureOwnsPot(id);
         }
 
         if (_pots.Any(pot => changes.Count(change => change.Id == pot.Id) != 1))
@@ -231,11 +226,35 @@ public class Account
 
     public static string DuplicatePotNameMessage(string name) => $"A pot named \"{name}\" already exists.";
 
-    public static string OneCurrencyMessage(string name) => $"{name} has one currency.";
+    public static void EnsureMultiCurrency(Func<Capability, bool> has, string accountName)
+    {
+        if (!has(Capability.MultiCurrency))
+        {
+            throw new ArgumentException($"{accountName} has one currency.");
+        }
+    }
 
-    public static string NoParticipantsMessage(string name) => $"{name} has no participants.";
+    public static IReadOnlyList<Currency> ChosenCurrencies(IEnumerable<Currency> currencies)
+    {
+        var ordered = currencies.Distinct().Order().ToList();
+        return ordered.Count > 0 ? ordered.AsReadOnly() : throw new ArgumentException("Choose at least one currency.");
+    }
 
-    public static string NoCategorySettingMessage(string name) => $"{name} has no category setting.";
+    public static void EnsureHasParticipants(Func<Capability, bool> has, string accountName)
+    {
+        if (!has(Capability.HasParticipants))
+        {
+            throw new ArgumentException($"{accountName} has no participants.");
+        }
+    }
+
+    public static void EnsureHasCategorySetting(Func<Capability, bool> has, string accountName)
+    {
+        if (!has(Capability.HasPots))
+        {
+            throw new ArgumentException($"{accountName} has no category setting.");
+        }
+    }
 
     public static string? FindDuplicatePotName(IEnumerable<PotChange> changes) =>
         changes
@@ -257,10 +276,7 @@ public class Account
     {
         ArgumentNullException.ThrowIfNull(category);
 
-        if (!Has(Capability.HasPots))
-        {
-            throw new ArgumentException(NoCategorySettingMessage(Name));
-        }
+        EnsureHasCategorySetting(Has, Name);
 
         Category = category;
     }
