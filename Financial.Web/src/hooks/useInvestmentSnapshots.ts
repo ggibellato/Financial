@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { useLatestRequestGuard } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
 
 export type SnapshotEditField = 'editValue'
@@ -103,20 +104,23 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  const latestRequestId = useRef(0)
+  const beginRequest = useLatestRequestGuard()
 
   const fetchSnapshots = useCallback((year: number, month: number) => {
-    const requestId = ++latestRequestId.current
-    const isLatest = () => requestId === latestRequestId.current
+    const isLatest = beginRequest()
     return apiClient
       .getInvestmentSnapshots(year, month)
       .then((snapshots) => {
         if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: snapshots })
       })
       .catch((err: unknown) => {
-        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load investment snapshots') })
+        if (!isLatest()) return
+        dispatch({
+          type: 'FETCH_ERROR',
+          payload: getErrorMessage(err, 'Unable to load investment snapshots'),
+        })
       })
-  }, [])
+  }, [beginRequest])
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })

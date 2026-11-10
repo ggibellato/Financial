@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { getErrorMessage } from '../utils/formatters'
+import { useLatestRequestGuard } from './useAsyncResource'
 
 interface CrudResourceState<T> {
   data: T
@@ -90,12 +91,11 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
     optionsRef.current = options
   })
 
-  const latestRequestId = useRef(0)
+  const beginRequest = useLatestRequestGuard()
 
   const fetchData = useCallback(() => {
     const { load, loadErrorMessage } = optionsRef.current
-    const requestId = ++latestRequestId.current
-    const isLatest = () => requestId === latestRequestId.current
+    const isLatest = beginRequest()
     return load()
       .then((data) => {
         if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: data })
@@ -103,7 +103,7 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
       .catch((err: unknown) => {
         if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, loadErrorMessage) })
       })
-  }, [])
+  }, [beginRequest])
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })

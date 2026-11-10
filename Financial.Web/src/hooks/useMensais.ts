@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BankOption, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { useLatestRequestGuard } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
@@ -249,11 +250,10 @@ export function useMensais(): MensaisData {
   const { monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
-  const latestRequestId = useRef(0)
+  const beginRequest = useLatestRequestGuard()
 
   const fetchMensaisData = useCallback(() => {
-    const requestId = ++latestRequestId.current
-    const isLatest = () => requestId === latestRequestId.current
+    const isLatest = beginRequest()
     return Promise.all([apiClient.getMensaisBills(), apiClient.getAccounts(), apiClient.getCategories()])
       .then(([bills, accounts, categories]) => {
         if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks: billPayingAccounts(accounts), categories } })
@@ -261,7 +261,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
       })
-  }, [])
+  }, [beginRequest])
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
