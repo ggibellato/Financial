@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
   Button,
   Dialog,
@@ -36,12 +36,14 @@ export default function EntityFormDialog({
   const styles = useFormPanelStyles()
   const errorBar = useRef<HTMLDivElement | null>(null)
 
-  useLayoutEffect(() => {
-    const opener = document.activeElement as HTMLElement | null
-    return () => {
+  const [opener] = useState(() => document.activeElement as HTMLElement | null)
+
+  useEffect(
+    () => () => {
       if (opener?.isConnected) opener.focus()
-    }
-  }, [])
+    },
+    [opener],
+  )
 
   useEffect(() => {
     if (!error) return

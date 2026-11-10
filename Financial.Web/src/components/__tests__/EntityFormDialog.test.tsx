@@ -12,28 +12,29 @@ interface RenderOptions {
   onCancel?: () => void
 }
 
-const renderDialog = ({
+const dialog = ({
   error = null,
   isSaving = false,
   canSave = true,
   saveLabel,
   onSave = vi.fn(),
   onCancel = vi.fn(),
-}: RenderOptions = {}) =>
-  render(
-    <EntityFormDialog
-      title="Create Bank"
-      error={error}
-      isSaving={isSaving}
-      canSave={canSave}
-      saveLabel={saveLabel}
-      onSave={onSave}
-      onCancel={onCancel}
-    >
-      <label htmlFor="bank-name">Name</label>
-      <input id="bank-name" />
-    </EntityFormDialog>,
-  )
+}: RenderOptions = {}) => (
+  <EntityFormDialog
+    title="Create Bank"
+    error={error}
+    isSaving={isSaving}
+    canSave={canSave}
+    saveLabel={saveLabel}
+    onSave={onSave}
+    onCancel={onCancel}
+  >
+    <label htmlFor="bank-name">Name</label>
+    <input id="bank-name" />
+  </EntityFormDialog>
+)
+
+const renderDialog = (options: RenderOptions = {}) => render(dialog(options))
 
 describe('EntityFormDialog', () => {
   it('renders the title as the dialog heading with its fields inside the dialog', () => {
@@ -102,6 +103,23 @@ describe('EntityFormDialog', () => {
     opener.remove()
   })
 
+  it('returns focus to the opener even when a field takes focus as the dialog opens', () => {
+    const opener = document.createElement('button')
+    document.body.appendChild(opener)
+    opener.focus()
+    const { unmount } = render(
+      <EntityFormDialog title="Create Bank" error={null} isSaving={false} canSave onSave={vi.fn()} onCancel={vi.fn()}>
+        <label htmlFor="bank-name">Name</label>
+        <input id="bank-name" autoFocus />
+      </EntityFormDialog>,
+    )
+
+    unmount()
+
+    expect(opener).toHaveFocus()
+    opener.remove()
+  })
+
   it('names the save button by the given label', () => {
     renderDialog({ saveLabel: 'Add account' })
 
@@ -151,12 +169,7 @@ describe('EntityFormDialog', () => {
   it('moves focus to the error summary when a save fails', async () => {
     const { rerender } = renderDialog()
 
-    rerender(
-      <EntityFormDialog title="Create Bank" error="The bank could not be saved." isSaving={false} canSave onSave={vi.fn()} onCancel={vi.fn()}>
-        <label htmlFor="bank-name">Name</label>
-        <input id="bank-name" />
-      </EntityFormDialog>,
-    )
+    rerender(dialog({ error: 'The bank could not be saved.' }))
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
     expect(screen.getByRole('alert')).toHaveTextContent('The bank could not be saved.')
