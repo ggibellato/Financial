@@ -23,7 +23,7 @@ function reducer<T>(state: AsyncResourceState<T>, action: AsyncResourceAction<T>
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null, data: action.keepData ? state.data : null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, data: action.payload }
+      return { ...state, isLoading: false, error: null, data: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':

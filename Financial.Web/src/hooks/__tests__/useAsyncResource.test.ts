@@ -163,6 +163,27 @@ describe('useAsyncResource', () => {
     expect(result.current.data).toBe('first')
   })
 
+  it('refresh clears a previous error once it succeeds', async () => {
+    const fetcher = vi
+      .fn<(key: string) => Promise<string>>()
+      .mockResolvedValueOnce('first')
+      .mockRejectedValueOnce('not an error')
+      .mockResolvedValueOnce('second')
+    const { result } = renderResource(fetcher)
+    await waitFor(() => expect(result.current.data).toBe('first'))
+    await act(async () => {
+      await result.current.refresh()
+    })
+    expect(result.current.error).toBe('Fallback message')
+
+    await act(async () => {
+      await result.current.refresh()
+    })
+
+    expect(result.current.error).toBeNull()
+    expect(result.current.data).toBe('second')
+  })
+
   it('refresh does nothing when the fetcher has nothing to fetch', async () => {
     const { result } = renderHook(() => useAsyncResource<string>(() => null, [], 'Fallback message'))
 
