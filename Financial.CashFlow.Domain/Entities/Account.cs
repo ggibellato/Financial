@@ -57,6 +57,8 @@ public class Account
     public bool Has(Capability capability) =>
         (_capabilitiesOverride ?? AccountTemplates.CapabilitiesOf(Template)).Contains(capability);
 
+    public bool IsBuiltFrom(AccountTemplate template) => Template == template;
+
     public void Update(string name)
     {
         Name = ValidName(name);

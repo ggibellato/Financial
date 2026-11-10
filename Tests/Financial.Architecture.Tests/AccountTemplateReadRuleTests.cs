@@ -38,13 +38,17 @@ public class AccountTemplateReadRuleTests
         readers.Should().BeEquivalentTo(AllowList.Keys);
     }
 
-    [Fact]
+    [Theory]
     [Trait("AC", "P60-F02-account-model-and-bank-migration-09")]
-    public void TemplateReadQuery_FindsPlantedViolation()
+    [InlineData(typeof(PlantedTemplateReader))]
+    [InlineData(typeof(PlantedAsyncTemplateReader))]
+    [InlineData(typeof(PlantedLambdaTemplateReader))]
+    [InlineData(typeof(PlantedAsyncLambdaTemplateReader))]
+    public void TemplateReadQuery_FindsPlantedViolation(Type plantedReader)
     {
-        var readers = _query.TypesDependingOn([typeof(PlantedTemplateReader).Assembly], ReadsTheTemplate);
+        var readers = _query.TypesDependingOn([plantedReader.Assembly], ReadsTheTemplate);
 
-        readers.Should().Contain(typeof(PlantedTemplateReader).FullName);
+        readers.Should().Contain(plantedReader.FullName);
     }
 
     [Fact]

@@ -88,6 +88,15 @@ public class AccountTests
         Account.Create("Account", template, Currency.GBP).TemplateOrder.Should().Be(expected);
     }
 
+    [Theory]
+    [InlineData(AccountTemplate.Bank, true)]
+    [InlineData(AccountTemplate.CreditCard, false)]
+    [InlineData(AccountTemplate.Settlement, false)]
+    public void IsBuiltFrom_IsTrueOnlyForTheAccountsOwnTemplate(AccountTemplate template, bool expected)
+    {
+        CreateBank().IsBuiltFrom(template).Should().Be(expected);
+    }
+
     [Fact]
     public void CreateWithCapabilities_WithTemplateOutsideTheDefaultGroup_DoesNotJoinIt()
     {
