@@ -23,7 +23,7 @@ function reducer<T>(state: AsyncResourceState<T>, action: AsyncResourceAction<T>
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null, data: action.keepData ? state.data : null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, data: action.payload }
+      return { ...state, isLoading: false, error: null, data: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -37,6 +37,14 @@ function reducer<T>(state: AsyncResourceState<T>, action: AsyncResourceAction<T>
 
 function initialState<T>(initialLoading: boolean): AsyncResourceState<T> {
   return { data: null, isLoading: initialLoading, error: null, retryCount: 0 }
+}
+
+export function useLatestRequestGuard(): () => () => boolean {
+  const latestRequestId = useRef(0)
+  return useCallback(() => {
+    const requestId = ++latestRequestId.current
+    return () => requestId === latestRequestId.current
+  }, [])
 }
 
 export interface AsyncResourceOptions {
@@ -67,15 +75,14 @@ export function useAsyncResource<T>(
 ): AsyncResource<T> {
   const [state, dispatch] = useReducer(reducer<T>, initialLoading, initialState<T>)
   const latest = useRef({ fetcher, errorFallback })
-  const latestRequestId = useRef(0)
+  const beginRequest = useLatestRequestGuard()
 
   useEffect(() => {
     latest.current = { fetcher, errorFallback }
   })
 
   const settleLatest = useCallback((request: Promise<T>, fallback: string) => {
-    const requestId = ++latestRequestId.current
-    const isLatest = () => requestId === latestRequestId.current
+    const isLatest = beginRequest()
     return request
       .then((result) => {
         if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: result })
@@ -83,12 +90,12 @@ export function useAsyncResource<T>(
       .catch((err: unknown) => {
         if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, fallback) })
       })
-  }, [])
+  }, [beginRequest])
 
   useEffect(() => {
     const request = fetcher()
     if (!request) {
-      latestRequestId.current++
+      beginRequest()
       dispatch({ type: 'RESET' })
       return
     }

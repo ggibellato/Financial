@@ -3,6 +3,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { BankOption, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
+import { useLatestRequestGuard } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
@@ -125,6 +126,7 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return {
         ...state,
         isLoading: false,
+        error: null,
         bills: action.payload.bills,
         banks: action.payload.banks,
         categories: action.payload.categories,
@@ -248,13 +250,18 @@ export function useMensais(): MensaisData {
   const { monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
+  const beginRequest = useLatestRequestGuard()
+
   const fetchMensaisData = useCallback(() => {
+    const isLatest = beginRequest()
     return Promise.all([apiClient.getMensaisBills(), apiClient.getAccounts(), apiClient.getCategories()])
-      .then(([bills, accounts, categories]) => dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks: billPayingAccounts(accounts), categories } }))
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
+      .then(([bills, accounts, categories]) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks: billPayingAccounts(accounts), categories } })
       })
-  }, [])
+      .catch((err: unknown) => {
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
+      })
+  }, [beginRequest])
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })

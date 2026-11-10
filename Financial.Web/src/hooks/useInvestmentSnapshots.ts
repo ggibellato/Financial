@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { useLatestRequestGuard } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
 
 export type SnapshotEditField = 'editValue'
@@ -49,7 +50,7 @@ function reducer(state: InvestmentSnapshotsState, action: InvestmentSnapshotsAct
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, snapshots: action.payload }
+      return { ...state, isLoading: false, error: null, snapshots: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -102,18 +103,29 @@ export interface InvestmentSnapshotsData {
 export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const selectedMonth = useRef({ year, month })
+
+  useEffect(() => {
+    selectedMonth.current = { year, month }
+  })
+
+  const beginRequest = useLatestRequestGuard()
 
   const fetchSnapshots = useCallback((year: number, month: number) => {
+    const isLatest = beginRequest()
     return apiClient
       .getInvestmentSnapshots(year, month)
-      .then((snapshots) => dispatch({ type: 'FETCH_SUCCESS', payload: snapshots }))
+      .then((snapshots) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: snapshots })
+      })
       .catch((err: unknown) => {
+        if (!isLatest()) return
         dispatch({
           type: 'FETCH_ERROR',
           payload: getErrorMessage(err, 'Unable to load investment snapshots'),
         })
       })
-  }, [])
+  }, [beginRequest])
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
@@ -124,8 +136,8 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   // Re-fetches after a mutation without flipping isLoading, so the table's own sort state
   // (owned by useSortableRows in the page component) survives the refresh.
   const refreshSilently = useCallback(
-    () => fetchSnapshots(year, month),
-    [fetchSnapshots, year, month],
+    () => fetchSnapshots(selectedMonth.current.year, selectedMonth.current.month),
+    [fetchSnapshots],
   )
 
   const totalValue = useMemo(

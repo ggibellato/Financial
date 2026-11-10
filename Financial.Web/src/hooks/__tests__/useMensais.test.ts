@@ -332,6 +332,39 @@ describe('useMensais', () => {
     await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
   })
 
+  it('clears a previous load error once a reload after a later delete succeeds', async () => {
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    getMensaisBillsMock.mockRejectedValueOnce(new Error('Network down'))
+    act(() => result.current.deleteBill('b1'))
+    await waitFor(() => expect(result.current.error).toBe('Network down'))
+
+    act(() => result.current.deleteBill('b2'))
+
+    await waitFor(() => expect(result.current.error).toBeNull())
+    expect(getMensaisBillsMock).toHaveBeenCalledTimes(3)
+  })
+
+  it('ignores an older reload that settles after a newer one failed', async () => {
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    const loadedBills = [...result.current.brasilBills, ...result.current.ukBills]
+    let resolveOlderReload!: (bills: typeof BILLS) => void
+    getMensaisBillsMock.mockReturnValueOnce(new Promise((resolve) => (resolveOlderReload = resolve)))
+    act(() => result.current.deleteBill('b1'))
+    await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
+    getMensaisBillsMock.mockRejectedValueOnce(new Error('Network down'))
+
+    act(() => result.current.deleteBill('b2'))
+    await waitFor(() => expect(result.current.error).toBe('Network down'))
+    await act(async () => resolveOlderReload([]))
+
+    expect(result.current.error).toBe('Network down')
+    expect([...result.current.brasilBills, ...result.current.ukBills]).toEqual(loadedBills)
+  })
+
   it('surfaces a delete error without crashing', async () => {
     deleteMensaisBillMock.mockRejectedValue(new Error('Recurring bill not found.'))
     const { result } = renderHook(() => useMensais())

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { getErrorMessage } from '../utils/formatters'
+import { useLatestRequestGuard } from './useAsyncResource'
 
 interface CrudResourceState<T> {
   data: T
@@ -19,7 +20,7 @@ function reducer<T>(state: CrudResourceState<T>, action: CrudResourceAction<T>):
     case 'FETCH_START':
       return { ...state, isLoading: true, error: null }
     case 'FETCH_SUCCESS':
-      return { ...state, isLoading: false, data: action.payload }
+      return { ...state, isLoading: false, error: null, data: action.payload }
     case 'FETCH_ERROR':
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
@@ -90,14 +91,19 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
     optionsRef.current = options
   })
 
+  const beginRequest = useLatestRequestGuard()
+
   const fetchData = useCallback(() => {
     const { load, loadErrorMessage } = optionsRef.current
+    const isLatest = beginRequest()
     return load()
-      .then((data) => dispatch({ type: 'FETCH_SUCCESS', payload: data }))
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, loadErrorMessage) })
+      .then((data) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: data })
       })
-  }, [])
+      .catch((err: unknown) => {
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, loadErrorMessage) })
+      })
+  }, [beginRequest])
 
   useEffect(() => {
     dispatch({ type: 'FETCH_START' })
