@@ -165,6 +165,22 @@ describe('useCrudResource', () => {
     expect(result.current.data).toEqual(ITEMS)
   })
 
+  it('ignores an older silent refresh that settles after a newer one failed', async () => {
+    const { result } = await renderLoaded('silent')
+    const olderLoad = deferred<Item[]>()
+    load.mockReturnValueOnce(olderLoad.promise).mockRejectedValueOnce(new Error('Network down'))
+    act(() => {
+      void result.current.refresh()
+      void result.current.refresh()
+    })
+    await waitFor(() => expect(result.current.error).toBe('Network down'))
+
+    await act(async () => olderLoad.resolve([{ id: 'c' }]))
+
+    expect(result.current.error).toBe('Network down')
+    expect(result.current.data).toEqual(ITEMS)
+  })
+
   it('runPendingMutation tracks the pending id and reloads on success', async () => {
     const { result } = await renderLoaded()
     const mutation = deferred<void>()

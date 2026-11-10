@@ -80,6 +80,22 @@ describe('useInvestmentSnapshots', () => {
     expect(result.current.snapshots).toEqual(SNAPSHOTS)
   })
 
+  it('ignores an older month that loads after the newer month failed', async () => {
+    let resolveCurrentMonth!: (snapshots: InvestmentSnapshotDto[]) => void
+    getInvestmentSnapshotsMock
+      .mockReturnValueOnce(new Promise((resolve) => (resolveCurrentMonth = resolve)))
+      .mockRejectedValueOnce(new Error('Network down'))
+    const { result } = renderHook(() => useInvestmentSnapshots())
+
+    act(() => result.current.setMonthInputValue(NEXT_MONTH_INPUT))
+    await waitFor(() => expect(result.current.error).toBe('Network down'))
+
+    await act(async () => resolveCurrentMonth(SNAPSHOTS))
+
+    expect(result.current.error).toBe('Network down')
+    expect(result.current.snapshots).toEqual([])
+  })
+
   it('surfaces a fetch error', async () => {
     getInvestmentSnapshotsMock.mockRejectedValue(new Error('Network down'))
     const { result } = renderHook(() => useInvestmentSnapshots())

@@ -90,12 +90,18 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
     optionsRef.current = options
   })
 
+  const latestRequestId = useRef(0)
+
   const fetchData = useCallback(() => {
     const { load, loadErrorMessage } = optionsRef.current
+    const requestId = ++latestRequestId.current
+    const isLatest = () => requestId === latestRequestId.current
     return load()
-      .then((data) => dispatch({ type: 'FETCH_SUCCESS', payload: data }))
+      .then((data) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: data })
+      })
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, loadErrorMessage) })
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, loadErrorMessage) })
       })
   }, [])
 

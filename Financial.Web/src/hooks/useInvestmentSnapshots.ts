@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../api/types'
 import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
@@ -103,15 +103,18 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
+  const latestRequestId = useRef(0)
+
   const fetchSnapshots = useCallback((year: number, month: number) => {
+    const requestId = ++latestRequestId.current
+    const isLatest = () => requestId === latestRequestId.current
     return apiClient
       .getInvestmentSnapshots(year, month)
-      .then((snapshots) => dispatch({ type: 'FETCH_SUCCESS', payload: snapshots }))
+      .then((snapshots) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: snapshots })
+      })
       .catch((err: unknown) => {
-        dispatch({
-          type: 'FETCH_ERROR',
-          payload: getErrorMessage(err, 'Unable to load investment snapshots'),
-        })
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load investment snapshots') })
       })
   }, [])
 
