@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { makeStyles } from '@fluentui/react-components'
-import { findNavPageTitle } from '../navigation/navTree'
+import { findNavLocation } from '../navigation/navTree'
 
 const APP_NAME = 'Financial'
 
@@ -19,7 +19,8 @@ const useRouteAnnouncerStyles = makeStyles({
 export default function RouteAnnouncer() {
   const styles = useRouteAnnouncerStyles()
   const { pathname } = useLocation()
-  const pageTitle = findNavPageTitle(pathname)
+  const navLocation = findNavLocation(pathname)
+  const pageTitle = navLocation ? (navLocation.detail ?? navLocation.page).label : null
 
   useEffect(() => {
     document.title = pageTitle ? `${pageTitle} - ${APP_NAME}` : APP_NAME

@@ -172,7 +172,7 @@ describe('ColumnFilterMenu', () => {
       mockMatchMedia(false)
       renderMenu()
 
-      expect(screen.getByRole('button', { name: 'Filter by Category' })).not.toHaveAttribute('tabindex', '-1')
+      expect(screen.getByRole('button', { name: 'Filter by Category' })).not.toHaveAttribute('tabindex')
     })
   })
 })

@@ -18,7 +18,7 @@ describe('ActionsColumnHeader', () => {
     renderInHeaderRow(<ActionsColumnHeader />)
 
     const header = screen.getByRole('columnheader', { name: 'Actions' })
-    expect(header).toHaveTextContent('')
+    expect(header.textContent).toBe('')
     expect(header).toHaveClass('data-table__col--action')
   })
 

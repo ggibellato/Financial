@@ -102,15 +102,25 @@ export const NAV_TREE: NavCategory[] = [
   },
 ]
 
-export function findNavPageTitle(pathname: string): string | null {
-  const leaves = NAV_TREE.flatMap((category) => [
-    ...category.children,
-    ...(category.groups ?? []).flatMap((group) => group.children),
-  ])
-  for (const child of leaves) {
-    const match = matchNavChild(pathname, child)
-    if (match === 'page') return child.label
-    if (match === 'detail' && child.detail) return child.detail.label
+export interface NavLocation {
+  trail: string[]
+  page: NavChild
+  detail?: NavDetail
+}
+
+export function findNavLocation(pathname: string): NavLocation | null {
+  for (const category of NAV_TREE) {
+    const sections = [
+      { trail: [category.label], children: category.children },
+      ...(category.groups ?? []).map((group) => ({ trail: [category.label, group.label], children: group.children })),
+    ]
+    for (const { trail, children } of sections) {
+      for (const page of children) {
+        const match = matchNavChild(pathname, page)
+        if (match === 'page') return { trail, page }
+        if (match === 'detail') return { trail, page, detail: page.detail }
+      }
+    }
   }
   return null
 }
