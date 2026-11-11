@@ -25,6 +25,8 @@ const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })
 
 const INACTIVE_BANK: BankOption = { ...BANKS[0], id: 'bank-chase', name: 'Chase', isActive: false }
 
+const BARCLAYS_LOCK = { id: 'bank-barclays', name: 'Barclays' }
+
 const FUNDING: IncomeFunding = {
   isShown: false,
   isHandSplit: false,
@@ -99,6 +101,17 @@ describe('IncomeForm funded from', () => {
     expect(document.activeElement).toBe(screen.getByRole('group', { name: 'Funding line 1' }).querySelector('select'))
   })
 
+  it('leaves focus where it was when the section opens already showing the lines', () => {
+    const funding: IncomeFunding = { ...FUNDING, isShown: true, isHandSplit: true, lines: [{ key: 'l1', bankId: 'bank-barclays', amount: '90.00' }] }
+    const { rerender } = render(<IncomeForm {...baseProps} lockedBank={BARCLAYS_LOCK} />)
+    const description = screen.getByRole('textbox', { name: 'Description' })
+    description.focus()
+
+    rerender(<IncomeForm {...baseProps} lockedBank={BARCLAYS_LOCK} funding={funding} />)
+
+    expect(document.activeElement).toBe(description)
+  })
+
   it('disables Save and shows the mismatch while the lines do not add up', () => {
     const mismatch = 'Lines add up to £88.00; the deposit is £90.00.'
     render(
@@ -139,7 +152,7 @@ describe('IncomeForm funded from', () => {
   })
 
   it('does not mark a locked bank as required', () => {
-    render(<IncomeForm {...baseProps} lockedBank={{ id: 'bank-barclays', name: 'Barclays' }} funding={{ ...FUNDING, isShown: true }} />)
+    render(<IncomeForm {...baseProps} lockedBank={BARCLAYS_LOCK} funding={{ ...FUNDING, isShown: true }} />)
 
     expect(screen.getByText('Bank')).not.toHaveTextContent('*')
   })

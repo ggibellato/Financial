@@ -112,6 +112,11 @@ export function formatLongMonthYear(year: number, month: number): string {
   return new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })
 }
 
+export function formatStatementMonthLabel(invoiceDate: string | null | undefined): string {
+  const month = invoiceDate ? parseMonthInputValue(invoiceDate.slice(0, 7)) : null
+  return month ? formatLongMonthYear(month.year, month.month) : ''
+}
+
 // Monthly chart axis label, shared by every "value by month" chart
 // (Transactions/Credits) — docs/ui/forms-data-and-visualisations.md's
 // "Month-axis labels" rule: MM/yyyy everywhere, not a short month name.

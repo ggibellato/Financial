@@ -244,6 +244,7 @@ export default function AccountScreenPage() {
             creditCardId={expenseForm.creditCardId}
             creditCardName={expenseForm.creditCardName}
             invoiceDate={expenseForm.invoiceDate}
+            invoiceMonthMovedFrom={expenseForm.invoiceMonthMovedFrom}
             roundUpAmount={expenseForm.roundUpAmount}
             countsAsTithe={expenseForm.countsAsTithe === 'true'}
             paymentMode={expenseForm.paymentMode}
