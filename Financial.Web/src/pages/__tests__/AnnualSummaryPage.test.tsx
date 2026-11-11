@@ -582,8 +582,8 @@ describe('AnnualSummaryPage', () => {
     expect(tbody.queryByText('Casa')).not.toBeInTheDocument()
     expect(tbody.getByText('Mercado')).toBeInTheDocument()
     expect(tbody.getByText('Salary')).toBeInTheDocument()
-    expect(tbody.getByText('Resultado (R-D-Inv) (all rows)')).toBeInTheDocument()
-    expect(tbody.getByText('Total despesas (all rows)')).toBeInTheDocument()
+    expect(tbody.getByText(/^Resultado \(R-D-Inv\)/)).toBeInTheDocument()
+    expect(tbody.getByText(/^Total despesas/)).toBeInTheDocument()
   })
 
   it('labels Resultado and Total despesas as covering all rows only while a Category filter is active', async () => {
@@ -596,8 +596,9 @@ describe('AnnualSummaryPage', () => {
     })
     render(<AnnualSummaryPage />)
 
+    await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
     const tbody = () => within(document.querySelector('tbody')!)
-    expect(await screen.findByText('Total despesas')).toBeInTheDocument()
+    expect(tbody().getByText('Total despesas')).toBeInTheDocument()
     expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
