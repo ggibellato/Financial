@@ -6,6 +6,7 @@ interface FormSaveActionsProps {
   saveLabel: string
   isSaving: boolean
   isSaveDisabled?: boolean
+  isBusy?: boolean
   onCancel: () => void
   children?: ReactNode
 }
@@ -14,7 +15,7 @@ function blockSubmit(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault()
 }
 
-export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = false, onCancel, children }: FormSaveActionsProps) {
+export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = false, isBusy = isSaving, onCancel, children }: FormSaveActionsProps) {
   const styles = useFormPanelStyles()
 
   return (
@@ -22,7 +23,7 @@ export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = 
       <Button
         type="submit"
         appearance="primary"
-        disabled={!isSaving && isSaveDisabled}
+        disabled={!isSaving && (isSaveDisabled || isBusy)}
         disabledFocusable={isSaving}
         // Fluent drops its own click guard on a disabledFocusable <button>, so a click would still submit the form.
         onClickCapture={isSaving ? blockSubmit : undefined}
@@ -30,7 +31,7 @@ export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = 
       >
         {isSaving ? 'Saving...' : saveLabel}
       </Button>
-      <Button appearance="secondary" disabled={isSaving} onClick={onCancel}>
+      <Button appearance="secondary" disabled={isBusy} onClick={onCancel}>
         Cancel
       </Button>
       {children}

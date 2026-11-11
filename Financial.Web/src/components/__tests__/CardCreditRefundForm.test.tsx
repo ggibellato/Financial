@@ -71,10 +71,16 @@ describe('CardCreditRefundForm', () => {
     expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toBeDisabled()
   })
 
-  it('disables the form and shows Saving... while the refund saves', () => {
-    renderForm({ isSaving: true })
+  it('disables the fields and keeps Saving... focused while the refund saves', () => {
+    const { rerender } = renderForm()
+    screen.getByRole('button', { name: 'Refund credit to bank' }).focus()
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    rerender(<CardCreditRefundForm refundForm={formState({ isSaving: true })} onCancel={vi.fn()} />)
+
+    const save = screen.getByRole('button', { name: 'Saving...' })
+    expect(save).toHaveAttribute('aria-disabled', 'true')
+    expect(save).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     expect(screen.getByRole('combobox', { name: /^To bank/ })).toBeDisabled()
   })
 
@@ -96,11 +102,11 @@ describe('CardCreditRefundForm', () => {
     expect(screen.getByText("The card's credit is 35.00 GBP.")).toBeInTheDocument()
   })
 
-  it('announces the server message with focus on the submit', () => {
+  it('announces the server message and moves focus to it', () => {
     renderForm({ saveError: 'The server refused.' })
 
     expect(screen.getByRole('alert')).toHaveTextContent('The server refused.')
-    expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toHaveFocus()
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 
   it('reports each field change and cancels', () => {

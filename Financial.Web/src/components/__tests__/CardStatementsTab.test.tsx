@@ -36,7 +36,7 @@ const CARRYING: AccountStatementDto = {
 }
 
 function dueDateHandle(overrides: Partial<StatementDueDateFormHandle> = {}): StatementDueDateFormHandle {
-  return { form: null, failedSubmits: 0, isDirty: false, open: vi.fn(), close: vi.fn(), setDate: vi.fn(), save: vi.fn(), clear: vi.fn(), ...overrides }
+  return { form: null, failedValidations: 0, isDirty: false, open: vi.fn(), close: vi.fn(), setDate: vi.fn(), save: vi.fn(), clear: vi.fn(), ...overrides }
 }
 
 function dueDateFormState(overrides: Partial<DueDateFormState> = {}): DueDateFormState {
@@ -446,7 +446,7 @@ describe('CardStatementsTab', () => {
       expect(setStatementDueDateMock).not.toHaveBeenCalled()
     })
 
-    it('announces a server error in the form, keeps the value and returns focus to the field', async () => {
+    it('announces a server error in the form, keeps the value and moves focus to the message', async () => {
       setStatementDueDateMock.mockRejectedValue(new ApiError('Amex is inactive.', 400))
       await openRealForm()
       fireEvent.change(screen.getByLabelText(/^Due date/), { target: { value: '2026-10-20' } })
@@ -455,19 +455,23 @@ describe('CardStatementsTab', () => {
 
       expect(await screen.findByRole('alert')).toHaveTextContent('Amex is inactive.')
       expect(screen.getByLabelText(/^Due date/)).toHaveValue('2026-10-20')
-      expect(screen.getByLabelText(/^Due date/)).toHaveFocus()
+      expect(screen.getByRole('alert')).toHaveFocus()
     })
 
     it.each([
-      ['Save due date', 'Saving...'],
-      ['Clear due date', 'Clearing...'],
-    ])('disables the form and the row actions while %s runs', async (action, label) => {
+      ['Save due date', 'Saving...', 'Clear due date'],
+      ['Clear due date', 'Clearing...', 'Save due date'],
+    ])('disables the form and the row actions while %s runs, keeping focus on the action', async (action, label, other) => {
       setStatementDueDateMock.mockReturnValue(new Promise(() => {}))
       await openRealForm()
 
       await userEvent.click(screen.getByRole('button', { name: action }))
 
-      expect(screen.getByRole('button', { name: label })).toBeDisabled()
+      const pending = screen.getByRole('button', { name: label })
+      expect(pending).toHaveAttribute('aria-disabled', 'true')
+      expect(pending).toHaveFocus()
+      expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: other })).toBeDisabled()
       expect(screen.getByLabelText(/^Due date/)).toBeDisabled()
       expect(screen.getByRole('button', { name: 'Set the October 2026 due date' })).toBeDisabled()
       expect(screen.getByRole('button', { name: 'Pay October 2026 statement' })).toBeDisabled()

@@ -40,6 +40,13 @@ describe('FormSaveActions', () => {
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
   })
 
+  it('disables Save and Cancel while another action of the form runs', () => {
+    render(<FormSaveActions saveLabel="Save due date" isSaving={false} isBusy onCancel={vi.fn()} />)
+
+    expect(screen.getByRole('button', { name: 'Save due date' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  })
+
   it('keeps focus on Save from the click through saving to a failed save', () => {
     const props = { saveLabel: 'Add Expense', onCancel: vi.fn() }
     const { rerender } = render(<FormSaveActions {...props} isSaving={false} />)

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
-import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import SettlementEntryForm from '../SettlementEntryForm'
 
 function addState(overrides: Partial<SettlementEntryFormModel> = {}): SettlementEntryFormModel {
@@ -212,19 +212,50 @@ describe('SettlementEntryForm', () => {
     expect(screen.getByText('Amount must be greater than zero.')).toBeInTheDocument()
   })
 
-  it('[AC P60-F12-settlement-screen-08] disables the form and shows Saving... while it saves', () => {
-    renderForm(addState({ isSaving: true }))
+  it('[AC P60-F12-settlement-screen-08] disables the fields and keeps Saving... focused while it saves', () => {
+    const { rerender } = renderForm(addState())
+    screen.getByRole('button', { name: 'Add entry' }).focus()
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    rerender(<SettlementEntryForm form={addState({ isSaving: true })} onCancel={vi.fn()} />)
+
+    const save = screen.getByRole('button', { name: 'Saving...' })
+    expect(save).toHaveAttribute('aria-disabled', 'true')
+    expect(save).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
     expect(screen.getByRole('radio', { name: 'You' })).toBeDisabled()
   })
 
-  it('[AC P60-F12-settlement-screen-08] announces the server message with focus on the submit', () => {
+  it('[AC P60-F12-settlement-screen-08] announces the server message and moves focus to it', () => {
     renderForm(addState({ saveError: 'Mãe is inactive.' }))
 
     expect(screen.getByRole('alert')).toHaveTextContent('Mãe is inactive.')
-    expect(screen.getByRole('button', { name: 'Add entry' })).toHaveFocus()
+    expect(screen.getByRole('alert')).toHaveFocus()
+  })
+
+  it.each([
+    ['the Save button', () => screen.getByRole('button', { name: 'Save settlement' })],
+    ['a field', () => screen.getByLabelText(/^Description/)],
+  ])('returns focus to Save when the confirmation is cancelled after a submit from %s', async (_, origin) => {
+    const { rerender } = renderForm(settleState())
+    origin().focus()
+    rerender(<SettlementEntryForm form={settleState({ confirmation: 'Both totals become zero.' })} onCancel={vi.fn()} />)
+    await screen.findAllByRole('dialog', { hidden: true })
+
+    rerender(<SettlementEntryForm form={settleState()} onCancel={vi.fn()} />)
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save settlement' })).toHaveFocus())
+  })
+
+  it('moves focus to the alert when the confirmed settlement fails', async () => {
+    const { rerender } = renderForm(settleState({ confirmation: 'Both totals become zero.' }))
+    await screen.findAllByRole('dialog', { hidden: true })
+
+    rerender(<SettlementEntryForm form={settleState({ saveError: 'Mãe is inactive.' })} onCancel={vi.fn()} />)
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
   })
 
   it('[AC P60-F12-settlement-screen-04] shows the warning as status', () => {

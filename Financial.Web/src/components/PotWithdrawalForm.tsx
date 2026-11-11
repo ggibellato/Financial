@@ -1,10 +1,9 @@
-import { useEffect, useRef } from 'react'
 import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankOption } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { useFieldError } from '../hooks/useFieldError'
-import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
+import { useFocusSaveOnDialogClose, useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { PotWithdrawalFormModel } from '../hooks/usePotWithdrawalForm'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
 import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
@@ -36,14 +35,7 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
   const { formRef, errorRef } = useFormErrorFocus(form.errorFields, form.error)
-  const wasOverdraftOpen = useRef(false)
-
-  useEffect(() => {
-    if (wasOverdraftOpen.current && form.overdraftMessage === null && form.error === null) {
-      formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus()
-    }
-    wasOverdraftOpen.current = form.overdraftMessage !== null
-  }, [form.overdraftMessage, form.error, formRef])
+  useFocusSaveOnDialogClose(formRef, form.overdraftMessage !== null, form.error)
 
   const { values } = form
   if (!values) return null
