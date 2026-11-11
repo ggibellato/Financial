@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BankOption, IncomeDto, IncomeSourceDto } from '../../api/types'
 import { setStoredDefault } from '../../utils/createFormDefaults'
+import { comparableLines } from '../../utils/fundingLines'
 import { potsAccount } from '../../test/account'
 import { SPLIT_CONFIRMATION_DELAY_MS, selectActiveIncomeSources, useIncomeForm } from '../useIncomeForm'
 
@@ -797,6 +798,124 @@ describe('useIncomeForm funding lines', () => {
 
     expect(result.current.incomeLockedBank).toEqual(lockedBank)
     expect(result.current.incomeFunding.bankName).toBe('Barclays')
+  })
+})
+
+describe('useIncomeForm on a bank screen', () => {
+  const LOCKED_BARCLAYS = { id: 'bank-barclays', name: 'Barclays' }
+  const LINKED_INCOME: IncomeDto = {
+    id: 'i1', date: '2026-10-14', incomeSourceId: '2', incomeSourceName: 'Ariana',
+    grossValue: null, netValue: 100, bankId: 'bank-barclays', bankName: 'Barclays', description: 'Salary',
+    potsAccountId: 'p1',
+    hasLinkedDeposit: true,
+    fundingLines: [{ bankId: 'bank-barclays', amount: 90 }],
+  }
+  let onSaved: () => void
+
+  beforeEach(() => {
+    createIncomeMock.mockReset().mockResolvedValue(LINKED_INCOME)
+    updateIncomeMock.mockReset()
+    getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
+    onSaved = vi.fn<() => void>()
+    sessionStorage.clear()
+  })
+
+  async function renderOnBankScreen(settings = {}) {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_BARCLAYS, ...settings }))
+    await waitFor(() => expect(result.current.potsAccountsStatus).toBe('ready'))
+    return result
+  }
+
+  async function openNewIncomeOnBankScreen(settings = {}) {
+    const result = await renderOnBankScreen(settings)
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('date', '2026-10-14'))
+    act(() => result.current.setIncomeField('netValue', '100'))
+    return result
+  }
+
+  const amounts = (result: { current: ReturnType<typeof useIncomeForm> }) => comparableLines(result.current.incomeFunding.lines)
+
+  it('opens with the screen bank funding the whole deposit in one line', async () => {
+    const result = await openNewIncomeOnBankScreen()
+
+    expect(result.current.incomeLockedBank).toEqual(LOCKED_BARCLAYS)
+    expect(result.current.incomeFunding.isShown).toBe(true)
+    expect(result.current.incomeFunding.isHandSplit).toBe(true)
+    expect(amounts(result)).toEqual([{ bankId: 'bank-barclays', amount: '90.00' }])
+    expect(result.current.incomeFunding.mismatch).toBeNull()
+  })
+
+  it('keeps the line on the whole deposit while the net value changes', async () => {
+    const result = await openNewIncomeOnBankScreen()
+
+    act(() => result.current.setIncomeField('netValue', '250'))
+
+    expect(amounts(result)).toEqual([{ bankId: 'bank-barclays', amount: '225.00' }])
+  })
+
+  it('stops following the net value once a line is edited', async () => {
+    const result = await openNewIncomeOnBankScreen()
+    const [line] = result.current.incomeFunding.lines
+
+    act(() => result.current.incomeFunding.changeLine(line.key, { amount: '50' }))
+    act(() => result.current.incomeFunding.addLine())
+    act(() => result.current.setIncomeField('netValue', '250'))
+
+    expect(amounts(result)).toEqual([
+      { bankId: 'bank-barclays', amount: '50' },
+      { bankId: '', amount: '40.00' },
+    ])
+    expect(result.current.isIncomeDirty).toBe(true)
+  })
+
+  it('leaves the untouched default line to the server', async () => {
+    const result = await openNewIncomeOnBankScreen()
+
+    await act(async () => result.current.submitIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: 'bank-barclays', potsAccountId: 'p1', fundingLines: null }))
+  })
+
+  it('sends the lines once they are edited', async () => {
+    const result = await openNewIncomeOnBankScreen()
+    const [line] = result.current.incomeFunding.lines
+    act(() => result.current.incomeFunding.changeLine(line.key, { amount: '50' }))
+    act(() => result.current.incomeFunding.addLine())
+    act(() => result.current.incomeFunding.changeLine(result.current.incomeFunding.lines[1].key, { bankId: 'bank-trading212' }))
+
+    await act(async () => result.current.submitIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        fundingLines: [
+          { bankId: 'bank-barclays', amount: 50 },
+          { bankId: 'bank-trading212', amount: 40 },
+        ],
+      }),
+    )
+  })
+
+  it('follows the net value again for the next income after a kept-open save', async () => {
+    const result = await openNewIncomeOnBankScreen({ keepOpenAfterSave: true })
+    const [line] = result.current.incomeFunding.lines
+    act(() => result.current.incomeFunding.changeLine(line.key, { amount: '90.00' }))
+
+    await act(async () => result.current.submitIncome())
+    act(() => result.current.setIncomeField('netValue', '40'))
+
+    expect(amounts(result)).toEqual([{ bankId: 'bank-barclays', amount: '36.00' }])
+  })
+
+  it('opens an existing income with its saved funding, not a new default line', async () => {
+    const result = await renderOnBankScreen()
+
+    act(() => result.current.showEditIncomeForm(LINKED_INCOME))
+    act(() => result.current.setIncomeField('netValue', '250'))
+
+    expect(result.current.incomeFunding.isHandSplit).toBe(false)
+    expect(result.current.incomeFunding.lines).toEqual([])
   })
 })
 

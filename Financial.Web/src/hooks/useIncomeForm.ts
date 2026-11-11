@@ -110,6 +110,7 @@ interface FundingFields {
 }
 
 const DEFAULT_FUNDING: FundingFields = { isOlderSplit: false, fundingLines: [] }
+const DEPOSIT_LINE_KEY = 'deposit-line'
 
 function comparableFunding({ fundingLines }: FundingFields): string {
   return JSON.stringify(comparableLines(fundingLines))
@@ -342,9 +343,12 @@ export function useIncomeForm(
   const netValue = parseValidatedNumber(state.netValue, { min: 0 })
   const depositAmount = netValue === null ? null : incomeDepositAmount(netValue)
   const fundingCurrency = findAccount(accounts, state.potsAccountId)?.currency ?? DEFAULT_DEPOSIT_CURRENCY
-  const isHandSplit = state.fundingLines.length > 0
+  const wholeDeposit = depositAmount?.toFixed(2) ?? ''
+  const followsDeposit = !state.isEditing && incomeBankLock !== undefined && state.fundingLines.length === 0
+  const fundingLines = followsDeposit ? [{ key: DEPOSIT_LINE_KEY, bankId: incomeBankLock.id, amount: wholeDeposit }] : state.fundingLines
+  const isHandSplit = fundingLines.length > 0
   const editsFundingLines = isFundingShown && isHandSplit
-  const fundingMismatch = editsFundingLines ? fundingLinesMismatch(state.fundingLines, depositAmount, fundingCurrency) : null
+  const fundingMismatch = editsFundingLines ? fundingLinesMismatch(fundingLines, depositAmount, fundingCurrency) : null
 
   const potsAccountName = (potsAccountId: string | null | undefined): string | null =>
     potsAccountId == null ? null : (findAccount(accounts, potsAccountId)?.name ?? UNNAMED_POTS_ACCOUNT)
@@ -411,13 +415,13 @@ export function useIncomeForm(
 
   const setFundingLines = (lines: readonly FundingLineValues[]) => dispatch({ type: 'SET_FUNDING_LINES', payload: lines })
 
-  const splitAcrossBanks = () => setFundingLines([newFundingLine(incomeBankId, depositAmount?.toFixed(2) ?? '')])
+  const splitAcrossBanks = () => setFundingLines([newFundingLine(incomeBankId, wholeDeposit)])
 
-  const changeFundingLine = (key: string, change: FundingLineChange) => setFundingLines(withChangedLine(state.fundingLines, key, change))
+  const changeFundingLine = (key: string, change: FundingLineChange) => setFundingLines(withChangedLine(fundingLines, key, change))
 
-  const addFundingLine = () => setFundingLines(withAddedLine(state.fundingLines, depositAmount))
+  const addFundingLine = () => setFundingLines(withAddedLine(fundingLines, depositAmount))
 
-  const removeFundingLine = (key: string) => setFundingLines(withoutLine(state.fundingLines, key))
+  const removeFundingLine = (key: string) => setFundingLines(withoutLine(fundingLines, key))
 
   function setIncomeField(field: IncomeFormField, value: string) {
     dispatch({ type: 'SET_FIELD', payload: { field, value } })
@@ -436,7 +440,7 @@ export function useIncomeForm(
     if (fundingMismatch) return
 
     const errors: Partial<Record<IncomeFormField, string>> = {}
-    const fundingErrors = editsFundingLines ? fundingLineErrors(state.fundingLines) : NO_FUNDING_ERRORS
+    const fundingErrors = editsFundingLines ? fundingLineErrors(fundingLines) : NO_FUNDING_ERRORS
 
     if (!state.date.trim()) {
       errors.date = 'Date is required.'
@@ -484,7 +488,7 @@ export function useIncomeForm(
       bankId: incomeBankId || null,
       description: state.description || null,
       potsAccountId: requestedPotsAccountId(state, incomeSources),
-      fundingLines: editsFundingLines ? toFundingLineRequests(state.fundingLines) : null,
+      fundingLines: editsFundingLines && !followsDeposit ? toFundingLineRequests(fundingLines) : null,
     }
 
     const request =
@@ -521,7 +525,7 @@ export function useIncomeForm(
   const incomeFunding: IncomeFunding = {
     isShown: isFundingShown,
     isHandSplit,
-    lines: state.fundingLines,
+    lines: fundingLines,
     openedBankIds: state.openedValues?.bank ? [state.openedValues.bank] : [],
     bankName: incomeBankLock?.name ?? banks.find((bank) => bank.id === incomeBankId)?.name ?? null,
     depositAmount,
