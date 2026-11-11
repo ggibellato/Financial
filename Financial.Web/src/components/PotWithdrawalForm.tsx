@@ -3,7 +3,7 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { BankOption } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { useFieldError } from '../hooks/useFieldError'
-import { useFocusSaveOnDialogClose, useFormErrorFocus } from '../hooks/useFormErrorFocus'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { PotWithdrawalFormModel } from '../hooks/usePotWithdrawalForm'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
 import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
@@ -35,7 +35,6 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
   const { formRef, errorRef } = useFormErrorFocus(form.errorFields, form.error)
-  useFocusSaveOnDialogClose(formRef, form.overdraftMessage !== null, form.error)
 
   const { values } = form
   if (!values) return null

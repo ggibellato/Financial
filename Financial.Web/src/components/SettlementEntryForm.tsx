@@ -1,6 +1,5 @@
-import { useRef } from 'react'
 import { Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Text, tokens } from '@fluentui/react-components'
-import { useAlertFocus, useFocusSaveOnDialogClose } from '../hooks/useFormErrorFocus'
+import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
 import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
@@ -21,7 +20,6 @@ const useEntryFormStyles = makeStyles({
 export default function SettlementEntryForm({ form, onCancel }: SettlementEntryFormProps) {
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
-  const formRef = useRef<HTMLFormElement | null>(null)
   const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
   const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'Add entry'
   const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : title
@@ -36,7 +34,6 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   })
 
   const errorRef = useAlertFocus(saveError)
-  useFocusSaveOnDialogClose(formRef, confirmation !== null, saveError)
 
   const currencyChoice = asksCurrency && (
     <Field label="Currency" required {...validation('currency')}>
@@ -51,7 +48,6 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   return (
     <>
       <form
-        ref={formRef}
         className={styles.panel}
         noValidate
         aria-labelledby="settlement-entry-title"

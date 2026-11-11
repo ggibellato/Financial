@@ -1,9 +1,11 @@
 import { useRef } from 'react'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import type { LockedBank } from '../hooks/formSettings'
 import type { PayCardStatementField, PayCardStatementForm as PayCardStatementFormState } from '../hooks/usePayCardStatementForm'
 import { formatCurrency, formatLongMonthYear, todayIsoDate } from '../utils/formatters'
 import ErrorState from './ErrorState'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 const NOTHING_TO_PAY_MESSAGE = 'No card statement is waiting to be paid.'
@@ -26,6 +28,7 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
   const dateRef = useRef<HTMLInputElement | null>(null)
   const { cards, statements, statement, values, isLoading, loadError, retry, hasNothingToPay, isSaving, saveError, fieldErrors, setField, submit } =
     payForm
+  const errorRef = useAlertFocus(saveError)
   const fieldRefs: Record<PayCardStatementField, { current: HTMLElement | null }> = { cardId: cardRef, statementId: statementRef, date: dateRef }
   const validation = (field: PayCardStatementField) => ({
     validationState: fieldErrors[field] ? ('error' as const) : ('none' as const),
@@ -48,7 +51,7 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
           Pay card statement
         </Text>
         {saveError && (
-          <MessageBar intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -95,20 +98,13 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
             <Input readOnly value={statement ? formatCurrency(statement.total, statement.currency) : '—'} />
           </Field>
         </div>
-        <div className={styles.actions}>
-          <Button
-            type="submit"
-            appearance="primary"
-            disabled={isSaving || isLoading || loadError !== null || hasNothingToPay}
-            icon={isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {isSaving ? 'Saving...' : 'Pay card statement'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions
+        saveLabel="Pay card statement"
+        isSaving={isSaving}
+        isSaveDisabled={isLoading || loadError !== null || hasNothingToPay}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

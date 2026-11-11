@@ -53,10 +53,16 @@ describe('PayCardStatementForm', () => {
     expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeDisabled()
   })
 
-  it('disables the form and shows Saving... while the payment saves', () => {
-    render(<PayCardStatementForm payForm={formState({ isSaving: true })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
+  it('disables the fields and keeps Saving... focused while the payment saves', () => {
+    const { rerender } = render(<PayCardStatementForm payForm={formState()} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
+    screen.getByRole('button', { name: 'Pay card statement' }).focus()
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    rerender(<PayCardStatementForm payForm={formState({ isSaving: true })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
+
+    const save = screen.getByRole('button', { name: 'Saving...' })
+    expect(save).toHaveAttribute('aria-disabled', 'true')
+    expect(save).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     expect(screen.getByRole('combobox', { name: /^Card/ })).toBeDisabled()
   })
 
@@ -68,9 +74,10 @@ describe('PayCardStatementForm', () => {
     expect(screen.getByRole('combobox', { name: /^Statement/ })).toHaveFocus()
   })
 
-  it('shows the server message', () => {
+  it('announces the server message and moves focus to it', () => {
     render(<PayCardStatementForm payForm={formState({ saveError: 'There is nothing to pay on this statement.' })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
 
-    expect(screen.getByText('There is nothing to pay on this statement.')).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('There is nothing to pay on this statement.')
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 })

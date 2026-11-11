@@ -323,13 +323,28 @@ describe('CardStatementsTab', () => {
     expect(screen.getByRole('option', { name: 'Loading banks…' })).toBeInTheDocument()
   })
 
-  it('disables the pay form while saving', () => {
-    renderTab({
-      payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} },
-    })
+  it('disables the pay form fields and keeps Saving... focused while it saves', () => {
+    const payForm = { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} }
+    const statements = renderTab({ payForm })
+    screen.getByRole('button', { name: 'Pay statement' }).focus()
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    statements.rerenderWith({ payForm: { ...payForm, isSaving: true } })
+
+    const save = screen.getByRole('button', { name: 'Saving...' })
+    expect(save).toHaveAttribute('aria-disabled', 'true')
+    expect(save).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     expect(screen.getByLabelText(/^Bank/)).toBeDisabled()
+  })
+
+  it('moves focus to the server message when the payment fails', () => {
+    const payForm = { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} }
+    const statements = renderTab({ payForm })
+
+    statements.rerenderWith({ payForm: { ...payForm, isSaving: false, error: 'Barclays is inactive.' } })
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 
   it('submits and cancels the pay form', async () => {
