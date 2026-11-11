@@ -65,7 +65,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           <Select
             value={jurisdiction}
             onChange={(e) => setJurisdiction(e.target.value)}
-            disabled={isSaving || isEditing}
+            disabled={isEditing}
           >
             {JURISDICTIONS.map((j) => (
               <option key={j} value={j}>
@@ -79,7 +79,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           <Select
             value={eventCategory}
             onChange={(e) => setEventCategory(e.target.value)}
-            disabled={isSaving || isEditing}
+            disabled={isEditing}
           >
             {EVENT_CATEGORIES.map((c) => (
               <option key={c} value={c}>
@@ -96,13 +96,13 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
             validationState={trimmedLabel.length === 0 ? 'error' : 'none'}
             validationMessage={trimmedLabel.length === 0 ? 'Label is required.' : ''}
           >
-            <Input value={label} onChange={(e) => setLabel(e.target.value)} disabled={isSaving} autoFocus />
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} />
           </Field>
         </div>
 
         <div className={styles.spanTwo}>
           <Field label="Description">
-            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSaving} />
+            <Textarea value={description} onChange={(e) => setDescription(e.target.value)} />
           </Field>
         </div>
 
@@ -111,7 +111,6 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
             type="date"
             value={effectiveFrom}
             onChange={(e) => setEffectiveFrom(e.target.value)}
-            disabled={isSaving}
           />
         </Field>
 
@@ -120,7 +119,6 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
             type="date"
             value={effectiveTo}
             onChange={(e) => setEffectiveTo(e.target.value)}
-            disabled={isSaving}
           />
         </Field>
       </div>

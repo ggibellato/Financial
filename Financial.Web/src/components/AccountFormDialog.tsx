@@ -4,7 +4,6 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
-import { useFormPanelStyles } from './formPanelStyles'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
@@ -141,7 +140,6 @@ function categoryOptions(categories: CategoryDto[], keptId: string): CategoryDto
 }
 
 export default function AccountFormDialog({ account, templates, categories, onCancel, onSubmit }: AccountFormDialogProps) {
-  const styles = useFormPanelStyles()
   const isEditing = account !== null
   const isLocked = account?.hasRecords === true
   const [initial] = useState(() => initialValues(account, templates))
@@ -263,179 +261,177 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       onSave={handleSave}
       onCancel={requestClose}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <Field
+        label="Template"
+        required={!isLocked}
+        hint={isLocked ? LOCKED_HINT : undefined}
+        validationState={fieldState('template')}
+        validationMessage={fieldMessage('template')}
+      >
+        {isLocked ? (
+          <Input ref={templateRef} value={templateLabel} readOnly />
+        ) : (
+          <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
+            {templates.map((candidate) => (
+              <option key={candidate.name} value={candidate.name}>
+                {accountTemplateLabel(candidate.name)}
+              </option>
+            ))}
+          </Select>
+        )}
+      </Field>
+
+      <Field label="Name" required validationState={fieldState('name')} validationMessage={fieldMessage('name')}>
+        <Input ref={nameRef} value={values.name} onChange={(_, data) => setField('name', data.value)} />
+      </Field>
+
+      {isMultiCurrency ? (
         <Field
-          label="Template"
+          label={{ children: 'Currencies', id: currenciesLabelId, htmlFor: undefined }}
           required={!isLocked}
-          hint={isLocked ? LOCKED_HINT : undefined}
-          validationState={fieldState('template')}
-          validationMessage={fieldMessage('template')}
+          hint={isLocked ? LOCKED_HINT : { children: CURRENCIES_HINT, id: currenciesHintId }}
+          validationState={fieldState('currencies')}
+          validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
         >
           {isLocked ? (
-            <Input ref={templateRef} value={templateLabel} readOnly />
+            <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly aria-labelledby={currenciesLabelId} />
           ) : (
-            <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
-              {templates.map((candidate) => (
-                <option key={candidate.name} value={candidate.name}>
-                  {accountTemplateLabel(candidate.name)}
+            <FieldContextProvider value={undefined}>
+              <div
+                role="group"
+                aria-labelledby={currenciesLabelId}
+                aria-describedby={fieldMessage('currencies') ? `${currenciesHintId} ${currenciesMessageId}` : currenciesHintId}
+              >
+                {currencies.map((currency, index) => (
+                  <Checkbox
+                    key={currency}
+                    ref={index === 0 ? currenciesRef : undefined}
+                    label={currency}
+                    checked={values.currencies.includes(currency)}
+                    onChange={(_, data) => toggleCurrency(currency, data.checked === true)}
+                  />
+                ))}
+              </div>
+            </FieldContextProvider>
+          )}
+        </Field>
+      ) : (
+        <Field
+          label="Currency"
+          required={!isCurrencyFixed}
+          hint={currencyHint}
+          validationState={fieldState('currency')}
+          validationMessage={fieldMessage('currency')}
+        >
+          {isCurrencyFixed ? (
+            <Input ref={currencyRef} value={values.currency} readOnly />
+          ) : (
+            <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
+              {currencies.map((currency) => (
+                <option key={currency} value={currency}>
+                  {currency}
                 </option>
               ))}
             </Select>
           )}
         </Field>
+      )}
 
-        <Field label="Name" required validationState={fieldState('name')} validationMessage={fieldMessage('name')}>
-          <Input ref={nameRef} value={values.name} onChange={(_, data) => setField('name', data.value)} />
+      {hasParticipants && (
+        <Field
+          label="Other participant"
+          required
+          hint="The person you settle with, for example Mãe."
+          validationState={fieldState('otherParticipant')}
+          validationMessage={fieldMessage('otherParticipant')}
+        >
+          <Input
+            ref={otherParticipantRef}
+            value={values.otherParticipant}
+            onChange={(_, data) => setField('otherParticipant', data.value)}
+          />
         </Field>
+      )}
 
-        {isMultiCurrency ? (
-          <Field
-            label={{ children: 'Currencies', id: currenciesLabelId, htmlFor: undefined }}
-            required={!isLocked}
-            hint={isLocked ? LOCKED_HINT : { children: CURRENCIES_HINT, id: currenciesHintId }}
-            validationState={fieldState('currencies')}
-            validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
+      {hasPots && (
+        <Field
+          label={{
+            children: (_: unknown, props: LabelProps) => (
+              <InfoLabel {...props} info={CATEGORY_INFO}>
+                Bank expense category
+              </InfoLabel>
+            ),
+          }}
+          required
+          hint={categoryHint}
+          validationState={fieldState('category')}
+          validationMessage={fieldMessage('category')}
+        >
+          <Select
+            ref={categoryRef}
+            value={values.categoryId}
+            disabled={!hasCategoryChoices}
+            onChange={(_, data) => setField('categoryId', data.value)}
           >
-            {isLocked ? (
-              <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly aria-labelledby={currenciesLabelId} />
-            ) : (
-              <FieldContextProvider value={undefined}>
-                <div
-                  role="group"
-                  aria-labelledby={currenciesLabelId}
-                  aria-describedby={fieldMessage('currencies') ? `${currenciesHintId} ${currenciesMessageId}` : currenciesHintId}
-                >
-                  {currencies.map((currency, index) => (
-                    <Checkbox
-                      key={currency}
-                      ref={index === 0 ? currenciesRef : undefined}
-                      label={currency}
-                      checked={values.currencies.includes(currency)}
-                      onChange={(_, data) => toggleCurrency(currency, data.checked === true)}
-                    />
-                  ))}
-                </div>
-              </FieldContextProvider>
-            )}
-          </Field>
-        ) : (
-          <Field
-            label="Currency"
-            required={!isCurrencyFixed}
-            hint={currencyHint}
-            validationState={fieldState('currency')}
-            validationMessage={fieldMessage('currency')}
-          >
-            {isCurrencyFixed ? (
-              <Input ref={currencyRef} value={values.currency} readOnly />
-            ) : (
-              <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
-                {currencies.map((currency) => (
-                  <option key={currency} value={currency}>
-                    {currency}
-                  </option>
-                ))}
-              </Select>
-            )}
-          </Field>
-        )}
+            <option value="">{hasCategoryChoices ? 'Select a category' : 'No active categories'}</option>
+            {selectableCategories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.active ? category.name : `${category.name} (inactive)`}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
 
-        {hasParticipants && (
+      {hasOpeningBalance && (
+        <>
           <Field
-            label="Other participant"
+            label={`Opening balance (${values.currency})`}
             required
-            hint="The person you settle with, for example Mãe."
-            validationState={fieldState('otherParticipant')}
-            validationMessage={fieldMessage('otherParticipant')}
+            hint={isLocked ? "Changing it changes this account's past balances." : undefined}
+            validationState={fieldState('openingBalance')}
+            validationMessage={fieldMessage('openingBalance')}
           >
             <Input
-              ref={otherParticipantRef}
-              value={values.otherParticipant}
-              onChange={(_, data) => setField('otherParticipant', data.value)}
+              ref={openingBalanceRef}
+              type="number"
+              step="0.01"
+              min="0"
+              inputMode="decimal"
+              value={values.openingBalance}
+              onChange={(_, data) => setField('openingBalance', data.value)}
             />
           </Field>
-        )}
 
-        {hasPots && (
           <Field
-            label={{
-              children: (_: unknown, props: LabelProps) => (
-                <InfoLabel {...props} info={CATEGORY_INFO}>
-                  Bank expense category
-                </InfoLabel>
-              ),
-            }}
-            required
-            hint={categoryHint}
-            validationState={fieldState('category')}
-            validationMessage={fieldMessage('category')}
+            label="Balance start date"
+            required={!keepsUnsetStartDate}
+            hint={keepsUnsetStartDate ? 'Not set. Leave it empty to keep it that way.' : undefined}
+            validationState={fieldState('balanceStartDate')}
+            validationMessage={fieldMessage('balanceStartDate')}
           >
-            <Select
-              ref={categoryRef}
-              value={values.categoryId}
-              disabled={!hasCategoryChoices}
-              onChange={(_, data) => setField('categoryId', data.value)}
-            >
-              <option value="">{hasCategoryChoices ? 'Select a category' : 'No active categories'}</option>
-              {selectableCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.active ? category.name : `${category.name} (inactive)`}
-                </option>
-              ))}
-            </Select>
+            <Input
+              ref={balanceStartDateRef}
+              type="date"
+              max={todayIsoDate()}
+              value={values.balanceStartDate}
+              onChange={(_, data) => setField('balanceStartDate', data.value)}
+            />
           </Field>
-        )}
+        </>
+      )}
 
-        {hasOpeningBalance && (
-          <>
-            <Field
-              label={`Opening balance (${values.currency})`}
-              required
-              hint={isLocked ? "Changing it changes this account's past balances." : undefined}
-              validationState={fieldState('openingBalance')}
-              validationMessage={fieldMessage('openingBalance')}
-            >
-              <Input
-                ref={openingBalanceRef}
-                type="number"
-                step="0.01"
-                min="0"
-                inputMode="decimal"
-                value={values.openingBalance}
-                onChange={(_, data) => setField('openingBalance', data.value)}
-              />
-            </Field>
+      {supportsRoundUp && (
+        <Field label="Round-up">
+          <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
+        </Field>
+      )}
 
-            <Field
-              label="Balance start date"
-              required={!keepsUnsetStartDate}
-              hint={keepsUnsetStartDate ? 'Not set. Leave it empty to keep it that way.' : undefined}
-              validationState={fieldState('balanceStartDate')}
-              validationMessage={fieldMessage('balanceStartDate')}
-            >
-              <Input
-                ref={balanceStartDateRef}
-                type="date"
-                max={todayIsoDate()}
-                value={values.balanceStartDate}
-                onChange={(_, data) => setField('balanceStartDate', data.value)}
-              />
-            </Field>
-          </>
-        )}
-
-        {supportsRoundUp && (
-          <Field label="Round-up">
-            <Switch checked={values.roundUpEnabled} onChange={(_, data) => setField('roundUpEnabled', data.checked)} />
-          </Field>
-        )}
-
-        {isEditing && (
-          <Field label="Active">
-            <Switch checked={values.isActive} onChange={(_, data) => setField('isActive', data.checked)} />
-          </Field>
-        )}
-      </fieldset>
+      {isEditing && (
+        <Field label="Active">
+          <Switch checked={values.isActive} onChange={(_, data) => setField('isActive', data.checked)} />
+        </Field>
+      )}
 
       <DiscardChangesDialog
         open={discardPrompt.isPromptOpen}

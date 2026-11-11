@@ -94,22 +94,21 @@ export default function InvestmentAccountFormDialog({
         validationState={nameMessage ? 'error' : 'none'}
         validationMessage={nameMessage}
       >
-        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
       <Field label="Active">
-        <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} disabled={isSaving} />
+        <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
       </Field>
 
       <Field label="Liability">
-        <Switch checked={isLiability} onChange={(e) => setIsLiability(e.target.checked)} disabled={isSaving} />
+        <Switch checked={isLiability} onChange={(e) => setIsLiability(e.target.checked)} />
       </Field>
 
       <Field label="Source">
         <Select
           value={source}
           onChange={(e) => setSource(e.target.value as InvestmentAccountSourceOption)}
-          disabled={isSaving}
         >
           <option value="None">None</option>
           <option value="CreditCard">Credit card</option>
@@ -124,7 +123,7 @@ export default function InvestmentAccountFormDialog({
           validationState={creditCardValidationMessage ? 'error' : 'none'}
           validationMessage={creditCardValidationMessage}
         >
-          <Select value={creditCardId} onChange={(e) => setCreditCardId(e.target.value)} disabled={isSaving}>
+          <Select value={creditCardId} onChange={(e) => setCreditCardId(e.target.value)}>
             <option value="">Select card…</option>
             {cardOptions.map((c) => (
               <option key={c.id} value={c.id}>
@@ -150,7 +149,7 @@ export default function InvestmentAccountFormDialog({
           <Select
             value={shownPotsAccountId}
             onChange={(e) => setPotsAccountId(e.target.value)}
-            disabled={isSaving || !hasPotsAccountChoices}
+            disabled={!hasPotsAccountChoices}
           >
             <option value="">{hasPotsAccountChoices ? 'Select Pots account…' : 'No active Pots accounts'}</option>
             {potsAccountOptions.map((account) => (

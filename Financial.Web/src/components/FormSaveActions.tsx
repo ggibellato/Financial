@@ -11,6 +11,8 @@ interface FormSaveActionsProps {
   children?: ReactNode
 }
 
+const SAVING_LABEL = 'Saving...'
+
 function blockSubmit(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault()
 }
@@ -33,12 +35,15 @@ export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = 
         onClickCapture={isSaving ? blockSubmit : takeFocusOnSubmit}
         icon={isSaving ? <Spinner size="tiny" /> : undefined}
       >
-        {isSaving ? 'Saving...' : saveLabel}
+        {isSaving ? SAVING_LABEL : saveLabel}
       </Button>
       <Button appearance="secondary" disabled={isBusy} onClick={onCancel}>
         Cancel
       </Button>
       {children}
+      <span role="status" className={styles.visuallyHidden}>
+        {isSaving ? SAVING_LABEL : ''}
+      </span>
     </div>
   )
 }

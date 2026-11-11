@@ -157,7 +157,7 @@ describe('PotDepositForm', () => {
     expect(firstLine().getByLabelText(/^Amount/)).toHaveValue(90)
 
     fireEvent.change(firstLine().getByLabelText(/^Amount/), { target: { value: '85' } })
-    expect(screen.getByRole('status')).toHaveTextContent('Lines add up to £85.00; the deposit is £90.00.')
+    expect(screen.getByText('Lines add up to £85.00; the deposit is £90.00.').closest('[role="status"]')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add deposit' })).toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Add line' }))

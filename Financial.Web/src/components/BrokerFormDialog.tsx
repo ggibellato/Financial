@@ -48,11 +48,11 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
         validationState={nameMessage ? 'error' : 'none'}
         validationMessage={nameMessage}
       >
-        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
       <Field label="Currency" required>
-        <Select value={currency} onChange={(e) => setCurrency(e.target.value)} disabled={isSaving}>
+        <Select value={currency} onChange={(e) => setCurrency(e.target.value)}>
           {CURRENCIES.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -77,7 +77,6 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
         <Select
           value={costBasisMethod}
           onChange={(e) => setCostBasisMethod(e.target.value as CostBasisMethod)}
-          disabled={isSaving}
         >
           {COST_BASIS_METHODS.map((method) => (
             <option key={method} value={method}>

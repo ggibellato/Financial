@@ -19,7 +19,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
   const { isSaving, error, failure, submit } = useDialogSubmit('The portfolio could not be saved.')
 
   const trimmedName = name.trim()
-  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
+  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, JSON.stringify([brokerName, trimmedName]))
   const nameValidationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
   const nameMessage = nameValidationMessage || nameError
   const brokerValidationMessage = !isEditing && brokerName.length === 0 ? 'A broker is required.' : ''
@@ -42,7 +42,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
     >
       {isEditing ? (
         <Field label="Broker">
-          <Input value={portfolio.brokerName} disabled readOnly />
+          <Input value={portfolio.brokerName} readOnly />
         </Field>
       ) : (
         <Field
@@ -51,7 +51,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
           validationState={brokerValidationMessage ? 'error' : 'none'}
           validationMessage={brokerValidationMessage}
         >
-          <Select value={brokerName} onChange={(e) => setBrokerName(e.target.value)} disabled={isSaving}>
+          <Select value={brokerName} onChange={(e) => setBrokerName(e.target.value)}>
             {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
             {activeBrokers.map((b) => (
               <option key={b.name} value={b.name}>
@@ -68,7 +68,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
         validationState={nameMessage ? 'error' : 'none'}
         validationMessage={nameMessage}
       >
-        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
     </EntityFormDialog>
   )

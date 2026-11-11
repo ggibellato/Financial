@@ -18,12 +18,11 @@ interface ManagePotsDialogProps {
 
 interface PotRowFieldsProps {
   row: PotRow
-  isDisabled: boolean
   onChange: (change: PotRowChange) => void
   onRemove: () => void
 }
 
-function PotRowFields({ row, isDisabled, onChange, onRemove }: PotRowFieldsProps) {
+function PotRowFields({ row, onChange, onRemove }: PotRowFieldsProps) {
   const nameError = potNameError(row)
   const splitError = potSplitError(row)
   const displayName = row.name.trim() || row.label
@@ -35,7 +34,6 @@ function PotRowFields({ row, isDisabled, onChange, onRemove }: PotRowFieldsProps
           className="manage-pots__input"
           value={row.name}
           autoFocus={row.id === null}
-          disabled={isDisabled}
           onChange={(event) => onChange({ name: event.target.value })}
         />
       </Field>
@@ -53,7 +51,6 @@ function PotRowFields({ row, isDisabled, onChange, onRemove }: PotRowFieldsProps
           max={100}
           step="any"
           value={row.splitPercentage}
-          disabled={isDisabled}
           onChange={(event) => onChange({ splitPercentage: event.target.value })}
         />
       </Field>
@@ -62,7 +59,6 @@ function PotRowFields({ row, isDisabled, onChange, onRemove }: PotRowFieldsProps
         label="Active"
         labelPosition="above"
         checked={row.isActive}
-        disabled={isDisabled}
         onChange={(event) => onChange({ isActive: event.target.checked })}
       />
       {row.id === null && (
@@ -72,7 +68,6 @@ function PotRowFields({ row, isDisabled, onChange, onRemove }: PotRowFieldsProps
           size="small"
           icon={<DeleteRegular />}
           aria-label={`Remove ${displayName}`}
-          disabled={isDisabled}
           onClick={onRemove}
         />
       )}
@@ -108,7 +103,7 @@ export default function ManagePotsDialog({ potsAccountId, accountName, initialPo
             Pots of <strong>{accountName}</strong> save together. A pot can't be deleted: turn off Active to retire it, and it keeps its balance and history.
           </Text>
           <div>
-            <Button ref={addPotButton} appearance="primary" icon={<AddRegular />} disabled={form.isSaving} onClick={form.addPot}>
+            <Button ref={addPotButton} appearance="primary" icon={<AddRegular />} onClick={form.addPot}>
               Add pot
             </Button>
           </div>
@@ -117,7 +112,6 @@ export default function ManagePotsDialog({ potsAccountId, accountName, initialPo
             <PotRowFields
               key={row.key}
               row={row}
-              isDisabled={form.isSaving}
               onChange={(change) => form.changeRow(row.key, change)}
               onRemove={() => removeNewPot(row.key)}
             />

@@ -46,23 +46,22 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
         validationState={nameMessage ? 'error' : 'none'}
         validationMessage={nameMessage}
       >
-        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
       <Field label="Active">
-        <Switch checked={active} onChange={(e) => setActive(e.target.checked)} disabled={isSaving} />
+        <Switch checked={active} onChange={(e) => setActive(e.target.checked)} />
       </Field>
 
       <Field label="Investment">
         <Switch
           checked={isInvestment}
           onChange={(e) => setIsInvestment(e.target.checked)}
-          disabled={isSaving}
         />
       </Field>
 
       <Field label="Tithe">
-        <Switch checked={isTithe} onChange={(e) => setIsTithe(e.target.checked)} disabled={isSaving} />
+        <Switch checked={isTithe} onChange={(e) => setIsTithe(e.target.checked)} />
       </Field>
     </EntityFormDialog>
   )

@@ -38,7 +38,7 @@ describe('PortfolioFormDialog', () => {
     expect(screen.getByRole('heading', { name: 'Edit portfolio' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('Default')
     expect(screen.getByLabelText(/^Broker/)).toHaveValue('XPI')
-    expect(screen.getByLabelText(/^Broker/)).toBeDisabled()
+    expect(screen.getByLabelText(/^Broker/)).toHaveAttribute('readonly')
   })
 
   it('submits the selected broker and trimmed name', async () => {
@@ -61,5 +61,18 @@ describe('PortfolioFormDialog', () => {
     saveFromTheSaveButton('Add portfolio')
 
     await expectDuplicateUnderName(message)
+  })
+
+  it('drops a duplicate-name message once a different broker is chosen', async () => {
+    const message = 'Broker "XPI" already has a portfolio named "Default".'
+    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
+    render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default' } })
+    saveFromTheSaveButton('Add portfolio')
+    await expectDuplicateUnderName(message)
+
+    fireEvent.change(screen.getByLabelText(/^Broker/), { target: { value: 'Avenue' } })
+
+    expect(screen.queryByText(message)).not.toBeInTheDocument()
   })
 })

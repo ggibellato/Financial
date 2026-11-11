@@ -84,7 +84,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         validationState={dueDayError ? 'error' : 'none'}
         validationMessage={dueDayError}
       >
-        <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} disabled={isSaving} autoFocus />
+        <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
       </Field>
 
       <Field
@@ -93,7 +93,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         validationState={descriptionError ? 'error' : 'none'}
         validationMessage={descriptionError}
       >
-        <Input value={description} onChange={(e) => setDescription(e.target.value)} disabled={isSaving} />
+        <Input value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
 
       <Field
@@ -102,11 +102,11 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         validationState={valueError ? 'error' : 'none'}
         validationMessage={valueError}
       >
-        <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} disabled={isSaving} />
+        <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} />
       </Field>
 
       <Field label="Area">
-        <Select value={area} onChange={(e) => setArea(e.target.value)} disabled={isSaving}>
+        <Select value={area} onChange={(e) => setArea(e.target.value)}>
           {AREA_OPTIONS.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -116,11 +116,11 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       </Field>
 
       <Field label="Note">
-        <Textarea value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} />
+        <Textarea value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
 
       <Field label="NIT number">
-        <Input value={nitNumber} onChange={(e) => setNitNumber(e.target.value)} disabled={isSaving} />
+        <Input value={nitNumber} onChange={(e) => setNitNumber(e.target.value)} />
       </Field>
 
       <Field label="Minimum wage value">
@@ -128,13 +128,12 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
           type="number"
           value={minimumWageValue}
           onChange={(e) => setMinimumWageValue(e.target.value)}
-          disabled={isSaving}
         />
       </Field>
 
       {isEditing && (
         <Field label="Status">
-          <Select value={status} onChange={(e) => setStatus(e.target.value)} disabled={isSaving}>
+          <Select value={status} onChange={(e) => setStatus(e.target.value)}>
             {STATUS_OPTIONS.map((option) => (
               <option key={option} value={option}>
                 {option}
