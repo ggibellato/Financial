@@ -118,7 +118,7 @@ export default function TransferForm({
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
         <Text as="h2" weight="semibold" size={400}>
-          {isEditing ? 'Edit transfer' : 'New transfer'}
+          {isEditing ? 'Edit transfer' : lockedSide?.side === 'destination' ? 'Transfer from' : 'Transfer to'}
         </Text>
         {generalError && (
           <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
@@ -175,7 +175,7 @@ export default function TransferForm({
         </div>
       </fieldset>
       <FormSaveActions
-        saveLabel={isEditing ? 'Save' : 'Add transfer'}
+        saveLabel={isEditing ? 'Save' : 'Transfer'}
         isSaving={isSaving}
         isSaveDisabled={sameBankError !== null}
         onCancel={onCancel}

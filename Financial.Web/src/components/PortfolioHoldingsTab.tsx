@@ -49,7 +49,7 @@ function renderGatedCell(
   value: number | null,
   render: (v: number) => ReactNode,
 ) {
-  if (loading) return <span className="portfolio-holdings__loading-cell">…</span>
+  if (loading) return <span className="portfolio-holdings__loading-cell" role="img" aria-label="Loading">…</span>
   if (unavailable || value === null) return '—'
   return render(value)
 }
