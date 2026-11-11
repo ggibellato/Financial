@@ -33,7 +33,7 @@ describe('TransferForm', () => {
   it('renders the create form title and pre-filled values', () => {
     render(<TransferForm {...baseProps} />)
 
-    expect(screen.getByRole('heading', { name: 'New transfer' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Transfer to' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-07-25')
     expect(screen.getByLabelText(/^From/)).toHaveValue('bank-barclays')
     expect(screen.getByLabelText(/^To/)).toHaveValue('bank-trading212')
@@ -70,7 +70,7 @@ describe('TransferForm', () => {
     render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-barclays" amount="100" />)
 
     expect(screen.getByText('Source and destination must be different banks.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add transfer' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Transfer' })).toBeDisabled()
   })
 
   it('does not show the same-bank error when source and destination differ', () => {
@@ -84,7 +84,7 @@ describe('TransferForm', () => {
     const onCancel = vi.fn()
     render(<TransferForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add transfer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Transfer' }))
     expect(onSave).toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -128,6 +128,13 @@ describe('TransferForm', () => {
 
     expect(screen.getByLabelText(/^Amount sent \(GBP\)/)).toBeInTheDocument()
     expect(screen.getByLabelText(/^Amount received \(EUR\)/)).toBeInTheDocument()
+  })
+
+  it('titles the form Transfer from when this account is the destination', () => {
+    render(<TransferForm {...baseProps} lockedSide={{ side: 'destination', name: 'Barclays' }} />)
+
+    expect(screen.getByRole('heading', { name: 'Transfer from' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Transfer' })).toBeInTheDocument()
   })
 
   it('shows the locked account as text on its side and lists the others on the open side', () => {

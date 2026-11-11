@@ -438,7 +438,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
     await screen.findByRole('table', { name: 'Pots' })
-    const deposit = screen.getByRole('button', { name: 'Deposit' })
+    const deposit = screen.getByRole('button', { name: 'New deposit' })
     await waitFor(() => expect(deposit).toBeEnabled())
     expect(deposit).toHaveAttribute('aria-expanded', 'false')
 
@@ -473,11 +473,11 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
     await screen.findByRole('table', { name: 'Pots' })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Deposit' })).toBeEnabled())
-    await user.click(screen.getByRole('button', { name: 'Deposit' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New deposit' })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: 'New deposit' }))
     await user.type(within(await operationForm('New deposit')).getByLabelText(/^Description/), 'x')
 
-    await user.click(screen.getByRole('button', { name: 'Withdraw' }))
+    await user.click(screen.getByRole('button', { name: 'New withdrawal' }))
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(await operationForm('New withdrawal')).toBeInTheDocument()
@@ -491,14 +491,14 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
     await screen.findByRole('table', { name: 'Pots' })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Deposit' })).toBeEnabled())
-    await user.click(screen.getByRole('button', { name: 'Deposit' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New deposit' })).toBeEnabled())
+    await user.click(screen.getByRole('button', { name: 'New deposit' }))
     const depositForm = await operationForm('New deposit')
     await user.click(within(depositForm).getByRole('radio', { name: 'From an income' }))
     await user.click(within(depositForm).getByRole('button', { name: 'Continue to the income form' }))
 
     expect(await screen.findByRole('heading', { name: 'New income' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Deposit' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'New deposit' })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByLabelText(/^Source/)).toHaveValue('source-bonus')
     expect(screen.getByRole('checkbox', { name: 'Split to pots' })).toBeChecked()
     await waitFor(() => expect(screen.getByLabelText(/^Pots account/)).toHaveValue(RESERVA_ID))
@@ -550,9 +550,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
     await screen.findByRole('table', { name: 'Pots' })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Withdraw' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New withdrawal' })).toBeEnabled())
 
-    await user.click(screen.getByRole('button', { name: 'Withdraw' }))
+    await user.click(screen.getByRole('button', { name: 'New withdrawal' }))
     const form = await operationForm('New withdrawal')
     await waitFor(() => expect(within(form).getByLabelText(/^Pot\b/)).toHaveValue('pot-home'))
     fireEvent.change(within(form).getByLabelText(/^Description/), { target: { value: 'Boots' } })
@@ -630,7 +630,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     getPotOperationMock.mockReturnValue(new Promise((resolve) => { finishLoad = resolve }))
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
-    const deposit = await screen.findByRole('button', { name: 'Deposit' })
+    const deposit = await screen.findByRole('button', { name: 'New deposit' })
     await waitFor(() => expect(deposit).toBeEnabled())
     await waitFor(() => expect(getPotOperationMock).toHaveBeenCalled())
     await user.click(deposit)
@@ -868,7 +868,7 @@ describe('AccountScreenPage on a Pots account', () => {
     await screen.findByRole('table', { name: 'Pots' })
 
     const actions = within(screen.getByRole('group', { name: 'Account actions' })).getAllByRole('button')
-    expect(actions.map((button) => button.textContent)).toEqual(['Deposit', 'Withdraw', 'Manage pots'])
+    expect(actions.map((button) => button.textContent)).toEqual(['New deposit', 'New withdrawal', 'Manage pots'])
     expect(actions[0]).toHaveAttribute('aria-expanded', 'false')
     expect(actions[1]).toHaveAttribute('aria-expanded', 'false')
     expect(actions[2]).toHaveAttribute('aria-haspopup', 'dialog')
@@ -2033,12 +2033,12 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     const transferTo = screen.getByRole('button', { name: 'Transfer to' })
 
     await user.click(transferTo)
-    const form = screen.getByRole('heading', { name: 'New transfer' }).closest('form') as HTMLElement
+    const form = screen.getByRole('heading', { name: 'Transfer to' }).closest('form') as HTMLElement
     expect(within(form).getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
     expect(within(form).queryByLabelText(/^Amount received/)).not.toBeInTheDocument()
     await user.selectOptions(within(form).getByRole('combobox', { name: /^To/ }), CHASE_ID)
     await user.type(within(form).getByLabelText(/^Amount/), '200')
-    await user.click(within(form).getByRole('button', { name: 'Add transfer' }))
+    await user.click(within(form).getByRole('button', { name: 'Transfer' }))
 
     await waitFor(() =>
       expect(createAccountTransferMock).toHaveBeenCalledWith({
@@ -2051,7 +2051,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
       }),
     )
     expect(await screen.findByText('Transfer saved')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New transfer' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Transfer to' })).not.toBeInTheDocument()
     await waitFor(() => expect(transferTo).toHaveFocus())
   })
 
@@ -2063,7 +2063,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: /^From/ }), WISE_EUR_ID)
     await user.type(screen.getByRole('spinbutton', { name: /^Amount(?! received)/ }), '100')
     await user.type(screen.getByLabelText(/^Amount received \(GBP\)/), '86.20')
-    await user.click(screen.getByRole('button', { name: 'Add transfer' }))
+    await user.click(screen.getByRole('button', { name: 'Transfer' }))
 
     await waitFor(() =>
       expect(createAccountTransferMock).toHaveBeenCalledWith(
@@ -2200,7 +2200,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(screen.getByRole('heading', { name: 'Edit expense' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New transfer' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Transfer to' })).not.toBeInTheDocument()
   })
 
   it('[AC P60-F05-bank-account-screen-11] focus moves into a row edit and back to the row Edit button on Cancel', async () => {

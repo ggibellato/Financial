@@ -370,6 +370,7 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
     const loadingCells = screen.getAllByText('…')
     expect(loadingCells).toHaveLength(5)
+    expect(screen.getAllByRole('img', { name: 'Loading' })).toHaveLength(5)
   })
 
   it('renders_current_value_when_price_resolves', () => {

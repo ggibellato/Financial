@@ -187,8 +187,8 @@ detail panel's contextual Move/Delete action row, and a form's Save button.
   pinned brand blue from `decisions/ADR-005-brand-and-status-colors.md` — the
   same blue, same size, everywhere. Don't hand-draw a "+" as a text character
   — that is the drift this rule exists to prevent. Two peer action buttons sitting side by side (New income
-  split/New withdrawal; Move…/Delete portfolio; New transfer/New balance
-  correction) both stay primary, left-aligned, in the same style — never
+  split/New withdrawal; Move…/Delete portfolio; Transfer to/Transfer
+  from) both stay primary, left-aligned, in the same style — never
   demote one to a lesser style just because there are two, and never treat
   a Move/Delete pair as if it were a Save/Cancel pair.
 - **Position: left**, directly above or beside the content it acts on —
@@ -262,9 +262,13 @@ truncation and a button that opens a further step use the single ellipsis
 character ("Saving…", "Move…"), never three full stops.
 
 Do not let the form re-title itself into different wording once open (e.g.
-a "New transfer" trigger opening a form titled "Move money") — the trigger's
+a "Transfer to" trigger opening a form titled "Move money") — the trigger's
 noun carries through unchanged into both the form title and the confirm
-button, in every mode (create and edit).
+button, in every mode (create and edit). A trigger that names its own
+action with a verb instead of "New X" (Transfer to, Transfer from, Settle,
+Pay card statement, Withdraw from pots) titles the form with the trigger's
+own words and confirms with that action ("Transfer", "Save settlement",
+"Pay card statement").
 
 **Fix the whole chain together, not one link at a time.** An audit or PRD
 item that names only one link (e.g. "the trigger drops the entity name")
@@ -595,7 +599,7 @@ Use a dedicated page for complex, long, or multi-stage workflows.
 
 ### "New X" create actions are inline forms, not popup dialogs
 
-A "New X" / "+ New X" button (New expense, New income, New transfer, New
+A "New X" / "+ New X" button (New expense, New income, New deposit, New
 transaction, New credit, New price, etc.) creating one row for the grid
 immediately below it **always expands an inline form in place on the same
 tab/page** — it never opens a separate modal dialog.

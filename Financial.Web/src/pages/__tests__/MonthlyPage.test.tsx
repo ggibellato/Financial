@@ -149,7 +149,7 @@ describe('MonthlyPage', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(2)
     expect(screen.getByRole('tab', { name: 'All transactions' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.queryByRole('button', { name: /New Expense|New income|New transfer|Adjust balance|Mark Paid|Unmark Paid/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^(New expense|New income|Transfer to|Transfer from|Adjust balance|Mark paid|Unmark paid)$/i })).not.toBeInTheDocument()
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
   })
 

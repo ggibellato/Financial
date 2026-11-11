@@ -16,7 +16,7 @@ test('@smoke [AC P60-F13-consolidated-navigation-and-retirement-07] a manual dep
   await expect(page.getByText(POTS_TOTAL)).toBeVisible()
   const totalBefore = await potsTotal(page)
 
-  await page.getByRole('button', { name: 'Deposit', exact: true }).click()
+  await page.getByRole('button', { name: 'New deposit', exact: true }).click()
   await page.getByRole('checkbox', { name: /^No bank/ }).check()
   await page.getByLabel(/^Amount/).fill(String(DEPOSIT))
   await page.getByLabel(/^Description/).fill(description)
