@@ -40,11 +40,6 @@ export function moveTargetsFor(invoiceDate: string, statements: readonly Account
   return targets
 }
 
-export function currentStatementLabel(invoiceDate: string | null | undefined): string {
-  const current = invoiceDate ? invoiceMonthOf(invoiceDate) : null
-  return current ? formatLongMonthYear(current.year, current.month) : ''
-}
-
 export function moveRecordNoun(charge: ExpenseDto): 'charge' | 'refund' {
   return charge.value < 0 ? 'refund' : 'charge'
 }

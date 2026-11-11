@@ -59,6 +59,11 @@ function withOpenedValues(state: ExpenseFormState): ExpenseFormState {
   return { ...state, openedValues: snapshotFields(state, EDITABLE_FIELDS) }
 }
 
+function invoiceMonthMovedFrom(state: ExpenseFormState): string | null {
+  const openedMonth = state.openedValues?.invoiceDate
+  return state.isEditing && !state.invoiceMonthPinned && openedMonth && openedMonth !== state.invoiceDate ? openedMonth : null
+}
+
 interface ExpenseFormState {
   openedValues: EditableValues | null
   isOpen: boolean
@@ -72,9 +77,7 @@ interface ExpenseFormState {
   creditCardId: string
   creditCardName: string
   invoiceDate: string
-  // False until the user directly edits the invoice field - mirrors ExpenseWorkflowViewModel's
-  // _invoiceDateTouchedByUser.
-  invoiceDateTouched: boolean
+  invoiceMonthPinned: boolean
   roundUpAmount: string
   // True until the user directly edits the round-up field, or an edit form loads a saved
   // amount - both "freeze" it so later Value/PaymentSource edits stop recomputing it.
@@ -119,7 +122,7 @@ const BLANK_FORM = {
   creditCardId: '',
   creditCardName: '',
   invoiceDate: '',
-  invoiceDateTouched: false,
+  invoiceMonthPinned: false,
   paymentMode: 'bank' as PaymentMode,
   isRefund: false,
   isSettled: false,
@@ -157,6 +160,7 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
       })
     case 'SHOW_EDIT_FORM': {
       const { expense, isRefund } = action.payload
+      const invoiceMonth = expense.invoiceDate ? expense.invoiceDate.slice(0, 7) : ''
       return withOpenedValues({
         ...state,
         isOpen: true,
@@ -169,8 +173,8 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         paymentSource: expense.paymentSourceBankId ?? '',
         creditCardId: expense.creditCardId ?? '',
         creditCardName: expense.creditCardName ?? '',
-        invoiceDate: expense.invoiceDate ? expense.invoiceDate.slice(0, 7) : '',
-        invoiceDateTouched: false,
+        invoiceDate: invoiceMonth,
+        invoiceMonthPinned: invoiceMonth !== '' && invoiceMonth !== computeDefaultInvoiceMonth(expense.date),
         roundUpAmount: expense.roundUpAmount != null ? String(expense.roundUpAmount) : '',
         // A saved amount is frozen (not auto-recomputed), same as a user-typed one, so
         // re-editing Value/PaymentSource here doesn't silently change what was saved.
@@ -190,7 +194,7 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         return { ...state, roundUpAmount: action.payload.value, roundUpAmountAuto: false }
       }
       if (action.payload.field === 'invoiceDate') {
-        return { ...state, invoiceDate: action.payload.value, invoiceDateTouched: true }
+        return { ...state, invoiceDate: action.payload.value, invoiceMonthPinned: true }
       }
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SET_ROUND_UP_SUGGESTION':
@@ -222,6 +226,7 @@ export interface UseExpenseFormResult {
   creditCardId: string
   creditCardName: string
   invoiceDate: string
+  invoiceMonthMovedFrom: string | null
   roundUpAmount: string
   countsAsTithe: string
   paymentMode: PaymentMode
@@ -288,7 +293,7 @@ export function useExpenseForm(
       const suggestion = suggestRoundUpAmount(banks, bankId, expenseValue)
       dispatch({ type: 'SET_ROUND_UP_SUGGESTION', payload: { value: suggestion ?? '' } })
     }
-    if (field === 'date' && state.paymentMode === 'card' && !state.invoiceDateTouched) {
+    if (field === 'date' && state.paymentMode === 'card' && !state.invoiceMonthPinned) {
       dispatch({ type: 'SET_INVOICE_DATE_DEFAULT', payload: { value: computeDefaultInvoiceMonth(value) } })
     }
   }
@@ -396,6 +401,7 @@ export function useExpenseForm(
     creditCardId: state.creditCardId,
     creditCardName: state.creditCardName,
     invoiceDate: state.invoiceDate,
+    invoiceMonthMovedFrom: invoiceMonthMovedFrom(state),
     roundUpAmount: state.roundUpAmount,
     countsAsTithe: state.countsAsTithe,
     paymentMode: state.paymentMode,
