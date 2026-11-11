@@ -30,6 +30,19 @@ describe('CardsGrid', () => {
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 100.00')
   })
 
+  it('labels the adjustment figure as covering all rows while a Card filter is active, and plainly when none is', () => {
+    renderGrid()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Card' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
+
+    expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure (all rows): 100.00')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
+
+    expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 100.00')
+  })
+
   it('[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month', () => {
     renderGrid()
 

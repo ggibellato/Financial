@@ -69,6 +69,27 @@ describe('TotalsGrid', () => {
     expect(screen.getByText('25')).toBeInTheDocument()
   })
 
+  it('labels footer items as covering all rows only while its filter is active', () => {
+    const renderWith = (isFiltered: boolean) => (
+      <TotalsGrid
+        label="Totals"
+        emptyMessage="Nothing here"
+        columns={COLUMNS}
+        rows={ROWS}
+        rowKey={(r) => r.id}
+        footerItems={[{ label: 'Total', value: '25' }]}
+        filter={{ isFiltered, shownCount: 2, totalCount: 2, onClearFilters: vi.fn() }}
+      />
+    )
+    const { rerender } = render(renderWith(true))
+
+    expect(screen.getByText('Total (all rows):')).toBeInTheDocument()
+
+    rerender(renderWith(false))
+
+    expect(screen.getByText('Total:')).toBeInTheDocument()
+  })
+
   it('renders a sort button per column and nothing else interactive', () => {
     render(<TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={ROWS} rowKey={(r) => r.id} footerItems={[]} />)
 

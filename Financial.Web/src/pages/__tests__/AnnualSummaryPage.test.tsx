@@ -582,8 +582,34 @@ describe('AnnualSummaryPage', () => {
     expect(tbody.queryByText('Casa')).not.toBeInTheDocument()
     expect(tbody.getByText('Mercado')).toBeInTheDocument()
     expect(tbody.getByText('Salary')).toBeInTheDocument()
-    expect(tbody.getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
-    expect(tbody.getByText('Total despesas')).toBeInTheDocument()
+    expect(tbody.getByText('Resultado (R-D-Inv) (all rows)')).toBeInTheDocument()
+    expect(tbody.getByText('Total despesas (all rows)')).toBeInTheDocument()
+  })
+
+  it('labels Resultado and Total despesas as covering all rows only while a Category filter is active', async () => {
+    getCategoryTotalsAnnualForYearMock.mockResolvedValue({
+      ...CATEGORY_TOTALS_ANNUAL,
+      categoryTotals: [
+        { category: 'Mercado', monthlyTotals: new Array(12).fill(155), annualTotal: 1860, average: 155 },
+        { category: 'Casa', monthlyTotals: new Array(12).fill(500), annualTotal: 6000, average: 500 },
+      ],
+    })
+    render(<AnnualSummaryPage />)
+
+    const tbody = () => within(document.querySelector('tbody')!)
+    expect(await screen.findByText('Total despesas')).toBeInTheDocument()
+    expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
+
+    expect(tbody().getByText('Total despesas (all rows)')).toBeInTheDocument()
+    expect(tbody().getByText('Resultado (R-D-Inv) (all rows)')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
+
+    expect(tbody().getByText('Total despesas')).toBeInTheDocument()
+    expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
   })
 
   it('filters the Historic Summary Average table by Category', async () => {
