@@ -80,12 +80,12 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
     public async Task AddEntry_TwoCurrencies_StoresConvertedValueAtTheDateRateToTwoDecimals()
     {
         var response = await Client.PostAsJsonAsync(EntriesUrl(MaeId), NewEntry("BRL", 150.005m));
-        var returned = await response.Content.ReadFromJsonAsync<SettlementEntryDTO>();
+        var returned = (await response.Content.ReadFromJsonAsync<SettlementEntryDTO>())!;
 
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.Created);
-            returned!.Should().BeEquivalentTo(new
+            returned.Should().BeEquivalentTo(new
             {
                 AccountId = Guid.Parse(MaeId),
                 Date = new DateOnly(2026, 9, 20),
