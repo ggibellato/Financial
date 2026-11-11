@@ -54,7 +54,7 @@ public class Portfolio
     {
         if (FindAsset(asset.Name) is not null)
         {
-            throw new InvestmentRuleViolationException(
+            throw new InvestmentDuplicateNameException(
                 $"Portfolio \"{Name}\" already has an asset named \"{asset.Name}\".");
         }
 
@@ -85,7 +85,7 @@ public class Portfolio
 
         if (name != currentName && FindAsset(name) is not null)
         {
-            throw new InvestmentRuleViolationException(
+            throw new InvestmentDuplicateNameException(
                 $"Portfolio \"{Name}\" already has an asset named \"{name}\".");
         }
 

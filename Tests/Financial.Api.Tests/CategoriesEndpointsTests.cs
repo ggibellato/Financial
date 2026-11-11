@@ -84,7 +84,7 @@ public class CategoriesEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Mercado").And.Contain("already exists");
+        body.Should().Contain("Mercado").And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

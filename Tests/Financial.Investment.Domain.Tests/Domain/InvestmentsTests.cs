@@ -238,7 +238,7 @@ public class InvestmentsTests
 
         var act = () => investments.ArchiveAsset("XPI", "Default", "VOD", "Closed");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already holds an asset named*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already holds an asset named*");
         investments.FindActiveBroker("XPI")!.FindPortfolio("Default")!.Assets.Should().ContainSingle();
     }
 
@@ -263,7 +263,7 @@ public class InvestmentsTests
 
         var act = () => investments.ArchiveAsset("XPI", "Default", "VOD", "CLOSED");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already has a portfolio named*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already has a portfolio named*");
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class InvestmentsTests
 
         var act = () => investments.CreateActiveBroker("XPI", "GBP");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*XPI*already exists*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*XPI*already exists*");
         investments.ActiveBrokers.Should().ContainSingle();
     }
 
@@ -344,7 +344,7 @@ public class InvestmentsTests
 
         var act = () => investments.CreateActiveBroker("XPI", "GBP");
 
-        act.Should().Throw<InvestmentRuleViolationException>();
+        act.Should().Throw<InvestmentDuplicateNameException>();
         investments.ActiveBrokers.Should().BeEmpty();
     }
 
@@ -384,7 +384,7 @@ public class InvestmentsTests
 
         var act = () => investments.RenameBroker("XPI", "Avenue", "BRL");
 
-        act.Should().Throw<InvestmentRuleViolationException>();
+        act.Should().Throw<InvestmentDuplicateNameException>();
         investments.FindActiveBroker("XPI").Should().NotBeNull();
     }
 

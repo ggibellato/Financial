@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, AssetDetailsDto, CorporateActionDto, SelectedNode } from '../../api/types'
 import { BLANK_TARGET_ASSET_IDENTITY } from '../../components/targetAssetPickerValue'
@@ -551,7 +552,7 @@ describe('useCorporateActions', () => {
 
   it('routes a merger name-collision server error to saveErrorFields.formTargetAsset', async () => {
     addMergerMock.mockRejectedValueOnce(
-      new Error('An asset named "Company B" already exists — select it or choose a different name'),
+      new ApiError('Company B is already taken in this portfolio.', 409, { code: 'duplicateName' }),
     )
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCorporateActions(), { wrapper })
@@ -568,8 +569,30 @@ describe('useCorporateActions', () => {
     await waitFor(() => expect(result.current.isSaving).toBe(false))
 
     expect(result.current.saveErrorFields.formTargetAsset).toBe(
-      'An asset named "Company B" already exists — select it or choose a different name',
+      'Company B is already taken in this portfolio.',
     )
+  })
+
+  it('keeps a merger conflict without the duplicate-name code off the target asset field', async () => {
+    addMergerMock.mockRejectedValueOnce(
+      new ApiError('An asset named "Company B" already exists in portfolio "Acoes".', 409),
+    )
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+
+    expect(result.current.saveError).toBe('An asset named "Company B" already exists in portfolio "Acoes".')
+    expect(result.current.saveErrorFields.formTargetAsset).toBeUndefined()
   })
 
   it('SAVE_SUCCESS picks the target side of the merger result when the currently-selected asset is the target', async () => {
@@ -709,7 +732,7 @@ describe('useCorporateActions', () => {
 
   it('routes a spin-off name-collision server error to saveErrorFields.formNewAsset', async () => {
     addSpinOffMock.mockRejectedValueOnce(
-      new Error('An asset named "Company D" already exists — select it or choose a different name'),
+      new ApiError('Company D is already taken in this portfolio.', 409, { code: 'duplicateName' }),
     )
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCorporateActions(), { wrapper })
@@ -726,7 +749,7 @@ describe('useCorporateActions', () => {
     await waitFor(() => expect(result.current.isSaving).toBe(false))
 
     expect(result.current.saveErrorFields.formNewAsset).toBe(
-      'An asset named "Company D" already exists — select it or choose a different name',
+      'Company D is already taken in this portfolio.',
     )
   })
 

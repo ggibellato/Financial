@@ -40,14 +40,15 @@ describe('useDialogSubmit', () => {
     expect(result.current.isSaving).toBe(false)
   })
 
-  it('reports the status of a rejected API call, and no status for any other rejection', async () => {
+  it('exposes the latest rejection and clears it when a new save starts', async () => {
+    const rejection = new ApiError('That name is taken.', 409, { code: 'duplicateName' })
     const { result } = renderHook(() => useDialogSubmit('The account could not be saved.'))
 
-    await act(() => result.current.submit(() => Promise.reject(new ApiError('An account named "Barclays" already exists.', 409))))
-    expect(result.current.errorStatus).toBe(409)
+    await act(() => result.current.submit(() => Promise.reject(rejection)))
+    expect(result.current.failure).toBe(rejection)
 
-    await act(() => result.current.submit(() => Promise.reject(new Error('Server unavailable.'))))
-    expect(result.current.errorStatus).toBeNull()
+    act(() => { void result.current.submit(() => new Promise(() => {})) })
+    expect(result.current.failure).toBeNull()
   })
 
   it('falls back to the given message when the rejection is not an Error', async () => {

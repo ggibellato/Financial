@@ -1,10 +1,10 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { Checkbox, Field, FieldContextProvider, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
+import { isDuplicateName } from '../api/apiError'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
-import { isDuplicateNameConflict } from '../api/apiError'
 import { useFormPanelStyles } from './formPanelStyles'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
@@ -148,7 +148,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const [values, setValues] = useState(initial)
   const [showValidation, setShowValidation] = useState(false)
   const [submittedName, setSubmittedName] = useState<string | null>(null)
-  const { isSaving, error, errorStatus, submit } = useDialogSubmit('The account could not be saved.')
+  const { isSaving, error, failure, submit } = useDialogSubmit('The account could not be saved.')
   const templateRef = useRef<FieldControl>(null)
   const nameRef = useRef<FieldControl>(null)
   const currencyRef = useRef<FieldControl>(null)
@@ -176,8 +176,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
   const trimmedName = values.name.trim()
-  const isDuplicateName = submittedName !== null && isDuplicateNameConflict(errorStatus, error, submittedName)
-  const isNameConflict = isDuplicateName && submittedName === trimmedName
+  const isDuplicateNameError = isDuplicateName(failure)
+  const isNameConflict = isDuplicateNameError && submittedName === trimmedName
   const errors = validateAccountForm(values, template, keepsUnsetStartDate)
 
   useEffect(() => {
@@ -265,7 +265,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     <EntityFormDialog
       title={isEditing ? 'Edit account' : 'New account'}
       saveLabel={isEditing ? 'Save' : 'Add account'}
-      error={isDuplicateName ? null : error}
+      error={isDuplicateNameError ? null : error}
       isSaving={isSaving}
       canSave={!isSaving}
       onSave={handleSave}

@@ -82,7 +82,7 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Gleison").And.Contain("already exists");
+        body.Should().Contain("Gleison").And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

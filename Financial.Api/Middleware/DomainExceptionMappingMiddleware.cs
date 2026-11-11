@@ -18,6 +18,7 @@ internal sealed class DomainExceptionMappingMiddleware
 {
     private const string TransientRetryAfterSeconds = "30";
     private const string OverdraftProblemCode = "overdraftConfirmationRequired";
+    private const string DuplicateNameProblemCode = "duplicateName";
     private const string ProblemCodeKey = "code";
     private const string ProblemPotNameKey = "potName";
     private const string ProblemBalanceKey = "balance";
@@ -96,14 +97,17 @@ internal sealed class DomainExceptionMappingMiddleware
     }
 
     private static Dictionary<string, object?> ProblemExtensionsOf(Exception exception) =>
-        exception is OverdraftConfirmationRequiredException overdraft
-            ? new()
+        exception switch
+        {
+            OverdraftConfirmationRequiredException overdraft => new()
             {
                 [ProblemCodeKey] = OverdraftProblemCode,
                 [ProblemPotNameKey] = overdraft.PotName,
                 [ProblemBalanceKey] = overdraft.Balance
-            }
-            : [];
+            },
+            DuplicateNameException or InvestmentDuplicateNameException => new() { [ProblemCodeKey] = DuplicateNameProblemCode },
+            _ => []
+        };
 
     private static async Task WriteProblemAsync(HttpContext context, int statusCode, string detail, Dictionary<string, object?> extensions)
     {

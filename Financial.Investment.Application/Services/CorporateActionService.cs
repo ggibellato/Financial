@@ -605,7 +605,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
 
         if (existing is not null)
         {
-            throw new InvestmentRuleViolationException(
+            throw new InvestmentDuplicateNameException(
                 $"An asset named \"{assetName}\" already exists in portfolio \"{portfolio.Name}\".");
         }
 

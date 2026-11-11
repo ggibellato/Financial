@@ -207,7 +207,7 @@ describe('AdminAccountsPage', () => {
   })
 
   it('[AC P60-F06-admin-accounts-page-02] keeps the dialog open with the duplicate message under Name on a 409', async () => {
-    createAccountMock.mockRejectedValue(new ApiError('An account named "Barclays" already exists.', 409))
+    createAccountMock.mockRejectedValue(new ApiError('An account named "Barclays" already exists.', 409, { code: 'duplicateName' }))
     renderPage()
     await screen.findByRole('table', { name: 'Accounts' })
 

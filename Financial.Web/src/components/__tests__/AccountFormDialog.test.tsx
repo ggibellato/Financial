@@ -223,7 +223,7 @@ describe('AccountFormDialog', () => {
 
   it('[AC P60-F06-admin-accounts-page-02] shows a duplicate-name 409 under Name, and clears it once the name changes', async () => {
     const message = 'An account named "Barclays" already exists.'
-    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409)) })
+    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409, { code: 'duplicateName' })) })
     await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus())
 
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'barclays' } })
@@ -237,6 +237,29 @@ describe('AccountFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays 2' } })
     expect(screen.queryByText(message)).not.toBeInTheDocument()
+  })
+
+  it('places a duplicate-name 409 under Name by its code, whatever the message says', async () => {
+    const message = 'That account name is taken.'
+    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409, { code: 'duplicateName' })) })
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays' } })
+    save()
+
+    expect(await screen.findByText(message)).toBeInTheDocument()
+    expect(screen.getByLabelText(/Name/)).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getAllByText(message)).toHaveLength(1)
+  })
+
+  it('keeps a 409 without the duplicate-name code in the message bar, even when it reads like a duplicate', async () => {
+    const message = 'An account named "Barclays" already exists.'
+    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409)) })
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays' } })
+    save()
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(screen.getByLabelText(/Name/)).not.toHaveAttribute('aria-invalid', 'true')
   })
 
   it('shows a 409 that is not about the name in the message bar, leaving Name valid', async () => {

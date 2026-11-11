@@ -78,7 +78,7 @@ public class PortfolioServiceTests
 
         var act = async () => await CreateService().CreatePortfolioAsync(new PortfolioCreateDTO { BrokerName = "XPI", Name = "Default" });
 
-        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         _repository.WriteCallCount.Should().Be(0);
     }
 

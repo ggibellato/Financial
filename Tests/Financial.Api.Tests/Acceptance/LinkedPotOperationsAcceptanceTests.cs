@@ -469,7 +469,9 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             missing.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await DetailOf(missing)).Should().Be("Every pot must be in the list; pots can't be deleted.");
             duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(duplicate)).Should().Be("A pot named \"HOLIDAYS\" already exists.");
+            var duplicateProblem = await duplicate.Content.ReadFromJsonAsync<ProblemDetails>();
+            duplicateProblem!.Detail.Should().Be("A pot named \"HOLIDAYS\" already exists.");
+            duplicateProblem.Extensions["code"]!.ToString().Should().Be("duplicateName");
             blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             (await DetailOf(blank)).Should().Be("Pot name is required.");
             ReservaPots.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");

@@ -12,7 +12,7 @@ namespace Financial.Investment.Domain.Exceptions;
 /// throws that for genuine upstream faults. Sharing the type would force the API to map real
 /// defects and rule violations to the same status code.
 /// </remarks>
-public sealed class InvestmentRuleViolationException : Exception
+public class InvestmentRuleViolationException : Exception
 {
     public InvestmentRuleViolationException(string message) : base(message)
     {

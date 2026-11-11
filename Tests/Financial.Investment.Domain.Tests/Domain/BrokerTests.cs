@@ -189,7 +189,7 @@ public class BrokerTests
 
         var act = () => broker.MoveAsset("Default", "Asset A", "ISA");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already holds an asset named*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already holds an asset named*");
         using (new AssertionScope())
         {
             broker.FindPortfolio("Default")!.Assets.Should().ContainSingle();
@@ -248,7 +248,7 @@ public class BrokerTests
 
         var act = () => broker.MoveAsset("Default", "Asset A", "isa");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already has a portfolio named*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already has a portfolio named*");
         broker.Portfolios.Should().HaveCount(2, "no lookalike portfolio may be created");
     }
 
@@ -274,7 +274,7 @@ public class BrokerTests
 
         var act = () => broker.CreatePortfolio("Default");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already has a portfolio named*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already has a portfolio named*");
         broker.Portfolios.Should().ContainSingle();
     }
 
@@ -346,7 +346,7 @@ public class BrokerTests
 
         var act = () => broker.RenamePortfolio("Default", "Growth");
 
-        act.Should().Throw<InvestmentRuleViolationException>().WithMessage("*already has a portfolio named*");
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already has a portfolio named*");
         broker.FindPortfolio("Default").Should().NotBeNull();
     }
 

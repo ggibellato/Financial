@@ -84,7 +84,7 @@ public class AssetAdminServiceTests
     }
 
     [Fact]
-    public async Task CreateAssetAsync_DuplicateNameInPortfolio_ThrowsRuleViolationAndWritesNothing()
+    public async Task CreateAssetAsync_DuplicateNameInPortfolio_ThrowsDuplicateNameAndWritesNothing()
     {
         _repository.Investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
@@ -98,7 +98,7 @@ public class AssetAdminServiceTests
             Name = "AAAA"
         });
 
-        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         _repository.WriteCallCount.Should().Be(0);
     }
 

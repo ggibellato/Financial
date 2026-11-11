@@ -62,7 +62,7 @@ public class PortfolioEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("TestPortfolioA").And.Contain("already has a portfolio named");
+        body.Should().Contain("TestPortfolioA").And.Contain("already has a portfolio named").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]
