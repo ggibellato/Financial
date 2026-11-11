@@ -14,7 +14,7 @@ const FILTER_ACCESSORS = {
 }
 
 export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum }: CategoryTotalsGridProps) {
-  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, filterSummary } =
     useColumnFilters(categoryTotals, FILTER_ACCESSORS)
 
   return (
@@ -47,7 +47,7 @@ export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum }
         },
       ]}
       rows={filteredRows}
-      isFiltered={isColumnFiltered('category')}
+      filter={filterSummary}
       rowKey={(c) => c.category}
       emptyMessage="No expenses recorded for this month"
       footerItems={[{ label: 'Total', value: formatN2(categoryTotalsSum) }]}

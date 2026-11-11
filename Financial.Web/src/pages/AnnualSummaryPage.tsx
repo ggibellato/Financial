@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactNode } from 'react'
+import { Fragment, useRef, useState, type ReactNode } from 'react'
 import { Tab, TabList, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../components/ErrorState'
@@ -6,6 +6,7 @@ import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import ColumnFilterMenu from '../components/grid/ColumnFilterMenu'
+import FilteredRowsNotice from '../components/grid/FilteredRowsNotice'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
@@ -105,6 +106,7 @@ export default function AnnualSummaryPage() {
   } = useAnnualSummary()
 
   const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
+  const filterableTableRef = useRef<HTMLTableElement>(null)
   const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
@@ -119,6 +121,7 @@ export default function AnnualSummaryPage() {
     toggleValue: toggleCategoryTotalsValue,
     toggleAll: toggleCategoryTotalsAll,
     isColumnFiltered: isCategoryTotalsColumnFiltered,
+    filterSummary: categoryTotalsFilterSummary,
   } = useColumnFilters(categoryTotals, { category: (c: CategoryAnnualTotalDto) => c.category })
   const {
     sortedRows: sortedCategoryTotals,
@@ -149,6 +152,7 @@ export default function AnnualSummaryPage() {
     toggleValue: toggleHistoricValue,
     toggleAll: toggleHistoricAll,
     isColumnFiltered: isHistoricColumnFiltered,
+    filterSummary: historicFilterSummary,
   } = useColumnFilters(historicCategoryRows, { category: (row: HistoricCategoryRow) => row.category })
   const {
     sortedRows: sortedHistoricCategoryRows,
@@ -195,7 +199,8 @@ export default function AnnualSummaryPage() {
         <div className="annual-summary-page__content">
           {activeTab === 'categoryTotals' && (
             <section className="annual-summary-page__section">
-              <Table className="annual-summary-page__table data-table">
+              <FilteredRowsNotice {...categoryTotalsFilterSummary} tableRef={filterableTableRef} />
+              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Category totals">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader
@@ -385,7 +390,8 @@ export default function AnnualSummaryPage() {
 
           {activeTab === 'historicSummaryAverage' && (
             <section className="annual-summary-page__section">
-              <Table className="annual-summary-page__table data-table">
+              <FilteredRowsNotice {...historicFilterSummary} tableRef={filterableTableRef} />
+              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Historic summary average">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader

@@ -30,7 +30,7 @@ const FOOTER_FIGURES = [
 ]
 
 export default function BanksGrid({ bankTotals, currencyTotals, viewedMonth }: BanksGridProps) {
-  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, filterSummary } =
     useColumnFilters(bankTotals, FILTER_ACCESSORS)
   const isMultiCurrency = currencyTotals.length > 1
 
@@ -72,7 +72,7 @@ export default function BanksGrid({ bankTotals, currencyTotals, viewedMonth }: B
         },
       ]}
       rows={filteredRows}
-      isFiltered={isColumnFiltered('bank')}
+      filter={filterSummary}
       rowKey={(b) => b.bankId}
       emptyMessage="No accounts in the default group for this month"
       footerItems={currencyFooterItems(currencyTotals, FOOTER_FIGURES)}

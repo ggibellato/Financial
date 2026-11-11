@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 
 export function mockMatchMedia(initialMatches: boolean) {
   let matches = initialMatches
-  let changeHandler: (() => void) | undefined
+  const changeHandlers = new Set<(event: MediaQueryListEvent) => void>()
 
   const mediaQueryList = {
     get matches() {
@@ -10,11 +10,11 @@ export function mockMatchMedia(initialMatches: boolean) {
     },
     media: '',
     onchange: null,
-    addEventListener: (event: string, handler: () => void) => {
-      if (event === 'change') changeHandler = handler
+    addEventListener: (event: string, handler: (event: MediaQueryListEvent) => void) => {
+      if (event === 'change') changeHandlers.add(handler)
     },
-    removeEventListener: (event: string, handler: () => void) => {
-      if (event === 'change' && changeHandler === handler) changeHandler = undefined
+    removeEventListener: (event: string, handler: (event: MediaQueryListEvent) => void) => {
+      if (event === 'change') changeHandlers.delete(handler)
     },
     addListener: () => {},
     removeListener: () => {},
@@ -26,7 +26,7 @@ export function mockMatchMedia(initialMatches: boolean) {
   return {
     setMatches: (next: boolean) => {
       matches = next
-      changeHandler?.()
+      changeHandlers.forEach((handler) => handler({ matches: next } as MediaQueryListEvent))
     },
   }
 }

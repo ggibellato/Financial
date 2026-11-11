@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import TotalsGrid from '../TotalsGrid'
 
 interface Row {
@@ -83,7 +83,15 @@ describe('TotalsGrid', () => {
 
   it('prefers the filter message over the empty message when a filter emptied the rows', () => {
     render(
-      <TotalsGrid label="Totals" emptyMessage="Nothing here" columns={COLUMNS} rows={[]} rowKey={(r) => r.id} footerItems={[]} isFiltered />,
+      <TotalsGrid
+        label="Totals"
+        emptyMessage="Nothing here"
+        columns={COLUMNS}
+        rows={[]}
+        rowKey={(r) => r.id}
+        footerItems={[]}
+        filter={{ isFiltered: true, shownCount: 0, totalCount: 2, onClearFilters: vi.fn() }}
+      />,
     )
 
     expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()

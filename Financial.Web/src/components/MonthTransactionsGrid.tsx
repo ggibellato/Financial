@@ -14,12 +14,15 @@ import {
 } from '@fluentui/react-components'
 import type { MonthTransactionDto } from '../api/types'
 import { useColumnFilters } from '../hooks/useColumnFilters'
+import { useMediaQuery } from '../hooks/useMediaQuery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
+import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
 import { formatLongMonthYear, formatMonthInputValue, formatN2, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import { monthTransactionTotals } from '../utils/monthTransactionTotals'
 import ErrorState from './ErrorState'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import DataTableCell from './grid/DataTableCell'
+import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 import { kindLabel, operationPath } from './accountActions'
@@ -85,10 +88,11 @@ interface MonthTransactionsGridProps {
 export default function MonthTransactionsGrid({ year, month, rows, isLoading, error, onRetry }: MonthTransactionsGridProps) {
   const styles = useStyles()
   const gridRef = useRef<HTMLElement>(null)
-  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, clearFilters } =
+  const tableRef = useRef<HTMLTableElement>(null)
+  const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =
     useColumnFilters(rows, FILTER_ACCESSORS)
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
-  const isFiltered = FILTER_KEYS.some(isColumnFiltered)
   const monthValue = formatMonthInputValue(year, month)
 
   if (error) return <ErrorState message={error} onRetry={onRetry} />
@@ -166,7 +170,8 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   return (
     <section ref={gridRef} className="monthly-page__section monthly-page__section--grid">
-      {isFiltered && (
+      <FilteredRowsNotice {...filterSummary} tableRef={tableRef} />
+      {isFiltered && !isStackedLayout && (
         <div className={styles.toolbar}>
           <Button appearance="primary" onClick={clearAllFilters}>
             Clear filters
@@ -174,7 +179,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         </div>
       )}
       <div className="monthly-page__table-scroll">
-        <Table className="data-table" aria-label="All transactions">
+        <Table ref={tableRef} tabIndex={-1} className="data-table" aria-label="All transactions">
           <TableHeader>
             <TableRow>
               {COLUMNS.map((column) => (

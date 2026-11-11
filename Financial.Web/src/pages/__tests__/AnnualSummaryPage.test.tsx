@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { mockMatchMedia } from '../../test/mockMatchMedia'
 import AnnualSummaryPage from '../AnnualSummaryPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryAnnualAverageDto, CategoryTotalsAnnualDto, InvestmentAnnualResultDto } from '../../api/types'
@@ -598,5 +599,30 @@ describe('AnnualSummaryPage', () => {
     const tbody = within(document.querySelector('tbody')!)
     expect(tbody.queryByText('Mercado')).not.toBeInTheDocument()
     expect(tbody.getByText('Salary')).toBeInTheDocument()
+  })
+
+  describe('in the stacked narrow layout, where the header row is clipped', () => {
+    const originalMatchMedia = window.matchMedia
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    it('shows an active Historic Summary Average filter above the table, and Clear filters brings every row back', async () => {
+      mockMatchMedia(true)
+      render(<AnnualSummaryPage />)
+      fireEvent.click(await screen.findByRole('tab', { name: 'Historic Summary Average' }))
+      await screen.findByRole('columnheader', { name: '2025' })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+      fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
+
+      expect(await screen.findByText('Filtered: 7 of 8 rows')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(within(document.querySelector('tbody')!).getByText('Mercado')).toBeInTheDocument()
+      expect(screen.getByRole('table', { name: 'Historic summary average' })).toHaveFocus()
+    })
   })
 })
