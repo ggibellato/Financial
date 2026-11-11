@@ -129,7 +129,22 @@ describe('AssetFormDialog', () => {
     await waitFor(() => expect(screen.getByLabelText(/^Broker/)).toHaveFocus())
   })
 
-  it('drops a duplicate-name message once a different portfolio is chosen', async () => {
+  it('drops a duplicate-name message once a different portfolio under the same broker is chosen', async () => {
+    const message = 'Portfolio "Default" already holds an asset named "BCIA11".'
+    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
+    const portfolios: PortfolioDto[] = [...PORTFOLIOS, { name: 'Growth', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 }]
+    render(<AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={portfolios} onCancel={vi.fn()} onSubmit={onSubmit} />)
+    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'BCIA11' } })
+    saveFromTheSaveButton('Add asset')
+    await expectDuplicateUnderName(message)
+
+    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Growth' } })
+
+    expect(screen.queryByText(message)).not.toBeInTheDocument()
+  })
+
+  it('drops a duplicate-name message once a different broker is chosen', async () => {
     const message = 'Portfolio "Default" already holds an asset named "BCIA11".'
     const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
     render(<AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={onSubmit} />)
@@ -139,7 +154,6 @@ describe('AssetFormDialog', () => {
     await expectDuplicateUnderName(message)
 
     fireEvent.change(screen.getByLabelText(/^Broker/), { target: { value: 'Avenue' } })
-    fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'ISA' } })
 
     expect(screen.queryByText(message)).not.toBeInTheDocument()
   })

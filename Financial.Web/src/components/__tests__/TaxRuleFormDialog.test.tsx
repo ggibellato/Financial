@@ -63,4 +63,16 @@ describe('TaxRuleFormDialog', () => {
       expect(onSubmit).toHaveBeenCalledWith('UK', 'Interest', 'UK interest rule', 'Notes', '2026-01-01', null),
     )
   })
+
+  it('focuses Jurisdiction, the first field, when creating', async () => {
+    render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
+
+    await waitFor(() => expect(screen.getByLabelText('Jurisdiction')).toHaveFocus())
+  })
+
+  it('focuses Label when editing, past the read-only jurisdiction and event category', async () => {
+    render(<TaxRuleFormDialog taxRule={RULE} onCancel={vi.fn()} onSubmit={vi.fn()} />)
+
+    await waitFor(() => expect(screen.getByLabelText(/^Label/)).toHaveFocus())
+  })
 })
