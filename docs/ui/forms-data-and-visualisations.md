@@ -252,7 +252,9 @@ whose confirm reads "Add broker"; editing a row opens "Edit broker" with
 "Save". All of these labels, like every other piece of UI text, use sentence
 case (`design-tokens.md`): only the first word, proper nouns and acronyms are
 capitalised. A page name used mid-sentence is lowercase too ("will be archived
-into historic investments"). Validation, error, load- and save-failure and
+into historic investments"), while a navigation path quotes the menu labels
+exactly ("Admin → CashFlow → Accounts") and Pots, the account type's name,
+keeps its capital. Validation, error, load- and save-failure and
 empty-state messages are full sentences ending with a full stop ("Date is
 required.", "No income recorded for this month."); short labels, button text,
 headings and brief status toasts ("Expense added") have none.
