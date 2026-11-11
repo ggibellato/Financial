@@ -106,7 +106,7 @@ export default function EditMovementForm({
           </Field>
 
           <Field
-            label={`Amount (${currency})`}
+            label={currency ? `Amount (${currency})` : 'Amount'}
             required
             validationState={fieldError('editMovementAmount') ? 'error' : 'none'}
             validationMessage={fieldError('editMovementAmount')}

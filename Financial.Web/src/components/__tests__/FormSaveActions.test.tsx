@@ -74,6 +74,22 @@ describe('FormSaveActions', () => {
     expect(save).toHaveFocus()
   })
 
+  it('takes focus on submit from Enter in a field, so the field disabling while saving does not drop it', async () => {
+    const user = userEvent.setup()
+    const onSubmit = vi.fn((event: { preventDefault: () => void }) => event.preventDefault())
+    render(
+      <form onSubmit={onSubmit}>
+        <input aria-label="Description" />
+        <FormSaveActions saveLabel="Add Expense" isSaving={false} onCancel={vi.fn()} />
+      </form>,
+    )
+
+    await user.type(screen.getByLabelText('Description'), 'Rent{Enter}')
+
+    expect(onSubmit).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('button', { name: 'Add Expense' })).toHaveFocus()
+  })
+
   it('disables Save outright when the form cannot be saved yet', () => {
     renderInForm({ isSaving: false, isSaveDisabled: true })
 
