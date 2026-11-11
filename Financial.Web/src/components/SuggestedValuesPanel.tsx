@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import {
   Button,
   Checkbox,
@@ -53,12 +54,15 @@ interface SuggestedValuesPanelProps {
 }
 
 function NotUpdatedList({ notUpdated }: { notUpdated: InvestmentSnapshotSuggestionSkippedDto[] }) {
+  const headingId = useId()
   if (notUpdated.length === 0) return null
 
   return (
     <div>
-      <Text weight="semibold">Not updated</Text>
-      <Table className="data-table" size="small">
+      <Text id={headingId} weight="semibold">
+        Not updated
+      </Text>
+      <Table className="data-table" size="small" aria-labelledby={headingId}>
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Account</TableHeaderCell>

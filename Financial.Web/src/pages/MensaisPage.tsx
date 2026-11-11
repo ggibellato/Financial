@@ -135,7 +135,7 @@ function BillTable({
         <EmptyState>No {area} bills yet. Add one with New bill.</EmptyState>
       ) : (
         <div className="mensais-page__table-scroll">
-          <Table className="mensais-page__table data-table">
+          <Table className="mensais-page__table data-table" aria-labelledby={headingId}>
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader

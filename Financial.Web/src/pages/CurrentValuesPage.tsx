@@ -174,7 +174,7 @@ export default function CurrentValuesPage() {
 
       {results.length > 0 && (
         <section className="current-values__results">
-          <Table className="data-table">
+          <Table className="data-table" aria-label="Current prices">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader

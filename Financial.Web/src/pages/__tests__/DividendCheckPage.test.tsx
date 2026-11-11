@@ -124,8 +124,7 @@ describe('DividendCheckPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
     await screen.findByText('Dividend history')
 
-    const tables = screen.getAllByRole('table')
-    const historyRows = within(tables[0]).getAllByRole('row')
+    const historyRows = within(screen.getByRole('table', { name: 'Dividend history' })).getAllByRole('row')
     expect(historyRows[1]).toHaveTextContent('15/06/2024')
     expect(historyRows[2]).toHaveTextContent('10/12/2023')
   })
@@ -146,12 +145,12 @@ describe('DividendCheckPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
     await screen.findByText('By year')
 
-    const tables = screen.getAllByRole('table')
-    const yearRows = within(tables[1]).getAllByRole('row')
+    const yearTable = screen.getByRole('table', { name: 'By year' })
+    const yearRows = within(yearTable).getAllByRole('row')
     expect(yearRows[1]).toHaveTextContent('2024')
     expect(yearRows[2]).toHaveTextContent('2022')
 
-    const yearHeader = within(tables[1]).getByRole('button', { name: 'Year' })
+    const yearHeader = within(yearTable).getByRole('button', { name: 'Year' })
     expect(yearHeader.closest('th')).toHaveAttribute('aria-sort', 'descending')
   })
 

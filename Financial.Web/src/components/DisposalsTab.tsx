@@ -54,6 +54,7 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
   const { active, history } = chain
   const hasHistory = history.length > 0
   const historyPanelId = `disposal-history-${active.id}`
+  const historyTitleId = `${historyPanelId}-title`
   const dateLabel = formatShortDate(active.date)
 
   return (
@@ -89,8 +90,10 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
         <TableRow className="disposals-tab__history-row">
           <TableCell className="data-table__cell--message" colSpan={8}>
             <div id={historyPanelId}>
-              <p className="disposals-tab__history-title">Audit trail for the {dateLabel} disposal</p>
-              <Table className="disposals-tab__history-table data-table">
+              <p id={historyTitleId} className="disposals-tab__history-title">
+                Audit trail for the {dateLabel} disposal
+              </p>
+              <Table className="disposals-tab__history-table data-table" aria-labelledby={historyTitleId}>
                 <TableHeader>
                   <TableRow>
                     <TableHeaderCell>Computed on</TableHeaderCell>
@@ -161,7 +164,7 @@ export default function DisposalsTab() {
         <EmptyState>No disposals in {selectedTaxYear}.</EmptyState>
       ) : (
         <div className="disposals-tab__table-wrapper">
-          <Table className="disposals-tab__table data-table">
+          <Table className="disposals-tab__table data-table" aria-label="Disposals">
             <TableHeader>
               <TableRow>
                 <TableHeaderCell className="disposals-tab__col--expand" />

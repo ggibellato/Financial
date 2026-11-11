@@ -392,6 +392,12 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('-420.50')).toHaveClass('transactions-tab__total')
   })
 
+  it('names_the_transactions_table', async () => {
+    await renderAssetTab([TRANSACTION_BUY])
+
+    expect(screen.getByRole('table', { name: 'Transactions' })).toBeInTheDocument()
+  })
+
   it('shows_an_empty_state_instead_of_the_table_when_the_holding_has_no_transactions', async () => {
     await renderAssetTab([])
     expect(screen.getByText('No transactions yet — nothing has been bought or sold in this holding.')).toBeInTheDocument()

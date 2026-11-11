@@ -306,6 +306,14 @@ describe('MensaisPage', () => {
     expect(screen.getByText('Direct debit')).toBeInTheDocument()
   })
 
+  it('names each bills table after its section heading', async () => {
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    expect(within(screen.getByRole('table', { name: 'Brasil bills' })).getByText('INSS')).toBeInTheDocument()
+    expect(within(screen.getByRole('table', { name: 'UK bills' })).getByText('Council Tax')).toBeInTheDocument()
+  })
+
   it('names a missing NIT and Min. Wage Not available instead of leaving the cells blank', async () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')

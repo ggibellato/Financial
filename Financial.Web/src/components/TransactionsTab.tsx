@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useId, useRef } from 'react'
 import {
   Bar,
   BarChart,
@@ -329,6 +329,7 @@ function TransactionsChart({
   setChartMode,
   compact,
 }: TransactionsChartProps) {
+  const chartTitleId = useId()
   return (
     <div
       className={`transactions-tab__chart-panel${compact ? ' transactions-tab__chart-panel--compact' : ''}`}
@@ -342,8 +343,8 @@ function TransactionsChart({
           onSelect={setChartMode}
         />
       </div>
-      <p className="transactions-tab__chart-title">Net invested by month</p>
-      <div className="transactions-tab__chart-container">
+      <p id={chartTitleId} className="transactions-tab__chart-title">Net invested by month</p>
+      <div className="transactions-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartMode === 'Bar' ? (
             <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
@@ -497,7 +498,7 @@ export default function TransactionsTab() {
         <EmptyState className="transactions-tab__empty">No transactions yet — nothing has been bought or sold in this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="transactions-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="transactions-tab__table data-table">
+          <Table className="transactions-tab__table data-table" aria-label="Transactions">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader

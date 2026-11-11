@@ -266,7 +266,7 @@ export default function PortfolioHoldingsTab() {
         {isLoading && <LoadingState />}
         {error && <ErrorState message={error} onRetry={retry} />}
         {!isLoading && !error && items && (
-          <Table className="portfolio-holdings__table data-table">
+          <Table className="portfolio-holdings__table data-table" aria-label="Holdings">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader rowSpan={2} label="Asset name" columnKey="assetName" sortDirection={sortDirectionFor('assetName')} onSort={requestSort} />

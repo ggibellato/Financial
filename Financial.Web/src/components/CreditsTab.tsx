@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { Button, Field, Input, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
-import { useRef } from 'react'
+import { useId, useRef } from 'react'
 import EmptyState from './EmptyState'
 import type { CreditDto } from '../api/types'
 import ActionErrorAlert from './ActionErrorAlert'
@@ -289,13 +289,14 @@ interface ChartPanelProps {
 }
 
 function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, compact }: ChartPanelProps) {
+  const chartTitleId = useId()
   const isStacked = selectedMode === 'Stacked'
   const palette = buildPalette(creditTypes.length)
 
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
-      <p className="credits-tab__chart-title">Credits by month</p>
-      <div className="credits-tab__chart-container">
+      <p id={chartTitleId} className="credits-tab__chart-title">Credits by month</p>
+      <div className="credits-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartType === 'Bar' ? (
             <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
@@ -474,7 +475,7 @@ export default function CreditsTab() {
         <EmptyState className="credits-tab__empty">No credits yet — no dividend, JCP, coupon or lending income has been recorded for this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="credits-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="credits-tab__table data-table">
+          <Table className="credits-tab__table data-table" aria-label="Credits">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader

@@ -220,7 +220,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
         </EmptyState>
       ) : (
         <div ref={regionRef} className="corporate-actions-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="corporate-actions-tab__table data-table">
+          <Table className="corporate-actions-tab__table data-table" aria-label="Corporate actions">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useId, useMemo, useRef } from 'react'
 import {
   CartesianGrid,
   DefaultLegendContent,
@@ -241,12 +241,13 @@ interface ChartPanelProps {
 }
 
 function ChartPanel({ entries, transactions }: ChartPanelProps) {
+  const chartTitleId = useId()
   const chartData = useMemo(() => buildChartData(entries, transactions), [entries, transactions])
 
   return (
     <div className="price-history-tab__chart-panel">
-      <p className="price-history-tab__chart-title">Price history</p>
-      <div className="price-history-tab__chart-container">
+      <p id={chartTitleId} className="price-history-tab__chart-title">Price history</p>
+      <div className="price-history-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -343,7 +344,7 @@ export default function PriceHistoryTab() {
         <EmptyState className="price-history-tab__empty">No prices yet — add the first price for this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="price-history-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="price-history-tab__table data-table">
+          <Table className="price-history-tab__table data-table" aria-label="Price history">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader
