@@ -3,6 +3,7 @@ import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { FilterSummary } from '../../hooks/useColumnFilters'
 import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
+import { useVisuallyHiddenStyles } from '../../styles/visuallyHidden'
 
 const useStyles = makeStyles({
   notice: {
@@ -13,14 +14,6 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalM,
     marginBottom: tokens.spacingVerticalM,
   },
-  visuallyHidden: {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    overflow: 'hidden',
-    clip: 'rect(0 0 0 0)',
-    whiteSpace: 'nowrap',
-  },
 })
 
 interface FilteredRowsNoticeProps extends FilterSummary {
@@ -29,6 +22,7 @@ interface FilteredRowsNoticeProps extends FilterSummary {
 
 export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount, onClearFilters, tableRef }: FilteredRowsNoticeProps) {
   const styles = useStyles()
+  const hidden = useVisuallyHiddenStyles()
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
   const isShown = isStackedLayout && isFiltered
 
@@ -39,7 +33,7 @@ export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount,
 
   return (
     <div className={isShown ? styles.notice : undefined}>
-      <span role="status" className={isStackedLayout ? undefined : styles.visuallyHidden}>
+      <span role="status" className={isStackedLayout ? undefined : hidden.visuallyHidden}>
         {isFiltered && `Filtered: ${shownCount} of ${totalCount} ${totalCount === 1 ? 'row' : 'rows'}`}
       </span>
       {isShown && (

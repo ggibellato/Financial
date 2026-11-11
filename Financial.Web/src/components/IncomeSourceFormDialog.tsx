@@ -72,11 +72,11 @@ export default function IncomeSourceFormDialog({
         validationState={nameMessage ? 'error' : 'none'}
         validationMessage={nameMessage}
       >
-        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
       <Field label="Group">
-        <Select value={group} onChange={(e) => setGroup(e.target.value)} disabled={isSaving}>
+        <Select value={group} onChange={(e) => setGroup(e.target.value)}>
           {GROUP_OPTIONS.map((option) => (
             <option key={option} value={option}>
               {option}
@@ -86,14 +86,14 @@ export default function IncomeSourceFormDialog({
       </Field>
 
       <Field label="Active">
-        <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} disabled={isSaving} />
+        <Switch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
       </Field>
 
       <Field label="Pots account" hint={potsAccountHint(accountsStatus, hasPotsAccountChoices, potsAccountId)}>
         <Select
           value={potsAccountId}
           onChange={(e) => setPotsAccountId(e.target.value)}
-          disabled={isSaving || !canChoosePotsAccount}
+          disabled={!canChoosePotsAccount}
         >
           <option value="">None</option>
           {isLinkedAccountUnlisted && <option value={linkedPotsAccountId}>Current Pots account</option>}

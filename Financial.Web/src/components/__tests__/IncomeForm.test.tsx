@@ -107,7 +107,7 @@ describe('IncomeForm funded from', () => {
       />,
     )
 
-    expect(screen.getByRole('status')).toHaveTextContent(mismatch)
+    expect(screen.getAllByRole('status').filter((region) => region.textContent?.includes(mismatch))).toHaveLength(1)
     expect(screen.getByRole('button', { name: 'Add income' })).toBeDisabled()
   })
 

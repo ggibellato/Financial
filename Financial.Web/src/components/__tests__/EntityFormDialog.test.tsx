@@ -188,4 +188,32 @@ describe('EntityFormDialog', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
     expect(screen.getByRole('alert')).toHaveTextContent('The bank could not be saved.')
   })
+
+  it('focuses the first editable field in visual order as it opens, skipping read-only ones', async () => {
+    render(
+      <EntityFormDialog title="Edit asset" error={null} isSaving={false} canSave onSave={vi.fn()} onCancel={vi.fn()}>
+        <label htmlFor="asset-broker">Broker</label>
+        <input id="asset-broker" readOnly value="XPI" />
+        <label htmlFor="asset-class">Class</label>
+        <select id="asset-class">
+          <option>Equity</option>
+        </select>
+        <label htmlFor="asset-name">Name</label>
+        <input id="asset-name" />
+      </EntityFormDialog>,
+    )
+
+    await waitFor(() => expect(screen.getByLabelText('Class')).toHaveFocus())
+  })
+
+  it('disables every field while saving and enables them again afterwards', () => {
+    const { rerender } = renderDialog()
+    expect(screen.getByLabelText('Name')).toBeEnabled()
+
+    rerender(dialog({ isSaving: true, canSave: false }))
+    expect(screen.getByLabelText('Name')).toBeDisabled()
+
+    rerender(dialog())
+    expect(screen.getByLabelText('Name')).toBeEnabled()
+  })
 })

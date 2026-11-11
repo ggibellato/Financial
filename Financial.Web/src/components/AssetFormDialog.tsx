@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Field, Input, Select } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
+import ReadOnlyInput from './ReadOnlyInput'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { isValidIsin } from '../utils/validators'
@@ -62,7 +63,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   }
 
   const trimmedName = name.trim()
-  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
+  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, JSON.stringify([brokerName, portfolioName, trimmedName]))
   const trimmedIsin = isin.trim()
   const nameValidationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
   const nameMessage = nameValidationMessage || nameError
@@ -109,10 +110,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
       {isEditing ? (
         <>
           <Field label="Broker">
-            <Input value={asset.brokerName} disabled readOnly />
+            <ReadOnlyInput value={asset.brokerName} />
           </Field>
           <Field label="Portfolio">
-            <Input value={asset.portfolioName} disabled readOnly />
+            <ReadOnlyInput value={asset.portfolioName} />
           </Field>
         </>
       ) : (
@@ -123,7 +124,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
             validationState={brokerValidationMessage ? 'error' : 'none'}
             validationMessage={brokerValidationMessage}
           >
-            <Select value={brokerName} onChange={(e) => handleBrokerChange(e.target.value)} disabled={isSaving}>
+            <Select value={brokerName} onChange={(e) => handleBrokerChange(e.target.value)}>
               {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
               {activeBrokers.map((b) => (
                 <option key={b.name} value={b.name}>
@@ -139,7 +140,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
             validationState={portfolioValidationMessage ? 'error' : 'none'}
             validationMessage={portfolioValidationMessage}
           >
-            <Select value={portfolioName} onChange={(e) => setPortfolioName(e.target.value)} disabled={isSaving || brokerPortfolios.length === 0}>
+            <Select value={portfolioName} onChange={(e) => setPortfolioName(e.target.value)} disabled={brokerPortfolios.length === 0}>
               <option value="">
                 {brokerPortfolios.length === 0 ? 'No portfolios under this broker' : 'Select a portfolio'}
               </option>
@@ -159,7 +160,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
         validationState={nameMessage ? 'error' : 'none'}
         validationMessage={nameMessage}
       >
-        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} />
       </Field>
 
       <Field
@@ -167,19 +168,19 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
         validationState={isinValidationMessage ? 'error' : 'none'}
         validationMessage={isinValidationMessage}
       >
-        <Input value={isin} onChange={(e) => setIsin(e.target.value)} disabled={isSaving} />
+        <Input value={isin} onChange={(e) => setIsin(e.target.value)} />
       </Field>
 
       <Field label="Exchange">
-        <Input value={exchange} onChange={(e) => setExchange(e.target.value)} disabled={isSaving} />
+        <Input value={exchange} onChange={(e) => setExchange(e.target.value)} />
       </Field>
 
       <Field label="Ticker">
-        <Input value={ticker} onChange={(e) => setTicker(e.target.value)} disabled={isSaving} />
+        <Input value={ticker} onChange={(e) => setTicker(e.target.value)} />
       </Field>
 
       <Field label="Country">
-        <Select value={country} onChange={(e) => setCountry(e.target.value)} disabled={isSaving}>
+        <Select value={country} onChange={(e) => setCountry(e.target.value)}>
           {COUNTRY_OPTIONS.map((c) => (
             <option key={c} value={c}>
               {c}
@@ -189,11 +190,11 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
       </Field>
 
       <Field label="Local type code">
-        <Input value={localTypeCode} onChange={(e) => setLocalTypeCode(e.target.value)} disabled={isSaving} />
+        <Input value={localTypeCode} onChange={(e) => setLocalTypeCode(e.target.value)} />
       </Field>
 
       <Field label="Class">
-        <Select value={assetClass} onChange={(e) => setAssetClass(e.target.value)} disabled={isSaving}>
+        <Select value={assetClass} onChange={(e) => setAssetClass(e.target.value)}>
           {CLASS_OPTIONS.map((c) => (
             <option key={c} value={c}>
               {c}

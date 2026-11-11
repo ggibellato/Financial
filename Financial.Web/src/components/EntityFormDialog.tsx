@@ -9,6 +9,10 @@ import {
   MessageBarBody,
 } from '@fluentui/react-components'
 import FormSaveActions from './FormSaveActions'
+import { useFormPanelStyles } from './formPanelStyles'
+
+const EDITABLE_FIELD =
+  'input:not([type="hidden"]):not([readonly]):not([disabled]), select:not([disabled]), textarea:not([readonly]):not([disabled])'
 
 interface EntityFormDialogProps {
   title: string
@@ -31,7 +35,9 @@ export default function EntityFormDialog({
   onCancel,
   children,
 }: EntityFormDialogProps) {
+  const styles = useFormPanelStyles()
   const errorBar = useRef<HTMLDivElement | null>(null)
+  const content = useRef<HTMLDivElement | null>(null)
 
   const [opener] = useState(() => document.activeElement as HTMLElement | null)
 
@@ -41,6 +47,10 @@ export default function EntityFormDialog({
     },
     [opener],
   )
+
+  useEffect(() => {
+    content.current?.querySelector<HTMLElement>(EDITABLE_FIELD)?.focus()
+  }, [])
 
   useEffect(() => {
     if (!error) return
@@ -59,8 +69,10 @@ export default function EntityFormDialog({
         <form noValidate onSubmit={submit}>
           <DialogBody>
             <DialogTitle>{title}</DialogTitle>
-            <DialogContent>
-              {children}
+            <DialogContent ref={content}>
+              <fieldset disabled={isSaving} className={styles.savingFieldset}>
+                {children}
+              </fieldset>
 
               {error && (
                 <MessageBar ref={errorBar} role="alert" intent="error" tabIndex={-1}>

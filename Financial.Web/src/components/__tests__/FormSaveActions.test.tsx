@@ -95,4 +95,17 @@ describe('FormSaveActions', () => {
 
     expect(screen.getByRole('button', { name: 'Add Expense' })).toBeDisabled()
   })
+
+  it('announces Saving... in a polite status region only while saving', () => {
+    const { rerender } = renderInForm({ isSaving: false })
+    const status = screen.getByRole('status')
+    expect(status.textContent).toBe('')
+
+    rerender(
+      <form>
+        <FormSaveActions saveLabel="Add Expense" onCancel={vi.fn()} isSaving />
+      </form>,
+    )
+    expect(screen.getByRole('status')).toHaveTextContent('Saving...')
+  })
 })

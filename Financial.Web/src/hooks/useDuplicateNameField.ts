@@ -3,19 +3,19 @@ import { isDuplicateName } from '../api/apiError'
 
 interface RejectedName {
   failure: unknown
-  name: string
+  nameKey: string
 }
 
 export function useDuplicateNameField<T extends HTMLElement = HTMLInputElement>(
   failure: unknown,
   error: string | null,
-  name: string,
+  nameKey: string,
 ) {
   const nameRef = useRef<T>(null)
   const [rejected, setRejected] = useState<RejectedName | null>(null)
   const isDuplicate = isDuplicateName(failure)
-  if (isDuplicate && rejected?.failure !== failure) setRejected({ failure, name })
-  const isNameConflict = isDuplicate && rejected?.name === name
+  if (isDuplicate && rejected?.failure !== failure) setRejected({ failure, nameKey })
+  const isNameConflict = isDuplicate && rejected?.nameKey === nameKey
 
   useEffect(() => {
     if (isNameConflict) nameRef.current?.focus()
