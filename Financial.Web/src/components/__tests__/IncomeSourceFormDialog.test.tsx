@@ -23,7 +23,7 @@ describe('IncomeSourceFormDialog', () => {
   it('renders in create mode with an empty name, Salary group, active on, and no Pots account', () => {
     render(<IncomeSourceFormDialog incomeSource={null} accounts={ACCOUNTS} accountsStatus="ready" onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Income Source' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New income source' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText('Group')).toHaveValue('Salary')
     expect(screen.getByLabelText('Active')).toBeChecked()
@@ -41,7 +41,7 @@ describe('IncomeSourceFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Income Source' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit income source' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('Gleison')
     expect(screen.getByLabelText('Group')).toHaveValue('NonReportable')
     expect(screen.getByLabelText('Active')).not.toBeChecked()
@@ -81,7 +81,7 @@ describe('IncomeSourceFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  Freelance  ' } })
     fireEvent.change(screen.getByLabelText('Group'), { target: { value: 'NonReportable' } })
     fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add income source' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Freelance', 'NonReportable', true, 'p2'))
   })
@@ -150,7 +150,7 @@ describe('IncomeSourceFormDialog', () => {
     expect(screen.getByText(/Accounts couldn't be loaded/)).toBeInTheDocument()
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Freelance' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add income source' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Freelance', 'Salary', true, null))
   })
@@ -191,7 +191,7 @@ describe('IncomeSourceFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Freelance' } })
     fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add income source' }))
 
     expect(await screen.findByText('Reserva is inactive.')).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toHaveValue('p1')
@@ -219,7 +219,7 @@ describe('IncomeSourceFormDialog', () => {
     render(<IncomeSourceFormDialog incomeSource={null} accounts={ACCOUNTS} accountsStatus="ready" onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Gleison' } })
-    saveFromTheSaveButton()
+    saveFromTheSaveButton('Add income source')
 
     await expectDuplicateUnderName(message)
   })

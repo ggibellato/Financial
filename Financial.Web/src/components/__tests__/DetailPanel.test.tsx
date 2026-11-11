@@ -236,16 +236,16 @@ describe('DetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Credits' })).toBeInTheDocument()
   })
 
-  it('does not show Price History tab for a broker node', () => {
+  it('does not show Price history tab for a broker node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByRole('tab', { name: 'Price History' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Price history' })).not.toBeInTheDocument()
   })
 
-  it('does not show Price History tab for a portfolio node', () => {
+  it('does not show Price history tab for a portfolio node', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByRole('tab', { name: 'Price History' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Price history' })).not.toBeInTheDocument()
   })
 
   it('shows Holdings tab for a portfolio node right after Summary', () => {
@@ -280,43 +280,43 @@ describe('DetailPanel', () => {
     await waitFor(() => expect(screen.getByRole('table')).toBeInTheDocument())
   })
 
-  it('shows Price History tab for an asset node', () => {
+  it('shows Price history tab for an asset node', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByRole('tab', { name: 'Price History' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Price history' })).toBeInTheDocument()
   })
 
-  it('shows Corporate Actions tab for an asset node, after Disposals', () => {
+  it('shows Corporate actions tab for an asset node, after Disposals', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
     const tabs = screen.getAllByRole('tab')
-    expect(tabs[tabs.length - 1]).toHaveAccessibleName('Corporate Actions')
+    expect(tabs[tabs.length - 1]).toHaveAccessibleName('Corporate actions')
   })
 
-  it('does not show Corporate Actions tab for a broker node', () => {
+  it('does not show Corporate actions tab for a broker node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByRole('tab', { name: 'Corporate Actions' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Corporate actions' })).not.toBeInTheDocument()
   })
 
-  it('does not show Corporate Actions tab for a portfolio node', () => {
+  it('does not show Corporate actions tab for a portfolio node', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.queryByRole('tab', { name: 'Corporate Actions' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('tab', { name: 'Corporate actions' })).not.toBeInTheDocument()
   })
 
-  it('clicking Corporate Actions tab activates it', () => {
+  it('clicking Corporate actions tab activates it', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    fireEvent.click(screen.getByRole('tab', { name: 'Corporate Actions' }))
-    expect(screen.getByRole('tab', { name: 'Corporate Actions' })).toHaveAttribute('aria-selected', 'true')
+    fireEvent.click(screen.getByRole('tab', { name: 'Corporate actions' }))
+    expect(screen.getByRole('tab', { name: 'Corporate actions' })).toHaveAttribute('aria-selected', 'true')
   })
 
-  it('selects the Corporate Actions tab instead of Summary when selectedNode carries pendingCorporateActionId', async () => {
+  it('selects the Corporate actions tab instead of Summary when selectedNode carries pendingCorporateActionId', async () => {
     renderPanel(deepLinkedAssetNode)
     act(() => screen.getByTestId('setter').click())
 
-    expect(screen.getByRole('tab', { name: 'Corporate Actions' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tab', { name: 'Corporate actions' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'false')
   })
 
@@ -367,7 +367,7 @@ describe('DetailPanel', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    await waitFor(() => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Net invested by month')).toBeInTheDocument())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
@@ -375,7 +375,7 @@ describe('DetailPanel', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    await waitFor(() => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Net invested by month')).toBeInTheDocument())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
@@ -412,14 +412,14 @@ describe('DetailPanel', () => {
     renderPanel(emptyPortfolioNode)
     fireEvent.click(screen.getByTestId('setter'))
 
-    expect(screen.getByRole('button', { name: 'Delete Portfolio' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete portfolio' })).toBeInTheDocument()
   })
 
   it('does not offer to delete a portfolio that still holds assets', async () => {
     renderPanel(portfolioNode)
     fireEvent.click(screen.getByTestId('setter'))
 
-    expect(screen.queryByRole('button', { name: 'Delete Portfolio' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete portfolio' })).not.toBeInTheDocument()
   })
 
   it('does not offer to delete when the asset count is unknown', async () => {
@@ -427,7 +427,7 @@ describe('DetailPanel', () => {
     renderPanel({ ...emptyPortfolioNode, assetCount: -1 })
     fireEvent.click(screen.getByTestId('setter'))
 
-    expect(screen.queryByRole('button', { name: 'Delete Portfolio' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Delete portfolio' })).not.toBeInTheDocument()
   })
 
   it('deletes the portfolio and clears the selection', async () => {
@@ -435,14 +435,14 @@ describe('DetailPanel', () => {
     renderPanel(emptyPortfolioNode)
     fireEvent.click(screen.getByTestId('setter'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Portfolio' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete portfolio' }))
 
     await waitFor(() => expect(deleteEmptyPortfolioMock).toHaveBeenCalledWith('XPI', 'Stale', 'active'))
     // Nothing here describes anything once the portfolio is gone.
     await waitFor(() => expect(screen.getByText('Select an item to view details')).toBeInTheDocument())
   })
 
-  it('opens the Move Asset dialog for an asset node', () => {
+  it('opens the Move asset dialog for an asset node', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
 
@@ -451,7 +451,7 @@ describe('DetailPanel', () => {
     expect(screen.getByTestId('move-asset-dialog-stub')).toBeInTheDocument()
   })
 
-  it('closes the Move Asset dialog on cancel', () => {
+  it('closes the Move asset dialog on cancel', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
 
@@ -488,7 +488,7 @@ describe('DetailPanel', () => {
     renderPanel(emptyPortfolioNode)
     fireEvent.click(screen.getByTestId('setter'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Portfolio' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Delete portfolio' }))
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('still holds'))
   })

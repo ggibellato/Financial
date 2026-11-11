@@ -3,7 +3,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/re
 import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
-import type { FilterSummary } from '../hooks/useColumnFilters'
+import { NO_FILTER_MATCH_MESSAGE, type FilterSummary } from '../hooks/useColumnFilters'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import SectionTotals from './SectionTotals'
 import type { SectionTotalItem } from '../utils/currencyFooterItems'
@@ -58,7 +58,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell className="data-table__cell--message" colSpan={columns.length}>
-                  {filter?.isFiltered ? 'No rows match the current filters' : emptyMessage}
+                  {filter?.isFiltered ? NO_FILTER_MATCH_MESSAGE : emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (

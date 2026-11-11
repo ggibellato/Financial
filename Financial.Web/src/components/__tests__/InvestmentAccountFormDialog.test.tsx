@@ -16,7 +16,7 @@ describe('InvestmentAccountFormDialog', () => {
   it('renders in create mode with an empty name, active on, liability off, source none', () => {
     render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Investment Account' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New investment account' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText('Active')).toBeChecked()
     expect(screen.getByLabelText('Liability')).not.toBeChecked()
@@ -43,7 +43,7 @@ describe('InvestmentAccountFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Investment Account' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit investment account' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('ChaseSave')
     expect(screen.getByLabelText('Active')).not.toBeChecked()
     expect(screen.getByLabelText('Liability')).toBeChecked()
@@ -55,7 +55,7 @@ describe('InvestmentAccountFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  Monzo Pot  ' } })
     fireEvent.click(screen.getByLabelText('Liability'))
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, true, 'None', null, null))
   })
@@ -63,7 +63,7 @@ describe('InvestmentAccountFormDialog', () => {
   it('shows no extra field when source is none', () => {
     render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[activeCard]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.queryByLabelText('Credit Card')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Credit card')).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Pots account/)).not.toBeInTheDocument()
   })
 
@@ -72,7 +72,7 @@ describe('InvestmentAccountFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'CreditCard' } })
 
-    const picker = screen.getByLabelText(/^Credit Card/)
+    const picker = screen.getByLabelText(/^Credit card/)
     expect(picker).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Platinum Visa 8003' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Retired Card' })).not.toBeInTheDocument()
@@ -90,8 +90,8 @@ describe('InvestmentAccountFormDialog', () => {
       'Holidays',
       'Reserva',
     ])
-    expect(screen.getByText("Investment Snapshots will suggest the Pots account's total at the end of the previous month.")).toBeInTheDocument()
-    expect(screen.queryByLabelText(/^Credit Card/)).not.toBeInTheDocument()
+    expect(screen.getByText("Investment snapshots will suggest the Pots account's total at the end of the previous month.")).toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Credit card/)).not.toBeInTheDocument()
   })
 
   it('blocks save until a Pots account is chosen, then submits it', async () => {
@@ -101,11 +101,11 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Holiday savings' } })
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'PotsAccountTotal' } })
 
-    expect(screen.getByText('Select a Pots account')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByText('Select a Pots account.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add investment account' })).toBeDisabled()
 
     fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p2' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Holiday savings', true, false, 'PotsAccountTotal', null, 'p2'))
   })
@@ -125,9 +125,9 @@ describe('InvestmentAccountFormDialog', () => {
 
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled()
     expect(screen.getByRole('option', { name: 'No active Pots accounts' })).toBeInTheDocument()
-    expect(screen.getByText('Add a Pots account in Admin → Accounts first.')).toBeInTheDocument()
-    expect(screen.queryByText('Select a Pots account')).not.toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByText('Add a Pots account in Admin → CashFlow → Accounts first.')).toBeInTheDocument()
+    expect(screen.queryByText('Select a Pots account.')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add investment account' })).toBeDisabled()
   })
 
   it('treats a linked Pots account that is no longer listed as not chosen', () => {
@@ -151,7 +151,7 @@ describe('InvestmentAccountFormDialog', () => {
     )
 
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toHaveValue('')
-    expect(screen.getByText('Select a Pots account')).toBeInTheDocument()
+    expect(screen.getByText('Select a Pots account.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 
@@ -190,7 +190,7 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'CreditCard' } })
 
     expect(screen.getByText('Select a credit card')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add investment account' })).toBeDisabled()
   })
 
   it('submits the selected card id when source is credit card', async () => {
@@ -199,8 +199,8 @@ describe('InvestmentAccountFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Monzo Pot' } })
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'CreditCard' } })
-    fireEvent.change(screen.getByLabelText(/^Credit Card/), { target: { value: 'cc1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.change(screen.getByLabelText(/^Credit card/), { target: { value: 'cc1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, false, 'CreditCard', 'cc1', null))
   })
@@ -225,7 +225,7 @@ describe('InvestmentAccountFormDialog', () => {
       />,
     )
 
-    expect(screen.getByLabelText(/^Credit Card/)).toHaveValue('cc2')
+    expect(screen.getByLabelText(/^Credit card/)).toHaveValue('cc2')
     expect(screen.getByRole('option', { name: 'Retired Card' })).toBeInTheDocument()
   })
 
@@ -235,7 +235,7 @@ describe('InvestmentAccountFormDialog', () => {
     render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'ChaseSave' } })
-    saveFromTheSaveButton()
+    saveFromTheSaveButton('Add investment account')
 
     await expectDuplicateUnderName(message)
   })

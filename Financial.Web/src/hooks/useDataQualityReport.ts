@@ -13,7 +13,7 @@ export function useDataQualityReport(): DataQualityReportData {
   const { data, isLoading, error, retry } = useAsyncResource<DataQualityReportDto>(
     () => apiClient.getDataQualityReport(),
     [],
-    'Unable to load the data-quality report',
+    'Unable to load the data-quality report.',
   )
 
   return { report: data, isLoading, error, retry }

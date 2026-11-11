@@ -22,7 +22,7 @@ export function useBrokers(): BrokersData {
   const resource = useCrudResource({
     load: () => apiClient.getAdminBrokers(),
     initialData: NO_BROKERS,
-    loadErrorMessage: 'Unable to load brokers',
+    loadErrorMessage: 'Unable to load brokers.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -44,7 +44,7 @@ export function useBrokers(): BrokersData {
   )
 
   const deleteBroker = useCallback(
-    (name: string) => runPendingMutation(name, () => apiClient.deleteBroker(name), 'Failed to delete broker'),
+    (name: string) => runPendingMutation(name, () => apiClient.deleteBroker(name), 'Failed to delete broker.'),
     [runPendingMutation],
   )
 

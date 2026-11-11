@@ -61,7 +61,7 @@ export default function AllocationPieChart({
   title,
   entries,
   headingLevel: Heading = 'h4',
-  valueLabel = 'Market Value',
+  valueLabel = 'Market value',
 }: AllocationPieChartProps) {
   const sliceData = entries.map((entry) => ({
     name: entry.label,

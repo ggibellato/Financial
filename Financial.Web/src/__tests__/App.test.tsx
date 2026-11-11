@@ -35,7 +35,7 @@ describe('App', () => {
   it('renders the breadcrumb above the routed content', () => {
     render(<AppWithRoutes />)
 
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('InvestmentsActive Investments')
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('InvestmentsActive investments')
   })
 
   it('switches to the cashflow domain content', () => {
@@ -50,7 +50,7 @@ describe('App', () => {
   it('switches back to the investments domain content', () => {
     render(<AppWithRoutes initialEntry="/cashflow/monthly" />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Active Investments' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Active investments' }))
 
     expect(screen.getByText('Investments domain content')).toBeInTheDocument()
     expect(screen.queryByText('CashFlow domain content')).not.toBeInTheDocument()
@@ -60,7 +60,7 @@ describe('App', () => {
     render(<AppWithRoutes initialEntry="/cashflow/monthly" />)
 
     expect(screen.getByRole('link', { name: 'Monthly' })).toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Active Investments' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Active investments' })).not.toHaveClass('active')
   })
 
   it('persists the active domain to sessionStorage on navigation', () => {

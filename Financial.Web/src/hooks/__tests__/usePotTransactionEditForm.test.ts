@@ -70,7 +70,7 @@ describe('usePotTransactionEditForm', () => {
     act(() => result.current.setField('editMovementAmount', ''))
     act(() => result.current.submit())
 
-    expect(result.current.edit?.errorFields).toEqual({ editMovementDescription: 'Description is required', editMovementAmount: 'Amount must be a number' })
+    expect(result.current.edit?.errorFields).toEqual({ editMovementDescription: 'Description is required.', editMovementAmount: 'Amount must be a number.' })
     expect(updateReserveMovementMock).not.toHaveBeenCalled()
     expect(onSaved).not.toHaveBeenCalled()
   })

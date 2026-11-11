@@ -47,11 +47,11 @@ describe('ExpenseForm', () => {
   it('renders the create form with empty date/description/value fields', () => {
     render(<ExpenseForm {...baseProps} />)
 
-    expect(screen.getByText('New Expense')).toBeInTheDocument()
+    expect(screen.getByText('New expense')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('')
     expect(screen.getByLabelText(/^Description/)).toHaveValue('')
     expect(screen.getByLabelText(/^Value/)).toHaveValue(null)
-    expect(screen.getByRole('button', { name: 'Add Expense' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add expense' })).toBeInTheDocument()
   })
 
   it('shows the settlement note and hides payment fields when settled', () => {
@@ -67,7 +67,7 @@ describe('ExpenseForm', () => {
     )
 
     expect(screen.getByText(/locked while its card statement is paid/)).toBeInTheDocument()
-    expect(screen.queryByLabelText('Payment Source')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Payment source')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Card')).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
@@ -86,14 +86,14 @@ describe('ExpenseForm', () => {
 
   it('shows the bank picker and no toggle in bank mode', () => {
     render(<ExpenseForm {...baseProps} paymentMode="bank" />)
-    expect(screen.getByLabelText(/^Payment Source/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Payment source/)).toBeInTheDocument()
     expect(screen.queryByLabelText(/^Card/)).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
   it("shows the charge's card as read-only text and no toggle in card mode", () => {
     render(<ExpenseForm {...baseProps} paymentMode="card" creditCardId="card-baamex" creditCardName="BaAmex" />)
-    expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Payment source/)).not.toBeInTheDocument()
     expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: /^Card/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
@@ -120,7 +120,7 @@ describe('ExpenseForm', () => {
   it('shows an editable invoice month field pre-filled from the date when card mode is selected', () => {
     render(<ExpenseForm {...baseProps} paymentMode="card" date="2026-07-15" />)
 
-    const invoiceField = screen.getByLabelText('Invoice Month')
+    const invoiceField = screen.getByLabelText('Invoice month')
     expect(invoiceField).toBeInTheDocument()
     expect(invoiceField).not.toBeDisabled()
     expect(invoiceField).toHaveValue('2026-07')
@@ -130,7 +130,7 @@ describe('ExpenseForm', () => {
     const onFieldChange = vi.fn()
     render(<ExpenseForm {...baseProps} paymentMode="card" date="2026-07-15" onFieldChange={onFieldChange} />)
 
-    fireEvent.change(screen.getByLabelText('Invoice Month'), { target: { value: '2026-08' } })
+    fireEvent.change(screen.getByLabelText('Invoice month'), { target: { value: '2026-08' } })
 
     expect(onFieldChange).toHaveBeenCalledWith('invoiceDate', '2026-08')
   })
@@ -148,7 +148,7 @@ describe('ExpenseForm', () => {
       />,
     )
 
-    const invoiceField = screen.getByLabelText('Invoice Month')
+    const invoiceField = screen.getByLabelText('Invoice month')
     expect(invoiceField).toBeInTheDocument()
     expect(invoiceField).toBeDisabled()
     expect(invoiceField).toHaveValue('2026-07')
@@ -183,24 +183,24 @@ describe('ExpenseForm', () => {
   it("defaults the invoice month to the date's month", () => {
     render(<ExpenseForm {...baseProps} paymentMode="card" date="2026-07-15" creditCardId="card-baamex" />)
 
-    expect(screen.getByLabelText('Invoice Month')).toHaveValue('2026-07')
+    expect(screen.getByLabelText('Invoice month')).toHaveValue('2026-07')
   })
 
   it('hides the invoice month field in bank mode', () => {
     render(<ExpenseForm {...baseProps} paymentMode="bank" />)
 
-    expect(screen.queryByLabelText('Invoice Month')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Invoice month')).not.toBeInTheDocument()
   })
 
   it('shows the round-up field only for a round-up-enabled bank in bank mode', () => {
     const { rerender } = render(<ExpenseForm {...baseProps} paymentMode="bank" paymentSource="bank-barclays" />)
-    expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Round-up')).not.toBeInTheDocument()
 
     rerender(<ExpenseForm {...baseProps} paymentMode="bank" paymentSource="bank-trading212" />)
-    expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
+    expect(screen.getByLabelText('Round-up')).toBeInTheDocument()
 
     rerender(<ExpenseForm {...baseProps} paymentMode="card" paymentSource="bank-trading212" />)
-    expect(screen.queryByLabelText('Round-Up')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Round-up')).not.toBeInTheDocument()
   })
 
   it('hides the counts-toward-tithe checkbox for a non-tithe category', () => {
@@ -248,8 +248,8 @@ describe('ExpenseForm', () => {
         {...baseProps}
         paymentSource="bank-trading212"
         saveErrorFields={{
-          date: 'Date is required',
-          description: 'Description is required',
+          date: 'Date is required.',
+          description: 'Description is required.',
           paymentSource: 'Choose a payment source',
           value: 'Value is required',
           roundUpAmount: 'Round-up is too large',
@@ -258,8 +258,8 @@ describe('ExpenseForm', () => {
     )
 
     for (const message of [
-      'Date is required',
-      'Description is required',
+      'Date is required.',
+      'Description is required.',
       'Choose a payment source',
       'Value is required',
       'Round-up is too large',
@@ -275,19 +275,19 @@ describe('ExpenseForm', () => {
   })
 
   it('shows the save error below the form only when no field carries its own error', () => {
-    const { rerender } = render(<ExpenseForm {...baseProps} saveError="Could not save" />)
-    expect(screen.getByText('Could not save')).toBeInTheDocument()
+    const { rerender } = render(<ExpenseForm {...baseProps} saveError="Could not save." />)
+    expect(screen.getByText('Could not save.')).toBeInTheDocument()
 
-    rerender(<ExpenseForm {...baseProps} saveError="Could not save" saveErrorFields={{ value: 'Value is required' }} />)
-    expect(screen.queryByText('Could not save')).not.toBeInTheDocument()
+    rerender(<ExpenseForm {...baseProps} saveError="Could not save." saveErrorFields={{ value: 'Value is required' }} />)
+    expect(screen.queryByText('Could not save.')).not.toBeInTheDocument()
   })
 
   it('labels the primary button by state: add, save when editing, saving while in flight', () => {
     const { rerender } = render(<ExpenseForm {...baseProps} />)
-    expect(screen.getByRole('button', { name: 'Add Expense' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled()
 
     rerender(<ExpenseForm {...baseProps} isEditing />)
-    expect(screen.getByText('Edit Expense')).toBeInTheDocument()
+    expect(screen.getByText('Edit expense')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled()
 
     rerender(<ExpenseForm {...baseProps} isEditing isSaving />)
@@ -314,7 +314,7 @@ describe('ExpenseForm', () => {
     const onCancel = vi.fn()
     render(<ExpenseForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Expense' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add expense' }))
     expect(onSave).toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
@@ -326,11 +326,11 @@ describe('ExpenseForm with a locked bank', () => {
   it('shows the locked bank as read-only text instead of the payment source picker', () => {
     render(<ExpenseForm {...baseProps} paymentSource="bank-trading212" lockedBank={{ id: 'bank-trading212', name: 'Trading212' }} />)
 
-    expect(screen.getByText('Payment Source')).toBeInTheDocument()
+    expect(screen.getByText('Payment source')).toBeInTheDocument()
     expect(screen.getByText('Trading212')).toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: 'Payment Source' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('textbox', { name: 'Payment Source' })).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Round-Up')).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Payment source' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('textbox', { name: 'Payment source' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Round-up')).toBeInTheDocument()
   })
 
   it('saves when the form is submitted with Enter', () => {
@@ -340,7 +340,7 @@ describe('ExpenseForm with a locked bank', () => {
     fireEvent.submit(screen.getByLabelText(/^Description/).closest('form') as HTMLFormElement)
 
     expect(onSave).toHaveBeenCalledOnce()
-    expect(screen.getByRole('button', { name: 'Add Expense' })).toHaveAttribute('type', 'submit')
+    expect(screen.getByRole('button', { name: 'Add expense' })).toHaveAttribute('type', 'submit')
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveAttribute('type', 'button')
   })
 
@@ -352,17 +352,17 @@ describe('ExpenseForm with a locked bank', () => {
     expect(message.compareDocumentPosition(dateField) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Payment Source on a new expense', () => {
+  it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of Payment source on a new expense', () => {
     render(<ExpenseForm {...baseProps} banks={[...BANKS, INACTIVE_BANK]} />)
 
-    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212'])
+    expect(optionNames(screen.getByLabelText(/^Payment source/))).toEqual(['Barclays', 'Trading212'])
   })
 
   it('[AC P60-F06-admin-accounts-page-05] keeps the inactive bank of an expense being edited', () => {
     render(<ExpenseForm {...baseProps} isEditing paymentSource="bank-chase" banks={[...BANKS, INACTIVE_BANK]} />)
 
-    expect(screen.getByLabelText(/^Payment Source/)).toHaveValue('bank-chase')
-    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toEqual(['Barclays', 'Trading212', 'Chase'])
+    expect(screen.getByLabelText(/^Payment source/)).toHaveValue('bank-chase')
+    expect(optionNames(screen.getByLabelText(/^Payment source/))).toEqual(['Barclays', 'Trading212', 'Chase'])
   })
 
   it("[AC P60-F06-admin-accounts-page-05] keeps the edited expense's inactive bank after another bank is picked", () => {
@@ -371,7 +371,7 @@ describe('ExpenseForm with a locked bank', () => {
 
     rerender(<ExpenseForm {...props} paymentSource="bank-barclays" />)
 
-    expect(optionNames(screen.getByLabelText(/^Payment Source/))).toContain('Chase')
+    expect(optionNames(screen.getByLabelText(/^Payment source/))).toContain('Chase')
   })
 })
 
@@ -381,39 +381,39 @@ describe('ExpenseForm with a locked card', () => {
   it('shows the locked card as read-only text and names the record a charge', () => {
     render(<ExpenseForm {...cardProps} date="2026-10-14" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
 
-    expect(screen.getByRole('heading', { name: 'New Charge' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New charge' })).toBeInTheDocument()
     expect(screen.getByText('BaAmex')).toBeInTheDocument()
     expect(screen.queryByRole('combobox', { name: /^Card/ })).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Payment source/)).not.toBeInTheDocument()
     expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
-    expect(screen.getByRole('button', { name: 'Add Charge' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add charge' })).toBeInTheDocument()
   })
 
-  it('titles an edit Edit Charge and keeps the statement month editable', () => {
+  it('titles an edit Edit charge and keeps the statement month editable', () => {
     render(<ExpenseForm {...cardProps} isEditing invoiceDate="2026-11" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />)
 
-    expect(screen.getByRole('heading', { name: 'Edit Charge' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit charge' })).toBeInTheDocument()
     expect(screen.getByLabelText('Statement month')).toBeEnabled()
   })
 
   describe('in refund mode', () => {
     const refundProps = { ...cardProps, isRefund: true, lockedCard: { id: 'card-baamex', name: 'BaAmex' } }
 
-    it('titles the form New Refund, labels the amount and limits the date to today', () => {
+    it('titles the form New refund, labels the amount and limits the date to today', () => {
       render(<ExpenseForm {...refundProps} date="2026-10-14" />)
 
-      expect(screen.getByRole('heading', { name: 'New Refund' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
       expect(screen.getByLabelText(/^Amount/)).toBeInTheDocument()
       expect(screen.queryByLabelText(/^Value/)).not.toBeInTheDocument()
       expect(screen.getByLabelText(/^Date/)).toHaveAttribute('max', todayIsoDate())
       expect(screen.getByLabelText('Statement month')).toHaveValue('2026-10')
-      expect(screen.getByRole('button', { name: 'Add Refund' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Add refund' })).toBeInTheDocument()
     })
 
-    it('titles an edit Edit Refund and saves with Save', () => {
+    it('titles an edit Edit refund and saves with Save', () => {
       render(<ExpenseForm {...refundProps} isEditing value="40" invoiceDate="2026-11" />)
 
-      expect(screen.getByRole('heading', { name: 'Edit Refund' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Edit refund' })).toBeInTheDocument()
       expect(screen.getByLabelText(/^Amount/)).toHaveValue(40)
       expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
     })

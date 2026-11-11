@@ -205,7 +205,7 @@ export default function MoveAssetDialog({
     <Dialog open onOpenChange={(_, data) => { if (!data.open) onCancel() }}>
       <DialogSurface aria-describedby={undefined}>
         <DialogBody>
-          <DialogTitle>Move Asset</DialogTitle>
+          <DialogTitle>Move asset</DialogTitle>
           <DialogContent>
             <p className="move-asset-dialog__context">
               {brokerName} / {portfolioName} / {assetName}
@@ -236,7 +236,7 @@ export default function MoveAssetDialog({
                         checked={!archiveToHistoric}
                         onChange={() => selectScope(false)}
                       />
-                      Keep in Active Investments
+                      Keep in active investments
                     </label>
                     <label className="move-asset-dialog__option">
                       <input
@@ -245,7 +245,7 @@ export default function MoveAssetDialog({
                         checked={archiveToHistoric}
                         onChange={() => selectScope(true)}
                       />
-                      Archive to Historic Investments
+                      Archive to historic investments
                     </label>
                   </fieldset>
                 )}

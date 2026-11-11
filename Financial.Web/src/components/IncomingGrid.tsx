@@ -55,13 +55,13 @@ export default function IncomingGrid({
         ]}
         rows={incomeTotals}
         rowKey={(i) => i.incomeSourceId}
-        emptyMessage="No income recorded for this month"
+        emptyMessage="No income recorded for this month."
         footerItems={[
-          { label: 'Total Incoming', value: formatN2(totalIncoming) },
+          { label: 'Total incoming', value: formatN2(totalIncoming) },
           ...(titheSummary
             ? [
-                { label: 'Calculated Tithe', value: formatN2(titheSummary.calculatedTithe) },
-                { label: 'Tithe Balance', value: formatN2(titheSummary.titheBalance) },
+                { label: 'Calculated tithe', value: formatN2(titheSummary.calculatedTithe) },
+                { label: 'Tithe balance', value: formatN2(titheSummary.titheBalance) },
               ]
             : []),
           ...(carryForward

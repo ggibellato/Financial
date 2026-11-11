@@ -95,9 +95,9 @@ describe('BrokerBreakdownCharts', () => {
   })
 
   it('renders_error_state_with_retry_on_failure', () => {
-    setMock({ error: 'Unable to load breakdown' })
+    setMock({ error: 'Unable to load breakdown.' })
     render(<BrokerBreakdownCharts />)
-    expect(screen.getByText('Unable to load breakdown')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load breakdown.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
@@ -111,7 +111,7 @@ describe('BrokerBreakdownCharts', () => {
   it('renders_portfolio_breakdown_pie_with_one_slice_per_portfolio', () => {
     setMock({ breakdown: BREAKDOWN })
     render(<BrokerBreakdownCharts />)
-    expect(screen.getByText('Portfolio Breakdown')).toBeInTheDocument()
+    expect(screen.getByText('Portfolio breakdown')).toBeInTheDocument()
     const pies = screen.getAllByTestId('pie')
     const overviewSlices = pies[0].querySelectorAll('[data-testid="pie-slice"]')
     expect(overviewSlices).toHaveLength(2)
@@ -150,7 +150,7 @@ describe('BrokerBreakdownCharts', () => {
     setMock({ breakdown: BREAKDOWN })
     render(<BrokerBreakdownCharts />)
     expect(screen.getAllByRole('table')).toHaveLength(3)
-    expect(screen.getByRole('table', { name: 'Portfolio Breakdown' })).toBeInTheDocument()
+    expect(screen.getByRole('table', { name: 'Portfolio breakdown' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'Acoes' })).toBeInTheDocument()
     expect(screen.getByRole('table', { name: 'FII' })).toBeInTheDocument()
   })
@@ -158,9 +158,9 @@ describe('BrokerBreakdownCharts', () => {
   it('lists_each_portfolio_with_total_invested_and_share_in_the_overview_table', () => {
     setMock({ breakdown: BREAKDOWN })
     render(<BrokerBreakdownCharts />)
-    const table = screen.getByRole('table', { name: 'Portfolio Breakdown' })
+    const table = screen.getByRole('table', { name: 'Portfolio breakdown' })
     const headers = within(table).getAllByRole('columnheader').map((header) => header.textContent)
-    expect(headers).toEqual(['Label', 'Total Invested', 'Percentage'])
+    expect(headers).toEqual(['Label', 'Total invested', 'Percentage'])
     const rows = within(table).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(2)
     expect(within(rows[0]).getByText('Acoes')).toBeInTheDocument()

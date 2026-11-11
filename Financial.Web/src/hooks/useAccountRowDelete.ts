@@ -15,6 +15,6 @@ function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
 }
 
 export function useAccountRowDelete(onDeleted: (row: AccountTransactionDto) => void) {
-  const { target, request, ...rowDelete } = useConfirmedDelete(deleteSourceRecord, () => 'Failed to delete', onDeleted)
+  const { target, request, ...rowDelete } = useConfirmedDelete(deleteSourceRecord, () => 'Failed to delete.', onDeleted)
   return { ...rowDelete, row: target, requestDelete: request }
 }

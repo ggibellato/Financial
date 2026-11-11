@@ -106,12 +106,12 @@ export default function AssetsPage() {
   return (
     <AdminEntityPage
       title="Assets"
-      createLabel="Create Asset"
+      createLabel="New asset"
       onCreate={() => setIsCreating(true)}
       belowHeader={
         <div className="admin-entity-page__filters">
           <Select aria-label="Filter by broker" value={brokerFilter} onChange={(e) => setBrokerFilter(e.target.value)}>
-            <option value="">All Brokers</option>
+            <option value="">All brokers</option>
             {Array.from(new Set(assets.map((a) => a.brokerName))).sort().map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -123,7 +123,7 @@ export default function AssetsPage() {
             value={portfolioFilter}
             onChange={(e) => setPortfolioFilter(e.target.value)}
           >
-            <option value="">All Portfolios</option>
+            <option value="">All portfolios</option>
             {Array.from(new Set(assets.map((a) => a.portfolioName))).sort().map((name) => (
               <option key={name} value={name}>
                 {name}
@@ -131,7 +131,7 @@ export default function AssetsPage() {
             ))}
           </Select>
           <Select aria-label="Filter by class" value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
-            <option value="">All Classes</option>
+            <option value="">All classes</option>
             {assetClasses.map((c) => (
               <option key={c} value={c}>
                 {c}
@@ -159,7 +159,7 @@ export default function AssetsPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Asset"
+              entityLabel="asset"
               message={
                 confirmingDelete.quantity !== 0 ? (
                   <>
@@ -168,8 +168,8 @@ export default function AssetsPage() {
                   </>
                 ) : (
                   <>
-                    &ldquo;{confirmingDelete.name}&rdquo; holds zero quantity and will be archived into Historic
-                    Investments.
+                    &ldquo;{confirmingDelete.name}&rdquo; holds zero quantity and will be archived into historic
+                    investments.
                   </>
                 )
               }

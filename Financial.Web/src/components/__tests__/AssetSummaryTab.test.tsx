@@ -112,9 +112,9 @@ describe('AssetSummaryTab', () => {
   })
 
   it('renders_error_state_with_retry_on_asset_failure', () => {
-    setMock({ assetError: 'Unable to load asset details' })
+    setMock({ assetError: 'Unable to load asset details.' })
     renderAssetSummaryTab()
-    expect(screen.getByText('Unable to load asset details')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load asset details.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
@@ -122,10 +122,10 @@ describe('AssetSummaryTab', () => {
     setMock({ asset: ASSET, showCurrentSection: false })
     renderAssetSummaryTab()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
-    expect(screen.getByText('Average Price')).toBeInTheDocument()
+    expect(screen.getByText('Average price')).toBeInTheDocument()
     expect(screen.getByText('ISIN')).toBeInTheDocument()
-    expect(screen.getByText('Local Type')).toBeInTheDocument()
-    expect(screen.getByText('Asset Class')).toBeInTheDocument()
+    expect(screen.getByText('Local type')).toBeInTheDocument()
+    expect(screen.getByText('Asset class')).toBeInTheDocument()
     expect(screen.getByText('Country').nextElementSibling).toHaveTextContent('BR')
     expect(screen.getByText('Equity')).toBeInTheDocument()
   })
@@ -133,19 +133,19 @@ describe('AssetSummaryTab', () => {
   it('renders_tax_jurisdictions_joined_by_comma', () => {
     setMock({ asset: { ...ASSET, taxJurisdictions: ['BR', 'UK'] } })
     renderAssetSummaryTab()
-    expect(screen.getByText('Tax Jurisdiction').nextElementSibling).toHaveTextContent('BR, UK')
+    expect(screen.getByText('Tax jurisdiction').nextElementSibling).toHaveTextContent('BR, UK')
   })
 
   it('renders_em_dash_when_asset_has_no_tax_jurisdictions_yet', () => {
     setMock({ asset: { ...ASSET, taxJurisdictions: [] } })
     renderAssetSummaryTab()
-    expect(screen.getByText('Tax Jurisdiction').nextElementSibling).toHaveTextContent('—')
+    expect(screen.getByText('Tax jurisdiction').nextElementSibling).toHaveTextContent('—')
   })
 
   it.each([
-    ['Total Bought', 'asset-summary__value--green'],
-    ['Total Sold', 'asset-summary__value--red'],
-    ['Total Credits', 'asset-summary__value--blue'],
+    ['Total bought', 'asset-summary__value--green'],
+    ['Total sold', 'asset-summary__value--red'],
+    ['Total credits', 'asset-summary__value--blue'],
   ])('renders_%s_value_with_its_colour_class', (label, colourClass) => {
     setMock({ asset: ASSET })
     renderAssetSummaryTab()
@@ -160,7 +160,7 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab()
     expect(screen.getByText('Current')).toBeInTheDocument()
-    expect(screen.getByText('Current Value')).toBeInTheDocument()
+    expect(screen.getByText('Current value')).toBeInTheDocument()
     expect(screen.getByText('As of')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
   })
@@ -273,10 +273,10 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab('historic')
     expect(screen.getByText('Realized')).toBeInTheDocument()
-    const label = screen.getByText('Realized Gain/Loss')
+    const label = screen.getByText('Realized gain/loss')
     expect(label.nextElementSibling?.textContent).toBe('-50.00')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--red')
-    expect(screen.getByText('Portfolio Weight')).toBeInTheDocument()
+    expect(screen.getByText('Portfolio weight')).toBeInTheDocument()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
     expect(screen.getByText('XIRR')).toBeInTheDocument()
     expect(screen.getByText('XIRR (Shares only)')).toBeInTheDocument()
@@ -302,7 +302,7 @@ describe('AssetSummaryTab', () => {
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const label = screen.getByText('Realized Gain/Loss')
+    const label = screen.getByText('Realized gain/loss')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
@@ -313,8 +313,8 @@ describe('AssetSummaryTab', () => {
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const realizedGainLossLabel = screen.getByText('Realized Gain/Loss')
-    const sharesOnlyLabel = screen.getByText('Realized (Shares Only)')
+    const realizedGainLossLabel = screen.getByText('Realized gain/loss')
+    const sharesOnlyLabel = screen.getByText('Realized (shares only)')
     expect(sharesOnlyLabel.closest('.asset-summary__field')).toBe(
       realizedGainLossLabel.closest('.asset-summary__field')?.nextElementSibling,
     )
@@ -324,7 +324,7 @@ describe('AssetSummaryTab', () => {
   it('does_not_render_realized_gain_loss_shares_only_field_when_realized_section_is_hidden_for_active_scope', () => {
     setMock({ asset: ASSET, showCurrentSection: true, price: PRICE })
     renderAssetSummaryTab('active')
-    expect(screen.queryByText('Realized (Shares Only)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Realized (shares only)')).not.toBeInTheDocument()
   })
 
   it('renders_positive_realized_gain_loss_shares_only_in_green_for_historic_scope', () => {
@@ -334,7 +334,7 @@ describe('AssetSummaryTab', () => {
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const label = screen.getByText('Realized (Shares Only)')
+    const label = screen.getByText('Realized (shares only)')
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
@@ -345,9 +345,9 @@ describe('AssetSummaryTab', () => {
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const realizedGainLossLabel = screen.getByText('Realized Gain/Loss')
+    const realizedGainLossLabel = screen.getByText('Realized gain/loss')
     expect(realizedGainLossLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
-    const sharesOnlyLabel = screen.getByText('Realized (Shares Only)')
+    const sharesOnlyLabel = screen.getByText('Realized (shares only)')
     expect(sharesOnlyLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
@@ -373,7 +373,7 @@ describe('AssetSummaryTab', () => {
   it('renders_dash_for_current_value_while_price_loads', () => {
     setMock({ asset: ASSET, showCurrentSection: true, isLoadingPrice: true, price: null })
     renderAssetSummaryTab()
-    const currentValueLabel = screen.getByText('Current Value')
+    const currentValueLabel = screen.getByText('Current value')
     expect(currentValueLabel.nextElementSibling?.textContent).toBe('—')
   })
 
@@ -440,7 +440,7 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
-    const xirrWithCreditsLabel = screen.getByText('XIRR w/ Credits')
+    const xirrWithCreditsLabel = screen.getByText('XIRR w/ credits')
     expect(xirrWithCreditsLabel.nextElementSibling?.textContent).toBe('—')
   })
 

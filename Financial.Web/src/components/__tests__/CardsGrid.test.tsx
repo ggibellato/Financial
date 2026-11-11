@@ -91,7 +91,7 @@ describe('CardsGrid', () => {
   it('shows its empty message and a zero adjustment figure when the group has no card', () => {
     renderGrid([], [])
 
-    expect(screen.getByText('No cards in the default group for this month')).toBeInTheDocument()
+    expect(screen.getByText('No cards in the default group for this month.')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 0.00')
   })
 
@@ -152,6 +152,6 @@ describe('CardsGrid', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'BaAmex' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
 
-    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
   })
 })

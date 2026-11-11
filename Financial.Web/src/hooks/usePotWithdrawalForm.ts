@@ -149,7 +149,7 @@ export function usePotWithdrawalForm(
               ...current,
               isSaving: false,
               overdraftMessage: overdraft,
-              error: overdraft ? null : getSaveErrorMessage(err, 'Failed to save the withdrawal'),
+              error: overdraft ? null : getSaveErrorMessage(err, 'Failed to save the withdrawal.'),
             },
         )
       })

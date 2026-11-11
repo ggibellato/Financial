@@ -18,7 +18,7 @@ export function useBrokerBreakdown(): BrokerBreakdownData {
   const { data, isLoading, error, retry } = useAsyncResource<PortfolioBreakdownItemDto[]>(
     () => (isBroker && selectedNode ? apiClient.getBrokerBreakdown(selectedNode.brokerName, scope) : null),
     [selectedNode, isBroker, apiClient, scope],
-    'Unable to load breakdown',
+    'Unable to load breakdown.',
   )
 
   return { breakdown: data, isLoading, error, retry }

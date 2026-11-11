@@ -127,8 +127,8 @@ export default function IntegrationsPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHeaderCell>Card</TableHeaderCell>
-                      <TableHeaderCell>Due Date</TableHeaderCell>
-                      <TableHeaderCell>Sync Status</TableHeaderCell>
+                      <TableHeaderCell>Due date</TableHeaderCell>
+                      <TableHeaderCell>Sync status</TableHeaderCell>
                       <ActionsColumnHeader />
                     </TableRow>
                   </TableHeader>
@@ -136,8 +136,8 @@ export default function IntegrationsPage() {
                     {syncStatuses.rows.map((row) => (
                       <TableRow key={row.creditCardId}>
                         <DataTableCell label="Card">{row.name}</DataTableCell>
-                        <DataTableCell label="Due Date">{formatShortDateUtc(row.dueDate)}</DataTableCell>
-                        <DataTableCell label="Sync Status">
+                        <DataTableCell label="Due date">{formatShortDateUtc(row.dueDate)}</DataTableCell>
+                        <DataTableCell label="Sync status">
                           <CalendarSyncStatusBadge state={row.state} lastError={row.lastError} />
                         </DataTableCell>
                         <TableCell className="data-table__col--action">

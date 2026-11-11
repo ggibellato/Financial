@@ -113,7 +113,7 @@ describe('MonthlyPage', () => {
     render(<MonthlyPage />)
 
     expect(screen.getByText('Loading...')).toBeInTheDocument()
-    expect(screen.queryByText(/Bank Balance:/, { selector: 'p' })).not.toBeInTheDocument()
+    expect(screen.queryByText(/Bank balance:/, { selector: 'p' })).not.toBeInTheDocument()
   })
 
   it('[AC P60-F04-default-account-group-and-summary-query-07] shows an error with Try again when the summary request fails, and Try again reloads it', async () => {
@@ -125,7 +125,7 @@ describe('MonthlyPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
-    expect(await screen.findByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument()
+    expect(await screen.findByText(/Bank balance:/, { selector: 'p' })).toBeInTheDocument()
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledTimes(2)
   })
 
@@ -135,11 +135,11 @@ describe('MonthlyPage', () => {
 
     render(<MonthlyPage />)
 
-    expect(await screen.findByText('No accounts in the default group for this month')).toBeInTheDocument()
-    expect(screen.getByText('No cards in the default group for this month')).toBeInTheDocument()
-    expect(screen.getByText('No expenses recorded for this month')).toBeInTheDocument()
-    expect(screen.getByText('No income recorded for this month')).toBeInTheDocument()
-    expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toHaveTextContent('Bank Balance: 0.00 · Round-Up: 0.00')
+    expect(await screen.findByText('No accounts in the default group for this month.')).toBeInTheDocument()
+    expect(screen.getByText('No cards in the default group for this month.')).toBeInTheDocument()
+    expect(screen.getByText('No expenses recorded for this month.')).toBeInTheDocument()
+    expect(screen.getByText('No income recorded for this month.')).toBeInTheDocument()
+    expect(screen.getByText(/Bank balance:/, { selector: 'p' })).toHaveTextContent('Bank balance: 0.00 · Round-up: 0.00')
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-02] shows Summary and All transactions with no entry forms', async () => {
@@ -149,7 +149,7 @@ describe('MonthlyPage', () => {
     expect(screen.getAllByRole('tab')).toHaveLength(2)
     expect(screen.getByRole('tab', { name: 'All transactions' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
-    expect(screen.queryByRole('button', { name: /New Expense|New Income|New Transfer|Adjust balance|Mark Paid|Unmark Paid/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /New Expense|New income|New transfer|Adjust balance|Mark Paid|Unmark Paid/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
   })
 
@@ -172,7 +172,7 @@ describe('MonthlyPage', () => {
     expect(within(screen.getByRole('table', { name: 'Bank balances' })).queryByText('BaAmex')).not.toBeInTheDocument()
   })
 
-  it('renders Category Totals and Cards in the first Summary row, Banks and Incoming in the second', async () => {
+  it('renders Category totals and Cards in the first Summary row, Banks and Incoming in the second', async () => {
     render(<MonthlyPage />)
     await summaryLoaded()
 
@@ -184,8 +184,8 @@ describe('MonthlyPage', () => {
     expect(firstRow.getByText(/Combined adjustment figure/)).toBeInTheDocument()
 
     const secondRow = within(rows[1] as HTMLElement)
-    expect(secondRow.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument()
-    expect(secondRow.getByText(/Total Incoming:/)).toBeInTheDocument()
+    expect(secondRow.getByText(/Bank balance:/, { selector: 'p' })).toBeInTheDocument()
+    expect(secondRow.getByText(/Total incoming:/)).toBeInTheDocument()
   })
 
   it('shows each bank balance with its round-up in a separate column', async () => {
@@ -200,11 +200,11 @@ describe('MonthlyPage', () => {
   it('renders the Incoming grid with one row per source and the calculated tithe and tithe balance', async () => {
     render(<MonthlyPage />)
 
-    const incomingSection = within((await screen.findByText(/Total Incoming:/)).closest('section')!)
+    const incomingSection = within((await screen.findByText(/Total incoming:/)).closest('section')!)
     expect(incomingSection.getByText('Gleison')).toBeInTheDocument()
     expect(incomingSection.getByText('3,200.00')).toBeInTheDocument()
-    expect(incomingSection.getByText(/Calculated Tithe:/)).toBeInTheDocument()
-    expect(incomingSection.getByText(/Tithe Balance:/)).toBeInTheDocument()
+    expect(incomingSection.getByText(/Calculated tithe:/)).toBeInTheDocument()
+    expect(incomingSection.getByText(/Tithe balance:/)).toBeInTheDocument()
   })
 
   it('toggles carry-forward inclusion from the Summary checkbox', async () => {
@@ -316,12 +316,12 @@ describe('MonthlyPage', () => {
 
       fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
 
-      await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Unable to load the transactions'))
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Unable to load the transactions.'))
 
       fireEvent.click(screen.getByRole('tab', { name: 'Summary' }))
 
       expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-      expect(screen.getByText(/Bank Balance:/, { selector: 'p' })).toBeInTheDocument()
+      expect(screen.getByText(/Bank balance:/, { selector: 'p' })).toBeInTheDocument()
     })
 
     it('reloads on a month change and starts again with no filter', async () => {

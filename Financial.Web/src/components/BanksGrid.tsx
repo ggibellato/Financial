@@ -25,8 +25,8 @@ const CURRENCY_COLUMN = {
 }
 
 const FOOTER_FIGURES = [
-  { label: 'Bank Balance', pick: (total: CurrencyTotalDto) => total.balance },
-  { label: 'Round-Up', pick: (total: CurrencyTotalDto) => total.roundUpTotal },
+  { label: 'Bank balance', pick: (total: CurrencyTotalDto) => total.balance },
+  { label: 'Round-up', pick: (total: CurrencyTotalDto) => total.roundUpTotal },
 ]
 
 export default function BanksGrid({ bankTotals, currencyTotals, viewedMonth }: BanksGridProps) {
@@ -58,14 +58,14 @@ export default function BanksGrid({ bankTotals, currencyTotals, viewedMonth }: B
         ...(isMultiCurrency ? [CURRENCY_COLUMN] : []),
         {
           key: 'balance',
-          header: 'Bank Balance',
+          header: 'Bank balance',
           numeric: true,
           render: (b: BankTotal) => formatN2(b.balance),
           sortAccessor: (b: BankTotal) => b.balance,
         },
         {
           key: 'roundUp',
-          header: 'Round-Up',
+          header: 'Round-up',
           numeric: true,
           render: (b: BankTotal) => formatN2(b.roundUpTotal),
           sortAccessor: (b: BankTotal) => b.roundUpTotal,
@@ -74,7 +74,7 @@ export default function BanksGrid({ bankTotals, currencyTotals, viewedMonth }: B
       rows={filteredRows}
       filter={{ ...filterSummary, itemsNoun: 'banks' }}
       rowKey={(b) => b.bankId}
-      emptyMessage="No accounts in the default group for this month"
+      emptyMessage="No accounts in the default group for this month."
       footerItems={currencyFooterItems(currencyTotals, FOOTER_FIGURES)}
     />
   )

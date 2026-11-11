@@ -21,7 +21,7 @@ export function useTaxRules(): TaxRulesData {
   const resource = useCrudResource({
     load: () => apiClient.getTaxRules(),
     initialData: NO_TAX_RULES,
-    loadErrorMessage: 'Unable to load tax rules',
+    loadErrorMessage: 'Unable to load tax rules.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -37,7 +37,7 @@ export function useTaxRules(): TaxRulesData {
 
   const deleteTaxRule = useCallback(
     (taxRule: TaxRuleDto) =>
-      runPendingMutation(taxRule.id, () => apiClient.deleteTaxRule(taxRule.id), 'Failed to delete tax rule'),
+      runPendingMutation(taxRule.id, () => apiClient.deleteTaxRule(taxRule.id), 'Failed to delete tax rule.'),
     [runPendingMutation],
   )
 

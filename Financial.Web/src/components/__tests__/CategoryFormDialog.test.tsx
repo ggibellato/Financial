@@ -7,7 +7,7 @@ describe('CategoryFormDialog', () => {
   it('renders in create mode with an empty name, active on, and both classification flags off', () => {
     render(<CategoryFormDialog category={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Category' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New category' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText('Active')).toBeChecked()
     expect(screen.getByLabelText('Investment')).not.toBeChecked()
@@ -30,7 +30,7 @@ describe('CategoryFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Category' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit category' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('Mercado')
     expect(screen.getByLabelText('Active')).not.toBeChecked()
     expect(screen.getByLabelText('Investment')).toBeChecked()
@@ -43,7 +43,7 @@ describe('CategoryFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  Lazer  ' } })
     fireEvent.click(screen.getByLabelText('Investment'))
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add category' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Lazer', true, true, false))
   })
@@ -54,7 +54,7 @@ describe('CategoryFormDialog', () => {
     render(<CategoryFormDialog category={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Mercado' } })
-    saveFromTheSaveButton()
+    saveFromTheSaveButton('Add category')
 
     await expectDuplicateUnderName(message)
   })

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 
+export const NO_FILTER_MATCH_MESSAGE = 'No rows match the current filters.'
+
 export type ColumnFilterAccessor<T> = (row: T) => string | string[] | null | undefined
 
 export interface FilterSummary {

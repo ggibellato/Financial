@@ -392,6 +392,8 @@ afterEach(() => {
   vi.useRealTimers()
 })
 
+const operationForm = (name: string) => screen.findByRole('form', { name })
+
 describe('AccountScreenPage deposit and withdrawal forms', () => {
   const OPERATION_LINK = { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null }
   const DEPOSIT: PotOperationDto = {
@@ -430,8 +432,6 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     getAccountsMock.mockResolvedValue([...ACCOUNTS, reserva])
     withActions(['WithdrawFromPots'])
   }
-
-  const operationForm = (name: string) => screen.findByRole('form', { name })
 
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-03] saves a deposit from the Pots account, says so, refreshes the pots and returns focus', async () => {
     const user = userEvent.setup()
@@ -497,20 +497,20 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await user.click(within(depositForm).getByRole('radio', { name: 'From an income' }))
     await user.click(within(depositForm).getByRole('button', { name: 'Continue to the income form' }))
 
-    expect(await screen.findByRole('heading', { name: 'New Income' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'New income' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Deposit' })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByLabelText(/^Source/)).toHaveValue('source-bonus')
     expect(screen.getByRole('checkbox', { name: 'Split to pots' })).toBeChecked()
     await waitFor(() => expect(screen.getByLabelText(/^Pots account/)).toHaveValue(RESERVA_ID))
     await waitFor(() => expect(screen.getByLabelText(/^Date/)).toHaveFocus())
     fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: BARCLAYS_ID } })
-    fireEvent.change(screen.getByLabelText(/^Net Value/), { target: { value: '100' } })
-    await user.click(screen.getByRole('button', { name: 'Add Income' }))
+    fireEvent.change(screen.getByLabelText(/^Net value/), { target: { value: '100' } })
+    await user.click(within(await operationForm('New income')).getByRole('button', { name: 'Add income' }))
 
     await waitFor(() => expect(createIncomeMock).toHaveBeenCalled())
     expect(createIncomeMock.mock.calls[0][0]).toMatchObject({ incomeSourceId: 'source-bonus', bankId: BARCLAYS_ID, potsAccountId: RESERVA_ID })
     expect(await screen.findByText('Deposit saved')).toBeInTheDocument()
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New Income' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New income' })).not.toBeInTheDocument())
   })
 
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-07] Withdraw from pots on a bank sends what Withdraw on the Pots account sends', async () => {
@@ -666,9 +666,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions&operation=op1`)
 
-    expect(await screen.findByRole('heading', { name: 'Edit Income' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Edit income' })).toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledWith(2026, 10)
-    expect(screen.getByLabelText(/^Net Value/)).toHaveValue(100)
+    expect(screen.getByLabelText(/^Net value/)).toHaveValue(100)
     expect(screen.queryByRole('button', { name: /^Delete (deposit|withdrawal)$/ })).not.toBeInTheDocument()
   })
 
@@ -705,7 +705,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
 
       await user.click(await screen.findByRole('link', { name: 'Deposit to Reserva' }))
 
-      expect(await screen.findByRole('heading', { name: 'Edit Income' })).toBeInTheDocument()
+      expect(await screen.findByRole('heading', { name: 'Edit income' })).toBeInTheDocument()
       expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op1`)).toBeInTheDocument()
       expect(screen.getByRole('group', { name: 'Funded from' })).toHaveTextContent('Barclays')
 
@@ -766,7 +766,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load this deposit or withdrawal')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load this deposit or withdrawal.')
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await operationForm('Edit deposit')).toBeInTheDocument()
@@ -836,7 +836,7 @@ describe('AccountScreenPage on a Pots account', () => {
     await waitFor(() => expect(getPotsMock).toHaveBeenCalled())
     failLoad(new Error('offline'))
 
-    expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load the pots.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('table', { name: 'Pots' })).toBeInTheDocument()
@@ -847,7 +847,7 @@ describe('AccountScreenPage on a Pots account', () => {
     getPotsMock.mockResolvedValue({ ...POTS_SUMMARY, total: 0, pots: [] })
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
 
-    expect(await screen.findByText('This account has no pots yet')).toBeInTheDocument()
+    expect(await screen.findByText('This account has no pots yet.')).toBeInTheDocument()
     expect(screen.queryByText(/Pots total/)).not.toBeInTheDocument()
   })
 
@@ -881,7 +881,7 @@ describe('AccountScreenPage on a Pots account', () => {
     getPotsMock.mockRejectedValue(new Error('offline'))
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
 
-    expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load the pots.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Manage pots' })).toBeDisabled()
   })
 
@@ -1043,14 +1043,14 @@ describe('AccountScreenPage on a Pots account', () => {
     getPotsMock.mockRejectedValueOnce(new Error('offline'))
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
 
-    expect(await screen.findByText('Unable to load the pots')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load the pots.')).toBeInTheDocument()
     const edit = within(screen.getByText('Boots').closest('tr') as HTMLElement).getByRole('button', { name: /^Edit pot transaction\b/ })
     expect(edit).toBeDisabled()
 
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     await waitFor(() => expect(edit).toBeEnabled())
-    expect(screen.queryByText('Unable to load the pots')).not.toBeInTheDocument()
+    expect(screen.queryByText('Unable to load the pots.')).not.toBeInTheDocument()
   })
 
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-08] deletes a legacy movement after a confirmation that counts the lines of its split', async () => {
@@ -1130,7 +1130,7 @@ describe('AccountScreenPage on a Pots account', () => {
     getAccountMock.mockRejectedValueOnce(new Error('offline'))
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
-    expect(await screen.findByText('Unable to load this account')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load this account.')).toBeInTheDocument()
     expect(screen.queryByRole('table', { name: 'Pots' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Try again' }))
@@ -1378,7 +1378,7 @@ describe('AccountScreenPage on a Settlement account', () => {
     getAccountTransactionsMock.mockResolvedValue([])
     renderScreen(`/cashflow/accounts/${MAE_ID}?month=2022-03`)
 
-    expect(await screen.findByText('No transactions in March 2022')).toBeInTheDocument()
+    expect(await screen.findByText('No transactions in March 2022.')).toBeInTheDocument()
     expect(screen.getByText('Mãe owes you R$167.88 / £7.94')).toBeInTheDocument()
   })
 })
@@ -1435,7 +1435,7 @@ describe('AccountScreenPage', () => {
 
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
 
-    expect(await screen.findByText('Unable to load this account')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load this account.')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
     expect(screen.getByLabelText('Month')).toHaveValue('2026-08')
   })
@@ -1454,7 +1454,7 @@ describe('AccountScreenPage', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
-    expect(await screen.findByText('No transactions in October 2026')).toBeInTheDocument()
+    expect(await screen.findByText('No transactions in October 2026.')).toBeInTheDocument()
   })
 
   it('reloads for the month chosen in the month input', async () => {
@@ -1490,7 +1490,7 @@ describe('AccountScreenPage', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
-    expect(await screen.findByText('Unable to load this account')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load this account.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
@@ -1646,7 +1646,7 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     let finishSave: (expense: ExpenseDto) => void = () => {}
     createExpenseMock
-      .mockRejectedValueOnce(new ApiError('Failed to fetch', 0))
+      .mockRejectedValueOnce(new ApiError('Failed to fetch.', 0))
       .mockImplementationOnce(() => new Promise((resolve) => (finishSave = resolve)))
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
@@ -1657,11 +1657,11 @@ describe('AccountScreenPage actions', () => {
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
-    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
     expect(await screen.findByText('Could not save. Check the connection and try again.')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
 
-    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
     expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
     finishSave(SAVED_EXPENSE)
@@ -1703,7 +1703,7 @@ describe('AccountScreenPage actions', () => {
     await openScreen()
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
-    const expenseHeading = screen.getByRole('heading', { name: 'New Expense' })
+    const expenseHeading = screen.getByRole('heading', { name: 'New expense' })
     const transactionsHeading = screen.getByRole('heading', { name: 'Transactions' })
     expect(expenseHeading.compareDocumentPosition(transactionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
@@ -1716,13 +1716,13 @@ describe('AccountScreenPage actions', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
-    expect(screen.queryByRole('heading', { name: 'New Income' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New income' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
-    expect(screen.getByRole('heading', { name: 'New Income' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New income' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
   })
 
   it('switches between clean forms without asking', async () => {
@@ -1733,7 +1733,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(screen.getByRole('button', { name: 'Add income' }))
 
     expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'New Income' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New income' })).toBeInTheDocument()
   })
 
   it('[AC P60-F05-bank-account-screen-07] Add expense saves with this bank, refreshes header and grid, and stays open with the last date and category', async () => {
@@ -1747,7 +1747,7 @@ describe('AccountScreenPage actions', () => {
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
     await user.selectOptions(screen.getByLabelText(/^Category/), 'category-home')
-    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
@@ -1765,7 +1765,7 @@ describe('AccountScreenPage actions', () => {
     expect(await screen.findByText('Expense added')).toBeInTheDocument()
     await waitFor(() => expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 10))
     expect(getAccountTransactionsMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 10)
-    expect(screen.getByRole('heading', { name: 'New Expense' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New expense' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-15')
     expect(screen.getByLabelText(/^Category/)).toHaveValue('category-home')
     expect(screen.getByLabelText(/^Description/)).toHaveValue('')
@@ -1791,8 +1791,8 @@ describe('AccountScreenPage actions', () => {
     await openScreen()
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
-    await user.type(screen.getByLabelText(/^Net Value/), '2500')
-    await user.click(screen.getByRole('button', { name: 'Add Income' }))
+    await user.type(screen.getByLabelText(/^Net value/), '2500')
+    await user.click(within(await operationForm('New income')).getByRole('button', { name: 'Add income' }))
 
     expect(await screen.findByText('Income added and split to Reserva')).toBeInTheDocument()
   })
@@ -1805,7 +1805,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(addExpense)
     await user.click(addExpense)
 
-    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
     expect(addExpense).toHaveAttribute('aria-expanded', 'false')
     expect(addExpense).toHaveFocus()
   })
@@ -1817,16 +1817,16 @@ describe('AccountScreenPage actions', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
-    expect(within(screen.getByRole('heading', { name: 'New Expense' }).closest('form') as HTMLElement).getByText('Chase')).toBeInTheDocument()
+    expect(within(screen.getByRole('heading', { name: 'New expense' }).closest('form') as HTMLElement).getByText('Chase')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Browser back' }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
-    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ paymentSourceBankId: BARCLAYS_ID })),
@@ -1839,8 +1839,8 @@ describe('AccountScreenPage actions', () => {
 
     await user.click(screen.getByRole('button', { name: 'Add income' }))
     expect(screen.getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
-    await user.type(screen.getByLabelText(/^Net Value/), '2500')
-    await user.click(screen.getByRole('button', { name: 'Add Income' }))
+    await user.type(screen.getByLabelText(/^Net value/), '2500')
+    await user.click(within(await operationForm('New income')).getByRole('button', { name: 'Add income' }))
 
     await waitFor(() =>
       expect(createIncomeMock).toHaveBeenCalledWith(
@@ -1848,19 +1848,19 @@ describe('AccountScreenPage actions', () => {
       ),
     )
     expect(await screen.findByText('Income added')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'New Income' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Net Value/)).toHaveValue(null)
+    expect(screen.getByRole('heading', { name: 'New income' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Net value/)).toHaveValue(null)
   })
 
   it('keeps the values and shows the connection message when a save cannot reach the server', async () => {
     const user = userEvent.setup()
-    createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch.', 0))
     await openScreen()
 
     await user.click(screen.getByRole('button', { name: 'Add expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
-    await user.click(screen.getByRole('button', { name: 'Add Expense' }))
+    await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
 
     expect(await screen.findByText('Could not save. Check the connection and try again.')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
@@ -1879,7 +1879,7 @@ describe('AccountScreenPage actions', () => {
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
-    expect(screen.queryByRole('heading', { name: 'New Income' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New income' })).not.toBeInTheDocument()
     expect(addIncome).toHaveFocus()
   })
 
@@ -1892,7 +1892,7 @@ describe('AccountScreenPage actions', () => {
 
     expect(await screen.findByText('Balance at end of September 2026')).toBeInTheDocument()
     expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
   })
 
   it('opens a new entry on the last day of a past viewed month', async () => {
@@ -1925,7 +1925,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(await screen.findByText('Balance at end of September 2026')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
   })
 
   it('asks before an account change discards unsaved changes', async () => {
@@ -1941,7 +1941,7 @@ describe('AccountScreenPage actions', () => {
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Chase' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
   })
 
   it('disables the actions and offers Try again when the form options fail to load', async () => {
@@ -1949,7 +1949,7 @@ describe('AccountScreenPage actions', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
-    expect(await screen.findByText('Unable to load the form options')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load the form options.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add expense' })).toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
@@ -2033,12 +2033,12 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     const transferTo = screen.getByRole('button', { name: 'Transfer to' })
 
     await user.click(transferTo)
-    const form = screen.getByRole('heading', { name: 'New Transfer' }).closest('form') as HTMLElement
+    const form = screen.getByRole('heading', { name: 'New transfer' }).closest('form') as HTMLElement
     expect(within(form).getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
     expect(within(form).queryByLabelText(/^Amount received/)).not.toBeInTheDocument()
     await user.selectOptions(within(form).getByRole('combobox', { name: /^To/ }), CHASE_ID)
     await user.type(within(form).getByLabelText(/^Amount/), '200')
-    await user.click(within(form).getByRole('button', { name: 'Add Transfer' }))
+    await user.click(within(form).getByRole('button', { name: 'Add transfer' }))
 
     await waitFor(() =>
       expect(createAccountTransferMock).toHaveBeenCalledWith({
@@ -2051,7 +2051,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
       }),
     )
     expect(await screen.findByText('Transfer saved')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Transfer' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New transfer' })).not.toBeInTheDocument()
     await waitFor(() => expect(transferTo).toHaveFocus())
   })
 
@@ -2063,7 +2063,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: /^From/ }), WISE_EUR_ID)
     await user.type(screen.getByRole('spinbutton', { name: /^Amount(?! received)/ }), '100')
     await user.type(screen.getByLabelText(/^Amount received \(GBP\)/), '86.20')
-    await user.click(screen.getByRole('button', { name: 'Add Transfer' }))
+    await user.click(screen.getByRole('button', { name: 'Add transfer' }))
 
     await waitFor(() =>
       expect(createAccountTransferMock).toHaveBeenCalledWith(
@@ -2085,7 +2085,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     const form = screen.getByTestId('balance-adjustment-form-panel')
     expect(form).toHaveTextContent('Balance at end of October 2026: £2,800.25')
     expect(within(form).queryByRole('combobox', { name: /Bank/ })).not.toBeInTheDocument()
-    await user.type(within(form).getByRole('spinbutton', { name: /^Target Balance/ }), '2790')
+    await user.type(within(form).getByRole('spinbutton', { name: /^Target balance/ }), '2790')
     await user.click(within(form).getByRole('button', { name: 'Adjust balance' }))
 
     await waitFor(() =>
@@ -2102,7 +2102,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     const editExpense = within(rowOf('Tesco')).getByRole('button', { name: /^Edit expense\b/ })
 
     await user.click(editExpense)
-    expect(screen.getByRole('heading', { name: 'Edit Expense' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit expense' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Tesco')
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-10-14')
     await user.clear(screen.getByLabelText(/^Value/))
@@ -2113,7 +2113,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
       expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ value: 45, paymentSourceBankId: BARCLAYS_ID })),
     )
     expect(await screen.findByText('Expense updated')).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Edit Expense' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Edit expense' })).not.toBeInTheDocument()
     await waitFor(() => expect(editExpense).toHaveFocus())
 
     await user.click(within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ }))
@@ -2142,7 +2142,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     await openScreen()
 
     await user.click(within(rowOf('Chase')).getByRole('button', { name: /^Edit transfer\b/ }))
-    expect(screen.getByRole('heading', { name: 'Edit Transfer' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit transfer' })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /^To/ })).toHaveValue(CHASE_ID)
     await user.clear(screen.getByLabelText(/^Amount/))
     await user.type(screen.getByLabelText(/^Amount/), '250')
@@ -2173,7 +2173,7 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
 
   it('keeps the delete dialog open with the reason when the delete fails', async () => {
     const user = userEvent.setup()
-    deleteExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    deleteExpenseMock.mockRejectedValue(new ApiError('Failed to fetch.', 0))
     await openScreen()
 
     await user.click(within(rowOf('Tesco')).getByRole('button', { name: /^Delete expense\b/ }))
@@ -2199,8 +2199,8 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
-    expect(screen.getByRole('heading', { name: 'Edit Expense' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'New Transfer' })).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit expense' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'New transfer' })).not.toBeInTheDocument()
   })
 
   it('[AC P60-F05-bank-account-screen-11] focus moves into a row edit and back to the row Edit button on Cancel', async () => {
@@ -2277,13 +2277,13 @@ describe('AccountScreenPage card screen', () => {
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
     await user.click(await screen.findByRole('button', { name: 'Add charge' }))
-    const form = screen.getByRole('heading', { name: 'New Charge' }).closest('form') as HTMLElement
+    const form = screen.getByRole('heading', { name: 'New charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
-    expect(within(form).queryByLabelText(/^Payment Source/)).not.toBeInTheDocument()
+    expect(within(form).queryByLabelText(/^Payment source/)).not.toBeInTheDocument()
     expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
     await user.type(within(form).getByLabelText(/^Description/), 'Lunch')
     await user.type(within(form).getByLabelText(/^Value/), '12.40')
-    await user.click(within(form).getByRole('button', { name: 'Add Charge' }))
+    await user.click(within(form).getByRole('button', { name: 'Add charge' }))
 
     await waitFor(() =>
       expect(createExpenseMock).toHaveBeenCalledWith(
@@ -2307,7 +2307,7 @@ describe('AccountScreenPage card screen', () => {
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
     await user.click(await screen.findByRole('button', { name: /^Edit card charge\b/ }))
-    const form = screen.getByRole('heading', { name: 'Edit Charge' }).closest('form') as HTMLElement
+    const form = screen.getByRole('heading', { name: 'Edit charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
     expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
     await user.clear(within(form).getByLabelText(/^Value/))
@@ -2633,13 +2633,13 @@ describe('AccountScreenPage card screen', () => {
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
       await user.click(await screen.findByRole('button', { name: 'Add refund' }))
-      const form = screen.getByRole('heading', { name: 'New Refund' }).closest('form') as HTMLElement
+      const form = screen.getByRole('heading', { name: 'New refund' }).closest('form') as HTMLElement
       expect(within(form).getByText('BA Amex')).toBeInTheDocument()
       expect(within(form).getByLabelText(/^Date/)).toHaveValue('2026-10-15')
       expect(within(form).getByLabelText('Statement month')).toHaveValue('2026-10')
       await user.type(within(form).getByLabelText(/^Description/), 'Shoes returned')
       await user.type(within(form).getByLabelText(/^Amount/), '40')
-      await user.click(within(form).getByRole('button', { name: 'Add Refund' }))
+      await user.click(within(form).getByRole('button', { name: 'Add refund' }))
 
       await waitFor(() =>
         expect(createExpenseMock).toHaveBeenCalledWith(
@@ -2647,7 +2647,7 @@ describe('AccountScreenPage card screen', () => {
         ),
       )
       expect(await screen.findByText('Refund added')).toBeInTheDocument()
-      expect(screen.getByRole('heading', { name: 'New Refund' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
       await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
     })
 
@@ -2657,9 +2657,9 @@ describe('AccountScreenPage card screen', () => {
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
       await user.click(await screen.findByRole('button', { name: 'Add refund' }))
-      const form = screen.getByRole('heading', { name: 'New Refund' }).closest('form') as HTMLElement
+      const form = screen.getByRole('heading', { name: 'New refund' }).closest('form') as HTMLElement
       await user.type(within(form).getByLabelText(/^Description/), 'Shoes returned')
-      await user.click(within(form).getByRole('button', { name: 'Add Refund' }))
+      await user.click(within(form).getByRole('button', { name: 'Add refund' }))
 
       expect(await within(form).findByText('Amount must be greater than zero.')).toBeInTheDocument()
       expect(within(form).getByLabelText(/^Amount/)).toHaveFocus()
@@ -2678,7 +2678,7 @@ describe('AccountScreenPage card screen', () => {
       expect(within(row).getByRole('button', { name: /^Move refund\b.* to a later statement$/ })).toBeInTheDocument()
 
       await user.click(within(row).getByRole('button', { name: /^Edit refund\b/ }))
-      const form = screen.getByRole('heading', { name: 'Edit Refund' }).closest('form') as HTMLElement
+      const form = screen.getByRole('heading', { name: 'Edit refund' }).closest('form') as HTMLElement
       expect(within(form).getByLabelText(/^Amount/)).toHaveValue(40)
       await user.clear(within(form).getByLabelText(/^Amount/))
       await user.type(within(form).getByLabelText(/^Amount/), '55')
@@ -2723,7 +2723,7 @@ describe('AccountScreenPage card screen', () => {
       const form = await openMoveRefund(user)
       await moveToDecember(user, form)
 
-      expect(await within(form).findByText('Failed to move the refund')).toBeInTheDocument()
+      expect(await within(form).findByText('Failed to move the refund.')).toBeInTheDocument()
       expect(screen.queryByText('Refund moved')).not.toBeInTheDocument()
     })
 
@@ -2737,7 +2737,7 @@ describe('AccountScreenPage card screen', () => {
       await user.click(screen.getByRole('button', { name: 'Add charge' }))
 
       await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
-      expect(screen.getByRole('heading', { name: 'New Refund' })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
       expect(screen.getByLabelText(/^Amount/)).toHaveValue(40)
     })
 

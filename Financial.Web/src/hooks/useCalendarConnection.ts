@@ -65,7 +65,7 @@ export function useCalendarConnection(): CalendarConnectionData {
   } = useAsyncResource<CalendarConnectionStatusDto>(
     () => apiClient.getCalendarStatus(),
     [],
-    'Unable to load calendar connection status',
+    'Unable to load calendar connection status.',
     { initialLoading: true, keepDataWhileLoading: true },
   )
 
@@ -106,7 +106,7 @@ export function useCalendarConnection(): CalendarConnectionData {
       dispatch({ type: 'DISCONNECT_SUCCESS' })
       await refresh()
     } catch (err: unknown) {
-      dispatch({ type: 'DISCONNECT_ERROR', payload: getErrorMessage(err, 'Failed to disconnect Google Calendar') })
+      dispatch({ type: 'DISCONNECT_ERROR', payload: getErrorMessage(err, 'Failed to disconnect Google Calendar.') })
       throw err
     }
   }, [refresh])

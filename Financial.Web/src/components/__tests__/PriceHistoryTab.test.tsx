@@ -363,7 +363,7 @@ describe('PriceHistoryTab', () => {
     fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '50' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
-    expect(await screen.findByText('Date is required')).toBeInTheDocument()
+    expect(await screen.findByText('Date is required.')).toBeInTheDocument()
     expect(setAssetPriceMock).not.toHaveBeenCalled()
   })
 
@@ -373,7 +373,7 @@ describe('PriceHistoryTab', () => {
     fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
-    expect(await screen.findByText('Price must be a positive number')).toBeInTheDocument()
+    expect(await screen.findByText('Price must be a positive number.')).toBeInTheDocument()
     expect(setAssetPriceMock).not.toHaveBeenCalled()
   })
 

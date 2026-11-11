@@ -101,7 +101,7 @@ export default function AccountsPage() {
       ) : error || !groups ? (
         <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
       ) : groups.length === 0 ? (
-        <Text>No accounts this month</Text>
+        <Text>No accounts this month.</Text>
       ) : (
         groups.map((group) => {
           const grid = accountTemplateGrid(group.templateName)
@@ -120,7 +120,7 @@ export default function AccountsPage() {
                 columns={gridColumns(grid.columns, renderName)}
                 rows={group.members}
                 rowKey={(row) => row.accountId}
-                emptyMessage="No accounts this month"
+                emptyMessage="No accounts this month."
                 footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
               />
             </div>

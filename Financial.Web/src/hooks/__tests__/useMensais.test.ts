@@ -224,7 +224,7 @@ describe('useMensais', () => {
     act(() => result.current.showAddForm())
     act(() => result.current.submitAdd())
 
-    await waitFor(() => expect(result.current.addError).toBe('Description is required'))
+    await waitFor(() => expect(result.current.addError).toBe('Description is required.'))
     expect(createMensaisBillMock).not.toHaveBeenCalled()
   })
 
@@ -264,8 +264,8 @@ describe('useMensais', () => {
     act(() => result.current.saveEdit())
 
     expect(updateMensaisBillMock).not.toHaveBeenCalled()
-    expect(result.current.saveErrorFields.editValue).toBe('Value must be a number')
-    expect(result.current.saveErrorFields.editStatus).toBe('Status is required')
+    expect(result.current.saveErrorFields.editValue).toBe('Value must be a number.')
+    expect(result.current.saveErrorFields.editStatus).toBe('Status is required.')
   })
 
   it('cancelEdit clears the editing bill and its form fields', async () => {
@@ -391,13 +391,13 @@ describe('useMensais', () => {
   })
 
   it('surfaces a reset error without crashing', async () => {
-    resetMensaisToUnsetMock.mockRejectedValue(new Error('Failed to reset bills'))
+    resetMensaisToUnsetMock.mockRejectedValue(new Error('Failed to reset bills.'))
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.resetAllToUnset())
 
-    await waitFor(() => expect(result.current.resetError).toBe('Failed to reset bills'))
+    await waitFor(() => expect(result.current.resetError).toBe('Failed to reset bills.'))
   })
 
   it('updates a bill status in place, without refetching the bill list', async () => {

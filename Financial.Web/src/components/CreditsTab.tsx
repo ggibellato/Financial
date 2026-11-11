@@ -96,7 +96,7 @@ const TYPE_CLASSES: Record<string, string> = {
 
 const TYPE_LABELS: Record<string, string> = {
   Dividend: 'Dividend',
-  SecuritiesLendingIncome: 'Securities Lending Income',
+  SecuritiesLendingIncome: 'Securities lending income',
   JCP: 'JCP',
   Coupon: 'Coupon',
 }
@@ -199,10 +199,11 @@ function InlineForm({
 
         <Field label="Type">
           <Select value={formType} onChange={(e) => onFieldChange('formType', e.target.value)}>
-            <option value="Dividend">Dividend</option>
-            <option value="SecuritiesLendingIncome">Securities Lending Income</option>
-            <option value="JCP">JCP</option>
-            <option value="Coupon">Coupon</option>
+            {Object.entries(TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </Select>
         </Field>
 
@@ -210,7 +211,7 @@ function InlineForm({
           label="Value"
           required
           validationState={fieldError('formValue') ? 'error' : 'none'}
-          validationMessage={fieldError('formValue') ?? 'A negative value records a correction to a previous payment'}
+          validationMessage={fieldError('formValue') ?? 'A negative value records a correction to a previous payment.'}
         >
           <Input
             type="number"
@@ -292,7 +293,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
 
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
-      <p className="credits-tab__chart-title">Credits by Month</p>
+      <p className="credits-tab__chart-title">Credits by month</p>
       <div className="credits-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartType === 'Bar' ? (

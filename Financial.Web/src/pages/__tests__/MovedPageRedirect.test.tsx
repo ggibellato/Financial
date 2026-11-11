@@ -84,7 +84,7 @@ describe('MovedPageRedirect', () => {
     getAccountsMock.mockRejectedValueOnce(new Error('offline')).mockResolvedValue([potsAccount({ id: 'reserva', name: 'Reserva', replacesPage: 'reserva' })])
     renderRedirect()
 
-    expect(await screen.findByText('Unable to load the accounts')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load the accounts.')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Try again' }))
 
     await waitFor(() => expect(screen.getByText('Now at /cashflow/accounts/reserva?tab=pots')).toBeInTheDocument())

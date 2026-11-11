@@ -51,7 +51,7 @@ async function fetchOverview(year: number, month: number) {
 
 export function useMonthly(): MonthlyData {
   const { year, month, monthInputValue, setMonthInputValue } = useMonthSelection(currentYearMonth)
-  const overview = useAsyncResource(() => fetchOverview(year, month), [year, month], 'Unable to load Monthly data', {
+  const overview = useAsyncResource(() => fetchOverview(year, month), [year, month], 'Unable to load monthly data.', {
     initialLoading: true,
   })
   const [carryForwardUpdating, setCarryForwardUpdating] = useState(false)
@@ -69,7 +69,7 @@ export function useMonthly(): MonthlyData {
       .updateTitheCarryForward(year, month, { included })
       .then(() => overview.refresh())
       .catch((err: unknown) =>
-        setCarryForwardFailure({ monthInputValue, message: getErrorMessage(err, 'Failed to update carry-forward') }),
+        setCarryForwardFailure({ monthInputValue, message: getErrorMessage(err, 'Failed to update carry-forward.') }),
       )
       .finally(() => setCarryForwardUpdating(false))
   }

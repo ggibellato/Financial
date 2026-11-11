@@ -439,15 +439,15 @@ export function useIncomeForm(
     const fundingErrors = editsFundingLines ? fundingLineErrors(state.fundingLines) : NO_FUNDING_ERRORS
 
     if (!state.date.trim()) {
-      errors.date = 'Date is required'
+      errors.date = 'Date is required.'
     }
 
     if (!state.incomeSource.trim()) {
-      errors.incomeSource = 'Income source is required'
+      errors.incomeSource = 'Income source is required.'
     }
 
     if (netValue === null) {
-      errors.netValue = 'Net value must be a non-negative number'
+      errors.netValue = 'Net value must be a non-negative number.'
     } else if (isFundingShown && netValue === 0) {
       errors.netValue = 'Net value must be greater than zero to split to pots.'
     }
@@ -464,7 +464,7 @@ export function useIncomeForm(
     if (state.grossValue.trim() !== '') {
       grossValue = parseValidatedNumber(state.grossValue, { min: netValue ?? 0 })
       if (grossValue === null) {
-        errors.grossValue = 'Gross value must be at least the net value'
+        errors.grossValue = 'Gross value must be at least the net value.'
       }
     }
 
@@ -511,7 +511,7 @@ export function useIncomeForm(
         dispatch({
           type: 'SAVE_ERROR',
           payload: {
-            message: getSaveErrorMessage(err, state.isEditing ? 'Failed to update income' : 'Failed to create income'),
+            message: getSaveErrorMessage(err, state.isEditing ? 'Failed to update income.' : 'Failed to create income.'),
             fields: {},
           },
         })

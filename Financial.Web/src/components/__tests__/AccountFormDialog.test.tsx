@@ -165,7 +165,7 @@ describe('AccountFormDialog', () => {
     const select = screen.getByRole('combobox', { name: /^Bank expense category/ })
     expect(select).toBeDisabled()
     expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual(['No active categories'])
-    expect(screen.getByText('Add a category in Admin → Categories first.')).toBeInTheDocument()
+    expect(screen.getByText('Add a category in Admin → CashFlow → Categories first.')).toBeInTheDocument()
   })
 
   it('requires a category for a Pots account and focuses it', () => {

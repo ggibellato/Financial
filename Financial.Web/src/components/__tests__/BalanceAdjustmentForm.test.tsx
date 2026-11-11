@@ -45,20 +45,20 @@ describe('BalanceAdjustmentForm', () => {
     expect(screen.getByRole('heading', { name: 'Adjust balance' })).toBeInTheDocument()
   })
 
-  it('marks Bank and Target Balance as required, leaving Note optional', () => {
+  it('marks Bank and Target balance as required, leaving Note optional', () => {
     render(<BalanceAdjustmentForm {...baseProps} />)
 
     expect(screen.getByLabelText(/^Bank/)).toBeRequired()
-    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toBeRequired()
+    expect(screen.getByRole('spinbutton', { name: /^Target balance/ })).toBeRequired()
     expect(screen.getByLabelText('Note')).not.toBeRequired()
   })
 
-  it('offers contextual help explaining Target Balance', () => {
+  it('offers contextual help explaining Target balance', () => {
     render(<BalanceAdjustmentForm {...baseProps} />)
 
     expect(
       screen.getByRole('button', {
-        name: /Target Balance information/,
+        name: /Target balance information/,
       }),
     ).toBeInTheDocument()
   })
@@ -67,7 +67,7 @@ describe('BalanceAdjustmentForm', () => {
     render(<BalanceAdjustmentForm {...baseProps} isEditing targetBalance="150" note="Matched statement" />)
 
     expect(screen.getByRole('heading', { name: 'Edit balance adjustment' })).toBeInTheDocument()
-    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveValue(150)
+    expect(screen.getByRole('spinbutton', { name: /^Target balance/ })).toHaveValue(150)
     expect(screen.getByLabelText('Note')).toHaveValue('Matched statement')
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
@@ -76,7 +76,7 @@ describe('BalanceAdjustmentForm', () => {
     render(<BalanceAdjustmentForm {...baseProps} savedDelta={4.2} />)
 
     expect(screen.getByTestId('balance-adjustment-form-panel')).toHaveTextContent('Adjustment of £4.20 recorded')
-    expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Target balance')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument()
   })
 
@@ -137,7 +137,7 @@ describe('BalanceAdjustmentForm', () => {
     expect(screen.getByLabelText(/^Bank/)).toBeInTheDocument()
     expect(screen.queryByText(/Current calculated balance/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Date')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Target Balance')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Target balance')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Note')).not.toBeInTheDocument()
   })
 
@@ -148,7 +148,7 @@ describe('BalanceAdjustmentForm', () => {
       'Current calculated balance for Barclays: £100.00',
     )
     expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
-    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toBeInTheDocument()
+    expect(screen.getByRole('spinbutton', { name: /^Target balance/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
   })
 
@@ -222,7 +222,7 @@ describe('BalanceAdjustmentForm', () => {
 
     rerender(<BalanceAdjustmentForm {...baseProps} saveError="Enter a target balance." saveErrorFields={{ targetBalance: 'Enter a target balance.' }} />)
 
-    expect(screen.getByRole('spinbutton', { name: /^Target Balance/ })).toHaveFocus()
+    expect(screen.getByRole('spinbutton', { name: /^Target balance/ })).toHaveFocus()
   })
 
   it('announces a server error and moves focus to it', () => {

@@ -117,7 +117,7 @@ function renderBrokerSummary(summary: AggregatedSummaryDto) {
   return result
 }
 
-describe('P49 F04 — React Reporting Currency acceptance', () => {
+describe('P49 F04 — React Reporting currency acceptance', () => {
   beforeEach(() => {
     getReportingCurrencyMock.mockReset()
     setReportingCurrencyMock.mockReset()
@@ -128,7 +128,7 @@ describe('P49 F04 — React Reporting Currency acceptance', () => {
     getTransactionTypeEffectsMock.mockReturnValue(new Promise(() => {}))
   })
 
-  it('[AC P49-F04-react-reporting-currency-01] a Reporting Currency control appears under Settings, offering GBP/BRL/USD, and persists the chosen value via the setting endpoint', async () => {
+  it('[AC P49-F04-react-reporting-currency-01] a Reporting currency control appears under Settings, offering GBP/BRL/USD, and persists the chosen value via the setting endpoint', async () => {
     getReportingCurrencyMock.mockResolvedValue({ currency: 'GBP', enabled: true })
     setReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: true })
     render(<ReportingCurrencyPage />)
@@ -145,9 +145,9 @@ describe('P49 F04 — React Reporting Currency acceptance', () => {
   it('[AC P49-F04-react-reporting-currency-02] the broker summary view shows the converted total clearly labelled with its currency, next to the unchanged native-currency figures', async () => {
     renderBrokerSummary(SUMMARY)
 
-    expect(await screen.findByText('Market Value (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Total Bought')).toBeInTheDocument()
-    const nativeMarketValue = screen.getByText('Market Value').nextElementSibling
+    expect(await screen.findByText('Market value (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Total bought')).toBeInTheDocument()
+    const nativeMarketValue = screen.getByText('Market value').nextElementSibling
     expect(nativeMarketValue?.textContent).toMatch(/1[.,]150[.,]00/)
   })
 
@@ -168,7 +168,7 @@ describe('P49 F04 — React Reporting Currency acceptance', () => {
     renderBrokerSummary({ ...SUMMARY, isPartial: true })
 
     expect(await screen.findByText(/could not be converted/)).toBeInTheDocument()
-    expect(screen.getByText('Market Value (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Market value (converted to GBP)')).toBeInTheDocument()
   })
 
   it('[AC P49-F04-react-reporting-currency-05] a ReportingCurrencyUnavailable response hides the converted figures with a retry affordance while native-currency figures stay visible', async () => {
@@ -176,8 +176,8 @@ describe('P49 F04 — React Reporting Currency acceptance', () => {
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/Converted totals unavailable/)
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
-    expect(screen.queryByText(/Market Value \(converted to/)).not.toBeInTheDocument()
-    expect(screen.getByText('Total Bought')).toBeInTheDocument()
-    expect(screen.getByText('Market Value')).toBeInTheDocument()
+    expect(screen.queryByText(/Market value \(converted to/)).not.toBeInTheDocument()
+    expect(screen.getByText('Total bought')).toBeInTheDocument()
+    expect(screen.getByText('Market value')).toBeInTheDocument()
   })
 })

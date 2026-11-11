@@ -116,7 +116,7 @@ describe('TotalsGrid', () => {
       />,
     )
 
-    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
     expect(screen.queryByText('Nothing here')).not.toBeInTheDocument()
   })
 

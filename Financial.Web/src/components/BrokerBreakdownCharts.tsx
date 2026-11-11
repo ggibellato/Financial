@@ -19,7 +19,7 @@ interface BreakdownPieProps {
 }
 
 function BreakdownPie({ title, entries }: BreakdownPieProps) {
-  return <AllocationPieChart title={title} entries={entries} headingLevel="h3" valueLabel="Total Invested" />
+  return <AllocationPieChart title={title} entries={entries} headingLevel="h3" valueLabel="Total invested" />
 }
 
 export default function BrokerBreakdownCharts() {
@@ -47,7 +47,7 @@ export default function BrokerBreakdownCharts() {
 
   return (
     <div className="broker-breakdown">
-      <BreakdownPie title="Portfolio Breakdown" entries={portfolioEntries} />
+      <BreakdownPie title="Portfolio breakdown" entries={portfolioEntries} />
       <div className="broker-breakdown__grid">
         {breakdown.map((portfolio) => (
           <BreakdownPie

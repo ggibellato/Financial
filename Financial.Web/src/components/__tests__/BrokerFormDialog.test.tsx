@@ -4,18 +4,18 @@ import BrokerFormDialog from '../BrokerFormDialog'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 
 describe('BrokerFormDialog', () => {
-  it('renders in create mode with an empty name, the first currency, and Average Cost selected', () => {
+  it('renders in create mode with an empty name, the first currency, and Average cost selected', () => {
     render(<BrokerFormDialog broker={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Broker' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New broker' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
-    expect(screen.getByRole('combobox', { name: /^Cost Basis Method/ })).toHaveValue('AverageCost')
+    expect(screen.getByRole('combobox', { name: /^Cost basis method/ })).toHaveValue('AverageCost')
   })
 
-  it('offers contextual help explaining Cost Basis Method', () => {
+  it('offers contextual help explaining Cost basis method', () => {
     render(<BrokerFormDialog broker={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('button', { name: /Cost Basis Method information/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Cost basis method information/ })).toBeInTheDocument()
   })
 
   it('renders in edit mode pre-filled with the broker being edited', () => {
@@ -27,10 +27,10 @@ describe('BrokerFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Broker' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit broker' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('XPI')
     expect(screen.getByLabelText(/^Currency/)).toHaveValue('USD')
-    expect(screen.getByRole('combobox', { name: /^Cost Basis Method/ })).toHaveValue('FIFO')
+    expect(screen.getByRole('combobox', { name: /^Cost basis method/ })).toHaveValue('FIFO')
   })
 
   it('submits the trimmed name and selected currency', async () => {
@@ -39,7 +39,7 @@ describe('BrokerFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  XPI  ' } })
     fireEvent.change(screen.getByLabelText(/^Currency/), { target: { value: 'GBP' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add broker' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('XPI', 'GBP', 'AverageCost'))
   })
@@ -54,7 +54,7 @@ describe('BrokerFormDialog', () => {
       />,
     )
 
-    fireEvent.change(screen.getByRole('combobox', { name: /^Cost Basis Method/ }), { target: { value: 'SpecificId' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Cost basis method/ }), { target: { value: 'SpecificId' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('XPI', 'BRL', 'SpecificId'))
@@ -66,7 +66,7 @@ describe('BrokerFormDialog', () => {
     render(<BrokerFormDialog broker={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'XPI' } })
-    saveFromTheSaveButton()
+    saveFromTheSaveButton('Add broker')
 
     await expectDuplicateUnderName(message)
   })

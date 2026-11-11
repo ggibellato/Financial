@@ -205,7 +205,7 @@ describe('MoveAssetDialog', () => {
     renderDialog()
 
     await waitForDestinations()
-    expect(screen.queryByRole('radio', { name: 'Archive to Historic Investments' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: 'Archive to historic investments' })).not.toBeInTheDocument()
   })
 
   it('offers Historic destinations for a closed asset, keeping one named like the source', async () => {
@@ -216,9 +216,9 @@ describe('MoveAssetDialog', () => {
     renderDialog({ canArchive: true })
 
     await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Archive to Historic Investments' })).toBeInTheDocument(),
+      expect(screen.getByRole('radio', { name: 'Archive to historic investments' })).toBeInTheDocument(),
     )
-    fireEvent.click(screen.getByRole('radio', { name: 'Archive to Historic Investments' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Archive to historic investments' }))
 
     await waitFor(() =>
       expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Closed', 'Default']),
@@ -233,9 +233,9 @@ describe('MoveAssetDialog', () => {
     renderDialog({ canArchive: true, onMoved })
 
     await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Archive to Historic Investments' })).toBeInTheDocument(),
+      expect(screen.getByRole('radio', { name: 'Archive to historic investments' })).toBeInTheDocument(),
     )
-    fireEvent.click(screen.getByRole('radio', { name: 'Archive to Historic Investments' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Archive to historic investments' }))
     await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Closed']))
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 
@@ -260,9 +260,9 @@ describe('MoveAssetDialog', () => {
     renderDialog({ canArchive: true })
 
     await waitFor(() =>
-      expect(screen.getByRole('radio', { name: 'Archive to Historic Investments' })).toBeInTheDocument(),
+      expect(screen.getByRole('radio', { name: 'Archive to historic investments' })).toBeInTheDocument(),
     )
-    fireEvent.click(screen.getByRole('radio', { name: 'Archive to Historic Investments' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Archive to historic investments' }))
     await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Closed']))
     fireEvent.click(screen.getByRole('button', { name: 'Move' }))
 

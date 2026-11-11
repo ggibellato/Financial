@@ -64,7 +64,7 @@ export function useAnnualSummary(): AnnualSummaryData {
   const { data, isLoading, error, retry } = useAsyncResource<AnnualSummaryFigures>(
     () => fetchAnnualSummaryFigures(year),
     [year],
-    'Unable to load Annual Summary data',
+    'Unable to load annual summary data.',
     { initialLoading: true, keepDataWhileLoading: true },
   )
 

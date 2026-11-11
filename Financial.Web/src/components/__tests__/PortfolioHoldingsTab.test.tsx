@@ -134,9 +134,9 @@ describe('PortfolioHoldingsTab', () => {
   })
 
   it('renders_error_state_in_table_section_on_items_fetch_failure', () => {
-    setPortfolioMock({ error: 'Unable to load portfolio assets' })
+    setPortfolioMock({ error: 'Unable to load portfolio assets.' })
     renderComponent()
-    expect(screen.getByText('Unable to load portfolio assets')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load portfolio assets.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
@@ -144,19 +144,19 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent('active')
-    expect(screen.getByText('Asset Name')).toBeInTheDocument()
-    expect(screen.getByText('First Investment')).toBeInTheDocument()
+    expect(screen.getByText('Asset name')).toBeInTheDocument()
+    expect(screen.getByText('First investment')).toBeInTheDocument()
     expect(screen.getByText('Quantity')).toBeInTheDocument()
-    expect(screen.getAllByText('Total Invested').length).toBeGreaterThanOrEqual(1)
-    expect(screen.queryByText('Realized Gain/Loss')).not.toBeInTheDocument()
+    expect(screen.getAllByText('Total invested').length).toBeGreaterThanOrEqual(1)
+    expect(screen.queryByText('Realized gain/loss')).not.toBeInTheDocument()
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
-    expect(screen.getAllByText('Total Credits').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText('Current Value')).toBeInTheDocument()
-    expect(screen.getByText('Average Price')).toBeInTheDocument()
-    expect(screen.getByText('Current Price')).toBeInTheDocument()
+    expect(screen.getAllByText('Total credits').length).toBeGreaterThanOrEqual(1)
+    expect(screen.getByText('Current value')).toBeInTheDocument()
+    expect(screen.getByText('Average price')).toBeInTheDocument()
+    expect(screen.getByText('Current price')).toBeInTheDocument()
     expect(screen.getByText('Profit')).toBeInTheDocument()
     expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText('w/ Credits')).toBeInTheDocument()
+    expect(screen.getByText('w/ credits')).toBeInTheDocument()
     expect(screen.getByText('XIRR')).toBeInTheDocument()
   })
 
@@ -164,11 +164,11 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
-    expect(screen.getByText('Realized Gain/Loss')).toBeInTheDocument()
-    expect(screen.getByText('Realized (Shares Only)')).toBeInTheDocument()
-    expect(screen.getByText('Sold Price')).toBeInTheDocument()
-    expect(screen.queryByText('Current Value')).not.toBeInTheDocument()
-    expect(screen.queryByText('Current Price')).not.toBeInTheDocument()
+    expect(screen.getByText('Realized gain/loss')).toBeInTheDocument()
+    expect(screen.getByText('Realized (shares only)')).toBeInTheDocument()
+    expect(screen.getByText('Sold price')).toBeInTheDocument()
+    expect(screen.queryByText('Current value')).not.toBeInTheDocument()
+    expect(screen.queryByText('Current price')).not.toBeInTheDocument()
   })
 
   it('renders_realized_gain_loss_shares_only_column_header_immediately_after_realized_gain_loss_in_historic_scope', () => {
@@ -176,8 +176,8 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
     const headers = screen.getAllByRole('columnheader')
-    const realizedIndex = headers.findIndex(h => h.textContent === 'Realized Gain/Loss')
-    const sharesOnlyIndex = headers.findIndex(h => h.textContent === 'Realized (Shares Only)')
+    const realizedIndex = headers.findIndex(h => h.textContent === 'Realized gain/loss')
+    const sharesOnlyIndex = headers.findIndex(h => h.textContent === 'Realized (shares only)')
     expect(realizedIndex).toBeGreaterThanOrEqual(0)
     expect(sharesOnlyIndex).toBe(realizedIndex + 1)
   })
@@ -186,7 +186,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent('active')
-    expect(screen.queryByText('Realized (Shares Only)')).not.toBeInTheDocument()
+    expect(screen.queryByText('Realized (shares only)')).not.toBeInTheDocument()
   })
 
   it('renders_asset_row_with_correctly_formatted_values', () => {
@@ -208,7 +208,7 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
 
     const table = screen.getByRole('table')
-    const header = within(table).getByRole('button', { name: 'First Investment' })
+    const header = within(table).getByRole('button', { name: 'First investment' })
     expect(header.closest('th')).toHaveAttribute('aria-sort', 'descending')
 
     const rows = within(table.querySelector('tbody')!).getAllByRole('row')
@@ -248,7 +248,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
     const { container } = renderComponent('historic')
-    const input = container.querySelector('[data-label="Realized Gain/Loss"] + input') as HTMLInputElement
+    const input = container.querySelector('[data-label="Realized gain/loss"] + input') as HTMLInputElement
     expect(input.value).toBe('-70.00')
   })
 
@@ -272,7 +272,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
     const { container } = renderComponent('historic')
-    const input = container.querySelector('[data-label="Realized (Shares Only)"] + input') as HTMLInputElement
+    const input = container.querySelector('[data-label="Realized (shares only)"] + input') as HTMLInputElement
     expect(input.value).toBe('225.00')
   })
 
@@ -305,8 +305,8 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent('historic')
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const dataRow = screen.getAllByRole('row')[2]
-    const cell = within(dataRow).getAllByRole('cell')[9] // "Sold Price" column
-    expect(cell.textContent?.replace('Sold Price:', '')).toBe('—')
+    const cell = within(dataRow).getAllByRole('cell')[9] // "Sold price" column
+    expect(cell.textContent?.replace('Sold price:', '')).toBe('—')
   })
 
   it('renders_the_server_computed_historic_profit_percents', () => {
@@ -327,7 +327,7 @@ describe('PortfolioHoldingsTab', () => {
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
     expect(cells[10].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
-    expect(cells[11].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
+    expect(cells[11].textContent?.replace('Profit % w/ credits:', '')).toBe('—') // "Profit % w/ credits" column
   })
 
   it('renders_historic_xirr_from_the_resolved_row_rate', () => {
@@ -342,7 +342,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
     const { container } = renderComponent()
-    const input = container.querySelector('[data-label="Current Value"] + input') as HTMLInputElement
+    const input = container.querySelector('[data-label="Current value"] + input') as HTMLInputElement
     expect(input.value).toBe('—')
   })
 
@@ -502,7 +502,7 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
     expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—')
-    expect(cells[10].textContent?.replace('Profit % w/ Credits:', '')).toBe('—')
+    expect(cells[10].textContent?.replace('Profit % w/ credits:', '')).toBe('—')
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
   })
 
@@ -597,12 +597,12 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByText('Last Month')).toBeInTheDocument()
+    expect(screen.getByText('Last month')).toBeInTheDocument()
     expect(screen.getByText('Month')).toBeInTheDocument()
-    expect(screen.getByText('Est. Annual')).toBeInTheDocument()
-    // "Credits" sub-header appears under both the Last Month and Est. Annual groups
+    expect(screen.getByText('Est. annual')).toBeInTheDocument()
+    // "Credits" sub-header appears under both the Last month and Est. annual groups
     expect(screen.getAllByText('Credits').length).toBeGreaterThanOrEqual(2)
-    // "%" sub-header appears under Profit, Last Month, and Est. Annual groups
+    // "%" sub-header appears under Profit, Last month, and Est. annual groups
     expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(3)
   })
 
@@ -695,7 +695,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    const header = screen.getByRole('columnheader', { name: 'Last Month' })
+    const header = screen.getByRole('columnheader', { name: 'Last month' })
     expect(header).toHaveClass('portfolio-holdings__credits-separator')
   })
 
@@ -755,7 +755,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
     const { container } = renderComponent()
-    const input = container.querySelector('[data-label="Est. Annual Credits"] + input') as HTMLInputElement
+    const input = container.querySelector('[data-label="Est. annual credits"] + input') as HTMLInputElement
     expect(input.value).toBe('—')
   })
 
@@ -812,8 +812,8 @@ describe('PortfolioHoldingsTab', () => {
 
     // rows[0]/[1] are the two header rows; rows[2]/[3] are the data rows.
     const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
   })
 
   it('sorts_rows_by_quantity_descending_on_a_second_click_of_the_same_header', () => {
@@ -828,13 +828,13 @@ describe('PortfolioHoldingsTab', () => {
     fireEvent.click(quantityHeaderButton)
 
     const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
   })
 
   it('sorts_rows_by_a_derived_column_using_the_underlying_current_value_not_display_text', () => {
     // currentValue = item.marketValue: item1 = 50; item2 = 200.
-    // Sorting ascending by Current Value must put item1 first even though its formatted
+    // Sorting ascending by Current value must put item1 first even though its formatted
     // string ("50.00") would sort after item2's ("200.00") under a naive string compare.
     const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 5, marketValue: 50 }
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 100, marketValue: 200 }
@@ -844,11 +844,11 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
     renderComponent()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Current Value' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Current value' }))
 
     const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
   })
 
   it('clicking_the_realized_gain_loss_header_engages_that_columns_sort_in_historic_scope', () => {
@@ -858,8 +858,8 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
     renderComponent('historic')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Realized Gain/Loss' }))
-    expect(screen.getByRole('columnheader', { name: 'Realized Gain/Loss' })).toHaveAttribute('aria-sort', 'ascending')
+    fireEvent.click(screen.getByRole('button', { name: 'Realized gain/loss' }))
+    expect(screen.getByRole('columnheader', { name: 'Realized gain/loss' })).toHaveAttribute('aria-sort', 'ascending')
   })
 
   it('sorts_rows_by_realized_gain_loss_shares_only_ascending_then_descending_independently_of_realized_gain_loss', () => {
@@ -869,20 +869,20 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
     renderComponent('historic')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Realized (Shares Only)' }))
-    expect(screen.getByRole('columnheader', { name: 'Realized (Shares Only)' })).toHaveAttribute('aria-sort', 'ascending')
-    expect(screen.getByRole('columnheader', { name: 'Realized Gain/Loss' })).toHaveAttribute('aria-sort', 'none')
+    fireEvent.click(screen.getByRole('button', { name: 'Realized (shares only)' }))
+    expect(screen.getByRole('columnheader', { name: 'Realized (shares only)' })).toHaveAttribute('aria-sort', 'ascending')
+    expect(screen.getByRole('columnheader', { name: 'Realized gain/loss' })).toHaveAttribute('aria-sort', 'none')
 
     let rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Realized (Shares Only)' }))
-    expect(screen.getByRole('columnheader', { name: 'Realized (Shares Only)' })).toHaveAttribute('aria-sort', 'descending')
+    fireEvent.click(screen.getByRole('button', { name: 'Realized (shares only)' }))
+    expect(screen.getByRole('columnheader', { name: 'Realized (shares only)' })).toHaveAttribute('aria-sort', 'descending')
 
     rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset Name:', '')).toBe('BBB11')
+    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
+    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
   })
 
   it('clicking_each_remaining_sortable_header_engages_that_columns_sort', () => {
@@ -892,14 +892,14 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
     renderComponent()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Total Credits' }))
-    expect(screen.getByRole('columnheader', { name: 'Total Credits' })).toHaveAttribute('aria-sort', 'ascending')
+    fireEvent.click(screen.getByRole('button', { name: 'Total credits' }))
+    expect(screen.getByRole('columnheader', { name: 'Total credits' })).toHaveAttribute('aria-sort', 'ascending')
 
-    fireEvent.click(screen.getByRole('button', { name: 'Average Price' }))
-    expect(screen.getByRole('columnheader', { name: 'Average Price' })).toHaveAttribute('aria-sort', 'ascending')
+    fireEvent.click(screen.getByRole('button', { name: 'Average price' }))
+    expect(screen.getByRole('columnheader', { name: 'Average price' })).toHaveAttribute('aria-sort', 'ascending')
 
-    fireEvent.click(screen.getByRole('button', { name: 'w/ Credits' }))
-    expect(screen.getByRole('columnheader', { name: 'w/ Credits' })).toHaveAttribute('aria-sort', 'ascending')
+    fireEvent.click(screen.getByRole('button', { name: 'w/ credits' }))
+    expect(screen.getByRole('columnheader', { name: 'w/ credits' })).toHaveAttribute('aria-sort', 'ascending')
 
     const creditsHeaders = screen.getAllByRole('columnheader', { name: 'Credits' })
     fireEvent.click(within(creditsHeaders[0]).getByRole('button'))

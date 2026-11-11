@@ -150,7 +150,7 @@ export default function CurrentValuesPage() {
   return (
     <section className="current-values">
       <header className="current-values__header">
-        <h2>Fetch Current Prices</h2>
+        <h2>Fetch current prices</h2>
         <Button
           type="button"
           appearance="primary"
@@ -158,7 +158,7 @@ export default function CurrentValuesPage() {
           onClick={() => void runPriceCheck()}
           disabled={isRunning}
         >
-          {isRunning ? 'Checking...' : 'Check Prices'}
+          {isRunning ? 'Checking...' : 'Check prices'}
         </Button>
       </header>
 

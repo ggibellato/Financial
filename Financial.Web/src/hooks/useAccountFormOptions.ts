@@ -2,7 +2,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDto, BankOption, CategoryDto, IncomeSourceDto, TransferAccountOptionDto } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
 
-export const FORM_OPTIONS_LOAD_ERROR = 'Unable to load the form options'
+export const FORM_OPTIONS_LOAD_ERROR = 'Unable to load the form options.'
 
 export interface TransferCounterparts {
   destinations: TransferAccountOptionDto[]

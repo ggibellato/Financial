@@ -90,7 +90,7 @@ export default function BrokersPage() {
   return (
     <AdminEntityPage
       title="Brokers"
-      createLabel="Create Broker"
+      createLabel="New broker"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       isLoading={isLoading}
@@ -105,7 +105,7 @@ export default function BrokersPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Broker"
+              entityLabel="broker"
               message={deleteMessage(confirmingDelete)}
               confirmDisabled={confirmingDelete.portfolioCount > 0}
               onConfirm={handleConfirmDelete}

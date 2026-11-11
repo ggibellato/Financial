@@ -245,7 +245,7 @@ describe('CorporateActionsTab', () => {
     expect(screen.getAllByRole('row')).toHaveLength(2)
   })
 
-  it('renders a StatusBadge in the Tax Status column for a Merger record with a calculation status, and "—" for a Split record', () => {
+  it('renders a StatusBadge in the Tax status column for a Merger record with a calculation status, and "—" for a Split record', () => {
     const mergerRow = split({
       id: 'ca2',
       type: 'Merger',
@@ -262,7 +262,7 @@ describe('CorporateActionsTab', () => {
     expect(screen.getAllByText('—').length).toBeGreaterThan(0)
   })
 
-  it('shows the Resulting Change text for a SpinOff Parent-role record', () => {
+  it('shows the Resulting change text for a SpinOff Parent-role record', () => {
     const parentRow = split({
       id: 'ca3',
       type: 'SpinOff',
@@ -278,7 +278,7 @@ describe('CorporateActionsTab', () => {
     expect(screen.getByText('Cost basis reduced by spin-off')).toBeInTheDocument()
   })
 
-  it('shows the Resulting Change text for a SpinOff New-role record', () => {
+  it('shows the Resulting change text for a SpinOff New-role record', () => {
     const newRow = split({
       id: 'ca4',
       type: 'SpinOff',

@@ -59,7 +59,7 @@ export default function TaxRulesPage() {
   return (
     <AdminEntityPage
       title="Tax rules"
-      createLabel="Create Tax Rule"
+      createLabel="New tax rule"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       isLoading={isLoading}
@@ -74,7 +74,7 @@ export default function TaxRulesPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Tax Rule"
+              entityLabel="tax rule"
               message={<>&ldquo;{confirmingDelete.label}&rdquo; will be permanently deleted.</>}
               onConfirm={handleConfirmDelete}
               onCancel={() => setConfirmingDelete(null)}
@@ -87,10 +87,10 @@ export default function TaxRulesPage() {
         <TableHeader>
           <TableRow>
             <TableHeaderCell>Jurisdiction</TableHeaderCell>
-            <TableHeaderCell>Event Category</TableHeaderCell>
+            <TableHeaderCell>Event category</TableHeaderCell>
             <TableHeaderCell>Label</TableHeaderCell>
-            <TableHeaderCell>Effective From</TableHeaderCell>
-            <TableHeaderCell>Effective To</TableHeaderCell>
+            <TableHeaderCell>Effective from</TableHeaderCell>
+            <TableHeaderCell>Effective to</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
@@ -98,12 +98,12 @@ export default function TaxRulesPage() {
           {taxRules.map((rule) => (
             <TableRow key={rule.id}>
               <DataTableCell label="Jurisdiction">{rule.jurisdiction}</DataTableCell>
-              <DataTableCell label="Event Category">{rule.eventCategory}</DataTableCell>
+              <DataTableCell label="Event category">{rule.eventCategory}</DataTableCell>
               <DataTableCell label="Label">
                 <TruncatedText text={rule.label} />
               </DataTableCell>
-              <DataTableCell label="Effective From">{rule.effectiveFrom}</DataTableCell>
-              <DataTableCell label="Effective To">{rule.effectiveTo ?? '—'}</DataTableCell>
+              <DataTableCell label="Effective from">{rule.effectiveFrom}</DataTableCell>
+              <DataTableCell label="Effective to">{rule.effectiveTo ?? '—'}</DataTableCell>
               <RowActionsCell
                 itemName={rule.label}
                 isDeleting={deletingId === rule.id}

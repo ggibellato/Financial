@@ -77,7 +77,7 @@ describe('InvestmentSnapshotsPage', () => {
     expect(screen.getByRole('button', { name: 'Edit snapshot Account1 (liability)' })).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Edit snapshot Account0' }))
 
-    expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
+    expect(screen.getByText('Edit snapshot')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('0')
     fireEvent.change(valueInput, { target: { value: '999' } })
 
@@ -128,14 +128,14 @@ describe('InvestmentSnapshotsPage', () => {
 
     const editButtons = screen.getAllByRole('button', { name: /^Edit snapshot\b/ })
     fireEvent.click(editButtons[0])
-    expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
+    expect(screen.getByText('Edit snapshot')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Suggest Values' }))
-    await waitFor(() => expect(screen.queryByText('Edit Snapshot')).not.toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: 'Suggest values' }))
+    await waitFor(() => expect(screen.queryByText('Edit snapshot')).not.toBeInTheDocument())
     expect(screen.getByText('No suggestions available for this month.')).toBeInTheDocument()
 
     fireEvent.click(editButtons[0])
     expect(screen.queryByText('No suggestions available for this month.')).not.toBeInTheDocument()
-    expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
+    expect(screen.getByText('Edit snapshot')).toBeInTheDocument()
   })
 })

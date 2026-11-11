@@ -252,7 +252,7 @@ describe('MonthTransactionsGrid', () => {
   it('[AC P60-F16-month-transactions-view-04] shows the empty month message with no footer and nothing to clear', () => {
     renderGrid({ rows: [] })
 
-    expect(screen.getByText('No transactions in October 2026')).toBeInTheDocument()
+    expect(screen.getByText('No transactions in October 2026.')).toBeInTheDocument()
     expect(queryFooter()).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
   })
@@ -262,7 +262,7 @@ describe('MonthTransactionsGrid', () => {
 
     filterToNone('Account')
 
-    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
     expect(queryFooter()).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
   })

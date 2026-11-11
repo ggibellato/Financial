@@ -6,7 +6,7 @@ import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
 
-export const ACCOUNT_LOAD_ERROR = 'Unable to load this account'
+export const ACCOUNT_LOAD_ERROR = 'Unable to load this account.'
 
 export type AccountScreenTab = 'transactions' | 'statements' | 'pots'
 

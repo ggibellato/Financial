@@ -95,7 +95,7 @@ export default function DividendCheckPage() {
   return (
     <section className="dividend-check">
       <header className="dividend-check__header">
-        <h2>Shares Dividend Check</h2>
+        <h2>Shares dividend check</h2>
         <p>Review dividend history and estimate target entry price.</p>
       </header>
       <form className="dividend-check__form" onSubmit={handleSubmit} aria-label="Dividend check">
@@ -115,7 +115,7 @@ export default function DividendCheckPage() {
             </p>
             <p>Current price: {formatN2(summary.currentPrice)}</p>
             <p className="summary-card__avg-dividend">
-              Average Dividend: {formatN2(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatN2(summary.dividendYieldPercent)}%
+              Average dividend: {formatN2(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatN2(summary.dividendYieldPercent)}%
             </p>
             <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
               Price max buy: {formatN2(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
@@ -125,7 +125,7 @@ export default function DividendCheckPage() {
 
           <section className="dividend-check__tables">
             <div className="dividend-check__table-column">
-              <h3>Dividend History</h3>
+              <h3>Dividend history</h3>
               {displayedHistory.length === 0 ? (
                 <p>No dividend history found.</p>
               ) : (
@@ -168,7 +168,7 @@ export default function DividendCheckPage() {
               )}
             </div>
             <div className="dividend-check__table-column">
-              <h3>By Year</h3>
+              <h3>By year</h3>
               {displayedYearTotals.length === 0 ? (
                 <p>No annual totals available.</p>
               ) : (
@@ -208,7 +208,7 @@ export default function DividendCheckPage() {
       ) : null}
 
       {!summary && !error ? (
-        <p className="dividend-check__placeholder">Select a ticker and click Check</p>
+        <p className="dividend-check__placeholder">Select a ticker and click Check.</p>
       ) : null}
     </section>
   )

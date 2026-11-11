@@ -48,7 +48,7 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
         onSaved(dueDate === null ? 'Due date cleared' : 'Due date saved')
       })
       .catch((err: unknown) => {
-        const error = getSaveErrorMessage(err, 'Failed to save the due date')
+        const error = getSaveErrorMessage(err, 'Failed to save the due date.')
         setForm((latest) => (latest?.statement === current.statement ? { ...latest, pendingAction: null, error } : latest))
       })
   }

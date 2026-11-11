@@ -514,9 +514,9 @@ describe('useIncomeForm', () => {
     act(() => result.current.submitIncome())
 
     expect(createIncomeMock).not.toHaveBeenCalled()
-    expect(result.current.saveIncomeErrorFields.date).toBe('Date is required')
-    expect(result.current.saveIncomeErrorFields.incomeSource).toBe('Income source is required')
-    expect(result.current.saveIncomeErrorFields.grossValue).toBe('Gross value must be at least the net value')
+    expect(result.current.saveIncomeErrorFields.date).toBe('Date is required.')
+    expect(result.current.saveIncomeErrorFields.incomeSource).toBe('Income source is required.')
+    expect(result.current.saveIncomeErrorFields.grossValue).toBe('Gross value must be at least the net value.')
   })
 
   it('rejects a submit with a non-numeric net value, without calling the API', () => {
@@ -528,7 +528,7 @@ describe('useIncomeForm', () => {
     act(() => result.current.submitIncome())
 
     expect(createIncomeMock).not.toHaveBeenCalled()
-    expect(result.current.saveIncomeErrorFields.netValue).toBe('Net value must be a non-negative number')
+    expect(result.current.saveIncomeErrorFields.netValue).toBe('Net value must be a non-negative number.')
   })
 
   it('cancelIncomeForm closes the form and resets its fields', () => {
@@ -899,7 +899,7 @@ describe('useIncomeForm account settings', () => {
   })
 
   it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
-    createIncomeMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    createIncomeMock.mockRejectedValue(new ApiError('Failed to fetch.', 0))
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE }))
 
     await addIncome(result)

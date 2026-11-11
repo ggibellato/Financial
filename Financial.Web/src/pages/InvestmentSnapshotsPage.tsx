@@ -102,7 +102,7 @@ export default function InvestmentSnapshotsPage() {
           onChange={(e) => setMonthInputValue(e.target.value)}
         />
         <Button appearance="primary" onClick={openSuggestValues}>
-          Suggest Values
+          Suggest values
         </Button>
       </div>
 
@@ -128,7 +128,7 @@ export default function InvestmentSnapshotsPage() {
       {isEditing && (
         <div className={styles.panel}>
           <Text as="h2" weight="semibold" size={400}>
-            Edit Snapshot
+            Edit snapshot
           </Text>
 
           <div className={styles.grid}>

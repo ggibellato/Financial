@@ -79,7 +79,7 @@ export function useMoveChargeForm(onMoved: (message: string) => void) {
         onMoved(noun === 'refund' ? 'Refund moved' : 'Charge moved')
       })
       .catch((err: unknown) => {
-        setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, `Failed to move the ${noun}`) })
+        setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, `Failed to move the ${noun}.`) })
         void statements.refresh()
       })
     return true

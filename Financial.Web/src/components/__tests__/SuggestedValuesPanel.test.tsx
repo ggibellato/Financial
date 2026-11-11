@@ -133,6 +133,6 @@ describe('SuggestedValuesPanel', () => {
 
     expect(screen.getByText(/Applied 0 of 1/)).toBeInTheDocument()
     expect(screen.getByText(/1 failed: PlatinumVisa8003/)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retry Failed' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Retry failed rows' })).toBeInTheDocument()
   })
 })

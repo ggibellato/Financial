@@ -202,7 +202,7 @@ export function useAccountTransferForm(
         onSaved(editingId !== null)
       })
       .catch((err: unknown) => {
-        const message = getSaveErrorMessage(err, 'Failed to save transfer')
+        const message = getSaveErrorMessage(err, 'Failed to save transfer.')
         const mappedField = mapAccountTransferErrorToField(message, state.direction)
         const field = mappedField === 'destinationAmount' && !destinationCurrency ? null : mappedField
         setState((s) => ({

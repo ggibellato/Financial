@@ -50,7 +50,7 @@ export function useReportingCurrency(): ReportingCurrencyData {
   const { data: setting, isLoading, error, retry, setData } = useAsyncResource<ReportingCurrencySettingDto>(
     () => apiClient.getReportingCurrency(),
     [],
-    'Unable to load the reporting currency setting',
+    'Unable to load the reporting currency setting.',
     { initialLoading: true, keepDataWhileLoading: true },
   )
 
@@ -64,7 +64,7 @@ export function useReportingCurrency(): ReportingCurrencyData {
         setData(() => saved)
         dispatch({ type: 'SAVE_SUCCESS' })
       } catch (err: unknown) {
-        dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Unable to save the reporting currency setting') })
+        dispatch({ type: 'SAVE_ERROR', payload: getErrorMessage(err, 'Unable to save the reporting currency setting.') })
       }
     },
     [setData],

@@ -430,7 +430,7 @@ export default function AccountScreenPage() {
               transactions={screen.transactions}
               {...gridColumns}
               isLoading={screen.isLoading}
-              emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}`}
+              emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}.`}
               dateHeader={isCard ? 'Purchased' : 'Date'}
               isEditDisabled={(row) => !isAccountCurrent || (!row.settlement && (row.movement ? pots.data === null : !formOptions.isReady))}
               onEdit={openRowEdit}

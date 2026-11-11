@@ -58,7 +58,8 @@ export default function IncomeSourceFormDialog({
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Income Source' : 'Create Income Source'}
+      title={isEditing ? 'Edit income source' : 'New income source'}
+      saveLabel={isEditing ? 'Save' : 'Add income source'}
       error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}

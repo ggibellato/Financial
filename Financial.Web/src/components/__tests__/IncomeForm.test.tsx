@@ -108,7 +108,7 @@ describe('IncomeForm funded from', () => {
     )
 
     expect(screen.getByRole('status')).toHaveTextContent(mismatch)
-    expect(screen.getByRole('button', { name: 'Add Income' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add income' })).toBeDisabled()
   })
 
   it('shows a bank error on the Bank field and moves focus to it', () => {
@@ -156,24 +156,24 @@ describe('IncomeForm', () => {
   it('renders the create form with empty date/net-value fields', () => {
     render(<IncomeForm {...baseProps} />)
 
-    expect(screen.getByText('New Income')).toBeInTheDocument()
+    expect(screen.getByText('New income')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('')
-    expect(screen.getByLabelText(/^Net Value/)).toHaveValue(null)
-    expect(screen.getByRole('button', { name: 'Add Income' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Net value/)).toHaveValue(null)
+    expect(screen.getByRole('button', { name: 'Add income' })).toBeInTheDocument()
   })
 
   it('shows the gross value field only for sources that require it', () => {
     const { rerender } = render(<IncomeForm {...baseProps} incomeSource="1" />)
-    expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gross value')).toBeInTheDocument()
 
     rerender(<IncomeForm {...baseProps} incomeSource="2" />)
-    expect(screen.getByLabelText('Gross Value')).toBeInTheDocument()
+    expect(screen.getByLabelText('Gross value')).toBeInTheDocument()
 
     rerender(<IncomeForm {...baseProps} incomeSource="3" />)
-    expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Gross value')).not.toBeInTheDocument()
 
     rerender(<IncomeForm {...baseProps} incomeSource="4" />)
-    expect(screen.queryByLabelText('Gross Value')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Gross value')).not.toBeInTheDocument()
   })
 
   it('calls onSave and onCancel', () => {
@@ -181,17 +181,17 @@ describe('IncomeForm', () => {
     const onCancel = vi.fn()
     render(<IncomeForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Income' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add income' }))
     expect(onSave).toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
     expect(onCancel).toHaveBeenCalled()
   })
 
-  it('shows Edit Income and Save when editing', () => {
+  it('shows Edit income and Save when editing', () => {
     render(<IncomeForm {...baseProps} isEditing />)
 
-    expect(screen.getByText('Edit Income')).toBeInTheDocument()
+    expect(screen.getByText('Edit income')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 

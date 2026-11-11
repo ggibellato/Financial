@@ -8,7 +8,7 @@ import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import ColumnFilterMenu from '../components/grid/ColumnFilterMenu'
 import FilteredRowsNotice from '../components/grid/FilteredRowsNotice'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { useColumnFilters } from '../hooks/useColumnFilters'
+import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
@@ -28,9 +28,9 @@ function monthAccessors<T>(monthlyValuesOf: (row: T) => (number | null)[]): Reco
 type AnnualSummaryTabId = 'categoryTotals' | 'investments' | 'historicSummaryAverage'
 
 const TABS: { id: AnnualSummaryTabId; label: string }[] = [
-  { id: 'categoryTotals', label: 'Category Totals' },
+  { id: 'categoryTotals', label: 'Category totals' },
   { id: 'investments', label: 'Investments' },
-  { id: 'historicSummaryAverage', label: 'Historic Summary Average' },
+  { id: 'historicSummaryAverage', label: 'Historic summary average' },
 ]
 
 function AnnualSummaryRow({
@@ -55,7 +55,7 @@ function AnnualSummaryRow({
       <DataTableCell label="Average" className="data-table__col--numeric">
         <strong>{formatN2(average)}</strong>
       </DataTableCell>
-      <DataTableCell label="Annual Total" className="data-table__col--numeric">
+      <DataTableCell label="Annual total" className="data-table__col--numeric">
         <strong>{formatN2(annualTotal)}</strong>
       </DataTableCell>
     </TableRow>
@@ -225,7 +225,7 @@ export default function AnnualSummaryPage() {
                       onSort={requestCategoryTotalsSort}
                     />
                     <SortableColumnHeader
-                      label="Annual Total"
+                      label="Annual total"
                       columnKey="annualTotal"
                       numeric
                       sortDirection={
@@ -275,7 +275,7 @@ export default function AnnualSummaryPage() {
                   {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={SPACER_COL_SPAN}>
-                        No rows match the current filters
+                        {NO_FILTER_MATCH_MESSAGE}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -351,7 +351,7 @@ export default function AnnualSummaryPage() {
                 <tfoot>
                   <InvestmentRow label="Total" monthlyValues={investmentAnnualResult.netPosition.monthlyValues} />
                   <InvestmentRow
-                    label="Month Result"
+                    label="Month result"
                     monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
                   />
                 </tfoot>
@@ -359,15 +359,15 @@ export default function AnnualSummaryPage() {
 
               <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for Investments">
                 <div className="annual-summary-page__investment-total">
-                  <span>Year Progress</span>
+                  <span>Year progress</span>
                   <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>
                 </div>
                 <div className="annual-summary-page__investment-total">
-                  <span>Average Month Result</span>
+                  <span>Average month result</span>
                   <strong>{formatN2(investmentAnnualResult.netPosition.averageMonthResult)}</strong>
                 </div>
                 <div className="annual-summary-page__investment-total">
-                  <span>Sum of Month Results</span>
+                  <span>Sum of month results</span>
                   <strong>{formatN2(investmentAnnualResult.netPosition.sumOfMonthResults)}</strong>
                 </div>
               </div>
@@ -416,7 +416,7 @@ export default function AnnualSummaryPage() {
                   {historicSummaryAverage && sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
-                        No rows match the current filters
+                        {NO_FILTER_MATCH_MESSAGE}
                       </TableCell>
                     </TableRow>
                   ) : (

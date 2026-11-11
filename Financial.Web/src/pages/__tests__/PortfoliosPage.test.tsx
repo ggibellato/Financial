@@ -69,19 +69,19 @@ describe('PortfoliosPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('creates a portfolio through the Create Portfolio dialog', async () => {
+  it('creates a portfolio through the New portfolio dialog', async () => {
     createPortfolioMock.mockResolvedValue({ name: 'New Portfolio', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 })
     render(<PortfoliosPage />)
     await waitFor(() => expect(screen.getByText('Default')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Portfolio' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New portfolio' }))
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'New Portfolio' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add portfolio' }))
 
     await waitFor(() =>
       expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio' }),
     )
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Portfolio' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New portfolio' })).not.toBeInTheDocument())
   })
 
   it('edits a portfolio through its row action', async () => {
@@ -90,7 +90,7 @@ describe('PortfoliosPage', () => {
     await waitFor(() => expect(screen.getByText('Default')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Default' }))
-    expect(screen.getByRole('heading', { name: 'Edit Portfolio' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit portfolio' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default Renamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

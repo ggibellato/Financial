@@ -6,8 +6,8 @@ describe('RecurringBillFormDialog', () => {
   it('renders in create mode with empty fields and no Status field', () => {
     render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Recurring Bill' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Due Day/)).toHaveValue(null)
+    expect(screen.getByRole('heading', { name: 'New recurring bill' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Due day/)).toHaveValue(null)
     expect(screen.getByLabelText(/^Description/)).toHaveValue('')
     expect(screen.queryByLabelText('Status')).not.toBeInTheDocument()
   })
@@ -31,33 +31,33 @@ describe('RecurringBillFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Recurring Bill' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Due Day/)).toHaveValue(10)
+    expect(screen.getByRole('heading', { name: 'Edit recurring bill' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Due day/)).toHaveValue(10)
     expect(screen.getByLabelText(/^Description/)).toHaveValue('INSS')
     expect(screen.getByLabelText(/^Value/)).toHaveValue(850)
     expect(screen.getByLabelText('Area')).toHaveValue('Brasil')
-    expect(screen.getByLabelText('NIT Number')).toHaveValue('12345678901')
+    expect(screen.getByLabelText('NIT number')).toHaveValue('12345678901')
     expect(screen.getByLabelText('Status')).toHaveValue('Scheduled')
   })
 
   it('disables Save and shows a validation message when Description is blank', () => {
     render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '10' } })
+    fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '10' } })
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '100' } })
 
     expect(screen.getByText('Description is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add recurring bill' })).toBeDisabled()
   })
 
   it('submits the create form with the entered values', async () => {
     const onSubmit = vi.fn().mockResolvedValue(undefined)
     render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '10' } })
+    fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '10' } })
     fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Rent' } })
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1500' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add recurring bill' }))
 
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith({

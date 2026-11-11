@@ -62,22 +62,22 @@ describe('CorporateActionForm', () => {
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
-  it('shows only the Split field group: Effective Date, Type, ratio inputs, and Note', () => {
+  it('shows only the Split field group: Effective date, Type, ratio inputs, and Note', () => {
     render(<CorporateActionForm {...baseProps} />)
 
-    expect(screen.getByLabelText(/^Effective Date/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Effective date/)).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
     expect(screen.getByLabelText(/^New units/)).toBeInTheDocument()
     expect(screen.getByLabelText(/^Old units/)).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
   })
 
-  it('offers Split / Reverse Split, Merger, and Spin-off in the type selector', () => {
+  it('offers Split / reverse split, Merger, and Spin-off in the type selector', () => {
     render(<CorporateActionForm {...baseProps} />)
 
     const options = screen.getByLabelText('Type').querySelectorAll('option')
     expect(Array.from(options).map((o) => o.textContent)).toEqual([
-      'Split / Reverse Split',
+      'Split / reverse split',
       'Merger',
       'Spin-off',
     ])
@@ -89,10 +89,10 @@ describe('CorporateActionForm', () => {
     expect(screen.getByText(/2 new for 1 old is a 2-for-1 split/)).toBeInTheDocument()
   })
 
-  it('marks Effective Date and the ratio inputs as required, leaving Note optional', () => {
+  it('marks Effective date and the ratio inputs as required, leaving Note optional', () => {
     render(<CorporateActionForm {...baseProps} />)
 
-    expect(screen.getByLabelText(/^Effective Date/)).toBeRequired()
+    expect(screen.getByLabelText(/^Effective date/)).toBeRequired()
     expect(screen.getByLabelText(/^New units/)).toBeRequired()
     expect(screen.getByLabelText(/^Old units/)).toBeRequired()
     expect(screen.getByLabelText('Note')).not.toBeRequired()
@@ -167,10 +167,10 @@ describe('CorporateActionForm', () => {
   it('shows only the Merger field group when Type is Merger, hiding the Split ratio fields', () => {
     render(<CorporateActionForm {...baseProps} formType="Merger" />)
 
-    expect(screen.getByLabelText('Source Asset')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'Target Asset' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Exchange Ratio/)).toBeInTheDocument()
-    expect(screen.getByLabelText('Cash-in-Lieu Amount')).toBeInTheDocument()
+    expect(screen.getByLabelText('Source asset')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Target asset' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Exchange ratio/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Cash-in-lieu amount')).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
     expect(screen.queryByLabelText(/^New units/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Old units/)).not.toBeInTheDocument()
@@ -226,7 +226,7 @@ describe('CorporateActionForm', () => {
     expect(onBackToFields).toHaveBeenCalledTimes(1)
   })
 
-  it('shows Target Asset as read-only text instead of the picker when editing an existing merger', () => {
+  it('shows Target asset as read-only text instead of the picker when editing an existing merger', () => {
     render(
       <CorporateActionForm
         {...baseProps}
@@ -236,23 +236,23 @@ describe('CorporateActionForm', () => {
       />,
     )
 
-    expect(screen.getByLabelText('Target Asset')).toHaveValue('Company B')
-    expect(screen.getByLabelText('Target Asset')).toBeDisabled()
-    expect(screen.queryByRole('combobox', { name: 'Target Asset' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('Target asset')).toHaveValue('Company B')
+    expect(screen.getByLabelText('Target asset')).toBeDisabled()
+    expect(screen.queryByRole('combobox', { name: 'Target asset' })).not.toBeInTheDocument()
   })
 
   it('shows only the Spin-off field group when Type is SpinOff, hiding Split and Merger fields', () => {
     render(<CorporateActionForm {...baseProps} formType="SpinOff" />)
 
-    expect(screen.getByLabelText('Parent Asset')).toBeInTheDocument()
-    expect(screen.getByRole('combobox', { name: 'New Asset' })).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Quantity Received/)).toBeInTheDocument()
+    expect(screen.getByLabelText('Parent asset')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'New asset' })).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Quantity received/)).toBeInTheDocument()
     expect(screen.getByRole('spinbutton', { name: /^Allocation %/ })).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
     expect(screen.queryByLabelText(/^New units/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Old units/)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Source Asset')).not.toBeInTheDocument()
-    expect(screen.queryByRole('combobox', { name: 'Target Asset' })).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Source asset')).not.toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: 'Target asset' })).not.toBeInTheDocument()
   })
 
   it('shows the live spin-off preview text, updating with sourceCostBasis and the typed allocation percentage', () => {
@@ -273,7 +273,7 @@ describe('CorporateActionForm', () => {
     expect(screen.getByText(/moves to Company D/)).toBeInTheDocument()
   })
 
-  it('shows New Asset as read-only text instead of the picker when editing an existing spin-off', () => {
+  it('shows New asset as read-only text instead of the picker when editing an existing spin-off', () => {
     render(
       <CorporateActionForm
         {...baseProps}
@@ -283,9 +283,9 @@ describe('CorporateActionForm', () => {
       />,
     )
 
-    expect(screen.getByLabelText('New Asset')).toHaveValue('Company D')
-    expect(screen.getByLabelText('New Asset')).toBeDisabled()
-    expect(screen.queryByRole('combobox', { name: 'New Asset' })).not.toBeInTheDocument()
+    expect(screen.getByLabelText('New asset')).toHaveValue('Company D')
+    expect(screen.getByLabelText('New asset')).toBeDisabled()
+    expect(screen.queryByRole('combobox', { name: 'New asset' })).not.toBeInTheDocument()
   })
 
   it('the primary button for a new Spin-off reads Add corporate action and calls onSave directly', async () => {

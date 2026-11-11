@@ -21,7 +21,7 @@ export function useRecurringBills(): RecurringBillsData {
   const resource = useCrudResource({
     load: () => apiClient.getMensaisBills(),
     initialData: NO_RECURRING_BILLS,
-    loadErrorMessage: 'Unable to load recurring bills',
+    loadErrorMessage: 'Unable to load recurring bills.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -36,7 +36,7 @@ export function useRecurringBills(): RecurringBillsData {
   )
 
   const deleteRecurringBill = useCallback(
-    (id: string) => runPendingMutation(id, () => apiClient.deleteMensaisBill(id), 'Failed to delete recurring bill'),
+    (id: string) => runPendingMutation(id, () => apiClient.deleteMensaisBill(id), 'Failed to delete recurring bill.'),
     [runPendingMutation],
   )
 

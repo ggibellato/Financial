@@ -245,7 +245,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
 
   const hasCategoryChoices = selectableCategories.length > 0
   const categoryHint = !hasCategoryChoices
-    ? 'Add a category in Admin → Categories first.'
+    ? 'Add a category in Admin → CashFlow → Categories first.'
     : isEditing
       ? 'Changing it applies to later deposits and withdrawals; past ones keep their category.'
       : undefined

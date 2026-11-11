@@ -136,7 +136,7 @@ export function useAssetSummary(): AssetSummaryData {
         .catch((err: unknown) => {
           dispatch({
             type: 'PRICE_FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to fetch current price'),
+            payload: getErrorMessage(err, 'Unable to fetch current price.'),
           })
         })
     },
@@ -169,7 +169,7 @@ export function useAssetSummary(): AssetSummaryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'ASSET_FETCH_ERROR',
-          payload: getErrorMessage(err, 'Unable to load asset details'),
+          payload: getErrorMessage(err, 'Unable to load asset details.'),
         })
       })
 

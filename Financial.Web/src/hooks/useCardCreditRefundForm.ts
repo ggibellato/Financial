@@ -34,8 +34,8 @@ interface Counterpart {
 }
 
 const MODE_TEXT = {
-  card: { loadError: 'Unable to load the banks', saveError: 'Failed to refund the credit', missing: 'Select a bank.' },
-  bank: { loadError: 'Unable to load the cards', saveError: 'Failed to receive the card credit', missing: 'Select a card.' },
+  card: { loadError: 'Unable to load the banks.', saveError: 'Failed to refund the credit.', missing: 'Select a bank.' },
+  bank: { loadError: 'Unable to load the cards.', saveError: 'Failed to receive the card credit.', missing: 'Select a card.' },
 } as const
 
 function amountFor(credit: number | undefined): string {

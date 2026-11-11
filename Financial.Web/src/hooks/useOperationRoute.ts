@@ -4,7 +4,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { IncomeDto, PotOperationDto } from '../api/types'
 import { useAsyncResource } from './useAsyncResource'
 
-export const OPERATION_LOAD_ERROR = 'Unable to load this deposit or withdrawal'
+export const OPERATION_LOAD_ERROR = 'Unable to load this deposit or withdrawal.'
 export const OPERATION_NOT_FOUND = 'This deposit or withdrawal no longer exists.'
 
 export interface OperationToOpen {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import {
   Button,
   Checkbox,
@@ -100,10 +100,12 @@ export default function IncomeForm({
   const showPotsAccountField = showSplitField && splitToReserve
   const isPotsAccountUnlisted = potsAccountId !== '' && !potsAccounts.some((account) => account.id === potsAccountId)
   const canChoosePotsAccount = potsAccountsStatus === 'ready' && potsAccounts.length > 0
+  const titleId = useId()
 
   return (
     <form
       ref={formRef}
+      aria-labelledby={titleId}
       className={styles.panel}
       noValidate
       onSubmit={(event) => {
@@ -112,8 +114,8 @@ export default function IncomeForm({
       }}
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
-        <Text as="h2" weight="semibold" size={400}>
-          {isEditing ? 'Edit Income' : 'New Income'}
+        <Text as="h2" id={titleId} weight="semibold" size={400}>
+          {isEditing ? 'Edit income' : 'New income'}
         </Text>
         {!hasFieldErrors && saveError && (
           <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
@@ -172,7 +174,7 @@ export default function IncomeForm({
 
           {showGrossValueField && (
             <Field
-              label="Gross Value"
+              label="Gross value"
               validationState={fieldError('grossValue') ? 'error' : 'none'}
               validationMessage={fieldError('grossValue')}
             >
@@ -186,7 +188,7 @@ export default function IncomeForm({
           )}
 
           <Field
-            label="Net Value"
+            label="Net value"
             required
             validationState={fieldError('netValue') ? 'error' : 'none'}
             validationMessage={fieldError('netValue')}
@@ -248,7 +250,7 @@ export default function IncomeForm({
         {funding.isShown && <FundedFromSection funding={funding} banks={banks} />}
       </fieldset>
       <FormSaveActions
-        saveLabel={isEditing ? 'Save' : 'Add Income'}
+        saveLabel={isEditing ? 'Save' : 'Add income'}
         isSaving={isSaving}
         isSaveDisabled={funding.mismatch !== null}
         onCancel={onCancel}

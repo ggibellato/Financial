@@ -29,15 +29,15 @@ describe('IncomingGrid', () => {
     expect(screen.getByText('3,200.00')).toBeInTheDocument()
     expect(screen.getByText('Lottery')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
-    expect(screen.getByText(/Total Incoming:/)).toBeInTheDocument()
-    expect(screen.queryByText(/Calculated Tithe:/)).not.toBeInTheDocument()
+    expect(screen.getByText(/Total incoming:/)).toBeInTheDocument()
+    expect(screen.queryByText(/Calculated tithe:/)).not.toBeInTheDocument()
   })
 
   it('shows the calculated tithe and tithe balance when a tithe summary is provided', () => {
     renderGrid({ titheSummary: { calculatedTithe: 245, titheBalance: 245, carryForward: null } })
 
-    expect(screen.getByText(/Calculated Tithe:/)).toBeInTheDocument()
-    expect(screen.getByText(/Tithe Balance:/)).toBeInTheDocument()
+    expect(screen.getByText(/Calculated tithe:/)).toBeInTheDocument()
+    expect(screen.getByText(/Tithe balance:/)).toBeInTheDocument()
   })
 
   it('sorts rows by Net ascending when its header is clicked', () => {
@@ -113,15 +113,15 @@ describe('IncomingGrid', () => {
   })
 
   it('shows the action error message when a toggle failed', () => {
-    renderGrid({ carryForwardActionError: 'Failed to update carry-forward' })
+    renderGrid({ carryForwardActionError: 'Failed to update carry-forward.' })
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Failed to update carry-forward')
+    expect(screen.getByRole('alert')).toHaveTextContent('Failed to update carry-forward.')
   })
 
   it('shows its empty message when no income was recorded in the month', () => {
     renderGrid({ incomeTotals: [], totalIncoming: 0 })
 
-    expect(screen.getByText('No income recorded for this month')).toBeInTheDocument()
+    expect(screen.getByText('No income recorded for this month.')).toBeInTheDocument()
     expect(screen.getByText('0.00')).toBeInTheDocument()
   })
 })

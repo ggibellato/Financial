@@ -61,9 +61,9 @@ describe('InvestmentAccountsPage', () => {
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('Platinum Visa 8003')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Investment Account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New investment account' }))
     fireEvent.change(await screen.findByLabelText('Source'), { target: { value: 'CreditCard' } })
-    const picker = (await screen.findByLabelText(/^Credit Card/)) as HTMLSelectElement
+    const picker = (await screen.findByLabelText(/^Credit card/)) as HTMLSelectElement
 
     expect(Array.from(picker.options).map((option) => option.textContent)).toEqual(['Select card…', 'Platinum Visa 8003'])
   })
@@ -74,7 +74,7 @@ describe('InvestmentAccountsPage', () => {
     const row = (await screen.findByText('Platinum Visa 8003')).closest('tr') as HTMLElement
 
     fireEvent.click(within(row).getAllByRole('button')[0])
-    const picker = (await screen.findByLabelText(/^Credit Card/)) as HTMLSelectElement
+    const picker = (await screen.findByLabelText(/^Credit card/)) as HTMLSelectElement
 
     expect(Array.from(picker.options).map((option) => option.textContent)).toEqual(['Select card…', 'Platinum Visa 8003'])
   })
@@ -94,7 +94,7 @@ describe('InvestmentAccountsPage', () => {
   })
 
   it('shows a warning and keeps the account list usable when accounts fail to load', async () => {
-    getAccountsMock.mockRejectedValue(new Error('Unable to load accounts'))
+    getAccountsMock.mockRejectedValue(new Error('Unable to load accounts.'))
     render(<InvestmentAccountsPage />)
 
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
@@ -119,7 +119,7 @@ describe('InvestmentAccountsPage', () => {
     expect(reservasRow?.textContent).toContain('Reserva total')
   })
 
-  it('creates an investment account through the Create Investment Account dialog', async () => {
+  it('creates an investment account through the New investment account dialog', async () => {
     createInvestmentAccountMock.mockResolvedValue({
       id: 'a4',
       name: 'Monzo Pot',
@@ -133,9 +133,9 @@ describe('InvestmentAccountsPage', () => {
     render(<InvestmentAccountsPage />)
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Investment Account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New investment account' }))
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Monzo Pot' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
     await waitFor(() =>
       expect(createInvestmentAccountMock).toHaveBeenCalledWith({
@@ -148,7 +148,7 @@ describe('InvestmentAccountsPage', () => {
       }),
     )
     await waitFor(() =>
-      expect(screen.queryByRole('heading', { name: 'Create Investment Account' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('heading', { name: 'New investment account' })).not.toBeInTheDocument(),
     )
   })
 
@@ -167,7 +167,7 @@ describe('InvestmentAccountsPage', () => {
     await waitFor(() => expect(screen.getByText('ChaseSave')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit ChaseSave' }))
-    expect(screen.getByRole('heading', { name: 'Edit Investment Account' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit investment account' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'ChaseSaveRenamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

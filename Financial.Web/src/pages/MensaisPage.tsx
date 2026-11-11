@@ -58,7 +58,7 @@ function BillRow({
 }: BillRowProps) {
   return (
     <TableRow>
-      <DataTableCell label="Due Day">{bill.dueDay}</DataTableCell>
+      <DataTableCell label="Due day">{bill.dueDay}</DataTableCell>
       <DataTableCell label="Description">
         <TruncatedText text={bill.description} />
       </DataTableCell>
@@ -129,7 +129,7 @@ function BillTable({
           <TableHeader>
             <TableRow>
               <SortableColumnHeader
-                label="Due Day"
+                label="Due day"
                 columnKey="dueDay"
                 sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
                 onSort={requestSort}
@@ -283,7 +283,7 @@ export default function MensaisPage() {
         </div>
         <div className="mensais-page__toolbar">
           <Button ref={addBillRef} appearance="primary" icon={<AddRegular />} onClick={showAddForm}>
-            Add Bill
+            New bill
           </Button>
           <Button
             appearance="secondary"
@@ -303,7 +303,7 @@ export default function MensaisPage() {
       {isAddFormOpen && (
         <div className={styles.panel}>
           <Text as="h2" weight="semibold" size={400}>
-            Add Bill
+            New bill
           </Text>
 
           <div className={styles.grid}>
@@ -329,7 +329,7 @@ export default function MensaisPage() {
             </div>
 
             <Field
-              label="Due Day"
+              label="Due day"
               required
               validationState={addFieldError('newDueDay') ? 'error' : 'none'}
               validationMessage={addFieldError('newDueDay')}
@@ -361,7 +361,7 @@ export default function MensaisPage() {
 
           <div className={styles.actions}>
             <Button appearance="primary" disabled={isAdding} onClick={submitAdd}>
-              {isAdding ? 'Adding Bill...' : 'Add Bill'}
+              {isAdding ? 'Adding bill...' : 'Add bill'}
             </Button>
             <Button appearance="secondary" onClick={cancelAdd}>
               Cancel
@@ -379,7 +379,7 @@ export default function MensaisPage() {
       {isEditing && (
         <div className={styles.panel}>
           <Text as="h2" weight="semibold" size={400}>
-            Edit Bill
+            Edit bill
           </Text>
 
           <div className={styles.grid}>

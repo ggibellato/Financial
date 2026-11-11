@@ -202,7 +202,7 @@ function fillValidSale() {
   fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
   fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Sell' } })
   fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '10' } })
-  fireEvent.change(screen.getByLabelText(/^Unit Price/), { target: { value: '4.5' } })
+  fireEvent.change(screen.getByLabelText(/^Unit price/), { target: { value: '4.5' } })
   fireEvent.change(screen.getByLabelText('Fees'), { target: { value: '0.1' } })
 }
 
@@ -271,7 +271,7 @@ describe('TransactionsTab', () => {
     renderWithSelectedNode(<TransactionsTab />, node)
     await waitFor(() => expect(mock).toHaveBeenCalled())
 
-    expect(await screen.findByText('Net Invested by Month')).toBeInTheDocument()
+    expect(await screen.findByText('Net invested by month')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'New transaction' })).not.toBeInTheDocument()
   })
@@ -280,20 +280,20 @@ describe('TransactionsTab', () => {
     ['Broker', BROKER_NODE, getTransactionsByBrokerMock],
     ['Portfolio', PORTFOLIO_NODE, getTransactionsByPortfolioMock],
   ])('renders_error_state_with_retry_on_%s_fetch_failure', async (_name, node, mock) => {
-    mock.mockRejectedValueOnce(new Error('Unable to load transactions'))
+    mock.mockRejectedValueOnce(new Error('Unable to load transactions.'))
     mock.mockResolvedValue(SUMMARY_ITEMS)
     renderWithSelectedNode(<TransactionsTab />, node)
 
-    expect(await screen.findByText('Unable to load transactions')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load transactions.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
-    expect(await screen.findByText('Net Invested by Month')).toBeInTheDocument()
+    expect(await screen.findByText('Net invested by month')).toBeInTheDocument()
     expect(mock).toHaveBeenCalledTimes(2)
   })
 
   it('renders_chart_above_table_for_asset_node_selection', async () => {
     await renderAssetTab()
-    expect(screen.getByText('Net Invested by Month')).toBeInTheDocument()
+    expect(screen.getByText('Net invested by month')).toBeInTheDocument()
     expect(screen.getByRole('table')).toBeInTheDocument()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
@@ -330,7 +330,7 @@ describe('TransactionsTab', () => {
 
   it('renders_table_with_correct_columns', async () => {
     await renderAssetTab()
-    for (const header of ['Date', 'Type', 'Quantity', 'Unit Price', 'Fees', 'Withheld', 'Net']) {
+    for (const header of ['Date', 'Type', 'Quantity', 'Unit price', 'Fees', 'Withheld', 'Net']) {
       expect(screen.getByText(header)).toBeInTheDocument()
     }
   })
@@ -350,9 +350,9 @@ describe('TransactionsTab', () => {
 
   it.each([
     ['Redemption', 'Redemption', 'transactions-tab__type--sell'],
-    ['ReturnOfCapital', 'Return of Capital', 'transactions-tab__type--sell'],
+    ['ReturnOfCapital', 'Return of capital', 'transactions-tab__type--sell'],
     ['Fee', 'Fee', 'transactions-tab__type--buy'],
-    ['TransferIn', 'Transfer In', 'transactions-tab__type--neutral'],
+    ['TransferIn', 'Transfer in', 'transactions-tab__type--neutral'],
     ['Bonus', 'Bonus', 'transactions-tab__type--neutral'],
   ])('renders_a_%s_transaction_as_%s_with_the_%s_style', async (type, label, typeClass) => {
     await renderAssetTab([{ ...TRANSACTION_BUY, type }])
@@ -409,7 +409,7 @@ describe('TransactionsTab', () => {
     expect(screen.getByLabelText(/^Date/)).toBeInTheDocument()
     expect(screen.getByLabelText('Type')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Quantity/)).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Unit Price/)).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Unit price/)).toBeInTheDocument()
     expect(screen.getByLabelText('Fees')).toBeInTheDocument()
     expect(screen.getByLabelText('Withheld')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-06-01')
@@ -427,7 +427,7 @@ describe('TransactionsTab', () => {
     await openNewForm()
     fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Fee' } })
     await waitFor(() => expect(screen.queryByLabelText(/^Quantity/)).not.toBeInTheDocument())
-    expect(screen.queryByLabelText(/^Unit Price/)).not.toBeInTheDocument()
+    expect(screen.queryByLabelText(/^Unit price/)).not.toBeInTheDocument()
   })
 
   it('form_shows_the_type_effects_error_with_retry_instead_of_fields_when_they_fail_to_load', async () => {
@@ -470,7 +470,7 @@ describe('TransactionsTab', () => {
       [/^Date/, '2024-05-01', '2024-05-01'],
       ['Type', 'Sell', 'Sell'],
       [/^Quantity/, '10', 10],
-      [/^Unit Price/, '4.5', 4.5],
+      [/^Unit price/, '4.5', 4.5],
       ['Fees', '0.1', 0.1],
       ['Withheld', '0.2', 0.2],
     ]
@@ -488,7 +488,7 @@ describe('TransactionsTab', () => {
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-03-15')
     expect(screen.getByLabelText('Type')).toHaveValue('Buy')
     expect(screen.getByLabelText(/^Quantity/)).toHaveValue(100)
-    expect(screen.getByLabelText(/^Unit Price/)).toHaveValue(4.2)
+    expect(screen.getByLabelText(/^Unit price/)).toHaveValue(4.2)
     expect(screen.getByLabelText('Fees')).toHaveValue(0.5)
     expect(screen.getByLabelText('Withheld')).toHaveValue(0)
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
@@ -549,8 +549,8 @@ describe('TransactionsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
 
-    expect(await screen.findByText('Quantity must be a positive number')).toBeInTheDocument()
-    expect(screen.getByText('Unit Price must be a positive number')).toBeInTheDocument()
+    expect(await screen.findByText('Quantity must be a positive number.')).toBeInTheDocument()
+    expect(screen.getByText('Unit price must be a positive number.')).toBeInTheDocument()
     expect(addTransactionMock).not.toHaveBeenCalled()
   })
 
@@ -561,7 +561,7 @@ describe('TransactionsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
 
-    expect(await screen.findByText('Date is required')).toBeInTheDocument()
+    expect(await screen.findByText('Date is required.')).toBeInTheDocument()
     expect(addTransactionMock).not.toHaveBeenCalled()
   })
 
@@ -854,7 +854,7 @@ describe('TransactionsTab', () => {
   it.each([
     ['Type', ['Buy', 'Sell']],
     ['Quantity', ['Sell', 'Buy']],
-    ['Unit Price', ['Buy', 'Sell']],
+    ['Unit price', ['Buy', 'Sell']],
     ['Fees', ['Buy', 'Sell']],
   ])('clicking_%s_header_sorts_rows_ascending_then_descending', async (header, ascendingTypes) => {
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])

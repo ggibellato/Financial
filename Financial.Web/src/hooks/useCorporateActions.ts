@@ -275,7 +275,7 @@ export function useCorporateActions(): CorporateActionsData {
       .getAssetDetails(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
       .then((result) => settle({ type: 'FETCH_SUCCESS', payload: result }))
       .catch((err: unknown) => {
-        settle({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load corporate actions') })
+        settle({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load corporate actions.') })
       })
   }, [selectedNode, scope, state.retryCount, beginSelection])
 
@@ -305,19 +305,19 @@ export function useCorporateActions(): CorporateActionsData {
     const errors: Partial<Record<CorporateActionFormField, string>> = {}
 
     if (!state.formEffectiveDate.trim()) {
-      errors.formEffectiveDate = 'Effective date is required'
+      errors.formEffectiveDate = 'Effective date is required.'
     }
     if (!state.editingId && !state.formTargetAsset.assetName.trim()) {
-      errors.formTargetAsset = 'Target asset is required'
+      errors.formTargetAsset = 'Target asset is required.'
     }
     const exchangeRatio = parseValidatedNumber(state.formExchangeRatio)
     if (exchangeRatio === null || exchangeRatio <= 0) {
-      errors.formExchangeRatio = 'Exchange ratio must be greater than zero'
+      errors.formExchangeRatio = 'Exchange ratio must be greater than zero.'
     }
     if (state.formCashInLieu.trim() !== '') {
       const cashInLieu = parseValidatedNumber(state.formCashInLieu)
       if (cashInLieu === null || cashInLieu < 0) {
-        errors.formCashInLieu = 'Cash-in-lieu amount cannot be negative'
+        errors.formCashInLieu = 'Cash-in-lieu amount cannot be negative.'
       }
     }
 
@@ -387,7 +387,7 @@ export function useCorporateActions(): CorporateActionsData {
           }
         })
         .catch((err: unknown) => {
-          const message = getErrorMessage(err, 'Failed to save corporate action')
+          const message = getErrorMessage(err, 'Failed to save corporate action.')
           const fields: Partial<Record<CorporateActionFormField, string>> = isDuplicateName(err)
             ? { formTargetAsset: message }
             : {}
@@ -401,18 +401,18 @@ export function useCorporateActions(): CorporateActionsData {
       const errors: Partial<Record<CorporateActionFormField, string>> = {}
 
       if (!formEffectiveDate.trim()) {
-        errors.formEffectiveDate = 'Effective date is required'
+        errors.formEffectiveDate = 'Effective date is required.'
       }
       if (!editingId && !formNewAsset.assetName.trim()) {
-        errors.formNewAsset = 'New asset is required'
+        errors.formNewAsset = 'New asset is required.'
       }
       const quantityReceived = parseValidatedNumber(formQuantityReceived)
       if (quantityReceived === null || quantityReceived <= 0) {
-        errors.formQuantityReceived = 'Quantity received must be greater than zero'
+        errors.formQuantityReceived = 'Quantity received must be greater than zero.'
       }
       const allocationPercentage = parseValidatedNumber(formAllocationPercentage)
       if (allocationPercentage === null || allocationPercentage < 0 || allocationPercentage > 100) {
-        errors.formAllocationPercentage = 'Allocation percentage must be between 0 and 100'
+        errors.formAllocationPercentage = 'Allocation percentage must be between 0 and 100.'
       }
 
       if (Object.keys(errors).length > 0) {
@@ -467,7 +467,7 @@ export function useCorporateActions(): CorporateActionsData {
           }
         })
         .catch((err: unknown) => {
-          const message = getErrorMessage(err, 'Failed to save corporate action')
+          const message = getErrorMessage(err, 'Failed to save corporate action.')
           const fields: Partial<Record<CorporateActionFormField, string>> = isDuplicateName(err)
             ? { formNewAsset: message }
             : {}
@@ -480,18 +480,18 @@ export function useCorporateActions(): CorporateActionsData {
     const errors: Partial<Record<CorporateActionFormField, string>> = {}
 
     if (!formEffectiveDate.trim()) {
-      errors.formEffectiveDate = 'Effective date is required'
+      errors.formEffectiveDate = 'Effective date is required.'
     }
 
     const numerator = parseValidatedNumber(formRatioNumerator)
     const denominator = parseValidatedNumber(formRatioDenominator)
     let ratioFactor = 0
     if (numerator === null || numerator <= 0 || denominator === null || denominator <= 0) {
-      errors.formRatio = 'Enter a valid split ratio other than 1-for-1'
+      errors.formRatio = 'Enter a valid split ratio other than 1-for-1.'
     } else {
       ratioFactor = numerator / denominator
       if (ratioFactor === 1) {
-        errors.formRatio = 'Enter a valid split ratio other than 1-for-1'
+        errors.formRatio = 'Enter a valid split ratio other than 1-for-1.'
       }
     }
 
@@ -519,7 +519,7 @@ export function useCorporateActions(): CorporateActionsData {
       .catch((err: unknown) => {
         settle({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save corporate action'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to save corporate action.'), fields: {} },
         })
       })
   }, [selectedNode, state, targetAssetOptions.options, dispatchForCurrentSelection])
@@ -541,7 +541,7 @@ export function useCorporateActions(): CorporateActionsData {
         .catch((err: unknown) => {
           settle({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete corporate action'),
+            payload: getErrorMessage(err, 'Failed to delete corporate action.'),
           })
         })
     },

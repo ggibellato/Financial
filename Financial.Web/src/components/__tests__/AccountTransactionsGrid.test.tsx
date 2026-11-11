@@ -22,7 +22,7 @@ const ROWS: AccountTransactionDto[] = [
   accountTransactionRow({ id: 'a1', kind: 'Adjustment', date: '2026-10-01', description: 'Bank fee', amount: -1.5, canEdit: true }),
 ]
 
-const EMPTY_MESSAGE = 'No transactions in October 2026'
+const EMPTY_MESSAGE = 'No transactions in October 2026.'
 
 const NO_ROW_ACTIONS = { onEdit: vi.fn(), onDelete: vi.fn() }
 

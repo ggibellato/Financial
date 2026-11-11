@@ -281,7 +281,7 @@ describe('useCorporateActions', () => {
     act(() => result.current.setFormField('formRatioDenominator', '1'))
     act(() => result.current.saveForm())
 
-    expect(result.current.saveErrorFields.formRatio).toBe('Enter a valid split ratio other than 1-for-1')
+    expect(result.current.saveErrorFields.formRatio).toBe('Enter a valid split ratio other than 1-for-1.')
     expect(addSplitMock).not.toHaveBeenCalled()
   })
 
@@ -441,8 +441,8 @@ describe('useCorporateActions', () => {
     act(() => result.current.advanceToConfirm())
 
     expect(result.current.formStep).toBe('fields')
-    expect(result.current.saveErrorFields.formTargetAsset).toBe('Target asset is required')
-    expect(result.current.saveErrorFields.formExchangeRatio).toBe('Exchange ratio must be greater than zero')
+    expect(result.current.saveErrorFields.formTargetAsset).toBe('Target asset is required.')
+    expect(result.current.saveErrorFields.formExchangeRatio).toBe('Exchange ratio must be greater than zero.')
   })
 
   it('moves formStep to confirm once the Merger fields are valid', async () => {
@@ -734,10 +734,10 @@ describe('useCorporateActions', () => {
     act(() => result.current.setFormField('formAllocationPercentage', '150'))
     act(() => result.current.saveForm())
 
-    expect(result.current.saveErrorFields.formNewAsset).toBe('New asset is required')
-    expect(result.current.saveErrorFields.formQuantityReceived).toBe('Quantity received must be greater than zero')
+    expect(result.current.saveErrorFields.formNewAsset).toBe('New asset is required.')
+    expect(result.current.saveErrorFields.formQuantityReceived).toBe('Quantity received must be greater than zero.')
     expect(result.current.saveErrorFields.formAllocationPercentage).toBe(
-      'Allocation percentage must be between 0 and 100',
+      'Allocation percentage must be between 0 and 100.',
     )
     expect(addSpinOffMock).not.toHaveBeenCalled()
   })

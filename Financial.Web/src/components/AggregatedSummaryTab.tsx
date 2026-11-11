@@ -23,37 +23,37 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
     <div className="aggregated-summary">
       <div className="aggregated-summary__grid">
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Bought</span>
+          <span className="aggregated-summary__label">Total bought</span>
           <span className="aggregated-summary__value aggregated-summary__value--green">
             {formatN2(summary.totalBought)}
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Sold</span>
+          <span className="aggregated-summary__label">Total sold</span>
           <span className="aggregated-summary__value aggregated-summary__value--red">
             {formatN2(summary.totalSold)}
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Credits</span>
+          <span className="aggregated-summary__label">Total credits</span>
           <span className="aggregated-summary__value aggregated-summary__value--blue">
             {formatN2(summary.totalCredits)}
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Invested</span>
+          <span className="aggregated-summary__label">Total invested</span>
           <span className={`aggregated-summary__value ${signClass(summary.totalInvested, 'aggregated-summary__value')}`}>
             {formatN2(summary.totalInvested)}
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Market Value</span>
+          <span className="aggregated-summary__label">Market value</span>
           <span className="aggregated-summary__value">
             {formatN2OrDash(summary.marketValue)}
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Price-Only Return</span>
+          <span className="aggregated-summary__label">Price-only return</span>
           <span
             className={`aggregated-summary__value ${summary.priceOnlyReturn === null ? '' : signClass(summary.priceOnlyReturn, 'aggregated-summary__value')}`}
           >
@@ -61,7 +61,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Return (Gross)</span>
+          <span className="aggregated-summary__label">Total return (gross)</span>
           <span
             className={`aggregated-summary__value ${summary.totalReturn === null ? '' : signClass(summary.totalReturn, 'aggregated-summary__value')}`}
           >
@@ -69,7 +69,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           </span>
         </div>
         <div className="aggregated-summary__field">
-          <span className="aggregated-summary__label">Total Return (Net of Tax)</span>
+          <span className="aggregated-summary__label">Total return (net of tax)</span>
           <span
             className={`aggregated-summary__value ${summary.totalReturnNetOfTax === null ? '' : signClass(summary.totalReturnNetOfTax, 'aggregated-summary__value')}`}
           >
@@ -97,7 +97,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           )}
           <div className="aggregated-summary__grid">
             <div className="aggregated-summary__field">
-              <span className="aggregated-summary__label">Market Value (converted to {summary.reportingCurrency})</span>
+              <span className="aggregated-summary__label">Market value (converted to {summary.reportingCurrency})</span>
               <span className="aggregated-summary__value">{formatN2OrDash(summary.convertedMarketValue)}</span>
             </div>
             <div className="aggregated-summary__field">
@@ -109,7 +109,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               </span>
             </div>
             <div className="aggregated-summary__field">
-              <span className="aggregated-summary__label">Unrealised Gain/Loss (converted to {summary.reportingCurrency})</span>
+              <span className="aggregated-summary__label">Unrealised gain/loss (converted to {summary.reportingCurrency})</span>
               <span
                 className={`aggregated-summary__value ${summary.convertedUnrealisedGainLoss === null ? '' : signClass(summary.convertedUnrealisedGainLoss, 'aggregated-summary__value')}`}
               >
@@ -117,7 +117,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               </span>
             </div>
             <div className="aggregated-summary__field">
-              <span className="aggregated-summary__label">Total Return (converted to {summary.reportingCurrency})</span>
+              <span className="aggregated-summary__label">Total return (converted to {summary.reportingCurrency})</span>
               <span
                 className={`aggregated-summary__value ${summary.convertedTotalReturn === null ? '' : signClass(summary.convertedTotalReturn, 'aggregated-summary__value')}`}
               >
@@ -125,7 +125,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               </span>
             </div>
             <div className="aggregated-summary__field">
-              <span className="aggregated-summary__label">Total Return Net of Tax (converted to {summary.reportingCurrency})</span>
+              <span className="aggregated-summary__label">Total return net of tax (converted to {summary.reportingCurrency})</span>
               <span
                 className={`aggregated-summary__value ${summary.convertedTotalReturnNetOfTax === null ? '' : signClass(summary.convertedTotalReturnNetOfTax, 'aggregated-summary__value')}`}
               >

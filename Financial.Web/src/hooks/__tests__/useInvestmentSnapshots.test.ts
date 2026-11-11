@@ -161,7 +161,7 @@ describe('useInvestmentSnapshots', () => {
     act(() => result.current.setEditValue('abc'))
     act(() => result.current.saveEdit())
 
-    expect(result.current.saveError).toBe('Value must be a number')
+    expect(result.current.saveError).toBe('Value must be a number.')
     expect(updateInvestmentSnapshotValueMock).not.toHaveBeenCalled()
   })
 

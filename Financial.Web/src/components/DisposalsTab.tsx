@@ -29,12 +29,12 @@ interface HistoryRowProps {
 function HistoryRow({ record }: HistoryRowProps) {
   return (
     <TableRow>
-      <DataTableCell label="Computed On">{formatDateTime(record.createdAt)}</DataTableCell>
+      <DataTableCell label="Computed on">{formatDateTime(record.createdAt)}</DataTableCell>
       <DataTableCell label="Method">{COST_BASIS_METHOD_LABELS[record.method]}</DataTableCell>
       <DataTableCell label="Proceeds" className="data-table__col--numeric">{formatN2(record.proceeds)}</DataTableCell>
-      <DataTableCell label="Cost Basis" className="data-table__col--numeric">{formatN2(record.costBasis)}</DataTableCell>
+      <DataTableCell label="Cost basis" className="data-table__col--numeric">{formatN2(record.costBasis)}</DataTableCell>
       <DataTableCell
-        label="Gain/Loss"
+        label="Gain/loss"
         className={`data-table__col--numeric ${signClass(record.gainLoss, 'disposals-tab__value')}`}
       >
         {formatN2(record.gainLoss)}
@@ -75,14 +75,14 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
         <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(active.quantityDisposed)}</DataTableCell>
         <DataTableCell label="Method">{COST_BASIS_METHOD_LABELS[active.method]}</DataTableCell>
         <DataTableCell label="Proceeds" className="data-table__col--numeric">{formatN2(active.proceeds)}</DataTableCell>
-        <DataTableCell label="Cost Basis" className="data-table__col--numeric">{formatN2(active.costBasis)}</DataTableCell>
+        <DataTableCell label="Cost basis" className="data-table__col--numeric">{formatN2(active.costBasis)}</DataTableCell>
         <DataTableCell
-          label="Gain/Loss"
+          label="Gain/loss"
           className={`data-table__col--numeric ${signClass(active.gainLoss, 'disposals-tab__value')}`}
         >
           {formatN2(active.gainLoss)}
         </DataTableCell>
-        <DataTableCell label="Tax Year">{active.taxYear}</DataTableCell>
+        <DataTableCell label="Tax year">{active.taxYear}</DataTableCell>
       </TableRow>
       {hasHistory && isExpanded && (
         <TableRow className="disposals-tab__history-row">
@@ -92,11 +92,11 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
               <Table className="disposals-tab__history-table data-table">
                 <TableHeader>
                   <TableRow>
-                    <TableHeaderCell>Computed On</TableHeaderCell>
+                    <TableHeaderCell>Computed on</TableHeaderCell>
                     <TableHeaderCell>Method</TableHeaderCell>
                     <TableHeaderCell className="data-table__col--numeric">Proceeds</TableHeaderCell>
-                    <TableHeaderCell className="data-table__col--numeric">Cost Basis</TableHeaderCell>
-                    <TableHeaderCell className="data-table__col--numeric">Gain/Loss</TableHeaderCell>
+                    <TableHeaderCell className="data-table__col--numeric">Cost basis</TableHeaderCell>
+                    <TableHeaderCell className="data-table__col--numeric">Gain/loss</TableHeaderCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -191,21 +191,21 @@ export default function DisposalsTab() {
                   onSort={requestSort}
                 />
                 <SortableColumnHeader
-                  label="Cost Basis"
+                  label="Cost basis"
                   columnKey="costBasis"
                   numeric
                   sortDirection={sortState?.columnKey === 'costBasis' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
                 <SortableColumnHeader
-                  label="Gain/Loss"
+                  label="Gain/loss"
                   columnKey="gainLoss"
                   numeric
                   sortDirection={sortState?.columnKey === 'gainLoss' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
                 <SortableColumnHeader
-                  label="Tax Year"
+                  label="Tax year"
                   columnKey="taxYear"
                   sortDirection={sortState?.columnKey === 'taxYear' ? sortState.direction : undefined}
                   onSort={requestSort}

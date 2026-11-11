@@ -77,7 +77,7 @@ export default function RecurringBillsPage() {
   return (
     <AdminEntityPage
       title="Recurring bills"
-      createLabel="Create Recurring Bill"
+      createLabel="New recurring bill"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       isLoading={isLoading}
@@ -92,7 +92,7 @@ export default function RecurringBillsPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Recurring Bill"
+              entityLabel="recurring bill"
               message={<>&ldquo;{confirmingDelete.description}&rdquo; will be permanently removed.</>}
               onConfirm={handleConfirmDelete}
               onCancel={() => setConfirmingDelete(null)}
@@ -105,7 +105,7 @@ export default function RecurringBillsPage() {
         <TableHeader>
           <TableRow>
             <SortableColumnHeader
-              label="Due Day"
+              label="Due day"
               columnKey="dueDay"
               sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
               onSort={requestSort}
@@ -141,7 +141,7 @@ export default function RecurringBillsPage() {
         <TableBody>
           {sortedBills.map((bill) => (
             <TableRow key={bill.id}>
-              <DataTableCell label="Due Day">{bill.dueDay}</DataTableCell>
+              <DataTableCell label="Due day">{bill.dueDay}</DataTableCell>
               <DataTableCell label="Description">{bill.description}</DataTableCell>
               <DataTableCell label="Value" className="data-table__col--numeric">
                 {formatN2(bill.value)}

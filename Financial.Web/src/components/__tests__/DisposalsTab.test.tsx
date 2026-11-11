@@ -88,7 +88,7 @@ describe('DisposalsTab', () => {
     setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
     render(<DisposalsTab />)
 
-    expect(screen.getByText('Average Cost')).toBeInTheDocument()
+    expect(screen.getByText('Average cost')).toBeInTheDocument()
     expect(screen.getByText('600.00')).toBeInTheDocument()
     expect(screen.getByText('500.00')).toBeInTheDocument()
     expect(screen.getByText('100.00')).toBeInTheDocument()

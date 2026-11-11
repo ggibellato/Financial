@@ -13,7 +13,7 @@ import {
   tokens,
 } from '@fluentui/react-components'
 import type { MonthTransactionDto } from '../api/types'
-import { useColumnFilters } from '../hooks/useColumnFilters'
+import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
@@ -157,8 +157,8 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         </TableRow>
       )
     }
-    if (rows.length === 0) return renderMessage(`No transactions in ${formatLongMonthYear(year, month)}`)
-    if (sortedRows.length === 0) return renderMessage('No rows match the current filters')
+    if (rows.length === 0) return renderMessage(`No transactions in ${formatLongMonthYear(year, month)}.`)
+    if (sortedRows.length === 0) return renderMessage(NO_FILTER_MATCH_MESSAGE)
     return sortedRows.map((row) => (
       <TableRow key={rowKey(row)}>
         {COLUMNS.map((column) => (

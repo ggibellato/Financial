@@ -163,8 +163,8 @@ const renderDashboardRoute = () =>
       <LocationProbe />
       <Routes>
         <Route path="/investments/dashboard" element={<DashboardPage />} />
-        <Route path="/investments/active-investments" element={<div>Active Investments tree</div>} />
-        <Route path="/investments/historic-investments" element={<div>Historic Investments tree</div>} />
+        <Route path="/investments/active-investments" element={<div>Active investments tree</div>} />
+        <Route path="/investments/historic-investments" element={<div>Historic investments tree</div>} />
       </Routes>
     </MemoryRouter>,
   )
@@ -196,7 +196,7 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Portfolio Summary' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Portfolio summary' })).toBeInTheDocument()
   })
 
   it('P52-F05-react-portfolio-dashboard-01: a Dashboard nav entry appears first under Investments and opens the new page', () => {
@@ -215,21 +215,21 @@ describe('DashboardPage', () => {
   it('renders_the_kpi_tiles_from_the_dashboard_endpoint', async () => {
     renderDashboardRoute()
 
-    expect(await screen.findByText('Market Value (GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Net XIRR (of Tax) (GBP)')).toBeInTheDocument()
+    expect(await screen.findByText('Market value (GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Net XIRR (of tax) (GBP)')).toBeInTheDocument()
     expect(getDashboardMock).toHaveBeenCalledTimes(1)
   })
 
   it('renders_the_allocation_breakdown_panel_below_the_kpi_panel', async () => {
     renderDashboardRoute()
 
-    expect(await screen.findByRole('heading', { name: 'Allocation Breakdown' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Allocation breakdown' })).toBeInTheDocument()
     expect(await screen.findByRole('tab', { name: 'Class' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByText('Equity')).toBeInTheDocument()
     expect(getAllocationBreakdownMock).toHaveBeenCalledTimes(1)
 
     const headings = screen.getAllByRole('heading', { level: 3 }).map((heading) => heading.textContent)
-    expect(headings).toEqual(['Portfolio Summary', 'Allocation Breakdown', 'Data Quality Warnings', 'Upcoming Income'])
+    expect(headings).toEqual(['Portfolio summary', 'Allocation breakdown', 'Data quality warnings', 'Upcoming income'])
   })
 
   it('keeps_the_kpi_panel_intact_when_only_the_allocation_request_fails', async () => {
@@ -238,7 +238,7 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('Allocation service unavailable')).toBeInTheDocument()
-    expect(screen.getByText('Market Value (GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Market value (GBP)')).toBeInTheDocument()
     expect(screen.queryByRole('tab', { name: 'Class' })).not.toBeInTheDocument()
   })
 
@@ -253,7 +253,7 @@ describe('DashboardPage', () => {
   it('renders_the_data_quality_warnings_panel_from_the_report_endpoint', async () => {
     renderDashboardRoute()
 
-    expect(await screen.findByRole('heading', { name: 'Data Quality Warnings' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Data quality warnings' })).toBeInTheDocument()
     expect(await screen.findByText('Missing price (1)')).toBeInTheDocument()
     expect(getDataQualityReportMock).toHaveBeenCalledTimes(1)
   })
@@ -264,7 +264,7 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('Data quality service unavailable')).toBeInTheDocument()
-    expect(await screen.findByText('Net XIRR (of Tax) (GBP)')).toBeInTheDocument()
+    expect(await screen.findByText('Net XIRR (of tax) (GBP)')).toBeInTheDocument()
     expect(await screen.findByRole('tab', { name: 'Class' })).toBeInTheDocument()
   })
 
@@ -276,7 +276,7 @@ describe('DashboardPage', () => {
     fireEvent.click(await screen.findByText('Missing price (1)'))
     fireEvent.click(screen.getByText('VUSA'))
 
-    expect(await screen.findByText('Active Investments tree')).toBeInTheDocument()
+    expect(await screen.findByText('Active investments tree')).toBeInTheDocument()
     expect(screen.getByTestId('location')).toHaveTextContent(
       '/investments/active-investments|{"pendingSelection":{"brokerName":"Trading212","portfolioName":"ISA","assetName":"VUSA"}}',
     )
@@ -292,7 +292,7 @@ describe('DashboardPage', () => {
     fireEvent.click(await screen.findByText('Unresolved tax classification (1)'))
     fireEvent.click(screen.getByText('KLBN4'))
 
-    expect(await screen.findByText('Historic Investments tree')).toBeInTheDocument()
+    expect(await screen.findByText('Historic investments tree')).toBeInTheDocument()
   })
 
   it('shows_an_inline_warning_when_the_holding_is_in_neither_tree', async () => {
@@ -323,7 +323,7 @@ describe('DashboardPage', () => {
   it('renders_the_upcoming_income_panel_from_the_upcoming_income_endpoint', async () => {
     renderDashboardRoute()
 
-    expect(await screen.findByRole('heading', { name: 'Upcoming Income' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Upcoming income' })).toBeInTheDocument()
     expect(await screen.findByRole('tab', { name: '90 days' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('table', { name: 'Upcoming income' })).toBeInTheDocument()
     expect(getUpcomingIncomeMock).toHaveBeenCalledTimes(1)
@@ -347,7 +347,7 @@ describe('DashboardPage', () => {
     renderDashboardRoute()
 
     expect(await screen.findByText('Income service unavailable')).toBeInTheDocument()
-    expect(await screen.findByText('Net XIRR (of Tax) (GBP)')).toBeInTheDocument()
+    expect(await screen.findByText('Net XIRR (of tax) (GBP)')).toBeInTheDocument()
     expect(await screen.findByRole('tab', { name: 'Class' })).toBeInTheDocument()
     expect(screen.getByText('Missing price (1)')).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument()
@@ -365,8 +365,8 @@ describe('DashboardPage', () => {
       await screen.findByText('Unable to load the dashboard — none of its data could be retrieved.'),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Portfolio Summary' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Upcoming Income' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Portfolio summary' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Upcoming income' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
   })
 
@@ -380,7 +380,7 @@ describe('DashboardPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Retry' }))
 
-    expect(await screen.findByRole('heading', { name: 'Upcoming Income' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Upcoming income' })).toBeInTheDocument()
     expect(getDashboardMock).toHaveBeenCalledTimes(2)
     expect(getAllocationBreakdownMock).toHaveBeenCalledTimes(2)
     expect(getDataQualityReportMock).toHaveBeenCalledTimes(2)
@@ -425,7 +425,7 @@ describe('DashboardPage', () => {
 
   it('P55-F03-react-dashboard-currency-selector-03: selecting a currency re-fetches both endpoints with the new value, leaving data quality/upcoming income uncalled again', async () => {
     renderDashboardRoute()
-    await screen.findByText('Market Value (GBP)')
+    await screen.findByText('Market value (GBP)')
     getDashboardMock.mockClear()
     getAllocationBreakdownMock.mockClear()
     getDataQualityReportMock.mockClear()
@@ -441,7 +441,7 @@ describe('DashboardPage', () => {
 
   it('P55-F03-react-dashboard-currency-selector-04: selecting a broker filter re-fetches both endpoints, leaving data quality/upcoming income uncalled again', async () => {
     renderDashboardRoute()
-    await screen.findByText('Market Value (GBP)')
+    await screen.findByText('Market value (GBP)')
     getDashboardMock.mockClear()
     getAllocationBreakdownMock.mockClear()
     getDataQualityReportMock.mockClear()
@@ -464,11 +464,11 @@ describe('DashboardPage', () => {
   it('P55-F03-react-dashboard-currency-selector-06: the native, non-currency-suffixed KPI row is absent', async () => {
     renderDashboardRoute()
 
-    await screen.findByText('Market Value (GBP)')
-    expect(screen.queryByText('Market Value', { selector: '.dashboard-kpi-tiles__label' })).not.toBeInTheDocument()
+    await screen.findByText('Market value (GBP)')
+    expect(screen.queryByText('Market value', { selector: '.dashboard-kpi-tiles__label' })).not.toBeInTheDocument()
   })
 
-  it('P55-F03-react-dashboard-currency-selector-07: a filtered-to-zero-brokers response shows KPI zero values and the Allocation Breakdown empty state, not an error', async () => {
+  it('P55-F03-react-dashboard-currency-selector-07: a filtered-to-zero-brokers response shows KPI zero values and the Allocation breakdown empty state, not an error', async () => {
     getDashboardMock.mockResolvedValue({
       ...SUMMARY,
       marketValue: 0,

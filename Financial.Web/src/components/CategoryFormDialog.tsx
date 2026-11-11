@@ -32,7 +32,8 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Category' : 'Create Category'}
+      title={isEditing ? 'Edit category' : 'New category'}
+      saveLabel={isEditing ? 'Save' : 'Add category'}
       error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}

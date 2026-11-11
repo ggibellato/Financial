@@ -60,7 +60,7 @@ describe('BrokersPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('creates a broker through the Create Broker dialog', async () => {
+  it('creates a broker through the New broker dialog', async () => {
     createBrokerMock.mockResolvedValue({
       name: 'New Broker',
       currency: 'BRL',
@@ -71,9 +71,9 @@ describe('BrokersPage', () => {
     render(<BrokersPage />)
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Broker' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New broker' }))
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'New Broker' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add broker' }))
 
     await waitFor(() =>
       expect(createBrokerMock).toHaveBeenCalledWith({
@@ -82,7 +82,7 @@ describe('BrokersPage', () => {
         costBasisMethod: 'AverageCost',
       }),
     )
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Broker' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New broker' })).not.toBeInTheDocument())
   })
 
   it('edits a broker through its row action', async () => {
@@ -97,7 +97,7 @@ describe('BrokersPage', () => {
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit XPI' }))
-    expect(screen.getByRole('heading', { name: 'Edit Broker' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit broker' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'XPI Renamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
@@ -156,7 +156,7 @@ describe('BrokersPage', () => {
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit XPI' }))
-    fireEvent.change(screen.getByRole('combobox', { name: /^Cost Basis Method/ }), { target: { value: 'FIFO' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Cost basis method/ }), { target: { value: 'FIFO' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(setCostBasisMethodMock).toHaveBeenCalledWith('XPI', { method: 'FIFO' }, 'active'))
@@ -176,13 +176,13 @@ describe('BrokersPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit XPI' }))
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'XPI Renamed' } })
-    fireEvent.change(screen.getByRole('combobox', { name: /^Cost Basis Method/ }), { target: { value: 'FIFO' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Cost basis method/ }), { target: { value: 'FIFO' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await screen.findByText(/"XPI Renamed" was saved, but its cost basis method could not be changed/)).toBeInTheDocument()
     // The dialog must still be open, targeting the already-renamed broker - not the old name,
     // which no longer exists server-side after the partial success.
-    expect(screen.getByRole('heading', { name: 'Edit Broker' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit broker' })).toBeInTheDocument()
   })
 
   it('disables delete confirmation when the broker still has portfolios', async () => {
@@ -229,7 +229,7 @@ describe('BrokersPage', () => {
     deleteBrokerMock.mockReturnValue(new Promise<void>((resolve) => (completeDelete = resolve)))
     getAdminBrokersMock.mockResolvedValue([...BROKERS, INTER])
     render(<BrokersPage />)
-    await confirmDelete('Avenue', 'Broker')
+    await confirmDelete('Avenue', 'broker')
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Deleting Avenue', hidden: true })).toHaveFocus())
 
@@ -242,7 +242,7 @@ describe('BrokersPage', () => {
   it('moves focus to the announced error when a delete fails', async () => {
     deleteBrokerMock.mockRejectedValue(new Error('Avenue could not be deleted.'))
     render(<BrokersPage />)
-    await confirmDelete('Avenue', 'Broker')
+    await confirmDelete('Avenue', 'broker')
 
     const alert = await screen.findByRole('alert', { hidden: true })
     expect(alert).toHaveTextContent('Avenue could not be deleted.')

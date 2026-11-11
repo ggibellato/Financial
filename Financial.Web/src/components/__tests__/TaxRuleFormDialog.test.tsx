@@ -17,22 +17,22 @@ describe('TaxRuleFormDialog', () => {
   it('renders in create mode with defaults and an empty label', () => {
     render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Tax Rule' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New tax rule' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Label/)).toHaveValue('')
     expect(screen.getByLabelText('Jurisdiction')).not.toBeDisabled()
-    expect(screen.getByLabelText('Event Category')).not.toBeDisabled()
+    expect(screen.getByLabelText('Event category')).not.toBeDisabled()
   })
 
   it('renders in edit mode pre-filled, with jurisdiction and event category locked', () => {
     render(<TaxRuleFormDialog taxRule={RULE} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Edit Tax Rule' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit tax rule' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Label/)).toHaveValue('UK interest rule')
     expect(screen.getByLabelText('Description')).toHaveValue('Some notes')
-    expect(screen.getByLabelText(/^Effective From/)).toHaveValue('2026-01-01')
-    expect(screen.getByLabelText('Effective To')).toHaveValue('2026-12-31')
+    expect(screen.getByLabelText(/^Effective from/)).toHaveValue('2026-01-01')
+    expect(screen.getByLabelText('Effective to')).toHaveValue('2026-12-31')
     expect(screen.getByLabelText('Jurisdiction')).toBeDisabled()
-    expect(screen.getByLabelText('Event Category')).toBeDisabled()
+    expect(screen.getByLabelText('Event category')).toBeDisabled()
   })
 
   it('rejects an effective range where From is on or after To, inline before submission', () => {
@@ -40,11 +40,11 @@ describe('TaxRuleFormDialog', () => {
     render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Label/), { target: { value: 'BR dividend rule' } })
-    fireEvent.change(screen.getByLabelText(/^Effective From/), { target: { value: '2026-06-01' } })
-    fireEvent.change(screen.getByLabelText('Effective To'), { target: { value: '2026-01-01' } })
+    fireEvent.change(screen.getByLabelText(/^Effective from/), { target: { value: '2026-06-01' } })
+    fireEvent.change(screen.getByLabelText('Effective to'), { target: { value: '2026-01-01' } })
 
-    expect(screen.getByText('Effective From must be before Effective To.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByText('Effective from must be before effective to.')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Add tax rule' })).toBeDisabled()
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
@@ -53,11 +53,11 @@ describe('TaxRuleFormDialog', () => {
     render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText('Jurisdiction'), { target: { value: 'UK' } })
-    fireEvent.change(screen.getByLabelText('Event Category'), { target: { value: 'Interest' } })
+    fireEvent.change(screen.getByLabelText('Event category'), { target: { value: 'Interest' } })
     fireEvent.change(screen.getByLabelText(/^Label/), { target: { value: '  UK interest rule  ' } })
     fireEvent.change(screen.getByLabelText('Description'), { target: { value: 'Notes' } })
-    fireEvent.change(screen.getByLabelText(/^Effective From/), { target: { value: '2026-01-01' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.change(screen.getByLabelText(/^Effective from/), { target: { value: '2026-01-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add tax rule' }))
 
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith('UK', 'Interest', 'UK interest rule', 'Notes', '2026-01-01', null),

@@ -60,7 +60,7 @@ describe('AllocationPieChart', () => {
     renderChart()
 
     const headers = screen.getAllByRole('columnheader').map((header) => header.textContent)
-    expect(headers).toEqual(['Label', 'Market Value', 'Percentage'])
+    expect(headers).toEqual(['Label', 'Market value', 'Percentage'])
   })
 
   it('renders_the_chart_title_as_a_heading_labelling_the_graphic_and_the_table', () => {

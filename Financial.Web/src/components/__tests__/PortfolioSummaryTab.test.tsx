@@ -69,17 +69,17 @@ describe('PortfolioSummaryTab', () => {
   })
 
   it('renders_error_state_in_totals_section_on_aggregated_summary_failure', () => {
-    setAggregatedMock({ error: 'Unable to load summary' })
+    setAggregatedMock({ error: 'Unable to load summary.' })
     renderComponent()
-    expect(screen.getByText('Unable to load summary')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load summary.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it('renders_total_invested_for_portfolio_node_selection', () => {
     setAggregatedMock({ summary: SUMMARY })
     renderComponent()
-    const labels = screen.getAllByText(/^Total (Bought|Sold|Credits|Invested)$/, { selector: 'span.aggregated-summary__label' })
-    expect(labels.map((el) => el.textContent)).toEqual(['Total Bought', 'Total Sold', 'Total Credits', 'Total Invested'])
+    const labels = screen.getAllByText(/^Total (bought|sold|credits|invested)$/, { selector: 'span.aggregated-summary__label' })
+    expect(labels.map((el) => el.textContent)).toEqual(['Total bought', 'Total sold', 'Total credits', 'Total invested'])
   })
 
   it('does_not_render_the_assets_grid_or_footer', () => {
