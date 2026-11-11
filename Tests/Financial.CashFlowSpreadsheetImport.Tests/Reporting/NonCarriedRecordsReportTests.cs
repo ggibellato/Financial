@@ -1,5 +1,7 @@
-using System.Text.Json;
+using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
+using Financial.TestUtilities;
 using FluentAssertions;
 
 namespace Financial.CashFlowSpreadsheetImport.Tests.Reporting;
@@ -13,9 +15,9 @@ public class NonCarriedRecordsReportTests
     [Fact]
     public void Render_WithEveryTypePresent_ListsCountsInFixedOrder()
     {
-        var json = BuildJson(12, 3, 1, null, [.. SeededNames, "Pets", "Gifts", "Hobby", "Garden"]);
+        var data = BuildData(12, 3, 1, [.. SeededNames, "Pets", "Gifts", "Hobby", "Garden"]);
 
-        var line = NonCarriedRecordsReport.FromJson(json).Render();
+        var line = NonCarriedRecordsReport.From(data).Render();
 
         line.Should().Be("Not carried over: Transfers 12, BalanceAdjustments 3, Tithe carry-forwards 1, Categories 4");
     }
@@ -23,9 +25,9 @@ public class NonCarriedRecordsReportTests
     [Fact]
     public void Render_WithSeededCategoryInDifferentCase_DoesNotCountIt()
     {
-        var json = BuildJson(0, 0, 0, null, ["mercado", "DIZIMO", "Pets"]);
+        var data = BuildData(0, 0, 0, ["mercado", "DIZIMO", "Pets"]);
 
-        var line = NonCarriedRecordsReport.FromJson(json).Render();
+        var line = NonCarriedRecordsReport.From(data).Render();
 
         line.Should().Be("Not carried over: Transfers 0, BalanceAdjustments 0, Tithe carry-forwards 0, Categories 1");
     }
@@ -33,40 +35,49 @@ public class NonCarriedRecordsReportTests
     [Fact]
     public void Render_WithTitheEffectiveFromDate_IncludesItOnTheTitheSegment()
     {
-        var json = BuildJson(0, 0, 2, "2026-04-01", []);
+        var data = BuildData(0, 0, 2, []);
+        data.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 4, 1));
 
-        var line = NonCarriedRecordsReport.FromJson(json).Render();
+        var line = NonCarriedRecordsReport.From(data).Render();
 
         line.Should().Be("Not carried over: Transfers 0, BalanceAdjustments 0, Tithe carry-forwards 2 (effective from 2026-04-01), Categories 0");
     }
 
     [Fact]
-    public void FromJson_WithOldFileMissingTheCollections_CountsZero()
+    public void From_EmptyData_CountsZero()
     {
-        var line = NonCarriedRecordsReport.FromJson("""{ "Expenses": [], "Banks": [] }""").Render();
+        var line = NonCarriedRecordsReport.From(CashFlowData.Create()).Render();
 
         line.Should().Be("Not carried over: Transfers 0, BalanceAdjustments 0, Tithe carry-forwards 0, Categories 0");
     }
 
-    [Fact]
-    public void FromJson_WithCorruptJson_Throws()
+    private static CashFlowData BuildData(int transfers, int adjustments, int carryForwards, string[] categories)
     {
-        var act = () => NonCarriedRecordsReport.FromJson("{ not json");
+        var data = CashFlowData.Create();
+        var barclays = TestAccounts.Bank("Barclays");
+        var chase = TestAccounts.Bank("Chase");
+        var date = new DateOnly(2026, 9, 10);
 
-        act.Should().Throw<JsonException>();
-    }
-
-    private static string BuildJson(int transfers, int adjustments, int carryForwards, string? effectiveFrom, string[] categories)
-    {
-        var document = new Dictionary<string, object?>
+        for (var i = 0; i < transfers; i++)
         {
-            ["Transfers"] = Enumerable.Range(0, transfers).Select(_ => new { }).ToArray(),
-            ["BalanceAdjustments"] = Enumerable.Range(0, adjustments).Select(_ => new { }).ToArray(),
-            ["TitheCarryForwards"] = Enumerable.Range(0, carryForwards).Select(_ => new { }).ToArray(),
-            ["TitheCarryForwardEffectiveFrom"] = effectiveFrom,
-            ["Categories"] = categories.Select(name => new { Name = name }).ToArray()
-        };
+            data.AddTransfer(Transfer.Create(date, barclays, chase, 10m, destinationAmount: null, note: null, today: TestClock.Today));
+        }
 
-        return JsonSerializer.Serialize(document);
+        for (var i = 0; i < adjustments; i++)
+        {
+            data.AddBalanceAdjustment(BalanceAdjustment.Create(date, barclays, 990m, -10m, note: null));
+        }
+
+        for (var month = 1; month <= carryForwards; month++)
+        {
+            data.AddTitheCarryForward(TitheCarryForward.Create(2026, month, included: true));
+        }
+
+        foreach (var name in categories)
+        {
+            data.AddCategory(Category.Create(name));
+        }
+
+        return data;
     }
 }
