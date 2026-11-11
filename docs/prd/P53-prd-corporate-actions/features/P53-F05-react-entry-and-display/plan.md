@@ -22,7 +22,7 @@ Each PR ships passing `npm run lint`, `npm test`, and `npm run build`, per `docs
 
 **3. `CorporateActionForm` Component (Split fields only)** — Add the inline form component with its type selector (`Select`, initially offering only "Split / Reverse Split" until Stages 2-3 add the other two options), the Split field group (Effective Date, N/M ratio inputs computing `ratioFactor` client-side with the PRD-specified inline example text, Note), validation, and the saving/server-error/disabled states per spec.md §4.
 
-**4. `CorporateActionsTab` Component** — Add the tab container: "New Corporate Action" trigger, the form when open, and the history table (Date, Type, Affected/Linked Asset, Resulting Change — Tax Status column and its `StatusBadge` are added in Stage 2 since Split never has a `calculationStatus`) with Edit/Delete row actions (`confirmThenRun` on Delete), loading/empty/error states via the shared `LoadingState`/`ErrorState`.
+**4. `CorporateActionsTab` Component** — Add the tab container: "New Corporate Action" trigger, the form when open, and the history table (Date, Type, Affected/Linked Asset, Resulting Change — Tax Status column and its `StatusBadge` are added in Stage 2 since Split never has a `calculationStatus`) with Edit/Delete row actions (`confirmThenRun` on Delete; **later change, post-P60 UI clean-up**: the in-app "Delete corporate action" dialog), loading/empty/error states via the shared `LoadingState`/`ErrorState`.
 
 **5. `DetailPanel` Wiring** — Add `corporateActions` to `DetailPanel`'s `TabId`/asset tab list (lazy-loaded, matching every other tab); no deep-link routing yet (Stage 4/PR4 adds that).
 

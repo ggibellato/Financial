@@ -12,7 +12,6 @@
   range.
 - **Storage helpers** (`domainStorage.ts`, `sidebarStorage.ts`, `colourModeStorage.ts`):
   default when nothing stored, round-trip, corrupt value → default (never throws).
-- **`confirmThenRun`**: runs on confirm, skips on cancel.
 - **`createFormDefaults` / `expenseDefaults`**: today's date, last-used bank.
 - **Contexts** (`SelectedNodeContext`, `ColourModeContext`): default value, setter, toggle,
   persistence to `localStorage`, `prefers-color-scheme` fallback (P43).

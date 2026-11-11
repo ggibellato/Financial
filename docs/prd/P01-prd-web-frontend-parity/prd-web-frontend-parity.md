@@ -361,6 +361,7 @@ Chart capabilities (all selection types):
 - New credit: blank inline form; Save → `POST /api/v1/financial/credits` → reload asset; Cancel → clears form
 - Edit credit: click edit icon → form populated; Save → `PUT /api/v1/financial/credits` → reload asset; Cancel → clears form
 - Delete credit: `window.confirm("Delete this credit?")` → confirmed: `DELETE /api/v1/financial/credits` → reload asset
+  > **Later change (post-P60 UI clean-up, PR "fix(web): the last delete and reset screens use the app's confirmation dialog"):** the confirmation is now the in-app "Delete credit" dialog ("Delete the credit <type> <value>, <date>? This cannot be undone."). While the request runs the row shows "Deleting …". After a delete, focus moves to the next row's Delete, else the previous row's, else New credit; a failure shows a focused error alert. A credits grid with no rows shows an empty-state message instead of the table.
 
 **Error Handling:**
 - Credit submit failure (add or update): inline error below form; form remains populated
@@ -562,6 +563,7 @@ graph TD
 - [x] Adding a valid credit calls `POST /credits` and refreshes the credits list
 - [x] Editing a credit calls `PUT /credits` and refreshes the list
 - [x] Deleting a credit shows confirm dialog; confirmed calls `DELETE /credits` and removes the row
+  > **Later change:** the confirm dialog is the in-app "Delete credit" dialog; see the note in the delete-credit requirement.
 - [x] When a broker or portfolio is selected, no credits table and no New button are shown; only the chart is visible
 - [x] Chart title is "Credits by Month"
 - [x] X-axis labels are in MM/yyyy format, ordered chronologically
