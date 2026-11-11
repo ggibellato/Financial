@@ -4,6 +4,7 @@ import IncomeSourceFormDialog from '../IncomeSourceFormDialog'
 import type { IncomeSourceDto } from '../../api/types'
 import { account, potsAccount } from '../../test/account'
 import { optionNames as optionsOf } from '../../test-utils/optionNames'
+import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 
 const RESERVA = potsAccount({ id: 'p1', name: 'Reserva' })
 const HOLIDAYS = potsAccount({ id: 'p2', name: 'Holidays' })
@@ -210,5 +211,16 @@ describe('IncomeSourceFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled())
+  })
+
+  it('shows a duplicate name under Name and moves focus there', async () => {
+    const message = 'An income source named "Gleison" already exists.'
+    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
+    render(<IncomeSourceFormDialog incomeSource={null} accounts={ACCOUNTS} accountsStatus="ready" onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Gleison' } })
+    saveFromTheSaveButton()
+
+    await expectDuplicateUnderName(message)
   })
 })

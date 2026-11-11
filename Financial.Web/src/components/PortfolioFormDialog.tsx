@@ -3,6 +3,7 @@ import { Field, Input, Select } from '@fluentui/react-components'
 import type { BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 
 interface PortfolioFormDialogProps {
   portfolio: PortfolioDto | null
@@ -15,10 +16,12 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
   const isEditing = portfolio !== null
   const [brokerName, setBrokerName] = useState(portfolio?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [name, setName] = useState(portfolio?.name ?? '')
-  const { isSaving, error, submit } = useDialogSubmit('The portfolio could not be saved.')
+  const { isSaving, error, failure, submit } = useDialogSubmit('The portfolio could not be saved.')
 
   const trimmedName = name.trim()
+  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const nameValidationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
+  const nameMessage = nameValidationMessage || nameError
   const brokerValidationMessage = !isEditing && brokerName.length === 0 ? 'A broker is required.' : ''
   const canSubmit = nameValidationMessage.length === 0 && brokerValidationMessage.length === 0 && !isSaving
 
@@ -30,7 +33,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
   return (
     <EntityFormDialog
       title={isEditing ? 'Edit Portfolio' : 'Create Portfolio'}
-      error={error}
+      error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
       onSave={handleSubmit}
@@ -61,10 +64,10 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
       <Field
         label="Name"
         required
-        validationState={nameValidationMessage ? 'error' : 'none'}
-        validationMessage={nameValidationMessage}
+        validationState={nameMessage ? 'error' : 'none'}
+        validationMessage={nameMessage}
       >
-        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
       </Field>
     </EntityFormDialog>
   )

@@ -3,6 +3,7 @@ import { ApiError } from '../../api/apiError'
 import type { AccountTemplateDto, CategoryDto } from '../../api/types'
 import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
+import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 import AccountFormDialog from '../AccountFormDialog'
 
 const BANK: AccountTemplateDto = {
@@ -223,16 +224,13 @@ describe('AccountFormDialog', () => {
 
   it('[AC P60-F06-admin-accounts-page-02] shows a duplicate-name 409 under Name, and clears it once the name changes', async () => {
     const message = 'An account named "Barclays" already exists.'
-    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409, { code: 'duplicateName' })) })
+    renderDialog({ onSubmit: vi.fn().mockRejectedValue(duplicateNameRejection(message)) })
     await waitFor(() => expect(screen.getByRole('dialog')).toHaveFocus())
 
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'barclays' } })
-    save()
+    saveFromTheSaveButton('Add account')
 
-    expect(await screen.findByText(message)).toBeInTheDocument()
-    expect(screen.getByLabelText(/Name/)).toHaveAttribute('aria-invalid', 'true')
-    await waitFor(() => expect(screen.getByLabelText(/Name/)).toHaveFocus())
-    expect(screen.getAllByText(message)).toHaveLength(1)
+    await expectDuplicateUnderName(message)
     expect(screen.getByLabelText(/Name/)).toHaveValue('barclays')
 
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays 2' } })
@@ -241,7 +239,7 @@ describe('AccountFormDialog', () => {
 
   it('places a duplicate-name 409 under Name by its code, whatever the message says', async () => {
     const message = 'That account name is taken.'
-    renderDialog({ onSubmit: vi.fn().mockRejectedValue(new ApiError(message, 409, { code: 'duplicateName' })) })
+    renderDialog({ onSubmit: vi.fn().mockRejectedValue(duplicateNameRejection(message)) })
 
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays' } })
     save()

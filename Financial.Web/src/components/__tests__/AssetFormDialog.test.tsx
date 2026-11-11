@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import AssetFormDialog from '../AssetFormDialog'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../../api/types'
+import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
   { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
@@ -110,5 +111,15 @@ describe('AssetFormDialog', () => {
         expect.objectContaining({ brokerName: 'XPI', portfolioName: 'Default', name: 'NEWASSET' }),
       ),
     )
+  })
+
+  it('shows a duplicate name under Name and moves focus there', async () => {
+    const message = 'Portfolio "Default" already holds an asset named "BCIA11".'
+    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
+    render(<AssetFormDialog asset={EXISTING_ASSET} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    saveFromTheSaveButton()
+
+    await expectDuplicateUnderName(message)
   })
 })

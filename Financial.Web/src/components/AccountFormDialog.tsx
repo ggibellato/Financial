@@ -1,7 +1,6 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Checkbox, Field, FieldContextProvider, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
-import { isDuplicateName } from '../api/apiError'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
@@ -9,6 +8,7 @@ import { useFormPanelStyles } from './formPanelStyles'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
+import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { todayIsoDate } from '../utils/formatters'
 
@@ -147,10 +147,8 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const [initial] = useState(() => initialValues(account, templates))
   const [values, setValues] = useState(initial)
   const [showValidation, setShowValidation] = useState(false)
-  const [submittedName, setSubmittedName] = useState<string | null>(null)
   const { isSaving, error, failure, submit } = useDialogSubmit('The account could not be saved.')
   const templateRef = useRef<FieldControl>(null)
-  const nameRef = useRef<FieldControl>(null)
   const currencyRef = useRef<FieldControl>(null)
   const currenciesRef = useRef<FieldControl>(null)
   const otherParticipantRef = useRef<FieldControl>(null)
@@ -176,16 +174,11 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const isCurrencyFixed = isLocked || currencies.length <= 1
   const keepsUnsetStartDate = isEditing && account.balanceStartDate === UNSET_START_DATE
   const trimmedName = values.name.trim()
-  const isDuplicateNameError = isDuplicateName(failure)
-  const isNameConflict = isDuplicateNameError && submittedName === trimmedName
+  const { nameRef, nameError, summaryError } = useDuplicateNameField<FieldControl>(failure, error, trimmedName)
   const errors = validateAccountForm(values, template, keepsUnsetStartDate)
 
-  useEffect(() => {
-    if (isNameConflict) nameRef.current?.focus()
-  }, [isNameConflict])
-
   const fieldMessage = (field: FieldName) => {
-    if (field === 'name' && isNameConflict) return error
+    if (field === 'name' && nameError) return nameError
     return showValidation ? errors[field] : undefined
   }
 
@@ -243,7 +236,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       fieldRefs[firstInvalid].current?.focus()
       return
     }
-    setSubmittedName(trimmedName)
     void submit(() => onSubmit(toRequest()))
   }
 
@@ -265,7 +257,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     <EntityFormDialog
       title={isEditing ? 'Edit account' : 'New account'}
       saveLabel={isEditing ? 'Save' : 'Add account'}
-      error={isDuplicateNameError ? null : error}
+      error={summaryError}
       isSaving={isSaving}
       canSave={!isSaving}
       onSave={handleSave}

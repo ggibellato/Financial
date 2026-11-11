@@ -3,6 +3,7 @@ import { Field, Input, Select } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { isValidIsin } from '../utils/validators'
 
 const COUNTRY_OPTIONS = ['Unknown', 'BR', 'US', 'UK'] as const
@@ -51,7 +52,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   const [country, setCountry] = useState<string>(asset?.country ?? 'Unknown')
   const [localTypeCode, setLocalTypeCode] = useState(asset?.localTypeCode ?? '')
   const [assetClass, setAssetClass] = useState<string>(asset?.class ?? 'Unknown')
-  const { isSaving, error, submit } = useDialogSubmit('The asset could not be saved.')
+  const { isSaving, error, failure, submit } = useDialogSubmit('The asset could not be saved.')
 
   const brokerPortfolios = portfolios.filter((p) => p.brokerName === brokerName)
 
@@ -61,8 +62,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   }
 
   const trimmedName = name.trim()
+  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const trimmedIsin = isin.trim()
   const nameValidationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
+  const nameMessage = nameValidationMessage || nameError
   const brokerValidationMessage = !isEditing && brokerName.length === 0 ? 'A broker is required.' : ''
   const portfolioValidationMessage = !isEditing && portfolioName.length === 0 ? 'A portfolio is required.' : ''
   const isinValidationMessage =
@@ -96,7 +99,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   return (
     <EntityFormDialog
       title={isEditing ? 'Edit Asset' : 'Create Asset'}
-      error={error}
+      error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
       onSave={handleSubmit}
@@ -152,10 +155,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
       <Field
         label="Name"
         required
-        validationState={nameValidationMessage ? 'error' : 'none'}
-        validationMessage={nameValidationMessage}
+        validationState={nameMessage ? 'error' : 'none'}
+        validationMessage={nameMessage}
       >
-        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
       </Field>
 
       <Field

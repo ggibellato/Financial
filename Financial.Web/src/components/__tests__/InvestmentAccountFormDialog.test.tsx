@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import { account, cardAccount, potsAccount } from '../../test/account'
+import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 
 const activeCard = cardAccount({ id: 'cc1', name: 'Platinum Visa 8003' })
 const inactiveCard = cardAccount({ id: 'cc2', name: 'Retired Card', isActive: false })
@@ -226,5 +227,16 @@ describe('InvestmentAccountFormDialog', () => {
 
     expect(screen.getByLabelText(/^Credit Card/)).toHaveValue('cc2')
     expect(screen.getByRole('option', { name: 'Retired Card' })).toBeInTheDocument()
+  })
+
+  it('shows a duplicate name under Name and moves focus there', async () => {
+    const message = 'An investment account named "ChaseSave" already exists.'
+    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
+    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'ChaseSave' } })
+    saveFromTheSaveButton()
+
+    await expectDuplicateUnderName(message)
   })
 })
