@@ -144,7 +144,7 @@ public class Investments
         var collision = FindActiveBroker(name) ?? FindHistoricBroker(name);
         if (collision is not null && !ReferenceEquals(collision, excluding))
         {
-            throw new InvestmentRuleViolationException($"A broker named \"{name}\" already exists.");
+            throw new InvestmentDuplicateNameException($"A broker named \"{name}\" already exists.");
         }
     }
 

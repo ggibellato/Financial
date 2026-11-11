@@ -66,7 +66,7 @@ public class Broker
 
         if (FindPortfolio(trimmed) is not null)
         {
-            throw new InvestmentRuleViolationException(
+            throw new InvestmentDuplicateNameException(
                 $"Broker \"{Name}\" already has a portfolio named \"{trimmed}\".");
         }
 
@@ -96,7 +96,7 @@ public class Broker
 
         if (trimmed != currentName && FindPortfolio(trimmed) is not null)
         {
-            throw new InvestmentRuleViolationException(
+            throw new InvestmentDuplicateNameException(
                 $"Broker \"{Name}\" already has a portfolio named \"{trimmed}\".");
         }
 
@@ -201,7 +201,7 @@ public class Broker
         {
             return existing.FindAsset(assetName) is null
                 ? existing
-                : throw new InvestmentRuleViolationException(
+                : throw new InvestmentDuplicateNameException(
                     $"Portfolio \"{existing.Name}\" already holds an asset named \"{assetName}\".");
         }
 
@@ -209,7 +209,7 @@ public class Broker
             p => string.Equals(p.Name.Trim(), destinationPortfolioName, StringComparison.OrdinalIgnoreCase));
         if (nearMiss is not null)
         {
-            throw new InvestmentRuleViolationException(
+            throw new InvestmentDuplicateNameException(
                 $"Broker \"{Name}\" already has a portfolio named \"{nearMiss.Name}\". Select it instead of creating another.");
         }
 

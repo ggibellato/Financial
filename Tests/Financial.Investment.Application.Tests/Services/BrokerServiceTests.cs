@@ -41,7 +41,7 @@ public class BrokerServiceTests
 
         var act = async () => await CreateService().CreateBrokerAsync(new BrokerCreateDTO { Name = "XPI", Currency = "GBP" });
 
-        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         _repository.WriteCallCount.Should().Be(0);
     }
 

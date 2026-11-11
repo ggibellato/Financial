@@ -1,20 +1,24 @@
 import { describe, expect, it } from 'vitest'
-import { isDuplicateNameConflict } from '../apiError'
+import { ApiError, isDuplicateName } from '../apiError'
 
-describe('isDuplicateNameConflict', () => {
-  it('matches a 409 saying the submitted name already exists, ignoring case', () => {
-    expect(isDuplicateNameConflict(409, 'An account named "barclays" already exists.', 'Barclays')).toBe(true)
+describe('isDuplicateName', () => {
+  it('matches a 409 carrying the duplicate-name code, whatever its message says', () => {
+    expect(isDuplicateName(new ApiError('That name is taken.', 409, { code: 'duplicateName' }))).toBe(true)
   })
 
-  it('does not match a 409 that quotes the name for another reason', () => {
-    expect(isDuplicateNameConflict(409, '"Barclays" has a pending statement payment.', 'Barclays')).toBe(false)
+  it('does not match a 409 without the code, even when its message reads like a duplicate', () => {
+    expect(isDuplicateName(new ApiError('An account named "Barclays" already exists.', 409))).toBe(false)
   })
 
-  it('does not match a duplicate message for a different name', () => {
-    expect(isDuplicateNameConflict(409, 'An account named "Monzo" already exists.', 'Barclays')).toBe(false)
+  it('does not match a 409 carrying another code', () => {
+    expect(isDuplicateName(new ApiError('This withdrawal exceeds the balance.', 409, { code: 'overdraftConfirmationRequired' }))).toBe(false)
   })
 
-  it('does not match the same message with another status', () => {
-    expect(isDuplicateNameConflict(400, 'An account named "Barclays" already exists.', 'Barclays')).toBe(false)
+  it('does not match the code with another status', () => {
+    expect(isDuplicateName(new ApiError('That name is taken.', 400, { code: 'duplicateName' }))).toBe(false)
+  })
+
+  it('does not match an error that is not an API error', () => {
+    expect(isDuplicateName(new Error('An account named "Barclays" already exists.'))).toBe(false)
   })
 })

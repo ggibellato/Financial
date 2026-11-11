@@ -20,6 +20,7 @@ public class ExceptionMappingTests(ThrowingApiHost host) : IClassFixture<Throwin
         (new EntityInUseException("in use"), HttpStatusCode.Conflict),
         (new DuplicateNameException("duplicate"), HttpStatusCode.Conflict),
         (new InvestmentRuleViolationException("rule"), HttpStatusCode.Conflict),
+        (new InvestmentDuplicateNameException("duplicate"), HttpStatusCode.Conflict),
         (new UnsupportedAssetClassException("unsupported"), HttpStatusCode.UnprocessableEntity),
         (new KeyNotFoundException("missing"), HttpStatusCode.NotFound),
         (new DividendNotFoundException("missing"), HttpStatusCode.NotFound),

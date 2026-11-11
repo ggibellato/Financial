@@ -304,6 +304,8 @@ public class AssetEndpointsTests : ApiEndpointTests
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadAsStringAsync();
+        body.Should().Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

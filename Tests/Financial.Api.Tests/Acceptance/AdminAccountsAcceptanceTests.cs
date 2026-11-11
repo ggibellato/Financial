@@ -185,6 +185,7 @@ public class AdminAccountsAcceptanceTests : ApiEndpointTests
         {
             response.StatusCode.Should().Be(HttpStatusCode.Conflict);
             problem!.Detail.Should().Be("An account named \"barclays\" already exists.");
+            problem.Extensions["code"]!.ToString().Should().Be("duplicateName");
         }
     }
 

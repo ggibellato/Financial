@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
+import { isDuplicateName } from '../api/apiError'
 import type {
   AssetDetailsDto,
   CorporateActionDto,
@@ -18,7 +19,6 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { isAssetSelection } from '../utils/assetSelection'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
-import { isAssetNameCollisionError } from './isAssetNameCollisionError'
 import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
 
 function pickAffectedAsset(
@@ -372,7 +372,7 @@ export function useCorporateActions(): CorporateActionsData {
         })
         .catch((err: unknown) => {
           const message = getErrorMessage(err, 'Failed to save corporate action')
-          const fields: Partial<Record<CorporateActionFormField, string>> = isAssetNameCollisionError(message)
+          const fields: Partial<Record<CorporateActionFormField, string>> = isDuplicateName(err)
             ? { formTargetAsset: message }
             : {}
           dispatch({ type: 'SAVE_ERROR', payload: { message, fields } })
@@ -451,7 +451,7 @@ export function useCorporateActions(): CorporateActionsData {
         })
         .catch((err: unknown) => {
           const message = getErrorMessage(err, 'Failed to save corporate action')
-          const fields: Partial<Record<CorporateActionFormField, string>> = isAssetNameCollisionError(message)
+          const fields: Partial<Record<CorporateActionFormField, string>> = isDuplicateName(err)
             ? { formNewAsset: message }
             : {}
           dispatch({ type: 'SAVE_ERROR', payload: { message, fields } })

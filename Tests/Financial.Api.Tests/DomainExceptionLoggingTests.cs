@@ -55,10 +55,38 @@ public class DomainExceptionLoggingTests
         }
     }
 
-    [Fact]
-    public async Task OtherConflict_WritesNoOverdraftData()
+    public static TheoryData<Exception> DuplicateNameExceptions() =>
+    [
+        new DuplicateNameException("An account named \"Barclays\" already exists."),
+        new InvestmentDuplicateNameException("An account named \"Barclays\" already exists.")
+    ];
+
+    [Theory]
+    [MemberData(nameof(DuplicateNameExceptions))]
+    public async Task DuplicateName_WritesTheDuplicateNameCodeAndTheUnchangedMessage(Exception exception)
     {
-        var (_, context) = await InvokeWithAsync(new DuplicateNameException("duplicate"), "POST", "/api/v1/financial/accounts");
+        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/accounts");
+
+        using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
+        using (new AssertionScope())
+        {
+            body.RootElement.GetProperty("status").GetInt32().Should().Be(StatusCodes.Status409Conflict);
+            body.RootElement.GetProperty("detail").GetString().Should().Be("An account named \"Barclays\" already exists.");
+            body.RootElement.GetProperty("code").GetString().Should().Be("duplicateName");
+        }
+    }
+
+    public static TheoryData<Exception> OtherConflictExceptions() =>
+    [
+        new EntityInUseException("in use"),
+        new InvestmentRuleViolationException("Cannot delete a broker that still has portfolios.")
+    ];
+
+    [Theory]
+    [MemberData(nameof(OtherConflictExceptions))]
+    public async Task OtherConflict_WritesNoProblemCode(Exception exception)
+    {
+        var (_, context) = await InvokeWithAsync(exception, "POST", "/api/v1/financial/accounts");
 
         using var body = JsonDocument.Parse(await ReadResponseBodyAsync(context));
         using (new AssertionScope())

@@ -102,9 +102,9 @@ public class AssetMoveServiceTests
         _repository.Broker = broker;
 
         var act = async () => await CreateService().MoveAssetAsync(CreateRequest());
-        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
 
-        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.AssetMoveService.MoveAsset");
+        _tracer.ShouldHaveFailedSpan<InvestmentDuplicateNameException>("Investment.AssetMoveService.MoveAsset");
         using (new AssertionScope())
         {
 

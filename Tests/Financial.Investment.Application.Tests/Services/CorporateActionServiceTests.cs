@@ -380,7 +380,7 @@ public class CorporateActionServiceTests
             CreateTargetAssetInline = true
         });
 
-        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         source.CorporateActions.Should().BeEmpty();
         _repository.WriteCallCount.Should().Be(0);
     }
@@ -681,7 +681,7 @@ public class CorporateActionServiceTests
             CreateNewAssetInline = true
         });
 
-        await act.Should().ThrowAsync<InvestmentRuleViolationException>();
+        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         parent.CorporateActions.Should().BeEmpty("the parent record must roll back when the new-asset step fails");
         _repository.WriteCallCount.Should().Be(0);
     }

@@ -4,6 +4,7 @@ interface ApiErrorDetails {
 }
 
 const OVERDRAFT_CONFIRMATION_CODE = 'overdraftConfirmationRequired'
+const DUPLICATE_NAME_CODE = 'duplicateName'
 
 export class ApiError extends Error {
   status: number
@@ -35,8 +36,8 @@ export function isConflict(err: unknown): err is ApiError {
   return err instanceof ApiError && err.status === CONFLICT_STATUS
 }
 
-export function isDuplicateNameConflict(status: number | null, message: string | null, name: string): boolean {
-  return status === CONFLICT_STATUS && message?.toLowerCase().includes(`named "${name.toLowerCase()}" already exists`) === true
+export function isDuplicateName(err: unknown): boolean {
+  return isConflict(err) && err.code === DUPLICATE_NAME_CODE
 }
 
 export function overdraftBalance(err: ApiError): number | null {

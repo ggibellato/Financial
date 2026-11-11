@@ -27,7 +27,7 @@ public class PortfolioTests
 
         var act = () => portfolio.RegisterAsset(Asset.Create("Asset A", "ISIN456", "LSE", "BBB"));
 
-        act.Should().Throw<InvestmentRuleViolationException>()
+        act.Should().Throw<InvestmentDuplicateNameException>()
             .WithMessage("*already has an asset named \"Asset A\"*");
     }
 
@@ -73,7 +73,7 @@ public class PortfolioTests
         var act = () => portfolio.UpdateAssetIdentity(
             "Asset A", "Asset B", "ISIN123", "NYSE", "AAA", CountryCode.Unknown, "", GlobalAssetClass.Unknown);
 
-        act.Should().Throw<InvestmentRuleViolationException>()
+        act.Should().Throw<InvestmentDuplicateNameException>()
             .WithMessage("*already has an asset named \"Asset B\"*");
     }
 
