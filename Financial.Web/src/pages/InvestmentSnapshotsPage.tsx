@@ -192,24 +192,18 @@ export default function InvestmentSnapshotsPage() {
                   <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={openEditForm} />
                 ))}
               </TableBody>
+              <tfoot>
+                <TableRow>
+                  <DataTableCell label="Total">Total (net of liabilities)</DataTableCell>
+                  <DataTableCell label="Value" className="data-table__col--numeric">
+                    {formatN2(totalValue)}
+                  </DataTableCell>
+                  <TableCell />
+                </TableRow>
+              </tfoot>
             </Table>
           </section>
         </div>
-      )}
-
-      {!isLoading && !error && (
-        <Table className="investment-snapshots-page__table investment-snapshots-page__totals-table data-table">
-          <SnapshotColumns />
-          <TableBody>
-            <TableRow className="investment-snapshots-page__totals-row">
-              <DataTableCell label="Account">Total (net of liabilities)</DataTableCell>
-              <DataTableCell label="Value" className="data-table__col--numeric">
-                {formatN2(totalValue)}
-              </DataTableCell>
-              <TableCell />
-            </TableRow>
-          </TableBody>
-        </Table>
       )}
     </div>
   )

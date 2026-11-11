@@ -42,15 +42,11 @@
   width: 44px;
 }
 
-.investment-snapshots-page__totals-table {
-  flex-shrink: 0;
-  margin-bottom: 24px;
-}
-
-.investment-snapshots-page__totals-row td {
-  background: var(--bg-subtle, #f9f9f9);
-  font-weight: bold;
-  border-top: 2px solid var(--border, #e5e4e7);
+@media (min-width: 600px) {
+  .investment-snapshots-page__table tfoot td {
+    position: sticky;
+    bottom: 0;
+  }
 }
 
 @media (max-width: 599px) {

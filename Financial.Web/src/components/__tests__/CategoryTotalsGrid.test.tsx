@@ -37,6 +37,12 @@ describe('CategoryTotalsGrid', () => {
     expect(footer()).toBe('Total: 142.50')
   })
 
+  it('names its totals group once, not "Totals for Category totals"', () => {
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
+
+    expect(screen.getByRole('group', { name: 'Totals for categories' })).toBeInTheDocument()
+  })
+
   it('sorts rows by Category ascending when its header is clicked', () => {
     render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
