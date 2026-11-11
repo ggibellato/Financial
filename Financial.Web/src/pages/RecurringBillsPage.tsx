@@ -9,6 +9,7 @@ import { rowDeleteState } from '../components/grid/rowDeleteState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useRecurringBills } from '../hooks/useRecurringBills'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { RecurringBillDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
@@ -27,7 +28,7 @@ export default function RecurringBillsPage() {
   } = useRecurringBills()
   const [editingBill, setEditingBill] = useState<RecurringBillDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<RecurringBillDto | null>(null)
+  const deletion = usePendingDelete((row: RecurringBillDto) => deleteRecurringBill(row.id))
 
   const accessors: Record<string, SortAccessor<RecurringBillDto>> = {
     dueDay: (bill) => bill.dueDay,
@@ -69,12 +70,6 @@ export default function RecurringBillsPage() {
     return result
   }
 
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteRecurringBill(confirmingDelete.id)
-    setConfirmingDelete(null)
-  }
-
   return (
     <AdminEntityPage
       title="Recurring bills"
@@ -91,12 +86,12 @@ export default function RecurringBillsPage() {
           {(isCreating || editingBill) && (
             <RecurringBillFormDialog recurringBill={editingBill} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
           )}
-          {confirmingDelete && (
+          {deletion.pendingRow && (
             <ConfirmDeleteDialog
               entityLabel="recurring bill"
-              message={<>&ldquo;{confirmingDelete.description}&rdquo; will be permanently removed.</>}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              message={<>&ldquo;{deletion.pendingRow.description}&rdquo; will be permanently removed.</>}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -153,7 +148,7 @@ export default function RecurringBillsPage() {
                 itemName={bill.description}
                 {...rowDeleteState(deletingId, bill.id)}
                 onEdit={() => setEditingBill(bill)}
-                onDelete={() => setConfirmingDelete(bill)}
+                onDelete={() => deletion.request(bill)}
               />
             </TableRow>
           ))}

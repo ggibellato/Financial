@@ -10,6 +10,7 @@ import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
 import { assetKey, useAssets } from '../hooks/useAssets'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { AssetAdminDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
@@ -26,7 +27,8 @@ export default function AssetsPage() {
 
   const [editingAsset, setEditingAsset] = useState<AssetAdminDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<AssetAdminDto | null>(null)
+  const deletion = usePendingDelete((row: AssetAdminDto) => deleteAsset(row.brokerName, row.portfolioName, row.name))
+  const pendingDelete = deletion.pendingRow
 
   const closeFormDialog = () => {
     setEditingAsset(null)
@@ -87,12 +89,6 @@ export default function AssetsPage() {
         })
     closeFormDialog()
     return result
-  }
-
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteAsset(confirmingDelete.brokerName, confirmingDelete.portfolioName, confirmingDelete.name)
-    setConfirmingDelete(null)
   }
 
   const assetClasses = Array.from(new Set(assets.map((a) => a.class))).sort()
@@ -158,25 +154,25 @@ export default function AssetsPage() {
               onSubmit={handleFormSubmit}
             />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="asset"
               message={
-                confirmingDelete.quantity !== 0 ? (
+                pendingDelete.quantity !== 0 ? (
                   <>
-                    &ldquo;{confirmingDelete.name}&rdquo; still holds a position of {confirmingDelete.quantity} and
+                    &ldquo;{pendingDelete.name}&rdquo; still holds a position of {pendingDelete.quantity} and
                     cannot be deleted.
                   </>
                 ) : (
                   <>
-                    &ldquo;{confirmingDelete.name}&rdquo; holds zero quantity and will be archived into historic
+                    &ldquo;{pendingDelete.name}&rdquo; holds zero quantity and will be archived into historic
                     investments.
                   </>
                 )
               }
-              confirmDisabled={confirmingDelete.quantity !== 0}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              confirmDisabled={pendingDelete.quantity !== 0}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -211,7 +207,7 @@ export default function AssetsPage() {
                   itemName={asset.name}
                   {...rowDeleteState(deletingKey, key)}
                   onEdit={() => setEditingAsset(asset)}
-                  onDelete={() => setConfirmingDelete(asset)}
+                  onDelete={() => deletion.request(asset)}
                 />
               </TableRow>
             )

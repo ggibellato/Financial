@@ -18,6 +18,7 @@ import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useAccounts } from '../hooks/useAccounts'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
@@ -51,7 +52,8 @@ export default function InvestmentAccountsPage() {
   const creditCards = accounts.filter((account) => account.capabilities.includes('HasStatements'))
   const [editingAccount, setEditingAccount] = useState<InvestmentAccountDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<InvestmentAccountDto | null>(null)
+  const deletion = usePendingDelete((row: InvestmentAccountDto) => deleteInvestmentAccount(row.id))
+  const pendingDelete = deletion.pendingRow
 
   const handleSubmit = (
     name: string,
@@ -81,12 +83,6 @@ export default function InvestmentAccountsPage() {
     const result = await handleSubmit(name, isActive, isLiability, source, creditCardId, potsAccountId)
     closeFormDialog()
     return result
-  }
-
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteInvestmentAccount(confirmingDelete.id)
-    setConfirmingDelete(null)
   }
 
   return (
@@ -126,19 +122,19 @@ export default function InvestmentAccountsPage() {
               onSubmit={handleFormSubmit}
             />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="investment account"
               message={
-                confirmingDelete.hasNonZeroInvestmentSnapshot ? (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; has a non-zero balance and cannot be deleted.</>
+                pendingDelete.hasNonZeroInvestmentSnapshot ? (
+                  <>&ldquo;{pendingDelete.name}&rdquo; has a non-zero balance and cannot be deleted.</>
                 ) : (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                  <>&ldquo;{pendingDelete.name}&rdquo; will be permanently removed.</>
                 )
               }
-              confirmDisabled={confirmingDelete.hasNonZeroInvestmentSnapshot}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              confirmDisabled={pendingDelete.hasNonZeroInvestmentSnapshot}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -165,7 +161,7 @@ export default function InvestmentAccountsPage() {
                 itemName={account.name}
                 {...rowDeleteState(deletingId, account.id)}
                 onEdit={() => setEditingAccount(account)}
-                onDelete={() => setConfirmingDelete(account)}
+                onDelete={() => deletion.request(account)}
               />
             </TableRow>
           ))}
