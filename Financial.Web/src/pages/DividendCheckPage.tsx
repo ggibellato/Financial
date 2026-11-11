@@ -3,6 +3,7 @@ import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { DividendHistoryItemDto, DividendSummaryDto, DividendYearTotalDto, WatchlistItemDto } from '../api/types'
+import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
 import DataTableCell from '../components/grid/DataTableCell'
@@ -87,10 +88,8 @@ export default function DividendCheckPage() {
   const { sortedRows: displayedYearTotals, sortState: yearSortState, requestSort: requestYearSort } =
     useSortableRows(summary?.yearTotals ?? [], yearTotalsAccessors, { columnKey: 'year', direction: 'descending' })
 
-  const priceMaxBuyClass =
-    summary && summary.priceMaxBuy > 0 && summary.currentPrice < summary.priceMaxBuy
-      ? 'summary-card__price-max--positive'
-      : 'summary-card__price-max--negative'
+  const isBelowMaxBuy = !!summary && summary.priceMaxBuy > 0 && summary.currentPrice < summary.priceMaxBuy
+  const priceMaxBuyClass = isBelowMaxBuy ? 'summary-card__price-max--positive' : 'summary-card__price-max--negative'
 
   return (
     <section className="dividend-check">
@@ -113,13 +112,13 @@ export default function DividendCheckPage() {
             <p className="summary-card__title">
               {summary.ticker} - {summary.name}
             </p>
-            <p>Current price: {formatN2(summary.currentPrice)}</p>
+            <p>Current price: <strong>{formatN2(summary.currentPrice)}</strong></p>
             <p className="summary-card__avg-dividend">
-              Average dividend: {formatN2(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatPercentN2(summary.dividendYieldPercent)}
+              Average dividend: <strong>{formatN2(summary.averageDividendLastFiveYears)}</strong> (last 5 years) — Yield: <strong>{formatPercentN2(summary.dividendYieldPercent)}</strong>
             </p>
             <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
-              Price max buy: {formatN2(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
-              {formatPercentN2(summary.discountPercent)}
+              Price max buy: <strong>{formatN2(summary.priceMaxBuy)}</strong> — Discount <strong>{formatPercentN2(summary.discountPercent)}</strong> —{' '}
+              {isBelowMaxBuy ? 'current price below max buy' : 'current price not below max buy'}
             </p>
           </section>
 
@@ -127,7 +126,7 @@ export default function DividendCheckPage() {
             <div className="dividend-check__table-column">
               <h3>Dividend history</h3>
               {displayedHistory.length === 0 ? (
-                <p>No dividend history found.</p>
+                <EmptyState>No dividend history found.</EmptyState>
               ) : (
                 <Table className="data-table">
                   <TableHeader>

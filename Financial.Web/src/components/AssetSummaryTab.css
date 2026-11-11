@@ -49,7 +49,7 @@
 }
 
 .asset-summary__value--blue {
-  color: #1565c0;
+  color: var(--accent);
 }
 
 .asset-summary__value--error {

@@ -1,3 +1,4 @@
+import { useId } from 'react'
 import { makeStyles, Text, tokens } from '@fluentui/react-components'
 
 const useStyles = makeStyles({
@@ -15,10 +16,11 @@ interface LockedValueProps {
 
 export default function LockedValue({ label, value }: LockedValueProps) {
   const styles = useStyles()
+  const labelId = useId()
 
   return (
-    <div className={styles.root}>
-      <Text>{label}</Text>
+    <div className={styles.root} role="group" aria-labelledby={labelId}>
+      <Text id={labelId}>{label}</Text>
       <Text weight="semibold">{value}</Text>
     </div>
   )

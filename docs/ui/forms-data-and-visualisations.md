@@ -105,6 +105,13 @@ asset on edit, a statement amount, the account of a snapshot) uses
 locks only in some states (a settled expense) sets `readOnly` with the same
 `filled-darker` appearance while locked.
 
+**Fixed context:** the account a form was opened from (the locked bank of a
+pay or transfer form, the card of a refund, a settlement's currency) is not
+a form value but the context the form acts in. It uses
+`components/LockedValue`: a label and a bold value in a group named by the
+label, never a Fluent `Field` around static text. Use `ReadOnlyInput` when
+the value belongs to the record being edited.
+
 **Required indicator mechanism:** Web uses Fluent's `Field` component's
 first-class `required` prop (`<Field label="X" required>`), which renders a
 visible asterisk after the label and wires `aria-required` on the control —

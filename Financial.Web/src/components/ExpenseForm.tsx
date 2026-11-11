@@ -221,7 +221,8 @@ export default function ExpenseForm({
               <Input
                 type="month"
                 value={invoiceDateDisplay}
-                disabled={isSettled}
+                readOnly={isSettled}
+                appearance={isSettled ? 'filled-darker' : undefined}
                 onChange={(e) => onFieldChange('invoiceDate', e.target.value)}
               />
             </Field>

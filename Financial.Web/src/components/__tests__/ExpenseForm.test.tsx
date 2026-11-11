@@ -136,7 +136,7 @@ describe('ExpenseForm', () => {
     expect(onFieldChange).toHaveBeenCalledWith('invoiceDate', '2026-08')
   })
 
-  it('shows the invoice month field disabled once settled', () => {
+  it('shows the invoice month field read-only, still focusable, once settled', () => {
     render(
       <ExpenseForm
         {...baseProps}
@@ -150,8 +150,8 @@ describe('ExpenseForm', () => {
     )
 
     const invoiceField = screen.getByLabelText('Invoice month')
-    expect(invoiceField).toBeInTheDocument()
-    expect(invoiceField).toBeDisabled()
+    expect(invoiceField).toHaveAttribute('readonly')
+    expect(invoiceField).toBeEnabled()
     expect(invoiceField).toHaveValue('2026-07')
   })
 

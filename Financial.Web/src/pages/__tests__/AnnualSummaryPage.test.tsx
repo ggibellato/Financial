@@ -249,7 +249,7 @@ describe('AnnualSummaryPage', () => {
     expect(within(footer).getByText('Total')).toBeInTheDocument()
     expect(within(footer).getByText('Month result')).toBeInTheDocument()
     expect(within(footer).queryByText('ChaseSave')).not.toBeInTheDocument()
-    expect(screen.getByRole('group', { name: 'Totals for Investments' })).toHaveTextContent('Year progress')
+    expect(screen.getByRole('group', { name: 'Totals for investments' })).toHaveTextContent('Year progress')
   })
 
   it('shows only the Investments tab content after clicking Investments', async () => {

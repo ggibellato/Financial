@@ -14,6 +14,7 @@ import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import { allItemsTotalLabel } from '../utils/allItemsTotalLabel'
+import { RESULTADO_LABEL, splitHistoricRows, TOTAL_DESPESAS_LABEL, type HistoricAverageOf, type HistoricYear } from '../utils/annualSummaryTotals'
 import './AnnualSummaryPage.css'
 
 type InvestmentAccount = InvestmentAnnualResultDto['accounts'][number]
@@ -22,7 +23,6 @@ type HistoricCategoryRow = CategoryAnnualAverageDto['annualAverages'][number]
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const SPACER_COL_SPAN = MONTH_LABELS.length + 3
 const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
-const HISTORIC_SUMMARY_AVERAGE_TOTALS = ['Resultado (R-D-Inv)', 'Total despesas']
 const TOTAL_ROW_LABEL = 'Total'
 
 function monthAccessors<T>(monthlyValuesOf: (row: T) => (number | null)[]): Record<string, SortAccessor<T>> {
@@ -79,20 +79,6 @@ function InvestmentRow({ label, monthlyValues, isTotal = false }: { label: strin
       ))}
     </TableRow>
   )
-}
-
-type HistoricYear = CategoryAnnualAverageDto
-type HistoricAverageOf = (category: string, year: HistoricYear['year']) => number
-
-function splitHistoricRows(years: HistoricYear[]) {
-  const averages = new Map(years.map((y) => [y.year, new Map(y.annualAverages.map((d) => [d.category, d.value]))]))
-  const rows = years[0]?.annualAverages ?? []
-  const averageOf: HistoricAverageOf = (category, year) => averages.get(year)?.get(category) ?? 0
-  return {
-    categoryRows: rows.filter((row) => !HISTORIC_SUMMARY_AVERAGE_TOTALS.includes(row.category)),
-    totalRows: HISTORIC_SUMMARY_AVERAGE_TOTALS.flatMap((category) => rows.filter((row) => row.category === category)),
-    averageOf,
-  }
 }
 
 function HistoricRow({
@@ -332,15 +318,11 @@ export default function AnnualSummaryPage() {
                       />
                     ))
                   )}
-
-                  <TableRow>
-                    <TableCell colSpan={SPACER_COL_SPAN} />
-                  </TableRow>
                 </TableBody>
                 <tfoot>
                   {incomeSummary && (
                     <AnnualSummaryRow
-                      label={allItemsTotalLabel('Resultado (R-D-Inv)', 'categories', categoryTotalsFilterSummary.isFiltered)}
+                      label={allItemsTotalLabel(RESULTADO_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
                       isTotal
                       monthlyValues={resultadoMonthly}
                       average={resultadoAverage}
@@ -348,7 +330,7 @@ export default function AnnualSummaryPage() {
                     />
                   )}
                   <AnnualSummaryRow
-                    label={allItemsTotalLabel('Total despesas', 'categories', categoryTotalsFilterSummary.isFiltered)}
+                    label={allItemsTotalLabel(TOTAL_DESPESAS_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
                     isTotal
                     monthlyValues={totalDespesasMonthly}
                     average={totalDespesasAverage}
@@ -403,7 +385,7 @@ export default function AnnualSummaryPage() {
                 </tfoot>
               </Table>
 
-              <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for Investments">
+              <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for investments">
                 <div className="annual-summary-page__investment-total">
                   <span>Year progress</span>
                   <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>
