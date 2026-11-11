@@ -1,4 +1,7 @@
+import { useState } from 'react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
+import type { BillExpenseErrors } from '../billExpenseValues'
 import { recurringBill } from '../../test/recurringBill'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import PayRecurringBillForm from '../PayRecurringBillForm'
@@ -29,6 +32,11 @@ const baseProps = {
 const SELECTED = {
   billId: 'council',
   values: { date: '2026-10-15', description: 'Council Tax', value: '120', bankId: 'barclays', categoryId: '' },
+}
+
+function RejectingCategory() {
+  const [fieldErrors, setFieldErrors] = useState<BillExpenseErrors>({})
+  return <PayRecurringBillForm {...baseProps} {...SELECTED} fieldErrors={fieldErrors} onSave={() => setFieldErrors({ categoryId: 'Choose a category.' })} />
 }
 
 describe('PayRecurringBillForm', () => {
@@ -79,6 +87,17 @@ describe('PayRecurringBillForm', () => {
     expect(onSave).toHaveBeenCalledOnce()
   })
 
+  it('moves focus to the first invalid field when Enter in a field fails validation', async () => {
+    const user = userEvent.setup()
+    render(<RejectingCategory />)
+
+    await user.click(screen.getByLabelText(/^Description/))
+    await user.keyboard('{Enter}')
+
+    expect(screen.getByText('Choose a category.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Category/)).toHaveFocus()
+  })
+
   it('shows a loading indicator while the bills load', () => {
     render(<PayRecurringBillForm {...baseProps} bills={[]} isLoadingBills />)
 
@@ -103,14 +122,23 @@ describe('PayRecurringBillForm', () => {
     expect(onRetryBills).toHaveBeenCalledOnce()
   })
 
-  it('shows a save error above the fields and disables everything while saving', () => {
-    const { rerender } = render(<PayRecurringBillForm {...baseProps} {...SELECTED} saveError="This bill is already paid." />)
-    expect(screen.getByText('This bill is already paid.')).toBeInTheDocument()
+  it('disables the fields and keeps Saving... focused while the payment saves', () => {
+    const { rerender } = render(<PayRecurringBillForm {...baseProps} {...SELECTED} />)
+    screen.getByRole('button', { name: 'Pay recurring bill' }).focus()
 
     rerender(<PayRecurringBillForm {...baseProps} {...SELECTED} isSaving />)
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    const save = screen.getByRole('button', { name: 'Saving...' })
+    expect(save).toHaveAttribute('aria-disabled', 'true')
+    expect(save).toHaveFocus()
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  })
+
+  it('announces a save error above the fields and moves focus to it', () => {
+    render(<PayRecurringBillForm {...baseProps} {...SELECTED} saveError="This bill is already paid." />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('This bill is already paid.')
+    expect(screen.getByRole('alert')).toHaveFocus()
   })
 })

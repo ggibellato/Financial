@@ -1,11 +1,14 @@
+import { useEffect, useRef, useState } from 'react'
 import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { CategoryDto, RecurringBillDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
+import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import { BILL_CURRENCY } from '../hooks/usePayRecurringBill'
 import { formatCurrency } from '../utils/formatters'
 import BillExpenseFields from './BillExpenseFields'
 import type { BillExpenseErrors, BillExpenseField, BillExpenseValues } from './billExpenseValues'
 import ErrorState from './ErrorState'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 function billLabel(bill: RecurringBillDto): string {
@@ -50,7 +53,14 @@ export default function PayRecurringBillForm({
   onCancel,
 }: PayRecurringBillFormProps) {
   const styles = useFormPanelStyles()
+  const formRef = useRef<HTMLFormElement | null>(null)
+  const [submitCount, setSubmitCount] = useState(0)
+  const errorRef = useAlertFocus(saveError)
   const canPickBill = !billsError && !isLoadingBills && (bills.length > 0 || billId !== '')
+
+  useEffect(() => {
+    if (submitCount > 0) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+  }, [submitCount])
 
   const billPicker = () => {
     if (billsError) return <ErrorState message={billsError} onRetry={onRetryBills} />
@@ -80,11 +90,13 @@ export default function PayRecurringBillForm({
 
   return (
     <form
+      ref={formRef}
       className={styles.panel}
       noValidate
       onSubmit={(event) => {
         event.preventDefault()
         onSave()
+        setSubmitCount((count) => count + 1)
       }}
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
@@ -92,7 +104,7 @@ export default function PayRecurringBillForm({
           Pay recurring bill
         </Text>
         {saveError && (
-          <MessageBar intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -117,18 +129,16 @@ export default function PayRecurringBillForm({
             />
           </div>
         )}
-
+      </fieldset>
+      {canPickBill ? (
+        <FormSaveActions saveLabel="Pay recurring bill" isSaving={isSaving} onCancel={onCancel} />
+      ) : (
         <div className={styles.actions}>
-          {canPickBill && (
-            <Button type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-              {isSaving ? 'Saving...' : 'Pay recurring bill'}
-            </Button>
-          )}
           <Button appearance="secondary" onClick={onCancel}>
             Cancel
           </Button>
         </div>
-      </fieldset>
+      )}
     </form>
   )
 }

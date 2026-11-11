@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, overdraftBalance } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -331,9 +332,9 @@ describe('PotWithdrawalForm from the Pots account', () => {
     render(<Harness />)
     await potsLoaded()
     fillWithdrawal()
-    const description = screen.getByLabelText(/^Description/)
-    description.focus()
-    fireEvent.submit(description.closest('form') as HTMLFormElement)
+    const user = userEvent.setup()
+    await user.click(screen.getByLabelText(/^Description/))
+    await user.keyboard('{Enter}')
 
     fireEvent.click(within(await findDialog()).getByText('Cancel', { selector: 'button' }))
 

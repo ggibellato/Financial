@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
@@ -51,6 +53,34 @@ function settleState(overrides: Partial<SettlementEntryFormModel> = {}): Settlem
     ...overrides,
   })
 }
+
+type User = ReturnType<typeof userEvent.setup>
+
+function ConfirmingSettle({ confirmedError = null }: { confirmedError?: string | null }) {
+  const [confirmation, setConfirmation] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
+  const state = settleState({
+    confirmation,
+    saveError,
+    submit: () => {
+      setConfirmation('Both totals become zero.')
+      return null
+    },
+    confirmSettle: () => {
+      setConfirmation(null)
+      setSaveError(confirmedError)
+    },
+    cancelConfirmation: () => setConfirmation(null),
+  })
+  return <SettlementEntryForm form={state} onCancel={vi.fn()} />
+}
+
+const findConfirmation = () =>
+  waitFor(() => {
+    const dialog = screen.getAllByRole('dialog', { hidden: true }).find((candidate) => candidate.textContent?.includes('Both totals become zero.'))
+    expect(dialog).toBeDefined()
+    return dialog as HTMLElement
+  })
 
 function renderForm(state: SettlementEntryFormModel, onCancel = vi.fn()) {
   return render(<SettlementEntryForm form={state} onCancel={onCancel} />)
@@ -234,25 +264,28 @@ describe('SettlementEntryForm', () => {
   })
 
   it.each([
-    ['the Save button', () => screen.getByRole('button', { name: 'Save settlement' })],
-    ['a field', () => screen.getByLabelText(/^Description/)],
-  ])('returns focus to Save when the confirmation is cancelled after a submit from %s', async (_, origin) => {
-    const { rerender } = renderForm(settleState())
-    origin().focus()
-    rerender(<SettlementEntryForm form={settleState({ confirmation: 'Both totals become zero.' })} onCancel={vi.fn()} />)
-    await screen.findAllByRole('dialog', { hidden: true })
+    ['a click on Save', (user: User) => user.click(screen.getByRole('button', { name: 'Save settlement' }))],
+    ['Enter in a field', async (user: User) => {
+      await user.click(screen.getByLabelText(/^Description/))
+      await user.keyboard('{Enter}')
+    }],
+  ])('returns focus to Save when the confirmation is cancelled after %s', async (_, submitFrom) => {
+    const user = userEvent.setup()
+    render(<ConfirmingSettle />)
 
-    rerender(<SettlementEntryForm form={settleState()} onCancel={vi.fn()} />)
+    await submitFrom(user)
+    await user.click(within(await findConfirmation()).getByRole('button', { name: 'Cancel', hidden: true }))
 
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     await waitFor(() => expect(screen.getByRole('button', { name: 'Save settlement' })).toHaveFocus())
   })
 
   it('moves focus to the alert when the confirmed settlement fails', async () => {
-    const { rerender } = renderForm(settleState({ confirmation: 'Both totals become zero.' }))
-    await screen.findAllByRole('dialog', { hidden: true })
+    const user = userEvent.setup()
+    render(<ConfirmingSettle confirmedError="Mãe is inactive." />)
 
-    rerender(<SettlementEntryForm form={settleState({ saveError: 'Mãe is inactive.' })} onCancel={vi.fn()} />)
+    await user.click(screen.getByRole('button', { name: 'Save settlement' }))
+    await user.click(within(await findConfirmation()).getByRole('button', { name: 'Save settlement', hidden: true }))
 
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())

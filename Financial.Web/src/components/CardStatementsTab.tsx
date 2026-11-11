@@ -10,7 +10,6 @@ import {
   Select,
   Skeleton,
   SkeletonItem,
-  Spinner,
   Table,
   TableBody,
   TableCell,
@@ -19,11 +18,13 @@ import {
   Text,
 } from '@fluentui/react-components'
 import type { AccountStatementDto } from '../api/types'
+import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
 import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, MISSING_VALUE_PLACEHOLDER, todayIsoDate } from '../utils/formatters'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -126,6 +127,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
   const bankRef = useRef<HTMLSelectElement | null>(null)
   const dateRef = useRef<HTMLInputElement | null>(null)
   const { payers, isLoadingPayers, payersError, retryPayers, failedSubmit, setPayField, submitPayForm } = cardStatements
+  const errorRef = useAlertFocus(payForm.error)
 
   useEffect(() => {
     bankRef.current?.focus()
@@ -151,7 +153,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
           Pay {monthOf(payForm.statement)} statement
         </Text>
         {payForm.error && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{payForm.error}</MessageBarBody>
           </MessageBar>
         )}
@@ -195,20 +197,8 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
             <Input readOnly value={formatCurrency(payForm.statement.outstandingTotal, currency)} />
           </Field>
         </div>
-        <div className={styles.actions}>
-          <Button
-            type="submit"
-            appearance="primary"
-            disabled={payForm.isSaving}
-            icon={payForm.isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {payForm.isSaving ? 'Saving...' : 'Pay statement'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions saveLabel="Pay statement" isSaving={payForm.isSaving} onCancel={onCancel} />
     </form>
   )
 }

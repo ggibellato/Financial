@@ -1,8 +1,10 @@
 import { useRef } from 'react'
-import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Field, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import { currentStatementLabel, moveRecordNoun, type MoveChargeFormState } from '../hooks/useMoveChargeForm'
 import { formatN2, formatShortDateUtc } from '../utils/formatters'
 import ErrorState from './ErrorState'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 const STATEMENT_HINT = 'Months with no statement yet are marked (new); paid statements are not listed.'
@@ -17,6 +19,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
   const styles = useFormPanelStyles()
   const statementRef = useRef<HTMLSelectElement | null>(null)
   const { form, targets, isLoadingTargets, hasNoTargets, targetsError, retryTargets, setTarget, submit } = moveForm
+  const errorRef = useAlertFocus(form?.error ?? null)
 
   if (!form) return null
   const { charge } = form
@@ -40,7 +43,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
           {`${charge.description} (${formatShortDateUtc(charge.chargeDate ?? charge.date)}, ${formatN2(Math.abs(charge.value))}) is on the ${currentStatementLabel(charge.invoiceDate)} statement.`}
         </Text>
         {form.error && (
-          <MessageBar intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{form.error}</MessageBarBody>
           </MessageBar>
         )}
@@ -69,20 +72,8 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
             </Select>
           </Field>
         </div>
-        <div className={styles.actions}>
-          <Button
-            type="submit"
-            appearance="primary"
-            disabled={form.isSaving || hasNoTargets}
-            icon={form.isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {form.isSaving ? 'Saving...' : `Move ${noun}`}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions saveLabel={`Move ${noun}`} isSaving={form.isSaving} isSaveDisabled={hasNoTargets} onCancel={onCancel} />
     </form>
   )
 }
