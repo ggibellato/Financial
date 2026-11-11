@@ -64,6 +64,7 @@ describe('FormSaveActions', () => {
     fireEvent.click(save)
 
     expect(onSubmit).not.toHaveBeenCalled()
+    expect(save).toHaveFocus()
   })
 
   it('disables Save outright when the form cannot be saved yet', () => {
