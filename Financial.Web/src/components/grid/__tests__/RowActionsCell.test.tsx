@@ -115,4 +115,24 @@ describe('RowActionsCell', () => {
 
     expect(screen.getByRole('button', { name: 'Delete Chase' })).not.toHaveAccessibleDescription()
   })
+
+  it('keeps Edit focusable but inert while it is blocked, and says why', () => {
+    const onEdit = vi.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="bill INSS" editBlockedReason="A bill is being saved." onEdit={onEdit} onDelete={vi.fn()} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    const edit = screen.getByRole('button', { name: 'Edit bill INSS' })
+    fireEvent.click(edit)
+
+    expect(edit).toHaveAttribute('aria-disabled', 'true')
+    expect(edit).toHaveAccessibleDescription('A bill is being saved.')
+    expect(onEdit).not.toHaveBeenCalled()
+  })
 })

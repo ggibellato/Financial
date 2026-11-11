@@ -154,6 +154,7 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
     case 'SHOW_EDIT_FORM': {
+      if (state.isSaving || state.isAdding) return state
       const edit = { editingId: action.payload.id, editStatus: action.payload.status, editValue: String(action.payload.value) }
       return { ...state, ...CLOSED_ADD_FORM, ...CLOSED_EDIT_FORM, ...edit, editSnapshot: snapshotFields(edit, EDIT_FIELDS) }
     }
@@ -168,6 +169,7 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'SHOW_ADD_FORM': {
+      if (state.isSaving || state.isAdding) return state
       const add = { ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area }
       return { ...state, ...CLOSED_EDIT_FORM, ...CLOSED_ADD_FORM, ...add, isAddFormOpen: true, addSnapshot: snapshotFields(add, ADD_FIELDS) }
     }

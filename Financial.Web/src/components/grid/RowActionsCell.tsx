@@ -36,6 +36,7 @@ function IconAction({ label, icon, blockedReason, disabled, disabledFocusable, o
 interface RowActionsCellProps {
   itemName: string
   editDisabled?: boolean
+  editBlockedReason?: string
   isDeleting?: boolean
   isOtherDeleting?: boolean
   onEdit?: (button: HTMLButtonElement) => void
@@ -47,6 +48,7 @@ interface RowActionsCellProps {
 export default function RowActionsCell({
   itemName,
   editDisabled,
+  editBlockedReason,
   isDeleting = false,
   isOtherDeleting = false,
   onEdit,
@@ -62,7 +64,9 @@ export default function RowActionsCell({
           <IconAction
             label={`Edit ${itemName}`}
             icon={<EditRegular />}
+            blockedReason={editBlockedReason}
             disabled={editDisabled}
+            disabledFocusable={!!editBlockedReason}
             onClick={(event) => onEdit(event.currentTarget)}
           />
         )}

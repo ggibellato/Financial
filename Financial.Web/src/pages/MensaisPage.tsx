@@ -38,12 +38,14 @@ import { rowDeleteState, type RowDeleteState } from '../components/grid/rowDelet
 import './MensaisPage.css'
 
 const NEW_BILL_FORM = 'new'
+const BILL_FORM_SAVING = 'A bill is being saved.'
 
 interface BillRowProps {
   bill: RecurringBillDto
   showBrasilFields: boolean
   deleteState: RowDeleteState
   isUpdatingStatus: boolean
+  editBlockedReason?: string
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (bill: RecurringBillDto) => void
   onStatusChange: (id: string, status: string) => void
@@ -54,6 +56,7 @@ function BillRow({
   showBrasilFields,
   deleteState,
   isUpdatingStatus,
+  editBlockedReason,
   onEdit,
   onDelete,
   onStatusChange,
@@ -87,6 +90,7 @@ function BillRow({
       <RowActionsCell
         itemName={`bill ${bill.description}`}
         {...deleteState}
+        editBlockedReason={editBlockedReason}
         onEdit={() => onEdit(bill)}
         onDelete={() => onDelete(bill)}
       />
@@ -99,6 +103,7 @@ interface BillTableProps {
   showBrasilFields: boolean
   deletingBillId: string | null
   updatingStatusBillId: string | null
+  editBlockedReason?: string
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (bill: RecurringBillDto) => void
   onStatusChange: (id: string, status: string) => void
@@ -109,6 +114,7 @@ function BillTable({
   showBrasilFields,
   deletingBillId,
   updatingStatusBillId,
+  editBlockedReason,
   onEdit,
   onDelete,
   onStatusChange,
@@ -197,6 +203,7 @@ function BillTable({
                   showBrasilFields={showBrasilFields}
                   deleteState={rowDeleteState(deletingBillId, bill.id)}
                   isUpdatingStatus={updatingStatusBillId === bill.id}
+                  editBlockedReason={editBlockedReason}
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onStatusChange={onStatusChange}
@@ -274,6 +281,9 @@ export default function MensaisPage() {
   const addBillRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(billsRegionRef, addBillRef, isLoading)
   const openFormKey = isAddFormOpen ? NEW_BILL_FORM : editingId
+  const isFormSaving = isAdding || isSaving
+  const formBlockedReason = isFormSaving ? BILL_FORM_SAVING : undefined
+  const newBillReasonId = useId()
   const previousFormKey = useRef<string | null>(null)
 
   const restoreFocus = () => {
@@ -289,6 +299,7 @@ export default function MensaisPage() {
   }, [openFormKey])
 
   const openForm = (open: () => void) => {
+    if (isFormSaving) return
     const focused = document.activeElement
     const opener = focused instanceof HTMLElement && focused !== document.body ? focused : null
     discardPrompt.confirmDiscard(() => {
@@ -322,9 +333,17 @@ export default function MensaisPage() {
           />
         </div>
         <div className="mensais-page__toolbar">
-          <Button ref={addBillRef} appearance="primary" icon={<AddRegular />} onClick={() => openForm(showAddForm)}>
+          <Button
+            ref={addBillRef}
+            appearance="primary"
+            icon={<AddRegular />}
+            disabledFocusable={isFormSaving}
+            aria-describedby={isFormSaving ? newBillReasonId : undefined}
+            onClick={() => openForm(showAddForm)}
+          >
             New bill
           </Button>
+          {isFormSaving && <Text id={newBillReasonId}>{BILL_FORM_SAVING}</Text>}
           <Button
             appearance="primary"
             icon={<ArrowResetRegular />}
@@ -379,6 +398,7 @@ export default function MensaisPage() {
               showBrasilFields
               deletingBillId={deletingBillId}
               updatingStatusBillId={updatingStatusBillId}
+              editBlockedReason={formBlockedReason}
               onEdit={(bill) => openForm(() => showEditForm(bill))}
               onDelete={deletion.request}
               onStatusChange={updateBillStatus}
@@ -388,6 +408,7 @@ export default function MensaisPage() {
               showBrasilFields={false}
               deletingBillId={deletingBillId}
               updatingStatusBillId={updatingStatusBillId}
+              editBlockedReason={formBlockedReason}
               onEdit={(bill) => openForm(() => showEditForm(bill))}
               onDelete={deletion.request}
               onStatusChange={updateBillStatus}

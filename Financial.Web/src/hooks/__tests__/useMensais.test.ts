@@ -217,6 +217,22 @@ describe('useMensais', () => {
     expect(result.current.isAddFormOpen).toBe(false)
   })
 
+  it('does not swap in another form while a bill is saving', async () => {
+    updateMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showEditForm(BILLS[0]))
+    act(() => result.current.setEditField('editValue', '900'))
+    act(() => result.current.saveEdit())
+    act(() => result.current.showEditForm(BILLS[1]))
+    act(() => result.current.showAddForm())
+
+    expect(result.current.editingId).toBe(BILLS[0].id)
+    expect(result.current.editValue).toBe('900')
+    expect(result.current.isAddFormOpen).toBe(false)
+  })
+
   it('reports each successful add, save, delete and reset, and nothing for a failure', async () => {
     const notifySaved = vi.fn()
     createMensaisBillMock.mockResolvedValueOnce({ ...BILLS[0], id: 'b3' }).mockRejectedValueOnce(new Error('down'))

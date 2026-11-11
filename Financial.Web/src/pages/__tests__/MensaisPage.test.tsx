@@ -657,6 +657,44 @@ describe('MensaisPage', () => {
       await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
     })
 
+    it('keeps a saving Edit open and blocks New bill and the other Edits until it settles', async () => {
+      updateMensaisBillMock.mockReturnValue(never())
+      const form = await openEditInss()
+      fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '900' } })
+      fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
+      await within(form).findByRole('button', { name: 'Saving…', hidden: true })
+
+      const otherEdit = screen.getByRole('button', { name: 'Edit bill Council Tax', hidden: true })
+      const newBill = screen.getByRole('button', { name: 'New bill', hidden: true })
+      fireEvent.click(otherEdit)
+      fireEvent.click(newBill)
+
+      expect(screen.getByRole('form', { name: 'Edit bill', hidden: true })).toBe(form)
+      expect(screen.getByLabelText(/^Value/)).toHaveValue(900)
+      expect(screen.queryByRole('form', { name: 'New bill', hidden: true })).not.toBeInTheDocument()
+      expect(otherEdit).toHaveAttribute('aria-disabled', 'true')
+      expect(otherEdit).toHaveAccessibleDescription('A bill is being saved.')
+      expect(newBill).toHaveAttribute('aria-disabled', 'true')
+      expect(newBill).toHaveAccessibleDescription('A bill is being saved.')
+    })
+
+    it('keeps a saving New bill open and blocks the row Edits', async () => {
+      createMensaisBillMock.mockReturnValue(never())
+      const form = await openNewBill()
+      fillNewBill()
+      fireEvent.click(within(form).getByRole('button', { name: 'Add bill' }))
+      await within(form).findByRole('button', { name: 'Saving…', hidden: true })
+
+      const edit = screen.getByRole('button', { name: 'Edit bill INSS', hidden: true })
+      fireEvent.click(edit)
+
+      expect(edit).toHaveAttribute('aria-disabled', 'true')
+      expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })).not.toBeInTheDocument()
+      expect(screen.getByRole('form', { name: 'New bill', hidden: true })).toBe(form)
+      expect(screen.queryByRole('form', { name: 'Edit bill', hidden: true })).not.toBeInTheDocument()
+      expect(screen.getByLabelText(/^Description/)).toHaveValue('Aluguel')
+    })
+
     it('focuses the first field when New bill opens', async () => {
       await openNewBill()
 
