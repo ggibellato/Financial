@@ -39,14 +39,6 @@ export const useFormPanelStyles = makeStyles({
   savingFieldset: {
     display: 'contents',
   },
-  visuallyHidden: {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    overflow: 'hidden',
-    clip: 'rect(0 0 0 0)',
-    whiteSpace: 'nowrap',
-  },
   actions: {
     display: 'flex',
     flexWrap: 'wrap',

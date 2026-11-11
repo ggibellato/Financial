@@ -1,6 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react'
 import { Button, Spinner } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
+import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 
 interface FormSaveActionsProps {
   saveLabel: string
@@ -23,6 +24,7 @@ function takeFocusOnSubmit(event: MouseEvent<HTMLButtonElement>) {
 
 export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = false, isBusy = isSaving, onCancel, children }: FormSaveActionsProps) {
   const styles = useFormPanelStyles()
+  const hidden = useVisuallyHiddenStyles()
 
   return (
     <div className={styles.actions}>
@@ -41,7 +43,7 @@ export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = 
         Cancel
       </Button>
       {children}
-      <span role="status" className={styles.visuallyHidden}>
+      <span role="status" className={hidden.visuallyHidden}>
         {isSaving ? SAVING_LABEL : ''}
       </span>
     </div>
