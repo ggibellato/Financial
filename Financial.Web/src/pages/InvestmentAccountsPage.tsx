@@ -97,7 +97,7 @@ export default function InvestmentAccountsPage() {
         accountsError && (
           <MessageBar intent="warning">
             <MessageBarBody>
-              Couldn&rsquo;t load accounts, so the Credit Card and Pots account pickers are empty and the Source column
+              Couldn&rsquo;t load accounts, so the credit card and Pots account pickers are empty and the Source column
               shows — for linked accounts.
             </MessageBarBody>
             <MessageBarActions>

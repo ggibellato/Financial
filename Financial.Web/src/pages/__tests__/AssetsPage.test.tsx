@@ -170,7 +170,7 @@ describe('AssetsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete CLOSEDASSET' }))
 
-    expect(screen.getByText(/will be archived into Historic investments/)).toBeInTheDocument()
+    expect(screen.getByText(/will be archived into historic investments/)).toBeInTheDocument()
     const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
     fireEvent.click(confirmButtons[confirmButtons.length - 1])
 

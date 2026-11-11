@@ -168,7 +168,7 @@ export default function AssetsPage() {
                   </>
                 ) : (
                   <>
-                    &ldquo;{confirmingDelete.name}&rdquo; holds zero quantity and will be archived into Historic
+                    &ldquo;{confirmingDelete.name}&rdquo; holds zero quantity and will be archived into historic
                     investments.
                   </>
                 )

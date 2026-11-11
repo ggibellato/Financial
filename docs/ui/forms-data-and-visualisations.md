@@ -251,7 +251,11 @@ same shape: the page's "New broker" button opens a dialog titled "New broker"
 whose confirm reads "Add broker"; editing a row opens "Edit broker" with
 "Save". All of these labels, like every other piece of UI text, use sentence
 case (`design-tokens.md`): only the first word, proper nouns and acronyms are
-capitalised.
+capitalised. A page name used mid-sentence is lowercase too ("will be archived
+into historic investments"). Validation, error, load- and save-failure and
+empty-state messages are full sentences ending with a full stop ("Date is
+required.", "No income recorded for this month."); short labels, button text,
+headings and brief status toasts ("Expense added") have none.
 
 Do not let the form re-title itself into different wording once open (e.g.
 a "New transfer" trigger opening a form titled "Move money") — the trigger's

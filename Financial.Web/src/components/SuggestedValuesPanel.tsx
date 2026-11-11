@@ -188,7 +188,7 @@ export default function SuggestedValuesPanel({
             )}
             {phase === 'completed' && failedRows.length > 0 && (
               <Button appearance="primary" onClick={onRetryFailed}>
-                Retry failed
+                Retry failed rows
               </Button>
             )}
             <Button appearance="secondary" disabled={isApplying} onClick={onClose}>
