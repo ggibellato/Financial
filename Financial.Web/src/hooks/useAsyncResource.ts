@@ -47,18 +47,11 @@ export function useLatestRequestGuard(): () => () => boolean {
   }, [])
 }
 
-export interface SelectionGuard<A> {
-  beginSelection: () => void
-  dispatchForCurrentSelection: () => (action: A) => void
-}
+const alwaysCurrent = () => true
 
-export function useSelectionGuard<A>(dispatch: Dispatch<A>): SelectionGuard<A> {
+export function useSelectionGuard<A>(dispatch: Dispatch<A>) {
   const beginRequest = useLatestRequestGuard()
-  const isCurrentSelection = useRef<() => boolean>(() => true)
-
-  const beginSelection = useCallback(() => {
-    isCurrentSelection.current = beginRequest()
-  }, [beginRequest])
+  const isCurrentSelection = useRef<() => boolean>(alwaysCurrent)
 
   const dispatchForCurrentSelection = useCallback(() => {
     const isCurrent = isCurrentSelection.current
@@ -66,6 +59,11 @@ export function useSelectionGuard<A>(dispatch: Dispatch<A>): SelectionGuard<A> {
       if (isCurrent()) dispatch(action)
     }
   }, [dispatch])
+
+  const beginSelection = useCallback(() => {
+    isCurrentSelection.current = beginRequest()
+    return dispatchForCurrentSelection()
+  }, [beginRequest, dispatchForCurrentSelection])
 
   return { beginSelection, dispatchForCurrentSelection }
 }

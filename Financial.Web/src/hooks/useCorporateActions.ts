@@ -263,14 +263,13 @@ export function useCorporateActions(): CorporateActionsData {
   )
 
   useEffect(() => {
-    beginSelection()
+    const settle = beginSelection()
     if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
     }
 
     dispatch({ type: 'FETCH_START' })
-    const settle = dispatchForCurrentSelection()
 
     void apiClient
       .getAssetDetails(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
@@ -278,7 +277,7 @@ export function useCorporateActions(): CorporateActionsData {
       .catch((err: unknown) => {
         settle({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load corporate actions') })
       })
-  }, [selectedNode, scope, state.retryCount, beginSelection, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 

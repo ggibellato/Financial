@@ -322,8 +322,7 @@ export function useTransactions(): TransactionsData {
   )
 
   useEffect(() => {
-    beginSelection()
-    const settle = dispatchForCurrentSelection()
+    const settle = beginSelection()
     if (!selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -368,7 +367,7 @@ export function useTransactions(): TransactionsData {
     } else {
       dispatch({ type: 'RESET' })
     }
-  }, [selectedNode, scope, state.retryCount, beginSelection, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const transactions = useMemo(() => state.asset?.transactions ?? [], [state.asset])
 

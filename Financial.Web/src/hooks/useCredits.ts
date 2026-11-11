@@ -269,7 +269,7 @@ export function useCredits(): CreditsData {
   const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
 
   useEffect(() => {
-    beginSelection()
+    const settle = beginSelection()
     if (!selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -277,7 +277,6 @@ export function useCredits(): CreditsData {
 
     const key = buildSelectionKey(selectedNode)
     dispatch({ type: 'FETCH_START', payload: { key } })
-    const settle = dispatchForCurrentSelection()
 
     const { nodeType, brokerName, portfolioName, assetName } = selectedNode
 
@@ -312,7 +311,7 @@ export function useCredits(): CreditsData {
           })
         })
     }
-  }, [selectedNode, scope, state.retryCount, beginSelection, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const credits = state.credits
 

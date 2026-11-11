@@ -188,7 +188,7 @@ export function usePriceHistory(): PriceHistoryData {
   const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
 
   useEffect(() => {
-    beginSelection()
+    const settle = beginSelection()
     if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
@@ -196,7 +196,6 @@ export function usePriceHistory(): PriceHistoryData {
 
     const key = buildSelectionKey(selectedNode)
     dispatch({ type: 'FETCH_START', payload: { key } })
-    const settle = dispatchForCurrentSelection()
 
     void apiClient
       .getAssetDetails(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
@@ -212,7 +211,7 @@ export function usePriceHistory(): PriceHistoryData {
           payload: getErrorMessage(err, 'Unable to load price history'),
         })
       })
-  }, [selectedNode, scope, state.retryCount, beginSelection, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const entries = state.entries
 
