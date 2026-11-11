@@ -158,10 +158,7 @@ public class Transfer : IAccountTransaction
 
     private static void EnsureDateAndNoteAreValid(DateOnly date, string? note, DateOnly today)
     {
-        if (date > today)
-        {
-            throw new ArgumentException("Date must not be in the future.");
-        }
+        TransactionDateRule.EnsureNotInFuture(date, today);
 
         if (note?.Length > MaxNoteLength)
         {

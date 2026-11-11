@@ -190,13 +190,7 @@ public sealed class SettlementService : ISettlementService
     private SettlementTransaction EntryOf(Account account, Guid entryId) =>
         _repository.GetSettlementTransactions().FirstOrThrow(entry => entry.Id == entryId && entry.Account.Id == account.Id, "Settlement entry", entryId);
 
-    private void EnsureNotInTheFuture(DateOnly date)
-    {
-        if (date > _timeProvider.GetLocalToday())
-        {
-            throw new ArgumentException("Date must not be in the future.");
-        }
-    }
+    private void EnsureNotInTheFuture(DateOnly date) => TransactionDateRule.EnsureNotInFuture(date, _timeProvider.GetLocalToday());
 
     private async Task<string?> ApplyConvertedValueAsync(SettlementTransaction entry)
     {

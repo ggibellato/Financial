@@ -19,7 +19,6 @@ public sealed class ExpenseService : IExpenseService
     private const string PaidStatementMessage = "This charge's statement is paid; unmark it first.";
     private const string StatementPaidStatus = "CreditCardStatementPaid";
     private const string InvalidStatementMonthMessage = "The statement month is not a valid month.";
-    private const string FutureRefundDateMessage = "Date must not be in the future.";
 
     private readonly ICashFlowRepository _repository;
     private readonly TimeProvider _timeProvider;
@@ -236,9 +235,9 @@ public sealed class ExpenseService : IExpenseService
 
     private void EnsureRefundIsNotFutureDated(decimal value, Account? creditCard, DateOnly date)
     {
-        if (creditCard is not null && value < 0 && date > _timeProvider.GetLocalToday())
+        if (creditCard is not null && value < 0)
         {
-            throw new ArgumentException(FutureRefundDateMessage);
+            TransactionDateRule.EnsureNotInFuture(date, _timeProvider.GetLocalToday());
         }
     }
 
