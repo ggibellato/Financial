@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Button, TableCell } from '@fluentui/react-components'
+import { Button, Spinner, TableCell } from '@fluentui/react-components'
 import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 
 interface RowActionsCellProps {
@@ -39,7 +39,7 @@ export default function RowActionsCell({
           <Button
             appearance="subtle"
             size="small"
-            icon={<DeleteRegular />}
+            icon={isDeleting ? <Spinner size="tiny" /> : <DeleteRegular />}
             aria-label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
             disabledFocusable={isDeleting}
             onClick={onDelete}

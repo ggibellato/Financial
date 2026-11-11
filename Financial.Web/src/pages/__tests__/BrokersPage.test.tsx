@@ -236,7 +236,7 @@ describe('BrokersPage', () => {
     getAdminBrokersMock.mockResolvedValue([BROKERS[0], INTER])
     completeDelete()
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Inter', hidden: true })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Inter' })).toHaveFocus())
   })
 
   it('moves focus to the announced error when a delete fails', async () => {

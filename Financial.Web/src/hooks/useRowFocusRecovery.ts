@@ -2,6 +2,8 @@ import { useEffect, useRef, type FocusEvent, type RefObject } from 'react'
 
 interface FocusedRowControl {
   element: HTMLElement
+  body: HTMLElement
+  bodyIndex: number
   rowIndex: number
   controlsAfter: number
 }
@@ -13,17 +15,24 @@ function focusIsLost(): boolean {
   return document.activeElement === null || document.activeElement === document.body
 }
 
-function locate(element: HTMLElement): FocusedRowControl | null {
+function locate(region: HTMLElement, element: HTMLElement): FocusedRowControl | null {
   const row = element.closest<HTMLTableRowElement>(ROW_SELECTOR)
-  if (!row?.parentElement) return null
-  const rowIndex = Array.from(row.parentElement.children).indexOf(row)
+  const body = row?.parentElement
+  if (!row || !body) return null
   const controls = Array.from(row.querySelectorAll(CONTROL_SELECTOR))
   const controlIndex = controls.indexOf(element)
-  return controlIndex < 0 ? null : { element, rowIndex, controlsAfter: controls.length - 1 - controlIndex }
+  if (controlIndex < 0) return null
+  return {
+    element,
+    body,
+    bodyIndex: Array.from(region.querySelectorAll('tbody')).indexOf(body as HTMLTableSectionElement),
+    rowIndex: Array.from(body.children).indexOf(row),
+    controlsAfter: controls.length - 1 - controlIndex,
+  }
 }
 
-function controlNear(region: HTMLElement, { rowIndex, controlsAfter }: FocusedRowControl): HTMLElement | null {
-  const rows = region.querySelectorAll(ROW_SELECTOR)
+function controlNear(region: HTMLElement, { body, bodyIndex, rowIndex, controlsAfter }: FocusedRowControl): HTMLElement | null {
+  const rows = (body.isConnected ? body : region.querySelectorAll('tbody')[bodyIndex])?.children ?? []
   const row = rows[Math.min(rowIndex, rows.length - 1)]
   if (!row) return null
   const controls = row.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)
@@ -49,6 +58,6 @@ export function useRowFocusRecovery(
 
   return (event: FocusEvent<HTMLElement>) => {
     if (!event.currentTarget.contains(event.target)) return
-    lastFocused.current = locate(event.target)
+    lastFocused.current = locate(event.currentTarget, event.target)
   }
 }

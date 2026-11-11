@@ -641,7 +641,42 @@ describe('TransactionsTab', () => {
 
     await confirmDelete(BUY_NAME)
 
+    await waitFor(() => expect(screen.getByRole('button', { name: `Delete ${SELL_NAME}` })).toHaveFocus())
+  })
+
+  it('moves_focus_to_the_next_transaction_not_the_lot_picker_when_the_sale_form_is_open', async () => {
+    getOpenLotsMock.mockResolvedValue([OPEN_LOT])
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL], 'SpecificId'))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL], 'SpecificId')
+    await openNewForm()
+    fillValidSale()
+    await screen.findByRole('spinbutton', { name: /Allocate quantity/ })
+
+    await confirmDelete(BUY_NAME)
+
     await waitFor(() => expect(rowButton(`Delete ${SELL_NAME}`)).toHaveFocus())
+  })
+
+  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+    deleteTransactionMock.mockReturnValue(new Promise(() => {}))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+    await confirmDelete(BUY_NAME)
+
+    await confirmDelete(SELL_NAME)
+
+    expect(deleteTransactionMock).toHaveBeenCalledOnce()
+    expect(rowButton(`Delete ${SELL_NAME}`)).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('closes_the_edit_form_when_the_transaction_being_edited_is_deleted', async () => {
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL]))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+    fireEvent.click(rowButton(`Edit ${BUY_NAME}`))
+    await screen.findByRole('heading', { name: 'Edit transaction' })
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Edit transaction', hidden: true })).not.toBeInTheDocument())
   })
 
   it('moves_focus_to_the_previous_row_delete_after_deleting_the_last_row', async () => {
@@ -669,7 +704,7 @@ describe('TransactionsTab', () => {
 
     await confirmDelete(BUY_NAME)
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'New transaction', hidden: true })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New transaction' })).toHaveFocus())
   })
 
   it('announces_a_failed_delete_and_moves_focus_to_it', async () => {

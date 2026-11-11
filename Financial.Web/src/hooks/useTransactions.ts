@@ -247,8 +247,16 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
       return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: state.deleteError }
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
-    case 'DELETE_SUCCESS':
-      return { ...state, asset: action.payload, deletingId: null, deleteError: null }
+    case 'DELETE_SUCCESS': {
+      const deletedRowWasBeingEdited = state.editingId === state.deletingId
+      return {
+        ...state,
+        ...(deletedRowWasBeingEdited ? BLANK_FORM : {}),
+        asset: action.payload,
+        deletingId: null,
+        deleteError: null,
+      }
+    }
     case 'DELETE_ERROR':
       return { ...state, deletingId: null, deleteError: action.payload }
     default:
@@ -517,7 +525,7 @@ export function useTransactions(): TransactionsData {
 
   const deleteTransaction = useCallback(
     (id: string) => {
-      if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+      if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
       dispatch({ type: 'DELETE_START', payload: id })
       void apiClient
@@ -535,7 +543,7 @@ export function useTransactions(): TransactionsData {
           })
         })
     },
-    [selectedNode],
+    [selectedNode, state.deletingId],
   )
 
   return {

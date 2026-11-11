@@ -458,7 +458,7 @@ export default function TransactionsTab() {
   }
 
   return (
-    <div ref={regionRef} className="transactions-tab" onFocus={recordRowFocus}>
+    <div className="transactions-tab">
       <TransactionsChart
         chartData={chartData}
         selectedFilter={selectedFilter}
@@ -499,7 +499,7 @@ export default function TransactionsTab() {
         />
       )}
 
-      <div className="transactions-tab__table-wrapper">
+      <div ref={regionRef} className="transactions-tab__table-wrapper" onFocus={recordRowFocus}>
         <Table className="transactions-tab__table data-table">
           <TableHeader>
             <TableRow>
