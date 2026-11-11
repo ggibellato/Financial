@@ -37,6 +37,10 @@ public static class AccountBalanceRule
         return account.Currencies.Select(currency => (currency, Balance(account, currency, asOf, records))).ToList();
     }
 
+    public static IReadOnlyList<(Currency Currency, decimal Balance)> CurrentBalances(
+        Account account, IReadOnlyCollection<IAccountTransaction> records) =>
+        Balances(account, DateOnly.MaxValue, records);
+
     public static decimal PotBalance(Pot pot, DateOnly asOf, IEnumerable<PotTransaction> movements)
     {
         ArgumentNullException.ThrowIfNull(pot);

@@ -166,7 +166,7 @@ public sealed class SettlementService : ISettlementService
             throw new ArgumentException($"{account.Name} can't be settled.");
         }
 
-        var currentBalances = AccountBalanceRule.Balances(account, DateOnly.MaxValue, AccountTransactionReader.Read(_repository));
+        var currentBalances = AccountBalanceRule.CurrentBalances(account, AccountTransactionReader.Read(_repository));
         if (AccountActions.DisabledFor(account, currentBalances).TryGetValue(AccountAction.Settle, out var reason))
         {
             throw new ArgumentException(reason);

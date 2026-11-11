@@ -328,4 +328,16 @@ public class AccountBalanceRuleTests
 
         AccountBalanceRule.Balances(_barclays, new DateOnly(2026, 9, 30), records).Should().Equal((Currency.GBP, 1300m));
     }
+
+    [Fact]
+    public void CurrentBalances_CountsRecordsOfEveryDate()
+    {
+        IAccountTransaction[] records =
+        [
+            Income.Create(new DateOnly(2026, 9, 3), _salary, null, 100m, _barclays),
+            Income.Create(new DateOnly(2099, 12, 31), _salary, null, 5m, _barclays)
+        ];
+
+        AccountBalanceRule.CurrentBalances(_barclays, records).Should().Equal((Currency.GBP, 1105m));
+    }
 }
