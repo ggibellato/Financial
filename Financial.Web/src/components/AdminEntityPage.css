@@ -20,7 +20,3 @@
   gap: 12px;
   flex-wrap: wrap;
 }
-
-.admin-entity-page__empty {
-  color: var(--text, #333);
-}

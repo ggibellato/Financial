@@ -3,8 +3,6 @@ import {
   Button,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Select,
   Table,
   TableBody,
@@ -25,6 +23,7 @@ import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useFormPanelStyles } from '../components/formPanelStyles'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useMensais } from '../hooks/useMensais'
@@ -252,17 +251,11 @@ export default function MensaisPage() {
   const styles = useFormPanelStyles()
   const addFieldError = useFieldError(addErrorFields)
   const editFieldError = useFieldError(saveErrorFields)
-  const [confirmingDelete, setConfirmingDelete] = useState<RecurringBillDto | null>(null)
+  const deletion = usePendingDelete((row: RecurringBillDto) => deleteBill(row.id))
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
   const billsRegionRef = useRef<HTMLDivElement | null>(null)
   const addBillRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(billsRegionRef, addBillRef, isLoading)
-
-  const confirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteBill(confirmingDelete.id)
-    setConfirmingDelete(null)
-  }
 
   const confirmReset = () => {
     resetAllToUnset()
@@ -368,11 +361,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {Object.keys(addErrorFields).length === 0 && addError && (
-            <MessageBar intent="error">
-              <MessageBarBody>{addError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={Object.keys(addErrorFields).length === 0 ? addError : null} />
         </div>
       )}
 
@@ -422,11 +411,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {Object.keys(saveErrorFields).length === 0 && saveError && (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
         </div>
       )}
 
@@ -442,7 +427,7 @@ export default function MensaisPage() {
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
-            onDelete={setConfirmingDelete}
+            onDelete={deletion.request}
             onStatusChange={updateBillStatus}
           />
           <BillTable
@@ -451,18 +436,18 @@ export default function MensaisPage() {
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
-            onDelete={setConfirmingDelete}
+            onDelete={deletion.request}
             onStatusChange={updateBillStatus}
           />
         </div>
       )}
 
-      {confirmingDelete && (
+      {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="bill"
-          message={`Delete the bill "${confirmingDelete.description}"? This cannot be undone.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(null)}
+          message={`Delete the bill "${deletion.pendingRow.description}"? This cannot be undone.`}
+          onConfirm={deletion.confirm}
+          onCancel={deletion.cancel}
         />
       )}
 

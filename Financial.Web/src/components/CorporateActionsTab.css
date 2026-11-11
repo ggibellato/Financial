@@ -9,10 +9,6 @@
   align-items: center;
 }
 
-.corporate-actions-tab__empty {
-  color: var(--text);
-}
-
 .corporate-actions-tab__table-wrapper {
   overflow: auto;
 }

@@ -1,5 +1,6 @@
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { ChevronDownRegular, ChevronRightRegular } from '@fluentui/react-icons'
+import EmptyState from './EmptyState'
 import type { DisposalRecordDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
@@ -140,7 +141,7 @@ export default function DisposalsTab() {
   if (chains.length === 0) {
     return (
       <div className="disposals-tab">
-        <p className="disposals-tab__empty">No disposals yet — nothing has been sold from this holding.</p>
+        <EmptyState>No disposals yet — nothing has been sold from this holding.</EmptyState>
       </div>
     )
   }
@@ -157,7 +158,7 @@ export default function DisposalsTab() {
       </div>
 
       {filteredChains.length === 0 ? (
-        <p className="disposals-tab__empty">No disposals in {selectedTaxYear}.</p>
+        <EmptyState>No disposals in {selectedTaxYear}.</EmptyState>
       ) : (
         <div className="disposals-tab__table-wrapper">
           <Table className="disposals-tab__table data-table">

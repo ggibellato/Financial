@@ -17,6 +17,7 @@ import {
   TableRow,
 } from '@fluentui/react-components'
 import { ArrowSyncRegular } from '@fluentui/react-icons'
+import EmptyState from '../components/EmptyState'
 import CalendarSyncStatusBadge from '../components/CalendarSyncStatusBadge'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -113,7 +114,7 @@ export default function IntegrationsPage() {
             ) : syncStatuses.error ? (
               <ErrorState message={syncStatuses.error} onRetry={syncStatuses.retry} />
             ) : syncStatuses.rows.length === 0 ? (
-              <p className="integrations-page__empty">No active credit cards with a due date yet.</p>
+              <EmptyState>No active credit cards with a due date yet.</EmptyState>
             ) : (
               <>
                 {retryFailure && failedResyncRow && (

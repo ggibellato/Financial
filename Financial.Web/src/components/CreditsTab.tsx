@@ -11,9 +11,10 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
+import EmptyState from './EmptyState'
 import type { CreditDto } from '../api/types'
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
@@ -25,6 +26,7 @@ import LoadingState from './LoadingState'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
@@ -266,11 +268,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
     </div>
   )
 }
@@ -396,16 +394,10 @@ export default function CreditsTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(credits, SORT_ACCESSORS, DATE_DESC_SORT)
 
-  const [confirmingDelete, setConfirmingDelete] = useState<CreditDto | null>(null)
+  const deletion = usePendingDelete((row: CreditDto) => deleteCredit(row.id))
   const regionRef = useRef<HTMLDivElement | null>(null)
   const newCreditRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(regionRef, newCreditRef, isLoading)
-
-  const confirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteCredit(confirmingDelete.id)
-    setConfirmingDelete(null)
-  }
 
   if (isLoading) {
     return <LoadingState />
@@ -476,7 +468,7 @@ export default function CreditsTab() {
       )}
 
       {credits.length === 0 ? (
-        <p className="credits-tab__empty">No credits yet — no dividend, JCP, coupon or lending income has been recorded for this holding.</p>
+        <EmptyState className="credits-tab__empty">No credits yet — no dividend, JCP, coupon or lending income has been recorded for this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="credits-tab__table-wrapper" onFocus={recordRowFocus}>
           <Table className="credits-tab__table data-table">
@@ -548,7 +540,7 @@ export default function CreditsTab() {
                   credit={c}
                   isDeleting={deletingId === c.id}
                   onEdit={showEditForm}
-                  onDelete={setConfirmingDelete}
+                  onDelete={deletion.request}
                 />
               ))}
             </TableBody>
@@ -558,12 +550,12 @@ export default function CreditsTab() {
 
       <ActionErrorAlert message={deleteError} className="credits-tab__delete-error" />
 
-      {confirmingDelete && (
+      {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="credit"
-          message={`Delete the ${creditName(confirmingDelete)}? This cannot be undone.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(null)}
+          message={`Delete the ${creditName(deletion.pendingRow)}? This cannot be undone.`}
+          onConfirm={deletion.confirm}
+          onCancel={deletion.cancel}
         />
       )}
     </div>
