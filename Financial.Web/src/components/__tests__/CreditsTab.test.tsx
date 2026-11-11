@@ -160,8 +160,8 @@ async function openNewForm() {
 
 const DIVIDEND_NAME = 'credit Dividend 120.50, 15/03/2024'
 const JCP_NAME = 'credit JCP 75.00, 20/02/2024'
-const requestDelete = (name: string) => requestDeleteOf(name, 'Credit')
-const confirmDelete = (name: string) => confirmDeleteOf(name, 'Credit')
+const requestDelete = (name: string) => requestDeleteOf(name, 'credit')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'credit')
 const rowButton = (name: string) => screen.getByRole('button', { name, hidden: true })
 
 function dataRows() {
@@ -470,6 +470,29 @@ describe('CreditsTab', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New credit' })).toHaveFocus())
     expect(screen.getByText(/^No credits yet/)).toBeInTheDocument()
+  })
+
+  it('closes_the_edit_form_when_the_credit_being_edited_is_deleted', async () => {
+    deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_JCP]))
+    await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
+    fireEvent.click(rowButton(`Edit ${DIVIDEND_NAME}`))
+    await screen.findByRole('heading', { name: 'Edit credit' })
+
+    await confirmDelete(DIVIDEND_NAME)
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Edit credit', hidden: true })).not.toBeInTheDocument())
+  })
+
+  it('keeps_the_edit_form_open_when_another_credit_is_deleted', async () => {
+    deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_DIVIDEND]))
+    await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
+    fireEvent.click(rowButton(`Edit ${DIVIDEND_NAME}`))
+    await screen.findByRole('heading', { name: 'Edit credit' })
+
+    await confirmDelete(JCP_NAME)
+
+    await waitFor(() => expect(screen.queryByText('20/02/2024')).not.toBeInTheDocument())
+    expect(screen.getByRole('heading', { name: 'Edit credit', hidden: true })).toBeInTheDocument()
   })
 
   it('announces_a_failed_delete_and_moves_focus_to_it', async () => {

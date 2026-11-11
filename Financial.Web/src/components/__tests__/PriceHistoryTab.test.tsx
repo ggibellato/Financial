@@ -158,8 +158,8 @@ async function renderEmpty() {
 const EARLIER_MANUAL_ENTRY: AssetPriceSnapshotDto = { ...MANUAL_ENTRY, date: '2024-02-10T00:00:00', price: 110 }
 const MANUAL_NAME = 'price 15/03/2024'
 const EARLIER_MANUAL_NAME = 'price 10/02/2024'
-const requestDelete = (name: string) => requestDeleteOf(name, 'Price')
-const confirmDelete = (name: string) => confirmDeleteOf(name, 'Price')
+const requestDelete = (name: string) => requestDeleteOf(name, 'price')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'price')
 const rowButton = (name: string) => screen.getByRole('button', { name, hidden: true })
 
 function dataRows(table: HTMLElement) {
@@ -455,6 +455,17 @@ describe('PriceHistoryTab', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New price' })).toHaveFocus())
     expect(screen.getByText(/^No prices yet/)).toBeInTheDocument()
+  })
+
+  it('closes_the_edit_form_when_the_price_being_edited_is_deleted', async () => {
+    deleteAssetPriceMock.mockResolvedValue(detailsWith(EARLIER_MANUAL_ENTRY))
+    await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
+    fireEvent.click(rowButton(`Edit ${MANUAL_NAME}`))
+    await screen.findByRole('heading', { name: 'Edit price' })
+
+    await confirmDelete(MANUAL_NAME)
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Edit price', hidden: true })).not.toBeInTheDocument())
   })
 
   it('announces_a_failed_delete_and_moves_focus_to_it', async () => {

@@ -559,7 +559,7 @@ export default function CreditsTab() {
 
       {confirmingDelete && (
         <ConfirmDeleteDialog
-          entityLabel="Credit"
+          entityLabel="credit"
           message={`Delete the ${creditName(confirmingDelete)}? This cannot be undone.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmingDelete(null)}

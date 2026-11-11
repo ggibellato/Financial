@@ -137,7 +137,14 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
     case 'DELETE_START':
       return { ...state, deletingDate: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
-      return { ...state, entries: action.payload.priceHistory, transactions: action.payload.transactions, deletingDate: null, deleteError: null }
+      return {
+        ...state,
+        ...(state.deletingDate !== null && state.editingDate === state.deletingDate ? BLANK_FORM : {}),
+        entries: action.payload.priceHistory,
+        transactions: action.payload.transactions,
+        deletingDate: null,
+        deleteError: null,
+      }
     case 'DELETE_ERROR':
       return { ...state, deletingDate: null, deleteError: action.payload }
     default:

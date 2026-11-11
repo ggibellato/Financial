@@ -286,12 +286,12 @@ export default function MensaisPage() {
             Add Bill
           </Button>
           <Button
-            appearance="primary"
+            appearance="secondary"
             icon={<ArrowResetRegular />}
             disabledFocusable={isResetting}
             onClick={() => setIsConfirmingReset(true)}
           >
-            {isResetting ? 'Resetting...' : 'Reset All to Unset'}
+            {isResetting ? 'Resetting...' : 'Reset all to Unset'}
           </Button>
         </div>
       </div>
@@ -459,7 +459,7 @@ export default function MensaisPage() {
 
       {confirmingDelete && (
         <ConfirmDeleteDialog
-          entityLabel="Bill"
+          entityLabel="bill"
           message={`Delete the bill "${confirmingDelete.description}"? This cannot be undone.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmingDelete(null)}
@@ -468,7 +468,7 @@ export default function MensaisPage() {
 
       <ConfirmDialog
         open={isConfirmingReset}
-        title="Reset all bills"
+        title="Reset all bills to Unset"
         message="Set the status of every bill back to Unset for the new month?"
         confirmLabel="Reset all to Unset"
         cancelLabel="Cancel"

@@ -10,7 +10,7 @@
 }
 
 .corporate-actions-tab__empty {
-  color: var(--text-muted, #888);
+  color: var(--text);
 }
 
 .corporate-actions-tab__table-wrapper {

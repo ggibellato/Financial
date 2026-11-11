@@ -178,7 +178,13 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
-      return { ...state, credits: action.payload, deletingId: null, deleteError: null }
+      return {
+        ...state,
+        ...(state.deletingId !== null && state.editingId === state.deletingId ? BLANK_FORM : {}),
+        credits: action.payload,
+        deletingId: null,
+        deleteError: null,
+      }
     case 'DELETE_ERROR':
       return { ...state, deletingId: null, deleteError: action.payload }
     default:

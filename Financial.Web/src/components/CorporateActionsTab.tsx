@@ -264,7 +264,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
 
       {confirmingDelete && (
         <ConfirmDeleteDialog
-          entityLabel="Corporate action"
+          entityLabel="corporate action"
           message={`Delete the ${corporateActionName(confirmingDelete, affectedAssetName)}? This cannot be undone.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmingDelete(null)}

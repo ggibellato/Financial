@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, AssetDetailsDto, CorporateActionDto, SelectedNode } from '../../api/types'
 import { BLANK_TARGET_ASSET_IDENTITY } from '../../components/targetAssetPickerValue'
+import { deferred } from '../../test-utils/deferred'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useCorporateActions } from '../useCorporateActions'
 
@@ -360,8 +361,8 @@ describe('useCorporateActions', () => {
   })
 
   it('marks the corporate action as deleting until the delete finishes and ignores a second delete meanwhile', async () => {
-    let finishDelete: (asset: AssetDetailsDto) => void = () => {}
-    deleteCorporateActionMock.mockReturnValueOnce(new Promise((resolve) => (finishDelete = resolve)))
+    const pendingDelete = deferred<AssetDetailsDto>()
+    deleteCorporateActionMock.mockReturnValueOnce(pendingDelete.promise)
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useCorporateActions(), { wrapper })
     setNode(ASSET_NODE)
@@ -372,8 +373,21 @@ describe('useCorporateActions', () => {
     act(() => result.current.deleteCorporateAction('ca2'))
 
     expect(deleteCorporateActionMock).toHaveBeenCalledOnce()
-    await act(async () => finishDelete({ ...ASSET_DETAILS, corporateActions: [] }))
+    await act(async () => pendingDelete.resolve({ ...ASSET_DETAILS, corporateActions: [] }))
     expect(result.current.deletingId).toBeNull()
+  })
+
+  it('closes the edit form when the corporate action being edited is deleted', async () => {
+    deleteCorporateActionMock.mockResolvedValueOnce({ ...ASSET_DETAILS, corporateActions: [] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showEditForm(SPLIT_RECORD))
+
+    act(() => result.current.deleteCorporateAction(SPLIT_RECORD.id))
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
   })
 
   it('surfaces a delete failure without discarding the current list', async () => {

@@ -40,7 +40,7 @@
 
 .credits-tab__empty {
   margin: 8px 16px;
-  color: var(--text-muted, #888);
+  color: var(--text);
 }
 
 .credits-tab__table-wrapper {

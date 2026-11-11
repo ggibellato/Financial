@@ -76,8 +76,8 @@ const CATEGORIES: CategoryDto[] = [
 const INSS_NAME = 'bill INSS'
 
 async function requestReset() {
-  fireEvent.click(await screen.findByRole('button', { name: 'Reset All to Unset' }))
-  return screen.findByRole('dialog', { name: 'Reset all bills', hidden: true })
+  fireEvent.click(await screen.findByRole('button', { name: 'Reset all to Unset' }))
+  return screen.findByRole('dialog', { name: 'Reset all bills to Unset', hidden: true })
 }
 
 describe('MensaisPage', () => {
@@ -381,7 +381,7 @@ describe('MensaisPage', () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
-    const dialog = await requestDelete(INSS_NAME, 'Bill')
+    const dialog = await requestDelete(INSS_NAME, 'bill')
     expect(dialog).toHaveAccessibleDescription('Delete the bill "INSS"? This cannot be undone.')
     getMensaisBillsMock.mockResolvedValue([BILLS[1]])
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
@@ -394,7 +394,7 @@ describe('MensaisPage', () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
-    const dialog = await requestDelete(INSS_NAME, 'Bill')
+    const dialog = await requestDelete(INSS_NAME, 'bill')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: `Delete ${INSS_NAME}`, hidden: true })).toHaveFocus())
@@ -406,7 +406,7 @@ describe('MensaisPage', () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
-    await confirmDelete(INSS_NAME, 'Bill')
+    await confirmDelete(INSS_NAME, 'bill')
 
     const deleting = await screen.findByRole('button', { name: `Deleting ${INSS_NAME}`, hidden: true })
     await waitFor(() => expect(deleting).toHaveFocus())
@@ -419,7 +419,7 @@ describe('MensaisPage', () => {
     await screen.findByText('INSS')
     getMensaisBillsMock.mockResolvedValue([BILLS[1]])
 
-    await confirmDelete(INSS_NAME, 'Bill')
+    await confirmDelete(INSS_NAME, 'bill')
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add Bill' })).toHaveFocus())
   })
@@ -429,7 +429,7 @@ describe('MensaisPage', () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
-    await confirmDelete(INSS_NAME, 'Bill')
+    await confirmDelete(INSS_NAME, 'bill')
 
     const alert = await screen.findByRole('alert', { hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
@@ -456,12 +456,12 @@ describe('MensaisPage', () => {
   it('does not reset when the user cancels, and returns focus to Reset All to Unset', async () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')
-    screen.getByRole('button', { name: 'Reset All to Unset' }).focus()
+    screen.getByRole('button', { name: 'Reset all to Unset' }).focus()
 
     const dialog = await requestReset()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Reset All to Unset', hidden: true })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reset all to Unset', hidden: true })).toHaveFocus())
     expect(resetMensaisToUnsetMock).not.toHaveBeenCalled()
   })
 
@@ -469,7 +469,7 @@ describe('MensaisPage', () => {
     resetMensaisToUnsetMock.mockReturnValue(new Promise(() => {}))
     render(<MensaisPage />)
     await screen.findByText('INSS')
-    screen.getByRole('button', { name: 'Reset All to Unset' }).focus()
+    screen.getByRole('button', { name: 'Reset all to Unset' }).focus()
 
     const dialog = await requestReset()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))

@@ -198,7 +198,7 @@ describe('CorporateActionsTab', () => {
     setMock({ corporateActions: [split({})] })
     render(<CorporateActionsTab />)
 
-    const dialog = await requestDelete(SPLIT_NAME, 'Corporate action')
+    const dialog = await requestDelete(SPLIT_NAME, 'corporate action')
     expect(dialog).toHaveAccessibleDescription(`Delete the ${SPLIT_NAME}? This cannot be undone.`)
     expect(mockDeleteCorporateAction).not.toHaveBeenCalled()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
@@ -210,7 +210,7 @@ describe('CorporateActionsTab', () => {
     setMock({ corporateActions: [split({})] })
     render(<CorporateActionsTab />)
 
-    const dialog = await requestDelete(SPLIT_NAME, 'Corporate action')
+    const dialog = await requestDelete(SPLIT_NAME, 'corporate action')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: `Delete ${SPLIT_NAME}`, hidden: true })).toHaveFocus())
@@ -227,7 +227,7 @@ describe('CorporateActionsTab', () => {
   it('moves focus to New corporate action after the only row is deleted', async () => {
     setMock({ corporateActions: [split({})] })
     const { rerender } = render(<CorporateActionsTab />)
-    await confirmDelete(SPLIT_NAME, 'Corporate action')
+    await confirmDelete(SPLIT_NAME, 'corporate action')
 
     setMock({ corporateActions: [] })
     rerender(<CorporateActionsTab />)

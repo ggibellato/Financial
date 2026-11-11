@@ -393,7 +393,7 @@ export default function PriceHistoryTab() {
 
       {confirmingDelete && (
         <ConfirmDeleteDialog
-          entityLabel="Price"
+          entityLabel="price"
           message={`Delete the ${priceName(confirmingDelete)}? This cannot be undone.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmingDelete(null)}
