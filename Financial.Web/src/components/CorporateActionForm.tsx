@@ -15,7 +15,7 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
 import TargetAssetPicker from './TargetAssetPicker'
 import type { TargetAssetPickerValue } from './targetAssetPickerValue'
-import { formatN2, parseValidatedNumber } from '../utils/formatters'
+import { formatN2, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
 import './CorporateActionForm.css'
 
 const CORPORATE_ACTION_TYPE_OPTIONS = [
@@ -87,7 +87,7 @@ export default function CorporateActionForm({
   const isMergerFieldsStep = formType === 'Merger' && formStep === 'fields'
   const isMergerConfirmStep = formType === 'Merger' && formStep === 'confirm'
   const confirmLabel = isSaving
-    ? 'Saving…'
+    ? SAVING_LABEL
     : isMergerFieldsStep
       ? 'Continue'
       : isMergerConfirmStep

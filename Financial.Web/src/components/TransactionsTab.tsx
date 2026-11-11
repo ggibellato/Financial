@@ -32,7 +32,7 @@ import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } f
 import { useTransactions } from '../hooks/useTransactions'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { formatN2, formatN8, formatShortDate, parseValidatedNumber } from '../utils/formatters'
+import { formatN2, formatN8, formatShortDate, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
@@ -296,7 +296,7 @@ function InlineForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSaving || !typeEffectsLoaded || !allocationSatisfied} onClick={onSave}>
-          {isSaving ? 'Saving…' : editingId ? 'Save' : 'Add transaction'}
+          {isSaving ? SAVING_LABEL : editingId ? 'Save' : 'Add transaction'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

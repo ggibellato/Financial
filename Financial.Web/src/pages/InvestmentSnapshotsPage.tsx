@@ -10,7 +10,7 @@ import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
 import { useSuggestedValues } from '../hooks/useSuggestedValues'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import './InvestmentSnapshotsPage.css'
@@ -147,7 +147,7 @@ export default function InvestmentSnapshotsPage() {
 
           <div className={styles.actions}>
             <Button appearance="primary" disabled={isSaving} onClick={saveEdit}>
-              {isSaving ? 'Saving…' : 'Save'}
+              {isSaving ? SAVING_LABEL : 'Save'}
             </Button>
             <Button appearance="secondary" onClick={cancelEdit}>
               Cancel

@@ -13,7 +13,7 @@ import {
 } from '@fluentui/react-components'
 import type { BankOption, CategoryDto, RecurringBillDto } from '../api/types'
 import type { ExpensePromptValues } from '../hooks/useMensais'
-import { todayIsoDate } from '../utils/formatters'
+import { SAVING_LABEL, todayIsoDate } from '../utils/formatters'
 import BillExpenseFields from './BillExpenseFields'
 import { billExpenseValuesFor, parseBillExpense, type BillExpenseField } from './billExpenseValues'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -97,7 +97,7 @@ export default function UkExpensePromptDialog({
           </DialogContent>
           <div className={styles.actions}>
             <Button appearance="primary" onClick={handleConfirm} disabled={!canConfirm}>
-              {isSaving ? 'Saving…' : 'Confirm'}
+              {isSaving ? SAVING_LABEL : 'Confirm'}
             </Button>
             <Button appearance="secondary" onClick={onSkip} disabled={isSaving}>
               Skip
