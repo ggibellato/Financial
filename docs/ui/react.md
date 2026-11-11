@@ -36,9 +36,12 @@ exists.
   free. Render it through `components/PageTabList`, which requires an
   `aria-label` naming the strip, never shrinks and wraps its tabs onto
   another row at narrow widths instead of overflowing, so every tab strip
-  looks and reflows the same. `MonthlyPage.tsx` is the reference;
-  `AccountScreenPage.tsx` also wires `role="tabpanel"` and `aria-controls`,
-  which the other pages do not yet. This is distinct from the chart
+  looks and reflows the same. `MonthlyPage.tsx` is the reference. Wire each
+  tab to the panel it switches with `hooks/useTabPanel(activeTab)`: spread
+  `tabProps(value)` on every `Tab` (its `id` and `aria-controls`) and
+  `panelProps` on the one element that holds every state of the panel
+  (loading, error and loaded), so the panel exists, `role="tabpanel"` and named
+  by the selected tab, whatever is showing. This is distinct from the chart
   filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
   (same underlying component, different content role).
 
