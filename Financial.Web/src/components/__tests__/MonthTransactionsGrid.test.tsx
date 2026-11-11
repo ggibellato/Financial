@@ -302,7 +302,7 @@ describe('MonthTransactionsGrid', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
 
       expect(bodyRows()).toHaveLength(7)
-      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(screen.getByRole('status')).toHaveTextContent('Filters cleared: showing all 7 rows')
       expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
       expect(screen.getByRole('table', { name: 'All transactions' })).toHaveFocus()
     })

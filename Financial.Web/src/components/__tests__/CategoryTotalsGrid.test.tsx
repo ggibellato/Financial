@@ -99,7 +99,7 @@ describe('CategoryTotalsGrid', () => {
       expect(await screen.findByText('Filtered: 1 of 2 rows')).toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
 
-      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(screen.getByRole('status')).toHaveTextContent('Filters cleared: showing all 2 rows')
       expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
       expect(within(document.querySelector('tbody')!).getByText('Mercado')).toBeInTheDocument()
       expect(screen.getByRole('table', { name: 'Category totals' })).toHaveFocus()
