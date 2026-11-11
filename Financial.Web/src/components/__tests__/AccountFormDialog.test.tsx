@@ -194,7 +194,7 @@ describe('AccountFormDialog', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ categoryId: 'c4' })))
   })
 
-  it('[AC P60-F06-admin-accounts-page-07] shows each problem under its field on submit and focuses the first one', () => {
+  it('[AC P60-F06-admin-accounts-page-07] shows each problem under its field on submit and focuses the error summary listing them', async () => {
     const { onSubmit } = renderDialog()
 
     expect(screen.queryByText('Account name is required.')).not.toBeInTheDocument()
@@ -202,11 +202,17 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Balance start date/), { target: { value: '2026-10-25' } })
     save()
 
-    expect(screen.getByText('Account name is required.')).toBeInTheDocument()
-    expect(screen.getByText('Opening balance cannot be negative.')).toBeInTheDocument()
-    expect(screen.getByText("Balance start date can't be in the future.")).toBeInTheDocument()
-    expect(screen.getByLabelText(/Name/)).toHaveFocus()
+    expect(screen.getByLabelText(/Name/)).toHaveAccessibleDescription('Account name is required.')
+    expect(screen.getByLabelText(/Opening balance/)).toHaveAccessibleDescription('Opening balance cannot be negative.')
+    expect(screen.getByLabelText(/Balance start date/)).toHaveAccessibleDescription("Balance start date can't be in the future.")
     expect(screen.getByLabelText(/Name/)).toHaveAttribute('aria-invalid', 'true')
+    const summary = screen.getByRole('group', { name: 'Fix 3 fields before saving' })
+    await waitFor(() => expect(summary).toHaveFocus())
+    expect(within(summary).getAllByRole('button').map((link) => link.textContent)).toEqual([
+      'Account name is required.',
+      'Opening balance cannot be negative.',
+      "Balance start date can't be in the future.",
+    ])
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
@@ -217,8 +223,8 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Opening balance/), { target: { value: '' } })
     save()
 
-    expect(screen.getByText('Account name must be 60 characters or fewer.')).toBeInTheDocument()
-    expect(screen.getByText('Opening balance is required.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/Name/)).toHaveAccessibleDescription('Account name must be 60 characters or fewer.')
+    expect(screen.getByLabelText(/Opening balance/)).toHaveAccessibleDescription('Opening balance is required.')
     expect(onSubmit).not.toHaveBeenCalled()
   })
 

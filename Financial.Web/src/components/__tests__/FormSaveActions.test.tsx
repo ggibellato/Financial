@@ -108,4 +108,18 @@ describe('FormSaveActions', () => {
     )
     expect(screen.getByRole('status')).toHaveTextContent('Saving…')
   })
+
+  it('leaves the status region silent when the focused save button already says Saving…', () => {
+    const { rerender } = renderInForm({ isSaving: false })
+    screen.getByRole('button', { name: 'Add Expense' }).focus()
+
+    rerender(
+      <form>
+        <FormSaveActions saveLabel="Add Expense" onCancel={vi.fn()} isSaving />
+      </form>,
+    )
+
+    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveFocus()
+    expect(screen.getByRole('status').textContent).toBe('')
+  })
 })

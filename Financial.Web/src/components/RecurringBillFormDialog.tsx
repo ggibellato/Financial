@@ -8,6 +8,12 @@ import { useEntityForm } from '../hooks/useEntityForm'
 const AREA_OPTIONS = ['Brasil', 'UK']
 const STATUS_OPTIONS = ['Unset', 'Scheduled', 'Paid']
 
+function valueErrorOf(value: string, parsedValue: number): string {
+  if (value.trim().length === 0) return 'Value is required.'
+  if (Number.isNaN(parsedValue)) return 'Value must be a number.'
+  return ''
+}
+
 export interface RecurringBillFormValues {
   dueDay: number
   description: string
@@ -50,7 +56,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
     ? 'Due day must be between 1 and 31.'
     : ''
   const descriptionError = trimmedDescription.length === 0 ? 'Description is required.' : ''
-  const valueError = value.trim().length === 0 || Number.isNaN(parsedValue) ? 'Value must be a number.' : ''
+  const valueError = valueErrorOf(value, parsedValue)
 
   const canSubmit = !dueDayError && !descriptionError && !valueError
 

@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { PotBalanceDto, PotUpdateDto } from '../api/types'
 import { useDialogSubmit } from './useDialogSubmit'
-import { useDiscardPrompt } from './useDiscardPrompt'
 import { parseValidatedNumber } from '../utils/formatters'
 import { REQUIRED_ACTIVE_TOTAL, roundSplitTotal } from '../utils/potSplitPreview'
 
@@ -72,7 +71,6 @@ export function useManagePots(potsAccountId: string, initialPots: readonly PotBa
 
   const isDirty = rows.some((row) => isChanged(row, savedPots.find((pot) => pot.id === row.id)))
   const hasFieldErrors = rows.some((row) => potNameError(row) !== '' || potSplitError(row) !== '')
-  const discardPrompt = useDiscardPrompt(isDirty)
   const activeTotal = activeTotalOf(rows)
 
   const changeRow = (key: string, change: PotRowChange) =>
@@ -106,7 +104,7 @@ export function useManagePots(potsAccountId: string, initialPots: readonly PotBa
     isSaving,
     error,
     canSave,
-    discardPrompt,
+    isDirty,
     changeRow,
     addPot,
     removeNewPot,

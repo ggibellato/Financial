@@ -4,7 +4,6 @@ import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { PotBalanceDto } from '../api/types'
 import { potNameError, potSplitError, useManagePots, type PotRow, type PotRowChange } from '../hooks/useManagePots'
 import { formatN2To4 } from '../utils/formatters'
-import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
 import './ManagePotsDialog.css'
 
@@ -79,53 +78,43 @@ export default function ManagePotsDialog({ potsAccountId, accountName, initialPo
   const form = useManagePots(potsAccountId, initialPots, onSaved)
   const addPotButton = useRef<HTMLButtonElement | null>(null)
 
-  const cancel = () => {
-    if (!form.isSaving) form.discardPrompt.confirmDiscard(onClose)
-  }
-
   const removeNewPot = (key: string) => {
     form.removeNewPot(key)
     addPotButton.current?.focus()
   }
 
   return (
-    <>
-      <EntityFormDialog
-        title="Manage pots"
-        error={form.error}
-        isSaving={form.isSaving}
-        canSave={form.canSave}
-        onSave={form.save}
-        onCancel={cancel}
-      >
-        <div className="manage-pots">
-          <Text>
-            Pots of <strong>{accountName}</strong> save together. A pot can't be deleted: turn off Active to retire it, and it keeps its balance and history.
-          </Text>
-          <div>
-            <Button ref={addPotButton} appearance="primary" icon={<AddRegular />} onClick={form.addPot}>
-              Add pot
-            </Button>
-          </div>
-          {form.rows.length === 0 && <Text>This account has no pots yet.</Text>}
-          {form.rows.map((row) => (
-            <PotRowFields
-              key={row.key}
-              row={row}
-              onChange={(change) => form.changeRow(row.key, change)}
-              onRemove={() => removeNewPot(row.key)}
-            />
-          ))}
-          <p className="manage-pots__total" role="status">
-            Active pots total: <strong>{formatN2To4(form.activeTotal)}%</strong>.{form.guidance && ` ${form.guidance}`}
-          </p>
+    <EntityFormDialog
+      title="Manage pots"
+      error={form.error}
+      isSaving={form.isSaving}
+      canSave={form.canSave}
+      isDirty={form.isDirty}
+      onSave={form.save}
+      onCancel={onClose}
+    >
+      <div className="manage-pots">
+        <Text>
+          Pots of <strong>{accountName}</strong> save together. A pot can't be deleted: turn off Active to retire it, and it keeps its balance and history.
+        </Text>
+        <div>
+          <Button ref={addPotButton} appearance="primary" icon={<AddRegular />} onClick={form.addPot}>
+            Add pot
+          </Button>
         </div>
-      </EntityFormDialog>
-      <DiscardChangesDialog
-        open={form.discardPrompt.isPromptOpen}
-        onKeepEditing={form.discardPrompt.keepEditing}
-        onDiscard={form.discardPrompt.discard}
-      />
-    </>
+        {form.rows.length === 0 && <Text>This account has no pots yet.</Text>}
+        {form.rows.map((row) => (
+          <PotRowFields
+            key={row.key}
+            row={row}
+            onChange={(change) => form.changeRow(row.key, change)}
+            onRemove={() => removeNewPot(row.key)}
+          />
+        ))}
+        <p className="manage-pots__total" role="status">
+          Active pots total: <strong>{formatN2To4(form.activeTotal)}%</strong>.{form.guidance && ` ${form.guidance}`}
+        </p>
+      </div>
+    </EntityFormDialog>
   )
 }

@@ -112,7 +112,11 @@ const CASES: FormDialogCase[] = [
     name: 'RecurringBillFormDialog',
     saveLabel: 'Add recurring bill',
     renderDialog: (h) => render(<RecurringBillFormDialog recurringBill={null} {...h} />),
-    makeInvalid: () => change(/^Due day/, '32'),
+    makeInvalid: () => {
+      change(/^Due day/, '32')
+      change(/^Description/, 'Rent')
+      change(/^Value/, '1500')
+    },
     validationMessage: 'Due day must be between 1 and 31.',
     fillValid: () => {
       change(/^Due day/, '10')

@@ -248,5 +248,46 @@ describe('EntityFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(screen.getByLabelText('Code')).toHaveFocus())
+    expect(screen.queryByText(/before saving/)).not.toBeInTheDocument()
+  })
+
+  it('focuses an error summary linking each invalid field when several fail on Save', async () => {
+    render(
+      <EntityFormDialog title="New bank" error={null} isSaving={false} onSave={vi.fn()} onCancel={vi.fn()}>
+        <label htmlFor="bank-name">Name</label>
+        <input id="bank-name" aria-invalid="true" aria-describedby="name-error" />
+        <span id="name-error">Name is required.</span>
+        <div role="group" aria-label="Pot Savings">
+          <label htmlFor="bank-code">Code</label>
+          <input id="bank-code" aria-invalid="true" aria-describedby="code-error" />
+          <span id="code-error">Code must be 3 digits.</span>
+        </div>
+      </EntityFormDialog>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    const summary = await screen.findByRole('group', { name: 'Fix 2 fields before saving' })
+    await waitFor(() => expect(summary).toHaveFocus())
+    expect(summary).not.toHaveAttribute('role', 'alert')
+    fireEvent.click(within(summary).getByRole('button', { name: 'Pot Savings: Code must be 3 digits.' }))
+    expect(screen.getByLabelText('Code')).toHaveFocus()
+  })
+
+  it('drops the error summary once a later Save finds the fields valid', async () => {
+    const invalidDialog = (invalid: boolean) => (
+      <EntityFormDialog title="New bank" error={null} isSaving={false} onSave={vi.fn()} onCancel={vi.fn()}>
+        <input aria-label="Name" id="bank-name" aria-invalid={invalid} />
+        <input aria-label="Code" id="bank-code" aria-invalid={invalid} />
+      </EntityFormDialog>
+    )
+    const { rerender } = render(invalidDialog(true))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    expect(await screen.findByText('Fix 2 fields before saving')).toBeInTheDocument()
+
+    rerender(invalidDialog(false))
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(screen.queryByText('Fix 2 fields before saving')).not.toBeInTheDocument())
   })
 })

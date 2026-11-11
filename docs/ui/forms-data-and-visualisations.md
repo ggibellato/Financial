@@ -167,7 +167,11 @@ inventing a new one.
 
 - Validate client-side and server-side where appropriate.
 - Keep field errors near the affected control.
-- Use an error summary when several errors exist.
+- Use an error summary when several errors exist. Admin dialogs get one from
+  `EntityFormDialog` (`FieldErrorSummary`): when a Save leaves more than one
+  field invalid, a summary at the top lists each message as a link to its
+  field and takes focus instead of the first field; with one invalid field,
+  focus goes straight to it.
 - Make messages specific and actionable.
 - Example: “Enter a quantity greater than 0.”
 - Do not use only “Invalid value” or “Required.”
