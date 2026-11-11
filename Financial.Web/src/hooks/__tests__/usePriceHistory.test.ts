@@ -5,6 +5,7 @@ import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode, TransactionD
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { usePriceHistory } from '../usePriceHistory'
 import { pinDate } from '../../test-utils/pinDate'
+import { deferred } from '../../test-utils/deferred'
 
 const { getAssetDetailsMock, setAssetPriceMock, deleteAssetPriceMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -395,5 +396,125 @@ describe('usePriceHistory', () => {
     act(() => result.current.setFilter('this-month'))
     expect(result.current.filteredTransactions).toHaveLength(1)
     expect(result.current.filteredTransactions[0].id).toBe('tx-recent')
+  })
+
+  describe('responses for a node the user has already left', () => {
+    const OTHER_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, name: 'TASA4', priceSnapshots: [ENTRY_B] }
+    const LEFT_NODE_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, priceSnapshots: [] }
+
+    async function renderOnAsset() {
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const hook = renderHook(() => usePriceHistory(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(hook.result.current.entries).toEqual([ENTRY_A, ENTRY_B]))
+      return { result: hook.result, setNode }
+    }
+
+    async function startPendingLoad() {
+      const pending = deferred<AssetDetailsDto>()
+      getAssetDetailsMock.mockReturnValueOnce(pending.promise)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => usePriceHistory(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledOnce())
+      return { result, setNode, pending }
+    }
+
+    async function startPendingSave() {
+      getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+      const pending = deferred<AssetDetailsDto>()
+      setAssetPriceMock.mockReturnValue(pending.promise)
+      const { result, setNode } = await renderOnAsset()
+      act(() => result.current.showNewForm())
+      act(() => {
+        result.current.setFormField('formDate', '2026-08-20')
+        result.current.setFormField('formPrice', '50')
+      })
+      act(() => result.current.saveForm())
+      expect(setAssetPriceMock).toHaveBeenCalledOnce()
+      return { result, setNode, pending }
+    }
+
+    async function startPendingDelete() {
+      getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+      const pending = deferred<AssetDetailsDto>()
+      deleteAssetPriceMock.mockReturnValue(pending.promise)
+      const { result, setNode } = await renderOnAsset()
+      act(() => result.current.deleteEntry('2026-08-15'))
+      expect(deleteAssetPriceMock).toHaveBeenCalledOnce()
+      return { result, setNode, pending }
+    }
+
+    async function moveToOtherAssetWithNewFormOpen({ result, setNode }: Awaited<ReturnType<typeof startPendingLoad>>) {
+      getAssetDetailsMock.mockResolvedValue(OTHER_DETAILS)
+      setNode(ASSET_NODE_B)
+      await waitFor(() => expect(result.current.entries).toEqual([ENTRY_B]))
+      act(() => result.current.showNewForm())
+      act(() => result.current.setFormField('formPrice', '7'))
+    }
+
+    function expectOtherAssetUntouched({ result }: Awaited<ReturnType<typeof startPendingLoad>>) {
+      expect(result.current.entries).toEqual([ENTRY_B])
+      expect(result.current.isFormVisible).toBe(true)
+      expect(result.current.formPrice).toBe('7')
+      expect(result.current.isSaving).toBe(false)
+      expect(result.current.saveError).toBeNull()
+      expect(result.current.deletingDate).toBeNull()
+      expect(result.current.deleteError).toBeNull()
+      expect(result.current.error).toBeNull()
+    }
+
+    it('ignores_a_late_load_success_for_the_previous_asset', async () => {
+      const started = await startPendingLoad()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.resolve(LEFT_NODE_DETAILS))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_load_failure_for_the_previous_asset', async () => {
+      const started = await startPendingLoad()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Load failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_save_success_for_the_previous_asset', async () => {
+      const started = await startPendingSave()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.resolve(LEFT_NODE_DETAILS))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_save_failure_for_the_previous_asset', async () => {
+      const started = await startPendingSave()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Save failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_delete_success_for_the_previous_asset', async () => {
+      const started = await startPendingDelete()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.resolve(LEFT_NODE_DETAILS))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_delete_failure_for_the_previous_asset', async () => {
+      const started = await startPendingDelete()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Delete failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('still_applies_a_delete_that_finishes_on_the_same_asset_after_a_form_was_opened', async () => {
+      const { result, pending } = await startPendingDelete()
+      act(() => result.current.showNewForm())
+
+      await act(async () => pending.resolve(LEFT_NODE_DETAILS))
+
+      expect(result.current.entries).toEqual([])
+      expect(result.current.deletingDate).toBeNull()
+      expect(result.current.isFormVisible).toBe(true)
+    })
   })
 })

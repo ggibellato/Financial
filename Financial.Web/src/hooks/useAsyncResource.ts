@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useReducer, useRef, type Dispatch } from 'react'
 import { getErrorMessage } from '../utils/formatters'
 
 interface AsyncResourceState<T> {
@@ -45,6 +45,29 @@ export function useLatestRequestGuard(): () => () => boolean {
     const requestId = ++latestRequestId.current
     return () => requestId === latestRequestId.current
   }, [])
+}
+
+export interface SelectionGuard<A> {
+  beginSelection: () => void
+  dispatchForCurrentSelection: () => (action: A) => void
+}
+
+export function useSelectionGuard<A>(dispatch: Dispatch<A>): SelectionGuard<A> {
+  const beginRequest = useLatestRequestGuard()
+  const isCurrentSelection = useRef<() => boolean>(() => true)
+
+  const beginSelection = useCallback(() => {
+    isCurrentSelection.current = beginRequest()
+  }, [beginRequest])
+
+  const dispatchForCurrentSelection = useCallback(() => {
+    const isCurrent = isCurrentSelection.current
+    return (action: A) => {
+      if (isCurrent()) dispatch(action)
+    }
+  }, [dispatch])
+
+  return { beginSelection, dispatchForCurrentSelection }
 }
 
 export interface AsyncResourceOptions {

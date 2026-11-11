@@ -8,6 +8,7 @@ import { formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, tod
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { createSelectionPrefsStore } from './selectionPrefsStore'
+import { useSelectionGuard } from './useAsyncResource'
 
 export type ViewMode = 'Stacked' | 'Grouped'
 export type ChartType = 'Bar' | 'Line'
@@ -265,8 +266,10 @@ export interface CreditsData {
 export function useCredits(): CreditsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
 
   useEffect(() => {
+    beginSelection()
     if (!selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -274,15 +277,16 @@ export function useCredits(): CreditsData {
 
     const key = buildSelectionKey(selectedNode)
     dispatch({ type: 'FETCH_START', payload: { key } })
+    const settle = dispatchForCurrentSelection()
 
     const { nodeType, brokerName, portfolioName, assetName } = selectedNode
 
     if (nodeType === 'Asset' && portfolioName && assetName) {
       void apiClient
         .getAssetDetails(brokerName, portfolioName, assetName, scope)
-        .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result.credits }))
+        .then((result) => settle({ type: 'FETCH_SUCCESS', payload: result.credits }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to load credits'),
           })
@@ -290,9 +294,9 @@ export function useCredits(): CreditsData {
     } else if (nodeType === 'Broker') {
       void apiClient
         .getCreditsByBroker(brokerName, scope)
-        .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to load credits'),
           })
@@ -300,15 +304,15 @@ export function useCredits(): CreditsData {
     } else if (nodeType === 'Portfolio' && portfolioName) {
       void apiClient
         .getCreditsByPortfolio(brokerName, portfolioName, scope)
-        .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to load credits'),
           })
         })
     }
-  }, [selectedNode, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount, beginSelection, dispatchForCurrentSelection])
 
   const credits = state.credits
 
@@ -403,6 +407,7 @@ export function useCredits(): CreditsData {
     const intermediationFee = formIntermediationFee.trim() === '' ? 0 : parseFloat(formIntermediationFee)
 
     dispatch({ type: 'SAVE_START' })
+    const settle = dispatchForCurrentSelection()
 
     const base = {
       brokerName: selectedNode.brokerName,
@@ -424,21 +429,22 @@ export function useCredits(): CreditsData {
       .then((result) => {
         setStoredDefault(DATE_KEY, formDate)
         setStoredDefault(TYPE_KEY, formType)
-        dispatch({ type: 'SAVE_SUCCESS', payload: result.credits })
+        settle({ type: 'SAVE_SUCCESS', payload: result.credits })
       })
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'SAVE_ERROR',
           payload: { message: getErrorMessage(err, 'Failed to save credit'), fields: {} },
         })
       })
-  }, [selectedNode, state])
+  }, [selectedNode, state, dispatchForCurrentSelection])
 
   const deleteCredit = useCallback(
     (id: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
       dispatch({ type: 'DELETE_START', payload: id })
+      const settle = dispatchForCurrentSelection()
       void apiClient
         .deleteCredit({
           brokerName: selectedNode.brokerName,
@@ -446,15 +452,15 @@ export function useCredits(): CreditsData {
           assetName: selectedNode.assetName,
           id,
         })
-        .then((result) => dispatch({ type: 'DELETE_SUCCESS', payload: result.credits }))
+        .then((result) => settle({ type: 'DELETE_SUCCESS', payload: result.credits }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'DELETE_ERROR',
             payload: getErrorMessage(err, 'Failed to delete credit'),
           })
         })
     },
-    [selectedNode, state.deletingId],
+    [selectedNode, state.deletingId, dispatchForCurrentSelection],
   )
 
   return {
