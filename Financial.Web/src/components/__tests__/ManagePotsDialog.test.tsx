@@ -224,6 +224,17 @@ describe('ManagePotsDialog', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
+  it('closes on Cancel without the discard prompt after a new pot is added and removed again', async () => {
+    const { user, onClose } = renderDialog()
+    await user.click(button('Add pot'))
+    await user.click(screen.getByLabelText('Remove new pot 1'))
+
+    await user.click(button('Cancel'))
+
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(screen.queryByText('Discard unsaved changes?')).not.toBeInTheDocument()
+  })
+
   it('asks before discarding unsaved changes, and keeps them on Keep editing', async () => {
     const { user, onClose } = renderDialog()
     await setText(user, 'Home', SPLIT, '55')

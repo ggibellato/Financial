@@ -466,6 +466,27 @@ describe('useAssetSummary', () => {
       expectOtherAssetUntouched(result)
     })
 
+    it('clears_the_price_loading_state_when_the_next_asset_has_no_price_to_fetch', async () => {
+      const pending = deferred<AssetPriceDto>()
+      const unpricedNode: SelectedNode = { ...OTHER_ASSET_NODE, ticker: undefined, exchange: undefined }
+      getAssetDetailsMock.mockImplementation((_broker, _portfolio, assetName) =>
+        Promise.resolve(assetName === 'TRPL4' ? OTHER_DETAILS : ASSET_DETAILS))
+      getCurrentPriceMock.mockReturnValueOnce(pending.promise)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => useAssetSummary(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(result.current.isLoadingPrice).toBe(true))
+
+      setNode(unpricedNode)
+      await waitFor(() => expect(result.current.asset?.name).toBe('TRPL4'))
+      await act(async () => pending.resolve(PRICE))
+
+      expect(getCurrentPriceMock).toHaveBeenCalledOnce()
+      expect(result.current.isLoadingPrice).toBe(false)
+      expect(result.current.canRefresh).toBe(true)
+      expect(result.current.price).toBeNull()
+    })
+
     it('ignores_a_late_chained_valuation_refresh_for_the_previous_asset', async () => {
       const refresh = deferred<AssetDetailsDto>()
       getAssetDetailsMock.mockResolvedValueOnce(ASSET_DETAILS).mockReturnValueOnce(refresh.promise)
