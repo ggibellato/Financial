@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useRef, useState } from 'react'
 import { Tab, TabList, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../components/ErrorState'
@@ -32,8 +32,6 @@ const TABS: { id: AnnualSummaryTabId; label: string }[] = [
   { id: 'investments', label: 'Investments' },
   { id: 'historicSummaryAverage', label: 'Historic Summary Average' },
 ]
-
-const optionalEmphasize = (content: ReactNode, emphasized?: boolean) => (emphasized ? <strong>{content}</strong> : content)
 
 function AnnualSummaryRow({
   label,
@@ -423,16 +421,13 @@ export default function AnnualSummaryPage() {
                     </TableRow>
                   ) : (
                     historicSummaryAverage &&
-                    sortedHistoricCategoryRows.map((a) => {
-                      const isEmphasized = HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category)
-                      return (
+                    sortedHistoricCategoryRows.map((a) => (
                         <Fragment key={a.category}>
-                          <TableRow className={isEmphasized ? 'data-table__row--emphasized' : undefined}>
-                            <DataTableCell label="Category">{optionalEmphasize(a.category, isEmphasized)}</DataTableCell>
+                          <TableRow className={HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category) ? 'data-table__row--emphasized' : undefined}>
+                            <DataTableCell label="Category">{a.category}</DataTableCell>
                             {historicSummaryAverage.map((y) => (
                               <DataTableCell key={y.year} label={String(y.year)} className="data-table__col--numeric">
-                                {optionalEmphasize(formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0),
-                                  isEmphasized)}
+                                {formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0)}
                               </DataTableCell>
                             ))}
                           </TableRow>
@@ -442,8 +437,7 @@ export default function AnnualSummaryPage() {
                             </TableRow>
                           )}
                         </Fragment>
-                      )
-                    })
+                    ))
                   )}
                 </TableBody>
               </Table>

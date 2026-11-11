@@ -86,7 +86,8 @@
   gap: 4px;
 }
 
-.data-table tfoot td {
+.data-table tfoot td,
+.data-table__row--emphasized > td {
   font-weight: bold;
 }
 

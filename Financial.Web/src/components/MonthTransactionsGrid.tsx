@@ -72,6 +72,8 @@ const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
 
 const BLANK_OPERATION_LINK = 'Deposit from an income'
 
+const GRID_LABEL = 'All transactions'
+
 function rowKey(row: MonthTransactionDto): string {
   return `${row.accountId}-${row.transaction.kind}-${row.transaction.id}`
 }
@@ -179,7 +181,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         </div>
       )}
       <div className="monthly-page__table-scroll">
-        <Table ref={tableRef} tabIndex={-1} className="data-table" aria-label="All transactions">
+        <Table ref={tableRef} tabIndex={-1} className="data-table" aria-label={GRID_LABEL}>
           <TableHeader>
             <TableRow>
               {COLUMNS.map((column) => (
@@ -231,7 +233,7 @@ interface MonthTransactionsFooterProps {
 function MonthTransactionsFooter({ rows, allRowCount, isFiltered, showsSpend }: MonthTransactionsFooterProps) {
   const totals = monthTransactionTotals(rows)
   return (
-    <p className="monthly-page__section-total" role="group" aria-label="Totals for All transactions">
+    <p className="monthly-page__section-total" role="group" aria-label={`Totals for ${GRID_LABEL}`}>
       <strong>{rows.length}</strong>
       {isFiltered && (
         <>

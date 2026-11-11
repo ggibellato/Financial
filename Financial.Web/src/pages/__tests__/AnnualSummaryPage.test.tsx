@@ -503,11 +503,11 @@ describe('AnnualSummaryPage', () => {
 
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
     expect(resultadoRow).toHaveClass('data-table__row--emphasized')
-    expect(within(resultadoRow).getByText('720.00').closest('strong')).toBeInTheDocument()
+    expect(within(resultadoRow).getByText('720.00')).toBeInTheDocument()
 
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
     expect(totalDespesasRow).toHaveClass('data-table__row--emphasized')
-    expect(within(totalDespesasRow).getByText('155.00').closest('strong')).toBeInTheDocument()
+    expect(within(totalDespesasRow).getByText('155.00')).toBeInTheDocument()
   })
 
   it('does not affect the Category Totals tab content when viewing Historic Summary Average', async () => {
