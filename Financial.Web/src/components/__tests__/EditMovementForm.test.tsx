@@ -58,17 +58,19 @@ describe('EditMovementForm', () => {
     expect(screen.getAllByText('Description is required')).toHaveLength(1)
   })
 
-  it('shows a failed save without a field in a message bar and brings focus back to Save', () => {
+  it('announces a failed save without a field and moves focus to it', () => {
     renderForm({ error: 'Failed to update' })
 
-    expect(screen.getByText('Failed to update')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus()
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Failed to update')
+    expect(alert).toHaveFocus()
   })
 
-  it('disables the fields and the actions while saving', () => {
+  it('disables the fields and Cancel while saving, keeping Save focusable', () => {
     renderForm({ isSaving: true })
 
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
   })
 })

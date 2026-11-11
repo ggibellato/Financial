@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular } from '@fluentui/react-icons'
 import type { TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
@@ -32,6 +32,7 @@ import type { PeriodFilterOption } from '../utils/periodFilter'
 import { formatN2, formatN8, formatShortDate, parseValidatedNumber } from '../utils/formatters'
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+import RowActionsCell from './grid/RowActionsCell'
 import './TransactionsTab.css'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
@@ -88,40 +89,31 @@ interface TransactionRowProps {
 }
 
 function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
+  const date = formatShortDate(transaction.date)
+  const typeLabel = typeDisplayLabel(transaction.type)
+  const net = formatN2(transaction.netCash)
+
   return (
     <TableRow>
-      <DataTableCell label="Date">{formatShortDate(transaction.date)}</DataTableCell>
+      <DataTableCell label="Date">{date}</DataTableCell>
       <DataTableCell label="Type" className={typeDisplayClass(transaction.type)}>
-        {typeDisplayLabel(transaction.type)}
+        {typeLabel}
       </DataTableCell>
       <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(transaction.quantity)}</DataTableCell>
       <DataTableCell label="Unit Price" className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</DataTableCell>
       <DataTableCell label="Fees" className="data-table__col--numeric">{formatN2(transaction.fees)}</DataTableCell>
       <DataTableCell label="Withheld" className="data-table__col--numeric">{formatN2(transaction.withheld)}</DataTableCell>
       <DataTableCell label="Net" className="data-table__col--numeric transactions-tab__total">
-        {formatN2(transaction.netCash)}
+        {net}
       </DataTableCell>
       <DataTableCell label="FX">
         <FxProvenanceTooltip currency={transaction.currency} fxRateSnapshot={transaction.fxRateSnapshot} />
       </DataTableCell>
-      <DataTableCell label="Actions" className="data-table__col--action">
-        <div className="data-table__actions-cell">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<EditRegular />}
-            aria-label="Edit transaction"
-            onClick={() => onEdit(transaction)}
-          />
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<DeleteRegular />}
-            aria-label="Delete transaction"
-            onClick={() => onDelete(transaction.id)}
-          />
-        </div>
-      </DataTableCell>
+      <RowActionsCell
+        itemName={`transaction ${typeLabel} ${net}, ${date}`}
+        onEdit={() => onEdit(transaction)}
+        onDelete={() => onDelete(transaction.id)}
+      />
     </TableRow>
   )
 }

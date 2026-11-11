@@ -117,7 +117,7 @@ export default function PortfoliosPage() {
                 <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
                 <RowActionsCell
                   itemName={portfolio.name}
-                  deleteDisabled={deletingKey === key}
+                  isDeleting={deletingKey === key}
                   onEdit={() => setEditingPortfolio(portfolio)}
                   onDelete={() => setConfirmingDelete(portfolio)}
                 />

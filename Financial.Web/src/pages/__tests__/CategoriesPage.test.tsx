@@ -139,4 +139,21 @@ describe('CategoriesPage', () => {
 
     await waitFor(() => expect(deleteCategoryMock).toHaveBeenCalledWith('c2'))
   })
+
+  it('says the row is being deleted and keeps its Delete focusable but inert', async () => {
+    deleteCategoryMock.mockReturnValue(new Promise(() => undefined))
+    render(<CategoriesPage />)
+    await waitFor(() => expect(screen.getByText('Extras')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Extras' }))
+    const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
+    fireEvent.click(confirmButtons[confirmButtons.length - 1])
+
+    const deleting = await screen.findByRole('button', { name: 'Deleting Extras' })
+    expect(deleting).toHaveAttribute('aria-disabled', 'true')
+    expect(deleting).toBeEnabled()
+    fireEvent.click(deleting)
+    await waitFor(() => expect(screen.queryByText(/will be permanently removed/)).not.toBeInTheDocument())
+    expect(deleteCategoryMock).toHaveBeenCalledOnce()
+  })
 })

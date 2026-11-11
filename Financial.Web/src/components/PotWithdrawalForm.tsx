@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { Button, Field, InfoLabel, Input, Select, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankOption } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
@@ -35,13 +35,15 @@ function saveLabel(form: PotWithdrawalFormModel): string {
 export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, onCancel }: PotWithdrawalFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
-  const { formRef, saveRef } = useFormErrorFocus(form.errorFields, form.error)
+  const { formRef, errorRef } = useFormErrorFocus(form.errorFields, form.error)
   const wasOverdraftOpen = useRef(false)
 
   useEffect(() => {
-    if (wasOverdraftOpen.current && form.overdraftMessage === null) saveRef.current?.focus()
+    if (wasOverdraftOpen.current && form.overdraftMessage === null && form.error === null) {
+      formRef.current?.querySelector<HTMLButtonElement>('button[type="submit"]')?.focus()
+    }
     wasOverdraftOpen.current = form.overdraftMessage !== null
-  }, [form.overdraftMessage, saveRef])
+  }, [form.overdraftMessage, form.error, formRef])
 
   const { values } = form
   if (!values) return null
@@ -81,6 +83,11 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
           <Text as="h2" id="pot-withdrawal-title" weight="semibold" size={400}>
             {title}
           </Text>
+          {form.error && (
+            <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
+              <MessageBarBody>{form.error}</MessageBarBody>
+            </MessageBar>
+          )}
 
           {form.hasPotsError && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
 
@@ -175,18 +182,16 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
               </Field>
             )}
           </div>
-
-          <PotFormFooter
-            saveRef={saveRef}
-            saveLabel={saveLabel(form)}
-            deleteLabel={form.isEditing ? 'Delete withdrawal' : null}
-            isSaving={form.isSaving}
-            isSaveDisabled={form.pots === null}
-            error={form.error}
-            onDelete={onDelete}
-            onCancel={onCancel}
-          />
         </fieldset>
+
+        <PotFormFooter
+          saveLabel={saveLabel(form)}
+          deleteLabel={form.isEditing ? 'Delete withdrawal' : null}
+          isSaving={form.isSaving}
+          isSaveDisabled={form.pots === null}
+          onDelete={onDelete}
+          onCancel={onCancel}
+        />
       </form>
 
       <ConfirmDialog

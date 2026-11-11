@@ -5,7 +5,6 @@ import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
 interface RowActionsCellProps {
   itemName: string
   editDisabled?: boolean
-  deleteDisabled?: boolean
   isDeleting?: boolean
   onEdit?: (button: HTMLButtonElement) => void
   onDelete?: () => void
@@ -16,7 +15,6 @@ interface RowActionsCellProps {
 export default function RowActionsCell({
   itemName,
   editDisabled,
-  deleteDisabled,
   isDeleting = false,
   onEdit,
   onDelete,
@@ -43,7 +41,6 @@ export default function RowActionsCell({
             size="small"
             icon={<DeleteRegular />}
             aria-label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
-            disabled={deleteDisabled}
             disabledFocusable={isDeleting}
             onClick={onDelete}
           />

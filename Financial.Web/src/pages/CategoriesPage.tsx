@@ -111,7 +111,7 @@ export default function CategoriesPage() {
               <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>
               <RowActionsCell
                 itemName={category.name}
-                deleteDisabled={deletingId === category.id}
+                isDeleting={deletingId === category.id}
                 onEdit={() => setEditingCategory(category)}
                 onDelete={() => setConfirmingDelete(category)}
               />

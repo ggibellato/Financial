@@ -143,7 +143,7 @@ export default function IncomeSourcesPage() {
               </DataTableCell>
               <RowActionsCell
                 itemName={incomeSource.name}
-                deleteDisabled={deletingId === incomeSource.id}
+                isDeleting={deletingId === incomeSource.id}
                 onEdit={() => setEditingIncomeSource(incomeSource)}
                 onDelete={() => setConfirmingDelete(incomeSource)}
               />

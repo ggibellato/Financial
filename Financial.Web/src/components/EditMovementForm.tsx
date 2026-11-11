@@ -1,7 +1,8 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { EditMovementField } from '../utils/movementEdit'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface PotOption {
@@ -44,7 +45,7 @@ export default function EditMovementForm({
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(errorFields)
   const generalError = Object.keys(errorFields).length === 0 ? error : null
-  const { formRef, saveRef } = useFormErrorFocus(errorFields, generalError)
+  const { formRef, errorRef } = useFormErrorFocus(errorFields, generalError)
 
   return (
     <form
@@ -62,6 +63,11 @@ export default function EditMovementForm({
         <Text as="h2" id="edit-movement-title" weight="semibold" size={400}>
           {title}
         </Text>
+        {generalError && (
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
+            <MessageBarBody>{generalError}</MessageBarBody>
+          </MessageBar>
+        )}
 
         <div className={styles.grid}>
           <Field
@@ -111,22 +117,8 @@ export default function EditMovementForm({
             />
           </Field>
         </div>
-
-        <div className={styles.actions}>
-          <Button ref={saveRef} type="submit" appearance="primary" disabled={isSaving}>
-            {isSaving ? 'Saving...' : 'Save'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
-
-        {generalError && (
-          <MessageBar intent="error">
-            <MessageBarBody>{generalError}</MessageBarBody>
-          </MessageBar>
-        )}
       </fieldset>
+      <FormSaveActions saveLabel="Save" isSaving={isSaving} onCancel={onCancel} />
     </form>
   )
 }

@@ -150,7 +150,7 @@ export default function RecurringBillsPage() {
               <DataTableCell label="Status">{bill.status}</DataTableCell>
               <RowActionsCell
                 itemName={bill.description}
-                deleteDisabled={deletingId === bill.id}
+                isDeleting={deletingId === bill.id}
                 onEdit={() => setEditingBill(bill)}
                 onDelete={() => setConfirmingDelete(bill)}
               />

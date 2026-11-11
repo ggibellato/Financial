@@ -3,6 +3,8 @@ import {
   Checkbox,
   Field,
   Input,
+  MessageBar,
+  MessageBarBody,
   Radio,
   RadioGroup,
   Spinner,
@@ -87,7 +89,7 @@ interface PotDepositFormProps {
 export default function PotDepositForm({ form, banks, incomeSources, onFromIncome, onDelete, onCancel }: PotDepositFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
-  const { formRef, saveRef } = useFormErrorFocus(form.errorFields, form.error)
+  const { formRef, errorRef } = useFormErrorFocus(form.errorFields, form.error)
   const [source, setSource] = useState(MANUAL_SOURCE)
   const isFromIncome = !form.isEditing && source === INCOME_SOURCE
   const { values } = form
@@ -110,6 +112,11 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
         <Text as="h2" id="pot-deposit-title" weight="semibold" size={400}>
           {form.isEditing ? 'Edit deposit' : 'New deposit'}
         </Text>
+        {form.error && (
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
+            <MessageBarBody>{form.error}</MessageBarBody>
+          </MessageBar>
+        )}
 
         {form.hasPotsError && !isFromIncome && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
 
@@ -217,18 +224,16 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
             )}
           </>
         )}
-
-        <PotFormFooter
-          saveRef={saveRef}
-          saveLabel={isFromIncome ? 'Continue to the income form' : form.isEditing ? 'Save' : 'Add deposit'}
-          deleteLabel={form.isEditing ? 'Delete deposit' : null}
-          isSaving={form.isSaving}
-          isSaveDisabled={!isFromIncome && (form.mismatch !== null || form.pots === null)}
-          error={form.error}
-          onDelete={onDelete}
-          onCancel={onCancel}
-        />
       </fieldset>
+
+      <PotFormFooter
+        saveLabel={isFromIncome ? 'Continue to the income form' : form.isEditing ? 'Save' : 'Add deposit'}
+        deleteLabel={form.isEditing ? 'Delete deposit' : null}
+        isSaving={form.isSaving}
+        isSaveDisabled={!isFromIncome && (form.mismatch !== null || form.pots === null)}
+        onDelete={onDelete}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

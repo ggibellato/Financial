@@ -326,6 +326,21 @@ describe('PotWithdrawalForm from the Pots account', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add withdrawal' })).toHaveFocus())
   })
 
+  it('returns focus to Save after Cancel when the save was submitted from a field', async () => {
+    createPotWithdrawalMock.mockRejectedValueOnce(overdraftError())
+    render(<Harness />)
+    await potsLoaded()
+    fillWithdrawal()
+    const description = screen.getByLabelText(/^Description/)
+    description.focus()
+    fireEvent.submit(description.closest('form') as HTMLFormElement)
+
+    fireEvent.click(within(await findDialog()).getByText('Cancel', { selector: 'button' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add withdrawal' })).toHaveFocus())
+  })
+
   it('closes the dialog and shows the error when the confirmed save fails', async () => {
     createPotWithdrawalMock.mockRejectedValueOnce(overdraftError()).mockRejectedValueOnce(new ApiError('Barclays is inactive.', 400))
     render(<Harness />)
@@ -335,11 +350,13 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     fireEvent.click(within(await findDialog()).getByText('Continue', { selector: 'button' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Barclays is inactive.')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Barclays is inactive.')
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 
-  it('shows a server refusal in an alert and returns focus to Save', async () => {
+  it('shows a server refusal in an alert and moves focus to it', async () => {
     createPotWithdrawalMock.mockRejectedValue(new ApiError("Category 'Saude' cannot be used for a withdrawal expense.", 400))
     render(<Harness />)
     await potsLoaded()
@@ -347,8 +364,9 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent("Category 'Saude' cannot be used")
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add withdrawal' })).toHaveFocus())
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent("Category 'Saude' cannot be used")
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 
   it('offers a retry when the pots fail, with Save disabled', async () => {
@@ -442,6 +460,23 @@ describe('PotWithdrawalForm editing an operation', () => {
       categoryId: 'cat-saude',
       confirmed: false,
     })
+  })
+
+  it('keeps Save focusable and disables Cancel and Delete while saving', async () => {
+    updatePotWithdrawalMock.mockReturnValue(new Promise(() => undefined))
+    render(<Harness edit={OPERATION} />)
+    await potsLoaded()
+    const saveButton = screen.getByRole('button', { name: 'Save' })
+    saveButton.focus()
+
+    save('Save')
+
+    expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(saveButton).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Delete withdrawal' })).toBeDisabled()
+    save('Saving...')
+    expect(updatePotWithdrawalMock).toHaveBeenCalledOnce()
   })
 
   it('keeps a saved bank and category that are no longer offered, so the server can say why', async () => {
