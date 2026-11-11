@@ -4,6 +4,7 @@ import type { BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 
 interface PortfolioFormDialogProps {
@@ -18,15 +19,17 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
   const [brokerName, setBrokerName] = useState(portfolio?.brokerName ?? activeBrokers[0]?.name ?? '')
   const [name, setName] = useState(portfolio?.name ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The portfolio could not be saved.')
+  const form = useEntityForm({ brokerName, name })
 
   const trimmedName = name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, JSON.stringify([brokerName, trimmedName]))
   const nameValidationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
-  const nameMessage = nameValidationMessage || nameError
+  const nameMessage = form.shown(nameValidationMessage) || nameError
   const brokerValidationMessage = !isEditing && brokerName.length === 0 ? 'A broker is required.' : ''
-  const canSubmit = nameValidationMessage.length === 0 && brokerValidationMessage.length === 0 && !isSaving
+  const canSubmit = nameValidationMessage.length === 0 && brokerValidationMessage.length === 0
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(() => onSubmit(brokerName, trimmedName))
   }
@@ -37,7 +40,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
       saveLabel={isEditing ? 'Save' : 'Add portfolio'}
       error={summaryError}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >
@@ -49,8 +52,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
         <Field
           label="Broker"
           required
-          validationState={brokerValidationMessage ? 'error' : 'none'}
-          validationMessage={brokerValidationMessage}
+          {...form.fieldValidation(brokerValidationMessage)}
         >
           <Select value={brokerName} onChange={(e) => setBrokerName(e.target.value)}>
             {activeBrokers.length === 0 && <option value="">No active brokers available</option>}

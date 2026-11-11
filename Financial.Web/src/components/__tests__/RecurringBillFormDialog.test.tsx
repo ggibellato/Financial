@@ -40,14 +40,17 @@ describe('RecurringBillFormDialog', () => {
     expect(screen.getByLabelText('Status')).toHaveValue('Scheduled')
   })
 
-  it('disables Save and shows a validation message when Description is blank', () => {
+  it('shows the Description message after Save when it is blank', async () => {
     render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '10' } })
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '100' } })
 
-    expect(screen.getByText('Description is required.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add recurring bill' })).toBeDisabled()
+    expect(screen.queryByText('Description is required.')).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Add recurring bill' }))
+
+    expect(await screen.findByText('Description is required.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
   })
 
   it('submits the create form with the entered values', async () => {

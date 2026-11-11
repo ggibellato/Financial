@@ -3,6 +3,7 @@ import { Field, Input, Select, Switch } from '@fluentui/react-components'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountsWith } from '../utils/accountCapabilities'
 
@@ -40,22 +41,26 @@ export default function InvestmentAccountFormDialog({
   const [creditCardId, setCreditCardId] = useState(investmentAccount?.creditCardId ?? '')
   const [potsAccountId, setPotsAccountId] = useState(investmentAccount?.potsAccountId ?? '')
   const { isSaving, error, failure, submit } = useDialogSubmit('The investment account could not be saved.')
+  const form = useEntityForm({ name, isActive, isLiability, source, creditCardId, potsAccountId })
 
   const trimmedName = name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
-  const nameMessage = validationMessage || nameError
-  const creditCardValidationMessage = source === 'CreditCard' && creditCardId === '' ? 'Select a credit card' : ''
+  const nameMessage = form.shown(validationMessage) || nameError
+  const creditCardValidationMessage = source === 'CreditCard' && creditCardId === '' ? 'Select a credit card.' : ''
   const potsAccountOptions = accountsWith(accounts, 'HasPots', investmentAccount?.potsAccountId ?? undefined)
   const hasPotsAccountChoices = potsAccountOptions.length > 0
   const shownPotsAccountId = potsAccountOptions.some((account) => account.id === potsAccountId) ? potsAccountId : ''
   const isPotsAccountMissing = source === 'PotsAccountTotal' && shownPotsAccountId === ''
   const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account.' : ''
+  const sourceValidationMessage =
+    isPotsAccountMissing && !hasPotsAccountChoices
+      ? 'No active Pots accounts. Add one in Admin → CashFlow → Accounts, or choose another source.'
+      : ''
   const canSubmit =
     validationMessage.length === 0 &&
     creditCardValidationMessage.length === 0 &&
-    !isPotsAccountMissing &&
-    !isSaving
+    !isPotsAccountMissing
 
   // The picker always offers every active card, plus the account's currently-linked card even if
   // it has since become inactive - otherwise reopening Edit would silently show no selection for a
@@ -65,6 +70,7 @@ export default function InvestmentAccountFormDialog({
   )
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(() =>
       onSubmit(
@@ -84,7 +90,7 @@ export default function InvestmentAccountFormDialog({
       saveLabel={isEditing ? 'Save' : 'Add investment account'}
       error={summaryError}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >
@@ -105,7 +111,7 @@ export default function InvestmentAccountFormDialog({
         <Switch checked={isLiability} onChange={(e) => setIsLiability(e.target.checked)} />
       </Field>
 
-      <Field label="Source">
+      <Field label="Source" {...form.fieldValidation(sourceValidationMessage)}>
         <Select
           value={source}
           onChange={(e) => setSource(e.target.value as InvestmentAccountSourceOption)}
@@ -120,8 +126,7 @@ export default function InvestmentAccountFormDialog({
         <Field
           label="Credit card"
           required
-          validationState={creditCardValidationMessage ? 'error' : 'none'}
-          validationMessage={creditCardValidationMessage}
+          {...form.fieldValidation(creditCardValidationMessage)}
         >
           <Select value={creditCardId} onChange={(e) => setCreditCardId(e.target.value)}>
             <option value="">Select card…</option>
@@ -143,8 +148,7 @@ export default function InvestmentAccountFormDialog({
               ? "Investment snapshots will suggest the Pots account's total at the end of the previous month."
               : 'Add a Pots account in Admin → CashFlow → Accounts first.'
           }
-          validationState={potsAccountValidationMessage ? 'error' : 'none'}
-          validationMessage={potsAccountValidationMessage}
+          {...form.fieldValidation(potsAccountValidationMessage)}
         >
           <Select
             value={shownPotsAccountId}

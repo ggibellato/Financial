@@ -35,7 +35,7 @@ describe('TaxRuleFormDialog', () => {
     expect(screen.getByLabelText('Event category')).toHaveAttribute('readonly')
   })
 
-  it('rejects an effective range where From is on or after To, inline before submission', () => {
+  it('rejects an effective range where From is on or after To, under Effective from, after Save', async () => {
     const onSubmit = vi.fn()
     render(<TaxRuleFormDialog taxRule={null} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
@@ -43,8 +43,10 @@ describe('TaxRuleFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Effective from/), { target: { value: '2026-06-01' } })
     fireEvent.change(screen.getByLabelText('Effective to'), { target: { value: '2026-01-01' } })
 
-    expect(screen.getByText('Effective from must be before effective to.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add tax rule' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Add tax rule' }))
+
+    expect(await screen.findByText('Effective from must be before effective to.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByLabelText(/^Effective from/)).toHaveFocus())
     expect(onSubmit).not.toHaveBeenCalled()
   })
 

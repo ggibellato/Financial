@@ -4,6 +4,7 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { BrokerDto, CostBasisMethod } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { COST_BASIS_METHODS, COST_BASIS_METHOD_LABELS } from '../utils/costBasisMethod'
 import { CURRENCIES } from '../utils/currency'
@@ -20,14 +21,16 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
   const [currency, setCurrency] = useState<string>(broker?.currency ?? CURRENCIES[0])
   const [costBasisMethod, setCostBasisMethod] = useState<CostBasisMethod>(broker?.costBasisMethod ?? 'AverageCost')
   const { isSaving, error, failure, submit } = useDialogSubmit('The broker could not be saved.')
+  const form = useEntityForm({ name, currency, costBasisMethod })
 
   const trimmedName = name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
-  const nameMessage = validationMessage || nameError
-  const canSubmit = validationMessage.length === 0 && !isSaving
+  const nameMessage = form.shown(validationMessage) || nameError
+  const canSubmit = validationMessage.length === 0
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(() => onSubmit(trimmedName, currency, costBasisMethod))
   }
@@ -38,7 +41,7 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
       saveLabel={isEditing ? 'Save' : 'Add broker'}
       error={summaryError}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >

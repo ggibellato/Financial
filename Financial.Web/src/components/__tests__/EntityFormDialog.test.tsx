@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import EntityFormDialog from '../EntityFormDialog'
@@ -215,5 +215,38 @@ describe('EntityFormDialog', () => {
 
     rerender(dialog())
     expect(screen.getByLabelText('Name')).toBeEnabled()
+  })
+
+  it('asks before discarding changes on Escape, and stays open on Keep editing', async () => {
+    const onCancel = vi.fn()
+    render(
+      <EntityFormDialog title="New bank" error={null} isSaving={false} isDirty onSave={vi.fn()} onCancel={onCancel}>
+        <label htmlFor="bank-name">Name</label>
+        <input id="bank-name" />
+      </EntityFormDialog>,
+    )
+
+    fireEvent.keyDown(screen.getByRole('dialog', { name: 'New bank' }), { key: 'Escape' })
+
+    const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Keep editing', hidden: true }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })).not.toBeInTheDocument())
+    expect(onCancel).not.toHaveBeenCalled()
+    expect(screen.getByRole('dialog', { name: 'New bank', hidden: true })).toBeInTheDocument()
+  })
+
+  it('moves focus to the first invalid field after a Save the dialog rejects', async () => {
+    render(
+      <EntityFormDialog title="New bank" error={null} isSaving={false} onSave={vi.fn()} onCancel={vi.fn()}>
+        <label htmlFor="bank-name">Name</label>
+        <input id="bank-name" />
+        <label htmlFor="bank-code">Code</label>
+        <input id="bank-code" aria-invalid="true" />
+      </EntityFormDialog>,
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+
+    await waitFor(() => expect(screen.getByLabelText('Code')).toHaveFocus())
   })
 })
