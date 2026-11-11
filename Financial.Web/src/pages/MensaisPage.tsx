@@ -29,6 +29,8 @@ import { BILL_STATUSES, useMensais } from '../hooks/useMensais'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2 } from '../utils/formatters'
 import { isFocusLost } from '../utils/focus'
+import { orMissing } from '../utils/orMissing'
+import MissingValue from '../components/MissingValue'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from '../components/grid/rowDeleteState'
@@ -65,10 +67,10 @@ function BillRow({
       <DataTableCell label="Note">
         <TruncatedText text={bill.note} />
       </DataTableCell>
-      {showBrasilFields && <DataTableCell label="NIT">{bill.nitNumber ?? ''}</DataTableCell>}
+      {showBrasilFields && <DataTableCell label="NIT">{bill.nitNumber ?? <MissingValue />}</DataTableCell>}
       {showBrasilFields && (
         <DataTableCell label="Min. Wage" className="data-table__col--numeric">
-          {bill.minimumWageValue !== null ? formatN2(bill.minimumWageValue) : ''}
+          {orMissing(bill.minimumWageValue, formatN2)}
         </DataTableCell>
       )}
       <DataTableCell label="Value" className="data-table__col--numeric">

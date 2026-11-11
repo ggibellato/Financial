@@ -33,7 +33,8 @@ import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks
 import { useCredits } from '../hooks/useCredits'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatAmount, formatN2, formatPercent1OrDash, formatShortDate, SAVING_LABEL } from '../utils/formatters'
+import { formatAmount, formatN2, formatPercent1, formatShortDate, SAVING_LABEL } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
@@ -129,10 +130,10 @@ function CreditRow({ credit, deleteState, onEdit, onDelete }: CreditRowProps) {
         {formatN2(credit.netAmount)}
       </DataTableCell>
       <DataTableCell label="Yield (Bought)" className="data-table__col--numeric">
-        {formatPercent1OrDash(credit.yieldOnInvested)}
+        {orMissing(credit.yieldOnInvested, formatPercent1)}
       </DataTableCell>
       <DataTableCell label="Yield (Current)" className="data-table__col--numeric">
-        {formatPercent1OrDash(credit.yieldOnMarket)}
+        {orMissing(credit.yieldOnMarket, formatPercent1)}
       </DataTableCell>
       <DataTableCell label="Yield details">
         <DividendYieldTooltip credit={credit} />

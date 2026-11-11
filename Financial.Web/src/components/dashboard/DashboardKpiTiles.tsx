@@ -1,9 +1,10 @@
-import { useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { Link } from '@fluentui/react-components'
 import ErrorState from '../ErrorState'
 import KpiTileSkeleton from './KpiTileSkeleton'
 import { useFocusReloadedContent } from '../../hooks/useFocusReloadedContent'
-import { formatN2OrDash, formatPercentFractionOrDash, signClass } from '../../utils/formatters'
+import { formatN2, formatPercentFraction, signClass } from '../../utils/formatters'
+import { orMissing } from '../../utils/orMissing'
 import type { PortfolioDashboardDto } from '../../api/types'
 import './DashboardKpiTiles.css'
 
@@ -67,8 +68,8 @@ const KPI_TILES: KpiTileDefinition[] = [
   },
 ]
 
-function formatTileValue(value: number | null, isPercent: boolean): string {
-  return isPercent ? formatPercentFractionOrDash(value) : formatN2OrDash(value)
+function formatTileValue(value: number | null, isPercent: boolean): ReactNode {
+  return isPercent ? orMissing(value, formatPercentFraction) : orMissing(value, formatN2)
 }
 
 function tileValueClass(value: number | null, isSigned: boolean): string {

@@ -306,6 +306,14 @@ describe('MensaisPage', () => {
     expect(screen.getByText('Direct debit')).toBeInTheDocument()
   })
 
+  it('names a missing NIT and Min. Wage Not available instead of leaving the cells blank', async () => {
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    const inssRow = screen.getByText('INSS').closest('tr') as HTMLElement
+    expect(within(inssRow).getAllByRole('img', { name: 'Not available' })).toHaveLength(2)
+  })
+
   it('shows NIT and Min. Wage columns only in the Brasil section', async () => {
     render(<MensaisPage />)
 

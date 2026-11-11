@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Button } from '@fluentui/react-components'
 import { ArrowSyncRegular } from '@fluentui/react-icons'
 import type { AssetPriceDto } from '../api/types'
@@ -5,25 +6,22 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import {
-  formatDateTime,
-  formatN2,
-  formatN2OrDash,
-  formatN8,
-  formatPercentFraction,
-  formatPercentFractionOrDash,
-  formatShortDateUtc,
-  signClass,
-} from '../utils/formatters'
+import { formatDateTime, formatN2, formatN8, formatPercentFraction, formatShortDateUtc, signClass } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import './AssetSummaryTab.css'
+import MissingValue from './MissingValue'
 
 /** A live quote carries a time of day; a price read from Price History carries only a date, and
  * is read as UTC so the reader's time zone cannot shift it onto the previous day. */
-function formatAsOf(price: AssetPriceDto | null): string {
-  if (!price) return '—'
+function formatAsOf(price: AssetPriceDto | null): ReactNode {
+  if (!price) return <MissingValue />
   if (price.asOf) return formatDateTime(price.asOf)
   if (price.asOfDate) return formatShortDateUtc(price.asOfDate)
-  return '—'
+  return <MissingValue />
+}
+
+function formatPercentPoints(percent: number): string {
+  return formatPercentFraction(percent / 100)
 }
 
 export default function AssetSummaryTab() {
@@ -79,7 +77,7 @@ export default function AssetSummaryTab() {
 
         <div className="asset-summary__field">
           <span className="asset-summary__label">ISIN</span>
-          <span className="asset-summary__value">{asset.isin || '—'}</span>
+          <span className="asset-summary__value">{asset.isin || <MissingValue />}</span>
         </div>
         <div className="asset-summary__field">
           <span className="asset-summary__label">Country</span>
@@ -89,13 +87,13 @@ export default function AssetSummaryTab() {
         <div className="asset-summary__field">
           <span className="asset-summary__label">Tax jurisdiction</span>
           <span className="asset-summary__value">
-            {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : '—'}
+            {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : <MissingValue />}
           </span>
         </div>
 
         <div className="asset-summary__field">
           <span className="asset-summary__label">Local type</span>
-          <span className="asset-summary__value">{asset.localTypeCode || '—'}</span>
+          <span className="asset-summary__value">{asset.localTypeCode || <MissingValue />}</span>
         </div>
         <div className="asset-summary__field">
           <span className="asset-summary__label">Asset class</span>
@@ -151,19 +149,19 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">XIRR</span>
               <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                {formatPercentFractionOrDash(xirrWithCredits)}
+                {orMissing(xirrWithCredits, formatPercentFraction)}
               </span>
             </div>
             <div className="asset-summary__field">
               <span className="asset-summary__label">XIRR (Shares only)</span>
               <span className={`asset-summary__value ${xirrClass}`}>
-                {formatPercentFractionOrDash(xirr)}
+                {orMissing(xirr, formatPercentFraction)}
               </span>
             </div>
             <div className="asset-summary__field">
               <span className="asset-summary__label">Portfolio weight</span>
               <span className="asset-summary__value">
-                {portfolioWeight === null ? '—' : formatPercentFraction(portfolioWeight / 100)}
+                {orMissing(portfolioWeight, formatPercentPoints)}
               </span>
             </div>
           </>
@@ -183,7 +181,7 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">Current value</span>
               <span className="asset-summary__value">
-                {isLoadingPrice || !price ? '—' : formatN2(price.price)}
+                {isLoadingPrice || !price ? <MissingValue /> : formatN2(price.price)}
                 {!isLoadingPrice && price?.isManual && (
                   <span
                     className="asset-summary__manual-badge"
@@ -198,7 +196,7 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">As of</span>
               <span className="asset-summary__value">
-                {isLoadingPrice ? '—' : formatAsOf(price)}
+                {isLoadingPrice ? <MissingValue /> : formatAsOf(price)}
                 {!isLoadingPrice && asset.marketStatus === 'Stale' && (
                   <span className="asset-summary__stale-badge" title="This price is older than the most recent weekday.">
                     {' '}
@@ -218,38 +216,38 @@ export default function AssetSummaryTab() {
               <>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Total current value</span>
-                  <span className="asset-summary__value">{formatN2OrDash(marketValue)}</span>
+                  <span className="asset-summary__value">{orMissing(marketValue, formatN2)}</span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result %</span>
                   <span className={`asset-summary__value ${resultClass}`}>
-                    {resultPercent === null ? '—' : formatPercentFraction(resultPercent / 100)}
+                    {orMissing(resultPercent, formatPercentPoints)}
                   </span>
                 </div>
 
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Total current + credits</span>
                   <span className="asset-summary__value">
-                    {formatN2OrDash(totalCurrentPlusCredits)}
+                    {orMissing(totalCurrentPlusCredits, formatN2)}
                   </span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">Result % with Credits</span>
                   <span className={`asset-summary__value ${resultWithCreditsClass}`}>
-                    {resultWithCreditsPercent === null ? '—' : formatPercentFraction(resultWithCreditsPercent / 100)}
+                    {orMissing(resultWithCreditsPercent, formatPercentPoints)}
                   </span>
                 </div>
 
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">XIRR</span>
                   <span className={`asset-summary__value ${xirrClass}`}>
-                    {formatPercentFractionOrDash(xirr)}
+                    {orMissing(xirr, formatPercentFraction)}
                   </span>
                 </div>
                 <div className="asset-summary__field">
                   <span className="asset-summary__label">XIRR w/ credits</span>
                   <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                    {formatPercentFractionOrDash(xirrWithCredits)}
+                    {orMissing(xirrWithCredits, formatPercentFraction)}
                   </span>
                 </div>
               </>

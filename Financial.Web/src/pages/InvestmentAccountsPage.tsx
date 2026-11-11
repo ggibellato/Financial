@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Button,
   MessageBar,
@@ -21,17 +21,18 @@ import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import MissingValue from '../components/MissingValue'
 
-function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): string {
+function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): ReactNode {
   if (account.source === 'CreditCard') {
-    return accounts.find((a) => a.id === account.creditCardId)?.name ?? '—'
+    return accounts.find((a) => a.id === account.creditCardId)?.name ?? <MissingValue />
   }
   if (account.source === 'PotsAccountTotal') {
     const potsAccount = accounts.find((a) => a.id === account.potsAccountId)
-    if (!potsAccount) return '—'
+    if (!potsAccount) return <MissingValue />
     return potsAccount.isActive ? `${potsAccount.name} total` : `${potsAccount.name} total (inactive)`
   }
-  return '—'
+  return <MissingValue />
 }
 
 export default function InvestmentAccountsPage() {

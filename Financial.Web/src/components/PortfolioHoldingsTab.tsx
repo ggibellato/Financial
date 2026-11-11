@@ -13,7 +13,8 @@ import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
-import { formatMonthYear, formatN2, formatN2OrDash, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
+import { formatMonthYear, formatN2, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import './PortfolioHoldingsTab.css'
 
 function parseCreditMonth(yearMonth: string): Date {
@@ -45,10 +46,6 @@ const DEFAULT_ROW_PRICE: RowPriceState = {
   isManual: false,
 }
 
-function renderOptional<T>(value: T | null, render: (v: T) => ReactNode) {
-  return value === null ? <MissingValue /> : render(value)
-}
-
 const LOADING_ANNOUNCED = { role: 'img', 'aria-label': 'Loading' } as const
 const LOADING_SILENT = { 'aria-hidden': true } as const
 
@@ -67,7 +64,7 @@ function renderGatedCell(
     )
   }
   if (unavailable) return <MissingValue />
-  return renderOptional(value, render)
+  return orMissing(value, render)
 }
 
 const MANUAL_PRICE_MEANING = 'This value came from a manually-entered price, not a live fetch.'
@@ -84,7 +81,7 @@ function PriceBadge({ abbreviation, meaning, className }: { abbreviation: string
   )
 }
 
-function FooterTotal({ label, value, children }: { label: string; value: string; children?: ReactNode }) {
+function FooterTotal({ label, value, children }: { label: string; value: ReactNode; children?: ReactNode }) {
   return (
     <div className="portfolio-holdings__footer-item">
       <span className="portfolio-holdings__footer-label">{label}</span>
@@ -117,7 +114,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="First investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
       <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
       <DataTableCell label="% Portfolio">
-        {renderOptional(item.portfolioWeight, formatPercentN2)}
+        {orMissing(item.portfolioWeight, formatPercentN2)}
       </DataTableCell>
       <DataTableCell label="Total invested">{formatN2(item.totalInvested)}</DataTableCell>
       {isHistoric && (
@@ -170,16 +167,16 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         {item.lastCreditMonth === null ? <MissingValue /> : formatN2(item.lastMonthCredits)}
       </DataTableCell>
       <DataTableCell label="Last credit month">
-        {renderOptional(item.lastCreditMonth, formatCreditMonth)}
+        {orMissing(item.lastCreditMonth, formatCreditMonth)}
       </DataTableCell>
       <DataTableCell label="Last month credits %">
-        {renderOptional(item.lastMonthCreditsPercent, formatPercentN2)}
+        {orMissing(item.lastMonthCreditsPercent, formatPercentN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual credits">
-        {renderOptional(item.estimatedAnnualCredits, formatN2)}
+        {orMissing(item.estimatedAnnualCredits, formatN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual %">
-        {renderOptional(item.estimatedAnnualPercent, formatPercentN2)}
+        {orMissing(item.estimatedAnnualPercent, formatPercentN2)}
       </DataTableCell>
     </TableRow>
   )
@@ -188,7 +185,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
 function computeCurrentValueFooter(
   items: PortfolioAssetSummaryItemDto[],
   rowPrices: RowPriceState[],
-): { display: string; partial: boolean } {
+): { display: ReactNode; partial: boolean } {
   const anyLoading = rowPrices.some(r => r.isLoading)
   const resolved = items
     .map((item, i) => {
@@ -198,7 +195,7 @@ function computeCurrentValueFooter(
     .filter((v): v is number => v !== null)
 
   if (anyLoading && resolved.length === 0) return { display: 'Calculating…', partial: false }
-  if (!anyLoading && resolved.length === 0) return { display: '—', partial: false }
+  if (!anyLoading && resolved.length === 0) return { display: <MissingValue />, partial: false }
   const sum = resolved.reduce((acc, v) => acc + v, 0)
   if (anyLoading) return { display: `${formatN2(sum)} *`, partial: true }
   return { display: formatN2(sum), partial: false }
@@ -327,7 +324,7 @@ export default function PortfolioHoldingsTab() {
             </FooterTotal>
           )}
           <FooterTotal label={creditsLabel} value={formatN2(footer.currentMonthCredits)} />
-          <FooterTotal label="Est. annual credits" value={formatN2OrDash(footer.estAnnualCredits)} />
+          <FooterTotal label="Est. annual credits" value={orMissing(footer.estAnnualCredits, formatN2)} />
         </div>
       )}
     </div>

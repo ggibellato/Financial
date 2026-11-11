@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import EmptyState from './EmptyState'
@@ -22,12 +22,13 @@ import TruncatedText from './TruncatedText'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
+import MissingValue from './MissingValue'
 
 function formatRatioFactor(factor: number): string {
   return `×${factor.toFixed(4).replace(/\.?0+$/, '')}`
 }
 
-function resultingChange(record: CorporateActionDto): string {
+function resultingChange(record: CorporateActionDto): ReactNode {
   if (record.type === 'Split' && record.ratioFactor !== null) {
     return `Quantity/average cost rescaled ${formatRatioFactor(record.ratioFactor)}`
   }
@@ -40,7 +41,7 @@ function resultingChange(record: CorporateActionDto): string {
         ? `+${formatN2(record.convertedQuantity)} units received`
         : 'Units received from merger'
     }
-    return '—'
+    return <MissingValue />
   }
   if (record.type === 'SpinOff') {
     if (record.role === 'Parent') {
@@ -51,9 +52,9 @@ function resultingChange(record: CorporateActionDto): string {
         ? `+${formatN2(record.convertedQuantity)} units received`
         : 'Units received from spin-off'
     }
-    return '—'
+    return <MissingValue />
   }
-  return '—'
+  return <MissingValue />
 }
 
 function corporateActionName(record: CorporateActionDto, affectedAssetName: string): string {
@@ -86,7 +87,7 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, deleteSt
       <DataTableCell label="Affected/linked asset"><TruncatedText text={record.linkedAssetName ?? affectedAssetName} /></DataTableCell>
       <DataTableCell label="Resulting change">{resultingChange(record)}</DataTableCell>
       <DataTableCell label="Tax status">
-        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}
+        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : <MissingValue />}
       </DataTableCell>
       <RowActionsCell
         itemName={corporateActionName(record, affectedAssetName)}

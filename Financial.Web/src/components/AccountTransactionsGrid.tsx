@@ -22,6 +22,7 @@ import TruncatedText from './TruncatedText'
 import { paidByLabel } from '../utils/paidBy'
 import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, recordNoun, rowKey, statementPath } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+import MissingValue from './MissingValue'
 
 function rowName(row: AccountTransactionDto): string {
   const noun = row.description ? `${recordNoun(row.kind)} ${row.description}` : recordNoun(row.kind)
@@ -78,7 +79,6 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
 
 const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
-const NO_CONVERTED_VALUE = '—'
 
 const CONVERTED_COLUMN: TransactionColumn = {
   key: 'converted',
@@ -88,7 +88,7 @@ const CONVERTED_COLUMN: TransactionColumn = {
   render: ({ settlement }) =>
     settlement?.convertedValue != null && settlement.convertedCurrency
       ? formatCurrency(settlement.convertedValue, settlement.convertedCurrency)
-      : NO_CONVERTED_VALUE,
+      : <MissingValue />,
 }
 
 function settlementColumns(otherParticipant: string, showsConverted: boolean): TransactionColumn[] {

@@ -10,6 +10,7 @@ import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useTaxRules } from '../hooks/useTaxRules'
 import type { TaxRuleDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import MissingValue from '../components/MissingValue'
 
 export default function TaxRulesPage() {
   const {
@@ -104,7 +105,7 @@ export default function TaxRulesPage() {
                 <TruncatedText text={rule.label} />
               </DataTableCell>
               <DataTableCell label="Effective from">{rule.effectiveFrom}</DataTableCell>
-              <DataTableCell label="Effective to">{rule.effectiveTo ?? '—'}</DataTableCell>
+              <DataTableCell label="Effective to">{rule.effectiveTo ?? <MissingValue />}</DataTableCell>
               <RowActionsCell
                 itemName={rule.label}
                 {...rowDeleteState(deletingId, rule.id)}

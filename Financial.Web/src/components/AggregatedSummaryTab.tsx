@@ -3,7 +3,8 @@ import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatN2, formatN2OrDash, formatPercentFractionOrDash, signClass } from '../utils/formatters'
+import { formatN2, formatPercentFraction, signClass } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import type { AggregatedSummaryDto } from '../api/types'
 import './AggregatedSummaryTab.css'
 
@@ -49,7 +50,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
         <div className="aggregated-summary__field">
           <span className="aggregated-summary__label">Market value</span>
           <span className="aggregated-summary__value">
-            {formatN2OrDash(summary.marketValue)}
+            {orMissing(summary.marketValue, formatN2)}
           </span>
         </div>
         <div className="aggregated-summary__field">
@@ -57,7 +58,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <span
             className={`aggregated-summary__value ${summary.priceOnlyReturn === null ? '' : signClass(summary.priceOnlyReturn, 'aggregated-summary__value')}`}
           >
-            {formatPercentFractionOrDash(summary.priceOnlyReturn)}
+            {orMissing(summary.priceOnlyReturn, formatPercentFraction)}
           </span>
         </div>
         <div className="aggregated-summary__field">
@@ -65,7 +66,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <span
             className={`aggregated-summary__value ${summary.totalReturn === null ? '' : signClass(summary.totalReturn, 'aggregated-summary__value')}`}
           >
-            {formatPercentFractionOrDash(summary.totalReturn)}
+            {orMissing(summary.totalReturn, formatPercentFraction)}
           </span>
         </div>
         <div className="aggregated-summary__field">
@@ -73,7 +74,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <span
             className={`aggregated-summary__value ${summary.totalReturnNetOfTax === null ? '' : signClass(summary.totalReturnNetOfTax, 'aggregated-summary__value')}`}
           >
-            {formatPercentFractionOrDash(summary.totalReturnNetOfTax)}
+            {orMissing(summary.totalReturnNetOfTax, formatPercentFraction)}
           </span>
         </div>
       </div>
@@ -98,14 +99,14 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
           <div className="aggregated-summary__grid">
             <div className="aggregated-summary__field">
               <span className="aggregated-summary__label">Market value (converted to {summary.reportingCurrency})</span>
-              <span className="aggregated-summary__value">{formatN2OrDash(summary.convertedMarketValue)}</span>
+              <span className="aggregated-summary__value">{orMissing(summary.convertedMarketValue, formatN2)}</span>
             </div>
             <div className="aggregated-summary__field">
               <span className="aggregated-summary__label">Invested (converted to {summary.reportingCurrency})</span>
               <span
                 className={`aggregated-summary__value ${summary.convertedInvested === null ? '' : signClass(summary.convertedInvested, 'aggregated-summary__value')}`}
               >
-                {formatN2OrDash(summary.convertedInvested)}
+                {orMissing(summary.convertedInvested, formatN2)}
               </span>
             </div>
             <div className="aggregated-summary__field">
@@ -113,7 +114,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               <span
                 className={`aggregated-summary__value ${summary.convertedUnrealisedGainLoss === null ? '' : signClass(summary.convertedUnrealisedGainLoss, 'aggregated-summary__value')}`}
               >
-                {formatN2OrDash(summary.convertedUnrealisedGainLoss)}
+                {orMissing(summary.convertedUnrealisedGainLoss, formatN2)}
               </span>
             </div>
             <div className="aggregated-summary__field">
@@ -121,7 +122,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               <span
                 className={`aggregated-summary__value ${summary.convertedTotalReturn === null ? '' : signClass(summary.convertedTotalReturn, 'aggregated-summary__value')}`}
               >
-                {formatPercentFractionOrDash(summary.convertedTotalReturn)}
+                {orMissing(summary.convertedTotalReturn, formatPercentFraction)}
               </span>
             </div>
             <div className="aggregated-summary__field">
@@ -129,7 +130,7 @@ export function AggregatedSummaryView({ summary, retry }: { summary: AggregatedS
               <span
                 className={`aggregated-summary__value ${summary.convertedTotalReturnNetOfTax === null ? '' : signClass(summary.convertedTotalReturnNetOfTax, 'aggregated-summary__value')}`}
               >
-                {formatPercentFractionOrDash(summary.convertedTotalReturnNetOfTax)}
+                {orMissing(summary.convertedTotalReturnNetOfTax, formatPercentFraction)}
               </span>
             </div>
           </div>

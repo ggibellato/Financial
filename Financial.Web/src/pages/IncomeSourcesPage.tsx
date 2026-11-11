@@ -21,9 +21,10 @@ import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { AccountDto, IncomeSourceDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import { orMissing } from '../utils/orMissing'
 
-function splitsToDisplay(incomeSource: IncomeSourceDto, accounts: AccountDto[], accountsStatus: AccountsStatus): string {
-  if (incomeSource.potsAccountId == null) return '—'
+function splitsToDisplay(incomeSource: IncomeSourceDto, accounts: AccountDto[], accountsStatus: AccountsStatus): string | null {
+  if (incomeSource.potsAccountId == null) return null
   const potsAccount = accounts.find((a) => a.id === incomeSource.potsAccountId)
   if (potsAccount) return potsAccount.isActive ? potsAccount.name : `${potsAccount.name} (inactive)`
   return accountsStatus === 'loading' ? 'Loading…' : 'Pots account (not loaded)'
@@ -140,7 +141,7 @@ export default function IncomeSourcesPage() {
               <DataTableCell label="Group"><TruncatedText text={incomeSource.group} /></DataTableCell>
               <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
               <DataTableCell label="Splits to">
-                <TruncatedText text={splitsToDisplay(incomeSource, accounts, accountsStatus)} />
+                {orMissing(splitsToDisplay(incomeSource, accounts, accountsStatus), (text) => <TruncatedText text={text} />)}
               </DataTableCell>
               <RowActionsCell
                 itemName={incomeSource.name}
