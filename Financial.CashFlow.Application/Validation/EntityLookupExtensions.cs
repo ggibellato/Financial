@@ -16,11 +16,10 @@ public static class EntityLookupExtensions
         Guid? excludingId,
         Func<T, string> nameSelector,
         Func<T, Guid> idSelector,
-        string entityDisplayName,
-        IEqualityComparer<string>? comparer = null)
+        string entityDisplayName)
     {
-        comparer ??= StringComparer.Ordinal;
-        var collision = items.FirstOrDefault(item => comparer.Equals(nameSelector(item), name) && idSelector(item) != excludingId);
+        var collision = items.FirstOrDefault(
+            item => string.Equals(nameSelector(item), name, StringComparison.OrdinalIgnoreCase) && idSelector(item) != excludingId);
         if (collision is not null)
         {
             throw new DuplicateNameException($"{entityDisplayName} named \"{name}\" already exists.");
@@ -29,5 +28,5 @@ public static class EntityLookupExtensions
 
     public static void EnsureAccountNameIsUnique(this IEnumerable<Account> accounts, string? name, Guid? excludingId, string entityDisplayName) =>
         accounts.EnsureNameIsUnique(
-            name?.Trim() ?? string.Empty, excludingId, a => a.Name, a => a.Id, entityDisplayName, StringComparer.OrdinalIgnoreCase);
+            name?.Trim() ?? string.Empty, excludingId, a => a.Name, a => a.Id, entityDisplayName);
 }

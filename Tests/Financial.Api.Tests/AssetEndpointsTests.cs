@@ -293,14 +293,16 @@ public class AssetEndpointsTests : ApiEndpointTests
         atNode.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
-    [Fact]
-    public async Task CreateAsset_DuplicateNameInPortfolio_ReturnsConflict()
+    [Theory]
+    [InlineData("BCIA11")]
+    [InlineData("bcia11")]
+    public async Task CreateAsset_DuplicateNameInAnyCaseInPortfolio_ReturnsConflict(string name)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/assets", new AssetAdminCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
-            Name = "BCIA11"
+            Name = name
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);

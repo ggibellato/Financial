@@ -23,16 +23,18 @@ public class BrokersEndpointsTests : ApiEndpointTests
         broker.PortfolioCount.Should().Be(0);
     }
 
-    [Fact]
-    public async Task CreateBroker_DuplicateName_ReturnsConflictWithMessage()
+    [Theory]
+    [InlineData("TestBrokerA")]
+    [InlineData("testbrokera")]
+    public async Task CreateBroker_DuplicateNameInAnyCase_ReturnsConflictWithMessage(string name)
     {
         await Client.PostAsJsonAsync("/api/v1/financial/brokers", ValidBrokerRequest("TestBrokerA"));
 
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/brokers", ValidBrokerRequest("TestBrokerA"));
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/brokers", ValidBrokerRequest(name));
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("TestBrokerA").And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
+        body.Should().Contain(name).And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

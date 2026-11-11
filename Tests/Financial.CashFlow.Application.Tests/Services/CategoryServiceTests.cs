@@ -89,19 +89,22 @@ public class CategoryServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateCategoryAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("Mercado")]
+    [InlineData("mercado")]
+    [InlineData("MERCADO")]
+    public async Task CreateCategoryAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         var repository = new StubCashFlowRepository();
         repository.Categories.Add(Category.Create("Mercado"));
         var sut = CreateService(repository);
-        var request = new CategoryCreateDTO { Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false };
+        var request = new CategoryCreateDTO { Name = name, Active = true, IsInvestment = false, IsTithe = false };
 
         var act = async () => await sut.CreateCategoryAsync(request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).WithMessage($"A category named \"{name}\" already exists.");
             repository.SaveChangesCallCount.Should().Be(0);
         }
     }
@@ -153,8 +156,11 @@ public class CategoryServiceTests
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
-    [Fact]
-    public async Task UpdateCategoryAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("Casa")]
+    [InlineData("casa")]
+    [InlineData("CASA")]
+    public async Task UpdateCategoryAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         var repository = new StubCashFlowRepository();
         var mercado = Category.Create("Mercado");
@@ -162,14 +168,33 @@ public class CategoryServiceTests
         repository.Categories.Add(mercado);
         repository.Categories.Add(casa);
         var sut = CreateService(repository);
-        var request = new CategoryUpdateDTO { Name = "Casa", Active = true, IsInvestment = false, IsTithe = false };
+        var request = new CategoryUpdateDTO { Name = name, Active = true, IsInvestment = false, IsTithe = false };
 
         var act = async () => await sut.UpdateCategoryAsync(mercado.Id, request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).WithMessage($"A category named \"{name}\" already exists.");
+            mercado.Name.Should().Be("Mercado");
             repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateCategoryAsync_KeepingItsOwnNameInAnotherCase_Saves()
+    {
+        var repository = new StubCashFlowRepository();
+        var mercado = Category.Create("mercado");
+        repository.Categories.Add(mercado);
+        var sut = CreateService(repository);
+        var request = new CategoryUpdateDTO { Name = "Mercado", Active = true, IsInvestment = false, IsTithe = false };
+
+        await sut.UpdateCategoryAsync(mercado.Id, request);
+
+        using (new AssertionScope())
+        {
+            mercado.Name.Should().Be("Mercado");
+            repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 

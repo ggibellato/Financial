@@ -64,7 +64,7 @@ public class Broker
             ? throw new ArgumentException("A portfolio name is required.", nameof(name))
             : name.Trim();
 
-        if (FindPortfolio(trimmed) is not null)
+        if (HasPortfolioNamed(trimmed))
         {
             throw new InvestmentDuplicateNameException(
                 $"Broker \"{Name}\" already has a portfolio named \"{trimmed}\".");
@@ -94,7 +94,7 @@ public class Broker
             ? throw new ArgumentException("A portfolio name is required.", nameof(newName))
             : newName.Trim();
 
-        if (trimmed != currentName && FindPortfolio(trimmed) is not null)
+        if (HasPortfolioNamed(trimmed, excluding: portfolio))
         {
             throw new InvestmentDuplicateNameException(
                 $"Broker \"{Name}\" already has a portfolio named \"{trimmed}\".");
@@ -109,6 +109,9 @@ public class Broker
 
     public Portfolio GetPortfolio(string name) =>
         FindPortfolio(name) ?? throw new KeyNotFoundException($"Portfolio \"{name}\" was not found under broker \"{Name}\".");
+
+    private bool HasPortfolioNamed(string name, Portfolio? excluding = null) =>
+        _portfolios.Any(p => !ReferenceEquals(p, excluding) && string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Moves an asset between two of this broker's portfolios, creating the destination when the
@@ -199,10 +202,10 @@ public class Broker
         var existing = FindPortfolio(destinationPortfolioName);
         if (existing is not null)
         {
-            return existing.FindAsset(assetName) is null
-                ? existing
-                : throw new InvestmentDuplicateNameException(
-                    $"Portfolio \"{existing.Name}\" already holds an asset named \"{assetName}\".");
+            return existing.HasAssetNamed(assetName)
+                ? throw new InvestmentDuplicateNameException(
+                    $"Portfolio \"{existing.Name}\" already holds an asset named \"{assetName}\".")
+                : existing;
         }
 
         var nearMiss = _portfolios.FirstOrDefault(

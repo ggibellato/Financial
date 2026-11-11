@@ -101,6 +101,7 @@ public class Investments
     public Broker RenameBroker(string currentName, string newName, string newCurrency, bool preferHistoric = false)
     {
         var broker = GetBroker(currentName, preferHistoric);
+        var twin = IsActiveBroker(broker) ? FindHistoricBroker(currentName) : FindActiveBroker(currentName);
 
         if (newName != currentName)
         {
@@ -108,6 +109,11 @@ public class Investments
         }
 
         broker.Update(newName, newCurrency);
+        if (twin is not null && string.Equals(newName, currentName, StringComparison.OrdinalIgnoreCase))
+        {
+            twin.Update(newName, twin.Currency);
+        }
+
         return broker;
     }
 
@@ -141,12 +147,14 @@ public class Investments
 
     private void EnsureNameIsUnique(string name, Broker? excluding)
     {
-        var collision = FindActiveBroker(name) ?? FindHistoricBroker(name);
-        if (collision is not null && !ReferenceEquals(collision, excluding))
+        if (_activeBrokers.Concat(_historicBrokers).Any(broker => IsAnotherBrokerNamed(broker, name, excluding)))
         {
             throw new InvestmentDuplicateNameException($"A broker named \"{name}\" already exists.");
         }
     }
+
+    private static bool IsAnotherBrokerNamed(Broker broker, string name, Broker? excluding) =>
+        broker.Name != excluding?.Name && string.Equals(broker.Name, name, StringComparison.OrdinalIgnoreCase);
 
     private static void EnsureEmpty(Broker broker)
     {

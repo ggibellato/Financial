@@ -53,16 +53,18 @@ public class PortfolioEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
-    [Fact]
-    public async Task CreatePortfolio_DuplicateNameUnderSameBroker_ReturnsConflict()
+    [Theory]
+    [InlineData("TestPortfolioA")]
+    [InlineData("testportfolioa")]
+    public async Task CreatePortfolio_DuplicateNameInAnyCaseUnderSameBroker_ReturnsConflict(string name)
     {
         await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "XPI", Name = "TestPortfolioA" });
 
-        var response = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "XPI", Name = "TestPortfolioA" });
+        var response = await Client.PostAsJsonAsync("/api/v1/financial/portfolios", new PortfolioCreateDTO { BrokerName = "XPI", Name = name });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("TestPortfolioA").And.Contain("already has a portfolio named").And.Contain("\"code\":\"duplicateName\"");
+        body.Should().Contain(name).And.Contain("already has a portfolio named").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

@@ -361,8 +361,11 @@ public class CorporateActionServiceTests
         result.Target.AveragePrice.Should().Be(3.5m, "(10 x 2 + 50) / 20");
     }
 
-    [Fact]
-    public async Task AddMergerAsync_TargetNameCollidesWithExistingDistinctAsset_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("TGT")]
+    [InlineData("tgt")]
+    [InlineData("Tgt")]
+    public async Task AddMergerAsync_TargetNameCollidesWithExistingDistinctAssetInAnyCase_ThrowsAndWritesNothing(string targetName)
     {
         var (broker, portfolio, source) = MakeMergerFixture();
         portfolio.RegisterAsset(Asset.Create("TGT", "ISIN2", "BVMF", "TGT"));
@@ -376,11 +379,36 @@ public class CorporateActionServiceTests
             SourceAssetName = "SRC",
             EffectiveDate = new DateTime(2024, 6, 1),
             ExchangeRatio = 2.0m,
-            TargetAssetName = "TGT",
+            TargetAssetName = targetName,
             CreateTargetAssetInline = true
         });
 
-        await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
+        (await act.Should().ThrowAsync<InvestmentDuplicateNameException>())
+            .WithMessage($"An asset named \"{targetName}\" already exists in portfolio \"Default\".");
+        source.CorporateActions.Should().BeEmpty();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_ExistingTargetLookedUpInAnotherCase_IsNotFound()
+    {
+        var (broker, portfolio, source) = MakeMergerFixture();
+        portfolio.RegisterAsset(Asset.Create("TGT", "ISIN2", "BVMF", "TGT"));
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 2.0m,
+            TargetAssetName = "tgt",
+            CreateTargetAssetInline = false
+        });
+
+        await act.Should().ThrowAsync<KeyNotFoundException>();
         source.CorporateActions.Should().BeEmpty();
         _repository.WriteCallCount.Should().Be(0);
     }

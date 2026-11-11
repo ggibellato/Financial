@@ -158,17 +158,20 @@ public class InvestmentAccountServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateInvestmentAccountAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("ChaseSave")]
+    [InlineData("chasesave")]
+    [InlineData("CHASESAVE")]
+    public async Task CreateInvestmentAccountAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         _repository.InvestmentAccounts.Add(InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false));
-        var request = new InvestmentAccountCreateDTO { Name = "ChaseSave", IsActive = true, IsLiability = false };
+        var request = new InvestmentAccountCreateDTO { Name = name, IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.CreateInvestmentAccountAsync(request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).WithMessage($"An investment account named \"{name}\" already exists.");
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
@@ -201,21 +204,41 @@ public class InvestmentAccountServiceTests
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
 
-    [Fact]
-    public async Task UpdateInvestmentAccountAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("BaAmex")]
+    [InlineData("baamex")]
+    [InlineData("BAAMEX")]
+    public async Task UpdateInvestmentAccountAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         var chaseSave = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
         var baAmex = InvestmentAccount.Create("BaAmex", isActive: true, isLiability: true);
         _repository.InvestmentAccounts.Add(chaseSave);
         _repository.InvestmentAccounts.Add(baAmex);
-        var request = new InvestmentAccountUpdateDTO { Name = "BaAmex", IsActive = true, IsLiability = false };
+        var request = new InvestmentAccountUpdateDTO { Name = name, IsActive = true, IsLiability = false };
 
         var act = async () => await _sut.UpdateInvestmentAccountAsync(chaseSave.Id, request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).WithMessage($"An investment account named \"{name}\" already exists.");
+            chaseSave.Name.Should().Be("ChaseSave");
             _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_KeepingItsOwnNameInAnotherCase_Saves()
+    {
+        var chaseSave = InvestmentAccount.Create("chasesave", isActive: true, isLiability: false);
+        _repository.InvestmentAccounts.Add(chaseSave);
+        var request = new InvestmentAccountUpdateDTO { Name = "ChaseSave", IsActive = true, IsLiability = false };
+
+        await _sut.UpdateInvestmentAccountAsync(chaseSave.Id, request);
+
+        using (new AssertionScope())
+        {
+            chaseSave.Name.Should().Be("ChaseSave");
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 

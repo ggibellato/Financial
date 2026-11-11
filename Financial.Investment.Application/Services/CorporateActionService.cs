@@ -595,15 +595,14 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
         GlobalAssetClass? assetClass,
         out bool isNew)
     {
-        var existing = portfolio.FindAsset(assetName);
-
         if (!createInline)
         {
             isNew = false;
-            return existing ?? throw new KeyNotFoundException($"Asset \"{assetName}\" was not found in portfolio \"{portfolio.Name}\".");
+            return portfolio.FindAsset(assetName)
+                ?? throw new KeyNotFoundException($"Asset \"{assetName}\" was not found in portfolio \"{portfolio.Name}\".");
         }
 
-        if (existing is not null)
+        if (portfolio.HasAssetNamed(assetName))
         {
             throw new InvestmentDuplicateNameException(
                 $"An asset named \"{assetName}\" already exists in portfolio \"{portfolio.Name}\".");
