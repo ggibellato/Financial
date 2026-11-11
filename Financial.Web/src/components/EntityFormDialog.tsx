@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import {
-  Button,
   Dialog,
   DialogBody,
   DialogContent,
@@ -8,9 +7,8 @@ import {
   DialogTitle,
   MessageBar,
   MessageBarBody,
-  Spinner,
 } from '@fluentui/react-components'
-import { useFormPanelStyles } from './formPanelStyles'
+import FormSaveActions from './FormSaveActions'
 
 interface EntityFormDialogProps {
   title: string
@@ -33,7 +31,6 @@ export default function EntityFormDialog({
   onCancel,
   children,
 }: EntityFormDialogProps) {
-  const styles = useFormPanelStyles()
   const errorBar = useRef<HTMLDivElement | null>(null)
 
   const [opener] = useState(() => document.activeElement as HTMLElement | null)
@@ -71,19 +68,7 @@ export default function EntityFormDialog({
                 </MessageBar>
               )}
             </DialogContent>
-            <div className={styles.actions}>
-              <Button
-                type="submit"
-                appearance="primary"
-                disabled={!canSave}
-                icon={isSaving ? <Spinner size="tiny" /> : undefined}
-              >
-                {saveLabel}
-              </Button>
-              <Button appearance="secondary" onClick={onCancel} disabled={isSaving}>
-                Cancel
-              </Button>
-            </div>
+            <FormSaveActions saveLabel={saveLabel} isSaving={isSaving} isSaveDisabled={!canSave} onCancel={onCancel} />
           </DialogBody>
         </form>
       </DialogSurface>
