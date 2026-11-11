@@ -267,6 +267,7 @@ export default function AccountScreenPage() {
             amount={potTransactionForm.edit.values.editMovementAmount}
             date={potTransactionForm.edit.values.editMovementDate}
             description={potTransactionForm.edit.values.editMovementDescription}
+            currency={account?.currency ?? ''}
             buckets={pots.data?.pots ?? []}
             isSaving={potTransactionForm.edit.isSaving}
             error={potTransactionForm.edit.error}
