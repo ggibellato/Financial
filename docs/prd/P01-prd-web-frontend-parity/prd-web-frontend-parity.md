@@ -297,7 +297,8 @@ Each problem maps to a concrete deliverable:
 **Experience:**
 - New: shows blank form with title "New transaction"; Save → `POST /api/v1/financial/transactions`; Cancel → clears form
 - Edit icon: populates form with the row's values; form title changes to "Edit transaction"; Save → `PUT /api/v1/financial/transactions`; Cancel → clears form
-- Delete icon: opens the in-app "Delete Transaction" dialog ("Delete the transaction <type> <net>, <date>? This cannot be undone.") → Delete: the row shows "Deleting …" with a spinner, `DELETE /api/v1/financial/transactions` → reload asset, focus moves to the next row's Delete (else the previous row's, else New transaction); a failure shows a focused error alert; Cancel: no action, focus returns to the row's Delete
+- Delete icon: `window.confirm("Delete this transaction?")` → confirmed: `DELETE /api/v1/financial/transactions` → reload asset; denied: no action
+  > **Later change (post-P60 UI clean-up, PR #1238):** the confirmation is now the in-app "Delete Transaction" dialog ("Delete the transaction <type> <net>, <date>? This cannot be undone."). While the request runs the row shows "Deleting …" with a spinner. After a delete, focus moves to the next row's Delete, else the previous row's, else New transaction. A failure shows a focused error alert. Cancel returns focus to the row's Delete.
 - After save or delete: reload asset details; reset form to blank state
 - Save button: disabled during submission; label shows "Saving..."
 - Form validation: Date, Quantity, and Unit Price required; all numeric fields must be finite positive numbers; Fees defaults to 0 if blank
@@ -548,7 +549,8 @@ graph TD
 - [x] Submitting a valid new transaction form calls `POST /transactions` and refreshes the transaction list
 - [x] Clicking the edit icon populates the inline form with that transaction's values and changes the title to "Edit transaction"
 - [x] Submitting an edited transaction form calls `PUT /transactions` and refreshes the list
-- [x] Clicking the delete icon opens the in-app "Delete Transaction" confirmation dialog (replaced `window.confirm` in the post-P60 UI clean-up)
+- [x] Clicking the delete icon shows `window.confirm("Delete this transaction?")`
+  > **Later change (PR #1238):** replaced by the in-app "Delete Transaction" dialog; see the note in the delete-icon requirement.
 - [x] Confirming delete calls `DELETE /transactions` and removes the row from the table
 - [x] Cancelling delete leaves the transaction unchanged
 - [x] Save button shows "Saving..." and is disabled during submission
