@@ -98,6 +98,35 @@ describe('PayRecurringBillForm', () => {
     expect(screen.getByLabelText(/^Category/)).toHaveFocus()
   })
 
+  it('moves focus to a field the server rejects after the save returns', () => {
+    const { rerender } = render(<PayRecurringBillForm {...baseProps} {...SELECTED} />)
+    screen.getByRole('button', { name: 'Pay recurring bill' }).focus()
+
+    rerender(<PayRecurringBillForm {...baseProps} {...SELECTED} fieldErrors={{ value: 'Value must be greater than zero.' }} />)
+
+    expect(screen.getByLabelText(/^Value/)).toHaveFocus()
+  })
+
+  it('leaves focus in the field being typed in when its own error clears', () => {
+    const { rerender } = render(
+      <PayRecurringBillForm {...baseProps} {...SELECTED} fieldErrors={{ description: 'Description is required.', categoryId: 'Choose a category.' }} />,
+    )
+    screen.getByLabelText(/^Description/).focus()
+
+    rerender(<PayRecurringBillForm {...baseProps} {...SELECTED} fieldErrors={{ categoryId: 'Choose a category.' }} />)
+
+    expect(screen.getByLabelText(/^Description/)).toHaveFocus()
+  })
+
+  it('moves focus to the bill picker when Save is pressed with no bill chosen', () => {
+    const { rerender } = render(<PayRecurringBillForm {...baseProps} />)
+    screen.getByRole('button', { name: 'Pay recurring bill' }).focus()
+
+    rerender(<PayRecurringBillForm {...baseProps} billError="Choose a bill." />)
+
+    expect(screen.getByLabelText(/^Bill/)).toHaveFocus()
+  })
+
   it('shows a loading indicator while the bills load', () => {
     render(<PayRecurringBillForm {...baseProps} bills={[]} isLoadingBills />)
 

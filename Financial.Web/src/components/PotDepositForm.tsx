@@ -3,8 +3,6 @@ import {
   Checkbox,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Radio,
   RadioGroup,
   Spinner,
@@ -22,6 +20,7 @@ import { POTS_LOAD_ERROR } from '../hooks/usePots'
 import type { DepositInto, PotDepositFormModel } from '../hooks/usePotDepositForm'
 import { formatN2OrDash, formatN2To4 } from '../utils/formatters'
 import { activePotsTotal, canSplitAcrossActivePots, previewPotSplit } from '../utils/potSplitPreview'
+import ActionErrorAlert from './ActionErrorAlert'
 import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
 import FundingLinesField from './FundingLinesField'
@@ -89,7 +88,7 @@ interface PotDepositFormProps {
 export default function PotDepositForm({ form, banks, incomeSources, onFromIncome, onDelete, onCancel }: PotDepositFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
-  const { formRef, errorRef } = useFormErrorFocus(form.errorFields, form.error)
+  const formRef = useFormErrorFocus(form.errorFields)
   const [source, setSource] = useState(MANUAL_SOURCE)
   const isFromIncome = !form.isEditing && source === INCOME_SOURCE
   const { values } = form
@@ -112,11 +111,7 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
         <Text as="h2" id="pot-deposit-title" weight="semibold" size={400}>
           {form.isEditing ? 'Edit deposit' : 'New deposit'}
         </Text>
-        {form.error && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{form.error}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={form.error} />
 
         {form.hasPotsError && !isFromIncome && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
 

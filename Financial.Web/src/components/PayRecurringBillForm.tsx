@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useMemo } from 'react'
 import { Button, Field, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
 import type { CategoryDto, RecurringBillDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
+import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { BILL_CURRENCY } from '../hooks/usePayRecurringBill'
 import { formatCurrency } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import BillExpenseFields from './BillExpenseFields'
 import type { BillExpenseErrors, BillExpenseField, BillExpenseValues } from './billExpenseValues'
 import ErrorState from './ErrorState'
@@ -53,14 +54,9 @@ export default function PayRecurringBillForm({
   onCancel,
 }: PayRecurringBillFormProps) {
   const styles = useFormPanelStyles()
-  const formRef = useRef<HTMLFormElement | null>(null)
-  const [submitCount, setSubmitCount] = useState(0)
-  const errorRef = useAlertFocus(saveError)
+  const errorFields = useMemo(() => ({ ...fieldErrors, bill: billError }), [fieldErrors, billError])
+  const formRef = useFormErrorFocus(errorFields)
   const canPickBill = !billsError && !isLoadingBills && (bills.length > 0 || billId !== '')
-
-  useEffect(() => {
-    if (submitCount > 0) formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
-  }, [submitCount])
 
   const billPicker = () => {
     if (billsError) return <ErrorState message={billsError} onRetry={onRetryBills} />
@@ -96,18 +92,13 @@ export default function PayRecurringBillForm({
       onSubmit={(event) => {
         event.preventDefault()
         onSave()
-        setSubmitCount((count) => count + 1)
       }}
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
         <Text as="h2" weight="semibold" size={400}>
           Pay recurring bill
         </Text>
-        {saveError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{saveError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={saveError} />
 
         {billPicker()}
         {lockedBank.currency !== BILL_CURRENCY && (

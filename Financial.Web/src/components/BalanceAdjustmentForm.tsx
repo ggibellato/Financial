@@ -1,4 +1,4 @@
-import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankOption } from '../api/types'
 import type { BalanceAdjustmentFormField } from '../hooks/mapBalanceAdjustmentErrorToField'
@@ -6,8 +6,10 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { formatCurrency } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
+import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 interface BalanceAdjustmentFormProps {
   isEditing: boolean
@@ -53,7 +55,7 @@ export default function BalanceAdjustmentForm({
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
   const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
-  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, generalError)
+  const formRef = useFormErrorFocus(saveErrorFields)
 
   if (savedDelta !== null) {
     return (
@@ -90,17 +92,11 @@ export default function BalanceAdjustmentForm({
         <Text as="h2" weight="semibold" size={400}>
           {isEditing ? 'Edit balance adjustment' : 'Adjust balance'}
         </Text>
-        {generalError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{generalError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={generalError} />
 
         {isBankLocked ? (
           <div className={styles.grid}>
-            <Field label="Bank">
-              <Text weight="semibold">{bankDisplayName}</Text>
-            </Field>
+            <LockedValue label="Bank" value={bankDisplayName} />
           </div>
         ) : !isEditing && (
           <div className={styles.grid}>

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { Button, Field, Input, MessageBar, MessageBarBody, Spinner, Text } from '@fluentui/react-components'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
+import { Button, Field, Input, Spinner, Text } from '@fluentui/react-components'
 import { dueDateRangeOf, type DueDateFormState, type StatementDueDateFormHandle } from '../hooks/useStatementDueDateForm'
 import { formatLongMonthYear } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -18,8 +18,6 @@ export default function StatementDueDateForm({ form, dueDateForm, onCancel }: St
   const { failedValidations, setDate, save, clear } = dueDateForm
   const { statement, date, pendingAction, error, dateError } = form
   const { min, max } = dueDateRangeOf(statement)
-  const errorRef = useAlertFocus(error)
-
   useEffect(() => {
     dateRef.current?.focus()
   }, [failedValidations])
@@ -38,11 +36,7 @@ export default function StatementDueDateForm({ form, dueDateForm, onCancel }: St
         <Text as="h3" id="statement-due-date-title" weight="semibold" size={400}>
           {formatLongMonthYear(statement.year, statement.month)} due date
         </Text>
-        {error && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{error}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={error} />
         <div className={styles.grid}>
           <Field label="Due date" required validationState={dateError ? 'error' : 'none'} validationMessage={dateError}>
             <Input ref={dateRef} type="date" min={min} max={max} value={date} onChange={(event) => setDate(event.target.value)} />

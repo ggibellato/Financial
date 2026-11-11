@@ -1,13 +1,14 @@
 import { useRef } from 'react'
-import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
+import { Field, Input, Select, Text } from '@fluentui/react-components'
 import type { LockedBank } from '../hooks/formSettings'
 import type { PayCardStatementField, PayCardStatementForm as PayCardStatementFormState } from '../hooks/usePayCardStatementForm'
 import { formatCurrency, formatLongMonthYear, todayIsoDate } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import ErrorState from './ErrorState'
 import FormSaveActions from './FormSaveActions'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 const NOTHING_TO_PAY_MESSAGE = 'No card statement is waiting to be paid.'
 
@@ -29,7 +30,6 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
   const dateRef = useRef<HTMLInputElement | null>(null)
   const { cards, statements, statement, values, isLoading, loadError, retry, hasNothingToPay, isSaving, saveError, fieldErrors, setField, submit } =
     payForm
-  const errorRef = useAlertFocus(saveError)
   const fieldRefs: Record<PayCardStatementField, { current: HTMLElement | null }> = { cardId: cardRef, statementId: statementRef, date: dateRef }
   const validation = (field: PayCardStatementField) => ({
     validationState: fieldErrors[field] ? ('error' as const) : ('none' as const),
@@ -51,16 +51,10 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
         <Text as="h2" id="pay-card-statement-title" weight="semibold" size={400}>
           Pay card statement
         </Text>
-        {saveError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{saveError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={saveError} />
         {loadError && <ErrorState message={loadError} onRetry={retry} />}
         <div className={styles.grid}>
-          <Field label="From">
-            <Text weight="semibold">{lockedBank.name}</Text>
-          </Field>
+          <LockedValue label="From" value={lockedBank.name} />
           <Field label="Card" required hint={hasNothingToPay ? NOTHING_TO_PAY_MESSAGE : undefined} {...validation('cardId')}>
             <Select ref={cardRef} value={values.cardId} aria-busy={isLoading} onChange={(event) => setField('cardId', event.target.value)}>
               <option value="">{isLoading ? 'Loading statements…' : 'Select a card'}</option>

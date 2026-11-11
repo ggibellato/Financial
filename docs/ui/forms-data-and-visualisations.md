@@ -41,6 +41,17 @@ For a transaction form, the normal sequence is:
 6. Notes
 7. Save and Cancel
 
+Documented exceptions:
+
+- **Paying a card statement** (`PayCardStatementForm` from the bank,
+  `CardStatementsTab`'s Pay form from the card): the payer or statement
+  choice comes before Date, because Date defaults to today and rarely
+  changes while that choice drives the amount (P60 F08 spec).
+- **Paying a recurring bill** (`PayRecurringBillForm`): the Bill picker comes
+  first, because the expense fields only appear, pre-filled, once a bill is
+  chosen; the fields themselves (`BillExpenseFields`) follow the default
+  order: Date, Bank, Category, Description, Value.
+
 ### Layout
 
 Use a content-aware responsive form grid:

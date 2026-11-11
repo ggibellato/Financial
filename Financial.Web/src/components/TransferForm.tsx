@@ -1,13 +1,15 @@
 import { useState } from 'react'
-import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Field, Input, Select, Text } from '@fluentui/react-components'
 import type { LockedBank } from '../hooks/formSettings'
 import type { TransferFormField } from '../hooks/transferFormField'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks, type SelectableBank } from '../utils/selectableBanks'
+import ActionErrorAlert from './ActionErrorAlert'
 import { ACTION_LABELS } from './accountActions'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 const DIFFERENT_BANKS_ERROR = 'Source and destination must be different banks.'
 
@@ -75,15 +77,13 @@ export default function TransferForm({
   }
 
   const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
-  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, generalError)
+  const formRef = useFormErrorFocus(saveErrorFields)
 
   const accountField = (side: LockedTransferSide['side'], label: string) => {
     const field: TransferFormField = side === 'source' ? 'sourceBank' : 'destinationBank'
     if (lockedSide?.side === side) {
       return (
-        <Field label={label}>
-          <Text weight="semibold">{lockedSide.name}</Text>
-        </Field>
+        <LockedValue label={label} value={lockedSide.name} />
       )
     }
     const options = side === 'source' ? sourceBanks : destinationBanks
@@ -122,11 +122,7 @@ export default function TransferForm({
         <Text as="h2" weight="semibold" size={400}>
           {title}
         </Text>
-        {generalError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{generalError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={generalError} />
 
         <div className={styles.grid}>
           <Field

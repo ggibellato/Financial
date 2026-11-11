@@ -1,9 +1,10 @@
-import { Field, Input, Select, Text } from '@fluentui/react-components'
+import { Field, Input, Select } from '@fluentui/react-components'
 import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
 import { selectableBanks } from '../utils/selectableBanks'
 import type { BillExpenseErrors, BillExpenseField, BillExpenseValues } from './billExpenseValues'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 interface BillExpenseFieldsProps {
   values: BillExpenseValues
@@ -34,24 +35,8 @@ export default function BillExpenseFields({
         <Input type="date" value={values.date} onChange={(e) => onFieldChange('date', e.target.value)} disabled={disabled} />
       </Field>
 
-      <Field label="Description" required className={styles.spanTwo} {...validation('description')}>
-        <Input value={values.description} onChange={(e) => onFieldChange('description', e.target.value)} disabled={disabled} />
-      </Field>
-
-      <Field label="Value" required {...validation('value')}>
-        <Input
-          type="number"
-          step="0.01"
-          value={values.value}
-          onChange={(e) => onFieldChange('value', e.target.value)}
-          disabled={disabled}
-        />
-      </Field>
-
       {lockedBank ? (
-        <Field label="Bank">
-          <Text weight="semibold">{lockedBank.name}</Text>
-        </Field>
+        <LockedValue label="Bank" value={lockedBank.name} />
       ) : (
         <Field label="Bank" required {...validation('bankId')}>
           <Select value={values.bankId} onChange={(e) => onFieldChange('bankId', e.target.value)} disabled={disabled}>
@@ -74,6 +59,20 @@ export default function BillExpenseFields({
             </option>
           ))}
         </Select>
+      </Field>
+
+      <Field label="Description" required className={styles.spanTwo} {...validation('description')}>
+        <Input value={values.description} onChange={(e) => onFieldChange('description', e.target.value)} disabled={disabled} />
+      </Field>
+
+      <Field label="Value" required {...validation('value')}>
+        <Input
+          type="number"
+          step="0.01"
+          value={values.value}
+          onChange={(e) => onFieldChange('value', e.target.value)}
+          disabled={disabled}
+        />
       </Field>
     </>
   )

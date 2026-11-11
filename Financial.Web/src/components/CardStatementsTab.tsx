@@ -18,10 +18,10 @@ import {
   Text,
 } from '@fluentui/react-components'
 import type { AccountStatementDto } from '../api/types'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
 import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, MISSING_VALUE_PLACEHOLDER, todayIsoDate } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import FormSaveActions from './FormSaveActions'
@@ -128,7 +128,6 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
   const bankRef = useRef<HTMLSelectElement | null>(null)
   const dateRef = useRef<HTMLInputElement | null>(null)
   const { payers, isLoadingPayers, payersError, retryPayers, failedSubmit, setPayField, submitPayForm } = cardStatements
-  const errorRef = useAlertFocus(payForm.error)
 
   useEffect(() => {
     bankRef.current?.focus()
@@ -153,11 +152,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
         <Text as="h3" id="pay-statement-title" weight="semibold" size={400}>
           Pay {monthOf(payForm.statement)} statement
         </Text>
-        {payForm.error && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{payForm.error}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={payForm.error} />
         {payersError && <ErrorState message={payersError} onRetry={retryPayers} />}
         <div className={styles.grid}>
           <Field

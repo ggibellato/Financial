@@ -1,4 +1,5 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import ActionErrorAlert from '../components/ActionErrorAlert'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -155,11 +156,7 @@ export default function InvestmentSnapshotsPage() {
             </Button>
           </div>
 
-          {Object.keys(saveErrorFields).length === 0 && saveError && (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
         </div>
       )}
 

@@ -1,8 +1,8 @@
 import { useRef } from 'react'
-import { Field, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
+import { Field, Select, Text } from '@fluentui/react-components'
 import { currentStatementLabel, moveRecordNoun, type MoveChargeFormState } from '../hooks/useMoveChargeForm'
 import { formatN2, formatShortDateUtc } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import ErrorState from './ErrorState'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -19,8 +19,6 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
   const styles = useFormPanelStyles()
   const statementRef = useRef<HTMLSelectElement | null>(null)
   const { form, targets, isLoadingTargets, hasNoTargets, targetsError, retryTargets, setTarget, submit } = moveForm
-  const errorRef = useAlertFocus(form?.error ?? null)
-
   if (!form) return null
   const { charge } = form
   const noun = moveRecordNoun(charge)
@@ -42,11 +40,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
         <Text as="p">
           {`${charge.description} (${formatShortDateUtc(charge.chargeDate ?? charge.date)}, ${formatN2(Math.abs(charge.value))}) is on the ${currentStatementLabel(charge.invoiceDate)} statement.`}
         </Text>
-        {form.error && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{form.error}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={form.error} />
         {targetsError && <ErrorState message={targetsError} onRetry={retryTargets} />}
         <div className={styles.grid}>
           <Field

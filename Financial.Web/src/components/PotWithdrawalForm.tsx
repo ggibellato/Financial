@@ -1,4 +1,4 @@
-import { Button, Field, InfoLabel, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Button, Field, InfoLabel, Input, Select, Text } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { BankOption } from '../api/types'
 import type { LockedBank } from '../hooks/formSettings'
@@ -7,11 +7,13 @@ import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { PotWithdrawalFormModel } from '../hooks/usePotWithdrawalForm'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
 import { inactiveMarked, selectableBanks } from '../utils/selectableBanks'
+import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
 import { useFormPanelStyles } from './formPanelStyles'
 import PotField from './PotField'
 import PotFormFooter from './PotFormFooter'
+import LockedValue from './LockedValue'
 
 interface PotWithdrawalFormProps {
   form: PotWithdrawalFormModel
@@ -34,7 +36,7 @@ function saveLabel(form: PotWithdrawalFormModel): string {
 export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, onCancel }: PotWithdrawalFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(form.errorFields)
-  const { formRef, errorRef } = useFormErrorFocus(form.errorFields, form.error)
+  const formRef = useFormErrorFocus(form.errorFields)
 
   const { values } = form
   if (!values) return null
@@ -74,11 +76,7 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
           <Text as="h2" id="pot-withdrawal-title" weight="semibold" size={400}>
             {title}
           </Text>
-          {form.error && (
-            <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-              <MessageBarBody>{form.error}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={form.error} />
 
           {form.hasPotsError && <ErrorState message={POTS_LOAD_ERROR} onRetry={form.retryPots} />}
 
@@ -127,9 +125,7 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
             </Field>
 
             {form.isBankLocked && lockedBank ? (
-              <Field label="Through bank">
-                <Text weight="semibold">{lockedBank.name}</Text>
-              </Field>
+              <LockedValue label="Through bank" value={lockedBank.name} />
             ) : (
               <Field
                 label={{

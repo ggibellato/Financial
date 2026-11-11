@@ -10,6 +10,7 @@ import {
   Textarea,
 } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
+import ActionErrorAlert from './ActionErrorAlert'
 import type { CorporateActionFormField } from '../hooks/useCorporateActions'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -330,11 +331,7 @@ export default function CorporateActionForm({
         )}
       </div>
 
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
     </div>
   )
 }

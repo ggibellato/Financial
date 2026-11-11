@@ -1,5 +1,6 @@
-import { MessageBar, MessageBarBody, Radio, RadioGroup, Switch } from '@fluentui/react-components'
+import { Radio, RadioGroup, Switch } from '@fluentui/react-components'
 import type { RadioGroupOnChangeData } from '@fluentui/react-components'
+import ActionErrorAlert from '../components/ActionErrorAlert'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import { useReportingCurrency } from '../hooks/useReportingCurrency'
@@ -39,11 +40,7 @@ export default function ReportingCurrencyPage() {
           ))}
         </RadioGroup>
       </div>
-      {saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={saveError} />
     </section>
   )
 }
