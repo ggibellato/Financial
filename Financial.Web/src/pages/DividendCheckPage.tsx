@@ -101,7 +101,7 @@ export default function DividendCheckPage() {
       <form className="dividend-check__form" onSubmit={handleSubmit} aria-label="Dividend check">
         <TickerCombobox groups={groups} value={ticker} onChange={setTicker} />
         <Button type="submit" appearance="primary" icon={<SearchRegular />} disabled={isLoading}>
-          {isLoading ? 'Checking...' : 'Check'}
+          {isLoading ? 'Checking…' : 'Check'}
         </Button>
       </form>
 

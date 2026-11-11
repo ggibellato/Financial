@@ -31,7 +31,7 @@ import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks
 import { useCredits } from '../hooks/useCredits'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatN2, formatPercent1OrDash, formatShortDate } from '../utils/formatters'
+import { formatN2, formatPercent1OrDash, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
 import './CreditsTab.css'
@@ -259,7 +259,7 @@ function InlineForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSaving} onClick={onSave}>
-          {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add credit'}
+          {isSaving ? SAVING_LABEL : editingId ? 'Save' : 'Add credit'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

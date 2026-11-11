@@ -6,18 +6,18 @@ describe('LoadingState', () => {
   it('renders the default loading message', () => {
     render(<LoadingState />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders a custom message when provided', () => {
-    render(<LoadingState message="Please wait..." />)
+    render(<LoadingState message="Please wait…" />)
 
-    expect(screen.getByText('Please wait...')).toBeInTheDocument()
+    expect(screen.getByText('Please wait…')).toBeInTheDocument()
   })
 
   it('announces the loading message as a polite status', () => {
-    render(<LoadingState message="Loading accounts..." />)
+    render(<LoadingState message="Loading accounts…" />)
 
-    expect(screen.getByRole('status')).toHaveTextContent('Loading accounts...')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading accounts…')
   })
 })

@@ -183,7 +183,7 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() =>
-      expect(screen.getByText('Fetching 1 of 2: BCIA11...')).toBeInTheDocument(),
+      expect(screen.getByText('Fetching 1 of 2: BCIA11…')).toBeInTheDocument(),
     )
   })
 
@@ -210,7 +210,7 @@ describe('CurrentValuesPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Checking...' })).toBeDisabled(),
+      expect(screen.getByRole('button', { name: 'Checking…' })).toBeDisabled(),
     )
   })
 

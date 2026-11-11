@@ -29,7 +29,7 @@ import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
 import { usePriceHistory } from '../hooks/usePriceHistory'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatN2, formatShortDate } from '../utils/formatters'
+import { formatN2, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
@@ -158,7 +158,7 @@ function InlineForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSaving} onClick={onSave}>
-          {isSaving ? 'Saving...' : editingDate ? 'Save' : 'Add price'}
+          {isSaving ? SAVING_LABEL : editingDate ? 'Save' : 'Add price'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

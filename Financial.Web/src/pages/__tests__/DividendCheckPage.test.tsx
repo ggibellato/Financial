@@ -227,7 +227,7 @@ describe('DividendCheckPage', () => {
     expect(yearRows[2]).toHaveTextContent('2024')
   })
 
-  it('shows Checking... and disables button during fetch', async () => {
+  it('shows Checking… and disables button during fetch', async () => {
     getDividendSummaryMock.mockReturnValue(new Promise(() => {}))
     getDividendHistoryMock.mockReturnValue(new Promise(() => {}))
 
@@ -235,7 +235,7 @@ describe('DividendCheckPage', () => {
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
 
-    expect(screen.getByRole('button', { name: 'Checking...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Checking…' })).toBeDisabled()
   })
 
   it('clears results and shows error on check failure', async () => {

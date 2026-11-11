@@ -126,7 +126,7 @@ describe('AdminAccountsPage', () => {
     getAccountsMock.mockResolvedValue([])
     renderPage()
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'New account', description: 'Loading account templates.' })).toHaveAttribute(
       'aria-disabled',
       'true',

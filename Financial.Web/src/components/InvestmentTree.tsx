@@ -431,7 +431,7 @@ export default function InvestmentTree() {
         />
       )}
       {isLoading ? (
-        <LoadingState message="Loading investments..." />
+        <LoadingState message="Loading investments…" />
       ) : error ? (
         <ErrorState message={error} onRetry={handleRetry} />
       ) : tree ? (

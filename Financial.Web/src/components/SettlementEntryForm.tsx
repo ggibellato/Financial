@@ -21,8 +21,8 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
   const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
-  const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'Add entry'
-  const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : title
+  const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'New entry'
+  const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : 'Add entry'
   const validation = (field: SettlementEntryField) => ({
     validationState: fieldErrors[field] ? ('error' as const) : ('none' as const),
     validationMessage: fieldErrors[field],

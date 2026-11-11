@@ -108,7 +108,7 @@ describe('AssetSummaryTab', () => {
   it('renders_loading_indicator_while_asset_loads', () => {
     setMock({ isLoadingAsset: true })
     renderAssetSummaryTab()
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_on_asset_failure', () => {

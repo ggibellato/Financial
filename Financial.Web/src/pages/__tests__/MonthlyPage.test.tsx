@@ -104,7 +104,7 @@ describe('MonthlyPage', () => {
   it('shows a loading state before data arrives', () => {
     render(<MonthlyPage />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('[AC P60-F04-default-account-group-and-summary-query-07] shows loading while the summary request is pending', () => {
@@ -112,7 +112,7 @@ describe('MonthlyPage', () => {
 
     render(<MonthlyPage />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
     expect(screen.queryByText(/Bank balance:/, { selector: 'p' })).not.toBeInTheDocument()
   })
 
@@ -297,7 +297,7 @@ describe('MonthlyPage', () => {
       render(<MonthlyPage />)
 
       await openAllTransactions()
-      expect(screen.queryByText('Loading...')).not.toBeInTheDocument()
+      expect(screen.queryByText('Loading…')).not.toBeInTheDocument()
     })
 
     it('[AC P60-F16-month-transactions-view-04] works while the Monthly load has failed', async () => {

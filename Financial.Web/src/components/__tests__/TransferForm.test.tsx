@@ -109,10 +109,10 @@ describe('TransferForm', () => {
     expect(screen.getByText('Network request failed')).toBeInTheDocument()
   })
 
-  it('shows Saving... and disables the button while isSaving', () => {
+  it('shows Saving… and disables the button while isSaving', () => {
     render(<TransferForm {...baseProps} isSaving />)
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('disables every field and Cancel while saving', () => {
@@ -226,7 +226,7 @@ describe('TransferForm', () => {
     const onSave = vi.fn()
     render(<TransferForm {...baseProps} isSaving onSave={onSave} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Saving...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Saving…' }))
 
     expect(onSave).not.toHaveBeenCalled()
   })

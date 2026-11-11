@@ -105,7 +105,7 @@ export default function SuggestedValuesPanel({
         Suggest values
       </Text>
 
-      {phase === 'loading' && <LoadingState message="Loading suggestions..." />}
+      {phase === 'loading' && <LoadingState message="Loading suggestions…" />}
 
       {phase === 'error' && <ErrorState message={fetchError ?? "Couldn't load suggestions."} onRetry={onRetryFetch} />}
 
@@ -167,7 +167,7 @@ export default function SuggestedValuesPanel({
             <div>
               <ProgressBar value={applyProgress.current / applyProgress.total} />
               <Text size={200}>
-                Applying {applyProgress.current} of {applyProgress.total}: {applyProgress.accountName}...
+                Applying {applyProgress.current} of {applyProgress.total}: {applyProgress.accountName}…
               </Text>
             </div>
           )}

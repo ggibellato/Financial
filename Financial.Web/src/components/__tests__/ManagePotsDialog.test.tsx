@@ -210,7 +210,7 @@ describe('ManagePotsDialog', () => {
     expect(potField('Home', SPLIT)).toBeDisabled()
     expect(potField('Trips', ACTIVE)).toBeDisabled()
     expect(button('Add pot')).toBeDisabled()
-    const saving = button('Saving...')
+    const saving = button('Saving…')
     expect(saving).toHaveAttribute('aria-disabled', 'true')
     expect(saving).toHaveFocus()
     expect(button('Cancel')).toBeDisabled()

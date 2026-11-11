@@ -149,7 +149,7 @@ shared shape, not an ad hoc spinner:
 - A determinate progress bar (0–100%), driven by completed/total item count —
   not an indeterminate spinner, since the total is known up front.
 - A text line under the bar naming the current item: `Fetching {n} of
-  {total}: {item}...`.
+  {total}: {item}…`.
 - On completion, replace the progress line with a short result summary:
   `Completed! Loaded {total} {items}.`
 - Disable the action that started the batch for its duration, so it can't be
@@ -187,7 +187,7 @@ detail panel's contextual Move/Delete action row, and a form's Save button.
   pinned brand blue from `decisions/ADR-005-brand-and-status-colors.md` — the
   same blue, same size, everywhere. Don't hand-draw a "+" as a text character
   — that is the drift this rule exists to prevent. Two peer action buttons sitting side by side (New income
-  split/New withdrawal; Move.../Delete portfolio; New transfer/New balance
+  split/New withdrawal; Move…/Delete portfolio; New transfer/New balance
   correction) both stay primary, left-aligned, in the same style — never
   demote one to a lesser style just because there are two, and never treat
   a Move/Delete pair as if it were a Save/Cancel pair.
@@ -242,7 +242,7 @@ The "New X" trigger button, the form it opens, and that form's own confirm
 action must all name the same thing, so cause and effect are traceable
 without re-reading anything: **trigger button → form title → confirm
 button**. The account screen's expense action (`AccountActionBar.tsx` →
-`ExpenseForm.tsx`) is the reference: the trigger reads "Add expense", the
+`ExpenseForm.tsx`) is the reference: the trigger reads "New expense", the
 form's own title reads "New expense" (and "Edit expense" once populated from
 an existing row), and the confirm button reads "Add expense" (and "Save" once
 editing) — never a generic
@@ -257,7 +257,9 @@ exactly ("Admin → CashFlow → Accounts") and Pots, the account type's name,
 keeps its capital. Validation, error, load- and save-failure and
 empty-state messages are full sentences ending with a full stop ("Date is
 required.", "No income recorded for this month."); short labels, button text,
-headings and brief status toasts ("Expense added") have none.
+headings and brief status toasts ("Expense added") have none. Progress text,
+truncation and a button that opens a further step use the single ellipsis
+character ("Saving…", "Move…"), never three full stops.
 
 Do not let the form re-title itself into different wording once open (e.g.
 a "New transfer" trigger opening a form titled "Move money") — the trigger's

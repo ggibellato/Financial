@@ -2,6 +2,7 @@ import type { MouseEvent, ReactNode } from 'react'
 import { Button, Spinner } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
+import { SAVING_LABEL } from '../utils/formatters'
 
 interface FormSaveActionsProps {
   saveLabel: string
@@ -11,8 +12,6 @@ interface FormSaveActionsProps {
   onCancel: () => void
   children?: ReactNode
 }
-
-const SAVING_LABEL = 'Saving...'
 
 function blockSubmit(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault()

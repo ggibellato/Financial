@@ -77,7 +77,7 @@ describe('SuggestedValuesPanel', () => {
       />,
     )
 
-    expect(screen.getByText('Applying 2 of 5: PlatinumVisa8003...')).toBeInTheDocument()
+    expect(screen.getByText('Applying 2 of 5: PlatinumVisa8003…')).toBeInTheDocument()
   })
 
   it('shows a fetch error state with a retry action', () => {

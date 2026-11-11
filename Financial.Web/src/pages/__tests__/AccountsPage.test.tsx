@@ -306,7 +306,7 @@ describe('AccountsPage', () => {
 
     renderPage()
 
-    expect(screen.getAllByText('Loading...')).toHaveLength(1)
+    expect(screen.getAllByText('Loading…')).toHaveLength(1)
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

@@ -87,10 +87,10 @@ function renderForm(state: SettlementEntryFormModel, onCancel = vi.fn()) {
 }
 
 describe('SettlementEntryForm', () => {
-  it('[AC P60-F12-settlement-screen-08] titles Add entry and shows the fields in the documented order', () => {
+  it('[AC P60-F12-settlement-screen-08] titles New entry and shows the fields in the documented order', () => {
     renderForm(addState())
 
-    expect(screen.getByRole('heading', { name: 'Add entry' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New entry' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add entry' })).toBeEnabled()
     const labels = Array.from(document.querySelectorAll('form label'))
       .map((label) => label.textContent?.replace('*', '').trim())
@@ -242,13 +242,13 @@ describe('SettlementEntryForm', () => {
     expect(screen.getByText('Amount must be greater than zero.')).toBeInTheDocument()
   })
 
-  it('[AC P60-F12-settlement-screen-08] disables the fields and keeps Saving... focused while it saves', () => {
+  it('[AC P60-F12-settlement-screen-08] disables the fields and keeps Saving… focused while it saves', () => {
     const { rerender } = renderForm(addState())
     screen.getByRole('button', { name: 'Add entry' }).focus()
 
     rerender(<SettlementEntryForm form={addState({ isSaving: true })} onCancel={vi.fn()} />)
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()

@@ -130,7 +130,7 @@ describe('PortfolioHoldingsTab', () => {
   it('renders_loading_state_in_table_section_while_items_load', () => {
     setPortfolioMock({ isLoading: true })
     renderComponent()
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_in_table_section_on_items_fetch_failure', () => {
@@ -360,7 +360,7 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
     expect(screen.getByText(/75[.,]50/)).toBeInTheDocument()
-    const loadingCells = screen.getAllByText('...')
+    const loadingCells = screen.getAllByText('…')
     expect(loadingCells.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -368,7 +368,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    const loadingCells = screen.getAllByText('...')
+    const loadingCells = screen.getAllByText('…')
     expect(loadingCells).toHaveLength(5)
   })
 
@@ -483,7 +483,7 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells[11].textContent?.replace('XIRR:', '')).toBe('...')
+    expect(cells[11].textContent?.replace('XIRR:', '')).toBe('…')
   })
 
   it('renders_dash_in_current_value_and_price_dependent_columns_on_price_failure', () => {

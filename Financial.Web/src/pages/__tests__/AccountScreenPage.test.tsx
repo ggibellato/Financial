@@ -1237,8 +1237,8 @@ describe('AccountScreenPage on a Settlement account', () => {
     const user = await openMaeScreen()
     expect(getIncomeSourcesMock).not.toHaveBeenCalled()
 
-    await user.click(screen.getByRole('button', { name: 'Add entry' }))
-    const form = screen.getByRole('form', { name: 'Add entry' })
+    await user.click(screen.getByRole('button', { name: 'New entry' }))
+    const form = screen.getByRole('form', { name: 'New entry' })
     expect(within(form).getByLabelText(/^Date/)).toHaveFocus()
     await user.click(within(form).getByRole('radio', { name: 'You' }))
     await user.type(within(form).getByLabelText(/^Description/), 'Mercado')
@@ -1299,7 +1299,7 @@ describe('AccountScreenPage on a Settlement account', () => {
 
     expect(await screen.findByText('Nothing to settle.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Settle' })).toHaveAttribute('aria-disabled', 'true')
-    expect(screen.getByRole('button', { name: 'Add entry' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'New entry' })).toBeEnabled()
   })
 
   it('[AC P60-F12-settlement-screen-08] hides the Converted column on a one-currency account', async () => {
@@ -1339,7 +1339,7 @@ describe('AccountScreenPage on a Settlement account', () => {
 
   it('[AC P60-F12-settlement-screen-08] asks before discarding a typed entry when a row is opened, and keeps it on Keep editing', async () => {
     const user = await openMaeScreen()
-    await user.click(screen.getByRole('button', { name: 'Add entry' }))
+    await user.click(screen.getByRole('button', { name: 'New entry' }))
     await user.type(screen.getByLabelText(/^Description/), 'Mercado')
 
     await user.click(screen.getByRole('button', { name: /^Edit entry\b/ }))
@@ -1352,25 +1352,25 @@ describe('AccountScreenPage on a Settlement account', () => {
   it('[AC P60-F12-settlement-screen-08] shows the server refusal in the form and keeps the values', async () => {
     createSettlementEntryMock.mockRejectedValue(new ApiError('Mãe is inactive.', 400))
     const user = await openMaeScreen()
-    await user.click(screen.getByRole('button', { name: 'Add entry' }))
+    await user.click(screen.getByRole('button', { name: 'New entry' }))
     await user.click(screen.getByRole('radio', { name: 'Mãe' }))
     await user.type(screen.getByLabelText(/^Description/), 'Mercado')
     await user.type(screen.getByLabelText(/^Amount/), '80')
 
-    await user.click(within(screen.getByRole('form', { name: 'Add entry' })).getByRole('button', { name: 'Add entry' }))
+    await user.click(within(screen.getByRole('form', { name: 'New entry' })).getByRole('button', { name: 'Add entry' }))
 
     expect(await screen.findByText('Mãe is inactive.')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
   })
 
-  it('closes the form and returns focus to Add entry on Cancel', async () => {
+  it('closes the form and returns focus to New entry on Cancel', async () => {
     const user = await openMaeScreen()
-    const addEntry = screen.getByRole('button', { name: 'Add entry' })
+    const addEntry = screen.getByRole('button', { name: 'New entry' })
     await user.click(addEntry)
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
-    expect(screen.queryByRole('form', { name: 'Add entry' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'New entry' })).not.toBeInTheDocument()
     expect(addEntry).toHaveFocus()
   })
 
@@ -1541,7 +1541,7 @@ describe('AccountScreenPage actions', () => {
   async function openScreen() {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     await screen.findByRole('heading', { level: 1, name: 'Barclays' })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
   }
 
   it('[AC P60-F05-bank-account-screen-05] renders exactly the allowed actions: seven for a bank, a reduced list as sent, none when inactive', async () => {
@@ -1552,8 +1552,8 @@ describe('AccountScreenPage actions', () => {
         .getAllByRole('button')
         .map((button) => button.textContent)
     expect(actionNames()).toEqual([
-      'Add expense',
-      'Add income',
+      'New expense',
+      'New income',
       'Transfer to',
       'Transfer from',
       'Pay recurring bill',
@@ -1567,9 +1567,9 @@ describe('AccountScreenPage actions', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add income' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New income' })).toBeEnabled())
     const actions = within(screen.getByRole('group', { name: 'Account actions' })).getAllByRole('button')
-    expect(actions.map((button) => button.textContent)).toEqual(['Adjust balance', 'Add income'])
+    expect(actions.map((button) => button.textContent)).toEqual(['Adjust balance', 'New income'])
   })
 
   it('renders no actions and no row buttons for an inactive account', async () => {
@@ -1652,9 +1652,9 @@ describe('AccountScreenPage actions', () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     expect(screen.getByLabelText('Loading account')).toBeInTheDocument()
     expect(screen.getByLabelText('Loading account details')).toBeInTheDocument()
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
     await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
@@ -1662,7 +1662,7 @@ describe('AccountScreenPage actions', () => {
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
 
     await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
     finishSave(SAVED_EXPENSE)
     expect(await screen.findByText('Expense added')).toBeInTheDocument()
@@ -1673,7 +1673,7 @@ describe('AccountScreenPage actions', () => {
 
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
     expect(screen.getByRole('button', { name: 'Adjust balance' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Transfer to' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Transfer from' })).toBeDisabled()
@@ -1702,13 +1702,13 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     const expenseHeading = screen.getByRole('heading', { name: 'New expense' })
     const transactionsHeading = screen.getByRole('heading', { name: 'Transactions' })
     expect(expenseHeading.compareDocumentPosition(transactionsHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
-    await user.click(screen.getByRole('button', { name: 'Add income' }))
+    await user.click(screen.getByRole('button', { name: 'New income' }))
 
     expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
 
@@ -1718,7 +1718,7 @@ describe('AccountScreenPage actions', () => {
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
     expect(screen.queryByRole('heading', { name: 'New income' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Add income' }))
+    await user.click(screen.getByRole('button', { name: 'New income' }))
     await user.click(await dialogButton('Discard unsaved changes?', 'Discard'))
 
     expect(screen.getByRole('heading', { name: 'New income' })).toBeInTheDocument()
@@ -1729,8 +1729,8 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
-    await user.click(screen.getByRole('button', { name: 'Add income' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
+    await user.click(screen.getByRole('button', { name: 'New income' }))
 
     expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'New income' })).toBeInTheDocument()
@@ -1742,7 +1742,7 @@ describe('AccountScreenPage actions', () => {
     getAccountMock.mockClear()
     getAccountTransactionsMock.mockClear()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     expect(screen.getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
@@ -1776,7 +1776,7 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40{Enter}')
 
@@ -1790,7 +1790,7 @@ describe('AccountScreenPage actions', () => {
     createIncomeMock.mockResolvedValue({ ...SAVED_INCOME, potsAccountId: 'reserva' })
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add income' }))
+    await user.click(screen.getByRole('button', { name: 'New income' }))
     await user.type(screen.getByLabelText(/^Net value/), '2500')
     await user.click(within(await operationForm('New income')).getByRole('button', { name: 'Add income' }))
 
@@ -1800,7 +1800,7 @@ describe('AccountScreenPage actions', () => {
   it('closes the open form when the open action is pressed again, returning focus to it', async () => {
     const user = userEvent.setup()
     await openScreen()
-    const addExpense = screen.getByRole('button', { name: 'Add expense' })
+    const addExpense = screen.getByRole('button', { name: 'New expense' })
 
     await user.click(addExpense)
     await user.click(addExpense)
@@ -1814,16 +1814,16 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     renderScreen(`/cashflow/accounts/${CHASE_ID}?month=2026-10`, [`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`])
     await screen.findByRole('heading', { level: 1, name: 'Chase' })
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     expect(within(screen.getByRole('heading', { name: 'New expense' }).closest('form') as HTMLElement).getByText('Chase')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Browser back' }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'New expense' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
     await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
@@ -1837,7 +1837,7 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add income' }))
+    await user.click(screen.getByRole('button', { name: 'New income' }))
     expect(screen.getByText('Barclays', { selector: 'span' })).toBeInTheDocument()
     await user.type(screen.getByLabelText(/^Net value/), '2500')
     await user.click(within(await operationForm('New income')).getByRole('button', { name: 'Add income' }))
@@ -1857,7 +1857,7 @@ describe('AccountScreenPage actions', () => {
     createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch.', 0))
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.type(screen.getByLabelText(/^Value/), '12.40')
     await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
@@ -1870,7 +1870,7 @@ describe('AccountScreenPage actions', () => {
   it('moves focus into the opened form and back to its action button on Cancel', async () => {
     const user = userEvent.setup()
     await openScreen()
-    const addIncome = screen.getByRole('button', { name: 'Add income' })
+    const addIncome = screen.getByRole('button', { name: 'New income' })
 
     await user.click(addIncome)
 
@@ -1887,7 +1887,7 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
 
     expect(await screen.findByText('Balance at end of September 2026')).toBeInTheDocument()
@@ -1899,9 +1899,9 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
     await screen.findByText('Balance at end of September 2026')
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
 
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-09-30')
   })
@@ -1910,7 +1910,7 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-09' } })
 
@@ -1932,7 +1932,7 @@ describe('AccountScreenPage actions', () => {
     const user = userEvent.setup()
     await openScreen()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(screen.getByLabelText(/^Description/), 'Lidl')
     await user.click(screen.getByRole('combobox', { name: 'Account' }))
     await user.click(screen.getByRole('option', { name: 'Chase' }))
@@ -1950,11 +1950,11 @@ describe('AccountScreenPage actions', () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
     expect(await screen.findByText('Unable to load the form options.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add expense' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New expense' })).toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
   })
 })
 
@@ -2276,7 +2276,7 @@ describe('AccountScreenPage card screen', () => {
     createExpenseMock.mockResolvedValue({ ...TAXI, id: 'c2', description: 'Lunch' })
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-    await user.click(await screen.findByRole('button', { name: 'Add charge' }))
+    await user.click(await screen.findByRole('button', { name: 'New charge' }))
     const form = screen.getByRole('heading', { name: 'New charge' }).closest('form') as HTMLElement
     expect(within(form).getByText('BA Amex')).toBeInTheDocument()
     expect(within(form).queryByLabelText(/^Payment source/)).not.toBeInTheDocument()
@@ -2418,7 +2418,7 @@ describe('AccountScreenPage card screen', () => {
       const form = await openRefundForm(user)
       await user.selectOptions(within(form).getByRole('combobox', { name: /^To bank/ }), await within(form).findByRole('option', { name: 'Barclays' }))
 
-      await user.click(screen.getByRole('button', { name: 'Add charge' }))
+      await user.click(screen.getByRole('button', { name: 'New charge' }))
 
       expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: 'Refund credit to bank' })).toBeInTheDocument()
@@ -2464,7 +2464,7 @@ describe('AccountScreenPage card screen', () => {
       withActions(['AddCharge', 'AddRefund'])
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      expect(await screen.findByRole('button', { name: 'Add refund' })).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: 'New refund' })).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: 'Refund credit to bank' })).not.toBeInTheDocument()
     })
 
@@ -2612,7 +2612,7 @@ describe('AccountScreenPage card screen', () => {
       const form = await openReceiveForm(user)
       await user.selectOptions(within(form).getByRole('combobox', { name: /^From/ }), await within(form).findByRole('option', { name: /^BA Amex/ }))
 
-      await user.click(screen.getByRole('button', { name: 'Add expense' }))
+      await user.click(screen.getByRole('button', { name: 'New expense' }))
 
       expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
       expect(screen.getByRole('heading', { name: 'Receive card credit' })).toBeInTheDocument()
@@ -2632,7 +2632,7 @@ describe('AccountScreenPage card screen', () => {
       createExpenseMock.mockResolvedValue({ ...SHOES, id: 'r2' })
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: 'Add refund' }))
+      await user.click(await screen.findByRole('button', { name: 'New refund' }))
       const form = screen.getByRole('heading', { name: 'New refund' }).closest('form') as HTMLElement
       expect(within(form).getByText('BA Amex')).toBeInTheDocument()
       expect(within(form).getByLabelText(/^Date/)).toHaveValue('2026-10-15')
@@ -2656,7 +2656,7 @@ describe('AccountScreenPage card screen', () => {
       withActions(['AddRefund'])
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: 'Add refund' }))
+      await user.click(await screen.findByRole('button', { name: 'New refund' }))
       const form = screen.getByRole('heading', { name: 'New refund' }).closest('form') as HTMLElement
       await user.type(within(form).getByLabelText(/^Description/), 'Shoes returned')
       await user.click(within(form).getByRole('button', { name: 'Add refund' }))
@@ -2732,9 +2732,9 @@ describe('AccountScreenPage card screen', () => {
       withActions(['AddCharge', 'AddRefund'])
       renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: 'Add refund' }))
+      await user.click(await screen.findByRole('button', { name: 'New refund' }))
       await user.type(screen.getByLabelText(/^Amount/), '40')
-      await user.click(screen.getByRole('button', { name: 'Add charge' }))
+      await user.click(screen.getByRole('button', { name: 'New charge' }))
 
       await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))
       expect(screen.getByRole('heading', { name: 'New refund' })).toBeInTheDocument()
@@ -3055,7 +3055,7 @@ describe('AccountScreenPage bank side card payments', () => {
     const card = await screen.findByRole('combobox', { name: /^Card/ })
     await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
     await user.selectOptions(card, VISA_ID)
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
 
     expect(await findDialog('Discard unsaved changes?')).toBeInTheDocument()
   })
@@ -3090,7 +3090,7 @@ describe('AccountScreenPage bank side card payments', () => {
     await screen.findByRole('heading', { level: 1, name: 'Barclays' })
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeEnabled())
-    expect(screen.getByRole('button', { name: 'Add expense' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'New expense' })).toBeDisabled()
   })
 
   it('asks before a card payment link discards unsaved changes, and stays on Keep editing', async () => {
@@ -3098,7 +3098,7 @@ describe('AccountScreenPage bank side card payments', () => {
     getAccountTransactionsMock.mockResolvedValue([...TRANSACTIONS, CARD_PAYMENT_ROW])
     await openBank()
 
-    await user.click(screen.getByRole('button', { name: 'Add expense' }))
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
     await user.type(await screen.findByLabelText(/^Description/), 'Lidl')
     await user.click(screen.getByRole('link', { name: 'BA Amex payment – Sep 2026 statement' }))
     await user.click(await dialogButton('Discard unsaved changes?', 'Keep editing'))

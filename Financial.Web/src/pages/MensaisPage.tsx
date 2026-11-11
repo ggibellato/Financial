@@ -29,7 +29,7 @@ import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useMensais } from '../hooks/useMensais'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
-import { formatN2 } from '../utils/formatters'
+import { formatN2, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import './MensaisPage.css'
@@ -291,7 +291,7 @@ export default function MensaisPage() {
             disabledFocusable={isResetting}
             onClick={() => setIsConfirmingReset(true)}
           >
-            {isResetting ? 'Resetting...' : 'Reset all to Unset'}
+            {isResetting ? 'Resetting…' : 'Reset all to Unset'}
           </Button>
         </div>
       </div>
@@ -361,7 +361,7 @@ export default function MensaisPage() {
 
           <div className={styles.actions}>
             <Button appearance="primary" disabled={isAdding} onClick={submitAdd}>
-              {isAdding ? 'Adding bill...' : 'Add bill'}
+              {isAdding ? 'Adding bill…' : 'Add bill'}
             </Button>
             <Button appearance="secondary" onClick={cancelAdd}>
               Cancel
@@ -415,7 +415,7 @@ export default function MensaisPage() {
 
           <div className={styles.actions}>
             <Button appearance="primary" disabled={isSaving} onClick={saveEdit}>
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? SAVING_LABEL : 'Save'}
             </Button>
             <Button appearance="secondary" onClick={cancelEdit}>
               Cancel

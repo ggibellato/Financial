@@ -113,7 +113,7 @@ describe('CorporateActionsTab', () => {
   it('shows a loading state', () => {
     setMock({ isLoading: true })
     render(<CorporateActionsTab />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('shows an error state with retry', () => {

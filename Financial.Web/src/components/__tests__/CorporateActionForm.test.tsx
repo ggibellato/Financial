@@ -124,10 +124,10 @@ describe('CorporateActionForm', () => {
     expect(screen.getAllByText('Enter a valid split ratio other than 1-for-1')).toHaveLength(2)
   })
 
-  it('shows Saving... and disables the confirm button while isSaving', () => {
+  it('shows Saving… and disables the confirm button while isSaving', () => {
     render(<CorporateActionForm {...baseProps} isSaving />)
 
-    const button = screen.getByRole('button', { name: 'Saving...' })
+    const button = screen.getByRole('button', { name: 'Saving…' })
     expect(button).toBeDisabled()
   })
 

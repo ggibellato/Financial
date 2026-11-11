@@ -291,7 +291,7 @@ describe('AccountFormDialog', () => {
     save()
 
     await waitFor(() => expect(screen.getByLabelText(/Name/)).toBeDisabled())
-    const saving = screen.getByRole('button', { name: 'Saving...' })
+    const saving = screen.getByRole('button', { name: 'Saving…' })
     expect(saving).toHaveAttribute('aria-disabled', 'true')
     expect(saving).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()

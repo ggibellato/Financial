@@ -64,7 +64,7 @@ describe('AdminEntityPage', () => {
   it('shows the loading state instead of the content while loading', () => {
     renderPage({ isLoading: true, loadError: 'ignored while loading' })
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })

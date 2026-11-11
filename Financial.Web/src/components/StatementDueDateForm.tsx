@@ -59,7 +59,7 @@ export default function StatementDueDateForm({ form, dueDateForm, onCancel }: St
             icon={pendingAction === 'clear' ? <Spinner size="tiny" /> : undefined}
             onClick={clear}
           >
-            {pendingAction === 'clear' ? 'Clearing...' : 'Clear due date'}
+            {pendingAction === 'clear' ? 'Clearing…' : 'Clear due date'}
           </Button>
         )}
       </FormSaveActions>

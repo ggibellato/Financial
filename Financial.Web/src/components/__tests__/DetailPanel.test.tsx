@@ -347,19 +347,19 @@ describe('DetailPanel', () => {
   it('renders_asset_summary_tab_when_asset_selected', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_aggregated_summary_tab_for_broker_node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_portfolio_summary_tab_for_portfolio_node', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
-    const loadingItems = screen.getAllByText('Loading...')
+    const loadingItems = screen.getAllByText('Loading…')
     expect(loadingItems.length).toBeGreaterThanOrEqual(1)
   })
 
@@ -446,7 +446,7 @@ describe('DetailPanel', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move…' }))
 
     expect(screen.getByTestId('move-asset-dialog-stub')).toBeInTheDocument()
   })
@@ -455,7 +455,7 @@ describe('DetailPanel', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move…' }))
     fireEvent.click(screen.getByText('stub-cancel'))
 
     expect(screen.queryByTestId('move-asset-dialog-stub')).not.toBeInTheDocument()
@@ -465,7 +465,7 @@ describe('DetailPanel', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move…' }))
     fireEvent.click(screen.getByText('stub-moved'))
 
     expect(screen.queryByTestId('move-asset-dialog-stub')).not.toBeInTheDocument()
@@ -476,7 +476,7 @@ describe('DetailPanel', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Move...' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Move…' }))
     fireEvent.click(screen.getByText('stub-archived'))
 
     expect(screen.queryByTestId('move-asset-dialog-stub')).not.toBeInTheDocument()

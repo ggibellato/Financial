@@ -125,10 +125,10 @@ describe('BalanceAdjustmentForm', () => {
     expect(screen.getByText('Network request failed')).toBeInTheDocument()
   })
 
-  it('shows Saving... and disables the button while isSaving', () => {
+  it('shows Saving… and disables the button while isSaving', () => {
     render(<BalanceAdjustmentForm {...baseProps} isSaving />)
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('only the Bank dropdown is enabled before a bank is chosen', () => {

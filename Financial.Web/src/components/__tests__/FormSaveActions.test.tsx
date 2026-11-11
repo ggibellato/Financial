@@ -34,7 +34,7 @@ describe('FormSaveActions', () => {
   it('keeps Save focusable but marked unavailable while saving, and disables Cancel', () => {
     renderInForm({ isSaving: true })
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).not.toBeDisabled()
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
@@ -53,7 +53,7 @@ describe('FormSaveActions', () => {
     screen.getByRole('button', { name: 'Add Expense' }).focus()
 
     rerender(<FormSaveActions {...props} isSaving />)
-    expect(screen.getByRole('button', { name: 'Saving...' })).toHaveFocus()
+    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveFocus()
 
     rerender(<FormSaveActions {...props} isSaving={false} />)
     expect(screen.getByRole('button', { name: 'Add Expense' })).toHaveFocus()
@@ -62,7 +62,7 @@ describe('FormSaveActions', () => {
   it('does not submit again while saving, by click or by keyboard', async () => {
     const user = userEvent.setup()
     const { onSubmit } = renderInForm({ isSaving: true })
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
 
     await user.click(save)
     save.focus()
@@ -96,7 +96,7 @@ describe('FormSaveActions', () => {
     expect(screen.getByRole('button', { name: 'Add Expense' })).toBeDisabled()
   })
 
-  it('announces Saving... in a polite status region only while saving', () => {
+  it('announces Saving… in a polite status region only while saving', () => {
     const { rerender } = renderInForm({ isSaving: false })
     const status = screen.getByRole('status')
     expect(status.textContent).toBe('')
@@ -106,6 +106,6 @@ describe('FormSaveActions', () => {
         <FormSaveActions saveLabel="Add Expense" onCancel={vi.fn()} isSaving />
       </form>,
     )
-    expect(screen.getByRole('status')).toHaveTextContent('Saving...')
+    expect(screen.getByRole('status')).toHaveTextContent('Saving…')
   })
 })

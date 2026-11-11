@@ -53,13 +53,13 @@ describe('PayCardStatementForm', () => {
     expect(screen.getByRole('button', { name: 'Pay card statement' })).toBeDisabled()
   })
 
-  it('disables the fields and keeps Saving... focused while the payment saves', () => {
+  it('disables the fields and keeps Saving… focused while the payment saves', () => {
     const { rerender } = render(<PayCardStatementForm payForm={formState()} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
     screen.getByRole('button', { name: 'Pay card statement' }).focus()
 
     rerender(<PayCardStatementForm payForm={formState({ isSaving: true })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()

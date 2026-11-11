@@ -472,11 +472,11 @@ describe('PotWithdrawalForm editing an operation', () => {
 
     save('Save')
 
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
     expect(saveButton).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Delete withdrawal' })).toBeDisabled()
-    save('Saving...')
+    save('Saving…')
     expect(updatePotWithdrawalMock).toHaveBeenCalledOnce()
   })
 

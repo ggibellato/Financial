@@ -187,7 +187,7 @@ describe('CreditsTab', () => {
   it('renders_loading_state', () => {
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     renderWithSelectedNode(<CreditsTab />, ASSET_NODE)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry', async () => {
@@ -378,7 +378,7 @@ describe('CreditsTab', () => {
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '10' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add credit' }))
 
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toBeDisabled()
   })
 
   it('renders_save_error_below_form', async () => {

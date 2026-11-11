@@ -268,10 +268,10 @@ describe('PotDepositForm', () => {
 
     save()
 
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
-    save('Saving...')
+    save('Saving…')
     expect(createPotDepositMock).toHaveBeenCalledOnce()
   })
 
