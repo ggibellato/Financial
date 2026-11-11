@@ -350,7 +350,7 @@ describe('TransactionsTab', () => {
 
   it.each([
     ['Redemption', 'Redemption', 'transactions-tab__type--sell'],
-    ['ReturnOfCapital', 'Return of Capital', 'transactions-tab__type--sell'],
+    ['ReturnOfCapital', 'Return of capital', 'transactions-tab__type--sell'],
     ['Fee', 'Fee', 'transactions-tab__type--buy'],
     ['TransferIn', 'Transfer in', 'transactions-tab__type--neutral'],
     ['Bonus', 'Bonus', 'transactions-tab__type--neutral'],

@@ -56,7 +56,7 @@ const TRANSACTION_TYPE_OPTIONS = [
   { value: 'TransferIn', label: 'Transfer in' },
   { value: 'TransferOut', label: 'Transfer out' },
   { value: 'CapitalCall', label: 'Capital call' },
-  { value: 'ReturnOfCapital', label: 'Return of Capital' },
+  { value: 'ReturnOfCapital', label: 'Return of capital' },
 ]
 
 const SORT_ACCESSORS: Record<string, SortAccessor<TransactionDto>> = {

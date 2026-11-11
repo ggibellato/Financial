@@ -199,10 +199,11 @@ function InlineForm({
 
         <Field label="Type">
           <Select value={formType} onChange={(e) => onFieldChange('formType', e.target.value)}>
-            <option value="Dividend">Dividend</option>
-            <option value="SecuritiesLendingIncome">Securities lending income</option>
-            <option value="JCP">JCP</option>
-            <option value="Coupon">Coupon</option>
+            {Object.entries(TYPE_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </Select>
         </Field>
 
