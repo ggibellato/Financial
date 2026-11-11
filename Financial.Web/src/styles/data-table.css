@@ -111,6 +111,7 @@
 
   .data-table,
   .data-table tbody,
+  .data-table tfoot,
   .data-table tr,
   .data-table td {
     display: block;
@@ -121,7 +122,8 @@
     box-sizing: border-box;
   }
 
-  .data-table tbody tr {
+  .data-table tbody tr,
+  .data-table tfoot tr {
     border: 1px solid var(--border);
     border-radius: 4px;
     margin-bottom: 8px;

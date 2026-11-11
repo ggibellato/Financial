@@ -227,6 +227,30 @@ describe('AnnualSummaryPage', () => {
     expect(within(resultadoRow).getByText('27,740.00')).toBeInTheDocument()
   })
 
+  it('pins Resultado and Total despesas in the table footer, after every body row', async () => {
+    render(<AnnualSummaryPage />)
+
+    const table = await screen.findByRole('table', { name: 'Category totals' })
+    const footerRows = within(table.querySelector('tfoot')!).getAllByRole('row')
+    expect(footerRows.map((row) => row.querySelector('td')?.textContent?.replace('Category:', ''))).toEqual([
+      'Resultado (R-D-Inv)',
+      'Total despesas',
+    ])
+    expect(within(table.querySelector('tbody')!).queryByText('Total despesas')).not.toBeInTheDocument()
+  })
+
+  it('names the Investments table and pins its Total and Month Result rows in the table footer', async () => {
+    render(<AnnualSummaryPage />)
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Investments' }))
+    const table = await screen.findByRole('table', { name: 'Investments' })
+
+    const footer = table.querySelector('tfoot')!
+    expect(within(footer).getByText('Total')).toBeInTheDocument()
+    expect(within(footer).getByText('Month Result')).toBeInTheDocument()
+    expect(within(footer).queryByText('ChaseSave')).not.toBeInTheDocument()
+  })
+
   it('shows only the Investments tab content after clicking Investments', async () => {
     render(<AnnualSummaryPage />)
 
@@ -582,8 +606,9 @@ describe('AnnualSummaryPage', () => {
     expect(tbody.queryByText('Casa')).not.toBeInTheDocument()
     expect(tbody.getByText('Mercado')).toBeInTheDocument()
     expect(tbody.getByText('Salary')).toBeInTheDocument()
-    expect(tbody.getByText(/^Resultado \(R-D-Inv\)/)).toBeInTheDocument()
-    expect(tbody.getByText(/^Total despesas/)).toBeInTheDocument()
+    const tfoot = within(document.querySelector('tfoot')!)
+    expect(tfoot.getByText(/^Resultado \(R-D-Inv\)/)).toBeInTheDocument()
+    expect(tfoot.getByText(/^Total despesas/)).toBeInTheDocument()
   })
 
   it('labels Resultado and Total despesas as covering all categories only while a Category filter is active', async () => {
@@ -597,20 +622,20 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
-    const tbody = () => within(document.querySelector('tbody')!)
-    expect(tbody().getByText('Total despesas')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
+    const tfoot = () => within(document.querySelector('tfoot')!)
+    expect(tfoot().getByText('Total despesas')).toBeInTheDocument()
+    expect(tfoot().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(tbody().getByText('Total despesas (all categories)')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv) (all categories)')).toBeInTheDocument()
+    expect(tfoot().getByText('Total despesas (all categories)')).toBeInTheDocument()
+    expect(tfoot().getByText('Resultado (R-D-Inv) (all categories)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(tbody().getByText('Total despesas')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
+    expect(tfoot().getByText('Total despesas')).toBeInTheDocument()
+    expect(tfoot().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
   })
 
   it('filters the Historic Summary Average table by Category', async () => {

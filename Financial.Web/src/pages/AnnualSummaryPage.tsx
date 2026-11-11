@@ -112,7 +112,7 @@ export default function AnnualSummaryPage() {
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
   // Only the homogeneous data rows (category totals / accounts / historic categories) are
-  // sortable/filterable; the fixed income-summary lines, spacer rows, and emphasized total rows
+  // sortable/filterable; the fixed income-summary lines, spacer rows, and the <tfoot> total rows
   // on the Category Totals and Investments tabs render outside these arrays and stay pinned in
   // place regardless of sort or filter state.
   const {
@@ -182,6 +182,7 @@ export default function AnnualSummaryPage() {
       </div>
 
       <TabList
+        className="annual-summary-page__tabs"
         selectedValue={activeTab}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as AnnualSummaryTabId)}
       >
@@ -308,7 +309,8 @@ export default function AnnualSummaryPage() {
                   <TableRow>
                     <TableCell colSpan={SPACER_COL_SPAN} />
                   </TableRow>
-
+                </TableBody>
+                <tfoot>
                   {incomeSummary && (
                     <AnnualSummaryRow
                       label={allItemsTotalLabel('Resultado (R-D-Inv)', 'categories', categoryTotalsFilterSummary.isFiltered)}
@@ -325,14 +327,14 @@ export default function AnnualSummaryPage() {
                     annualTotal={totalDespesasAnnualTotal}
                     emphasized
                   />
-                </TableBody>
+                </tfoot>
               </Table>
             </section>
           )}
 
           {activeTab === 'investments' && investmentAnnualResult && (
             <section className="annual-summary-page__section">
-              <Table className="annual-summary-page__table data-table">
+              <Table className="annual-summary-page__table data-table" aria-label="Investments">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader
@@ -363,13 +365,15 @@ export default function AnnualSummaryPage() {
                       monthlyValues={a.monthlyValues}
                     />
                   ))}
+                </TableBody>
+                <tfoot>
                   <InvestmentRow label="Total" monthlyValues={investmentAnnualResult.netPosition.monthlyValues} emphasized />
                   <InvestmentRow
                     label="Month Result"
                     monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
                     emphasized
                   />
-                </TableBody>
+                </tfoot>
               </Table>
 
               <div className="annual-summary-page__investment-totals">
