@@ -11,7 +11,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthInputValue, formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { deleteFailedMessage, formatMonthInputValue, formatMonthKey, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber, todayIsoDate, toInputDate } from '../utils/formatters'
 import { isAllocationExact } from '../utils/lotAllocation'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
@@ -244,7 +244,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
         formLotAllocations: { ...state.formLotAllocations, [action.payload.sourceTransactionId]: action.payload.value },
       }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: state.deleteError }
+      return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: null }
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS': {
@@ -543,7 +543,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           settle({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete transaction.'),
+            payload: getDeleteErrorMessage(err, deleteFailedMessage('transaction')),
           })
         })
     },

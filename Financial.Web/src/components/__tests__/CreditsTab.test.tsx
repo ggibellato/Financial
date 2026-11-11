@@ -7,6 +7,7 @@ import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } fr
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import CreditsTab from '../CreditsTab'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const { getAssetDetailsMock, getCreditsByBrokerMock, addCreditMock, updateCreditMock, deleteCreditMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -409,7 +410,7 @@ describe('CreditsTab', () => {
     deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_JCP]))
 
     const dialog = await requestDelete(DIVIDEND_NAME)
-    expect(dialog).toHaveAccessibleDescription(`Delete the ${DIVIDEND_NAME}? This cannot be undone.`)
+    expect(dialog).toHaveAccessibleDescription("Delete the credit Dividend £120.50, 15/03/2024? This cannot be undone.")
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
@@ -501,7 +502,7 @@ describe('CreditsTab', () => {
 
     await confirmDelete(DIVIDEND_NAME)
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(rowButton(`Delete ${DIVIDEND_NAME}`)).toBeInTheDocument()

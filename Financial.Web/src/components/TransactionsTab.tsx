@@ -34,7 +34,7 @@ import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } f
 import { useTransactions } from '../hooks/useTransactions'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { formatN2, formatN8, formatShortDate, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
+import { formatAmount, formatN2, formatN8, formatShortDate, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
@@ -87,8 +87,8 @@ function typeDisplayLabel(type: string): string {
   return TRANSACTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type
 }
 
-function transactionName(transaction: TransactionDto): string {
-  return `transaction ${typeDisplayLabel(transaction.type)} ${formatN2(transaction.netCash)}, ${formatShortDate(transaction.date)}`
+function transactionName(transaction: TransactionDto, amount = formatN2(transaction.netCash)): string {
+  return `transaction ${typeDisplayLabel(transaction.type)} ${amount}, ${formatShortDate(transaction.date)}`
 }
 
 interface TransactionRowProps {
@@ -569,7 +569,7 @@ export default function TransactionsTab() {
       {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="transaction"
-          message={`Delete the ${transactionName(deletion.pendingRow)}? This cannot be undone.`}
+          message={`Delete the ${transactionName(deletion.pendingRow, formatAmount(deletion.pendingRow.netCash, deletion.pendingRow.currency))}? This cannot be undone.`}
           onConfirm={deletion.confirm}
           onCancel={deletion.cancel}
         />

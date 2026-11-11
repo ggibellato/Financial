@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { getErrorMessage } from '../utils/formatters'
+import { deleteFailedMessage, getErrorMessage } from '../utils/formatters'
 
 export interface PortfolioDeletionData {
   deleteError: string | null
@@ -22,7 +22,7 @@ export function usePortfolioDeletion(): PortfolioDeletionData {
         reload()
       })
       .catch((err: unknown) => {
-        setDeleteError(getErrorMessage(err, 'The portfolio could not be deleted.'))
+        setDeleteError(getErrorMessage(err, deleteFailedMessage('portfolio')))
       })
   }
 

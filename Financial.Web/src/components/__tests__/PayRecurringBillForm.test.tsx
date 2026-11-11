@@ -5,6 +5,7 @@ import type { BillExpenseErrors } from '../billExpenseValues'
 import { recurringBill } from '../../test/recurringBill'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import PayRecurringBillForm from '../PayRecurringBillForm'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const COUNCIL_TAX = recurringBill({ id: 'council', dueDay: 5, description: 'Council Tax', value: 120 })
 
@@ -167,7 +168,7 @@ describe('PayRecurringBillForm', () => {
   it('announces a save error above the fields and moves focus to it', () => {
     render(<PayRecurringBillForm {...baseProps} {...SELECTED} saveError="This bill is already paid." />)
 
-    expect(screen.getByRole('alert')).toHaveTextContent('This bill is already paid.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('This bill is already paid.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 })

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { CardCreditRefundForm as CardCreditRefundFormState } from '../../hooks/useCardCreditRefundForm'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import CardCreditRefundForm from '../CardCreditRefundForm'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 function formState(overrides: Partial<CardCreditRefundFormState> = {}): CardCreditRefundFormState {
   return {
@@ -105,8 +106,8 @@ describe('CardCreditRefundForm', () => {
   it('announces the server message and moves focus to it', () => {
     renderForm({ saveError: 'The server refused.' })
 
-    expect(screen.getByRole('alert')).toHaveTextContent('The server refused.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('The server refused.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 
   it('reports each field change and cancels', () => {

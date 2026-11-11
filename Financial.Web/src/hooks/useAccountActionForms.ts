@@ -19,6 +19,7 @@ import { usePotTransactionEditForm } from './usePotTransactionEditForm'
 import { usePotWithdrawalForm } from './usePotWithdrawalForm'
 import { useSettlementEntryForm } from './useSettlementEntryForm'
 import type { YearMonth } from './useMonthSelection'
+import { deleteFailedMessage } from '../utils/formatters'
 
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
@@ -256,7 +257,7 @@ export function useAccountActionForms(
 
   const operationDelete = useConfirmedDelete<OperationDeleteTarget>(
     ({ operationId }) => apiClient.deletePotOperation(operationId),
-    ({ noun }) => `Failed to delete the ${noun}.`,
+    ({ noun }) => deleteFailedMessage(noun),
     ({ noun }) => {
       closeForms()
       saved(`${OPERATION_TITLES[noun]} deleted`)

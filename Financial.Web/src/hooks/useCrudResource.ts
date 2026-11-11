@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { getErrorMessage } from '../utils/formatters'
+import { getDeleteErrorMessage, getErrorMessage } from '../utils/formatters'
 import { useLatestRequestGuard } from './useAsyncResource'
 
 interface CrudResourceState<T> {
@@ -139,7 +139,7 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
           void refresh()
         })
         .catch((err: unknown) => {
-          fail(getErrorMessage(err, errorMessage))
+          fail(getDeleteErrorMessage(err, errorMessage))
         })
     },
     [start, succeed, fail, refresh],

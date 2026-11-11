@@ -7,6 +7,7 @@ import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } fr
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import PriceHistoryTab from '../PriceHistoryTab'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const { getAssetDetailsMock, setAssetPriceMock, deleteAssetPriceMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -474,7 +475,7 @@ describe('PriceHistoryTab', () => {
 
     await confirmDelete(MANUAL_NAME)
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(within(table).getByText('15/03/2024')).toBeInTheDocument()

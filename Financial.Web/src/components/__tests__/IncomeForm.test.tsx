@@ -6,6 +6,7 @@ import type { BankOption, IncomeSourceDto } from '../../api/types'
 import type { IncomeFunding } from '../../hooks/useIncomeForm'
 import { optionNames } from '../../test-utils/optionNames'
 import { potsAccount } from '../../test/account'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANKS: BankOption[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
@@ -133,8 +134,8 @@ describe('IncomeForm funded from', () => {
 
     rerender(<IncomeForm {...baseProps} saveError="Barclays is inactive." saveErrorFields={{}} />)
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('Barclays is inactive.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 
   it('does not mark a locked bank as required', () => {

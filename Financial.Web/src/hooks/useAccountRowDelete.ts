@@ -2,6 +2,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountTransactionDto } from '../api/types'
 import { isCreditRefund } from '../components/accountActions'
 import { useConfirmedDelete } from './useConfirmedDelete'
+import { deleteFailedMessage } from '../utils/formatters'
 
 function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
   if (row.expense) return apiClient.deleteExpense(row.expense.id)
@@ -15,6 +16,6 @@ function deleteSourceRecord(row: AccountTransactionDto): Promise<void> {
 }
 
 export function useAccountRowDelete(onDeleted: (row: AccountTransactionDto) => void) {
-  const { target, request, ...rowDelete } = useConfirmedDelete(deleteSourceRecord, () => 'Failed to delete.', onDeleted)
+  const { target, request, ...rowDelete } = useConfirmedDelete(deleteSourceRecord, () => deleteFailedMessage('record'), onDeleted)
   return { ...rowDelete, row: target, requestDelete: request }
 }

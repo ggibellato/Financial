@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import EntityFormDialog from '../EntityFormDialog'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 interface RenderOptions {
   error?: string | null
@@ -185,8 +186,8 @@ describe('EntityFormDialog', () => {
 
     rerender(dialog({ error: 'The bank could not be saved.' }))
 
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
-    expect(screen.getByRole('alert')).toHaveTextContent('The bank could not be saved.')
+    await waitFor(() => expect(getErrorAlert()).toHaveFocus())
+    expect(getErrorAlert()).toHaveTextContent('The bank could not be saved.')
   })
 
   it('focuses the first editable field in visual order as it opens, skipping read-only ones', async () => {

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { PayCardStatementForm as PayCardStatementFormState } from '../../hooks/usePayCardStatementForm'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import PayCardStatementForm from '../PayCardStatementForm'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const BARCLAYS = { id: 'barclays', name: 'Barclays' }
 
@@ -77,7 +78,7 @@ describe('PayCardStatementForm', () => {
   it('announces the server message and moves focus to it', () => {
     render(<PayCardStatementForm payForm={formState({ saveError: 'There is nothing to pay on this statement.' })} lockedBank={BARCLAYS} onCancel={vi.fn()} />)
 
-    expect(screen.getByRole('alert')).toHaveTextContent('There is nothing to pay on this statement.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('There is nothing to pay on this statement.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 })

@@ -7,6 +7,7 @@ import { usePotDepositForm } from '../../hooks/usePotDepositForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import PotDepositForm from '../PotDepositForm'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const { createPotDepositMock, updatePotDepositMock, getPotsMock } = vi.hoisted(() => ({
   createPotDepositMock: vi.fn<FinancialApiClient['createPotDeposit']>(),
@@ -253,7 +254,7 @@ describe('PotDepositForm', () => {
 
     save()
 
-    const alert = await screen.findByRole('alert')
+    const alert = await findErrorAlert()
     expect(alert).toHaveTextContent('Active pots must total 100% (now 95%).')
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Ramsay bonus')
     await waitFor(() => expect(alert).toHaveFocus())

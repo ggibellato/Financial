@@ -5,6 +5,7 @@ import ExpenseForm from '../ExpenseForm'
 import type { BankOption, CategoryDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
 import { todayIsoDate } from '../../utils/formatters'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANKS: BankOption[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
@@ -433,8 +434,8 @@ describe('ExpenseForm with a locked card', () => {
 
       rerender(<ExpenseForm {...refundProps} saveError="This charge's statement is paid; unmark it first." />)
 
-      expect(screen.getByRole('alert')).toHaveTextContent("This charge's statement is paid; unmark it first.")
-      expect(screen.getByRole('alert')).toHaveFocus()
+      expect(getErrorAlert()).toHaveTextContent("This charge's statement is paid; unmark it first.")
+      expect(getErrorAlert()).toHaveFocus()
     })
   })
 

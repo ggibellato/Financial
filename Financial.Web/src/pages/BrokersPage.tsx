@@ -127,7 +127,7 @@ export default function BrokersPage() {
         </TableHeader>
         <TableBody>
           {brokers.map((broker) => (
-            <TableRow key={broker.name}>
+            <TableRow key={`${broker.status}:${broker.name}`}>
               <DataTableCell label="Name"><TruncatedText text={broker.name} /></DataTableCell>
               <DataTableCell label="Currency">{broker.currency}</DataTableCell>
               <DataTableCell label="Status">{broker.status}</DataTableCell>

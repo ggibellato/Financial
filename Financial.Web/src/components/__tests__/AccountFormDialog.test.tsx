@@ -5,6 +5,7 @@ import { account, cardAccount, potsAccount, settlementAccount } from '../../test
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 import AccountFormDialog from '../AccountFormDialog'
+import { findErrorAlert, getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANK: AccountTemplateDto = {
   name: 'Bank',
@@ -262,7 +263,7 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays' } })
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(await findErrorAlert()).toHaveTextContent(message)
     expect(screen.getByLabelText(/Name/)).not.toHaveAttribute('aria-invalid', 'true')
   })
 
@@ -273,7 +274,7 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(await findErrorAlert()).toHaveTextContent(message)
     expect(screen.getByLabelText(/Name/)).not.toHaveAttribute('aria-invalid', 'true')
     expect(screen.getAllByText(message)).toHaveLength(1)
   })
@@ -284,10 +285,10 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Bank accounts must be GBP.')
+    expect(await findErrorAlert()).toHaveTextContent('Bank accounts must be GBP.')
     expect(screen.getByLabelText(/Name/)).toHaveValue('Monzo')
     expect(screen.getByRole('button', { name: 'Add account' })).toBeEnabled()
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    await waitFor(() => expect(getErrorAlert()).toHaveFocus())
   })
 
   it('[AC P60-F06-admin-accounts-page-07] disables the fields and the buttons while saving', async () => {

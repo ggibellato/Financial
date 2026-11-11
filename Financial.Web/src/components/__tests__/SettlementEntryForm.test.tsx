@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { SettlementEntryFormModel } from '../../hooks/useSettlementEntryForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import SettlementEntryForm from '../SettlementEntryForm'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 function addState(overrides: Partial<SettlementEntryFormModel> = {}): SettlementEntryFormModel {
   return {
@@ -259,8 +260,8 @@ describe('SettlementEntryForm', () => {
   it('[AC P60-F12-settlement-screen-08] announces the server message and moves focus to it', () => {
     renderForm(addState({ saveError: 'Mãe is inactive.' }))
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Mãe is inactive.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('Mãe is inactive.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 
   it.each([
@@ -288,7 +289,7 @@ describe('SettlementEntryForm', () => {
     await user.click(within(await findConfirmation()).getByRole('button', { name: 'Save settlement', hidden: true }))
 
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    await waitFor(() => expect(getErrorAlert()).toHaveFocus())
   })
 
   it('[AC P60-F12-settlement-screen-04] shows the warning as status', () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import EditMovementForm from '../EditMovementForm'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const POTS = [
   { id: 'p1', name: 'Home', isActive: true },
@@ -68,7 +69,7 @@ describe('EditMovementForm', () => {
   it('announces a failed save without a field and moves focus to it', () => {
     renderForm({ error: 'Failed to update.' })
 
-    const alert = screen.getByRole('alert')
+    const alert = getErrorAlert()
     expect(alert).toHaveTextContent('Failed to update.')
     expect(alert).toHaveFocus()
   })

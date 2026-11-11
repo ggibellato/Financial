@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { MessageBar, MessageBarBody } from '@fluentui/react-components'
 
 interface ActionErrorAlertProps {
@@ -8,15 +8,18 @@ interface ActionErrorAlertProps {
 
 export default function ActionErrorAlert({ message, className }: ActionErrorAlertProps) {
   const ref = useRef<HTMLDivElement | null>(null)
+  const bodyId = useId()
 
   useEffect(() => {
-    if (message) ref.current?.focus()
+    if (!message) return
+    ref.current?.scrollIntoView?.({ block: 'nearest' })
+    ref.current?.focus()
   }, [message])
 
   if (!message) return null
   return (
-    <MessageBar ref={ref} role="alert" intent="error" tabIndex={-1} className={className}>
-      <MessageBarBody>{message}</MessageBarBody>
+    <MessageBar ref={ref} intent="error" tabIndex={-1} aria-labelledby={bodyId} className={className}>
+      <MessageBarBody id={bodyId}>{message}</MessageBarBody>
     </MessageBar>
   )
 }

@@ -17,7 +17,7 @@ import {
 } from '../components/targetAssetPickerValue'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { isAssetSelection } from '../utils/assetSelection'
-import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber, todayIsoDate, toInputDate } from '../utils/formatters'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
 import { useSelectionGuard } from './useAsyncResource'
@@ -197,7 +197,7 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
     case 'SET_NEW_ASSET':
       return { ...state, formNewAsset: action.payload }
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_FORM, asset: action.payload }
+      return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: null }
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
@@ -541,7 +541,7 @@ export function useCorporateActions(): CorporateActionsData {
         .catch((err: unknown) => {
           settle({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete corporate action.'),
+            payload: getDeleteErrorMessage(err, deleteFailedMessage('corporate action')),
           })
         })
     },

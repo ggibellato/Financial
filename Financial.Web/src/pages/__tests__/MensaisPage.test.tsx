@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account } from '../../test/account'
 import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const {
   getMensaisBillsMock,
@@ -251,7 +252,7 @@ describe('MensaisPage', () => {
     fireEvent.click(statusButtons[0])
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Status is not recognized.')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(screen.getAllByRole('button', { name: /^Status: Unset/ })).toHaveLength(2)
@@ -458,7 +459,7 @@ describe('MensaisPage', () => {
 
     await confirmDelete(INSS_NAME, 'bill')
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(screen.getByText('INSS')).toBeInTheDocument()
@@ -514,7 +515,7 @@ describe('MensaisPage', () => {
     const dialog = await requestReset()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to reset bills.')
     await waitFor(() => expect(alert).toHaveFocus())
   })

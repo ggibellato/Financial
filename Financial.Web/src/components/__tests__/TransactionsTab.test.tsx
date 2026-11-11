@@ -14,6 +14,7 @@ import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } fr
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import TransactionsTab from '../TransactionsTab'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: ReactNode }) => <div data-testid="bar-chart">{children}</div>,
@@ -594,7 +595,7 @@ describe('TransactionsTab', () => {
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
     const dialog = await requestDelete(BUY_NAME)
-    expect(dialog).toHaveAccessibleDescription(`Delete the ${BUY_NAME}? This cannot be undone.`)
+    expect(dialog).toHaveAccessibleDescription("Delete the transaction Buy -£420.50, 15/03/2024? This cannot be undone.")
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
@@ -732,7 +733,7 @@ describe('TransactionsTab', () => {
 
     await confirmDelete(BUY_NAME)
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(rowButton(`Delete ${BUY_NAME}`)).toBeInTheDocument()

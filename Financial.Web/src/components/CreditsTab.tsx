@@ -33,7 +33,7 @@ import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks
 import { useCredits } from '../hooks/useCredits'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatN2, formatPercent1OrDash, formatShortDate, SAVING_LABEL } from '../utils/formatters'
+import { formatAmount, formatN2, formatPercent1OrDash, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
 import './CreditsTab.css'
@@ -107,8 +107,8 @@ function typeLabel(type: string): string {
   return TYPE_LABELS[type] ?? type
 }
 
-function creditName(credit: CreditDto): string {
-  return `credit ${typeLabel(credit.type)} ${formatN2(credit.value)}, ${formatShortDate(credit.date)}`
+function creditName(credit: CreditDto, amount = formatN2(credit.value)): string {
+  return `credit ${typeLabel(credit.type)} ${amount}, ${formatShortDate(credit.date)}`
 }
 
 function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
@@ -553,7 +553,7 @@ export default function CreditsTab() {
       {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="credit"
-          message={`Delete the ${creditName(deletion.pendingRow)}? This cannot be undone.`}
+          message={`Delete the ${creditName(deletion.pendingRow, formatAmount(deletion.pendingRow.value, deletion.pendingRow.currency))}? This cannot be undone.`}
           onConfirm={deletion.confirm}
           onCancel={deletion.cancel}
         />

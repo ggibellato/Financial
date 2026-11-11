@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import AdminEntityPage from '../AdminEntityPage'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 type Props = Parameters<typeof AdminEntityPage>[0]
 
@@ -164,7 +165,7 @@ describe('AdminEntityPage', () => {
   it('announces an action error and moves focus to it', async () => {
     renderPage({ actionError: 'Barclays could not be deleted.' })
 
-    const alert = screen.getByRole('alert')
+    const alert = getErrorAlert()
     expect(alert).toHaveTextContent('Barclays could not be deleted.')
     await waitFor(() => expect(alert).toHaveFocus())
   })
