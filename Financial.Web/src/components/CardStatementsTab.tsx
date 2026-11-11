@@ -148,7 +148,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
         submitPayForm()
       }}
     >
-      <fieldset disabled={payForm.isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={payForm.isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h3" id="pay-statement-title" weight="semibold" size={400}>
           Pay {monthOf(payForm.statement)} statement
         </Text>

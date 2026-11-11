@@ -64,4 +64,7 @@ export const useFormPanelStyles = makeStyles({
   deleteAction: {
     marginLeft: tokens.spacingHorizontalXXL,
   },
+  dialogError: {
+    marginBottom: tokens.spacingVerticalM,
+  },
 })

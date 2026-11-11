@@ -107,6 +107,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
   const priceValue = isHistoric ? item.averageSellPrice : rowPrice.currentPrice
   const cellLoading = !isHistoric && rowPrice.isLoading
   const cellUnavailable = !isHistoric && rowPrice.fetchFailed
+  const showsPriceStatus = !isHistoric && !cellLoading && !cellUnavailable
 
   return (
     <TableRow aria-busy={cellLoading || undefined}>
@@ -143,10 +144,10 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="Average price">{formatN2(item.averagePrice)}</DataTableCell>
       <DataTableCell label={isHistoric ? 'Sold price' : 'Current price'}>
         {renderGatedCell(cellLoading, cellUnavailable, priceValue, formatN2, { announcesLoading: true })}
-        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
+        {showsPriceStatus && item.marketStatus === 'Stale' && (
           <PriceBadge abbreviation="S" meaning={STALE_PRICE_MEANING} className="portfolio-holdings__stale-badge" />
         )}
-        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Unavailable' && (
+        {showsPriceStatus && item.marketStatus === 'Unavailable' && (
           <PriceBadge abbreviation="U" meaning={NO_PRICE_MEANING} className="portfolio-holdings__stale-badge" />
         )}
       </DataTableCell>

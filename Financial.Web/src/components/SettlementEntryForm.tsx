@@ -55,7 +55,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
           if (firstInvalid) event.currentTarget.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus()
         }}
       >
-        <fieldset disabled={isSaving} className={styles.savingFieldset}>
+        <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
           <Text as="h2" id="settlement-entry-title" weight="semibold" size={400}>
             {title}
           </Text>

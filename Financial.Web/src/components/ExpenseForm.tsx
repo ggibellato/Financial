@@ -104,7 +104,7 @@ export default function ExpenseForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>

@@ -86,11 +86,10 @@ export default function EntityFormDialog({
               <DialogTitle>{title}</DialogTitle>
               <DialogContent ref={content}>
                 {summarizedErrors.length > 0 && <FieldErrorSummary ref={errorSummary} errors={summarizedErrors} />}
-                <fieldset disabled={isSaving} className={styles.savingFieldset}>
+                <ActionErrorAlert message={error} className={styles.dialogError} />
+                <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
                   {children}
                 </fieldset>
-
-                <ActionErrorAlert message={error} />
               </DialogContent>
               <FormSaveActions saveLabel={saveLabel} isSaving={isSaving} isSaveDisabled={!canSave} onCancel={requestClose} />
             </DialogBody>

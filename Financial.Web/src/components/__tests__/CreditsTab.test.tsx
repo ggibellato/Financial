@@ -159,8 +159,8 @@ async function openNewForm() {
   await screen.findByRole('heading', { name: 'New credit' })
 }
 
-const DIVIDEND_NAME = 'credit Dividend 120.50, 15/03/2024'
-const JCP_NAME = 'credit JCP 75.00, 20/02/2024'
+const DIVIDEND_NAME = 'credit Dividend £120.50, 15/03/2024'
+const JCP_NAME = 'credit JCP £75.00, 20/02/2024'
 const requestDelete = (name: string) => requestDeleteOf(name, 'credit')
 const confirmDelete = (name: string) => confirmDeleteOf(name, 'credit')
 const rowButton = (name: string) => screen.getByRole('button', { name, hidden: true })
@@ -410,7 +410,7 @@ describe('CreditsTab', () => {
     deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_JCP]))
 
     const dialog = await requestDelete(DIVIDEND_NAME)
-    expect(dialog).toHaveAccessibleDescription("Delete the credit Dividend £120.50, 15/03/2024? This cannot be undone.")
+    expect(dialog).toHaveAccessibleDescription(`Delete the ${DIVIDEND_NAME}? This cannot be undone.`)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())

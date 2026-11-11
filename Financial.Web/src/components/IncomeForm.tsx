@@ -114,7 +114,7 @@ export default function IncomeForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
           {isEditing ? 'Edit income' : 'New income'}
         </Text>

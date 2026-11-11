@@ -32,6 +32,7 @@ import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './MensaisPage.css'
 
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
@@ -375,7 +376,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          <ActionErrorAlert message={Object.keys(addErrorFields).length === 0 ? addError : null} />
+          <ActionErrorAlert message={generalErrorOf(addError, addErrorFields)} />
         </div>
       )}
 
@@ -425,7 +426,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
+          <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
         </div>
       )}
 

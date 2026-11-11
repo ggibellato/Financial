@@ -5,6 +5,7 @@ import type { EditMovementField } from '../utils/movementEdit'
 import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import { generalErrorOf } from '../utils/fieldErrors'
 
 interface PotOption {
   id: string
@@ -47,7 +48,7 @@ export default function EditMovementForm({
 }: EditMovementFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(errorFields)
-  const generalError = Object.keys(errorFields).length === 0 ? error : null
+  const generalError = generalErrorOf(error, errorFields)
   const formRef = useFormErrorFocus(errorFields)
 
   return (
@@ -62,7 +63,7 @@ export default function EditMovementForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="edit-movement-title" weight="semibold" size={400}>
           {title}
         </Text>

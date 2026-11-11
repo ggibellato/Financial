@@ -94,7 +94,7 @@ export default function PayRecurringBillForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" weight="semibold" size={400}>
           Pay recurring bill
         </Text>

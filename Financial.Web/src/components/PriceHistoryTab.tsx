@@ -35,6 +35,7 @@ import { formatN2, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './PriceHistoryTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
@@ -167,7 +168,7 @@ function InlineForm({
         </Button>
       </div>
 
-      <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
+      <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
     </div>
   )
 }
@@ -193,7 +194,7 @@ function ChartDot({ cx, cy, payload }: DotProps) {
     case 'automatic':
       return <circle cx={cx} cy={cy} r={3} fill={AUTOMATIC_DOT_COLOR} />
     case 'manual':
-      return <circle cx={cx} cy={cy} r={3} fill={MANUAL_DOT_COLOR} />
+      return <rect x={cx - 3} y={cy - 3} width={6} height={6} fill={MANUAL_DOT_COLOR} />
     case 'buy':
       return <polygon points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
     case 'sell':
@@ -221,7 +222,7 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
 
 const LEGEND_PAYLOAD = [
   { value: 'Automatic', type: 'circle' as const, color: AUTOMATIC_DOT_COLOR },
-  { value: 'Manual', type: 'circle' as const, color: MANUAL_DOT_COLOR },
+  { value: 'Manual', type: 'square' as const, color: MANUAL_DOT_COLOR },
   { value: 'Buy', type: 'triangle' as const, color: BUY_COLOR },
   { value: 'Sell', type: 'diamond' as const, color: SELL_COLOR },
 ]

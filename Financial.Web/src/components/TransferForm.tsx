@@ -10,6 +10,7 @@ import { ACTION_LABELS } from './accountActions'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import LockedValue from './LockedValue'
+import { generalErrorOf } from '../utils/fieldErrors'
 
 const DIFFERENT_BANKS_ERROR = 'Source and destination must be different banks.'
 
@@ -76,7 +77,7 @@ export default function TransferForm({
     return baseFieldError(field)
   }
 
-  const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
+  const generalError = generalErrorOf(saveError, saveErrorFields)
   const formRef = useFormErrorFocus(saveErrorFields)
 
   const accountField = (side: LockedTransferSide['side'], label: string) => {
@@ -118,7 +119,7 @@ export default function TransferForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" weight="semibold" size={400}>
           {title}
         </Text>

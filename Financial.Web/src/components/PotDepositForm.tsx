@@ -107,7 +107,7 @@ export default function PotDepositForm({ form, banks, incomeSources, onFromIncom
         else form.submit()
       }}
     >
-      <fieldset disabled={form.isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={form.isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="pot-deposit-title" weight="semibold" size={400}>
           {form.isEditing ? 'Edit deposit' : 'New deposit'}
         </Text>

@@ -32,7 +32,7 @@ export default function StatementDueDateForm({ form, dueDateForm, onCancel }: St
         save()
       }}
     >
-      <fieldset disabled={pendingAction !== null} className={styles.savingFieldset}>
+      <fieldset disabled={pendingAction !== null} className={styles.savingFieldset} role="presentation">
         <Text as="h3" id="statement-due-date-title" weight="semibold" size={400}>
           {formatLongMonthYear(statement.year, statement.month)} due date
         </Text>

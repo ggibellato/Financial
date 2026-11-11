@@ -33,7 +33,7 @@ export default function MoveChargeForm({ moveForm, onCancel }: MoveChargeFormPro
         if (!submit()) statementRef.current?.focus()
       }}
     >
-      <fieldset disabled={form.isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={form.isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="move-charge-title" weight="semibold" size={400}>
           {`Move ${noun} to a later statement`}
         </Text>

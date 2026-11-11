@@ -116,7 +116,7 @@ export default function DividendCheckPage() {
             <p className="summary-card__avg-dividend">
               Average dividend: <strong>{formatN2(summary.averageDividendLastFiveYears)}</strong> (last 5 years) — Yield: <strong>{formatPercentN2(summary.dividendYieldPercent)}</strong>
             </p>
-            <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
+            <p className={priceMaxBuyClass}>
               Price max buy: <strong>{formatN2(summary.priceMaxBuy)}</strong> — Discount <strong>{formatPercentN2(summary.discountPercent)}</strong> —{' '}
               {isBelowMaxBuy ? 'current price below max buy' : 'current price not below max buy'}
             </p>

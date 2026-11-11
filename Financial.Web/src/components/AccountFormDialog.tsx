@@ -293,12 +293,14 @@ export default function AccountFormDialog({ account, templates, categories, onCa
               <div
                 role="group"
                 aria-labelledby={currenciesLabelId}
-                aria-describedby={fieldMessage('currencies') ? `${currenciesHintId} ${currenciesMessageId}` : currenciesHintId}
+                aria-describedby={fieldMessage('currencies') ? `${currenciesMessageId} ${currenciesHintId}` : currenciesHintId}
               >
                 {currencies.map((currency, index) => (
                   <Checkbox
                     key={currency}
                     ref={index === 0 ? currenciesRef : undefined}
+                    aria-invalid={index === 0 && fieldMessage('currencies') ? true : undefined}
+                    aria-describedby={index === 0 && fieldMessage('currencies') ? currenciesMessageId : undefined}
                     label={currency}
                     checked={values.currencies.includes(currency)}
                     onChange={(_, data) => toggleCurrency(currency, data.checked === true)}

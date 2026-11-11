@@ -87,10 +87,8 @@ export function useManagePots(potsAccountId: string, initialPots: readonly PotBa
 
   const removeNewPot = (key: string) => setRows((current) => current.filter((row) => row.key !== key))
 
-  const canSave = isDirty && !hasFieldErrors && !isSaving
-
   const save = () => {
-    if (!canSave) return
+    if (!isDirty || hasFieldErrors || isSaving) return
     void submit(async () => {
       await apiClient.updatePots(potsAccountId, { pots: rows.map(toRequest) })
       onSaved()
@@ -103,7 +101,6 @@ export function useManagePots(potsAccountId: string, initialPots: readonly PotBa
     guidance: totalGuidance(rows, activeTotal, hasFieldErrors),
     isSaving,
     error,
-    canSave,
     isDirty,
     changeRow,
     addPot,

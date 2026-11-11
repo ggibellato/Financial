@@ -485,15 +485,21 @@ describe('AccountFormDialog', () => {
       )
     })
 
-    it('requires a currency and the other participant, focusing the currencies first', () => {
+    it('requires a currency and the other participant, listing both in the focused error summary', async () => {
       const { onSubmit } = renderDialog({ templates: [SETTLEMENT] })
 
       fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
       save()
 
-      expect(screen.getByText('Choose at least one currency.')).toBeInTheDocument()
-      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Tick at least one. Choose at least one currency.')
-      expect(screen.getByText("Enter the other participant's name.")).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Choose at least one currency. Tick at least one.')
+      expect(currencyBox('BRL')).toHaveAttribute('aria-invalid', 'true')
+      const summary = screen.getByRole('group', { name: 'Fix 2 fields before saving' })
+      await waitFor(() => expect(summary).toHaveFocus())
+      expect(within(summary).getAllByRole('button').map((link) => link.textContent)).toEqual([
+        'Choose at least one currency.',
+        "Enter the other participant's name.",
+      ])
+      fireEvent.click(within(summary).getByRole('button', { name: 'Choose at least one currency.' }))
       expect(currencyBox('BRL')).toHaveFocus()
       expect(onSubmit).not.toHaveBeenCalled()
     })

@@ -18,6 +18,7 @@ import ReadOnlyInput from './ReadOnlyInput'
 import TargetAssetPicker from './TargetAssetPicker'
 import type { TargetAssetPickerValue } from './targetAssetPickerValue'
 import { formatN2, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './CorporateActionForm.css'
 
 const CORPORATE_ACTION_TYPE_OPTIONS = [
@@ -331,7 +332,7 @@ export default function CorporateActionForm({
         )}
       </div>
 
-      <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
+      <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
     </div>
   )
 }

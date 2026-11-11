@@ -75,7 +75,7 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
         if (firstInvalid) fieldRefs[firstInvalid].current?.focus()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="card-credit-refund-title" weight="semibold" size={400}>
           {text.title}
         </Text>

@@ -211,8 +211,8 @@ function dataRows() {
   return within(screen.getByRole('table')).getAllByRole('row').slice(1)
 }
 
-const BUY_NAME = 'transaction Buy -420.50, 15/03/2024'
-const SELL_NAME = 'transaction Sell 251.00, 10/01/2024'
+const BUY_NAME = 'transaction Buy -£420.50, 15/03/2024'
+const SELL_NAME = 'transaction Sell £251.00, 10/01/2024'
 const FX_SNAPSHOT = { rate: 1.27, toCurrency: 'USD', source: 'Frankfurter', retrievedAt: '2024-01-10T00:00:00Z' }
 
 function rowButton(name: string) {
@@ -595,7 +595,7 @@ describe('TransactionsTab', () => {
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
     const dialog = await requestDelete(BUY_NAME)
-    expect(dialog).toHaveAccessibleDescription("Delete the transaction Buy -£420.50, 15/03/2024? This cannot be undone.")
+    expect(dialog).toHaveAccessibleDescription(`Delete the ${BUY_NAME}? This cannot be undone.`)
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
@@ -612,8 +612,8 @@ describe('TransactionsTab', () => {
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
     const buyRow = within(dataRows()[0])
-    expect(buyRow.getByRole('button', { name: 'Edit transaction Buy -420.50, 15/03/2024' })).toBeInTheDocument()
-    expect(buyRow.getByRole('button', { name: 'Delete transaction Buy -420.50, 15/03/2024' })).toBeInTheDocument()
+    expect(buyRow.getByRole('button', { name: `Edit ${BUY_NAME}` })).toBeInTheDocument()
+    expect(buyRow.getByRole('button', { name: `Delete ${BUY_NAME}` })).toBeInTheDocument()
   })
 
   it('delete_icon_does_not_delete_when_the_user_cancels_the_confirmation', async () => {

@@ -47,7 +47,7 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
         if (firstInvalid) fieldRefs[firstInvalid].current?.focus()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="pay-card-statement-title" weight="semibold" size={400}>
           Pay card statement
         </Text>

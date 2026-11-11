@@ -10,6 +10,7 @@ import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import LockedValue from './LockedValue'
+import { generalErrorOf } from '../utils/fieldErrors'
 
 interface BalanceAdjustmentFormProps {
   isEditing: boolean
@@ -54,7 +55,7 @@ export default function BalanceAdjustmentForm({
 }: BalanceAdjustmentFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(saveErrorFields)
-  const generalError = Object.keys(saveErrorFields).length === 0 ? saveError : null
+  const generalError = generalErrorOf(saveError, saveErrorFields)
   const formRef = useFormErrorFocus(saveErrorFields)
 
   if (savedDelta !== null) {
@@ -88,7 +89,7 @@ export default function BalanceAdjustmentForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" weight="semibold" size={400}>
           {isEditing ? 'Edit balance adjustment' : 'Adjust balance'}
         </Text>

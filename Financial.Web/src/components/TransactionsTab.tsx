@@ -38,6 +38,7 @@ import { formatAmount, formatN2, formatN8, formatShortDate, parseValidatedNumber
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
@@ -87,8 +88,8 @@ function typeDisplayLabel(type: string): string {
   return TRANSACTION_TYPE_OPTIONS.find((o) => o.value === type)?.label ?? type
 }
 
-function transactionName(transaction: TransactionDto, amount = formatN2(transaction.netCash)): string {
-  return `transaction ${typeDisplayLabel(transaction.type)} ${amount}, ${formatShortDate(transaction.date)}`
+function transactionName(transaction: TransactionDto): string {
+  return `transaction ${typeDisplayLabel(transaction.type)} ${formatAmount(transaction.netCash, transaction.currency)}, ${formatShortDate(transaction.date)}`
 }
 
 interface TransactionRowProps {
@@ -305,7 +306,7 @@ function InlineForm({
         </Button>
       </div>
 
-      <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
+      <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
     </div>
   )
 }
@@ -569,7 +570,7 @@ export default function TransactionsTab() {
       {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="transaction"
-          message={`Delete the ${transactionName(deletion.pendingRow, formatAmount(deletion.pendingRow.netCash, deletion.pendingRow.currency))}? This cannot be undone.`}
+          message={`Delete the ${transactionName(deletion.pendingRow)}? This cannot be undone.`}
           onConfirm={deletion.confirm}
           onCancel={deletion.cancel}
         />

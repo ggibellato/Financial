@@ -72,7 +72,7 @@ export default function PotWithdrawalForm({ form, banks, lockedBank, onDelete, o
           form.submit()
         }}
       >
-        <fieldset disabled={form.isSaving} className={styles.savingFieldset}>
+        <fieldset disabled={form.isSaving} className={styles.savingFieldset} role="presentation">
           <Text as="h2" id="pot-withdrawal-title" weight="semibold" size={400}>
             {title}
           </Text>

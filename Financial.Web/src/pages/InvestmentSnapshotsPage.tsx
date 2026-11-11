@@ -15,6 +15,7 @@ import { useSuggestedValues } from '../hooks/useSuggestedValues'
 import { formatN2, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './InvestmentSnapshotsPage.css'
 
 function SnapshotColumns() {
@@ -156,7 +157,7 @@ export default function InvestmentSnapshotsPage() {
             </Button>
           </div>
 
-          <ActionErrorAlert message={Object.keys(saveErrorFields).length === 0 ? saveError : null} />
+          <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
         </div>
       )}
 

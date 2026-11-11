@@ -95,6 +95,16 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
       </Field>
 
+      <Field label="Area">
+        <Select value={area} onChange={(e) => setArea(e.target.value)}>
+          {AREA_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </Select>
+      </Field>
+
       <Field
         label="Description"
         required
@@ -109,16 +119,6 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         {...form.fieldValidation(valueError)}
       >
         <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} />
-      </Field>
-
-      <Field label="Area">
-        <Select value={area} onChange={(e) => setArea(e.target.value)}>
-          {AREA_OPTIONS.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </Select>
       </Field>
 
       <Field label="Note">
