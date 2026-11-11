@@ -125,6 +125,7 @@ export default function ExpenseForm({
               value={date}
               max={isRefund ? todayIsoDate() : undefined}
               readOnly={isSettled}
+              appearance={isSettled ? 'filled-darker' : undefined}
               onChange={(e) => onFieldChange('date', e.target.value)}
             />
           </Field>
@@ -189,6 +190,7 @@ export default function ExpenseForm({
               min={isRefund ? 0.01 : undefined}
               value={value}
               readOnly={isSettled}
+              appearance={isSettled ? 'filled-darker' : undefined}
               onChange={(e) => onFieldChange('value', e.target.value)}
             />
           </Field>

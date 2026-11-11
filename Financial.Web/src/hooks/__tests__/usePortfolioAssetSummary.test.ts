@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
+import { deferred, never } from '../../test-utils/deferred'
 import { usePortfolioAssetSummary } from '../usePortfolioAssetSummary'
 
 const { getPortfolioAssetsSummaryMock, getCurrentPriceMock } = vi.hoisted(() => ({
@@ -393,5 +394,101 @@ describe('usePortfolioAssetSummary', () => {
     expect(getCurrentPriceMock).not.toHaveBeenCalled()
     await act(async () => {})
     expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledTimes(1)
+  })
+
+  describe('responses for a portfolio the user has already left', () => {
+    const OTHER_PORTFOLIO_NODE: SelectedNode = { ...PORTFOLIO_NODE, portfolioName: 'FIIs' }
+    const OTHER_PRICE: AssetPriceDto = { ...PRICE_DTO, ticker: 'MXRF11', price: 9.75 }
+    type HookResult = { current: ReturnType<typeof usePortfolioAssetSummary> }
+
+    function answerOnlyFor(portfolio: string, items: PortfolioAssetSummaryItemDto[]) {
+      return (_broker: string, portfolioName: string) =>
+        portfolioName === portfolio ? Promise.resolve(items) : never<PortfolioAssetSummaryItemDto[]>()
+    }
+
+    async function moveToOtherPortfolio(setNode: (node: SelectedNode) => void, result: HookResult) {
+      getPortfolioAssetsSummaryMock.mockImplementation(answerOnlyFor('FIIs', [ITEM_2]))
+      getCurrentPriceMock.mockResolvedValue(OTHER_PRICE)
+      setNode(OTHER_PORTFOLIO_NODE)
+      await waitFor(() => expect(result.current.rowPrices[0]?.currentPrice).toBe(9.75))
+    }
+
+    function expectOtherPortfolioUntouched(result: HookResult) {
+      expect(result.current.items).toEqual([ITEM_2])
+      expect(result.current.rowPrices).toEqual([{ isLoading: false, currentPrice: 9.75, fetchFailed: false, isManual: false }])
+      expect(result.current.error).toBeNull()
+    }
+
+    async function startPendingSummary() {
+      const pending = deferred<PortfolioAssetSummaryItemDto[]>()
+      getPortfolioAssetsSummaryMock.mockReturnValueOnce(pending.promise)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+      setNode(PORTFOLIO_NODE)
+      await waitFor(() => expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledOnce())
+      await moveToOtherPortfolio(setNode, result)
+      return { result, pending }
+    }
+
+    async function startPendingRowPrice() {
+      const pending = deferred<AssetPriceDto>()
+      getPortfolioAssetsSummaryMock.mockImplementation(answerOnlyFor('Acoes', [ITEM_1]))
+      getCurrentPriceMock.mockReturnValueOnce(pending.promise)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+      setNode(PORTFOLIO_NODE)
+      await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledOnce())
+      await moveToOtherPortfolio(setNode, result)
+      return { result, pending }
+    }
+
+    it('ignores_a_late_summary_success_for_the_previous_portfolio', async () => {
+      const { result, pending } = await startPendingSummary()
+
+      await act(async () => pending.resolve([ITEM_1]))
+
+      expectOtherPortfolioUntouched(result)
+      expect(getCurrentPriceMock).toHaveBeenCalledOnce()
+    })
+
+    it('ignores_a_late_summary_failure_for_the_previous_portfolio', async () => {
+      const { result, pending } = await startPendingSummary()
+
+      await act(async () => pending.reject(new Error('Load failed')))
+
+      expectOtherPortfolioUntouched(result)
+    })
+
+    it('ignores_a_late_row_price_written_to_the_same_row_index_of_the_previous_portfolio', async () => {
+      const { result, pending } = await startPendingRowPrice()
+
+      await act(async () => pending.resolve({ ...PRICE_DTO, price: 999, isManual: true }))
+
+      expectOtherPortfolioUntouched(result)
+      expect(getPortfolioAssetsSummaryMock.mock.calls.filter(([, portfolioName]) => portfolioName === 'Acoes')).toHaveLength(1)
+    })
+
+    it('ignores_a_late_row_price_failure_for_the_previous_portfolio', async () => {
+      const { result, pending } = await startPendingRowPrice()
+
+      await act(async () => pending.reject(new Error('Price fetch failed')))
+
+      expectOtherPortfolioUntouched(result)
+    })
+
+    it('ignores_a_late_valuation_refresh_for_the_previous_portfolio', async () => {
+      const refresh = deferred<PortfolioAssetSummaryItemDto[]>()
+      getPortfolioAssetsSummaryMock.mockResolvedValueOnce([ITEM_1]).mockReturnValueOnce(refresh.promise)
+      getCurrentPriceMock.mockResolvedValueOnce(PRICE_DTO)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+      setNode(PORTFOLIO_NODE)
+      await waitFor(() => expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledTimes(2))
+      await moveToOtherPortfolio(setNode, result)
+
+      await act(async () => refresh.resolve([{ ...ITEM_1, marketValue: 1 }]))
+
+      expectOtherPortfolioUntouched(result)
+    })
   })
 })

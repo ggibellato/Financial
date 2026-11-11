@@ -19,7 +19,7 @@
 }
 
 .lot-allocation-picker__empty {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .lot-allocation-picker__summary--match {

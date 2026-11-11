@@ -49,12 +49,12 @@
 }
 
 .portfolio-holdings__loading-cell {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-style: italic;
 }
 
 .portfolio-holdings__manual-badge {
-  color: #e65100;
+  color: var(--warning-text);
   font-style: italic;
   font-size: 11px;
 }
@@ -89,7 +89,7 @@
 
 .portfolio-holdings__footer-label {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -116,7 +116,7 @@
 
 .portfolio-holdings__footer-footnote {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-style: italic;
 }
 

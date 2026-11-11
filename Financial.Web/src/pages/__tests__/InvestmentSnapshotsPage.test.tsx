@@ -97,6 +97,7 @@ describe('InvestmentSnapshotsPage', () => {
     const accountInput = screen.getByLabelText('Account')
     expect(accountInput).toHaveValue('Account0')
     expect(accountInput).toHaveAttribute('readonly')
+    expect(accountInput).toBeEnabled()
   })
 
   it('sorts rows by clicking the Value column header, keeping the totals row fixed as the last row', async () => {

@@ -6,6 +6,7 @@ import type { PayCardStatementField, PayCardStatementForm as PayCardStatementFor
 import { formatCurrency, formatLongMonthYear, todayIsoDate } from '../utils/formatters'
 import ErrorState from './ErrorState'
 import FormSaveActions from './FormSaveActions'
+import ReadOnlyInput from './ReadOnlyInput'
 import { useFormPanelStyles } from './formPanelStyles'
 
 const NOTHING_TO_PAY_MESSAGE = 'No card statement is waiting to be paid.'
@@ -95,7 +96,7 @@ export default function PayCardStatementForm({ payForm, lockedBank, onCancel }: 
             />
           </Field>
           <Field label="Amount">
-            <Input readOnly value={statement ? formatCurrency(statement.total, statement.currency) : '—'} />
+            <ReadOnlyInput value={statement ? formatCurrency(statement.total, statement.currency) : '—'} />
           </Field>
         </div>
       </fieldset>

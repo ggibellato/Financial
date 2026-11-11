@@ -237,7 +237,8 @@ describe('CorporateActionForm', () => {
     )
 
     expect(screen.getByLabelText('Target asset')).toHaveValue('Company B')
-    expect(screen.getByLabelText('Target asset')).toBeDisabled()
+    expect(screen.getByLabelText('Target asset')).toHaveAttribute('readonly')
+    expect(screen.getByLabelText('Target asset')).toBeEnabled()
     expect(screen.queryByRole('combobox', { name: 'Target asset' })).not.toBeInTheDocument()
   })
 
@@ -284,7 +285,8 @@ describe('CorporateActionForm', () => {
     )
 
     expect(screen.getByLabelText('New asset')).toHaveValue('Company D')
-    expect(screen.getByLabelText('New asset')).toBeDisabled()
+    expect(screen.getByLabelText('New asset')).toHaveAttribute('readonly')
+    expect(screen.getByLabelText('New asset')).toBeEnabled()
     expect(screen.queryByRole('combobox', { name: 'New asset' })).not.toBeInTheDocument()
   })
 

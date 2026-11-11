@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import { useState, type MouseEvent, type ReactNode } from 'react'
 import { Button, Spinner } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
@@ -24,11 +24,16 @@ function takeFocusOnSubmit(event: MouseEvent<HTMLButtonElement>) {
 export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = false, isBusy = isSaving, onCancel, children }: FormSaveActionsProps) {
   const styles = useFormPanelStyles()
   const hidden = useVisuallyHiddenStyles()
+  const [isSaveFocused, setIsSaveFocused] = useState(false)
+  // A focused button already announces its own "Saving…" name change, so the status region speaks only when focus is elsewhere.
+  const announcesSaving = isSaving && !isSaveFocused
 
   return (
     <div className={styles.actions}>
       <Button
         type="submit"
+        onFocus={() => setIsSaveFocused(true)}
+        onBlur={() => setIsSaveFocused(false)}
         appearance="primary"
         disabled={!isSaving && (isSaveDisabled || isBusy)}
         disabledFocusable={isSaving}
@@ -43,7 +48,7 @@ export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = 
       </Button>
       {children}
       <span role="status" className={hidden.visuallyHidden}>
-        {isSaving ? SAVING_LABEL : ''}
+        {announcesSaving ? SAVING_LABEL : ''}
       </span>
     </div>
   )

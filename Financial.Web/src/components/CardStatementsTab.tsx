@@ -28,6 +28,7 @@ import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import ReadOnlyInput from './ReadOnlyInput'
 import StatementDueDateForm from './StatementDueDateForm'
 import TruncatedText from './TruncatedText'
 import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
@@ -194,7 +195,7 @@ function PayStatementForm({ payForm, cardStatements, currency, onCancel }: PaySt
             />
           </Field>
           <Field label="Amount">
-            <Input readOnly value={formatCurrency(payForm.statement.outstandingTotal, currency)} />
+            <ReadOnlyInput value={formatCurrency(payForm.statement.outstandingTotal, currency)} />
           </Field>
         </div>
       </fieldset>

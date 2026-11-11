@@ -1,7 +1,7 @@
 .move-asset-dialog__context {
   margin: 0 0 16px;
   font-size: 12px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .move-asset-dialog__option {

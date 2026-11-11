@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
 
@@ -51,6 +51,33 @@ describe('RecurringBillFormDialog', () => {
 
     expect(await screen.findByText('Description is required.')).toBeInTheDocument()
     await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
+  })
+
+  it('says Value is required when it is blank, and a number when it is not one', async () => {
+    render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
+    fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '10' } })
+    fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Rent' } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add recurring bill' }))
+
+    expect(await screen.findByText('Value is required.')).toBeInTheDocument()
+    expect(screen.queryByText('Value must be a number.')).not.toBeInTheDocument()
+  })
+
+  it('lists every invalid field in an error summary that takes focus when several fail on Save', async () => {
+    render(<RecurringBillFormDialog recurringBill={null} onCancel={vi.fn()} onSubmit={vi.fn()} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add recurring bill' }))
+
+    const summary = await screen.findByRole('group', { name: 'Fix 3 fields before saving' })
+    await waitFor(() => expect(summary).toHaveFocus())
+    expect(within(summary).getAllByRole('button').map((link) => link.textContent)).toEqual([
+      'Due day must be between 1 and 31.',
+      'Description is required.',
+      'Value is required.',
+    ])
+    fireEvent.click(within(summary).getByRole('button', { name: 'Description is required.' }))
+    expect(screen.getByLabelText(/^Description/)).toHaveFocus()
   })
 
   it('submits the create form with the entered values', async () => {

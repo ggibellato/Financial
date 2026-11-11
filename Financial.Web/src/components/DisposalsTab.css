@@ -11,7 +11,7 @@
 }
 
 .disposals-tab__empty {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .disposals-tab__table-wrapper {
@@ -30,7 +30,7 @@
   font-size: 12px;
   font-weight: 600;
   margin: 0 0 4px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .disposals-tab__history-table {

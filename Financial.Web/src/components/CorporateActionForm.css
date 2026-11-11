@@ -1,4 +1,4 @@
 .corporate-action-form__ratio-hint {
   display: block;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }

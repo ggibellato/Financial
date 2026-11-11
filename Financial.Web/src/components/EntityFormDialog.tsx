@@ -8,7 +8,10 @@ import {
   MessageBar,
   MessageBarBody,
 } from '@fluentui/react-components'
+import { flushSync } from 'react-dom'
 import DiscardChangesDialog from './DiscardChangesDialog'
+import FieldErrorSummary from './FieldErrorSummary'
+import { collectFieldErrors, type FieldError } from '../utils/fieldErrors'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
@@ -43,7 +46,8 @@ export default function EntityFormDialog({
   const errorBar = useRef<HTMLDivElement | null>(null)
   const content = useRef<HTMLDivElement | null>(null)
   const discardPrompt = useDiscardPrompt(isDirty)
-  const [saveAttempts, setSaveAttempts] = useState(0)
+  const errorSummary = useRef<HTMLDivElement | null>(null)
+  const [summarizedErrors, setSummarizedErrors] = useState<FieldError[]>([])
 
   const [opener] = useState(() => document.activeElement as HTMLElement | null)
 
@@ -59,11 +63,6 @@ export default function EntityFormDialog({
   }, [])
 
   useEffect(() => {
-    if (saveAttempts === 0 || content.current?.contains(document.activeElement)) return
-    content.current?.querySelector<HTMLElement>('[aria-invalid="true"]:not(:disabled)')?.focus()
-  }, [saveAttempts])
-
-  useEffect(() => {
     if (!error) return
     errorBar.current?.scrollIntoView?.({ block: 'nearest' })
     errorBar.current?.focus()
@@ -72,8 +71,14 @@ export default function EntityFormDialog({
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!canSave || isSaving) return
-    onSave()
-    setSaveAttempts((attempts) => attempts + 1)
+    flushSync(onSave)
+    const invalidFields = collectFieldErrors(content.current)
+    const hasSeveral = invalidFields.length > 1
+    flushSync(() => setSummarizedErrors(hasSeveral ? invalidFields : []))
+    if (hasSeveral) errorSummary.current?.focus()
+    else if (invalidFields.length === 1 && !content.current?.contains(document.activeElement)) {
+      document.getElementById(invalidFields[0].fieldId)?.focus()
+    }
   }
 
   const requestClose = () => {
@@ -88,6 +93,7 @@ export default function EntityFormDialog({
             <DialogBody>
               <DialogTitle>{title}</DialogTitle>
               <DialogContent ref={content}>
+                {summarizedErrors.length > 0 && <FieldErrorSummary ref={errorSummary} errors={summarizedErrors} />}
                 <fieldset disabled={isSaving} className={styles.savingFieldset}>
                   {children}
                 </fieldset>

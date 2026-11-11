@@ -56,7 +56,9 @@ export function useSelectionGuard<A>(dispatch: Dispatch<A>) {
   const dispatchForCurrentSelection = useCallback(() => {
     const isCurrent = isCurrentSelection.current
     return (action: A) => {
-      if (isCurrent()) dispatch(action)
+      if (!isCurrent()) return false
+      dispatch(action)
+      return true
     }
   }, [dispatch])
 

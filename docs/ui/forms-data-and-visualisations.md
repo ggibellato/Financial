@@ -87,6 +87,13 @@ Every editable field requires:
 
 Do not use placeholders as labels.
 
+**Read-only values:** a value the user can see but not change (a source
+asset on edit, a statement amount, the account of a snapshot) uses
+`components/ReadOnlyInput` — focusable, `readOnly`, `filled-darker` — never a
+`disabled` input, which keyboard and screen-reader users skip. An input that
+locks only in some states (a settled expense) sets `readOnly` with the same
+`filled-darker` appearance while locked.
+
 **Required indicator mechanism:** Web uses Fluent's `Field` component's
 first-class `required` prop (`<Field label="X" required>`), which renders a
 visible asterisk after the label and wires `aria-required` on the control —
@@ -167,7 +174,11 @@ inventing a new one.
 
 - Validate client-side and server-side where appropriate.
 - Keep field errors near the affected control.
-- Use an error summary when several errors exist.
+- Use an error summary when several errors exist. Admin dialogs get one from
+  `EntityFormDialog` (`FieldErrorSummary`): when a Save leaves more than one
+  field invalid, a summary at the top lists each message as a link to its
+  field and takes focus instead of the first field; with one invalid field,
+  focus goes straight to it.
 - Make messages specific and actionable.
 - Example: “Enter a quantity greater than 0.”
 - Do not use only “Invalid value” or “Required.”

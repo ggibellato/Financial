@@ -370,7 +370,33 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
     const loadingCells = screen.getAllByText('…')
     expect(loadingCells).toHaveLength(5)
-    expect(screen.getAllByRole('img', { name: 'Loading' })).toHaveLength(5)
+    expect(screen.getAllByRole('img', { name: 'Loading' })).toHaveLength(1)
+    expect(screen.getAllByRole('row')[2]).toHaveAttribute('aria-busy', 'true')
+  })
+
+  it('clears_the_row_busy_state_once_its_price_settles', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
+    renderComponent()
+    expect(screen.getAllByRole('row')[2]).not.toHaveAttribute('aria-busy')
+  })
+
+  it('names_an_unavailable_price_cell_for_screen_readers', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
+    renderComponent()
+    const priceCell = within(screen.getAllByRole('row')[2]).getAllByRole('cell')[8]
+    expect(within(priceCell).getByRole('img', { name: 'Not available' })).toHaveTextContent('—')
+  })
+
+  it('names_a_missing_last_credit_month_for_screen_readers', () => {
+    const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, lastCreditMonth: null }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
+    expect(within(cells[12]).getByRole('img', { name: 'Not available' })).toBeInTheDocument()
+    expect(within(cells[13]).getByRole('img', { name: 'Not available' })).toBeInTheDocument()
   })
 
   it('renders_current_value_when_price_resolves', () => {

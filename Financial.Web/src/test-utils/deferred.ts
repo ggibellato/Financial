@@ -7,3 +7,7 @@ export function deferred<T>() {
   })
   return { promise, resolve, reject }
 }
+
+export function never<T>() {
+  return new Promise<T>(() => {})
+}
