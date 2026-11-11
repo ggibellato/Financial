@@ -13,7 +13,10 @@ import {
 } from 'recharts'
 import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
+import { useRef, useState } from 'react'
 import type { CreditDto } from '../api/types'
+import ActionErrorAlert from './ActionErrorAlert'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import DividendYieldTooltip from './DividendYieldTooltip'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
@@ -26,7 +29,7 @@ import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/use
 import { useFieldError } from '../hooks/useFieldError'
 import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks/useCredits'
 import { useCredits } from '../hooks/useCredits'
-import { confirmThenRun } from '../utils/confirmThenRun'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatPercent1OrDash, formatShortDate } from '../utils/formatters'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
@@ -79,8 +82,9 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
 
 interface CreditRowProps {
   credit: CreditDto
+  isDeleting: boolean
   onEdit: (c: CreditDto) => void
-  onDelete: (id: string) => void
+  onDelete: (c: CreditDto) => void
 }
 
 const TYPE_CLASSES: Record<string, string> = {
@@ -101,7 +105,11 @@ function typeLabel(type: string): string {
   return TYPE_LABELS[type] ?? type
 }
 
-function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
+function creditName(credit: CreditDto): string {
+  return `credit ${typeLabel(credit.type)} ${formatN2(credit.value)}, ${formatShortDate(credit.date)}`
+}
+
+function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
   const typeClass = TYPE_CLASSES[credit.type] ?? 'credits-tab__type--dividend'
 
   return (
@@ -129,9 +137,10 @@ function CreditRow({ credit, onEdit, onDelete }: CreditRowProps) {
         <FxProvenanceTooltip currency={credit.currency} fxRateSnapshot={credit.fxRateSnapshot} />
       </DataTableCell>
       <RowActionsCell
-        itemName={`credit ${typeLabel(credit.type)} ${formatN2(credit.value)}, ${formatShortDate(credit.date)}`}
+        itemName={creditName(credit)}
+        isDeleting={isDeleting}
         onEdit={() => onEdit(credit)}
-        onDelete={() => onDelete(credit.id)}
+        onDelete={() => onDelete(credit)}
       />
     </TableRow>
   )
@@ -373,6 +382,7 @@ export default function CreditsTab() {
     isSaving,
     saveError,
     saveErrorFields,
+    deletingId,
     deleteError,
     nodeType,
     showNewForm,
@@ -385,7 +395,16 @@ export default function CreditsTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(credits, SORT_ACCESSORS, DATE_DESC_SORT)
 
-  const confirmAndDeleteCredit = (id: string) => confirmThenRun('Delete this credit?', () => deleteCredit(id))
+  const [confirmingDelete, setConfirmingDelete] = useState<CreditDto | null>(null)
+  const regionRef = useRef<HTMLDivElement | null>(null)
+  const newCreditRef = useRef<HTMLButtonElement | null>(null)
+  const recordRowFocus = useRowFocusRecovery(regionRef, newCreditRef, isLoading)
+
+  const confirmDelete = () => {
+    if (!confirmingDelete) return
+    deleteCredit(confirmingDelete.id)
+    setConfirmingDelete(null)
+  }
 
   if (isLoading) {
     return <LoadingState />
@@ -432,7 +451,7 @@ export default function CreditsTab() {
       />
 
       <div className="credits-tab__table-toolbar">
-        <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
+        <Button ref={newCreditRef} appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New credit
         </Button>
       </div>
@@ -455,78 +474,97 @@ export default function CreditsTab() {
         />
       )}
 
-      <div className="credits-tab__table-wrapper">
-        <Table className="credits-tab__table data-table">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Date"
-                columnKey="date"
-                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Type"
-                columnKey="type"
-                sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Value"
-                columnKey="value"
-                numeric
-                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Withheld"
-                columnKey="withheld"
-                numeric
-                sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Intermediation fee"
-                columnKey="intermediationFee"
-                numeric
-                sortDirection={sortState?.columnKey === 'intermediationFee' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Net"
-                columnKey="netAmount"
-                numeric
-                sortDirection={sortState?.columnKey === 'netAmount' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Yield (Bought)"
-                columnKey="yieldOnInvested"
-                numeric
-                sortDirection={sortState?.columnKey === 'yieldOnInvested' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Yield (Current)"
-                columnKey="yieldOnMarket"
-                numeric
-                sortDirection={sortState?.columnKey === 'yieldOnMarket' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <TableHeaderCell aria-label="Yield details" />
-              <TableHeaderCell>FX</TableHeaderCell>
-              <ActionsColumnHeader />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedRows.map((c) => (
-              <CreditRow key={c.id} credit={c} onEdit={showEditForm} onDelete={confirmAndDeleteCredit} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {credits.length === 0 ? (
+        <p className="credits-tab__empty">No credits yet — no dividend, JCP, coupon or lending income has been recorded for this holding.</p>
+      ) : (
+        <div ref={regionRef} className="credits-tab__table-wrapper" onFocus={recordRowFocus}>
+          <Table className="credits-tab__table data-table">
+            <TableHeader>
+              <TableRow>
+                <SortableColumnHeader
+                  label="Date"
+                  columnKey="date"
+                  sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Type"
+                  columnKey="type"
+                  sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Value"
+                  columnKey="value"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Withheld"
+                  columnKey="withheld"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Intermediation fee"
+                  columnKey="intermediationFee"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'intermediationFee' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Net"
+                  columnKey="netAmount"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'netAmount' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Yield (Bought)"
+                  columnKey="yieldOnInvested"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'yieldOnInvested' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Yield (Current)"
+                  columnKey="yieldOnMarket"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'yieldOnMarket' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <TableHeaderCell aria-label="Yield details" />
+                <TableHeaderCell>FX</TableHeaderCell>
+                <ActionsColumnHeader />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedRows.map((c) => (
+                <CreditRow
+                  key={c.id}
+                  credit={c}
+                  isDeleting={deletingId === c.id}
+                  onEdit={showEditForm}
+                  onDelete={setConfirmingDelete}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-      {deleteError && <p className="credits-tab__delete-error">{deleteError}</p>}
+      <ActionErrorAlert message={deleteError} className="credits-tab__delete-error" />
+
+      {confirmingDelete && (
+        <ConfirmDeleteDialog
+          entityLabel="credit"
+          message={`Delete the ${creditName(confirmingDelete)}? This cannot be undone.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(null)}
+        />
+      )}
     </div>
   )
 }

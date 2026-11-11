@@ -298,7 +298,7 @@ Each problem maps to a concrete deliverable:
 - New: shows blank form with title "New transaction"; Save → `POST /api/v1/financial/transactions`; Cancel → clears form
 - Edit icon: populates form with the row's values; form title changes to "Edit transaction"; Save → `PUT /api/v1/financial/transactions`; Cancel → clears form
 - Delete icon: `window.confirm("Delete this transaction?")` → confirmed: `DELETE /api/v1/financial/transactions` → reload asset; denied: no action
-  > **Later change (post-P60 UI clean-up, PR #1238):** the confirmation is now the in-app "Delete Transaction" dialog ("Delete the transaction <type> <net>, <date>? This cannot be undone."). While the request runs the row shows "Deleting …" with a spinner. After a delete, focus moves to the next row's Delete, else the previous row's, else New transaction. A failure shows a focused error alert. Cancel returns focus to the row's Delete.
+  > **Later change (post-P60 UI clean-up, PR #1238):** the confirmation is now the in-app "Delete transaction" dialog ("Delete the transaction <type> <net>, <date>? This cannot be undone."). While the request runs the row shows "Deleting …" with a spinner. After a delete, focus moves to the next row's Delete, else the previous row's, else New transaction. A failure shows a focused error alert. Cancel returns focus to the row's Delete.
 - After save or delete: reload asset details; reset form to blank state
 - Save button: disabled during submission; label shows "Saving..."
 - Form validation: Date, Quantity, and Unit Price required; all numeric fields must be finite positive numbers; Fees defaults to 0 if blank
@@ -361,6 +361,7 @@ Chart capabilities (all selection types):
 - New credit: blank inline form; Save → `POST /api/v1/financial/credits` → reload asset; Cancel → clears form
 - Edit credit: click edit icon → form populated; Save → `PUT /api/v1/financial/credits` → reload asset; Cancel → clears form
 - Delete credit: `window.confirm("Delete this credit?")` → confirmed: `DELETE /api/v1/financial/credits` → reload asset
+  > **Later change (post-P60 UI clean-up, PR "fix(web): the last delete and reset screens use the app's confirmation dialog"):** the confirmation is now the in-app "Delete credit" dialog ("Delete the credit <type> <value>, <date>? This cannot be undone."). While the request runs the row shows "Deleting …". After a delete, focus moves to the next row's Delete, else the previous row's, else New credit; a failure shows a focused error alert. A credits grid with no rows shows an empty-state message instead of the table.
 
 **Error Handling:**
 - Credit submit failure (add or update): inline error below form; form remains populated
@@ -550,7 +551,7 @@ graph TD
 - [x] Clicking the edit icon populates the inline form with that transaction's values and changes the title to "Edit transaction"
 - [x] Submitting an edited transaction form calls `PUT /transactions` and refreshes the list
 - [x] Clicking the delete icon shows `window.confirm("Delete this transaction?")`
-  > **Later change (PR #1238):** replaced by the in-app "Delete Transaction" dialog; see the note in the delete-icon requirement.
+  > **Later change (PR #1238):** replaced by the in-app "Delete transaction" dialog; see the note in the delete-icon requirement.
 - [x] Confirming delete calls `DELETE /transactions` and removes the row from the table
 - [x] Cancelling delete leaves the transaction unchanged
 - [x] Save button shows "Saving..." and is disabled during submission
@@ -562,6 +563,7 @@ graph TD
 - [x] Adding a valid credit calls `POST /credits` and refreshes the credits list
 - [x] Editing a credit calls `PUT /credits` and refreshes the list
 - [x] Deleting a credit shows confirm dialog; confirmed calls `DELETE /credits` and removes the row
+  > **Later change:** the confirm dialog is the in-app "Delete credit" dialog; see the note in the delete-credit requirement.
 - [x] When a broker or portfolio is selected, no credits table and no New button are shown; only the chart is visible
 - [x] Chart title is "Credits by Month"
 - [x] X-axis labels are in MM/yyyy format, ordered chronologically

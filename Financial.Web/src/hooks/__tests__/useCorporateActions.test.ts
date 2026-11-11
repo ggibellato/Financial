@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetAdminDto, AssetDetailsDto, CorporateActionDto, SelectedNode } from '../../api/types'
 import { BLANK_TARGET_ASSET_IDENTITY } from '../../components/targetAssetPickerValue'
+import { deferred } from '../../test-utils/deferred'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useCorporateActions } from '../useCorporateActions'
 
@@ -359,6 +360,36 @@ describe('useCorporateActions', () => {
     })
   })
 
+  it('marks the corporate action as deleting until the delete finishes and ignores a second delete meanwhile', async () => {
+    const pendingDelete = deferred<AssetDetailsDto>()
+    deleteCorporateActionMock.mockReturnValueOnce(pendingDelete.promise)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteCorporateAction('ca1'))
+    expect(result.current.deletingId).toBe('ca1')
+    act(() => result.current.deleteCorporateAction('ca2'))
+
+    expect(deleteCorporateActionMock).toHaveBeenCalledOnce()
+    await act(async () => pendingDelete.resolve({ ...ASSET_DETAILS, corporateActions: [] }))
+    expect(result.current.deletingId).toBeNull()
+  })
+
+  it('closes the edit form when the corporate action being edited is deleted', async () => {
+    deleteCorporateActionMock.mockResolvedValueOnce({ ...ASSET_DETAILS, corporateActions: [] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showEditForm(SPLIT_RECORD))
+
+    act(() => result.current.deleteCorporateAction(SPLIT_RECORD.id))
+
+    await waitFor(() => expect(result.current.isFormVisible).toBe(false))
+  })
+
   it('surfaces a delete failure without discarding the current list', async () => {
     deleteCorporateActionMock.mockRejectedValueOnce(new Error('Cannot delete: a later disposal depends on lots created by this split'))
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -371,6 +402,7 @@ describe('useCorporateActions', () => {
     await waitFor(() =>
       expect(result.current.deleteError).toBe('Cannot delete: a later disposal depends on lots created by this split'),
     )
+    expect(result.current.deletingId).toBeNull()
     expect(result.current.corporateActions).toEqual([SPLIT_RECORD])
   })
 

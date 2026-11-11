@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import {
   CartesianGrid,
   DefaultLegendContent,
@@ -14,6 +14,8 @@ import type { DefaultLegendContentProps } from 'recharts'
 import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableHeader, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
+import ActionErrorAlert from './ActionErrorAlert'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
 import LoadingState from './LoadingState'
@@ -25,7 +27,7 @@ import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/use
 import { useFieldError } from '../hooks/useFieldError'
 import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
 import { usePriceHistory } from '../hooks/usePriceHistory'
-import { confirmThenRun } from '../utils/confirmThenRun'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
@@ -61,13 +63,18 @@ const SORT_ACCESSORS: Record<string, SortAccessor<AssetPriceSnapshotDto>> = {
   source: (entry) => SOURCE_LABELS[entry.source],
 }
 
-interface PriceRowProps {
-  entry: AssetPriceSnapshotDto
-  onEdit: (entry: AssetPriceSnapshotDto) => void
-  onDelete: (date: string) => void
+function priceName(entry: AssetPriceSnapshotDto): string {
+  return `price ${formatShortDate(entry.date)}`
 }
 
-function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
+interface PriceRowProps {
+  entry: AssetPriceSnapshotDto
+  isDeleting: boolean
+  onEdit: (entry: AssetPriceSnapshotDto) => void
+  onDelete: (entry: AssetPriceSnapshotDto) => void
+}
+
+function PriceRow({ entry, isDeleting, onEdit, onDelete }: PriceRowProps) {
   return (
     <TableRow>
       <DataTableCell label="Date">{formatShortDate(entry.date)}</DataTableCell>
@@ -81,9 +88,10 @@ function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
         <span title={entry.sourceReference ?? undefined}>{SOURCE_LABELS[entry.source]}</span>
       </DataTableCell>
       <RowActionsCell
-        itemName={`price ${formatShortDate(entry.date)}`}
+        itemName={priceName(entry)}
+        isDeleting={isDeleting}
         onEdit={entry.isManual ? () => onEdit(entry) : undefined}
-        onDelete={entry.isManual ? () => onDelete(entry.date) : undefined}
+        onDelete={entry.isManual ? () => onDelete(entry) : undefined}
       />
     </TableRow>
   )
@@ -278,6 +286,7 @@ export default function PriceHistoryTab() {
     isSaving,
     saveError,
     saveErrorFields,
+    deletingDate,
     deleteError,
     showNewForm,
     showEditForm,
@@ -289,7 +298,16 @@ export default function PriceHistoryTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(entries, SORT_ACCESSORS, DATE_DESC_SORT)
 
-  const confirmAndDeleteEntry = (date: string) => confirmThenRun('Delete this price entry?', () => deleteEntry(date))
+  const [confirmingDelete, setConfirmingDelete] = useState<AssetPriceSnapshotDto | null>(null)
+  const regionRef = useRef<HTMLDivElement | null>(null)
+  const newPriceRef = useRef<HTMLButtonElement | null>(null)
+  const recordRowFocus = useRowFocusRecovery(regionRef, newPriceRef, isLoading)
+
+  const confirmDelete = () => {
+    if (!confirmingDelete) return
+    deleteEntry(confirmingDelete.date)
+    setConfirmingDelete(null)
+  }
 
   if (isLoading) {
     return <LoadingState />
@@ -308,7 +326,7 @@ export default function PriceHistoryTab() {
   const leftPanel = (
     <div className="price-history-tab__left">
       <div className="price-history-tab__table-toolbar">
-        <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
+        <Button ref={newPriceRef} appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New price
         </Button>
       </div>
@@ -327,41 +345,60 @@ export default function PriceHistoryTab() {
         />
       )}
 
-      <div className="price-history-tab__table-wrapper">
-        <Table className="price-history-tab__table data-table">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Date"
-                columnKey="date"
-                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Price"
-                columnKey="price"
-                numeric
-                sortDirection={sortState?.columnKey === 'price' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Source"
-                columnKey="source"
-                sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <ActionsColumnHeader />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedRows.map((entry) => (
-              <PriceRow key={entry.date} entry={entry} onEdit={showEditForm} onDelete={confirmAndDeleteEntry} />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {entries.length === 0 ? (
+        <p className="price-history-tab__empty">No prices yet — add the first price for this holding.</p>
+      ) : (
+        <div ref={regionRef} className="price-history-tab__table-wrapper" onFocus={recordRowFocus}>
+          <Table className="price-history-tab__table data-table">
+            <TableHeader>
+              <TableRow>
+                <SortableColumnHeader
+                  label="Date"
+                  columnKey="date"
+                  sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Price"
+                  columnKey="price"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'price' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Source"
+                  columnKey="source"
+                  sortDirection={sortState?.columnKey === 'source' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <ActionsColumnHeader />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedRows.map((entry) => (
+                <PriceRow
+                  key={entry.date}
+                  entry={entry}
+                  isDeleting={deletingDate === entry.date}
+                  onEdit={showEditForm}
+                  onDelete={setConfirmingDelete}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
-      {deleteError && <p className="price-history-tab__delete-error">{deleteError}</p>}
+      <ActionErrorAlert message={deleteError} className="price-history-tab__delete-error" />
+
+      {confirmingDelete && (
+        <ConfirmDeleteDialog
+          entityLabel="price"
+          message={`Delete the ${priceName(confirmingDelete)}? This cannot be undone.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(null)}
+        />
+      )}
     </div>
   )
 

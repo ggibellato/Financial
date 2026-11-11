@@ -324,7 +324,7 @@ Utility functions defined locally in `TransactionsTab.tsx`, following `AssetSumm
 | POST on save; list refreshes | `save_new_transaction_calls_add_and_updates_asset` |
 | Edit icon populates form "Edit transaction" | `edit_icon_calls_show_edit_form`, `renders_edit_transaction_title_when_editing` |
 | PUT on save; list refreshes | `save_edit_transaction_calls_update` |
-| Delete icon opens the in-app "Delete Transaction" dialog (**later change, PR #1238**; originally `window.confirm`) | `delete_icon_deletes_the_transaction_after_the_user_confirms` |
+| Delete icon opens the in-app "Delete transaction" dialog (**later change, PR #1238**; originally `window.confirm`) | `delete_icon_deletes_the_transaction_after_the_user_confirms` |
 | DELETE on confirm; row removed | `delete_transaction_calls_api_and_updates_asset` |
 | Save disabled + "Saving..." during submit | `save_button_disabled_while_saving` |
 | Validation: Date, Qty, UnitPrice required; Fees defaults to 0 | `save_validation_error_when_required_fields_missing`, `save_defaults_fees_to_zero_when_blank` |
