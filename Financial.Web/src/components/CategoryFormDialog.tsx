@@ -3,6 +3,7 @@ import { Field, Input, Switch } from '@fluentui/react-components'
 import type { CategoryDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 
 interface CategoryFormDialogProps {
   category: CategoryDto | null
@@ -16,10 +17,12 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
   const [active, setActive] = useState(category?.active ?? true)
   const [isInvestment, setIsInvestment] = useState(category?.isInvestment ?? false)
   const [isTithe, setIsTithe] = useState(category?.isTithe ?? false)
-  const { isSaving, error, submit } = useDialogSubmit('The category could not be saved.')
+  const { isSaving, error, failure, submit } = useDialogSubmit('The category could not be saved.')
 
   const trimmedName = name.trim()
+  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
+  const nameMessage = validationMessage || nameError
   const canSubmit = validationMessage.length === 0 && !isSaving
 
   const handleSubmit = () => {
@@ -30,7 +33,7 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
   return (
     <EntityFormDialog
       title={isEditing ? 'Edit Category' : 'Create Category'}
-      error={error}
+      error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
       onSave={handleSubmit}
@@ -39,10 +42,10 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
       <Field
         label="Name"
         required
-        validationState={validationMessage ? 'error' : 'none'}
-        validationMessage={validationMessage}
+        validationState={nameMessage ? 'error' : 'none'}
+        validationMessage={nameMessage}
       >
-        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
       </Field>
 
       <Field label="Active">

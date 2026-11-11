@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import PortfolioFormDialog from '../PortfolioFormDialog'
 import type { BrokerDto } from '../../api/types'
+import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
   { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
@@ -49,5 +50,16 @@ describe('PortfolioFormDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Avenue', 'Growth'))
+  })
+
+  it('shows a duplicate name under Name and moves focus there', async () => {
+    const message = 'Broker "XPI" already has a portfolio named "Default".'
+    const onSubmit = vi.fn().mockRejectedValue(duplicateNameRejection(message))
+    render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default' } })
+    saveFromTheSaveButton()
+
+    await expectDuplicateUnderName(message)
   })
 })

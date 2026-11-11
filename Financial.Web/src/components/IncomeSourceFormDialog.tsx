@@ -4,6 +4,7 @@ import type { AccountDto, IncomeSourceDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import type { AccountsStatus } from '../hooks/useAccounts'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountsWith } from '../utils/accountCapabilities'
 
 const GROUP_OPTIONS = ['Salary', 'DividendoJuros', 'NonReportable']
@@ -37,10 +38,12 @@ export default function IncomeSourceFormDialog({
   const [group, setGroup] = useState(incomeSource?.group ?? GROUP_OPTIONS[0])
   const [isActive, setIsActive] = useState(incomeSource?.isActive ?? true)
   const [potsAccountId, setPotsAccountId] = useState(linkedPotsAccountId)
-  const { isSaving, error, submit } = useDialogSubmit('The income source could not be saved.')
+  const { isSaving, error, failure, submit } = useDialogSubmit('The income source could not be saved.')
 
   const trimmedName = name.trim()
+  const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
+  const nameMessage = validationMessage || nameError
   const canSubmit = validationMessage.length === 0 && !isSaving
   const potsAccountOptions = accountsWith(accounts, 'ReceivesIncomeSplit', linkedPotsAccountId || undefined)
   const isLinkedAccountUnlisted =
@@ -56,7 +59,7 @@ export default function IncomeSourceFormDialog({
   return (
     <EntityFormDialog
       title={isEditing ? 'Edit Income Source' : 'Create Income Source'}
-      error={error}
+      error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
       onSave={handleSubmit}
@@ -65,10 +68,10 @@ export default function IncomeSourceFormDialog({
       <Field
         label="Name"
         required
-        validationState={validationMessage ? 'error' : 'none'}
-        validationMessage={validationMessage}
+        validationState={nameMessage ? 'error' : 'none'}
+        validationMessage={nameMessage}
       >
-        <Input value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
+        <Input ref={nameRef} value={name} onChange={(e) => setName(e.target.value)} disabled={isSaving} autoFocus />
       </Field>
 
       <Field label="Group">
