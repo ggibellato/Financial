@@ -65,7 +65,7 @@ describe('PortfolioSummaryTab', () => {
   it('renders_loading_state_in_totals_section_while_aggregated_summary_loads', () => {
     setAggregatedMock({ isLoading: true })
     renderComponent()
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_in_totals_section_on_aggregated_summary_failure', () => {

@@ -323,14 +323,14 @@ describe('CardStatementsTab', () => {
     expect(screen.getByRole('option', { name: 'Loading banks…' })).toBeInTheDocument()
   })
 
-  it('disables the pay form fields and keeps Saving... focused while it saves', () => {
+  it('disables the pay form fields and keeps Saving… focused while it saves', () => {
     const payForm = { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} }
     const statements = renderTab({ payForm })
     screen.getByRole('button', { name: 'Pay statement' }).focus()
 
     statements.rerenderWith({ payForm: { ...payForm, isSaving: true } })
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
@@ -474,8 +474,8 @@ describe('CardStatementsTab', () => {
     })
 
     it.each([
-      ['Save due date', 'Saving...', 'Clear due date'],
-      ['Clear due date', 'Clearing...', 'Save due date'],
+      ['Save due date', 'Saving…', 'Clear due date'],
+      ['Clear due date', 'Clearing…', 'Save due date'],
     ])('disables the form and the row actions while %s runs, keeping focus on the action', async (action, label, other) => {
       setStatementDueDateMock.mockReturnValue(new Promise(() => {}))
       await openRealForm()

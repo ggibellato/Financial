@@ -40,7 +40,7 @@ describe('MovedPageRedirect', () => {
     getAccountsMock.mockReturnValue(new Promise(() => {}))
     renderRedirect()
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
     expect(screen.queryByText(/Now at/)).not.toBeInTheDocument()
   })
 

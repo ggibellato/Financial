@@ -12,7 +12,7 @@ interface FormSaveActionsProps {
   children?: ReactNode
 }
 
-const SAVING_LABEL = 'Saving...'
+const SAVING_LABEL = 'Saving…'
 
 function blockSubmit(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault()

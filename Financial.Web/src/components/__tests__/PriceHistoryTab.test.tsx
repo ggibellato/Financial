@@ -183,7 +183,7 @@ describe('PriceHistoryTab', () => {
   it('renders_loading_state', async () => {
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     renderWithSelectedNode(<PriceHistoryTab />, ASSET_NODE)
-    expect(await screen.findByText('Loading...')).toBeInTheDocument()
+    expect(await screen.findByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry', async () => {
@@ -353,7 +353,7 @@ describe('PriceHistoryTab', () => {
     fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '50' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toBeDisabled()
   })
 
   it('save_requires_a_date', async () => {

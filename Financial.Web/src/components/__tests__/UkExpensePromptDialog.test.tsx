@@ -114,7 +114,7 @@ describe('UkExpensePromptDialog', () => {
   it('disables every action while saving', () => {
     renderDialog({ isSaving: true })
 
-    expect(screen.getByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Skip' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
   })

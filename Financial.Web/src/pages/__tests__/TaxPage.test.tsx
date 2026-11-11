@@ -125,7 +125,7 @@ describe('TaxPage', () => {
   it('renders_loading_indicator_while_options_load', () => {
     setMock({ isLoadingOptions: true })
     render(<TaxPage />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_on_options_failure', () => {
@@ -196,7 +196,7 @@ describe('TaxPage', () => {
   it('renders_loading_indicator_while_the_workbook_loads', () => {
     setMock({ isLoadingWorkbook: true, workbook: null })
     render(<TaxPage />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_on_workbook_failure', () => {

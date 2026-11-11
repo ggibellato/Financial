@@ -123,7 +123,7 @@ describe('AllocationBreakdownPanel', () => {
   it('renders_the_loading_state_while_the_breakdown_is_loading', () => {
     renderPanel({ breakdown: null, isLoading: true })
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })
 

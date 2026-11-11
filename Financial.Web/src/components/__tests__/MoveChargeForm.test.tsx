@@ -87,13 +87,13 @@ describe('MoveChargeForm', () => {
     expect(screen.getByRole('button', { name: 'Move charge' })).toBeDisabled()
   })
 
-  it('disables the statement list and keeps Saving... focused while the move saves', () => {
+  it('disables the statement list and keeps Saving… focused while the move saves', () => {
     const { rerender } = render(<MoveChargeForm moveForm={moveFormState()} onCancel={vi.fn()} />)
     screen.getByRole('button', { name: 'Move charge' }).focus()
 
     rerender(<MoveChargeForm moveForm={moveFormState({ form: { charge: CHARGE, target: '2026-12', isSaving: true, error: null, targetError: null } })} onCancel={vi.fn()} />)
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()

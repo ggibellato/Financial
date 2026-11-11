@@ -124,13 +124,13 @@ describe('EntityFormDialog', () => {
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
   })
 
-  it('keeps Saving... focused and inert, with progress, while saving', () => {
+  it('keeps Saving… focused and inert, with progress, while saving', () => {
     const { rerender } = renderDialog()
     screen.getByRole('button', { name: 'Save' }).focus()
 
     rerender(dialog({ isSaving: true, canSave: false }))
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(save.querySelector('.fui-Spinner')).toBeInTheDocument()

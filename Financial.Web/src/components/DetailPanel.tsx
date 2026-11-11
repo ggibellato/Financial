@@ -107,7 +107,7 @@ export default function DetailPanel() {
               onClick={() => setIsMoving(true)}
               title="Move to another portfolio"
             >
-              Move...
+              Move…
             </Button>
           )}
           {canDeletePortfolio && (

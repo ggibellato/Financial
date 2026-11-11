@@ -93,7 +93,7 @@ export default function TargetAssetPicker({ label, value, onChange, disabled, na
             selectedOptions={matchedAsset ? [matchedAsset.name] : []}
             onOptionSelect={handleOptionSelect}
             onChange={(e) => applyTypedName(e.target.value)}
-            placeholder={isLoading ? 'Loading assets...' : 'Search assets or type a new name'}
+            placeholder={isLoading ? 'Loading assets…' : 'Search assets or type a new name'}
           >
             {filteredOptions.map((asset) => (
               <Option key={asset.name} value={asset.name}>

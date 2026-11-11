@@ -20,7 +20,7 @@ describe('LotAllocationPicker', () => {
         errorMessage={null}
       />,
     )
-    expect(screen.getByText('Loading open lots...')).toBeInTheDocument()
+    expect(screen.getByText('Loading open lots…')).toBeInTheDocument()
   })
 
   it('shows an error state', () => {

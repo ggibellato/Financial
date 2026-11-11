@@ -87,7 +87,7 @@ export default function CorporateActionForm({
   const isMergerFieldsStep = formType === 'Merger' && formStep === 'fields'
   const isMergerConfirmStep = formType === 'Merger' && formStep === 'confirm'
   const confirmLabel = isSaving
-    ? 'Saving...'
+    ? 'Saving…'
     : isMergerFieldsStep
       ? 'Continue'
       : isMergerConfirmStep

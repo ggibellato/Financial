@@ -92,7 +92,7 @@ describe('UpcomingIncomePanel', () => {
   it('shows_the_loading_state_while_the_request_is_in_flight', () => {
     render(<UpcomingIncomePanel entries={null} isLoading error={null} retry={vi.fn()} />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
   })

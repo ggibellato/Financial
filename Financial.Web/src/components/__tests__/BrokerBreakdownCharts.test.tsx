@@ -91,7 +91,7 @@ describe('BrokerBreakdownCharts', () => {
   it('renders_loading_state_independently_of_totals', () => {
     setMock({ isLoading: true })
     render(<BrokerBreakdownCharts />)
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_on_failure', () => {

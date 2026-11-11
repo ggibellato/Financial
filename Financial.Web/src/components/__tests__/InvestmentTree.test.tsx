@@ -146,7 +146,7 @@ describe('InvestmentTree', () => {
         <InvestmentTree />
       </SelectedNodeProvider>,
     )
-    expect(screen.getByText('Loading investments...')).toBeInTheDocument()
+    expect(screen.getByText('Loading investments…')).toBeInTheDocument()
   })
 
   it('renders broker nodes after successful load', async () => {

@@ -99,7 +99,7 @@ describe('MensaisPage', () => {
   it('shows a loading state before data arrives', () => {
     render(<MensaisPage />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('shows an error state with retry when the fetch fails', async () => {
@@ -474,7 +474,7 @@ describe('MensaisPage', () => {
     const dialog = await requestReset()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
 
-    const resetting = await screen.findByRole('button', { name: 'Resetting...', hidden: true })
+    const resetting = await screen.findByRole('button', { name: 'Resetting…', hidden: true })
     await waitFor(() => expect(resetting).toHaveFocus())
     expect(resetting).toHaveAttribute('aria-disabled', 'true')
   })

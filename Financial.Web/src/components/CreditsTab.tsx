@@ -259,7 +259,7 @@ function InlineForm({
 
       <div className={styles.actions}>
         <Button appearance="primary" disabled={isSaving} onClick={onSave}>
-          {isSaving ? 'Saving...' : editingId ? 'Save' : 'Add credit'}
+          {isSaving ? 'Saving…' : editingId ? 'Save' : 'Add credit'}
         </Button>
         <Button appearance="secondary" onClick={onCancel}>
           Cancel

@@ -235,7 +235,7 @@ describe('DataQualityWarningsPanel', () => {
   it('shows_the_loading_state_while_the_report_is_pending', () => {
     render(<DataQualityWarningsPanel report={null} isLoading error={null} retry={noop} />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('shows_the_error_state_with_a_retry_action', () => {

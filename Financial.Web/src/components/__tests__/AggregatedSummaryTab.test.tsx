@@ -77,7 +77,7 @@ describe('AggregatedSummaryTab', () => {
   it('renders_loading_indicator_while_data_loads', () => {
     setMock({ isLoading: true })
     renderComponent()
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_on_failure', () => {

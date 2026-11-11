@@ -122,13 +122,13 @@ describe('PayRecurringBillForm', () => {
     expect(onRetryBills).toHaveBeenCalledOnce()
   })
 
-  it('disables the fields and keeps Saving... focused while the payment saves', () => {
+  it('disables the fields and keeps Saving… focused while the payment saves', () => {
     const { rerender } = render(<PayRecurringBillForm {...baseProps} {...SELECTED} />)
     screen.getByRole('button', { name: 'Pay recurring bill' }).focus()
 
     rerender(<PayRecurringBillForm {...baseProps} {...SELECTED} isSaving />)
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()

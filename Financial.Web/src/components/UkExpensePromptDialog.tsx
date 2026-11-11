@@ -97,7 +97,7 @@ export default function UkExpensePromptDialog({
           </DialogContent>
           <div className={styles.actions}>
             <Button appearance="primary" onClick={handleConfirm} disabled={!canConfirm}>
-              {isSaving ? 'Saving...' : 'Confirm'}
+              {isSaving ? 'Saving…' : 'Confirm'}
             </Button>
             <Button appearance="secondary" onClick={onSkip} disabled={isSaving}>
               Skip

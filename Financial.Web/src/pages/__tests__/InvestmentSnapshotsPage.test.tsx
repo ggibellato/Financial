@@ -40,7 +40,7 @@ describe('InvestmentSnapshotsPage', () => {
   it('shows a loading state before data arrives', () => {
     render(<InvestmentSnapshotsPage />)
 
-    expect(screen.getByText('Loading...')).toBeInTheDocument()
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
   it('shows an error state with retry when the fetch fails', async () => {

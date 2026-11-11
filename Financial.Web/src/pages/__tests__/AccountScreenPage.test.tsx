@@ -1662,7 +1662,7 @@ describe('AccountScreenPage actions', () => {
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Lidl')
 
     await user.click(within(await operationForm('New expense')).getByRole('button', { name: 'Add expense' }))
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
     finishSave(SAVED_EXPENSE)
     expect(await screen.findByText('Expense added')).toBeInTheDocument()

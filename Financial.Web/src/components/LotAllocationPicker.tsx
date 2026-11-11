@@ -29,7 +29,7 @@ export default function LotAllocationPicker({
   errorMessage,
 }: LotAllocationPickerProps) {
   if (isLoading) {
-    return <LoadingState message="Loading open lots..." />
+    return <LoadingState message="Loading open lots…" />
   }
 
   if (error) {

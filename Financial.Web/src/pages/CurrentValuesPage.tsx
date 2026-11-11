@@ -81,7 +81,7 @@ export default function CurrentValuesPage() {
     setIsRunning(true)
     setProgressValue(0)
     setResults([])
-    setProgressText(`Fetching 0 of ${assetsToCheck.length}...`)
+    setProgressText(`Fetching 0 of ${assetsToCheck.length}…`)
 
     let completed = 0
     for (const asset of assetsToCheck) {
@@ -125,7 +125,7 @@ export default function CurrentValuesPage() {
 
       completed += 1
       setProgressValue(Math.round((completed / assetsToCheck.length) * 100))
-      setProgressText(`Fetching ${completed} of ${assetsToCheck.length}: ${asset.ticker}...`)
+      setProgressText(`Fetching ${completed} of ${assetsToCheck.length}: ${asset.ticker}…`)
     }
 
     setProgressText(`Completed! Loaded ${assetsToCheck.length} assets.`)
@@ -140,7 +140,7 @@ export default function CurrentValuesPage() {
   const { sortedRows, sortState, requestSort } = useSortableRows(results, priceAccessors)
 
   if (isLoading) {
-    return <LoadingState message="Loading data..." />
+    return <LoadingState message="Loading data…" />
   }
 
   if (error) {
@@ -158,7 +158,7 @@ export default function CurrentValuesPage() {
           onClick={() => void runPriceCheck()}
           disabled={isRunning}
         >
-          {isRunning ? 'Checking...' : 'Check prices'}
+          {isRunning ? 'Checking…' : 'Check prices'}
         </Button>
       </header>
 

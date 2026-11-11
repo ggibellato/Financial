@@ -71,13 +71,13 @@ describe('CardCreditRefundForm', () => {
     expect(screen.getByRole('button', { name: 'Refund credit to bank' })).toBeDisabled()
   })
 
-  it('disables the fields and keeps Saving... focused while the refund saves', () => {
+  it('disables the fields and keeps Saving… focused while the refund saves', () => {
     const { rerender } = renderForm()
     screen.getByRole('button', { name: 'Refund credit to bank' }).focus()
 
     rerender(<CardCreditRefundForm refundForm={formState({ isSaving: true })} onCancel={vi.fn()} />)
 
-    const save = screen.getByRole('button', { name: 'Saving...' })
+    const save = screen.getByRole('button', { name: 'Saving…' })
     expect(save).toHaveAttribute('aria-disabled', 'true')
     expect(save).toHaveFocus()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()

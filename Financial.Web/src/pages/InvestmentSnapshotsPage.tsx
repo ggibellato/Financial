@@ -147,7 +147,7 @@ export default function InvestmentSnapshotsPage() {
 
           <div className={styles.actions}>
             <Button appearance="primary" disabled={isSaving} onClick={saveEdit}>
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Saving…' : 'Save'}
             </Button>
             <Button appearance="secondary" onClick={cancelEdit}>
               Cancel

@@ -247,7 +247,7 @@ describe('TransactionsTab', () => {
   it('renders_loading_state', async () => {
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
-    expect(await screen.findByText('Loading...')).toBeInTheDocument()
+    expect(await screen.findByText('Loading…')).toBeInTheDocument()
   })
 
   it('renders_error_state_with_retry_and_refetches_on_try_again', async () => {
@@ -573,7 +573,7 @@ describe('TransactionsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
 
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: 'Saving…' })).toBeDisabled()
   })
 
   it('renders_save_error_below_form', async () => {
