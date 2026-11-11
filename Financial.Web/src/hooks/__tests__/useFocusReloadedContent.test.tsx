@@ -48,4 +48,28 @@ describe('useFocusReloadedContent', () => {
     await screen.findByRole('button', { name: 'First row' })
     expect(screen.getByRole('button', { name: 'First row' })).not.toHaveFocus()
   })
+
+  it('focuses the reloaded region itself when it holds no control', async () => {
+    function ReloadWithoutControls() {
+      const [phase, setPhase] = useState<'error' | 'loading' | 'loaded'>('error')
+      const regionRef = useRef<HTMLDivElement>(null)
+      useFocusReloadedContent(regionRef, phase === 'loading')
+
+      if (phase === 'error') return <ErrorState message="Unable to load" onRetry={() => setPhase('loading')} />
+      return (
+        <>
+          <div ref={regionRef} aria-label="Totals" role="region">
+            {phase === 'loaded' ? 'Market value 1,000.00' : 'Loading'}
+          </div>
+          {phase === 'loading' && <button onClick={() => setPhase('loaded')}>Finish</button>}
+        </>
+      )
+    }
+    render(<ReloadWithoutControls />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
+
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Totals' })).toHaveFocus())
+  })
 })

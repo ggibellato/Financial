@@ -13,6 +13,7 @@ import { assetKey, useAssets } from '../hooks/useAssets'
 import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { AssetAdminDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import { formatN8 } from '../utils/formatters'
 
 export default function AssetsPage() {
   const { assets, isLoading, error, retry, createAsset, updateAsset, deletingKey, deleteError, deleteAsset } =
@@ -186,7 +187,7 @@ export default function AssetsPage() {
             <TableHeaderCell>Broker</TableHeaderCell>
             <TableHeaderCell>Portfolio</TableHeaderCell>
             <TableHeaderCell>Class</TableHeaderCell>
-            <TableHeaderCell>Quantity</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--numeric">Quantity</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
@@ -202,7 +203,9 @@ export default function AssetsPage() {
                 <DataTableCell label="Broker"><TruncatedText text={asset.brokerName} /></DataTableCell>
                 <DataTableCell label="Portfolio"><TruncatedText text={asset.portfolioName} /></DataTableCell>
                 <DataTableCell label="Class">{asset.class}</DataTableCell>
-                <DataTableCell label="Quantity">{asset.quantity}</DataTableCell>
+                <DataTableCell label="Quantity" className="data-table__col--numeric">
+                  {formatN8(asset.quantity)}
+                </DataTableCell>
                 <RowActionsCell
                   itemName={asset.name}
                   {...rowDeleteState(deletingKey, key)}

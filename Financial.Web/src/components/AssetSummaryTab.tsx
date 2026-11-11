@@ -8,8 +8,8 @@ import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { formatDateTime, formatN2, formatN8, formatPercentFraction, formatShortDateUtc, signClass } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
-import './AssetSummaryTab.css'
 import MissingValue from './MissingValue'
+import './AssetSummaryTab.css'
 
 /** A live quote carries a time of day; a price read from Price History carries only a date, and
  * is read as UTC so the reader's time zone cannot shift it onto the previous day. */
@@ -77,7 +77,7 @@ export default function AssetSummaryTab() {
 
         <div className="asset-summary__field">
           <span className="asset-summary__label">ISIN</span>
-          <span className="asset-summary__value">{asset.isin || <MissingValue />}</span>
+          <span className="asset-summary__value">{asset.isin || <MissingValue label="None" />}</span>
         </div>
         <div className="asset-summary__field">
           <span className="asset-summary__label">Country</span>
@@ -87,13 +87,13 @@ export default function AssetSummaryTab() {
         <div className="asset-summary__field">
           <span className="asset-summary__label">Tax jurisdiction</span>
           <span className="asset-summary__value">
-            {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : <MissingValue />}
+            {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : <MissingValue label="None" />}
           </span>
         </div>
 
         <div className="asset-summary__field">
           <span className="asset-summary__label">Local type</span>
-          <span className="asset-summary__value">{asset.localTypeCode || <MissingValue />}</span>
+          <span className="asset-summary__value">{asset.localTypeCode || <MissingValue label="None" />}</span>
         </div>
         <div className="asset-summary__field">
           <span className="asset-summary__label">Asset class</span>
@@ -181,7 +181,7 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">Current value</span>
               <span className="asset-summary__value">
-                {isLoadingPrice || !price ? <MissingValue /> : formatN2(price.price)}
+                {isLoadingPrice ? <MissingValue label="Loading" /> : orMissing(price, (current) => formatN2(current.price))}
                 {!isLoadingPrice && price?.isManual && (
                   <span
                     className="asset-summary__manual-badge"
@@ -196,7 +196,7 @@ export default function AssetSummaryTab() {
             <div className="asset-summary__field">
               <span className="asset-summary__label">As of</span>
               <span className="asset-summary__value">
-                {isLoadingPrice ? <MissingValue /> : formatAsOf(price)}
+                {isLoadingPrice ? <MissingValue label="Loading" /> : formatAsOf(price)}
                 {!isLoadingPrice && asset.marketStatus === 'Stale' && (
                   <span className="asset-summary__stale-badge" title="This price is older than the most recent weekday.">
                     {' '}

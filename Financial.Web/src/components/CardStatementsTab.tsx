@@ -68,7 +68,7 @@ const COLUMNS: StatementColumn[] = [
     header: 'Credit in',
     numeric: true,
     accessor: (statement) => statement.creditIn,
-    render: (statement) => (statement.creditIn === 0 ? <MissingValue /> : formatN2(statement.creditIn)),
+    render: (statement) => (statement.creditIn === 0 ? <MissingValue label="None" /> : formatN2(statement.creditIn)),
   },
   {
     key: 'toPay',
@@ -81,7 +81,7 @@ const COLUMNS: StatementColumn[] = [
     key: 'dueDate',
     header: 'Due date',
     accessor: (statement) => statement.dueDate,
-    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : <MissingValue />),
+    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : <MissingValue label="None" />),
   },
   {
     key: 'status',

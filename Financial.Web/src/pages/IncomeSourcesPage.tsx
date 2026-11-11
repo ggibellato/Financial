@@ -137,7 +137,7 @@ export default function IncomeSourcesPage() {
               <DataTableCell label="Group"><TruncatedText text={incomeSource.group} /></DataTableCell>
               <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
               <DataTableCell label="Splits to">
-                {orMissing(splitsToDisplay(incomeSource, accounts, accountsStatus), (text) => <TruncatedText text={text} />)}
+                {orMissing(splitsToDisplay(incomeSource, accounts, accountsStatus), (text) => <TruncatedText text={text} />, 'None')}
               </DataTableCell>
               <RowActionsCell
                 itemName={incomeSource.name}

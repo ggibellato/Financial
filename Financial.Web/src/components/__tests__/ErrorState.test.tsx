@@ -75,7 +75,9 @@ describe('ErrorState', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     fireEvent.click(screen.getByRole('button', { name: 'Finish retry' }))
 
-    expect(screen.getByRole('alert')).toHaveFocus()
+    const error = screen.getByRole('group', { name: 'Still failing' })
+    expect(error).toHaveFocus()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
   })
 
   it('leaves focus on a control the user is already in', () => {
@@ -126,7 +128,7 @@ describe('ErrorState', () => {
 
       retryAndFinish()
 
-      await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+      await waitFor(() => expect(screen.getByRole('group', { name: 'Still unable to load' })).toHaveFocus())
     })
 
     it('leaves focus alone when the user moved on while it reloaded', async () => {
@@ -145,5 +147,16 @@ describe('ErrorState', () => {
       await screen.findByRole('button', { name: 'First bill' })
       expect(search).toHaveFocus()
     })
+  })
+
+  it('stays an alert when a later failure is not the outcome of the retry', () => {
+    const { unmount } = render(<ErrorState message="First failure" onRetry={vi.fn()} />)
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    unmount()
+
+    render(<ErrorState message="Unrelated failure" />)
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Unrelated failure')
+    expect(screen.getByRole('alert')).not.toHaveFocus()
   })
 })

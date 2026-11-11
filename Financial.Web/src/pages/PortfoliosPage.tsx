@@ -101,7 +101,7 @@ export default function PortfoliosPage() {
             <TableHeaderCell>Name</TableHeaderCell>
             <TableHeaderCell>Broker</TableHeaderCell>
             <TableHeaderCell>Broker status</TableHeaderCell>
-            <TableHeaderCell>Assets</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--numeric">Assets</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
@@ -113,7 +113,9 @@ export default function PortfoliosPage() {
                 <DataTableCell label="Name">{portfolio.name}</DataTableCell>
                 <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
                 <DataTableCell label="Broker status">{portfolio.brokerStatus}</DataTableCell>
-                <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
+                <DataTableCell label="Assets" className="data-table__col--numeric">
+                  {portfolio.assetCount}
+                </DataTableCell>
                 <RowActionsCell
                   itemName={portfolio.name}
                   {...rowDeleteState(deletingKey, key)}

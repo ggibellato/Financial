@@ -400,8 +400,8 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [item], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(within(cells[12]).getByRole('img', { name: 'Not available' })).toBeInTheDocument()
-    expect(within(cells[13]).getByRole('img', { name: 'Not available' })).toBeInTheDocument()
+    expect(within(cells[12]).getByRole('img', { name: 'None' })).toBeInTheDocument()
+    expect(within(cells[13]).getByRole('img', { name: 'None' })).toBeInTheDocument()
   })
 
   it('renders_current_value_when_price_resolves', () => {

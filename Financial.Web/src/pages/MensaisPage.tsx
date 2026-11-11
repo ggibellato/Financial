@@ -25,10 +25,11 @@ import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
+import { useSuccessToast } from '../hooks/useSuccessToast'
 import { BILL_STATUSES, useMensais } from '../hooks/useMensais'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2 } from '../utils/formatters'
-import { isFocusLost } from '../utils/focus'
+import { EDITABLE_FIELD, isFocusLost } from '../utils/focus'
 import { orMissing } from '../utils/orMissing'
 import MissingValue from '../components/MissingValue'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
@@ -37,7 +38,6 @@ import { rowDeleteState, type RowDeleteState } from '../components/grid/rowDelet
 import './MensaisPage.css'
 
 const NEW_BILL_FORM = 'new'
-const FIRST_FIELD = 'input, select, textarea'
 
 interface BillRowProps {
   bill: RecurringBillDto
@@ -67,7 +67,7 @@ function BillRow({
       <DataTableCell label="Note">
         <TruncatedText text={bill.note} />
       </DataTableCell>
-      {showBrasilFields && <DataTableCell label="NIT">{bill.nitNumber ?? <MissingValue />}</DataTableCell>}
+      {showBrasilFields && <DataTableCell label="NIT">{bill.nitNumber ?? <MissingValue label="None" />}</DataTableCell>}
       {showBrasilFields && (
         <DataTableCell label="Min. Wage" className="data-table__col--numeric">
           {orMissing(bill.minimumWageValue, formatN2)}
@@ -211,6 +211,7 @@ function BillTable({
 }
 
 export default function MensaisPage() {
+  const { showSuccess } = useSuccessToast()
   const {
     monthInputValue,
     setMonthInputValue,
@@ -258,9 +259,12 @@ export default function MensaisPage() {
     confirmExpensePrompt,
     skipExpensePrompt,
     closeExpensePrompt,
-  } = useMensais()
+  } = useMensais(showSuccess)
 
   const isEditing = editingId !== null
+  const isEditedBill = (bill: RecurringBillDto) => bill.id === editingId
+  const editingBill = brasilBills.find(isEditedBill) ?? ukBills.find(isEditedBill)
+  const editingBillLabel = editingBill ? `${editingBill.description} · ${editingBill.area} · due day ${editingBill.dueDay}` : ''
   const discardPrompt = useDiscardPrompt(isFormDirty)
   const formAreaRef = useRef<HTMLDivElement | null>(null)
   const openerRef = useRef<HTMLElement | null>(null)
@@ -280,7 +284,7 @@ export default function MensaisPage() {
   useEffect(() => {
     const wasOpen = previousFormKey.current !== null
     previousFormKey.current = openFormKey
-    if (openFormKey) formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD)?.focus()
+    if (openFormKey) formAreaRef.current?.querySelector<HTMLElement>(EDITABLE_FIELD)?.focus()
     else if (wasOpen && isFocusLost()) restoreFocus()
   }, [openFormKey])
 
@@ -351,6 +355,7 @@ export default function MensaisPage() {
 
         {isEditing && (
           <EditBillForm
+            billLabel={editingBillLabel}
             values={{ editValue, editStatus }}
             isSaving={isSaving}
             error={saveError}
@@ -362,32 +367,34 @@ export default function MensaisPage() {
         )}
       </div>
 
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : (
-        <div ref={billsRegionRef} className="mensais-page__content" onFocus={recordRowFocus}>
-          <BillTable
-            bills={brasilBills}
-            showBrasilFields
-            deletingBillId={deletingBillId}
-            updatingStatusBillId={updatingStatusBillId}
-            onEdit={(bill) => openForm(() => showEditForm(bill))}
-            onDelete={deletion.request}
-            onStatusChange={updateBillStatus}
-          />
-          <BillTable
-            bills={ukBills}
-            showBrasilFields={false}
-            deletingBillId={deletingBillId}
-            updatingStatusBillId={updatingStatusBillId}
-            onEdit={(bill) => openForm(() => showEditForm(bill))}
-            onDelete={deletion.request}
-            onStatusChange={updateBillStatus}
-          />
-        </div>
-      )}
+      <div className="mensais-page__body">
+        {isLoading ? (
+          <LoadingState />
+        ) : error ? (
+          <ErrorState message={error} onRetry={retry} />
+        ) : (
+          <div ref={billsRegionRef} className="mensais-page__content" onFocus={recordRowFocus}>
+            <BillTable
+              bills={brasilBills}
+              showBrasilFields
+              deletingBillId={deletingBillId}
+              updatingStatusBillId={updatingStatusBillId}
+              onEdit={(bill) => openForm(() => showEditForm(bill))}
+              onDelete={deletion.request}
+              onStatusChange={updateBillStatus}
+            />
+            <BillTable
+              bills={ukBills}
+              showBrasilFields={false}
+              deletingBillId={deletingBillId}
+              updatingStatusBillId={updatingStatusBillId}
+              onEdit={(bill) => openForm(() => showEditForm(bill))}
+              onDelete={deletion.request}
+              onStatusChange={updateBillStatus}
+            />
+          </div>
+        )}
+      </div>
 
       {deletion.pendingRow && (
         <ConfirmDeleteDialog

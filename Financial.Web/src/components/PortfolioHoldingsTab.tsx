@@ -164,10 +164,10 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         ))}
       </DataTableCell>
       <DataTableCell label="Last month credits" className="portfolio-holdings__credits-separator">
-        {item.lastCreditMonth === null ? <MissingValue /> : formatN2(item.lastMonthCredits)}
+        {item.lastCreditMonth === null ? <MissingValue label="None" /> : formatN2(item.lastMonthCredits)}
       </DataTableCell>
       <DataTableCell label="Last credit month">
-        {orMissing(item.lastCreditMonth, formatCreditMonth)}
+        {orMissing(item.lastCreditMonth, formatCreditMonth, 'None')}
       </DataTableCell>
       <DataTableCell label="Last month credits %">
         {orMissing(item.lastMonthCreditsPercent, formatPercentN2)}

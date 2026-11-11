@@ -11,8 +11,8 @@ import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMon
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
-import './AccountsPage.css'
 import MissingValue from '../components/MissingValue'
+import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
   return {
@@ -56,7 +56,7 @@ const nextStatementColumn = {
   header: 'Next statement',
   render: (row: AccountGroupMemberDto) => {
     const month = nextStatementMonth(row)
-    return month && row.nextStatement ? `${formatMonthYear(month)} · ${formatN2(row.nextStatement.outstandingTotal)}` : <MissingValue />
+    return month && row.nextStatement ? `${formatMonthYear(month)} · ${formatN2(row.nextStatement.outstandingTotal)}` : <MissingValue label="None" />
   },
   sortAccessor: nextStatementMonth,
 }

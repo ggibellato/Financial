@@ -6,8 +6,8 @@ import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { generalErrorOf } from '../utils/fieldErrors'
 import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
+import ReadOnlyInput from './ReadOnlyInput'
 import { useFormPanelStyles } from './formPanelStyles'
-
 
 interface BillFormProps<TField extends string> {
   isSaving: boolean
@@ -22,7 +22,7 @@ interface BillFormPanelProps {
   saveLabel: string
   isSaving: boolean
   generalError: string | null
-  errorFields: object
+  errorFields: Partial<Record<string, string>>
   onSave: () => void
   onCancel: () => void
   children: ReactNode
@@ -123,11 +123,13 @@ export function AddBillForm({ values, isSaving, error, errorFields, onFieldChang
 }
 
 interface EditBillFormProps extends BillFormProps<EditField> {
+  billLabel: string
   values: Record<EditField, string>
   onFieldChange: (field: EditField, value: string) => void
 }
 
-export function EditBillForm({ values, isSaving, error, errorFields, onFieldChange, onSave, onCancel }: EditBillFormProps) {
+export function EditBillForm({ billLabel, values, isSaving, error, errorFields, onFieldChange, onSave, onCancel }: EditBillFormProps) {
+  const styles = useFormPanelStyles()
   const fieldError = useFieldError(errorFields)
 
   return (
@@ -140,6 +142,10 @@ export function EditBillForm({ values, isSaving, error, errorFields, onFieldChan
       onSave={onSave}
       onCancel={onCancel}
     >
+      <Field label="Bill" className={styles.spanAll}>
+        <ReadOnlyInput value={billLabel} />
+      </Field>
+
       <Field
         label="Value"
         required

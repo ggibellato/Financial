@@ -1,5 +1,13 @@
 import { MISSING_VALUE_PLACEHOLDER } from '../utils/formatters'
 
-export default function MissingValue() {
-  return <span role="img" aria-label="Not available">{MISSING_VALUE_PLACEHOLDER}</span>
+interface MissingValueProps {
+  label?: string
+}
+
+export default function MissingValue({ label = 'Not available' }: MissingValueProps) {
+  return (
+    <span role="img" aria-label={label}>
+      {MISSING_VALUE_PLACEHOLDER}
+    </span>
+  )
 }

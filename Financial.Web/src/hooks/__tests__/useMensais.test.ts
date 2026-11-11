@@ -217,6 +217,37 @@ describe('useMensais', () => {
     expect(result.current.isAddFormOpen).toBe(false)
   })
 
+  it('reports each successful add, save, delete and reset, and nothing for a failure', async () => {
+    const notifySaved = vi.fn()
+    createMensaisBillMock.mockResolvedValueOnce({ ...BILLS[0], id: 'b3' }).mockRejectedValueOnce(new Error('down'))
+    updateMensaisBillMock.mockResolvedValue({ ...BILLS[0], value: 900 })
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    resetMensaisToUnsetMock.mockResolvedValue(BILLS)
+    const { result } = renderHook(() => useMensais(notifySaved))
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    const addBill = () => {
+      act(() => result.current.showAddForm())
+      act(() => result.current.setAddField('newDescription', 'Aluguel'))
+      act(() => result.current.setAddField('newDueDay', '5'))
+      act(() => result.current.setAddField('newValue', '1000'))
+      act(() => result.current.submitAdd())
+    }
+    addBill()
+    await waitFor(() => expect(notifySaved).toHaveBeenLastCalledWith('Bill added'))
+    addBill()
+    await waitFor(() => expect(result.current.addError).toBe('down'))
+
+    act(() => result.current.showEditForm(BILLS[0]))
+    act(() => result.current.saveEdit())
+    await waitFor(() => expect(notifySaved).toHaveBeenLastCalledWith('Bill saved'))
+    act(() => result.current.deleteBill(BILLS[0].id))
+    await waitFor(() => expect(notifySaved).toHaveBeenLastCalledWith('Bill deleted'))
+    act(() => result.current.resetAllToUnset())
+    await waitFor(() => expect(notifySaved).toHaveBeenLastCalledWith('All bills reset to Unset'))
+    expect(notifySaved).toHaveBeenCalledTimes(4)
+  })
+
   it('surfaces an add error without crashing', async () => {
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))

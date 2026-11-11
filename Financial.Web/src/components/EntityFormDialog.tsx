@@ -14,9 +14,7 @@ import { collectFieldErrors, type FieldError } from '../utils/fieldErrors'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
-
-const EDITABLE_FIELD =
-  'input:not([type="hidden"]):not([readonly]):not([disabled]), select:not([disabled]), textarea:not([readonly]):not([disabled])'
+import { EDITABLE_FIELD } from '../utils/focus'
 
 interface EntityFormDialogProps {
   title: string

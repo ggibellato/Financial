@@ -26,14 +26,14 @@ import MissingValue from '../components/MissingValue'
 
 function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): ReactNode {
   if (account.source === 'CreditCard') {
-    return accounts.find((a) => a.id === account.creditCardId)?.name ?? <MissingValue />
+    return accounts.find((a) => a.id === account.creditCardId)?.name ?? <MissingValue label="None" />
   }
   if (account.source === 'PotsAccountTotal') {
     const potsAccount = accounts.find((a) => a.id === account.potsAccountId)
-    if (!potsAccount) return <MissingValue />
+    if (!potsAccount) return <MissingValue label="None" />
     return potsAccount.isActive ? `${potsAccount.name} total` : `${potsAccount.name} total (inactive)`
   }
-  return <MissingValue />
+  return <MissingValue label="None" />
 }
 
 export default function InvestmentAccountsPage() {

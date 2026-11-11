@@ -12,6 +12,7 @@ import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { TaxRuleDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import MissingValue from '../components/MissingValue'
+import { formatShortDateUtc } from '../utils/formatters'
 
 export default function TaxRulesPage() {
   const {
@@ -99,8 +100,8 @@ export default function TaxRulesPage() {
               <DataTableCell label="Label">
                 <TruncatedText text={rule.label} />
               </DataTableCell>
-              <DataTableCell label="Effective from">{rule.effectiveFrom}</DataTableCell>
-              <DataTableCell label="Effective to">{rule.effectiveTo ?? <MissingValue />}</DataTableCell>
+              <DataTableCell label="Effective from">{formatShortDateUtc(rule.effectiveFrom)}</DataTableCell>
+              <DataTableCell label="Effective to">{rule.effectiveTo ? formatShortDateUtc(rule.effectiveTo) : <MissingValue label="Ongoing" />}</DataTableCell>
               <RowActionsCell
                 itemName={rule.label}
                 {...rowDeleteState(deletingId, rule.id)}

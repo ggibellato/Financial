@@ -79,7 +79,6 @@ const ACCOUNT_COLUMNS: TransactionColumn[] = [
 
 const POT_COLUMNS: TransactionColumn[] = [DATE_COLUMN, { ...COUNTERPART_COLUMN, header: 'Pot' }, DESCRIPTION_COLUMN, AMOUNT_COLUMN]
 
-
 const CONVERTED_COLUMN: TransactionColumn = {
   key: 'converted',
   header: 'Converted',

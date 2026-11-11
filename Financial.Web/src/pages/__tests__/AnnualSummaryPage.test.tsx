@@ -123,6 +123,14 @@ describe('AnnualSummaryPage', () => {
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
+  it('keeps the tab panel the tabs control while loading', () => {
+    render(<AnnualSummaryPage />)
+
+    const panel = screen.getByRole('tabpanel', { name: 'Category totals' })
+    expect(panel).toContainElement(screen.getByText('Loading…'))
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-controls', panel.id)
+  })
+
   it('shows an error state with retry when the fetch fails', async () => {
     getCategoryTotalsAnnualForYearMock.mockRejectedValue(new Error('Network down'))
 

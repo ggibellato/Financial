@@ -78,7 +78,7 @@ export default function AllocationPieChart({
       <div className="allocation-chart__grid">
         <div className="allocation-chart__graphic" role="img" aria-labelledby={titleId}>
           <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
+            <PieChart accessibilityLayer={false}>
               <Pie data={sliceData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={90}>
                 {sliceData.map((slice, index) => (
                   <Cell key={slice.name} fill={CATEGORICAL_PALETTE[index % CATEGORICAL_PALETTE.length]} />

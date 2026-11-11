@@ -262,7 +262,7 @@ export interface MensaisData {
   closeExpensePrompt: () => void
 }
 
-export function useMensais(): MensaisData {
+export function useMensais(notifySaved: (message: string) => void = () => {}): MensaisData {
   const { monthInputValue, setMonthInputValue } = useMonthSelection(DEFAULT_MONTH)
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
 
@@ -340,6 +340,7 @@ export function useMensais(): MensaisData {
       })
       .then(() => {
         dispatch({ type: 'SAVE_SUCCESS' })
+        notifySaved('Bill saved')
         void refreshSilently()
       })
       .catch((err: unknown) => {
@@ -396,6 +397,7 @@ export function useMensais(): MensaisData {
       .then(() => {
         setStoredDefault(AREA_KEY, state.newArea)
         dispatch({ type: 'ADD_SUCCESS' })
+        notifySaved('Bill added')
         void refreshSilently()
       })
       .catch((err: unknown) => {
@@ -414,6 +416,7 @@ export function useMensais(): MensaisData {
       .deleteMensaisBill(id)
       .then(() => {
         dispatch({ type: 'DELETE_SUCCESS' })
+        notifySaved('Bill deleted')
         void refreshSilently()
       })
       .catch((err: unknown) => {
@@ -429,7 +432,10 @@ export function useMensais(): MensaisData {
 
     void apiClient
       .resetMensaisToUnset()
-      .then((bills) => dispatch({ type: 'RESET_SUCCESS', payload: bills }))
+      .then((bills) => {
+        dispatch({ type: 'RESET_SUCCESS', payload: bills })
+        notifySaved('All bills reset to Unset')
+      })
       .catch((err: unknown) => {
         dispatch({
           type: 'RESET_ERROR',

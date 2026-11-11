@@ -41,7 +41,7 @@ function resultingChange(record: CorporateActionDto): ReactNode {
         ? `+${formatN2(record.convertedQuantity)} units received`
         : 'Units received from merger'
     }
-    return <MissingValue />
+    return <MissingValue label="None" />
   }
   if (record.type === 'SpinOff') {
     if (record.role === 'Parent') {
@@ -52,9 +52,9 @@ function resultingChange(record: CorporateActionDto): ReactNode {
         ? `+${formatN2(record.convertedQuantity)} units received`
         : 'Units received from spin-off'
     }
-    return <MissingValue />
+    return <MissingValue label="None" />
   }
-  return <MissingValue />
+  return <MissingValue label="None" />
 }
 
 function corporateActionName(record: CorporateActionDto, affectedAssetName: string): string {
@@ -87,7 +87,7 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, deleteSt
       <DataTableCell label="Affected/linked asset"><TruncatedText text={record.linkedAssetName ?? affectedAssetName} /></DataTableCell>
       <DataTableCell label="Resulting change">{resultingChange(record)}</DataTableCell>
       <DataTableCell label="Tax status">
-        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : <MissingValue />}
+        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : <MissingValue label="None" />}
       </DataTableCell>
       <RowActionsCell
         itemName={corporateActionName(record, affectedAssetName)}

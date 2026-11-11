@@ -118,7 +118,7 @@ export default function BrokersPage() {
             <TableHeaderCell>Name</TableHeaderCell>
             <TableHeaderCell>Currency</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Portfolios</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--numeric">Portfolios</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
@@ -128,7 +128,9 @@ export default function BrokersPage() {
               <DataTableCell label="Name"><TruncatedText text={broker.name} /></DataTableCell>
               <DataTableCell label="Currency">{broker.currency}</DataTableCell>
               <DataTableCell label="Status">{broker.status}</DataTableCell>
-              <DataTableCell label="Portfolios">{broker.portfolioCount}</DataTableCell>
+              <DataTableCell label="Portfolios" className="data-table__col--numeric">
+                {broker.portfolioCount}
+              </DataTableCell>
               <RowActionsCell
                 itemName={broker.name}
                 {...rowDeleteState(deletingName, broker.name)}

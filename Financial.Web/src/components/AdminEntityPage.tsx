@@ -72,15 +72,17 @@ export default function AdminEntityPage({
 
       {belowActionError}
 
-      {isLoading ? (
-        <LoadingState />
-      ) : loadError ? (
-        <ErrorState message={loadError} onRetry={onRetry} />
-      ) : isEmpty ? (
-        <EmptyState>{emptyMessage}</EmptyState>
-      ) : (
-        children
-      )}
+      <div className="admin-entity-page__body">
+        {isLoading ? (
+          <LoadingState />
+        ) : loadError ? (
+          <ErrorState message={loadError} onRetry={onRetry} />
+        ) : isEmpty ? (
+          <EmptyState>{emptyMessage}</EmptyState>
+        ) : (
+          children
+        )}
+      </div>
 
       {dialogs}
     </section>

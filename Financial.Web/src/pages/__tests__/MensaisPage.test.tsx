@@ -119,8 +119,8 @@ describe('MensaisPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
 
-    await screen.findByText('INSS')
-    await waitFor(() => expect(screen.getByLabelText('Month')).toHaveFocus())
+    const brasilBills = await screen.findByRole('table', { name: 'Brasil bills' })
+    await waitFor(() => expect(brasilBills).toContainElement(document.activeElement as HTMLElement))
   })
 
   it('renders Brasil and UK as two separate grouped sections', async () => {
@@ -314,12 +314,13 @@ describe('MensaisPage', () => {
     expect(within(screen.getByRole('table', { name: 'UK bills' })).getByText('Council Tax')).toBeInTheDocument()
   })
 
-  it('names a missing NIT and Min. Wage Not available instead of leaving the cells blank', async () => {
+  it('names a missing NIT None and a missing Min. Wage Not available instead of leaving the cells blank', async () => {
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
     const inssRow = screen.getByText('INSS').closest('tr') as HTMLElement
-    expect(within(inssRow).getAllByRole('img', { name: 'Not available' })).toHaveLength(2)
+    expect(within(inssRow).getByRole('img', { name: 'None' })).toBeInTheDocument()
+    expect(within(inssRow).getByRole('img', { name: 'Not available' })).toBeInTheDocument()
   })
 
   it('shows NIT and Min. Wage columns only in the Brasil section', async () => {
@@ -647,6 +648,14 @@ describe('MensaisPage', () => {
       fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '5' } })
       fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1000' } })
     }
+
+    it('names the bill being edited and focuses Value, the first field it can change', async () => {
+      await openEditInss()
+
+      expect(screen.getByLabelText('Bill')).toHaveValue('INSS · Brasil · due day 10')
+      expect(screen.getByLabelText('Bill')).toHaveAttribute('readonly')
+      await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
+    })
 
     it('focuses the first field when New bill opens', async () => {
       await openNewBill()

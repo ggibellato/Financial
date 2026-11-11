@@ -299,7 +299,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
       <div className="credits-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartType === 'Bar' ? (
-            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+            <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
@@ -324,7 +324,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
               ))}
             </BarChart>
           ) : (
-            <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+            <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
