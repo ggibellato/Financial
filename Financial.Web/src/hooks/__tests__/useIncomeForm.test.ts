@@ -870,6 +870,18 @@ describe('useIncomeForm on a bank screen', () => {
     expect(result.current.isIncomeDirty).toBe(true)
   })
 
+  it('keeps the bank line and adds an empty one when Add line is pressed on the untouched line', async () => {
+    const result = await openNewIncomeOnBankScreen()
+
+    act(() => result.current.incomeFunding.addLine())
+
+    expect(amounts(result)).toEqual([
+      { bankId: 'bank-barclays', amount: '90.00' },
+      { bankId: '', amount: '' },
+    ])
+    expect(result.current.isIncomeDirty).toBe(true)
+  })
+
   it('leaves the untouched default line to the server', async () => {
     const result = await openNewIncomeOnBankScreen()
 
