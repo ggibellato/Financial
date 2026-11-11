@@ -316,7 +316,6 @@ describe('PotWithdrawalForm from the Pots account', () => {
     render(<Harness />)
     await potsLoaded()
     fillWithdrawal()
-    screen.getByRole('button', { name: 'Add withdrawal' }).focus()
     save()
 
     fireEvent.click(within(await findDialog()).getByText('Cancel', { selector: 'button' }))
@@ -324,6 +323,21 @@ describe('PotWithdrawalForm from the Pots account', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     expect(createPotWithdrawalMock).toHaveBeenCalledOnce()
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Boots')
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add withdrawal' })).toHaveFocus())
+  })
+
+  it('returns focus to Save after Cancel when the save was submitted from a field', async () => {
+    createPotWithdrawalMock.mockRejectedValueOnce(overdraftError())
+    render(<Harness />)
+    await potsLoaded()
+    fillWithdrawal()
+    const description = screen.getByLabelText(/^Description/)
+    description.focus()
+    fireEvent.submit(description.closest('form') as HTMLFormElement)
+
+    fireEvent.click(within(await findDialog()).getByText('Cancel', { selector: 'button' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     await waitFor(() => expect(screen.getByRole('button', { name: 'Add withdrawal' })).toHaveFocus())
   })
 
