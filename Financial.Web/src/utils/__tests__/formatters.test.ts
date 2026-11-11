@@ -17,6 +17,7 @@ import {
   formatPercentFractionOrDash,
   formatShortDate,
   formatSignedN2,
+  formatStatementMonthLabel,
   formatCurrency,
   getDeleteErrorMessage,
   getSaveErrorMessage,
@@ -76,6 +77,19 @@ describe('formatSignedN2', () => {
 
   it('formatSignedN2_Zero_HasNoSign', () => {
     expect(formatSignedN2(0)).toBe('0.00')
+  })
+})
+
+describe('formatStatementMonthLabel', () => {
+  it.each([
+    ['2026-12-01', 'December 2026'],
+    ['2026-12', 'December 2026'],
+    ['', ''],
+    [null, ''],
+    [undefined, ''],
+    ['not-a-month', ''],
+  ])('formatStatementMonthLabel_%s_Returns"%s"', (invoiceDate, expected) => {
+    expect(formatStatementMonthLabel(invoiceDate)).toBe(expected)
   })
 })
 
