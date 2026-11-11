@@ -334,7 +334,7 @@ function TransactionsChart({
       className={`transactions-tab__chart-panel${compact ? ' transactions-tab__chart-panel--compact' : ''}`}
     >
       <div className="transactions-tab__controls">
-        <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+        <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
         <FilterTabList
           label="View:"
           options={CHART_MODE_OPTIONS}

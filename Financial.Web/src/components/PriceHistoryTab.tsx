@@ -313,7 +313,7 @@ export default function PriceHistoryTab() {
 
   const toolbar = (
     <div className="price-history-tab__controls">
-      <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+      <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
     </div>
   )
 

@@ -2,6 +2,7 @@ import { Fragment, useMemo, useRef, useState } from 'react'
 import { Tab, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import PageTabList from '../components/PageTabList'
+import { useTabPanel } from '../hooks/useTabPanel'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
@@ -126,6 +127,7 @@ export default function AnnualSummaryPage() {
   } = useAnnualSummary()
 
   const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
+  const tabPanel = useTabPanel(activeTab)
   const filterableTableRef = useRef<HTMLTableElement>(null)
 
   const {
@@ -200,7 +202,7 @@ export default function AnnualSummaryPage() {
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as AnnualSummaryTabId)}
       >
         {TABS.map((tab) => (
-          <Tab key={tab.id} value={tab.id}>
+          <Tab key={tab.id} value={tab.id} {...tabPanel.tabProps(tab.id)}>
             {tab.label}
           </Tab>
         ))}
@@ -211,7 +213,7 @@ export default function AnnualSummaryPage() {
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <div className="annual-summary-page__content">
+        <div className="annual-summary-page__content" {...tabPanel.panelProps}>
           {activeTab === 'categoryTotals' && (
             <section className="annual-summary-page__section">
               <FilteredRowsNotice {...categoryTotalsFilterSummary} tableRef={filterableTableRef} />

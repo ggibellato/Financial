@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
 import PageTabList from '../components/PageTabList'
+import { useTabPanel } from '../hooks/useTabPanel'
 import AccountActionBar from '../components/AccountActionBar'
 import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCreditRefund, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
@@ -58,6 +59,7 @@ export default function AccountScreenPage() {
   const isAccountActive = account?.isActive ?? false
   const hasTabs = screen.tabs.length > 0
   const activeTab = screen.tab
+  const tabPanel = useTabPanel(activeTab)
   const cardStatements = useCardStatements(isCard && activeTab === 'statements' ? screen.accountId : null, notifySaved)
   const forms = useAccountActionForms(
     screen.accountId,
@@ -380,7 +382,7 @@ export default function AccountScreenPage() {
           onTabSelect={(_, data) => guardChange(() => screen.setTab(data.value as AccountScreenTab))}
         >
           {screen.tabs.map((tab) => (
-            <Tab key={tab.value} id={`account-screen-tab-${tab.value}`} value={tab.value} aria-controls="account-screen-panel">
+            <Tab key={tab.value} value={tab.value} {...tabPanel.tabProps(tab.value)}>
               {tab.label}
             </Tab>
           ))}
@@ -388,10 +390,8 @@ export default function AccountScreenPage() {
       )}
 
       <section
-        id={hasTabs ? 'account-screen-panel' : undefined}
-        role={hasTabs ? 'tabpanel' : undefined}
+        {...(hasTabs ? tabPanel.panelProps : { 'aria-labelledby': 'account-screen-transactions' })}
         className="account-screen__transactions"
-        aria-labelledby={hasTabs ? `account-screen-tab-${activeTab}` : 'account-screen-transactions'}
       >
         {!isAccountCurrent && !screen.error ? (
           <Skeleton aria-label="Loading account details" className="account-screen__grid-skeleton">

@@ -4,6 +4,7 @@ import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../ErrorState'
 import LoadingState from '../LoadingState'
 import PageTabList from '../PageTabList'
+import { useTabPanel } from '../../hooks/useTabPanel'
 import AllocationPieChart, { type AllocationChartEntry } from './AllocationPieChart'
 import type { AllocationBreakdownDto, BrokerCurrencyFilter } from '../../api/types'
 import './AllocationBreakdownPanel.css'
@@ -80,6 +81,7 @@ export default function AllocationBreakdownPanel({
   brokerCurrencyFilter,
 }: AllocationBreakdownPanelProps) {
   const [activeDimension, setActiveDimension] = useState<AllocationDimension>('class')
+  const tabPanel = useTabPanel(activeDimension)
 
   if (isLoading) {
     return <LoadingState />
@@ -126,21 +128,23 @@ export default function AllocationBreakdownPanel({
         }
       >
         {DIMENSIONS.map((candidate) => (
-          <Tab key={candidate.id} value={candidate.id}>
+          <Tab key={candidate.id} value={candidate.id} {...tabPanel.tabProps(candidate.id)}>
             {candidate.label}
           </Tab>
         ))}
       </PageTabList>
 
-      {entries.length === 0 ? (
-        <p className="allocation-breakdown__empty">
-          {everyDimensionEmpty && brokerCurrencyFilter !== 'ALL'
-            ? `No brokers use the selected currency (${brokerCurrencyFilter}).`
-            : 'No priced holdings to display for this view.'}
-        </p>
-      ) : (
-        <AllocationPieChart title={dimension.title} entries={entries} />
-      )}
+      <div {...tabPanel.panelProps}>
+        {entries.length === 0 ? (
+          <p className="allocation-breakdown__empty">
+            {everyDimensionEmpty && brokerCurrencyFilter !== 'ALL'
+              ? `No brokers use the selected currency (${brokerCurrencyFilter}).`
+              : 'No priced holdings to display for this view.'}
+          </p>
+        ) : (
+          <AllocationPieChart title={dimension.title} entries={entries} />
+        )}
+      </div>
     </div>
   )
 }

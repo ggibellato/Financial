@@ -151,6 +151,13 @@ describe('AnnualSummaryPage', () => {
     expect(screen.queryByRole('heading', { name: 'Investments' })).not.toBeInTheDocument()
   })
 
+  it('names the loaded panel after its tab and wires every tab to it', async () => {
+    render(<AnnualSummaryPage />)
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Category totals' })
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-controls', panel.id)
+  })
+
   it('marks Category totals as the active tab button by default', async () => {
     render(<AnnualSummaryPage />)
 

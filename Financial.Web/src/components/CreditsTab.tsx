@@ -413,7 +413,7 @@ export default function CreditsTab() {
 
   const toolbar = (
     <div className="credits-tab__controls">
-      <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+      <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
       <FilterTabList label="View:" options={CHART_TYPE_OPTIONS} selected={selectedChartType} onSelect={setChartType} />
       <FilterTabList label="Group:" options={VIEW_MODE_OPTIONS} selected={selectedMode} onSelect={setMode} />
     </div>

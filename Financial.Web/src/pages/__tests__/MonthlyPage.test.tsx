@@ -153,6 +153,16 @@ describe('MonthlyPage', () => {
     expect(screen.queryByRole('form')).not.toBeInTheDocument()
   })
 
+  it('wires the Summary and All transactions tabs to the panel they control', async () => {
+    render(<MonthlyPage />)
+    await summaryLoaded()
+
+    const panel = screen.getByRole('tabpanel', { name: 'Summary' })
+    expect(screen.getByRole('tab', { name: 'All transactions' })).toHaveAttribute('aria-controls', panel.id)
+    fireEvent.click(screen.getByRole('tab', { name: 'All transactions' }))
+    expect(await screen.findByRole('tabpanel', { name: 'All transactions' })).toHaveAttribute('id', panel.id)
+  })
+
   it('[AC P60-F13-consolidated-navigation-and-retirement-02] links bank and card rows to their account screen at the viewed month', async () => {
     render(<MonthlyPage />)
     await summaryLoaded()
