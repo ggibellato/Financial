@@ -106,8 +106,7 @@ export default function AnnualSummaryPage() {
   } = useAnnualSummary()
 
   const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
-  const categoryTotalsTableRef = useRef<HTMLTableElement>(null)
-  const historicTableRef = useRef<HTMLTableElement>(null)
+  const filterableTableRef = useRef<HTMLTableElement>(null)
   const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
@@ -122,7 +121,7 @@ export default function AnnualSummaryPage() {
     toggleValue: toggleCategoryTotalsValue,
     toggleAll: toggleCategoryTotalsAll,
     isColumnFiltered: isCategoryTotalsColumnFiltered,
-    clearFilters: clearCategoryTotalsFilters,
+    filterSummary: categoryTotalsFilterSummary,
   } = useColumnFilters(categoryTotals, { category: (c: CategoryAnnualTotalDto) => c.category })
   const {
     sortedRows: sortedCategoryTotals,
@@ -153,7 +152,7 @@ export default function AnnualSummaryPage() {
     toggleValue: toggleHistoricValue,
     toggleAll: toggleHistoricAll,
     isColumnFiltered: isHistoricColumnFiltered,
-    clearFilters: clearHistoricFilters,
+    filterSummary: historicFilterSummary,
   } = useColumnFilters(historicCategoryRows, { category: (row: HistoricCategoryRow) => row.category })
   const {
     sortedRows: sortedHistoricCategoryRows,
@@ -200,14 +199,8 @@ export default function AnnualSummaryPage() {
         <div className="annual-summary-page__content">
           {activeTab === 'categoryTotals' && (
             <section className="annual-summary-page__section">
-              <FilteredRowsNotice
-                isFiltered={isCategoryTotalsColumnFiltered('category')}
-                shownCount={filteredCategoryTotals.length}
-                totalCount={categoryTotals.length}
-                onClearFilters={clearCategoryTotalsFilters}
-                tableRef={categoryTotalsTableRef}
-              />
-              <Table ref={categoryTotalsTableRef} tabIndex={-1} className="annual-summary-page__table data-table">
+              <FilteredRowsNotice {...categoryTotalsFilterSummary} tableRef={filterableTableRef} />
+              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader
@@ -397,14 +390,8 @@ export default function AnnualSummaryPage() {
 
           {activeTab === 'historicSummaryAverage' && (
             <section className="annual-summary-page__section">
-              <FilteredRowsNotice
-                isFiltered={isHistoricColumnFiltered('category')}
-                shownCount={filteredHistoricCategoryRows.length}
-                totalCount={historicCategoryRows.length}
-                onClearFilters={clearHistoricFilters}
-                tableRef={historicTableRef}
-              />
-              <Table ref={historicTableRef} tabIndex={-1} className="annual-summary-page__table data-table">
+              <FilteredRowsNotice {...historicFilterSummary} tableRef={filterableTableRef} />
+              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader

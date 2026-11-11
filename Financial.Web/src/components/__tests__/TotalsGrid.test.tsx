@@ -90,7 +90,7 @@ describe('TotalsGrid', () => {
         rows={[]}
         rowKey={(r) => r.id}
         footerItems={[]}
-        filter={{ isFiltered: true, allRowCount: 2, onClearFilters: vi.fn() }}
+        filter={{ isFiltered: true, shownCount: 0, totalCount: 2, onClearFilters: vi.fn() }}
       />,
     )
 

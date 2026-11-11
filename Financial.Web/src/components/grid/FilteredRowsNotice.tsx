@@ -1,6 +1,7 @@
 import type { RefObject } from 'react'
 import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
+import type { FilterSummary } from '../../hooks/useColumnFilters'
 import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
 
 const useStyles = makeStyles({
@@ -14,11 +15,7 @@ const useStyles = makeStyles({
   },
 })
 
-interface FilteredRowsNoticeProps {
-  isFiltered: boolean
-  shownCount: number
-  totalCount: number
-  onClearFilters: () => void
+interface FilteredRowsNoticeProps extends FilterSummary {
   tableRef: RefObject<HTMLTableElement | null>
 }
 

@@ -2,6 +2,13 @@ import { useMemo, useState } from 'react'
 
 export type ColumnFilterAccessor<T> = (row: T) => string | string[] | null | undefined
 
+export interface FilterSummary {
+  isFiltered: boolean
+  shownCount: number
+  totalCount: number
+  onClearFilters: () => void
+}
+
 export interface UseColumnFiltersResult<T> {
   filteredRows: T[]
   availableValues: Record<string, string[]>
@@ -9,7 +16,9 @@ export interface UseColumnFiltersResult<T> {
   toggleValue: (columnKey: string, value: string) => void
   toggleAll: (columnKey: string) => void
   isColumnFiltered: (columnKey: string) => boolean
+  isFiltered: boolean
   clearFilters: () => void
+  filterSummary: FilterSummary
 }
 
 function normalizeValues(value: string | string[] | null | undefined): string[] {
@@ -98,5 +107,18 @@ export function useColumnFilters<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, selections, availableValues])
 
-  return { filteredRows, availableValues, selectedValues: selections, toggleValue, toggleAll, isColumnFiltered, clearFilters }
+  const isFiltered = Object.keys(accessors).some(isColumnFiltered)
+  const filterSummary = { isFiltered, shownCount: filteredRows.length, totalCount: rows.length, onClearFilters: clearFilters }
+
+  return {
+    filteredRows,
+    availableValues,
+    selectedValues: selections,
+    toggleValue,
+    toggleAll,
+    isColumnFiltered,
+    isFiltered,
+    clearFilters,
+    filterSummary,
+  }
 }

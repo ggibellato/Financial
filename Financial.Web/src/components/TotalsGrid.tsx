@@ -3,6 +3,7 @@ import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/re
 import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import type { FilterSummary } from '../hooks/useColumnFilters'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import SectionTotals from './SectionTotals'
 import type { SectionTotalItem } from '../utils/currencyFooterItems'
@@ -16,19 +17,13 @@ interface TotalsGridColumn<T> {
   filterSlot?: ReactNode
 }
 
-interface TotalsGridFilter {
-  isFiltered: boolean
-  allRowCount: number
-  onClearFilters: () => void
-}
-
 interface TotalsGridProps<T> {
   label: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
   footerItems: SectionTotalItem[]
-  filter?: TotalsGridFilter
+  filter?: FilterSummary
   emptyMessage: string
 }
 
@@ -39,17 +34,9 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
-      {filter && (
-        <FilteredRowsNotice
-          isFiltered={filter.isFiltered}
-          shownCount={rows.length}
-          totalCount={filter.allRowCount}
-          onClearFilters={filter.onClearFilters}
-          tableRef={tableRef}
-        />
-      )}
+      {filter && <FilteredRowsNotice {...filter} tableRef={tableRef} />}
       <div className="monthly-page__table-scroll">
-        <Table ref={tableRef} tabIndex={-1} className="monthly-page__table data-table" aria-label={label}>
+        <Table ref={tableRef} tabIndex={filter ? -1 : undefined} className="monthly-page__table data-table" aria-label={label}>
           <TableHeader>
             <TableRow>
               {columns.map((col) => (

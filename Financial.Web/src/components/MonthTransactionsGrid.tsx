@@ -90,10 +90,9 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
   const gridRef = useRef<HTMLElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
-  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, clearFilters } =
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =
     useColumnFilters(rows, FILTER_ACCESSORS)
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
-  const isFiltered = FILTER_KEYS.some(isColumnFiltered)
   const monthValue = formatMonthInputValue(year, month)
 
   if (error) return <ErrorState message={error} onRetry={onRetry} />
@@ -171,13 +170,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   return (
     <section ref={gridRef} className="monthly-page__section monthly-page__section--grid">
-      <FilteredRowsNotice
-        isFiltered={isFiltered}
-        shownCount={sortedRows.length}
-        totalCount={rows.length}
-        onClearFilters={clearFilters}
-        tableRef={tableRef}
-      />
+      <FilteredRowsNotice {...filterSummary} tableRef={tableRef} />
       {isFiltered && !isStackedLayout && (
         <div className={styles.toolbar}>
           <Button appearance="primary" onClick={clearAllFilters}>

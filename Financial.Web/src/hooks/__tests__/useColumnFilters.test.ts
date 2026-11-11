@@ -121,4 +121,18 @@ describe('useColumnFilters', () => {
     expect(result.current.isColumnFiltered('card')).toBe(false)
     expect(result.current.selectedValues).toEqual({})
   })
+
+  it('summarises whether any column filters the rows, with the shown and total counts', () => {
+    const { result } = renderHook(() => useColumnFilters(ROWS, ACCESSORS))
+    expect(result.current.filterSummary).toMatchObject({ isFiltered: false, shownCount: 3, totalCount: 3 })
+
+    act(() => result.current.toggleValue('category', 'Casa'))
+
+    expect(result.current.isFiltered).toBe(true)
+    expect(result.current.filterSummary).toMatchObject({ isFiltered: true, shownCount: 2, totalCount: 3 })
+
+    act(() => result.current.filterSummary.onClearFilters())
+
+    expect(result.current.filterSummary).toMatchObject({ isFiltered: false, shownCount: 3, totalCount: 3 })
+  })
 })
