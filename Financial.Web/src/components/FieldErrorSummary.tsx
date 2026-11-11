@@ -3,6 +3,9 @@ import { Link, MessageBar, MessageBarBody, MessageBarTitle, makeStyles, tokens }
 import type { FieldError } from '../utils/fieldErrors'
 
 const useStyles = makeStyles({
+  root: {
+    marginBottom: tokens.spacingVerticalM,
+  },
   list: {
     margin: `${tokens.spacingVerticalXS} 0 0`,
     paddingLeft: tokens.spacingHorizontalXL,
@@ -18,7 +21,7 @@ const FieldErrorSummary = forwardRef<HTMLDivElement, FieldErrorSummaryProps>(({ 
   const titleId = useId()
 
   return (
-    <MessageBar ref={ref} intent="error" layout="multiline" tabIndex={-1} aria-labelledby={titleId}>
+    <MessageBar ref={ref} intent="error" layout="multiline" tabIndex={-1} aria-labelledby={titleId} className={styles.root}>
       <MessageBarBody>
         <MessageBarTitle id={titleId}>Fix {errors.length} fields before saving</MessageBarTitle>
         <ul className={styles.list}>
