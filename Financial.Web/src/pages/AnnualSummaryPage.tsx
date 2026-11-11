@@ -207,7 +207,6 @@ export default function AnnualSummaryPage() {
                     <SortableColumnHeader
                       label="Category"
                       columnKey="category"
-                      className="annual-summary-page__col--label"
                       sortDirection={categoryTotalsSortState?.columnKey === 'category' ? categoryTotalsSortState.direction : undefined}
                       onSort={requestCategoryTotalsSort}
                     >
