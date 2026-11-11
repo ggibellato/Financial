@@ -218,8 +218,8 @@ function rowButton(name: string) {
   return screen.getByRole('button', { name, hidden: true })
 }
 
-const requestDelete = (name: string) => requestDeleteOf(name, 'Transaction')
-const confirmDelete = (name: string) => confirmDeleteOf(name, 'Transaction')
+const requestDelete = (name: string) => requestDeleteOf(name, 'transaction')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'transaction')
 
 function rowTypes() {
   return dataRows().map((row) => (within(row).queryByText('Buy') ? 'Buy' : 'Sell'))

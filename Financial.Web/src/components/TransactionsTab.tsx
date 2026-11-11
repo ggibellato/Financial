@@ -576,7 +576,7 @@ export default function TransactionsTab() {
 
       {confirmingDelete && (
         <ConfirmDeleteDialog
-          entityLabel="Transaction"
+          entityLabel="transaction"
           message={`Delete the ${transactionName(confirmingDelete)}? This cannot be undone.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmingDelete(null)}
