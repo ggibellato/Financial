@@ -163,4 +163,15 @@ describe('AssetFormDialog', () => {
 
     expect(screen.queryByText(message)).not.toBeInTheDocument()
   })
+
+  it('focuses Name, not the disabled Portfolio, when Save fails for a broker with no portfolios', async () => {
+    const onSubmit = vi.fn()
+    render(<AssetFormDialog asset={null} activeBrokers={[ACTIVE_BROKERS[0]]} portfolios={[]} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add asset' }))
+
+    expect(await screen.findByText('A portfolio is required.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByLabelText(/^Name/)).toHaveFocus())
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
 })

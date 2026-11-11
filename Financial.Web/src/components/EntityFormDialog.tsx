@@ -60,7 +60,7 @@ export default function EntityFormDialog({
 
   useEffect(() => {
     if (saveAttempts === 0 || content.current?.contains(document.activeElement)) return
-    content.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+    content.current?.querySelector<HTMLElement>('[aria-invalid="true"]:not(:disabled)')?.focus()
   }, [saveAttempts])
 
   useEffect(() => {
