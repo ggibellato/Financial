@@ -18,6 +18,7 @@ interface EditMovementFormProps {
   amount: string
   date: string
   description: string
+  currency: string
   buckets: PotOption[]
   isSaving: boolean
   error: string | null
@@ -34,6 +35,7 @@ export default function EditMovementForm({
   amount,
   date,
   description,
+  currency,
   buckets,
   isSaving,
   error,
@@ -104,7 +106,7 @@ export default function EditMovementForm({
           </Field>
 
           <Field
-            label="Amount"
+            label={currency ? `Amount (${currency})` : 'Amount'}
             required
             validationState={fieldError('editMovementAmount') ? 'error' : 'none'}
             validationMessage={fieldError('editMovementAmount')}

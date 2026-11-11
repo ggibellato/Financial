@@ -1,8 +1,10 @@
-import { useEffect, useRef } from 'react'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { useRef } from 'react'
+import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { CardCreditRefundField, CardCreditRefundForm as CardCreditRefundFormState } from '../hooks/useCardCreditRefundForm'
+import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import { todayIsoDate } from '../utils/formatters'
 import ErrorState from './ErrorState'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface CardCreditRefundFormProps {
@@ -30,19 +32,15 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
   const counterpartRef = useRef<HTMLSelectElement | null>(null)
   const amountRef = useRef<HTMLInputElement | null>(null)
   const dateRef = useRef<HTMLInputElement | null>(null)
-  const submitRef = useRef<HTMLButtonElement | null>(null)
   const { mode, accountName, counterparts, currency, values, isLoading, loadError, retry, hasNoCounterparts, isSaving, saveError, fieldErrors, setField, submit } =
     refundForm
+  const errorRef = useAlertFocus(saveError)
   const text = MODE_TEXT[mode]
   const fieldRefs: Record<CardCreditRefundField, { current: HTMLElement | null }> = { counterpartId: counterpartRef, amount: amountRef, date: dateRef }
   const validation = (field: CardCreditRefundField) => ({
     validationState: fieldErrors[field] ? ('error' as const) : ('none' as const),
     validationMessage: fieldErrors[field],
   })
-
-  useEffect(() => {
-    if (saveError && !isSaving) submitRef.current?.focus()
-  }, [saveError, isSaving])
 
   const lockedField = (label: string) => (
     <Field label={label}>
@@ -84,7 +82,7 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
           {text.title}
         </Text>
         {saveError && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -114,21 +112,13 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
             <Input ref={dateRef} type="date" max={todayIsoDate()} value={values.date} onChange={(event) => setField('date', event.target.value)} />
           </Field>
         </div>
-        <div className={styles.actions}>
-          <Button
-            ref={submitRef}
-            type="submit"
-            appearance="primary"
-            disabled={isSaving || isLoading || loadError !== null || hasNoCounterparts}
-            icon={isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {isSaving ? 'Saving...' : text.title}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions
+        saveLabel={text.title}
+        isSaving={isSaving}
+        isSaveDisabled={isLoading || loadError !== null || hasNoCounterparts}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

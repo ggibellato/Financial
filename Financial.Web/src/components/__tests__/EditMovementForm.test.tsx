@@ -14,6 +14,7 @@ function renderForm(props: Partial<Parameters<typeof EditMovementForm>[0]> = {})
       amount="25"
       date="2026-10-05"
       description="Bonus"
+      currency="GBP"
       buckets={POTS}
       isSaving={false}
       error={null}
@@ -40,6 +41,12 @@ describe('EditMovementForm', () => {
     const form = screen.getByRole('form', { name: 'Edit pot transaction' })
     expect(within(form).getByLabelText(/^Pot/)).toHaveValue('p1')
     expect(within(form).getByRole('option', { name: 'Old car (inactive)' })).toBeInTheDocument()
+  })
+
+  it('shows the amount with the pot account currency', () => {
+    renderForm()
+
+    expect(screen.getByLabelText(/^Amount \(GBP\)/)).toHaveValue(25)
   })
 
   it('submits with Enter through the form', () => {

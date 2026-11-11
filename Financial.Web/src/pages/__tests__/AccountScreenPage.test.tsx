@@ -989,6 +989,7 @@ describe('AccountScreenPage on a Pots account', () => {
     const form = screen.getByRole('form', { name: 'Edit pot transaction' })
     expect(within(form).getByLabelText(/^Pot/)).toHaveValue('pot-trips')
     expect(within(form).getByRole('option', { name: 'Old car (inactive)' })).toBeInTheDocument()
+    expect(within(form).getByLabelText(/^Amount \(GBP\)/)).toBeInTheDocument()
     const potsReadsBeforeSave = getPotsMock.mock.calls.length
     await user.clear(within(form).getByLabelText(/^Description/))
     await user.type(within(form).getByLabelText(/^Description/), 'Boots chemist')

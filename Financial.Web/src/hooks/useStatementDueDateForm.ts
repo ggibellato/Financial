@@ -27,7 +27,7 @@ function dueDateError(statement: AccountStatementDto, date: string): string | un
 
 export function useStatementDueDateForm(cardId: string | null, onSaved: (message: string) => void) {
   const [form, setForm] = useState<DueDateFormState | null>(null)
-  const [failedSubmits, setFailedSubmits] = useState(0)
+  const [failedValidations, setFailedValidations] = useState(0)
 
   const open = (statement: AccountStatementDto) => {
     if (form?.pendingAction) return
@@ -50,7 +50,6 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
       .catch((err: unknown) => {
         const error = getSaveErrorMessage(err, 'Failed to save the due date')
         setForm((latest) => (latest?.statement === current.statement ? { ...latest, pendingAction: null, error } : latest))
-        setFailedSubmits((count) => count + 1)
       })
   }
 
@@ -59,7 +58,7 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
     const dateError = dueDateError(form.statement, form.date)
     if (dateError) {
       setForm({ ...form, dateError, error: null })
-      setFailedSubmits((count) => count + 1)
+      setFailedValidations((count) => count + 1)
       return
     }
     send(form, form.date)
@@ -72,7 +71,7 @@ export function useStatementDueDateForm(cardId: string | null, onSaved: (message
 
   return {
     form,
-    failedSubmits,
+    failedValidations,
     isDirty: form !== null && form.date !== (form.statement.dueDate ?? ''),
     open,
     close,

@@ -64,7 +64,7 @@ describe('useStatementDueDateForm', () => {
     act(() => result.current.save())
 
     expect(result.current.form?.dateError).toBe('Enter a due date.')
-    expect(result.current.failedSubmits).toBe(1)
+    expect(result.current.failedValidations).toBe(1)
     expect(setStatementDueDateMock).not.toHaveBeenCalled()
   })
 

@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react'
-import { Button, Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Spinner, Text, tokens } from '@fluentui/react-components'
+import { useRef } from 'react'
+import { Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Text, tokens } from '@fluentui/react-components'
+import { useAlertFocus, useFocusSaveOnDialogClose } from '../hooks/useFormErrorFocus'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
 import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
 import { PAID_BY_OTHER, PAID_BY_YOU } from './accountActions'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 interface SettlementEntryFormProps {
@@ -19,7 +21,7 @@ const useEntryFormStyles = makeStyles({
 export default function SettlementEntryForm({ form, onCancel }: SettlementEntryFormProps) {
   const styles = useFormPanelStyles()
   const entryStyles = useEntryFormStyles()
-  const submitRef = useRef<HTMLButtonElement | null>(null)
+  const formRef = useRef<HTMLFormElement | null>(null)
   const { isEditing, isSettling, values, currencies, otherParticipant, asksCurrency, convertedCurrency, isSaving, saveError, fieldErrors, warning, impliedRate, confirmation, setField, submit, confirmSettle, cancelConfirmation } = form
   const title = isSettling ? 'Settle' : isEditing ? 'Edit entry' : 'Add entry'
   const submitLabel = isSettling ? 'Save settlement' : isEditing ? 'Save' : title
@@ -33,9 +35,8 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
     onChange: (event: { target: { value: string } }) => setField(field, event.target.value),
   })
 
-  useEffect(() => {
-    if (saveError && !isSaving) submitRef.current?.focus()
-  }, [saveError, isSaving])
+  const errorRef = useAlertFocus(saveError)
+  useFocusSaveOnDialogClose(formRef, confirmation !== null, saveError)
 
   const currencyChoice = asksCurrency && (
     <Field label="Currency" required {...validation('currency')}>
@@ -50,6 +51,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
   return (
     <>
       <form
+        ref={formRef}
         className={styles.panel}
         noValidate
         aria-labelledby="settlement-entry-title"
@@ -64,7 +66,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
             {title}
           </Text>
           {saveError && (
-            <MessageBar role="alert" intent="error">
+            <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
               <MessageBarBody>{saveError}</MessageBarBody>
             </MessageBar>
           )}
@@ -110,15 +112,8 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
               <Input {...inputProps('note')} />
             </Field>
           </div>
-          <div className={styles.actions}>
-            <Button ref={submitRef} type="submit" appearance="primary" icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-              {isSaving ? 'Saving...' : submitLabel}
-            </Button>
-            <Button appearance="secondary" onClick={onCancel}>
-              Cancel
-            </Button>
-          </div>
         </fieldset>
+        <FormSaveActions saveLabel={submitLabel} isSaving={isSaving} onCancel={onCancel} />
       </form>
       <ConfirmDialog
         open={confirmation !== null}
