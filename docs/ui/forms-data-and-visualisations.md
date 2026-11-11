@@ -242,7 +242,7 @@ The "New X" trigger button, the form it opens, and that form's own confirm
 action must all name the same thing, so cause and effect are traceable
 without re-reading anything: **trigger button → form title → confirm
 button**. The account screen's expense action (`AccountActionBar.tsx` →
-`ExpenseForm.tsx`) is the reference: the trigger reads "Add expense", the
+`ExpenseForm.tsx`) is the reference: the trigger reads "New expense", the
 form's own title reads "New expense" (and "Edit expense" once populated from
 an existing row), and the confirm button reads "Add expense" (and "Save" once
 editing) — never a generic

@@ -13,7 +13,7 @@ describe('AccountActionBar', () => {
       />,
     )
 
-    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['Add income', 'Add expense'])
+    expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual(['New income', 'New expense'])
   })
 
   it('renders every bank action, in the order given', () => {
@@ -27,8 +27,8 @@ describe('AccountActionBar', () => {
     )
 
     expect(screen.getAllByRole('button').map((button) => button.textContent)).toEqual([
-      'Add expense',
-      'Add income',
+      'New expense',
+      'New income',
       'Transfer to',
       'Transfer from',
       'Pay recurring bill',
@@ -58,7 +58,7 @@ describe('AccountActionBar', () => {
   it('leaves actions without a reason enabled and undescribed', () => {
     render(<AccountActionBar allowedActions={['AddEntry', 'Settle']} activeAction={null} formAreaId="form" disabledReasons={{ Settle: 'Nothing to settle.' }} onAction={vi.fn()} />)
 
-    const addEntry = screen.getByRole('button', { name: 'Add entry' })
+    const addEntry = screen.getByRole('button', { name: 'New entry' })
     expect(addEntry).toBeEnabled()
     expect(addEntry).not.toHaveAttribute('aria-describedby')
   })
@@ -67,7 +67,7 @@ describe('AccountActionBar', () => {
     const onAction = vi.fn()
     render(<AccountActionBar allowedActions={['AddExpense']} activeAction={null} formAreaId="form" onAction={onAction} />)
 
-    const button = screen.getByRole('button', { name: 'Add expense' })
+    const button = screen.getByRole('button', { name: 'New expense' })
     fireEvent.click(button)
 
     expect(onAction).toHaveBeenCalledWith('AddExpense', button)
@@ -83,9 +83,9 @@ describe('AccountActionBar', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Add income' })).toHaveAttribute('aria-expanded', 'true')
-    expect(screen.getByRole('button', { name: 'Add expense' })).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.getByRole('button', { name: 'Add expense' })).toHaveAttribute('aria-controls', 'form')
+    expect(screen.getByRole('button', { name: 'New income' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'New expense' })).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('button', { name: 'New expense' })).toHaveAttribute('aria-controls', 'form')
   })
 
   it('disables only the actions the caller marks as disabled', () => {
@@ -99,7 +99,7 @@ describe('AccountActionBar', () => {
       />,
     )
 
-    expect(screen.getByRole('button', { name: 'Add expense' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled()
     expect(screen.getByRole('button', { name: 'Transfer to' })).toBeDisabled()
   })
 })

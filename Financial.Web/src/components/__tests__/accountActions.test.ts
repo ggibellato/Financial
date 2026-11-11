@@ -66,7 +66,7 @@ describe('refund wording', () => {
 
   it('offers Add refund as a form action', () => {
     expect(formActionsOf(['AddCharge', 'AddRefund'])).toEqual(['AddCharge', 'AddRefund'])
-    expect(ACTION_LABELS.AddRefund).toBe('Add refund')
+    expect(ACTION_LABELS.AddRefund).toBe('New refund')
   })
 
   it('labels a refund row Refund', () => {
@@ -104,7 +104,7 @@ describe('a settlement entry row', () => {
   const ENTRY = accountTransactionRow({ id: 's1', kind: 'SettlementEntry', date: '2026-10-11', amount: 80 })
 
   it('is labelled as an entry', () => {
-    expect(ACTION_LABELS.AddEntry).toBe('Add entry')
+    expect(ACTION_LABELS.AddEntry).toBe('New entry')
     expect(needsFormOptions('AddEntry')).toBe(false)
     expect(ACTION_LABELS.Settle).toBe('Settle')
     expect(needsFormOptions('Settle')).toBe(false)

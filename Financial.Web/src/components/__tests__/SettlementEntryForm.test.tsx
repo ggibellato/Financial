@@ -87,10 +87,10 @@ function renderForm(state: SettlementEntryFormModel, onCancel = vi.fn()) {
 }
 
 describe('SettlementEntryForm', () => {
-  it('[AC P60-F12-settlement-screen-08] titles Add entry and shows the fields in the documented order', () => {
+  it('[AC P60-F12-settlement-screen-08] titles New entry and shows the fields in the documented order', () => {
     renderForm(addState())
 
-    expect(screen.getByRole('heading', { name: 'Add entry' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New entry' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add entry' })).toBeEnabled()
     const labels = Array.from(document.querySelectorAll('form label'))
       .map((label) => label.textContent?.replace('*', '').trim())

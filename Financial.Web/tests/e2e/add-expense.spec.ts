@@ -6,7 +6,7 @@ test.describe.configure({ mode: 'serial' })
 async function openNewExpenseForm(page: Page) {
   await page.goto('/cashflow/accounts')
   await page.getByRole('link', { name: 'Barclays' }).click()
-  await page.getByRole('button', { name: 'Add expense', exact: true }).click()
+  await page.getByRole('button', { name: 'New expense', exact: true }).click()
 }
 
 async function fillValidExpense(page: Page, description: string) {

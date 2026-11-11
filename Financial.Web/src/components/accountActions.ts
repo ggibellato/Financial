@@ -24,12 +24,12 @@ export const PAID_BY_YOU = 'You'
 export const PAID_BY_OTHER = 'Other'
 
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
-  AddExpense: 'Add expense',
-  AddCharge: 'Add charge',
-  AddRefund: 'Add refund',
+  AddExpense: 'New expense',
+  AddCharge: 'New charge',
+  AddRefund: 'New refund',
   RefundCreditToBank: 'Refund credit to bank',
   ReceiveCardCredit: 'Receive card credit',
-  AddIncome: 'Add income',
+  AddIncome: 'New income',
   TransferTo: 'Transfer to',
   TransferFrom: 'Transfer from',
   PayRecurringBill: 'Pay recurring bill',
@@ -39,7 +39,7 @@ export const ACTION_LABELS: Record<AccountFormAction, string> = {
   Withdraw: 'Withdraw',
   ManagePots: 'Manage pots',
   WithdrawFromPots: 'Withdraw from pots',
-  AddEntry: 'Add entry',
+  AddEntry: 'New entry',
   Settle: 'Settle',
 }
 
