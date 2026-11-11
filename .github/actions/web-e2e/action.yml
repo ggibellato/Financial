@@ -17,6 +17,13 @@ runs:
     working-directory: Financial.Web
     run: npm install
 
+  - name: Use the main Ubuntu archive instead of the Azure mirror
+    shell: bash
+    run: |
+      if [ -f /etc/apt/apt-mirrors.txt ]; then
+        sudo sed -i '/azure\.archive\.ubuntu\.com/d' /etc/apt/apt-mirrors.txt
+      fi
+
   - name: Install Playwright browser
     shell: bash
     working-directory: Financial.Web
