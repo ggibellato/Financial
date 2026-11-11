@@ -1,9 +1,6 @@
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   Button,
-  Field,
-  Input,
-  Select,
   Table,
   TableBody,
   TableHeader,
@@ -15,6 +12,8 @@ import type { RecurringBillDto } from '../api/types'
 import ActionErrorAlert from '../components/ActionErrorAlert'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
+import DiscardChangesDialog from '../components/DiscardChangesDialog'
+import { AddBillForm, EditBillForm } from '../components/MensaisBillForms'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -23,20 +22,18 @@ import TruncatedText from '../components/TruncatedText'
 import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
-import { useFormPanelStyles } from '../components/formPanelStyles'
 import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { useFieldError } from '../hooks/useFieldError'
-import { useMensais } from '../hooks/useMensais'
+import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
+import { BILL_STATUSES, useMensais } from '../hooks/useMensais'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
-import { formatN2, SAVING_LABEL } from '../utils/formatters'
+import { formatN2 } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
-import { generalErrorOf } from '../utils/fieldErrors'
 import './MensaisPage.css'
 
-const STATUSES = ['Unset', 'Scheduled', 'Paid']
-const AREAS = ['Brasil', 'UK']
+const NEW_BILL_FORM = 'new'
+const FIRST_FIELD = 'input, select, textarea'
 
 interface BillRowProps {
   bill: RecurringBillDto
@@ -79,7 +76,7 @@ function BillRow({
       </DataTableCell>
       <DataTableCell label="Status">
         <StatusMenuButton
-          statuses={STATUSES}
+          statuses={BILL_STATUSES}
           status={bill.status}
           isUpdating={isUpdatingStatus}
           onChange={(status) => onStatusChange(bill.id, status)}
@@ -241,6 +238,7 @@ export default function MensaisPage() {
     isAdding,
     addError,
     addErrorFields,
+    isFormDirty,
     setAddField,
     showAddForm,
     cancelAdd,
@@ -263,14 +261,44 @@ export default function MensaisPage() {
   } = useMensais()
 
   const isEditing = editingId !== null
-  const styles = useFormPanelStyles()
-  const addFieldError = useFieldError(addErrorFields)
-  const editFieldError = useFieldError(saveErrorFields)
+  const discardPrompt = useDiscardPrompt(isFormDirty)
+  const formAreaRef = useRef<HTMLDivElement | null>(null)
+  const openerRef = useRef<HTMLElement | null>(null)
   const deletion = usePendingDelete((row: RecurringBillDto) => deleteBill(row.id))
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
   const billsRegionRef = useRef<HTMLDivElement | null>(null)
   const addBillRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(billsRegionRef, addBillRef, isLoading)
+  const openFormKey = isAddFormOpen ? NEW_BILL_FORM : editingId
+  const previousFormKey = useRef<string | null>(null)
+
+  const restoreFocus = () => {
+    const opener = openerRef.current?.isConnected ? openerRef.current : addBillRef.current
+    opener?.focus()
+  }
+
+  useEffect(() => {
+    const wasOpen = previousFormKey.current !== null
+    previousFormKey.current = openFormKey
+    if (openFormKey) formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD)?.focus()
+    else if (wasOpen && (document.activeElement === null || document.activeElement === document.body)) restoreFocus()
+  }, [openFormKey])
+
+  const openForm = (open: () => void) => {
+    const focused = document.activeElement
+    const opener = focused instanceof HTMLElement && focused !== document.body ? focused : null
+    discardPrompt.confirmDiscard(() => {
+      openerRef.current = opener
+      open()
+    })
+  }
+
+  const closeForm = (close: () => void) => {
+    discardPrompt.confirmDiscard(() => {
+      close()
+      restoreFocus()
+    })
+  }
 
   const confirmReset = () => {
     resetAllToUnset()
@@ -290,7 +318,7 @@ export default function MensaisPage() {
           />
         </div>
         <div className="mensais-page__toolbar">
-          <Button ref={addBillRef} appearance="primary" icon={<AddRegular />} onClick={showAddForm}>
+          <Button ref={addBillRef} appearance="primary" icon={<AddRegular />} onClick={() => openForm(showAddForm)}>
             New bill
           </Button>
           <Button
@@ -308,127 +336,31 @@ export default function MensaisPage() {
       <ActionErrorAlert message={resetError} />
       <ActionErrorAlert message={expensePromptBill ? null : statusUpdateError} />
 
-      {isAddFormOpen && (
-        <div className={styles.panel}>
-          <Text as="h2" weight="semibold" size={400}>
-            New bill
-          </Text>
+      <div ref={formAreaRef}>
+        {isAddFormOpen && (
+          <AddBillForm
+            values={{ newArea, newDescription, newDueDay, newValue, newNote }}
+            isSaving={isAdding}
+            error={addError}
+            errorFields={addErrorFields}
+            onFieldChange={setAddField}
+            onSave={submitAdd}
+            onCancel={() => closeForm(cancelAdd)}
+          />
+        )}
 
-          <div className={styles.grid}>
-            <Field label="Area">
-              <Select value={newArea} onChange={(e) => setAddField('newArea', e.target.value)}>
-                {AREAS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
-            <div className={styles.spanTwo}>
-              <Field
-                label="Description"
-                required
-                validationState={addFieldError('newDescription') ? 'error' : 'none'}
-                validationMessage={addFieldError('newDescription')}
-              >
-                <Input value={newDescription} onChange={(e) => setAddField('newDescription', e.target.value)} />
-              </Field>
-            </div>
-
-            <Field
-              label="Due day"
-              required
-              validationState={addFieldError('newDueDay') ? 'error' : 'none'}
-              validationMessage={addFieldError('newDueDay')}
-            >
-              <Input
-                type="number"
-                min="1"
-                max="31"
-                value={newDueDay}
-                onChange={(e) => setAddField('newDueDay', e.target.value)}
-              />
-            </Field>
-
-            <Field
-              label="Value"
-              required
-              validationState={addFieldError('newValue') ? 'error' : 'none'}
-              validationMessage={addFieldError('newValue')}
-            >
-              <Input type="number" step="0.01" value={newValue} onChange={(e) => setAddField('newValue', e.target.value)} />
-            </Field>
-
-            <div className={styles.spanTwo}>
-              <Field label="Note">
-                <Input value={newNote} onChange={(e) => setAddField('newNote', e.target.value)} />
-              </Field>
-            </div>
-          </div>
-
-          <div className={styles.actions}>
-            <Button appearance="primary" disabled={isAdding} onClick={submitAdd}>
-              {isAdding ? 'Adding bill…' : 'Add bill'}
-            </Button>
-            <Button appearance="secondary" onClick={cancelAdd}>
-              Cancel
-            </Button>
-          </div>
-
-          <ActionErrorAlert message={generalErrorOf(addError, addErrorFields)} />
-        </div>
-      )}
-
-      {isEditing && (
-        <div className={styles.panel}>
-          <Text as="h2" weight="semibold" size={400}>
-            Edit bill
-          </Text>
-
-          <div className={styles.grid}>
-            <Field
-              label="Value"
-              required
-              validationState={editFieldError('editValue') ? 'error' : 'none'}
-              validationMessage={editFieldError('editValue')}
-            >
-              <Input
-                type="number"
-                step="0.01"
-                value={editValue}
-                onChange={(e) => setEditField('editValue', e.target.value)}
-              />
-            </Field>
-
-            <Field
-              label="Status"
-              required
-              validationState={editFieldError('editStatus') ? 'error' : 'none'}
-              validationMessage={editFieldError('editStatus')}
-            >
-              <Select value={editStatus} onChange={(e) => setEditField('editStatus', e.target.value)}>
-                {STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
-
-          <div className={styles.actions}>
-            <Button appearance="primary" disabled={isSaving} onClick={saveEdit}>
-              {isSaving ? SAVING_LABEL : 'Save'}
-            </Button>
-            <Button appearance="secondary" onClick={cancelEdit}>
-              Cancel
-            </Button>
-          </div>
-
-          <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
-        </div>
-      )}
+        {isEditing && (
+          <EditBillForm
+            values={{ editValue, editStatus }}
+            isSaving={isSaving}
+            error={saveError}
+            errorFields={saveErrorFields}
+            onFieldChange={setEditField}
+            onSave={saveEdit}
+            onCancel={() => closeForm(cancelEdit)}
+          />
+        )}
+      </div>
 
       {isLoading ? (
         <LoadingState />
@@ -441,7 +373,7 @@ export default function MensaisPage() {
             showBrasilFields
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
-            onEdit={showEditForm}
+            onEdit={(bill) => openForm(() => showEditForm(bill))}
             onDelete={deletion.request}
             onStatusChange={updateBillStatus}
           />
@@ -450,7 +382,7 @@ export default function MensaisPage() {
             showBrasilFields={false}
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
-            onEdit={showEditForm}
+            onEdit={(bill) => openForm(() => showEditForm(bill))}
             onDelete={deletion.request}
             onStatusChange={updateBillStatus}
           />
@@ -465,6 +397,12 @@ export default function MensaisPage() {
           onCancel={deletion.cancel}
         />
       )}
+
+      <DiscardChangesDialog
+        open={discardPrompt.isPromptOpen}
+        onKeepEditing={discardPrompt.keepEditing}
+        onDiscard={discardPrompt.discard}
+      />
 
       <ConfirmDialog
         open={isConfirmingReset}

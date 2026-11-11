@@ -7,14 +7,17 @@ import { useLatestRequestGuard } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { toBillPaymentExpense, type BillExpense } from '../components/billExpenseValues'
+import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 
 export type EditField = 'editStatus' | 'editValue'
 export type AddField = 'newDueDay' | 'newDescription' | 'newValue' | 'newArea' | 'newNote'
 
 export type ExpensePromptValues = BillExpense
 
+export const BILL_STATUSES = ['Unset', 'Scheduled', 'Paid']
+
 const AREA_KEY = 'addBill.area'
-const AREAS = ['Brasil', 'UK']
+export const AREAS = ['Brasil', 'UK']
 
 const EMPTY_ADD_FORM_FIELDS = {
   newDueDay: '',
@@ -42,6 +45,8 @@ interface MensaisState {
   saveError: string | null
   saveErrorFields: Partial<Record<EditField, string>>
   isAddFormOpen: boolean
+  addSnapshot: Pick<MensaisState, AddField> | null
+  editSnapshot: Pick<MensaisState, EditField> | null
   newDueDay: string
   newDescription: string
   newValue: string
@@ -90,6 +95,17 @@ type MensaisAction =
 
 const DEFAULT_MONTH = currentYearMonth()
 
+const ADD_FIELDS: readonly AddField[] = ['newDueDay', 'newDescription', 'newValue', 'newArea', 'newNote']
+const EDIT_FIELDS: readonly EditField[] = ['editStatus', 'editValue']
+
+const CLOSED_EDIT_FORM = { editingId: null, editStatus: '', editValue: '', saveError: null, saveErrorFields: {}, editSnapshot: null }
+
+const CLOSED_ADD_FORM = { isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null, addErrorFields: {}, addSnapshot: null }
+
+function isFormDirty(state: MensaisState): boolean {
+  return hasChangedFields(state, state.addSnapshot, ADD_FIELDS) || hasChangedFields(state, state.editSnapshot, EDIT_FIELDS)
+}
+
 const INITIAL_STATE: MensaisState = {
   bills: [],
   banks: [],
@@ -104,6 +120,8 @@ const INITIAL_STATE: MensaisState = {
   saveError: null,
   saveErrorFields: {},
   isAddFormOpen: false,
+  addSnapshot: null,
+  editSnapshot: null,
   ...EMPTY_ADD_FORM_FIELDS,
   newArea: 'Brasil',
   isAdding: false,
@@ -135,35 +153,32 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return { ...state, isLoading: false, error: action.payload }
     case 'RETRY':
       return { ...state, retryCount: state.retryCount + 1 }
-    case 'SHOW_EDIT_FORM':
-      return {
-        ...state,
-        editingId: action.payload.id,
-        editStatus: action.payload.status,
-        editValue: String(action.payload.value),
-        saveError: null,
-        saveErrorFields: {},
-      }
+    case 'SHOW_EDIT_FORM': {
+      const edit = { editingId: action.payload.id, editStatus: action.payload.status, editValue: String(action.payload.value) }
+      return { ...state, ...CLOSED_ADD_FORM, ...CLOSED_EDIT_FORM, ...edit, editSnapshot: snapshotFields(edit, EDIT_FIELDS) }
+    }
     case 'CANCEL_EDIT':
-      return { ...state, editingId: null, editStatus: '', editValue: '', saveError: null, saveErrorFields: {} }
+      return { ...state, ...CLOSED_EDIT_FORM }
     case 'SET_EDIT_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
-      return { ...state, isSaving: false, editingId: null, editStatus: '', editValue: '', deleteError: null }
+      return { ...state, ...CLOSED_EDIT_FORM, isSaving: false, deleteError: null }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
-    case 'SHOW_ADD_FORM':
-      return { ...state, isAddFormOpen: true, ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area, addError: null, addErrorFields: {} }
+    case 'SHOW_ADD_FORM': {
+      const add = { ...EMPTY_ADD_FORM_FIELDS, newArea: action.payload.area }
+      return { ...state, ...CLOSED_EDIT_FORM, ...CLOSED_ADD_FORM, ...add, isAddFormOpen: true, addSnapshot: snapshotFields(add, ADD_FIELDS) }
+    }
     case 'CANCEL_ADD':
-      return { ...state, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, addError: null, addErrorFields: {} }
+      return { ...state, ...CLOSED_ADD_FORM }
     case 'SET_ADD_FIELD':
       return { ...state, [action.payload.field]: action.payload.value }
     case 'ADD_START':
       return { ...state, isAdding: true, addError: null, addErrorFields: {} }
     case 'ADD_SUCCESS':
-      return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, deleteError: null }
+      return { ...state, ...CLOSED_ADD_FORM, isAdding: false, deleteError: null }
     case 'ADD_ERROR':
       return { ...state, isAdding: false, addError: action.payload.message, addErrorFields: action.payload.fields }
     case 'DELETE_START':
@@ -225,6 +240,7 @@ export interface MensaisData {
   isAdding: boolean
   addError: string | null
   addErrorFields: Partial<Record<AddField, string>>
+  isFormDirty: boolean
   setAddField: (field: AddField, value: string) => void
   showAddForm: () => void
   cancelAdd: () => void
@@ -495,6 +511,7 @@ export function useMensais(): MensaisData {
     isAdding: state.isAdding,
     addError: state.addError,
     addErrorFields: state.addErrorFields,
+    isFormDirty: isFormDirty(state),
     setAddField,
     showAddForm,
     cancelAdd,
