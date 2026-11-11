@@ -96,7 +96,7 @@ const TYPE_CLASSES: Record<string, string> = {
 
 const TYPE_LABELS: Record<string, string> = {
   Dividend: 'Dividend',
-  SecuritiesLendingIncome: 'Securities Lending Income',
+  SecuritiesLendingIncome: 'Securities lending income',
   JCP: 'JCP',
   Coupon: 'Coupon',
 }
@@ -200,7 +200,7 @@ function InlineForm({
         <Field label="Type">
           <Select value={formType} onChange={(e) => onFieldChange('formType', e.target.value)}>
             <option value="Dividend">Dividend</option>
-            <option value="SecuritiesLendingIncome">Securities Lending Income</option>
+            <option value="SecuritiesLendingIncome">Securities lending income</option>
             <option value="JCP">JCP</option>
             <option value="Coupon">Coupon</option>
           </Select>
@@ -210,7 +210,7 @@ function InlineForm({
           label="Value"
           required
           validationState={fieldError('formValue') ? 'error' : 'none'}
-          validationMessage={fieldError('formValue') ?? 'A negative value records a correction to a previous payment'}
+          validationMessage={fieldError('formValue') ?? 'A negative value records a correction to a previous payment.'}
         >
           <Input
             type="number"

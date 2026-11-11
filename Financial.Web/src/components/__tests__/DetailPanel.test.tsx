@@ -367,7 +367,7 @@ describe('DetailPanel', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    await waitFor(() => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Net invested by month')).toBeInTheDocument())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
@@ -375,7 +375,7 @@ describe('DetailPanel', () => {
     renderPanel(portfolioNode)
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByRole('tab', { name: 'Transactions' }))
-    await waitFor(() => expect(screen.getByText('Net Invested by Month')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Net invested by month')).toBeInTheDocument())
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

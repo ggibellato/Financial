@@ -80,9 +80,9 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, isDeleti
     >
       <DataTableCell label="Date">{formatShortDate(record.effectiveDate)}</DataTableCell>
       <DataTableCell label="Type">{corporateActionTypeLabel(record.type)}</DataTableCell>
-      <DataTableCell label="Affected/Linked Asset"><TruncatedText text={record.linkedAssetName ?? affectedAssetName} /></DataTableCell>
-      <DataTableCell label="Resulting Change">{resultingChange(record)}</DataTableCell>
-      <DataTableCell label="Tax Status">
+      <DataTableCell label="Affected/linked asset"><TruncatedText text={record.linkedAssetName ?? affectedAssetName} /></DataTableCell>
+      <DataTableCell label="Resulting change">{resultingChange(record)}</DataTableCell>
+      <DataTableCell label="Tax status">
         {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}
       </DataTableCell>
       <RowActionsCell
@@ -237,9 +237,9 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
                   sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-                <TableHeaderCell>Affected/Linked Asset</TableHeaderCell>
-                <TableHeaderCell>Resulting Change</TableHeaderCell>
-                <TableHeaderCell>Tax Status</TableHeaderCell>
+                <TableHeaderCell>Affected/linked asset</TableHeaderCell>
+                <TableHeaderCell>Resulting change</TableHeaderCell>
+                <TableHeaderCell>Tax status</TableHeaderCell>
                 <ActionsColumnHeader />
               </TableRow>
             </TableHeader>

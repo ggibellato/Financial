@@ -239,7 +239,7 @@ describe('CreditsTab', () => {
 
   it.each([
     [CREDIT_DIVIDEND, 'Dividend', 'credits-tab__type--dividend'],
-    [CREDIT_SECURITIES_LENDING_INCOME, 'Securities Lending Income', 'credits-tab__type--securities-lending-income'],
+    [CREDIT_SECURITIES_LENDING_INCOME, 'Securities lending income', 'credits-tab__type--securities-lending-income'],
     [CREDIT_JCP, 'JCP', 'credits-tab__type--jcp'],
   ])('renders_%#_credit_type_%s_with_its_class', async (credit, label, typeClass) => {
     await renderAssetTab([credit])
@@ -400,7 +400,7 @@ describe('CreditsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Add credit' }))
 
-    expect(await screen.findByText('Value must not be zero (negative is a correction)')).toBeInTheDocument()
+    expect(await screen.findByText('Value must not be zero (negative is a correction).')).toBeInTheDocument()
     expect(addCreditMock).not.toHaveBeenCalled()
   })
 
@@ -610,7 +610,7 @@ describe('CreditsTab', () => {
     const rows = dataRows()
     expect(within(rows[0]).getByText('Dividend')).toBeInTheDocument()
     expect(within(rows[1]).getByText('JCP')).toBeInTheDocument()
-    expect(within(rows[2]).getByText('Securities Lending Income')).toBeInTheDocument()
+    expect(within(rows[2]).getByText('Securities lending income')).toBeInTheDocument()
   })
 
   it('defaults to sorting by date descending, with the header showing the active sort', async () => {
@@ -697,9 +697,9 @@ describe('CreditsTab', () => {
     fireEvent.click(screen.getByRole('button', { name: header }))
 
     expect(screen.getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
-    expect(dataRows().map((row) => row.textContent?.match(/JCP|Securities Lending Income|Dividend/)?.[0])).toEqual([
+    expect(dataRows().map((row) => row.textContent?.match(/JCP|Securities lending income|Dividend/)?.[0])).toEqual([
       'JCP',
-      'Securities Lending Income',
+      'Securities lending income',
       'Dividend',
     ])
   })

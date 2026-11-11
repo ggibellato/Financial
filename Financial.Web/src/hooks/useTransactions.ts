@@ -324,7 +324,7 @@ export function useTransactions(): TransactionsData {
   } = useAsyncResource<TransactionTypeEffectDto[]>(
     () => apiClient.getTransactionTypeEffects(),
     [],
-    'Unable to load the transaction types',
+    'Unable to load the transaction types.',
   )
 
   useEffect(() => {
@@ -346,7 +346,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           settle({
             type: 'FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to load asset details'),
+            payload: getErrorMessage(err, 'Unable to load asset details.'),
           })
         })
     } else if (nodeType === 'Broker') {
@@ -357,7 +357,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           settle({
             type: 'FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to load transactions'),
+            payload: getErrorMessage(err, 'Unable to load transactions.'),
           })
         })
     } else if (nodeType === 'Portfolio' && portfolioName) {
@@ -368,7 +368,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           settle({
             type: 'FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to load transactions'),
+            payload: getErrorMessage(err, 'Unable to load transactions.'),
           })
         })
     } else {
@@ -453,7 +453,7 @@ export function useTransactions(): TransactionsData {
     const errors: Partial<Record<TransactionFormField, string>> = {}
 
     if (!formDate.trim()) {
-      errors.formDate = 'Date is required'
+      errors.formDate = 'Date is required.'
     }
 
     let quantity = 0
@@ -461,14 +461,14 @@ export function useTransactions(): TransactionsData {
     if (hasQuantityEffect) {
       const parsedQuantity = parseValidatedNumber(formQuantity)
       if (parsedQuantity === null || parsedQuantity <= 0) {
-        errors.formQuantity = 'Quantity must be a positive number'
+        errors.formQuantity = 'Quantity must be a positive number.'
       } else {
         quantity = parsedQuantity
       }
 
       const parsedUnitPrice = parseValidatedNumber(formUnitPrice)
       if (parsedUnitPrice === null || parsedUnitPrice <= 0) {
-        errors.formUnitPrice = 'Unit Price must be a positive number'
+        errors.formUnitPrice = 'Unit price must be a positive number.'
       } else {
         unitPrice = parsedUnitPrice
       }
@@ -486,7 +486,7 @@ export function useTransactions(): TransactionsData {
       }
 
       if (allocations.length === 0 || !isAllocationExact(allocatedTotal, quantity)) {
-        errors.formLotAllocations = `Allocate exactly ${quantity} across one or more lots (currently allocated: ${allocatedTotal})`
+        errors.formLotAllocations = `Allocate exactly ${quantity} across one or more lots (currently allocated: ${allocatedTotal}).`
       } else {
         specificLotAllocations = allocations
       }
@@ -528,7 +528,7 @@ export function useTransactions(): TransactionsData {
       .catch((err: unknown) => {
         settle({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save transaction'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to save transaction.'), fields: {} },
         })
       })
   }, [selectedNode, state, typeEffects, requiresLotAllocation, dispatchForCurrentSelection])
@@ -550,7 +550,7 @@ export function useTransactions(): TransactionsData {
         .catch((err: unknown) => {
           settle({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete transaction'),
+            payload: getErrorMessage(err, 'Failed to delete transaction.'),
           })
         })
     },

@@ -259,7 +259,7 @@ export function useMensais(): MensaisData {
         if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: { bills, banks: billPayingAccounts(accounts), categories } })
       })
       .catch((err: unknown) => {
-        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data') })
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load Mensais data.') })
       })
   }, [beginRequest])
 
@@ -294,11 +294,11 @@ export function useMensais(): MensaisData {
 
     const value = parseValidatedNumber(state.editValue)
     if (value === null) {
-      errors.editValue = 'Value must be a number'
+      errors.editValue = 'Value must be a number.'
     }
 
     if (!state.editStatus.trim()) {
-      errors.editStatus = 'Status is required'
+      errors.editStatus = 'Status is required.'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -329,7 +329,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to update bill'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to update bill.'), fields: {} },
         })
       })
   }
@@ -347,17 +347,17 @@ export function useMensais(): MensaisData {
     const errors: Partial<Record<AddField, string>> = {}
 
     if (!state.newDescription.trim()) {
-      errors.newDescription = 'Description is required'
+      errors.newDescription = 'Description is required.'
     }
 
     const dueDay = parseValidatedNumber(state.newDueDay)
     if (dueDay === null) {
-      errors.newDueDay = 'Due day must be a number'
+      errors.newDueDay = 'Due day must be a number.'
     }
 
     const value = parseValidatedNumber(state.newValue)
     if (value === null) {
-      errors.newValue = 'Value must be a number'
+      errors.newValue = 'Value must be a number.'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -385,7 +385,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'ADD_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to add bill'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to add bill.'), fields: {} },
         })
       })
   }
@@ -402,7 +402,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'DELETE_ERROR',
-          payload: getErrorMessage(err, 'Failed to delete bill'),
+          payload: getErrorMessage(err, 'Failed to delete bill.'),
         })
       })
   }
@@ -416,7 +416,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'RESET_ERROR',
-          payload: getErrorMessage(err, 'Failed to reset bills'),
+          payload: getErrorMessage(err, 'Failed to reset bills.'),
         })
       })
   }
@@ -444,12 +444,12 @@ export function useMensais(): MensaisData {
       return
     }
 
-    runStatusUpdate(id, () => apiClient.updateMensaisBillStatus(id, { status }), 'Failed to update status')
+    runStatusUpdate(id, () => apiClient.updateMensaisBillStatus(id, { status }), 'Failed to update status.')
   }
 
   function markBillPaid(billId: string, values: ExpensePromptValues | null) {
     const expense = values && toBillPaymentExpense(values)
-    runStatusUpdate(billId, () => apiClient.markMensaisBillPaid(billId, { expense }), 'Failed to mark the bill as Paid')
+    runStatusUpdate(billId, () => apiClient.markMensaisBillPaid(billId, { expense }), 'Failed to mark the bill as Paid.')
   }
 
   function confirmExpensePrompt(values: ExpensePromptValues) {

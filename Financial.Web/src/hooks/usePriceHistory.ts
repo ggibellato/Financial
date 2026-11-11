@@ -205,7 +205,7 @@ export function usePriceHistory(): PriceHistoryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: getErrorMessage(err, 'Unable to load price history'),
+          payload: getErrorMessage(err, 'Unable to load price history.'),
         })
       })
   }, [selectedNode, scope, state.retryCount])
@@ -257,12 +257,12 @@ export function usePriceHistory(): PriceHistoryData {
     const errors: Partial<Record<PriceHistoryFormField, string>> = {}
 
     if (!formDate.trim()) {
-      errors.formDate = 'Date is required'
+      errors.formDate = 'Date is required.'
     }
 
     const price = parseValidatedNumber(formPrice)
     if (price === null || price <= 0) {
-      errors.formPrice = 'Price must be a positive number'
+      errors.formPrice = 'Price must be a positive number.'
     }
 
     if (Object.keys(errors).length > 0) {
@@ -292,7 +292,7 @@ export function usePriceHistory(): PriceHistoryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save price'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to save price.'), fields: {} },
         })
       })
   }, [selectedNode, state])
@@ -318,7 +318,7 @@ export function usePriceHistory(): PriceHistoryData {
         .catch((err: unknown) => {
           dispatch({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete price'),
+            payload: getErrorMessage(err, 'Failed to delete price.'),
           })
         })
     },

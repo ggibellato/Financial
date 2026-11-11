@@ -132,7 +132,7 @@ describe('MensaisPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit bill INSS' }))
 
-    expect(screen.getByText('Edit Bill')).toBeInTheDocument()
+    expect(screen.getByText('Edit bill')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('850')
     fireEvent.change(valueInput, { target: { value: '900' } })
     const statusSelect = screen.getByRole('combobox')
@@ -168,7 +168,7 @@ describe('MensaisPage', () => {
 
     await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith('b1', { status: 'Paid' }))
     await waitFor(() => expect(screen.getByRole('button', { name: /^Status: Paid/ })).toBeInTheDocument())
-    expect(screen.queryByText('Edit Bill')).not.toBeInTheDocument()
+    expect(screen.queryByText('Edit bill')).not.toBeInTheDocument()
   })
 
   it('marking a UK bill Paid opens the expense prompt instead of calling the status API', async () => {
@@ -273,7 +273,7 @@ describe('MensaisPage', () => {
     expect(screen.getAllByText('Min. Wage')).toHaveLength(1)
   })
 
-  it('adds a new bill via the Add Bill form', async () => {
+  it('adds a new bill via the New bill form', async () => {
     createMensaisBillMock.mockResolvedValue({
       id: 'b3',
       dueDay: 5,
@@ -289,17 +289,17 @@ describe('MensaisPage', () => {
 
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New bill' }))
     fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Aluguel' } })
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '5' } })
+    fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '5' } })
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1000' } })
 
     getMensaisBillsMock.mockResolvedValue([
       ...BILLS,
       { ...BILLS[0], id: 'b3', description: 'Aluguel', dueDay: 5, value: 1000 },
     ])
-    const addBillFormPanel = screen.getByRole('heading', { name: 'Add Bill' }).closest('div') as HTMLElement
-    fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add Bill' }))
+    const addBillFormPanel = screen.getByRole('heading', { name: 'New bill' }).closest('div') as HTMLElement
+    fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add bill' }))
 
     await waitFor(() =>
       expect(createMensaisBillMock).toHaveBeenCalledWith({
@@ -313,17 +313,17 @@ describe('MensaisPage', () => {
     await waitFor(() => expect(screen.getByText('Aluguel')).toBeInTheDocument())
   })
 
-  it('lists the Add Bill fields in Area, Description, Due Day, Value, Note order', async () => {
+  it('lists the New bill fields in Area, Description, Due day, Value, Note order', async () => {
     render(<MensaisPage />)
 
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
-    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New bill' }))
 
-    const addBillFormPanel = screen.getByRole('heading', { name: 'Add Bill' }).closest('div') as HTMLElement
+    const addBillFormPanel = screen.getByRole('heading', { name: 'New bill' }).closest('div') as HTMLElement
     const fieldLabels = within(addBillFormPanel)
-      .getAllByText(/^(Area|Description|Due Day|Value|Note)\*?$/, { selector: 'label' })
+      .getAllByText(/^(Area|Description|Due day|Value|Note)\*?$/, { selector: 'label' })
       .map((label) => label.textContent?.replace(/\*$/, ''))
-    expect(fieldLabels).toEqual(['Area', 'Description', 'Due Day', 'Value', 'Note'])
+    expect(fieldLabels).toEqual(['Area', 'Description', 'Due day', 'Value', 'Note'])
   })
 
   it('changing the month input navigates to the chosen month', async () => {
@@ -351,10 +351,10 @@ describe('MensaisPage', () => {
     render(<MensaisPage />)
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Bill' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New bill' }))
     fireEvent.change(screen.getByLabelText(/^Area/), { target: { value: 'UK' } })
     fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Council Tax 2' } })
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '20' } })
+    fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '20' } })
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '150' } })
     fireEvent.change(screen.getByLabelText(/^Note/), { target: { value: 'Second property' } })
 
@@ -362,8 +362,8 @@ describe('MensaisPage', () => {
       ...BILLS,
       { id: 'b3', dueDay: 20, description: 'Council Tax 2', area: 'UK', note: 'Second property', nitNumber: null, minimumWageValue: null, value: 150, status: 'Unset' },
     ])
-    const addBillFormPanel = screen.getByRole('heading', { name: 'Add Bill' }).closest('div') as HTMLElement
-    fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add Bill' }))
+    const addBillFormPanel = screen.getByRole('heading', { name: 'New bill' }).closest('div') as HTMLElement
+    fireEvent.click(within(addBillFormPanel).getByRole('button', { name: 'Add bill' }))
 
     await waitFor(() =>
       expect(createMensaisBillMock).toHaveBeenCalledWith({
@@ -413,7 +413,7 @@ describe('MensaisPage', () => {
     expect(deleting).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('moves focus to Add Bill after deleting the last bill of a grid', async () => {
+  it('moves focus to New bill after deleting the last bill of a grid', async () => {
     deleteMensaisBillMock.mockResolvedValue(undefined)
     render(<MensaisPage />)
     await screen.findByText('INSS')
@@ -421,7 +421,7 @@ describe('MensaisPage', () => {
 
     await confirmDelete(INSS_NAME, 'bill')
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Bill' })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New bill' })).toHaveFocus())
   })
 
   it('announces a failed delete and moves focus to it', async () => {
@@ -480,7 +480,7 @@ describe('MensaisPage', () => {
   })
 
   it('announces a failed reset and moves focus to it', async () => {
-    resetMensaisToUnsetMock.mockRejectedValue(new Error('Failed to reset bills'))
+    resetMensaisToUnsetMock.mockRejectedValue(new Error('Failed to reset bills.'))
     render(<MensaisPage />)
     await screen.findByText('INSS')
 
@@ -488,7 +488,7 @@ describe('MensaisPage', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
 
     const alert = await screen.findByRole('alert', { hidden: true })
-    expect(alert).toHaveTextContent('Failed to reset bills')
+    expect(alert).toHaveTextContent('Failed to reset bills.')
     await waitFor(() => expect(alert).toHaveFocus())
   })
 
@@ -535,7 +535,7 @@ describe('MensaisPage', () => {
     ])
   })
 
-  it('sorts the Brasil grid by Due Day, Note, NIT, Min. Wage, Value and Status', async () => {
+  it('sorts the Brasil grid by Due day, Note, NIT, Min. Wage, Value and Status', async () => {
     const bills: RecurringBillDto[] = [
       { id: 'b1', dueDay: 10, description: 'INSS', area: 'Brasil', note: 'Boleto', nitNumber: '222', minimumWageValue: 1412, value: 850, status: 'Unset' },
       { id: 'b2', dueDay: 5, description: 'Aluguel', area: 'Brasil', note: 'Aviso', nitNumber: '111', minimumWageValue: 706, value: 1200, status: 'Paid' },
@@ -552,7 +552,7 @@ describe('MensaisPage', () => {
         .slice(1)
         .map((r) => r.querySelectorAll('td')[1].textContent!.replace('Description:', ''))
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Due Day' }))
+    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Due day' }))
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
 
     fireEvent.click(within(brasilTable).getByRole('button', { name: 'Note' }))

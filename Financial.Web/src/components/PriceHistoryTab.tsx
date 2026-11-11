@@ -48,7 +48,7 @@ const MARKER_RADIUS = 4
 const SOURCE_LABELS: Record<AssetPriceSnapshotDto['source'], string> = {
   Unknown: 'Unknown',
   Manual: 'Manual',
-  ProviderValuation: 'Provider Valuation',
+  ProviderValuation: 'Provider valuation',
   Google: 'Google',
   Yahoo: 'Yahoo',
   StatusInvest: 'StatusInvest',
@@ -245,7 +245,7 @@ function ChartPanel({ entries, transactions }: ChartPanelProps) {
 
   return (
     <div className="price-history-tab__chart-panel">
-      <p className="price-history-tab__chart-title">Price History</p>
+      <p className="price-history-tab__chart-title">Price history</p>
       <div className="price-history-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>

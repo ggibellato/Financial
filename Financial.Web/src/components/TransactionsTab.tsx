@@ -53,9 +53,9 @@ const TRANSACTION_TYPE_OPTIONS = [
   { value: 'Sell', label: 'Sell' },
   { value: 'Fee', label: 'Fee' },
   { value: 'Redemption', label: 'Redemption' },
-  { value: 'TransferIn', label: 'Transfer In' },
-  { value: 'TransferOut', label: 'Transfer Out' },
-  { value: 'CapitalCall', label: 'Capital Call' },
+  { value: 'TransferIn', label: 'Transfer in' },
+  { value: 'TransferOut', label: 'Transfer out' },
+  { value: 'CapitalCall', label: 'Capital call' },
   { value: 'ReturnOfCapital', label: 'Return of Capital' },
 ]
 
@@ -108,7 +108,7 @@ function TransactionRow({ transaction, isDeleting, onEdit, onDelete }: Transacti
         {typeLabel}
       </DataTableCell>
       <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(transaction.quantity)}</DataTableCell>
-      <DataTableCell label="Unit Price" className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</DataTableCell>
+      <DataTableCell label="Unit price" className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</DataTableCell>
       <DataTableCell label="Fees" className="data-table__col--numeric">{formatN2(transaction.fees)}</DataTableCell>
       <DataTableCell label="Withheld" className="data-table__col--numeric">{formatN2(transaction.withheld)}</DataTableCell>
       <DataTableCell label="Net" className="data-table__col--numeric transactions-tab__total">
@@ -244,7 +244,7 @@ function InlineForm({
             </Field>
 
             <Field
-              label="Unit Price"
+              label="Unit price"
               required
               validationState={fieldError('formUnitPrice') ? 'error' : 'none'}
               validationMessage={fieldError('formUnitPrice')}
@@ -342,7 +342,7 @@ function TransactionsChart({
           onSelect={setChartMode}
         />
       </div>
-      <p className="transactions-tab__chart-title">Net Invested by Month</p>
+      <p className="transactions-tab__chart-title">Net invested by month</p>
       <div className="transactions-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartMode === 'Bar' ? (
@@ -526,7 +526,7 @@ export default function TransactionsTab() {
                   onSort={requestSort}
                 />
                 <SortableColumnHeader
-                  label="Unit Price"
+                  label="Unit price"
                   columnKey="unitPrice"
                   numeric
                   sortDirection={sortState?.columnKey === 'unitPrice' ? sortState.direction : undefined}

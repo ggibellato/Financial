@@ -284,7 +284,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to load credits'),
+            payload: getErrorMessage(err, 'Unable to load credits.'),
           })
         })
     } else if (nodeType === 'Broker') {
@@ -294,7 +294,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to load credits'),
+            payload: getErrorMessage(err, 'Unable to load credits.'),
           })
         })
     } else if (nodeType === 'Portfolio' && portfolioName) {
@@ -304,7 +304,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'FETCH_ERROR',
-            payload: getErrorMessage(err, 'Unable to load credits'),
+            payload: getErrorMessage(err, 'Unable to load credits.'),
           })
         })
     }
@@ -376,19 +376,19 @@ export function useCredits(): CreditsData {
     const errors: Partial<Record<CreditFormField, string>> = {}
 
     if (!formDate.trim()) {
-      errors.formDate = 'Date is required'
+      errors.formDate = 'Date is required.'
     }
 
     const value = parseValidatedNumber(formValue)
     if (value === null || value === 0) {
-      errors.formValue = 'Value must not be zero (negative is a correction)'
+      errors.formValue = 'Value must not be zero (negative is a correction).'
     }
 
     let sharesForDividend: number | null = null
     if (formSharesForDividend.trim() !== '') {
       const parsedShares = parseValidatedNumber(formSharesForDividend)
       if (parsedShares === null || parsedShares <= 0) {
-        errors.formSharesForDividend = 'Shares must be greater than zero'
+        errors.formSharesForDividend = 'Shares must be greater than zero.'
       } else {
         sharesForDividend = parsedShares
       }
@@ -429,7 +429,7 @@ export function useCredits(): CreditsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to save credit'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to save credit.'), fields: {} },
         })
       })
   }, [selectedNode, state])
@@ -450,7 +450,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           dispatch({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete credit'),
+            payload: getErrorMessage(err, 'Failed to delete credit.'),
           })
         })
     },
