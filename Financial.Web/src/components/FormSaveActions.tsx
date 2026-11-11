@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import { Button, Spinner } from '@fluentui/react-components'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -7,13 +7,14 @@ interface FormSaveActionsProps {
   isSaving: boolean
   isSaveDisabled?: boolean
   onCancel: () => void
+  children?: ReactNode
 }
 
 function blockSubmit(event: MouseEvent<HTMLButtonElement>) {
   event.preventDefault()
 }
 
-export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = false, onCancel }: FormSaveActionsProps) {
+export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = false, onCancel, children }: FormSaveActionsProps) {
   const styles = useFormPanelStyles()
 
   return (
@@ -32,6 +33,7 @@ export default function FormSaveActions({ saveLabel, isSaving, isSaveDisabled = 
       <Button appearance="secondary" disabled={isSaving} onClick={onCancel}>
         Cancel
       </Button>
+      {children}
     </div>
   )
 }

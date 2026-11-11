@@ -3,14 +3,14 @@ import { Table, TableBody, TableRow } from '@fluentui/react-components'
 import { describe, expect, it, vi } from 'vitest'
 import RowActionsCell from '../RowActionsCell'
 
-function renderCell(deleteDisabled = false) {
+function renderCell() {
   const onEdit = vi.fn()
   const onDelete = vi.fn()
   render(
     <Table>
       <TableBody>
         <TableRow>
-          <RowActionsCell itemName="Chase" deleteDisabled={deleteDisabled} onEdit={onEdit} onDelete={onDelete} />
+          <RowActionsCell itemName="Chase" onEdit={onEdit} onDelete={onDelete} />
         </TableRow>
       </TableBody>
     </Table>,
@@ -34,13 +34,6 @@ describe('RowActionsCell', () => {
 
     expect(onEdit).toHaveBeenCalledOnce()
     expect(onDelete).toHaveBeenCalledOnce()
-  })
-
-  it('disables only the delete button when deletion is unavailable', () => {
-    renderCell(true)
-
-    expect(screen.getByRole('button', { name: 'Delete Chase' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Edit Chase' })).toBeEnabled()
   })
 
   it('announces a delete in progress and keeps the button focusable but inert', () => {

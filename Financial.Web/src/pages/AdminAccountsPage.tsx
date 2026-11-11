@@ -167,7 +167,7 @@ export default function AdminAccountsPage() {
               <DataTableCell label="Active">{account.isActive ? 'Active' : 'Inactive'}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
-                deleteDisabled={deletingId === account.id}
+                isDeleting={deletingId === account.id}
                 onEdit={() => setFormTarget({ mode: 'edit', account })}
                 onDelete={() => requestDelete(account)}
               />

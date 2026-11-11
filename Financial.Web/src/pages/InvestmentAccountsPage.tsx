@@ -161,7 +161,7 @@ export default function InvestmentAccountsPage() {
               <DataTableCell label="Source">{sourceDisplay(account, accounts)}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
-                deleteDisabled={deletingId === account.id}
+                isDeleting={deletingId === account.id}
                 onEdit={() => setEditingAccount(account)}
                 onDelete={() => setConfirmingDelete(account)}
               />

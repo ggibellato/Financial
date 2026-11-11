@@ -2,7 +2,6 @@ import { useEffect, useRef } from 'react'
 
 export function useFormErrorFocus(errorFields: object, generalError: string | null) {
   const formRef = useRef<HTMLFormElement | null>(null)
-  const saveRef = useRef<HTMLButtonElement | null>(null)
   const errorRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -10,8 +9,8 @@ export function useFormErrorFocus(errorFields: object, generalError: string | nu
   }, [errorFields])
 
   useEffect(() => {
-    if (generalError) (errorRef.current ?? saveRef.current)?.focus()
+    if (generalError) errorRef.current?.focus()
   }, [generalError])
 
-  return { formRef, saveRef, errorRef }
+  return { formRef, errorRef }
 }

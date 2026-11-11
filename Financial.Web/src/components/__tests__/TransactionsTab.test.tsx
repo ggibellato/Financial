@@ -470,7 +470,7 @@ describe('TransactionsTab', () => {
 
   it('edit_icon_opens_the_edit_form_prefilled_with_the_transaction', async () => {
     await renderAssetTab()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit transaction / }))
 
     expect(await screen.findByRole('heading', { name: 'Edit transaction' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-03-15')
@@ -509,7 +509,7 @@ describe('TransactionsTab', () => {
   it('save_in_edit_mode_updates_the_transaction', async () => {
     updateTransactionMock.mockResolvedValue(assetWith([{ ...TRANSACTION_BUY, quantity: 120 }]))
     await renderAssetTab()
-    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit transaction / }))
     await screen.findByRole('heading', { name: 'Edit transaction' })
     fireEvent.change(screen.getByLabelText(/^Quantity/), { target: { value: '120' } })
 
@@ -581,7 +581,7 @@ describe('TransactionsTab', () => {
     deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL]))
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
-    fireEvent.click(within(dataRows()[0]).getByRole('button', { name: 'Delete transaction' }))
+    fireEvent.click(within(dataRows()[0]).getByRole('button', { name: /^Delete transaction / }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
     expect(screen.getByText('10/01/2024')).toBeInTheDocument()
@@ -593,11 +593,19 @@ describe('TransactionsTab', () => {
     })
   })
 
+  it('row_actions_name_the_transaction_by_type_net_and_date', async () => {
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+    const buyRow = within(dataRows()[0])
+    expect(buyRow.getByRole('button', { name: 'Edit transaction Buy -420.50, 15/03/2024' })).toBeInTheDocument()
+    expect(buyRow.getByRole('button', { name: 'Delete transaction Buy -420.50, 15/03/2024' })).toBeInTheDocument()
+  })
+
   it('delete_icon_does_not_delete_when_the_user_cancels_the_confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     await renderAssetTab()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete transaction / }))
 
     expect(deleteTransactionMock).not.toHaveBeenCalled()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
@@ -607,7 +615,7 @@ describe('TransactionsTab', () => {
     deleteTransactionMock.mockRejectedValue(new Error('Failed to delete'))
     await renderAssetTab()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete transaction / }))
 
     expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
@@ -636,7 +644,7 @@ describe('TransactionsTab', () => {
 
   it('does_not_show_the_lot_allocation_picker_when_editing_a_specific_id_sale', async () => {
     await renderAssetTab([TRANSACTION_SELL], 'SpecificId')
-    fireEvent.click(screen.getByRole('button', { name: 'Edit transaction' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit transaction / }))
     await screen.findByRole('heading', { name: 'Edit transaction' })
 
     expect(screen.queryByText(/Allocated/)).not.toBeInTheDocument()

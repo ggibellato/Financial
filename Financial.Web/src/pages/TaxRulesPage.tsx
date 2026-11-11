@@ -106,7 +106,7 @@ export default function TaxRulesPage() {
               <DataTableCell label="Effective To">{rule.effectiveTo ?? '—'}</DataTableCell>
               <RowActionsCell
                 itemName={rule.label}
-                deleteDisabled={deletingId === rule.id}
+                isDeleting={deletingId === rule.id}
                 onEdit={() => setEditingTaxRule(rule)}
                 onDelete={() => setConfirmingDelete(rule)}
               />

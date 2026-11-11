@@ -208,7 +208,7 @@ export default function AssetsPage() {
                 <DataTableCell label="Quantity">{asset.quantity}</DataTableCell>
                 <RowActionsCell
                   itemName={asset.name}
-                  deleteDisabled={deletingKey === key}
+                  isDeleting={deletingKey === key}
                   onEdit={() => setEditingAsset(asset)}
                   onDelete={() => setConfirmingDelete(asset)}
                 />

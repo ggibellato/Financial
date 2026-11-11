@@ -134,7 +134,7 @@ export default function BrokersPage() {
               <DataTableCell label="Portfolios">{broker.portfolioCount}</DataTableCell>
               <RowActionsCell
                 itemName={broker.name}
-                deleteDisabled={deletingName === broker.name}
+                isDeleting={deletingName === broker.name}
                 onEdit={() => setEditingBroker(broker)}
                 onDelete={() => setConfirmingDelete(broker)}
               />

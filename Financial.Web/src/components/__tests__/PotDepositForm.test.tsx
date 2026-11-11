@@ -244,7 +244,7 @@ describe('PotDepositForm', () => {
     expect(await screen.findByText('Enter the deposit date.')).toBeInTheDocument()
   })
 
-  it('shows a server refusal in an alert, keeps the values and returns focus to Save', async () => {
+  it('shows a server refusal in an alert, keeps the values and moves focus to the alert', async () => {
     createPotDepositMock.mockRejectedValue(new ApiError('Active pots must total 100% (now 95%).', 400))
     render(<Harness />)
     await screen.findByRole('table', { name: 'Split preview' })
@@ -253,12 +253,13 @@ describe('PotDepositForm', () => {
 
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Active pots must total 100% (now 95%).')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Active pots must total 100% (now 95%).')
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Ramsay bonus')
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Add deposit' })).toHaveFocus())
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 
-  it('disables the fields while saving and says so on the button', async () => {
+  it('disables the fields and Cancel while saving, and Save says so and stays focusable', async () => {
     createPotDepositMock.mockReturnValue(new Promise(() => undefined))
     render(<Harness />)
     await screen.findByRole('table', { name: 'Split preview' })
@@ -267,8 +268,9 @@ describe('PotDepositForm', () => {
 
     save()
 
-    expect(await screen.findByRole('button', { name: 'Saving...' })).toBeDisabled()
+    expect(await screen.findByRole('button', { name: 'Saving...' })).toHaveAttribute('aria-disabled', 'true')
     expect(screen.getByLabelText(/^Description/)).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
     save('Saving...')
     expect(createPotDepositMock).toHaveBeenCalledOnce()
   })
