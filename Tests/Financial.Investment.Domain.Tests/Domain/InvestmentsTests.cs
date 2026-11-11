@@ -417,15 +417,72 @@ public class InvestmentsTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void RenameBroker_EitherRecordOfANameSharedByActiveAndHistoric_ToThatNameInAnotherCase_Renames(bool preferHistoric)
+    public void RenameBroker_EitherRecordOfANameSharedByActiveAndHistoric_ToThatNameInAnotherCase_RenamesBothRecords(bool preferHistoric)
     {
-        var investments = Investments.Create();
-        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
-        investments.AddHistoricBroker(Broker.Create("XPI", "BRL"));
+        var investments = CreateInvestmentsWithSharedBrokerName(historicCurrency: "USD");
 
-        var broker = investments.RenameBroker("XPI", "Xpi", "BRL", preferHistoric);
+        investments.RenameBroker("XPI", "Xpi", "GBP", preferHistoric);
 
-        broker.Name.Should().Be("Xpi");
+        using (new AssertionScope())
+        {
+            investments.ActiveBrokers.Should().ContainSingle().Which.Should()
+                .BeEquivalentTo(new { Name = "Xpi", Currency = preferHistoric ? "BRL" : "GBP" });
+            investments.HistoricBrokers.Should().ContainSingle().Which.Should()
+                .BeEquivalentTo(new { Name = "Xpi", Currency = preferHistoric ? "GBP" : "USD" });
+        }
+    }
+
+    [Fact]
+    public void RenameBroker_OneRecordOfANameSharedByActiveAndHistoric_ToADifferentName_LeavesTheOtherRecord()
+    {
+        var investments = CreateInvestmentsWithSharedBrokerName();
+
+        investments.RenameBroker("XPI", "Clear", "BRL");
+
+        using (new AssertionScope())
+        {
+            investments.ActiveBrokers.Should().ContainSingle().Which.Name.Should().Be("Clear");
+            investments.HistoricBrokers.Should().ContainSingle().Which.Name.Should().Be("XPI");
+        }
+    }
+
+    [Fact]
+    public void ArchiveAsset_AfterACaseOnlyRenameOfABrokerWithAHistoricRecord_ReusesThatHistoricRecord()
+    {
+        var investments = CreateInvestmentsWithClosedAsset(withHistoricCounterpart: true);
+        investments.RenameBroker("XPI", "Xpi", "BRL");
+
+        investments.ArchiveAsset("Xpi", "Default", "VOD", "Closed");
+
+        using (new AssertionScope())
+        {
+            investments.HistoricBrokers.Should().ContainSingle();
+            investments.FindHistoricBroker("Xpi")!.FindPortfolio("Closed")!
+                .Assets.Should().ContainSingle().Which.Name.Should().Be("VOD");
+        }
+    }
+
+    [Fact]
+    public void RenameBroker_ToACaseVariantOfANameSharedByActiveAndHistoric_Throws()
+    {
+        var investments = CreateInvestmentsWithSharedBrokerName();
+        investments.AddActiveBroker(Broker.Create("Avenue", "USD"));
+
+        var act = () => investments.RenameBroker("Avenue", "xpi", "USD");
+
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("A broker named \"xpi\" already exists.");
+        investments.FindActiveBroker("Avenue").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void CreateActiveBroker_ACaseVariantOfANameSharedByActiveAndHistoric_ThrowsAndAddsNothing()
+    {
+        var investments = CreateInvestmentsWithSharedBrokerName();
+
+        var act = () => investments.CreateActiveBroker("Xpi", "BRL");
+
+        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("A broker named \"Xpi\" already exists.");
+        investments.ActiveBrokers.Should().ContainSingle();
     }
 
     [Theory]
@@ -433,9 +490,7 @@ public class InvestmentsTests
     [InlineData(true)]
     public void RenameBroker_EitherRecordOfANameSharedByActiveAndHistoric_ToAnotherBrokersNameInAnotherCase_Throws(bool preferHistoric)
     {
-        var investments = Investments.Create();
-        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
-        investments.AddHistoricBroker(Broker.Create("XPI", "BRL"));
+        var investments = CreateInvestmentsWithSharedBrokerName();
         investments.AddActiveBroker(Broker.Create("Avenue", "USD"));
 
         var act = () => investments.RenameBroker("XPI", "avenue", "BRL", preferHistoric);
@@ -820,6 +875,14 @@ public class InvestmentsTests
     /// Active XPI holding "VOD", bought then fully sold with a dividend along the way: closed, but
     /// with a record worth keeping.
     /// </summary>
+    private static Investments CreateInvestmentsWithSharedBrokerName(string historicCurrency = "BRL")
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+        investments.AddHistoricBroker(Broker.Create("XPI", historicCurrency));
+        return investments;
+    }
+
     private static Investments CreateInvestmentsWithClosedAsset(bool withHistoricCounterpart)
     {
         var investments = Investments.Create();

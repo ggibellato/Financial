@@ -101,6 +101,7 @@ public class Investments
     public Broker RenameBroker(string currentName, string newName, string newCurrency, bool preferHistoric = false)
     {
         var broker = GetBroker(currentName, preferHistoric);
+        var twin = IsActiveBroker(broker) ? FindHistoricBroker(currentName) : FindActiveBroker(currentName);
 
         if (newName != currentName)
         {
@@ -108,6 +109,11 @@ public class Investments
         }
 
         broker.Update(newName, newCurrency);
+        if (twin is not null && string.Equals(newName, currentName, StringComparison.OrdinalIgnoreCase))
+        {
+            twin.Update(newName, twin.Currency);
+        }
+
         return broker;
     }
 
