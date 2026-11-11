@@ -221,6 +221,15 @@ describe('TransferForm', () => {
     expect(screen.getByLabelText(/^Date/)).toHaveFocus()
   })
 
+  it('moves focus to a newly invalid field even when Enter was pressed in a valid one', () => {
+    const { rerender } = render(<TransferForm {...baseProps} />)
+    screen.getByLabelText(/^Note/).focus()
+
+    rerender(<TransferForm {...baseProps} saveErrorFields={{ date: 'Enter the transfer date.' }} />)
+
+    expect(screen.getByLabelText(/^Date/)).toHaveFocus()
+  })
+
   it('announces a server error and moves focus to it', () => {
     const { rerender } = render(<TransferForm {...baseProps} />)
 

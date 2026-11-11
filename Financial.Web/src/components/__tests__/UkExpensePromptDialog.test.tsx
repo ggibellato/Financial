@@ -111,6 +111,15 @@ describe('UkExpensePromptDialog', () => {
     expect(screen.getByLabelText(/^Bank/)).toBeEnabled()
   })
 
+  it('moves focus to an error that appears after a failed save', () => {
+    const props = { bill: BILL, banks: BANKS, categories: CATEGORIES, isSaving: false, onConfirm: vi.fn(), onSkip: vi.fn(), onCancel: vi.fn() }
+    const { rerender } = render(<UkExpensePromptDialog {...props} error={null} />)
+
+    rerender(<UkExpensePromptDialog {...props} error="Category is required." />)
+
+    expect(screen.getByRole('group', { name: 'Category is required.', hidden: true })).toHaveFocus()
+  })
+
   it('disables every action while saving', () => {
     renderDialog({ isSaving: true })
 

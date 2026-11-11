@@ -6,10 +6,9 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-  MessageBar,
-  MessageBarBody,
   Spinner,
 } from '@fluentui/react-components'
+import ActionErrorAlert from './ActionErrorAlert'
 import { useFormPanelStyles } from './formPanelStyles'
 
 export interface ConfirmDialogProps {
@@ -65,11 +64,7 @@ export default function ConfirmDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>
             <p id={descriptionId}>{message}</p>
-            {error && (
-              <MessageBar intent="error">
-                <MessageBarBody>{error}</MessageBarBody>
-              </MessageBar>
-            )}
+            <ActionErrorAlert message={error} />
           </DialogContent>
           <div className={styles.actions}>
             {confirmLabel && (
