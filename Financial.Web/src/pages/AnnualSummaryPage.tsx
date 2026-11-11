@@ -8,7 +8,7 @@ import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import ColumnFilterMenu from '../components/grid/ColumnFilterMenu'
 import FilteredRowsNotice from '../components/grid/FilteredRowsNotice'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { useColumnFilters } from '../hooks/useColumnFilters'
+import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
@@ -275,7 +275,7 @@ export default function AnnualSummaryPage() {
                   {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={SPACER_COL_SPAN}>
-                        No rows match the current filters.
+                        {NO_FILTER_MATCH_MESSAGE}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -416,7 +416,7 @@ export default function AnnualSummaryPage() {
                   {historicSummaryAverage && sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
-                        No rows match the current filters.
+                        {NO_FILTER_MATCH_MESSAGE}
                       </TableCell>
                     </TableRow>
                   ) : (

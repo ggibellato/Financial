@@ -310,7 +310,7 @@ export default function CardStatementsTab({
                 ) : sortedRows.length === 0 ? (
                   <TableRow>
                     <TableCell className="data-table__cell--message" colSpan={COLUMN_COUNT}>
-                      No statements yet
+                      No statements yet.
                     </TableCell>
                   </TableRow>
                 ) : (

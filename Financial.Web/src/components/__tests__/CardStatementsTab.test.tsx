@@ -195,7 +195,7 @@ describe('CardStatementsTab', () => {
   it('says when the card has no statements yet', () => {
     renderTab({ statements: [] })
 
-    expect(screen.getByText('No statements yet')).toBeInTheDocument()
+    expect(screen.getByText('No statements yet.')).toBeInTheDocument()
   })
 
   it('shows the load error with Try again', async () => {
@@ -419,7 +419,7 @@ describe('CardStatementsTab', () => {
       expect(screen.queryByRole('button', { name: /due date$/ })).not.toBeInTheDocument()
 
       rerenderWith({ statements: [] })
-      expect(screen.getByText('No statements yet')).toBeInTheDocument()
+      expect(screen.getByText('No statements yet.')).toBeInTheDocument()
       expect(screen.queryByRole('button', { name: /due date$/ })).not.toBeInTheDocument()
     })
 
