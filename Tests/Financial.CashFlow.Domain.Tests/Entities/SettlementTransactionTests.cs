@@ -21,7 +21,7 @@ public class SettlementTransactionTests
     {
         var mae = Mae();
 
-        var entry = SettlementTransaction.Create(mae, EntryDate, "School supplies", "Start of term", SettlementPayer.You, Currency.BRL, 350m, 51.23m);
+        var entry = SettlementTransaction.Create(mae, EntryDate, "School supplies", "Start of term", SettlementPayer.You, Currency.BRL, 350m, 51.23m, TestClock.Today);
 
         using (new AssertionScope())
         {
@@ -40,7 +40,7 @@ public class SettlementTransactionTests
     [Fact]
     public void Create_NullNote_StoresEmptyNote()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Medical appointment", null, SettlementPayer.Other, Currency.GBP, 40m, null);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Medical appointment", null, SettlementPayer.Other, Currency.GBP, 40m, null, TestClock.Today);
 
         entry.Note.Should().BeEmpty();
         entry.ConvertedValue.Should().BeNull();
@@ -49,7 +49,7 @@ public class SettlementTransactionTests
     [Fact]
     public void Create_AccountWithoutParticipants_Refused()
     {
-        var act = () => SettlementTransaction.Create(TestAccounts.Bank("Barclays"), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        var act = () => SettlementTransaction.Create(TestAccounts.Bank("Barclays"), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Barclays is not a Settlement account.");
     }
@@ -57,9 +57,54 @@ public class SettlementTransactionTests
     [Fact]
     public void Create_CurrencyTheAccountDoesNotUse_Refused()
     {
-        var act = () => SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, null);
+        var act = () => SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, null, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Samuel doesn't use BRL.");
+    }
+
+    [Fact]
+    public void Create_DateAfterToday_Refused()
+    {
+        var act = () => SettlementTransaction.Create(
+            Mae(), new DateOnly(2026, 10, 6), "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, new DateOnly(2026, 10, 5));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+    }
+
+    [Theory]
+    [InlineData(2026, 10, 5)]
+    [InlineData(2026, 10, 4)]
+    public void Create_DateTodayOrEarlier_Accepted(int year, int month, int day)
+    {
+        var date = new DateOnly(year, month, day);
+
+        var entry = SettlementTransaction.Create(Mae(), date, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, new DateOnly(2026, 10, 5));
+
+        entry.Date.Should().Be(date);
+    }
+
+    [Fact]
+    public void Update_DateAfterToday_RefusedWithoutChangingTheDate()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
+
+        var act = () => entry.Update(new DateOnly(2026, 10, 6), "Entry", null, SettlementPayer.You, 10m, null, new DateOnly(2026, 10, 5));
+
+        act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+        entry.Date.Should().Be(EntryDate);
+    }
+
+    [Theory]
+    [InlineData(2026, 10, 5)]
+    [InlineData(2026, 10, 4)]
+    public void Update_DateTodayOrEarlier_Accepted(int year, int month, int day)
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
+        var date = new DateOnly(year, month, day);
+
+        entry.Update(date, "Entry", null, SettlementPayer.You, 10m, null, new DateOnly(2026, 10, 5));
+
+        entry.Date.Should().Be(date);
     }
 
     [Theory]
@@ -67,7 +112,7 @@ public class SettlementTransactionTests
     [InlineData(486.3632, 72.05799207, 486.36, 72.06)]
     public void Create_ValuesWithMoreThanTwoDecimals_StoredRoundedToTwoAwayFromZero(decimal amount, decimal convertedValue, decimal expectedAmount, decimal expectedConvertedValue)
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, amount, convertedValue);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, amount, convertedValue, TestClock.Today);
 
         using (new AssertionScope())
         {
@@ -91,7 +136,7 @@ public class SettlementTransactionTests
     [InlineData(0.004)]
     public void Create_AmountNotPositive_Refused(decimal amount)
     {
-        var act = () => SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, amount, null);
+        var act = () => SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, amount, null, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Amount must be greater than zero.");
     }
@@ -99,7 +144,7 @@ public class SettlementTransactionTests
     [Fact]
     public void Create_OneCurrencyAccount_RefusesAConvertedValue()
     {
-        var act = () => SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 60m);
+        var act = () => SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 60m, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Samuel has one currency, so an entry has no converted value.");
     }
@@ -109,7 +154,7 @@ public class SettlementTransactionTests
     [InlineData(-0.005)]
     public void Create_NegativeConvertedValue_Refused(decimal convertedValue)
     {
-        var act = () => SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, convertedValue);
+        var act = () => SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, convertedValue, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("The converted value must be greater than zero.");
     }
@@ -120,7 +165,7 @@ public class SettlementTransactionTests
     [InlineData(-0.004)]
     public void Create_ConvertedValueRoundingToZero_StoredEmpty(decimal convertedValue)
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, convertedValue);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, convertedValue, TestClock.Today);
 
         entry.ConvertedValue.Should().BeNull();
     }
@@ -128,7 +173,7 @@ public class SettlementTransactionTests
     [Fact]
     public void UpdateValues_ConvertedValueRoundingToZero_StoredEmpty()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m, TestClock.Today);
 
         entry.UpdateValues(SettlementPayer.Other, 12m, 0.004m);
 
@@ -150,10 +195,10 @@ public class SettlementTransactionTests
     public void Update_ChangesTheSixFieldsAndKeepsIdAccountAndCurrency()
     {
         var mae = Mae();
-        var entry = SettlementTransaction.Create(mae, EntryDate, "Farmácia", "first", SettlementPayer.You, Currency.BRL, 150m, 22m);
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Farmácia", "first", SettlementPayer.You, Currency.BRL, 150m, 22m, TestClock.Today);
         var originalId = entry.Id;
 
-        entry.Update(new DateOnly(2026, 7, 14), "Farmácia e mercado", "metade", SettlementPayer.Other, 180.005m, 25.6m);
+        entry.Update(new DateOnly(2026, 7, 14), "Farmácia e mercado", "metade", SettlementPayer.Other, 180.005m, 25.6m, TestClock.Today);
 
         using (new AssertionScope())
         {
@@ -172,9 +217,9 @@ public class SettlementTransactionTests
     [Fact]
     public void Update_NullNoteAndNullConvertedValue_StoreEmptyNoteAndNoConvertedValue()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", "note", SettlementPayer.You, Currency.BRL, 10m, 2m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", "note", SettlementPayer.You, Currency.BRL, 10m, 2m, TestClock.Today);
 
-        entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, null);
+        entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, null, TestClock.Today);
 
         entry.Note.Should().BeEmpty();
         entry.ConvertedValue.Should().BeNull();
@@ -183,9 +228,9 @@ public class SettlementTransactionTests
     [Fact]
     public void Update_ConvertedValueRoundingToZero_StoredEmpty()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m, TestClock.Today);
 
-        entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, 0.001m);
+        entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, 0.001m, TestClock.Today);
 
         entry.ConvertedValue.Should().BeNull();
     }
@@ -196,9 +241,9 @@ public class SettlementTransactionTests
     [InlineData("New", 10, -1, "The converted value must be greater than zero.")]
     public void Update_InvalidValue_RefusedWithoutChangingAnything(string description, decimal amount, int? convertedValue, string message)
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", "note", SettlementPayer.You, Currency.BRL, 10m, 2m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", "note", SettlementPayer.You, Currency.BRL, 10m, 2m, TestClock.Today);
 
-        var act = () => entry.Update(new DateOnly(2026, 7, 1), description, "changed", SettlementPayer.Other, amount, convertedValue);
+        var act = () => entry.Update(new DateOnly(2026, 7, 1), description, "changed", SettlementPayer.Other, amount, convertedValue, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage(message);
         using (new AssertionScope())
@@ -218,9 +263,9 @@ public class SettlementTransactionTests
     [InlineData(0.004)]
     public void Update_ConvertedValueOnOneCurrencyAccount_Refused(decimal convertedValue)
     {
-        var entry = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        var entry = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
 
-        var act = () => entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, convertedValue);
+        var act = () => entry.Update(EntryDate, "Entry", null, SettlementPayer.You, 10m, convertedValue, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Samuel has one currency, so an entry has no converted value.");
     }
@@ -230,7 +275,7 @@ public class SettlementTransactionTests
     [InlineData("   ")]
     public void Create_BlankDescription_Refused(string description)
     {
-        var act = () => SettlementTransaction.Create(Mae(), EntryDate, description, null, SettlementPayer.You, Currency.BRL, 10m, null);
+        var act = () => SettlementTransaction.Create(Mae(), EntryDate, description, null, SettlementPayer.You, Currency.BRL, 10m, null, TestClock.Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Description is required.");
     }
@@ -238,7 +283,7 @@ public class SettlementTransactionTests
     [Fact]
     public void UpdateValues_ChangesPayerAndValuesWithoutChangingOtherFields()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Medical appointment", null, SettlementPayer.You, Currency.GBP, 40m, null);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Medical appointment", null, SettlementPayer.You, Currency.GBP, 40m, null, TestClock.Today);
         var originalId = entry.Id;
 
         entry.UpdateValues(SettlementPayer.Other, 45m, 320.50m);
@@ -257,7 +302,7 @@ public class SettlementTransactionTests
     [Fact]
     public void UpdateValues_ValuesWithFourDecimals_StoredWithTwo()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 40m, null);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 40m, null, TestClock.Today);
 
         entry.UpdateValues(SettlementPayer.Other, 7.9421m, 167.8768m);
 
@@ -271,7 +316,7 @@ public class SettlementTransactionTests
     [Fact]
     public void UpdateValues_InvalidAmount_RefusedAndKeepsTheStoredValues()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 10m, 2m, TestClock.Today);
 
         var act = () => entry.UpdateValues(SettlementPayer.Other, 0m, null);
 
@@ -284,7 +329,7 @@ public class SettlementTransactionTests
     [Fact]
     public void UpdateValues_ConvertedValueOnOneCurrencyAccount_Refused()
     {
-        var entry = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        var entry = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
 
         var act = () => entry.UpdateValues(SettlementPayer.You, 10m, 60m);
 
@@ -296,7 +341,7 @@ public class SettlementTransactionTests
     [InlineData(SettlementPayer.Other, -1)]
     public void SignedValueIn_SignFollowsPayerInBothCurrencies(SettlementPayer paidBy, int sign)
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, paidBy, Currency.GBP, 80m, 491.04m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, paidBy, Currency.GBP, 80m, 491.04m, TestClock.Today);
 
         using (new AssertionScope())
         {
@@ -308,7 +353,7 @@ public class SettlementTransactionTests
     [Fact]
     public void SignedValueIn_EmptyConvertedValue_IsNullInTheOtherCurrency()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.Other, Currency.BRL, 100m, null);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.Other, Currency.BRL, 100m, null, TestClock.Today);
 
         entry.SignedValueIn(Currency.BRL).Should().Be(-100m);
         entry.SignedValueIn(Currency.GBP).Should().BeNull();
@@ -317,8 +362,8 @@ public class SettlementTransactionTests
     [Fact]
     public void SignedValueIn_CurrencyTheAccountDoesNotHold_IsNull()
     {
-        var mae = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m);
-        var son = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        var mae = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m, TestClock.Today);
+        var son = SettlementTransaction.Create(Son(), EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
 
         mae.SignedValueIn(Currency.USD).Should().BeNull();
         son.SignedValueIn(Currency.BRL).Should().BeNull();
@@ -357,7 +402,7 @@ public class SettlementTransactionTests
     public void ContributionTo_OwnAccount_IsTheSignedValueInEachCurrency()
     {
         var mae = Mae();
-        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.Other, Currency.GBP, 40m, 260.5m);
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.Other, Currency.GBP, 40m, 260.5m, TestClock.Today);
 
         using (new AssertionScope())
         {
@@ -371,7 +416,7 @@ public class SettlementTransactionTests
     public void ContributionTo_EmptyConvertedValue_IsZeroInTheOtherCurrency()
     {
         var mae = Mae();
-        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, null);
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, null, TestClock.Today);
 
         entry.ContributionTo(mae, Currency.GBP).Should().Be(0m);
     }
@@ -379,7 +424,7 @@ public class SettlementTransactionTests
     [Fact]
     public void ContributionTo_AnotherAccount_IsZero()
     {
-        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m);
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m, TestClock.Today);
         var otherMae = Mae();
 
         using (new AssertionScope())
@@ -394,7 +439,7 @@ public class SettlementTransactionTests
     public void ContributionTo_WithoutCurrency_IsTheContributionInTheAccountsMainCurrency()
     {
         var mae = Mae();
-        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m);
+        var entry = SettlementTransaction.Create(mae, EntryDate, "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m, TestClock.Today);
 
         entry.ContributionTo(mae).Should().Be(65m);
     }

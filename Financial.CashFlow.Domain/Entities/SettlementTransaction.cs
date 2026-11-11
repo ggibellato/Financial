@@ -29,9 +29,11 @@ public class SettlementTransaction : IAccountTransaction
         SettlementPayer paidBy,
         Currency currency,
         decimal amount,
-        decimal? convertedValue)
+        decimal? convertedValue,
+        DateOnly today)
     {
         EnsureSettlementAccount(account);
+        TransactionDateRule.EnsureNotInFuture(date, today);
         EnsureAccountUses(account, currency);
         EnsureDescription(description);
 
@@ -48,8 +50,10 @@ public class SettlementTransaction : IAccountTransaction
         return entry;
     }
 
-    public void Update(DateOnly date, string description, string? note, SettlementPayer paidBy, decimal amount, decimal? convertedValue)
+    public void Update(
+        DateOnly date, string description, string? note, SettlementPayer paidBy, decimal amount, decimal? convertedValue, DateOnly today)
     {
+        TransactionDateRule.EnsureNotInFuture(date, today);
         EnsureDescription(description);
         UpdateValues(paidBy, amount, convertedValue);
 

@@ -47,7 +47,7 @@ public class CashFlowSerializerAdapterTests
         cardStatement.SetDueDate(new DateOnly(2026, 8, 18));
         var recurringBill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, "Direct debit", "12345678901", 1621m);
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
-        var settlementTransaction = SettlementTransaction.Create(mae, new DateOnly(2026, 7, 15), "School supplies", "Note", SettlementPayer.Other, Currency.GBP, 80m, 491.04m);
+        var settlementTransaction = SettlementTransaction.Create(mae, new DateOnly(2026, 7, 15), "School supplies", "Note", SettlementPayer.Other, Currency.GBP, 80m, 491.04m, TestClock.Today);
         var investmentSnapshot = InvestmentSnapshot.Create(investmentAccount, 2026, 7, 1250.00m);
         var transfer = Transfer.Create(new DateOnly(2026, 7, 25), bank, destinationBank, 500.00m, destinationAmount: null, "Round-up top-up", today: TestClock.Today);
         var balanceAdjustment = BalanceAdjustment.Create(new DateOnly(2026, 7, 25), bank, 2340.17m, -4.20m, "Matched against July statement");

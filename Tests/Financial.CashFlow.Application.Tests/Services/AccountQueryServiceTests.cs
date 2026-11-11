@@ -1379,7 +1379,7 @@ public class AccountQueryServiceTests
         var pai = TestAccounts.Settlement("Pai", [Currency.GBP], "Pai");
         _repository.Accounts.Add(pai);
         _repository.SettlementTransactions.Add(
-            SettlementTransaction.Create(pai, new DateOnly(2026, 10, 5), "Old", null, SettlementPayer.You, Currency.GBP, 5m, null));
+            SettlementTransaction.Create(pai, new DateOnly(2026, 10, 5), "Old", null, SettlementPayer.You, Currency.GBP, 5m, null, Today));
         pai.SetActive(false);
 
         _sut.GetTransactions(pai.Id, 2026, 10).Should().ContainSingle().Which.CanEdit.Should().BeFalse();
@@ -1476,9 +1476,9 @@ public class AccountQueryServiceTests
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
         _repository.Accounts.Add(mae);
         _repository.SettlementTransactions.Add(
-            SettlementTransaction.Create(mae, new DateOnly(year, month, 5), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45m));
+            SettlementTransaction.Create(mae, new DateOnly(year, month, 5), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45m, Today));
         _repository.SettlementTransactions.Add(
-            SettlementTransaction.Create(mae, new DateOnly(year, month, 6), "Paid by Mãe", null, SettlementPayer.Other, Currency.GBP, 10m, 40m));
+            SettlementTransaction.Create(mae, new DateOnly(year, month, 6), "Paid by Mãe", null, SettlementPayer.Other, Currency.GBP, 10m, 40m, Today));
         return mae;
     }
 }

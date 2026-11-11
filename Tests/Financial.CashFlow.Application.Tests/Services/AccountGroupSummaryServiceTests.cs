@@ -404,9 +404,9 @@ public class AccountGroupSummaryServiceTests
         _repository.Accounts.AddRange([mae, samuel]);
         _repository.SettlementTransactions.AddRange(
         [
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45.5m),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 3), "Paid by Mãe", null, SettlementPayer.Other, Currency.BRL, 100m, null),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 10, 1), "Next month", null, SettlementPayer.You, Currency.GBP, 10m, 65m)
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45.5m, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 3), "Paid by Mãe", null, SettlementPayer.Other, Currency.BRL, 100m, null, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 10, 1), "Next month", null, SettlementPayer.You, Currency.GBP, 10m, 65m, TestClock.Today)
         ]);
 
         var settlement = _sut.GetTemplateGroups(2026, 9).Single(group => group.TemplateName == "Settlement");

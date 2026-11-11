@@ -39,9 +39,9 @@ public sealed class SettlementService : ISettlementService
             ArgumentNullException.ThrowIfNull(request);
 
             var account = UsableSettlementAccount(accountId);
-            EnsureNotInTheFuture(request.Date);
             var entry = SettlementTransaction.Create(
-                account, request.Date, request.Description, request.Note, ParsePaidBy(request.PaidBy), CurrencyOf(account, request.Currency), request.Amount, null);
+                account, request.Date, request.Description, request.Note, ParsePaidBy(request.PaidBy), CurrencyOf(account, request.Currency), request.Amount, null,
+                _timeProvider.GetLocalToday());
             var warning = await ApplyConvertedValueAsync(entry).ConfigureAwait(false);
 
             return await SaveNewAsync(entry, warning, span, "AddEntry").ConfigureAwait(false);
@@ -62,9 +62,9 @@ public sealed class SettlementService : ISettlementService
 
             var account = UsableSettlementAccount(accountId);
             EnsureCanBeSettledNow(account);
-            EnsureNotInTheFuture(request.Date);
             var entry = SettlementTransaction.Create(
-                account, request.Date, request.Description, request.Note, ParsePaidBy(request.PaidBy), CurrencyOf(account, request.Currency), request.Amount, request.ConvertedValue);
+                account, request.Date, request.Description, request.Note, ParsePaidBy(request.PaidBy), CurrencyOf(account, request.Currency), request.Amount, request.ConvertedValue,
+                _timeProvider.GetLocalToday());
             var warning = RoundedAwayWarning(request.ConvertedValue, entry);
 
             return await SaveNewAsync(entry, warning, span, "Settle").ConfigureAwait(false);
@@ -85,12 +85,12 @@ public sealed class SettlementService : ISettlementService
             ArgumentNullException.ThrowIfNull(request);
 
             var entry = EntryOf(UsableSettlementAccount(accountId), entryId);
-            EnsureNotInTheFuture(request.Date);
             var paidBy = ParsePaidBy(request.PaidBy);
+            var today = _timeProvider.GetLocalToday();
 
             await _repository.ApplyAndSaveAsync(() =>
             {
-                entry.Update(request.Date, request.Description, request.Note, paidBy, request.Amount, request.ConvertedValue);
+                entry.Update(request.Date, request.Description, request.Note, paidBy, request.Amount, request.ConvertedValue, today);
                 return true;
             }).ConfigureAwait(false);
 
@@ -189,8 +189,6 @@ public sealed class SettlementService : ISettlementService
 
     private SettlementTransaction EntryOf(Account account, Guid entryId) =>
         _repository.GetSettlementTransactions().FirstOrThrow(entry => entry.Id == entryId && entry.Account.Id == account.Id, "Settlement entry", entryId);
-
-    private void EnsureNotInTheFuture(DateOnly date) => TransactionDateRule.EnsureNotInFuture(date, _timeProvider.GetLocalToday());
 
     private async Task<string?> ApplyConvertedValueAsync(SettlementTransaction entry)
     {

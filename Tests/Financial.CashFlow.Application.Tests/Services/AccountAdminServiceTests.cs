@@ -1045,7 +1045,7 @@ public class AccountAdminServiceTests
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
         _repository.Accounts.Add(mae);
         _repository.SettlementTransactions.Add(
-            SettlementTransaction.Create(mae, new DateOnly(2026, 7, 1), "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m));
+            SettlementTransaction.Create(mae, new DateOnly(2026, 7, 1), "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m, TestClock.Today));
         return mae;
     }
 }

@@ -16,8 +16,11 @@ public static class PotWithdrawal
         string description,
         Account? bank,
         Category? category,
-        Guid operationId)
+        Guid operationId,
+        DateOnly today)
     {
+        TransactionDateRule.EnsureNotInFuture(date, today);
+
         if (amount <= 0)
         {
             throw new ArgumentException("Amount must be greater than zero.");

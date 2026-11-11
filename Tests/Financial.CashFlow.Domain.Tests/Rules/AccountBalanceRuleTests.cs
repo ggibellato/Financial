@@ -272,10 +272,10 @@ public class AccountBalanceRuleTests
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
         var records = new IAccountTransaction[]
         {
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45.5m),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 3), "Paid by Mãe", null, SettlementPayer.Other, Currency.BRL, 100m, null),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 4), "Pounds", null, SettlementPayer.You, Currency.GBP, 10m, 65m),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 10, 1), "After as-of", null, SettlementPayer.You, Currency.BRL, 999m, 99m),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Paid by you", null, SettlementPayer.You, Currency.BRL, 300m, 45.5m, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 3), "Paid by Mãe", null, SettlementPayer.Other, Currency.BRL, 100m, null, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 4), "Pounds", null, SettlementPayer.You, Currency.GBP, 10m, 65m, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 10, 1), "After as-of", null, SettlementPayer.You, Currency.BRL, 999m, 99m, TestClock.Today),
             Expense.Create(new DateOnly(2026, 9, 5), "Another account", 50m, _groceries, _barclays, creditCard: null)
         };
         var asOf = new DateOnly(2026, 9, 30);
@@ -309,7 +309,7 @@ public class AccountBalanceRuleTests
         var mae = TestAccounts.Settlement("Mãe", [Currency.GBP, Currency.BRL], "Mãe");
         var records = new IAccountTransaction[]
         {
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Pounds", null, SettlementPayer.Other, Currency.GBP, 10m, 65m)
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 2), "Pounds", null, SettlementPayer.Other, Currency.GBP, 10m, 65m, TestClock.Today)
         };
 
         AccountBalanceRule.Balances(mae, new DateOnly(2026, 9, 30), records)
@@ -323,7 +323,7 @@ public class AccountBalanceRuleTests
         {
             Income.Create(new DateOnly(2026, 9, 20), _salary, null, 300m, _barclays),
             SettlementTransaction.Create(
-                TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe"), new DateOnly(2026, 9, 2), "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m)
+                TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe"), new DateOnly(2026, 9, 2), "Entry", null, SettlementPayer.You, Currency.GBP, 10m, 65m, TestClock.Today)
         };
 
         AccountBalanceRule.Balances(_barclays, new DateOnly(2026, 9, 30), records).Should().Equal((Currency.GBP, 1300m));

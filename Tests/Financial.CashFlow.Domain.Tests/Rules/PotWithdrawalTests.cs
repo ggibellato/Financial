@@ -10,6 +10,7 @@ namespace Financial.CashFlow.Domain.Tests.Rules;
 public class PotWithdrawalTests
 {
     private static readonly DateOnly Date = new(2026, 10, 12);
+    private static readonly DateOnly Today = new(2026, 11, 11);
     private static readonly Guid OperationId = Guid.NewGuid();
 
     private readonly Category _reservaCategory = Category.Create("Reserva");
@@ -27,7 +28,7 @@ public class PotWithdrawalTests
     [Fact]
     public void Build_ThroughABank_WritesTheMovementAndTwoBankExpensesSharingTheOperationId()
     {
-        var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId);
+        var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId, Today);
 
         var transaction = records.Transactions.Single();
         using (new AssertionScope())
@@ -52,7 +53,7 @@ public class PotWithdrawalTests
     [Fact]
     public void Build_WithoutABank_WritesOnlyTheMovement()
     {
-        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId);
+        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId, Today);
 
         var transaction = records.Transactions.Single();
         using (new AssertionScope())
@@ -63,12 +64,32 @@ public class PotWithdrawalTests
         }
     }
 
+    [Fact]
+    public void Build_DateAfterToday_Throws()
+    {
+        var act = () => PotWithdrawal.Build(_reserva, _pot, 20m, new DateOnly(2026, 11, 12), "Cash", bank: null, category: null, OperationId, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+    }
+
+    [Theory]
+    [InlineData(2026, 11, 11)]
+    [InlineData(2026, 11, 10)]
+    public void Build_DateTodayOrEarlier_IsAccepted(int year, int month, int day)
+    {
+        var date = new DateOnly(year, month, day);
+
+        var records = PotWithdrawal.Build(_reserva, _pot, 20m, date, "Cash", bank: null, category: null, OperationId, Today);
+
+        records.Date.Should().Be(date);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-5)]
     public void Build_AmountNotAboveZero_Throws(decimal amount)
     {
-        var act = () => PotWithdrawal.Build(_reserva, _pot, amount, Date, "Cash", bank: null, category: null, OperationId);
+        var act = () => PotWithdrawal.Build(_reserva, _pot, amount, Date, "Cash", bank: null, category: null, OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Amount must be greater than zero.");
     }
@@ -76,7 +97,7 @@ public class PotWithdrawalTests
     [Fact]
     public void Build_ThroughABankWithoutACategory_Throws()
     {
-        var act = () => PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Boots", _bank, category: null, OperationId);
+        var act = () => PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Boots", _bank, category: null, OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Category is required when a bank is selected.");
     }
@@ -86,7 +107,7 @@ public class PotWithdrawalTests
     {
         var holiday = TestAccounts.Pots("Holiday");
 
-        var act = () => PotWithdrawal.Build(holiday, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId);
+        var act = () => PotWithdrawal.Build(holiday, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Holiday.");
     }
@@ -97,7 +118,7 @@ public class PotWithdrawalTests
         var reserva = TestAccounts.Pots("Reserva");
         reserva.AddPot(_pot);
 
-        var act = () => PotWithdrawal.Build(reserva, _pot, 20m, Date, "Boots", _bank, _health, OperationId);
+        var act = () => PotWithdrawal.Build(reserva, _pot, 20m, Date, "Boots", _bank, _health, OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Set a category on Reserva first.");
     }

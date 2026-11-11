@@ -13,6 +13,7 @@ namespace Financial.CashFlow.Domain.Tests.Rules;
 public class PotDepositTests
 {
     private static readonly DateOnly Date = new(2026, 10, 31);
+    private static readonly DateOnly Today = new(2026, 11, 11);
     private static readonly Guid OperationId = Guid.NewGuid();
 
     private readonly Category _reservaCategory = Category.Create("Reserva");
@@ -36,7 +37,7 @@ public class PotDepositTests
     [Fact]
     public void Build_IntoActivePots_SplitsOnceByPercentageWithTheResidualToTheLargest()
     {
-        var records = PotDeposit.Build(_reserva, 33.33m, Date, "Ramsay bonus", pot: null, [], OperationId);
+        var records = PotDeposit.Build(_reserva, 33.33m, Date, "Ramsay bonus", pot: null, [], OperationId, Today);
 
         using (new AssertionScope())
         {
@@ -51,7 +52,7 @@ public class PotDepositTests
     [Fact]
     public void Build_IntoOneInactivePot_CreditsOnlyThatPot()
     {
-        var records = PotDeposit.Build(_reserva, 40m, Date, "Trip fund", _holidays, [], OperationId);
+        var records = PotDeposit.Build(_reserva, 40m, Date, "Trip fund", _holidays, [], OperationId, Today);
 
         records.Transactions.Select(transaction => (transaction.Pot, transaction.Amount)).Should().Equal((_holidays, 40m));
     }
@@ -60,7 +61,7 @@ public class PotDepositTests
     public void Build_WithFundingLines_WritesOneExpensePerLineInThePotsAccountsCategory()
     {
         var records = PotDeposit.Build(
-            _reserva, 90m, Date, "Ramsay bonus", pot: null, [new(_chase, 85m), new(_barclays, 5m)], OperationId);
+            _reserva, 90m, Date, "Ramsay bonus", pot: null, [new(_chase, 85m), new(_barclays, 5m)], OperationId, Today);
 
         using (new AssertionScope())
         {
@@ -78,9 +79,29 @@ public class PotDepositTests
     }
 
     [Fact]
+    public void Build_DateAfterToday_Throws()
+    {
+        var act = () => PotDeposit.Build(_reserva, 40m, new DateOnly(2026, 11, 12), "Bonus", _holidays, [], OperationId, Today);
+
+        act.Should().Throw<ArgumentException>().WithMessage("Date must not be in the future.");
+    }
+
+    [Theory]
+    [InlineData(2026, 11, 11)]
+    [InlineData(2026, 11, 10)]
+    public void Build_DateTodayOrEarlier_IsAccepted(int year, int month, int day)
+    {
+        var date = new DateOnly(year, month, day);
+
+        var records = PotDeposit.Build(_reserva, 40m, date, "Bonus", _holidays, [], OperationId, Today);
+
+        records.Date.Should().Be(date);
+    }
+
+    [Fact]
     public void Build_FundingLinesNotAddingUp_Throws()
     {
-        var act = () => PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_chase, 80m)], OperationId);
+        var act = () => PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_chase, 80m)], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Funding lines must add up to £90.00.");
     }
@@ -90,7 +111,7 @@ public class PotDepositTests
     {
         var lines = Enumerable.Range(0, 6).Select(_ => new PotFundingLine(_chase, 1m)).ToList();
 
-        var act = () => PotDeposit.Build(_reserva, 6m, Date, "Bonus", pot: null, lines, OperationId);
+        var act = () => PotDeposit.Build(_reserva, 6m, Date, "Bonus", pot: null, lines, OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("A deposit has at most 5 funding lines.");
     }
@@ -98,7 +119,7 @@ public class PotDepositTests
     [Fact]
     public void Build_FundingLineOfZero_Throws()
     {
-        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", pot: null, [new(_chase, 10m), new(_barclays, 0m)], OperationId);
+        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", pot: null, [new(_chase, 10m), new(_barclays, 0m)], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Funding line amounts must be greater than zero.");
     }
@@ -106,7 +127,7 @@ public class PotDepositTests
     [Fact]
     public void Build_FundedFromACard_Throws()
     {
-        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", pot: null, [new(TestAccounts.CreditCard("Amex"), 10m)], OperationId);
+        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", pot: null, [new(TestAccounts.CreditCard("Amex"), 10m)], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Amex is a card account and can't pay.");
     }
@@ -117,7 +138,7 @@ public class PotDepositTests
         var reserva = TestAccounts.Pots("Savings");
         reserva.AddPot(Pot.Create("Rainy day", 100m));
 
-        var act = () => PotDeposit.Build(reserva, 10m, Date, "Bonus", pot: null, [new(_chase, 10m)], OperationId);
+        var act = () => PotDeposit.Build(reserva, 10m, Date, "Bonus", pot: null, [new(_chase, 10m)], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Set a category on Savings first.");
     }
@@ -125,7 +146,7 @@ public class PotDepositTests
     [Fact]
     public void Build_PotOfAnotherAccount_Throws()
     {
-        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", Pot.Create("Trip", 0m), [], OperationId);
+        var act = () => PotDeposit.Build(_reserva, 10m, Date, "Bonus", Pot.Create("Trip", 0m), [], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("That pot isn't in Reserva.");
     }
@@ -136,7 +157,7 @@ public class PotDepositTests
         var savings = TestAccounts.Pots("Savings");
         savings.AddPot(Pot.Create("Old", 0m, isActive: false));
 
-        var act = () => PotDeposit.Build(savings, 10m, Date, "Bonus", pot: null, [], OperationId);
+        var act = () => PotDeposit.Build(savings, 10m, Date, "Bonus", pot: null, [], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Savings has no active pots.");
     }
@@ -146,7 +167,7 @@ public class PotDepositTests
     {
         _ariana.Update("Ariana", 19.99m, isActive: true);
 
-        var act = () => PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_chase, 90m)], OperationId);
+        var act = () => PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_chase, 90m)], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Active pots must total 100% (now 99.99%).");
     }
@@ -156,7 +177,7 @@ public class PotDepositTests
     [InlineData(-5)]
     public void Build_AmountNotPositive_Throws(decimal amount)
     {
-        var act = () => PotDeposit.Build(_reserva, amount, Date, "Bonus", pot: null, [], OperationId);
+        var act = () => PotDeposit.Build(_reserva, amount, Date, "Bonus", pot: null, [], OperationId, Today);
 
         act.Should().Throw<ArgumentException>().WithMessage("Amount must be greater than zero.");
     }

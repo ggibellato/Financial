@@ -152,7 +152,7 @@ else
     ImportMonthlyExpenseSheets(workbook, data, report, today);
     ImportReservasSheet(workbook, data, report);
     ImportMensaisSheet(workbook, data, report);
-    ImportControleMaeSheet(workbook, data, report);
+    ImportControleMaeSheet(workbook, data, report, today);
     ImportResumoSheets(workbook, data, report);
 }
 
@@ -275,7 +275,7 @@ static void ImportMensaisSheet(XLWorkbook workbook, CashFlowData data, ImportRep
     report.SheetImported(sheet.Name);
 }
 
-static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, ImportReport report)
+static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, ImportReport report, DateOnly today)
 {
     var mae = MaeAccount.Find(data.Accounts) ?? AddMaeAccount(data);
 
@@ -285,7 +285,7 @@ static void ImportControleMaeSheet(XLWorkbook workbook, CashFlowData data, Impor
         return;
     }
 
-    foreach (var entry in ControleMaeSheetImporter.Import(sheet, mae, report))
+    foreach (var entry in ControleMaeSheetImporter.Import(sheet, mae, report, today))
     {
         data.AddSettlementTransaction(entry);
     }
