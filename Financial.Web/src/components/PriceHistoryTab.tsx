@@ -35,6 +35,7 @@ import { formatN2, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './PriceHistoryTab.css'
 
@@ -72,12 +73,12 @@ function priceName(entry: AssetPriceSnapshotDto): string {
 
 interface PriceRowProps {
   entry: AssetPriceSnapshotDto
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (entry: AssetPriceSnapshotDto) => void
   onDelete: (entry: AssetPriceSnapshotDto) => void
 }
 
-function PriceRow({ entry, isDeleting, onEdit, onDelete }: PriceRowProps) {
+function PriceRow({ entry, deleteState, onEdit, onDelete }: PriceRowProps) {
   return (
     <TableRow>
       <DataTableCell label="Date">{formatShortDate(entry.date)}</DataTableCell>
@@ -92,7 +93,7 @@ function PriceRow({ entry, isDeleting, onEdit, onDelete }: PriceRowProps) {
       </DataTableCell>
       <RowActionsCell
         itemName={priceName(entry)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={entry.isManual ? () => onEdit(entry) : undefined}
         onDelete={entry.isManual ? () => onDelete(entry) : undefined}
       />
@@ -372,7 +373,7 @@ export default function PriceHistoryTab() {
                 <PriceRow
                   key={entry.date}
                   entry={entry}
-                  isDeleting={deletingDate === entry.date}
+                  deleteState={rowDeleteState(deletingDate, entry.date)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />

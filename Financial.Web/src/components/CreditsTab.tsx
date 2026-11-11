@@ -36,6 +36,7 @@ import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatAmount, formatN2, formatPercent1OrDash, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './CreditsTab.css'
 
@@ -85,7 +86,7 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
 
 interface CreditRowProps {
   credit: CreditDto
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (c: CreditDto) => void
   onDelete: (c: CreditDto) => void
 }
@@ -112,7 +113,7 @@ function creditName(credit: CreditDto): string {
   return `credit ${typeLabel(credit.type)} ${formatAmount(credit.value, credit.currency)}, ${formatShortDate(credit.date)}`
 }
 
-function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
+function CreditRow({ credit, deleteState, onEdit, onDelete }: CreditRowProps) {
   const typeClass = TYPE_CLASSES[credit.type] ?? 'credits-tab__type--dividend'
 
   return (
@@ -141,7 +142,7 @@ function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
       </DataTableCell>
       <RowActionsCell
         itemName={creditName(credit)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={() => onEdit(credit)}
         onDelete={() => onDelete(credit)}
       />
@@ -539,7 +540,7 @@ export default function CreditsTab() {
                 <CreditRow
                   key={c.id}
                   credit={c}
-                  isDeleting={deletingId === c.id}
+                  deleteState={rowDeleteState(deletingId, c.id)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />

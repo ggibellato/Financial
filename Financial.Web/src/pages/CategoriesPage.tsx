@@ -5,6 +5,7 @@ import CategoryFormDialog from '../components/CategoryFormDialog'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useCategories } from '../hooks/useCategories'
 import type { CategoryDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
@@ -111,7 +112,7 @@ export default function CategoriesPage() {
               <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>
               <RowActionsCell
                 itemName={category.name}
-                isDeleting={deletingId === category.id}
+                {...rowDeleteState(deletingId, category.id)}
                 onEdit={() => setEditingCategory(category)}
                 onDelete={() => setConfirmingDelete(category)}
               />

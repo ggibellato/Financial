@@ -6,6 +6,7 @@ import TaxRuleFormDialog from '../components/TaxRuleFormDialog'
 import TruncatedText from '../components/TruncatedText'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useTaxRules } from '../hooks/useTaxRules'
 import type { TaxRuleDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
@@ -106,7 +107,7 @@ export default function TaxRulesPage() {
               <DataTableCell label="Effective to">{rule.effectiveTo ?? '—'}</DataTableCell>
               <RowActionsCell
                 itemName={rule.label}
-                isDeleting={deletingId === rule.id}
+                {...rowDeleteState(deletingId, rule.id)}
                 onEdit={() => setEditingTaxRule(rule)}
                 onDelete={() => setConfirmingDelete(rule)}
               />

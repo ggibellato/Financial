@@ -429,12 +429,15 @@ describe('PriceHistoryTab', () => {
     expect(rowButton(`Deleting ${MANUAL_NAME}`)).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+  it('blocks_a_second_delete_while_one_is_in_progress', async () => {
     deleteAssetPriceMock.mockReturnValue(new Promise(() => {}))
     await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
     await confirmDelete(MANUAL_NAME)
 
-    await confirmDelete(EARLIER_MANUAL_NAME)
+    const blocked = await screen.findByRole('button', { name: `Delete ${EARLIER_MANUAL_NAME}`, hidden: true })
+    await waitFor(() => expect(blocked).toHaveAttribute('aria-disabled', 'true'))
+    fireEvent.click(blocked)
+    expect(screen.queryByRole('dialog', { name: /^Delete/, hidden: true })).not.toBeInTheDocument()
 
     expect(deleteAssetPriceMock).toHaveBeenCalledOnce()
   })

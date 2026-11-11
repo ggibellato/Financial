@@ -5,6 +5,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import PortfolioFormDialog from '../components/PortfolioFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useBrokers } from '../hooks/useBrokers'
 import { portfolioKey, usePortfolios } from '../hooks/usePortfolios'
 import type { PortfolioDto } from '../api/types'
@@ -117,7 +118,7 @@ export default function PortfoliosPage() {
                 <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
                 <RowActionsCell
                   itemName={portfolio.name}
-                  isDeleting={deletingKey === key}
+                  {...rowDeleteState(deletingKey, key)}
                   onEdit={() => setEditingPortfolio(portfolio)}
                   onDelete={() => setConfirmingDelete(portfolio)}
                 />

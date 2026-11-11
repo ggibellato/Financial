@@ -156,4 +156,19 @@ describe('CategoriesPage', () => {
     await waitFor(() => expect(screen.queryByText(/will be permanently removed/)).not.toBeInTheDocument())
     expect(deleteCategoryMock).toHaveBeenCalledOnce()
   })
+
+  it('blocks the other rows\' Delete while one delete runs, and says why', async () => {
+    deleteCategoryMock.mockReturnValue(new Promise(() => undefined))
+    render(<CategoriesPage />)
+    await waitFor(() => expect(screen.getByText('Extras')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete Extras' }))
+    const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
+    fireEvent.click(confirmButtons[confirmButtons.length - 1])
+
+    await screen.findByRole('button', { name: 'Deleting Extras' })
+    const other = screen.getByRole('button', { name: 'Delete Mercado' })
+    expect(other).toHaveAttribute('aria-disabled', 'true')
+    expect(other).toHaveAccessibleDescription('Another delete is in progress.')
+  })
 })

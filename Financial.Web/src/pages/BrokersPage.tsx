@@ -5,6 +5,7 @@ import BrokerFormDialog from '../components/BrokerFormDialog'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useBrokers } from '../hooks/useBrokers'
 import type { BrokerDto, CostBasisMethod } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
@@ -134,7 +135,7 @@ export default function BrokersPage() {
               <DataTableCell label="Portfolios">{broker.portfolioCount}</DataTableCell>
               <RowActionsCell
                 itemName={broker.name}
-                isDeleting={deletingName === broker.name}
+                {...rowDeleteState(deletingName, broker.name)}
                 onEdit={() => setEditingBroker(broker)}
                 onDelete={() => setConfirmingDelete(broker)}
               />

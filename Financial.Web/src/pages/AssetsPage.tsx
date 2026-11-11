@@ -6,6 +6,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import TruncatedText from '../components/TruncatedText'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useBrokers } from '../hooks/useBrokers'
 import { usePortfolios } from '../hooks/usePortfolios'
 import { assetKey, useAssets } from '../hooks/useAssets'
@@ -208,7 +209,7 @@ export default function AssetsPage() {
                 <DataTableCell label="Quantity">{asset.quantity}</DataTableCell>
                 <RowActionsCell
                   itemName={asset.name}
-                  isDeleting={deletingKey === key}
+                  {...rowDeleteState(deletingKey, key)}
                   onEdit={() => setEditingAsset(asset)}
                   onDelete={() => setConfirmingDelete(asset)}
                 />

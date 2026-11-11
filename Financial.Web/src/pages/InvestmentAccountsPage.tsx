@@ -15,6 +15,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import InvestmentAccountFormDialog, { type InvestmentAccountSourceOption } from '../components/InvestmentAccountFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useAccounts } from '../hooks/useAccounts'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
@@ -161,7 +162,7 @@ export default function InvestmentAccountsPage() {
               <DataTableCell label="Source">{sourceDisplay(account, accounts)}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
-                isDeleting={deletingId === account.id}
+                {...rowDeleteState(deletingId, account.id)}
                 onEdit={() => setEditingAccount(account)}
                 onDelete={() => setConfirmingDelete(account)}
               />

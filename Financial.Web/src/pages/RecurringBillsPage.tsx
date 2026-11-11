@@ -5,6 +5,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import RecurringBillFormDialog, { type RecurringBillFormValues } from '../components/RecurringBillFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useRecurringBills } from '../hooks/useRecurringBills'
@@ -150,7 +151,7 @@ export default function RecurringBillsPage() {
               <DataTableCell label="Status">{bill.status}</DataTableCell>
               <RowActionsCell
                 itemName={bill.description}
-                isDeleting={deletingId === bill.id}
+                {...rowDeleteState(deletingId, bill.id)}
                 onEdit={() => setEditingBill(bill)}
                 onDelete={() => setConfirmingDelete(bill)}
               />

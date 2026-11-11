@@ -38,6 +38,7 @@ import { formatAmount, formatN2, formatN8, formatShortDate, parseValidatedNumber
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
 
@@ -94,12 +95,12 @@ function transactionName(transaction: TransactionDto): string {
 
 interface TransactionRowProps {
   transaction: TransactionDto
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (t: TransactionDto) => void
   onDelete: (t: TransactionDto) => void
 }
 
-function TransactionRow({ transaction, isDeleting, onEdit, onDelete }: TransactionRowProps) {
+function TransactionRow({ transaction, deleteState, onEdit, onDelete }: TransactionRowProps) {
   const date = formatShortDate(transaction.date)
   const typeLabel = typeDisplayLabel(transaction.type)
   const net = formatN2(transaction.netCash)
@@ -122,7 +123,7 @@ function TransactionRow({ transaction, isDeleting, onEdit, onDelete }: Transacti
       </DataTableCell>
       <RowActionsCell
         itemName={transactionName(transaction)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={() => onEdit(transaction)}
         onDelete={() => onDelete(transaction)}
       />
@@ -555,7 +556,7 @@ export default function TransactionsTab() {
                 <TransactionRow
                   key={t.id}
                   transaction={t}
-                  isDeleting={deletingId === t.id}
+                  deleteState={rowDeleteState(deletingId, t.id)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />

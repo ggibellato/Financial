@@ -15,6 +15,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import IncomeSourceFormDialog from '../components/IncomeSourceFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { type AccountsStatus, useAccounts } from '../hooks/useAccounts'
 import { useIncomeSources } from '../hooks/useIncomeSources'
 import type { AccountDto, IncomeSourceDto } from '../api/types'
@@ -143,7 +144,7 @@ export default function IncomeSourcesPage() {
               </DataTableCell>
               <RowActionsCell
                 itemName={incomeSource.name}
-                isDeleting={deletingId === incomeSource.id}
+                {...rowDeleteState(deletingId, incomeSource.id)}
                 onEdit={() => setEditingIncomeSource(incomeSource)}
                 onDelete={() => setConfirmingDelete(incomeSource)}
               />

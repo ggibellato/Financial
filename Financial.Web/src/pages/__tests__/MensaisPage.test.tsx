@@ -280,7 +280,10 @@ describe('MensaisPage', () => {
     await screen.findByRole('button', { name: `Deleting ${INSS_NAME}`, hidden: true })
     const otherDeletes = screen.getAllByRole('button', { name: /^Delete bill/, hidden: true })
     expect(otherDeletes.length).toBeGreaterThan(0)
-    otherDeletes.forEach((button) => expect(button).toHaveAttribute('aria-disabled', 'true'))
+    otherDeletes.forEach((button) => {
+      expect(button).toHaveAttribute('aria-disabled', 'true')
+      expect(button).toHaveAccessibleDescription('Another delete is in progress.')
+    })
     expect(deleteMensaisBillMock).toHaveBeenCalledOnce()
   })
 

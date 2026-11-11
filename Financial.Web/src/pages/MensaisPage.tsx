@@ -30,6 +30,7 @@ import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2 } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from '../components/grid/rowDeleteState'
 import './MensaisPage.css'
 
 const NEW_BILL_FORM = 'new'
@@ -38,8 +39,7 @@ const FIRST_FIELD = 'input, select, textarea'
 interface BillRowProps {
   bill: RecurringBillDto
   showBrasilFields: boolean
-  isDeleting: boolean
-  deleteDisabled: boolean
+  deleteState: RowDeleteState
   isUpdatingStatus: boolean
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (bill: RecurringBillDto) => void
@@ -49,8 +49,7 @@ interface BillRowProps {
 function BillRow({
   bill,
   showBrasilFields,
-  isDeleting,
-  deleteDisabled,
+  deleteState,
   isUpdatingStatus,
   onEdit,
   onDelete,
@@ -84,8 +83,7 @@ function BillRow({
       </DataTableCell>
       <RowActionsCell
         itemName={`bill ${bill.description}`}
-        isDeleting={isDeleting}
-        deleteDisabled={deleteDisabled}
+        {...deleteState}
         onEdit={() => onEdit(bill)}
         onDelete={() => onDelete(bill)}
       />
@@ -194,8 +192,7 @@ function BillTable({
                   key={bill.id}
                   bill={bill}
                   showBrasilFields={showBrasilFields}
-                  isDeleting={deletingBillId === bill.id}
-                  deleteDisabled={deletingBillId !== null && deletingBillId !== bill.id}
+                  deleteState={rowDeleteState(deletingBillId, bill.id)}
                   isUpdatingStatus={updatingStatusBillId === bill.id}
                   onEdit={onEdit}
                   onDelete={onDelete}

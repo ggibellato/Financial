@@ -444,12 +444,15 @@ describe('CreditsTab', () => {
     expect(rowButton(`Deleting ${DIVIDEND_NAME}`)).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+  it('blocks_a_second_delete_while_one_is_in_progress', async () => {
     deleteCreditMock.mockReturnValue(new Promise(() => {}))
     await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
     await confirmDelete(DIVIDEND_NAME)
 
-    await confirmDelete(JCP_NAME)
+    const blocked = await screen.findByRole('button', { name: `Delete ${JCP_NAME}`, hidden: true })
+    await waitFor(() => expect(blocked).toHaveAttribute('aria-disabled', 'true'))
+    fireEvent.click(blocked)
+    expect(screen.queryByRole('dialog', { name: /^Delete/, hidden: true })).not.toBeInTheDocument()
 
     expect(deleteCreditMock).toHaveBeenCalledOnce()
   })
