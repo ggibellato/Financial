@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { CategoryCreateDto, CategoryDto, CategoryUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface CategoriesData {
   categories: CategoryDto[]
@@ -36,7 +37,7 @@ export function useCategories(): CategoriesData {
   )
 
   const deleteCategory = useCallback(
-    (id: string) => runPendingMutation(id, () => apiClient.deleteCategory(id), 'Failed to delete category.'),
+    (id: string) => runPendingMutation(id, () => apiClient.deleteCategory(id), deleteFailedMessage('category')),
     [runPendingMutation],
   )
 

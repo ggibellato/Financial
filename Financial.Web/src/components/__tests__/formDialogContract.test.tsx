@@ -10,6 +10,7 @@ import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import PortfolioFormDialog from '../PortfolioFormDialog'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
 import TaxRuleFormDialog from '../TaxRuleFormDialog'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
   { name: 'XPI', currency: 'BRL', status: 'Active', portfolioCount: 1, costBasisMethod: 'AverageCost' },
@@ -170,9 +171,9 @@ describe('form dialog contract: server rejection', () => {
     fireEvent.click(screen.getByRole('button', { name: saveLabel }))
 
     expect(await screen.findByText(serverError)).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent(serverError)
+    expect(getErrorAlert()).toHaveTextContent(serverError)
     expect(screen.getByRole('button', { name: saveLabel })).not.toBeDisabled()
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    await waitFor(() => expect(getErrorAlert()).toHaveFocus())
   })
 })
 

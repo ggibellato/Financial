@@ -1,4 +1,5 @@
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import ActionErrorAlert from '../components/ActionErrorAlert'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -14,6 +15,7 @@ import { useSuggestedValues } from '../hooks/useSuggestedValues'
 import { formatN2, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './InvestmentSnapshotsPage.css'
 
 function SnapshotColumns() {
@@ -155,11 +157,7 @@ export default function InvestmentSnapshotsPage() {
             </Button>
           </div>
 
-          {Object.keys(saveErrorFields).length === 0 && saveError && (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
         </div>
       )}
 
@@ -195,24 +193,18 @@ export default function InvestmentSnapshotsPage() {
                   <SnapshotRow key={snapshot.id} snapshot={snapshot} onEdit={openEditForm} />
                 ))}
               </TableBody>
+              <tfoot>
+                <TableRow>
+                  <DataTableCell label="Total">Total (net of liabilities)</DataTableCell>
+                  <DataTableCell label="Value" className="data-table__col--numeric">
+                    {formatN2(totalValue)}
+                  </DataTableCell>
+                  <TableCell />
+                </TableRow>
+              </tfoot>
             </Table>
           </section>
         </div>
-      )}
-
-      {!isLoading && !error && (
-        <Table className="investment-snapshots-page__table investment-snapshots-page__totals-table data-table">
-          <SnapshotColumns />
-          <TableBody>
-            <TableRow className="investment-snapshots-page__totals-row">
-              <DataTableCell label="Account">Total (net of liabilities)</DataTableCell>
-              <DataTableCell label="Value" className="data-table__col--numeric">
-                {formatN2(totalValue)}
-              </DataTableCell>
-              <TableCell />
-            </TableRow>
-          </TableBody>
-        </Table>
       )}
     </div>
   )

@@ -95,6 +95,7 @@ describe('DividendCheckPage', () => {
     const priceMaxText = await screen.findByText(/Price max buy:/)
     expect(priceMaxText).toHaveClass('summary-card__price-max--positive')
     expect(priceMaxText).not.toHaveClass('summary-card__price-max--negative')
+    expect(priceMaxText).toHaveTextContent('current price below max buy')
   })
 
   it('applies negative class when current price is above price max buy', async () => {
@@ -108,6 +109,7 @@ describe('DividendCheckPage', () => {
     const priceMaxText = await screen.findByText(/Price max buy:/)
     expect(priceMaxText).toHaveClass('summary-card__price-max--negative')
     expect(priceMaxText).not.toHaveClass('summary-card__price-max--positive')
+    expect(priceMaxText).toHaveTextContent('current price not below max buy')
   })
 
   it('shows dividend history in date descending order', async () => {

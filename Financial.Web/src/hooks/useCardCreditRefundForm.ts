@@ -6,7 +6,7 @@ import { formatN2, getSaveErrorMessage, positiveAmount, todayIsoDate } from '../
 import { formatOwedOrCredit } from '../utils/owedBalance'
 import { inactiveMarked } from '../utils/selectableBanks'
 import { useAsyncResource } from './useAsyncResource'
-import { paymentDateError } from './useCardStatements'
+import { paymentDateError } from '../utils/validators'
 
 const RECEIVES_TRANSFERS_CAPABILITY = 'CanReceiveTransfers'
 

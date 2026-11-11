@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentScope, PortfolioCreateDto, PortfolioDto, PortfolioUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 /** Uniquely identifies a portfolio row: names are only unique within their own broker. */
 export function portfolioKey(brokerName: string, portfolioName: string): string {
@@ -51,7 +52,7 @@ export function usePortfolios(): PortfoliosData {
       runPendingMutation(
         portfolioKey(brokerName, portfolioName),
         () => apiClient.deleteEmptyPortfolio(brokerName, portfolioName, brokerScope),
-        'Failed to delete portfolio.',
+        deleteFailedMessage('portfolio'),
       ),
     [runPendingMutation],
   )

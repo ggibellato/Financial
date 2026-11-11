@@ -1,6 +1,7 @@
 import { useId, useRef, type ReactNode } from 'react'
 import { Button, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
+import EmptyState from './EmptyState'
 import ActionErrorAlert from './ActionErrorAlert'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -76,7 +77,7 @@ export default function AdminEntityPage({
       ) : loadError ? (
         <ErrorState message={loadError} onRetry={onRetry} />
       ) : isEmpty ? (
-        <p className="admin-entity-page__empty">{emptyMessage}</p>
+        <EmptyState>{emptyMessage}</EmptyState>
       ) : (
         children
       )}

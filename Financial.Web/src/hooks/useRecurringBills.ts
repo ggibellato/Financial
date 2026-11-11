@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { RecurringBillCreateDto, RecurringBillDto, RecurringBillUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface RecurringBillsData {
   recurringBills: RecurringBillDto[]
@@ -36,7 +37,7 @@ export function useRecurringBills(): RecurringBillsData {
   )
 
   const deleteRecurringBill = useCallback(
-    (id: string) => runPendingMutation(id, () => apiClient.deleteMensaisBill(id), 'Failed to delete recurring bill.'),
+    (id: string) => runPendingMutation(id, () => apiClient.deleteMensaisBill(id), deleteFailedMessage('recurring bill')),
     [runPendingMutation],
   )
 

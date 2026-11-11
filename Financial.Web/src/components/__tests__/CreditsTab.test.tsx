@@ -7,6 +7,7 @@ import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } fr
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import CreditsTab from '../CreditsTab'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const { getAssetDetailsMock, getCreditsByBrokerMock, addCreditMock, updateCreditMock, deleteCreditMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -158,8 +159,8 @@ async function openNewForm() {
   await screen.findByRole('heading', { name: 'New credit' })
 }
 
-const DIVIDEND_NAME = 'credit Dividend 120.50, 15/03/2024'
-const JCP_NAME = 'credit JCP 75.00, 20/02/2024'
+const DIVIDEND_NAME = 'credit Dividend £120.50, 15/03/2024'
+const JCP_NAME = 'credit JCP £75.00, 20/02/2024'
 const requestDelete = (name: string) => requestDeleteOf(name, 'credit')
 const confirmDelete = (name: string) => confirmDeleteOf(name, 'credit')
 const rowButton = (name: string) => screen.getByRole('button', { name, hidden: true })
@@ -501,7 +502,7 @@ describe('CreditsTab', () => {
 
     await confirmDelete(DIVIDEND_NAME)
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(rowButton(`Delete ${DIVIDEND_NAME}`)).toBeInTheDocument()

@@ -7,6 +7,7 @@ import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
 import { account, cardAccount, potsAccount, settlementAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import AdminAccountsPage from '../AdminAccountsPage'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const { getAccountsMock, getAccountTemplatesMock, getCategoriesMock, createAccountMock, updateAccountMock, deleteAccountMock } = vi.hoisted(
   () => ({
@@ -300,7 +301,7 @@ describe('AdminAccountsPage', () => {
 
     expect(await screen.findByText('Monzo has transactions and cannot be deleted. Deactivate it instead.')).toBeInTheDocument()
     expect(screen.queryByText('Account deleted')).not.toBeInTheDocument()
-    const alert = screen.getByRole('alert', { hidden: true })
+    const alert = getErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Monzo has transactions and cannot be deleted.')
     await waitFor(() => expect(alert).toHaveFocus())
   })

@@ -5,6 +5,7 @@ import ExpenseForm from '../ExpenseForm'
 import type { BankOption, CategoryDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
 import { todayIsoDate } from '../../utils/formatters'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANKS: BankOption[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
@@ -135,7 +136,7 @@ describe('ExpenseForm', () => {
     expect(onFieldChange).toHaveBeenCalledWith('invoiceDate', '2026-08')
   })
 
-  it('shows the invoice month field disabled once settled', () => {
+  it('shows the invoice month field read-only, still focusable, once settled', () => {
     render(
       <ExpenseForm
         {...baseProps}
@@ -149,8 +150,8 @@ describe('ExpenseForm', () => {
     )
 
     const invoiceField = screen.getByLabelText('Invoice month')
-    expect(invoiceField).toBeInTheDocument()
-    expect(invoiceField).toBeDisabled()
+    expect(invoiceField).toHaveAttribute('readonly')
+    expect(invoiceField).toBeEnabled()
     expect(invoiceField).toHaveValue('2026-07')
   })
 
@@ -433,8 +434,8 @@ describe('ExpenseForm with a locked card', () => {
 
       rerender(<ExpenseForm {...refundProps} saveError="This charge's statement is paid; unmark it first." />)
 
-      expect(screen.getByRole('alert')).toHaveTextContent("This charge's statement is paid; unmark it first.")
-      expect(screen.getByRole('alert')).toHaveFocus()
+      expect(getErrorAlert()).toHaveTextContent("This charge's statement is paid; unmark it first.")
+      expect(getErrorAlert()).toHaveFocus()
     })
   })
 

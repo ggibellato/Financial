@@ -1,4 +1,5 @@
 import { Input, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
+import EmptyState from './EmptyState'
 import type { OpenLotDto } from '../api/types'
 import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
@@ -37,7 +38,7 @@ export default function LotAllocationPicker({
   }
 
   if (openLots.length === 0) {
-    return <p className="lot-allocation-picker__empty">No open lots available for this holding.</p>
+    return <EmptyState>No open lots available for this holding.</EmptyState>
   }
 
   const allocated = sumAllocations(allocations)

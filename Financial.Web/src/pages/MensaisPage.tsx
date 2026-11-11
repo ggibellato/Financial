@@ -1,10 +1,8 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import {
   Button,
   Field,
   Input,
-  MessageBar,
-  MessageBarBody,
   Select,
   Table,
   TableBody,
@@ -17,6 +15,7 @@ import type { RecurringBillDto } from '../api/types'
 import ActionErrorAlert from '../components/ActionErrorAlert'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
@@ -25,6 +24,7 @@ import UkExpensePromptDialog from '../components/UkExpensePromptDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useFormPanelStyles } from '../components/formPanelStyles'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useMensais } from '../hooks/useMensais'
@@ -32,6 +32,7 @@ import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2, SAVING_LABEL } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './MensaisPage.css'
 
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
@@ -41,6 +42,7 @@ interface BillRowProps {
   bill: RecurringBillDto
   showBrasilFields: boolean
   isDeleting: boolean
+  deleteDisabled: boolean
   isUpdatingStatus: boolean
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (bill: RecurringBillDto) => void
@@ -51,6 +53,7 @@ function BillRow({
   bill,
   showBrasilFields,
   isDeleting,
+  deleteDisabled,
   isUpdatingStatus,
   onEdit,
   onDelete,
@@ -85,6 +88,7 @@ function BillRow({
       <RowActionsCell
         itemName={`bill ${bill.description}`}
         isDeleting={isDeleting}
+        deleteDisabled={deleteDisabled}
         onEdit={() => onEdit(bill)}
         onDelete={() => onDelete(bill)}
       />
@@ -121,80 +125,90 @@ function BillTable({
     status: (bill) => bill.status,
   }
   const { sortedRows: sortedBills, sortState, requestSort } = useSortableRows(bills, accessors)
+  const headingId = useId()
+  const area = showBrasilFields ? 'Brasil' : 'UK'
 
   return (
-    <section className="mensais-page__section">
-      <div className="mensais-page__table-scroll">
-        <Table className="mensais-page__table data-table">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Due day"
-                columnKey="dueDay"
-                sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Description"
-                columnKey="description"
-                sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Note"
-                columnKey="note"
-                sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              {showBrasilFields && (
+    <section className="mensais-page__section" aria-labelledby={headingId}>
+      <Text as="h2" id={headingId} weight="semibold" size={400}>
+        {area} bills
+      </Text>
+      {bills.length === 0 ? (
+        <EmptyState>No {area} bills yet. Add one with New bill.</EmptyState>
+      ) : (
+        <div className="mensais-page__table-scroll">
+          <Table className="mensais-page__table data-table">
+            <TableHeader>
+              <TableRow>
                 <SortableColumnHeader
-                  label="NIT"
-                  columnKey="nit"
-                  sortDirection={sortState?.columnKey === 'nit' ? sortState.direction : undefined}
+                  label="Due day"
+                  columnKey="dueDay"
+                  sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-              )}
-              {showBrasilFields && (
                 <SortableColumnHeader
-                  label="Min. Wage"
-                  columnKey="minWage"
+                  label="Description"
+                  columnKey="description"
+                  sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Note"
+                  columnKey="note"
+                  sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                {showBrasilFields && (
+                  <SortableColumnHeader
+                    label="NIT"
+                    columnKey="nit"
+                    sortDirection={sortState?.columnKey === 'nit' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                )}
+                {showBrasilFields && (
+                  <SortableColumnHeader
+                    label="Min. Wage"
+                    columnKey="minWage"
+                    numeric
+                    sortDirection={sortState?.columnKey === 'minWage' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                )}
+                <SortableColumnHeader
+                  label="Value"
+                  columnKey="value"
                   numeric
-                  sortDirection={sortState?.columnKey === 'minWage' ? sortState.direction : undefined}
+                  sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-              )}
-              <SortableColumnHeader
-                label="Value"
-                columnKey="value"
-                numeric
-                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Status"
-                columnKey="status"
-                sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <ActionsColumnHeader />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedBills.map((bill) => (
-              <BillRow
-                key={bill.id}
-                bill={bill}
-                showBrasilFields={showBrasilFields}
-                isDeleting={deletingBillId === bill.id}
-                isUpdatingStatus={updatingStatusBillId === bill.id}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onStatusChange={onStatusChange}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                <SortableColumnHeader
+                  label="Status"
+                  columnKey="status"
+                  sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <ActionsColumnHeader />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedBills.map((bill) => (
+                <BillRow
+                  key={bill.id}
+                  bill={bill}
+                  showBrasilFields={showBrasilFields}
+                  isDeleting={deletingBillId === bill.id}
+                  deleteDisabled={deletingBillId !== null && deletingBillId !== bill.id}
+                  isUpdatingStatus={updatingStatusBillId === bill.id}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onStatusChange={onStatusChange}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </section>
   )
 }
@@ -252,17 +266,11 @@ export default function MensaisPage() {
   const styles = useFormPanelStyles()
   const addFieldError = useFieldError(addErrorFields)
   const editFieldError = useFieldError(saveErrorFields)
-  const [confirmingDelete, setConfirmingDelete] = useState<RecurringBillDto | null>(null)
+  const deletion = usePendingDelete((row: RecurringBillDto) => deleteBill(row.id))
   const [isConfirmingReset, setIsConfirmingReset] = useState(false)
   const billsRegionRef = useRef<HTMLDivElement | null>(null)
   const addBillRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(billsRegionRef, addBillRef, isLoading)
-
-  const confirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteBill(confirmingDelete.id)
-    setConfirmingDelete(null)
-  }
 
   const confirmReset = () => {
     resetAllToUnset()
@@ -286,7 +294,7 @@ export default function MensaisPage() {
             New bill
           </Button>
           <Button
-            appearance="secondary"
+            appearance="primary"
             icon={<ArrowResetRegular />}
             disabledFocusable={isResetting}
             onClick={() => setIsConfirmingReset(true)}
@@ -298,7 +306,7 @@ export default function MensaisPage() {
 
       <ActionErrorAlert message={deleteError} />
       <ActionErrorAlert message={resetError} />
-      {statusUpdateError && <p className="mensais-page__error">{statusUpdateError}</p>}
+      <ActionErrorAlert message={expensePromptBill ? null : statusUpdateError} />
 
       {isAddFormOpen && (
         <div className={styles.panel}>
@@ -368,11 +376,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {Object.keys(addErrorFields).length === 0 && addError && (
-            <MessageBar intent="error">
-              <MessageBarBody>{addError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={generalErrorOf(addError, addErrorFields)} />
         </div>
       )}
 
@@ -422,11 +426,7 @@ export default function MensaisPage() {
             </Button>
           </div>
 
-          {Object.keys(saveErrorFields).length === 0 && saveError && (
-            <MessageBar intent="error">
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
         </div>
       )}
 
@@ -442,7 +442,7 @@ export default function MensaisPage() {
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
-            onDelete={setConfirmingDelete}
+            onDelete={deletion.request}
             onStatusChange={updateBillStatus}
           />
           <BillTable
@@ -451,18 +451,18 @@ export default function MensaisPage() {
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
-            onDelete={setConfirmingDelete}
+            onDelete={deletion.request}
             onStatusChange={updateBillStatus}
           />
         </div>
       )}
 
-      {confirmingDelete && (
+      {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="bill"
-          message={`Delete the bill "${confirmingDelete.description}"? This cannot be undone.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(null)}
+          message={`Delete the bill "${deletion.pendingRow.description}"? This cannot be undone.`}
+          onConfirm={deletion.confirm}
+          onCancel={deletion.cancel}
         />
       )}
 

@@ -36,19 +36,15 @@
 }
 
 .summary-card__avg-dividend {
-  color: #1565c0;
-}
-
-.summary-card__price-max {
-  font-weight: 700;
+  color: var(--accent);
 }
 
 .summary-card__price-max--positive {
-  color: #1b8b4d;
+  color: var(--success);
 }
 
 .summary-card__price-max--negative {
-  color: #b42318;
+  color: var(--danger);
 }
 
 .dividend-check__tables {

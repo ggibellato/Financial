@@ -4,7 +4,7 @@ import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { formatMonthKey, getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { deleteFailedMessage, formatMonthKey, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber, todayIsoDate, toInputDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { createSelectionPrefsStore } from './selectionPrefsStore'
@@ -175,7 +175,7 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
     case 'SAVE_ERROR':
       return reduceInlineForm(state, action, BLANK_FORM)
     case 'SAVE_SUCCESS':
-      return { ...state, ...BLANK_FORM, credits: action.payload, deleteError: state.deleteError }
+      return { ...state, ...BLANK_FORM, credits: action.payload, deleteError: null }
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
@@ -455,7 +455,7 @@ export function useCredits(): CreditsData {
         .catch((err: unknown) => {
           settle({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete credit.'),
+            payload: getDeleteErrorMessage(err, deleteFailedMessage('credit')),
           })
         })
     },

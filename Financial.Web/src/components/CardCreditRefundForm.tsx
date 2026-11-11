@@ -1,11 +1,12 @@
 import { useRef } from 'react'
-import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Field, Input, Select, Text } from '@fluentui/react-components'
 import type { CardCreditRefundField, CardCreditRefundForm as CardCreditRefundFormState } from '../hooks/useCardCreditRefundForm'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import { todayIsoDate } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import ErrorState from './ErrorState'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 interface CardCreditRefundFormProps {
   refundForm: CardCreditRefundFormState
@@ -34,7 +35,6 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
   const dateRef = useRef<HTMLInputElement | null>(null)
   const { mode, accountName, counterparts, currency, values, isLoading, loadError, retry, hasNoCounterparts, isSaving, saveError, fieldErrors, setField, submit } =
     refundForm
-  const errorRef = useAlertFocus(saveError)
   const text = MODE_TEXT[mode]
   const fieldRefs: Record<CardCreditRefundField, { current: HTMLElement | null }> = { counterpartId: counterpartRef, amount: amountRef, date: dateRef }
   const validation = (field: CardCreditRefundField) => ({
@@ -43,9 +43,7 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
   })
 
   const lockedField = (label: string) => (
-    <Field label={label}>
-      <Text weight="semibold">{accountName}</Text>
-    </Field>
+    <LockedValue label={label} value={accountName} />
   )
   const pickerField = (label: string) => (
     <Field label={label} required hint={hasNoCounterparts ? text.empty(currency) : undefined} {...validation('counterpartId')}>
@@ -77,15 +75,11 @@ export default function CardCreditRefundForm({ refundForm, onCancel }: CardCredi
         if (firstInvalid) fieldRefs[firstInvalid].current?.focus()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="card-credit-refund-title" weight="semibold" size={400}>
           {text.title}
         </Text>
-        {saveError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{saveError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={saveError} />
         {loadError && (
           <ErrorState
             message={loadError}

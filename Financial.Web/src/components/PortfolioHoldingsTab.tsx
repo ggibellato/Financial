@@ -12,7 +12,8 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatMonthYear, formatN2, formatN2OrDash, formatN8, formatShortDate, signClass } from '../utils/formatters'
+import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
+import { formatMonthYear, formatN2, formatN2OrDash, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
 import './PortfolioHoldingsTab.css'
 
 function parseCreditMonth(yearMonth: string): Date {
@@ -44,10 +45,6 @@ const DEFAULT_ROW_PRICE: RowPriceState = {
   isManual: false,
 }
 
-function formatPercentValue(value: number): string {
-  return `${formatN2(value)}%`
-}
-
 function renderOptional<T>(value: T | null, render: (v: T) => ReactNode) {
   return value === null ? <MissingValue /> : render(value)
 }
@@ -73,6 +70,30 @@ function renderGatedCell(
   return renderOptional(value, render)
 }
 
+const MANUAL_PRICE_MEANING = 'This value came from a manually-entered price, not a live fetch.'
+const STALE_PRICE_MEANING = 'This price is older than the most recent weekday.'
+const NO_PRICE_MEANING = 'No price or value has been recorded for this holding yet.'
+
+function PriceBadge({ abbreviation, meaning, className }: { abbreviation: string; meaning: string; className: string }) {
+  const hidden = useVisuallyHiddenStyles()
+  return (
+    <span className={className} title={meaning}>
+      <span aria-hidden="true"> ({abbreviation})</span>
+      <span className={hidden.visuallyHidden}> {meaning}</span>
+    </span>
+  )
+}
+
+function FooterTotal({ label, value, children }: { label: string; value: string; children?: ReactNode }) {
+  return (
+    <div className="portfolio-holdings__footer-item">
+      <span className="portfolio-holdings__footer-label">{label}</span>
+      <strong className="portfolio-holdings__footer-value">{value}</strong>
+      {children}
+    </div>
+  )
+}
+
 interface AssetRowProps {
   item: PortfolioAssetSummaryItemDto
   rowPrice: RowPriceState
@@ -86,6 +107,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
   const priceValue = isHistoric ? item.averageSellPrice : rowPrice.currentPrice
   const cellLoading = !isHistoric && rowPrice.isLoading
   const cellUnavailable = !isHistoric && rowPrice.fetchFailed
+  const showsPriceStatus = !isHistoric && !cellLoading && !cellUnavailable
 
   return (
     <TableRow aria-busy={cellLoading || undefined}>
@@ -95,7 +117,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="First investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
       <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
       <DataTableCell label="% Portfolio">
-        {renderOptional(item.portfolioWeight, formatPercentValue)}
+        {renderOptional(item.portfolioWeight, formatPercentN2)}
       </DataTableCell>
       <DataTableCell label="Total invested">{formatN2(item.totalInvested)}</DataTableCell>
       {isHistoric && (
@@ -114,13 +136,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         <DataTableCell label="Current value">
           {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, formatN2)}
           {!rowPrice.isLoading && !rowPrice.fetchFailed && rowPrice.isManual && (
-            <span
-              className="portfolio-holdings__manual-badge"
-              title="This value came from a manually-entered price, not a live fetch."
-            >
-              {' '}
-              (M)
-            </span>
+            <PriceBadge abbreviation="M" meaning={MANUAL_PRICE_MEANING} className="portfolio-holdings__manual-badge" />
           )}
         </DataTableCell>
       )}
@@ -128,32 +144,26 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="Average price">{formatN2(item.averagePrice)}</DataTableCell>
       <DataTableCell label={isHistoric ? 'Sold price' : 'Current price'}>
         {renderGatedCell(cellLoading, cellUnavailable, priceValue, formatN2, { announcesLoading: true })}
-        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
-          <span className="portfolio-holdings__stale-badge" title="This price is older than the most recent weekday.">
-            {' '}
-            (S)
-          </span>
+        {showsPriceStatus && item.marketStatus === 'Stale' && (
+          <PriceBadge abbreviation="S" meaning={STALE_PRICE_MEANING} className="portfolio-holdings__stale-badge" />
         )}
-        {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Unavailable' && (
-          <span className="portfolio-holdings__stale-badge" title="No price or value has been recorded for this holding yet.">
-            {' '}
-            (U)
-          </span>
+        {showsPriceStatus && item.marketStatus === 'Unavailable' && (
+          <PriceBadge abbreviation="U" meaning={NO_PRICE_MEANING} className="portfolio-holdings__stale-badge" />
         )}
       </DataTableCell>
       <DataTableCell label="Profit %">
         {renderGatedCell(cellLoading, cellUnavailable, item.resultPercent, v => (
-          <span className={getProfitClass(v)}>{formatN2(v)}%</span>
+          <span className={getProfitClass(v)}>{formatPercentN2(v)}</span>
         ))}
       </DataTableCell>
       <DataTableCell label="Profit % w/ credits">
         {renderGatedCell(cellLoading, cellUnavailable, item.resultWithCreditsPercent, v => (
-          <span className={getProfitClass(v)}>{formatN2(v)}%</span>
+          <span className={getProfitClass(v)}>{formatPercentN2(v)}</span>
         ))}
       </DataTableCell>
       <DataTableCell label="XIRR">
         {renderGatedCell(cellLoading, false, xirrValue, v => (
-          <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
+          <span className={getProfitClass(v)}>{formatPercentN2(v * 100)}</span>
         ))}
       </DataTableCell>
       <DataTableCell label="Last month credits" className="portfolio-holdings__credits-separator">
@@ -163,13 +173,13 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         {renderOptional(item.lastCreditMonth, formatCreditMonth)}
       </DataTableCell>
       <DataTableCell label="Last month credits %">
-        {renderOptional(item.lastMonthCreditsPercent, formatPercentValue)}
+        {renderOptional(item.lastMonthCreditsPercent, formatPercentN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual credits">
         {renderOptional(item.estimatedAnnualCredits, formatN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual %">
-        {renderOptional(item.estimatedAnnualPercent, formatPercentValue)}
+        {renderOptional(item.estimatedAnnualPercent, formatPercentN2)}
       </DataTableCell>
     </TableRow>
   )
@@ -304,44 +314,20 @@ export default function PortfolioHoldingsTab() {
       </div>
 
       {footer && (
-        <div className="portfolio-holdings__footer">
-          <div className="portfolio-holdings__footer-item">
-            <span className="portfolio-holdings__footer-label" data-label="Total invested" />
-            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.totalInvested)} tabIndex={-1} />
-          </div>
-          <div className="portfolio-holdings__footer-item">
-            <span className="portfolio-holdings__footer-label" data-label="Total credits" />
-            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.totalCredits)} tabIndex={-1} />
-          </div>
-          {isHistoric && (
-            <div className="portfolio-holdings__footer-item">
-              <span className="portfolio-holdings__footer-label" data-label="Realized gain/loss" />
-              <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.realizedGainLoss)} tabIndex={-1} />
-            </div>
-          )}
-          {isHistoric && (
-            <div className="portfolio-holdings__footer-item">
-              <span className="portfolio-holdings__footer-label" data-label="Realized (shares only)" />
-              <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.realizedGainLossSharesOnly)} tabIndex={-1} />
-            </div>
-          )}
+        <div className="portfolio-holdings__footer" role="group" aria-label="Totals for holdings">
+          <FooterTotal label="Total invested" value={formatN2(footer.totalInvested)} />
+          <FooterTotal label="Total credits" value={formatN2(footer.totalCredits)} />
+          {isHistoric && <FooterTotal label="Realized gain/loss" value={formatN2(footer.realizedGainLoss)} />}
+          {isHistoric && <FooterTotal label="Realized (shares only)" value={formatN2(footer.realizedGainLossSharesOnly)} />}
           {!isHistoric && (
-            <div className="portfolio-holdings__footer-item">
-              <span className="portfolio-holdings__footer-label" data-label="Current value" />
-              <input type="text" readOnly className="portfolio-holdings__footer-value" value={footer.cv.display} tabIndex={-1} />
+            <FooterTotal label="Current value" value={footer.cv.display}>
               {footer.cv.partial && (
                 <span className="portfolio-holdings__footer-footnote">excludes assets with pending prices</span>
               )}
-            </div>
+            </FooterTotal>
           )}
-          <div className="portfolio-holdings__footer-item">
-            <span className="portfolio-holdings__footer-label">{creditsLabel}</span>
-            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2(footer.currentMonthCredits)} tabIndex={-1} />
-          </div>
-          <div className="portfolio-holdings__footer-item">
-            <span className="portfolio-holdings__footer-label" data-label="Est. annual credits" />
-            <input type="text" readOnly className="portfolio-holdings__footer-value" value={formatN2OrDash(footer.estAnnualCredits)} tabIndex={-1} />
-          </div>
+          <FooterTotal label={creditsLabel} value={formatN2(footer.currentMonthCredits)} />
+          <FooterTotal label="Est. annual credits" value={formatN2OrDash(footer.estAnnualCredits)} />
         </div>
       )}
     </div>

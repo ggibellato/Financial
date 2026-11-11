@@ -14,6 +14,7 @@ import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } fr
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import TransactionsTab from '../TransactionsTab'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: ReactNode }) => <div data-testid="bar-chart">{children}</div>,
@@ -210,8 +211,8 @@ function dataRows() {
   return within(screen.getByRole('table')).getAllByRole('row').slice(1)
 }
 
-const BUY_NAME = 'transaction Buy -420.50, 15/03/2024'
-const SELL_NAME = 'transaction Sell 251.00, 10/01/2024'
+const BUY_NAME = 'transaction Buy -£420.50, 15/03/2024'
+const SELL_NAME = 'transaction Sell £251.00, 10/01/2024'
 const FX_SNAPSHOT = { rate: 1.27, toCurrency: 'USD', source: 'Frankfurter', retrievedAt: '2024-01-10T00:00:00Z' }
 
 function rowButton(name: string) {
@@ -611,8 +612,8 @@ describe('TransactionsTab', () => {
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
     const buyRow = within(dataRows()[0])
-    expect(buyRow.getByRole('button', { name: 'Edit transaction Buy -420.50, 15/03/2024' })).toBeInTheDocument()
-    expect(buyRow.getByRole('button', { name: 'Delete transaction Buy -420.50, 15/03/2024' })).toBeInTheDocument()
+    expect(buyRow.getByRole('button', { name: `Edit ${BUY_NAME}` })).toBeInTheDocument()
+    expect(buyRow.getByRole('button', { name: `Delete ${BUY_NAME}` })).toBeInTheDocument()
   })
 
   it('delete_icon_does_not_delete_when_the_user_cancels_the_confirmation', async () => {
@@ -732,7 +733,7 @@ describe('TransactionsTab', () => {
 
     await confirmDelete(BUY_NAME)
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(rowButton(`Delete ${BUY_NAME}`)).toBeInTheDocument()

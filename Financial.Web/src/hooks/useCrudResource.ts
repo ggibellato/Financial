@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
-import { getErrorMessage } from '../utils/formatters'
+import { getDeleteErrorMessage, getErrorMessage } from '../utils/formatters'
 import { useLatestRequestGuard } from './useAsyncResource'
 
 interface CrudResourceState<T> {
@@ -45,6 +45,7 @@ export interface PendingOperation {
   start: (id: string) => void
   succeed: () => void
   fail: (message: string) => void
+  clearError: () => void
 }
 
 export interface CrudResource<T> {
@@ -72,8 +73,9 @@ export function usePendingOperation(): PendingOperation {
   const start = useCallback((id: string) => setState({ pendingId: id, pendingError: null }), [])
   const succeed = useCallback(() => setState((current) => ({ ...current, pendingId: null })), [])
   const fail = useCallback((message: string) => setState({ pendingId: null, pendingError: message }), [])
+  const clearError = useCallback(() => setState((current) => (current.pendingError ? { ...current, pendingError: null } : current)), [])
 
-  return { pendingId: state.pendingId, pendingError: state.pendingError, start, succeed, fail }
+  return { pendingId: state.pendingId, pendingError: state.pendingError, start, succeed, fail, clearError }
 }
 
 export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResource<T> {
@@ -117,14 +119,16 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
     dispatch({ type: 'RETRY' })
   }, [refreshMode, fetchData])
 
+  const { clearError: clearPendingError } = pending
   const mutateAndRefresh = useCallback(
     async <R,>(mutation: () => Promise<R>) => {
       const result = await mutation()
+      clearPendingError()
       const refreshing = refresh()
       if (refreshing) await refreshing
       return result
     },
-    [refresh],
+    [refresh, clearPendingError],
   )
 
   const { start, succeed, fail } = pending
@@ -139,7 +143,7 @@ export function useCrudResource<T>(options: CrudResourceOptions<T>): CrudResourc
           void refresh()
         })
         .catch((err: unknown) => {
-          fail(getErrorMessage(err, errorMessage))
+          fail(getDeleteErrorMessage(err, errorMessage))
         })
     },
     [start, succeed, fail, refresh],

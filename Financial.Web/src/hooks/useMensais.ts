@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BankOption, CategoryDto, RecurringBillCreateDto, RecurringBillDto } from '../api/types'
-import { currentYearMonth, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { currentYearMonth, deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { useLatestRequestGuard } from './useAsyncResource'
 import { useMonthSelection } from './useMonthSelection'
@@ -151,7 +151,7 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'SAVE_START':
       return { ...state, isSaving: true, saveError: null, saveErrorFields: {} }
     case 'SAVE_SUCCESS':
-      return { ...state, isSaving: false, editingId: null, editStatus: '', editValue: '' }
+      return { ...state, isSaving: false, editingId: null, editStatus: '', editValue: '', deleteError: null }
     case 'SAVE_ERROR':
       return { ...state, isSaving: false, saveError: action.payload.message, saveErrorFields: action.payload.fields }
     case 'SHOW_ADD_FORM':
@@ -163,7 +163,7 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
     case 'ADD_START':
       return { ...state, isAdding: true, addError: null, addErrorFields: {} }
     case 'ADD_SUCCESS':
-      return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS }
+      return { ...state, isAdding: false, isAddFormOpen: false, ...EMPTY_ADD_FORM_FIELDS, deleteError: null }
     case 'ADD_ERROR':
       return { ...state, isAdding: false, addError: action.payload.message, addErrorFields: action.payload.fields }
     case 'DELETE_START':
@@ -391,6 +391,7 @@ export function useMensais(): MensaisData {
   }
 
   function deleteBill(id: string) {
+    if (state.deletingBillId !== null) return
     dispatch({ type: 'DELETE_START', payload: id })
 
     void apiClient
@@ -402,7 +403,7 @@ export function useMensais(): MensaisData {
       .catch((err: unknown) => {
         dispatch({
           type: 'DELETE_ERROR',
-          payload: getErrorMessage(err, 'Failed to delete bill.'),
+          payload: getDeleteErrorMessage(err, deleteFailedMessage('bill')),
         })
       })
   }

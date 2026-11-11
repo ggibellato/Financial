@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@fluentui/react-components'
 import { DocumentArrowDownRegular } from '@fluentui/react-icons'
+import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusBadge from '../components/StatusBadge'
@@ -91,10 +92,10 @@ export default function TaxPage() {
       ) : optionsError ? (
         <ErrorState message={optionsError} onRetry={retryOptions} />
       ) : jurisdictions.length === 0 ? (
-        <p className="tax-page__empty">
+        <EmptyState>
           No classified disposals or income events yet — once one is recorded, its jurisdiction and tax
           year will appear here.
-        </p>
+        </EmptyState>
       ) : (
         <>
           <div className="tax-page__filters">
@@ -139,9 +140,9 @@ export default function TaxPage() {
           ) : workbookError ? (
             <ErrorState message={workbookError} onRetry={retryWorkbook} />
           ) : workbook && workbook.entries.length === 0 ? (
-            <p className="tax-page__empty">
+            <EmptyState>
               No classified events for {jurisdiction} {taxYear} yet.
-            </p>
+            </EmptyState>
           ) : workbook ? (
             <>
               <div className="tax-page__table-scroll">

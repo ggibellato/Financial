@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountCreateDto, AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface AdminAccountsData {
   accounts: AccountDto[]
@@ -76,7 +77,7 @@ export function useAdminAccounts(): AdminAccountsData {
 
   const deleteAccount = useCallback(
     (id: string, onDeleted: () => void) =>
-      runPendingMutation(id, () => apiClient.deleteAccount(id), 'The account could not be deleted.', onDeleted),
+      runPendingMutation(id, () => apiClient.deleteAccount(id), deleteFailedMessage('account'), onDeleted),
     [runPendingMutation],
   )
 

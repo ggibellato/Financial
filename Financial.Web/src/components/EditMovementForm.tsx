@@ -1,9 +1,11 @@
-import { Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Field, Input, Select, Text } from '@fluentui/react-components'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import type { EditMovementField } from '../utils/movementEdit'
+import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import { generalErrorOf } from '../utils/fieldErrors'
 
 interface PotOption {
   id: string
@@ -46,8 +48,8 @@ export default function EditMovementForm({
 }: EditMovementFormProps) {
   const styles = useFormPanelStyles()
   const fieldError = useFieldError(errorFields)
-  const generalError = Object.keys(errorFields).length === 0 ? error : null
-  const { formRef, errorRef } = useFormErrorFocus(errorFields, generalError)
+  const generalError = generalErrorOf(error, errorFields)
+  const formRef = useFormErrorFocus(errorFields)
 
   return (
     <form
@@ -61,15 +63,11 @@ export default function EditMovementForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id="edit-movement-title" weight="semibold" size={400}>
           {title}
         </Text>
-        {generalError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{generalError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={generalError} />
 
         <div className={styles.grid}>
           <Field

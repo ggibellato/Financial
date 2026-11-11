@@ -6,7 +6,7 @@ import { isAssetSelection } from '../utils/assetSelection'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
 import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
-import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
+import { deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber, todayIsoDate, toInputDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { createSelectionPrefsStore } from './selectionPrefsStore'
@@ -133,7 +133,7 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         ...BLANK_FORM,
         entries: action.payload.priceHistory,
         transactions: action.payload.transactions,
-        deleteError: state.deleteError,
+        deleteError: null,
       }
     case 'DELETE_START':
       return { ...state, deletingDate: action.payload, deleteError: null }
@@ -323,7 +323,7 @@ export function usePriceHistory(): PriceHistoryData {
         .catch((err: unknown) => {
           settle({
             type: 'DELETE_ERROR',
-            payload: getErrorMessage(err, 'Failed to delete price.'),
+            payload: getDeleteErrorMessage(err, deleteFailedMessage('price')),
           })
         })
     },

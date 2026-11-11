@@ -10,10 +10,6 @@
   gap: 8px;
 }
 
-.disposals-tab__empty {
-  color: var(--text-muted);
-}
-
 .disposals-tab__table-wrapper {
   overflow: auto;
 }

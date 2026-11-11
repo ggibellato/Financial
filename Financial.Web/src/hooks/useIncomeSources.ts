@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { IncomeSourceCreateDto, IncomeSourceDto, IncomeSourceUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface IncomeSourcesData {
   incomeSources: IncomeSourceDto[]
@@ -36,7 +37,7 @@ export function useIncomeSources(): IncomeSourcesData {
   )
 
   const deleteIncomeSource = useCallback(
-    (id: string) => runPendingMutation(id, () => apiClient.deleteIncomeSource(id), 'Failed to delete income source.'),
+    (id: string) => runPendingMutation(id, () => apiClient.deleteIncomeSource(id), deleteFailedMessage('income source')),
     [runPendingMutation],
   )
 

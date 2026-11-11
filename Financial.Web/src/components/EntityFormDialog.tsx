@@ -5,10 +5,9 @@ import {
   DialogContent,
   DialogSurface,
   DialogTitle,
-  MessageBar,
-  MessageBarBody,
 } from '@fluentui/react-components'
 import { flushSync } from 'react-dom'
+import ActionErrorAlert from './ActionErrorAlert'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import FieldErrorSummary from './FieldErrorSummary'
 import { collectFieldErrors, type FieldError } from '../utils/fieldErrors'
@@ -43,7 +42,6 @@ export default function EntityFormDialog({
   children,
 }: EntityFormDialogProps) {
   const styles = useFormPanelStyles()
-  const errorBar = useRef<HTMLDivElement | null>(null)
   const content = useRef<HTMLDivElement | null>(null)
   const discardPrompt = useDiscardPrompt(isDirty)
   const errorSummary = useRef<HTMLDivElement | null>(null)
@@ -61,12 +59,6 @@ export default function EntityFormDialog({
   useEffect(() => {
     content.current?.querySelector<HTMLElement>(EDITABLE_FIELD)?.focus()
   }, [])
-
-  useEffect(() => {
-    if (!error) return
-    errorBar.current?.scrollIntoView?.({ block: 'nearest' })
-    errorBar.current?.focus()
-  }, [error])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -94,15 +86,10 @@ export default function EntityFormDialog({
               <DialogTitle>{title}</DialogTitle>
               <DialogContent ref={content}>
                 {summarizedErrors.length > 0 && <FieldErrorSummary ref={errorSummary} errors={summarizedErrors} />}
-                <fieldset disabled={isSaving} className={styles.savingFieldset}>
+                <ActionErrorAlert message={error} className={styles.dialogError} />
+                <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
                   {children}
                 </fieldset>
-
-                {error && (
-                  <MessageBar ref={errorBar} role="alert" intent="error" tabIndex={-1}>
-                    <MessageBarBody>{error}</MessageBarBody>
-                  </MessageBar>
-                )}
               </DialogContent>
               <FormSaveActions saveLabel={saveLabel} isSaving={isSaving} isSaveDisabled={!canSave} onCancel={requestClose} />
             </DialogBody>

@@ -1,6 +1,7 @@
-import { Fragment, useRef, useState } from 'react'
-import { Tab, TabList, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
+import { Fragment, useMemo, useRef, useState } from 'react'
+import { Tab, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
+import PageTabList from '../components/PageTabList'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
@@ -13,6 +14,7 @@ import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
 import { allItemsTotalLabel } from '../utils/allItemsTotalLabel'
+import { RESULTADO_LABEL, splitHistoricRows, TOTAL_DESPESAS_LABEL, type HistoricAverageOf, type HistoricYear } from '../utils/annualSummaryTotals'
 import './AnnualSummaryPage.css'
 
 type InvestmentAccount = InvestmentAnnualResultDto['accounts'][number]
@@ -20,6 +22,8 @@ type HistoricCategoryRow = CategoryAnnualAverageDto['annualAverages'][number]
 
 const MONTH_LABELS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 const SPACER_COL_SPAN = MONTH_LABELS.length + 3
+const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
+const TOTAL_ROW_LABEL = 'Total'
 
 function monthAccessors<T>(monthlyValuesOf: (row: T) => (number | null)[]): Record<string, SortAccessor<T>> {
   return Object.fromEntries(MONTH_LABELS.map((_, i) => [`month-${i}`, (row: T) => monthlyValuesOf(row)[i]]))
@@ -38,15 +42,17 @@ function AnnualSummaryRow({
   monthlyValues,
   average,
   annualTotal,
+  isTotal = false,
 }: {
   label: string
   monthlyValues: number[]
   average: number
   annualTotal: number
+  isTotal?: boolean
 }) {
   return (
     <TableRow>
-      <DataTableCell label="Category">{label}</DataTableCell>
+      <DataTableCell label={isTotal ? TOTAL_ROW_LABEL : 'Category'}>{label}</DataTableCell>
       {monthlyValues.map((v, i) => (
         <DataTableCell key={i} label={MONTH_LABELS[i]} className="data-table__col--numeric">
           {formatN2(v)}
@@ -62,13 +68,38 @@ function AnnualSummaryRow({
   )
 }
 
-function InvestmentRow({ label, monthlyValues }: { label: string; monthlyValues: (number | null)[] }) {
+function InvestmentRow({ label, monthlyValues, isTotal = false }: { label: string; monthlyValues: (number | null)[]; isTotal?: boolean }) {
   return (
     <TableRow>
-      <DataTableCell label="Account">{label}</DataTableCell>
+      <DataTableCell label={isTotal ? TOTAL_ROW_LABEL : 'Account'}>{label}</DataTableCell>
       {monthlyValues.map((v, i) => (
         <DataTableCell key={i} label={MONTH_LABELS[i]} className="data-table__col--numeric">
           {v === null ? null : formatN2(v)}
+        </DataTableCell>
+      ))}
+    </TableRow>
+  )
+}
+
+function HistoricRow({
+  category,
+  label = category,
+  isTotal = false,
+  years,
+  averageOf,
+}: {
+  category: string
+  label?: string
+  isTotal?: boolean
+  years: HistoricYear[]
+  averageOf: HistoricAverageOf
+}) {
+  return (
+    <TableRow>
+      <DataTableCell label={isTotal ? TOTAL_ROW_LABEL : 'Category'}>{label}</DataTableCell>
+      {years.map((y) => (
+        <DataTableCell key={y.year} label={String(y.year)} className="data-table__col--numeric">
+          {formatN2(averageOf(category, y.year))}
         </DataTableCell>
       ))}
     </TableRow>
@@ -96,8 +127,6 @@ export default function AnnualSummaryPage() {
 
   const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
   const filterableTableRef = useRef<HTMLTableElement>(null)
-  const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
-  const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
   const {
     filteredRows: filteredCategoryTotals,
@@ -129,7 +158,7 @@ export default function AnnualSummaryPage() {
     ...monthAccessors<InvestmentAccount>((a) => a.monthlyValues),
   })
 
-  const historicCategoryRows = historicSummaryAverage[0]?.annualAverages ?? []
+  const historic = useMemo(() => splitHistoricRows(historicSummaryAverage), [historicSummaryAverage])
   const {
     filteredRows: filteredHistoricCategoryRows,
     availableValues: historicAvailableValues,
@@ -138,7 +167,7 @@ export default function AnnualSummaryPage() {
     toggleAll: toggleHistoricAll,
     isColumnFiltered: isHistoricColumnFiltered,
     filterSummary: historicFilterSummary,
-  } = useColumnFilters(historicCategoryRows, { category: (row: HistoricCategoryRow) => row.category })
+  } = useColumnFilters(historic.categoryRows, { category: (row: HistoricCategoryRow) => row.category })
   const {
     sortedRows: sortedHistoricCategoryRows,
     sortState: historicSortState,
@@ -148,7 +177,7 @@ export default function AnnualSummaryPage() {
     ...Object.fromEntries(
       historicSummaryAverage.map((y) => [
         `year-${y.year}`,
-        (row: HistoricCategoryRow) => y.annualAverages.find((d) => d.category === row.category)?.value ?? 0,
+        (row: HistoricCategoryRow) => historic.averageOf(row.category, y.year),
       ]),
     ),
   })
@@ -165,8 +194,8 @@ export default function AnnualSummaryPage() {
         />
       </div>
 
-      <TabList
-        className="annual-summary-page__tabs"
+      <PageTabList
+        aria-label="Annual summary views"
         selectedValue={activeTab}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as AnnualSummaryTabId)}
       >
@@ -175,7 +204,7 @@ export default function AnnualSummaryPage() {
             {tab.label}
           </Tab>
         ))}
-      </TabList>
+      </PageTabList>
 
       {isLoading ? (
         <LoadingState />
@@ -289,22 +318,20 @@ export default function AnnualSummaryPage() {
                       />
                     ))
                   )}
-
-                  <TableRow>
-                    <TableCell colSpan={SPACER_COL_SPAN} />
-                  </TableRow>
                 </TableBody>
                 <tfoot>
                   {incomeSummary && (
                     <AnnualSummaryRow
-                      label={allItemsTotalLabel('Resultado (R-D-Inv)', 'categories', categoryTotalsFilterSummary.isFiltered)}
+                      label={allItemsTotalLabel(RESULTADO_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
+                      isTotal
                       monthlyValues={resultadoMonthly}
                       average={resultadoAverage}
                       annualTotal={resultadoAnnualTotal}
                     />
                   )}
                   <AnnualSummaryRow
-                    label={allItemsTotalLabel('Total despesas', 'categories', categoryTotalsFilterSummary.isFiltered)}
+                    label={allItemsTotalLabel(TOTAL_DESPESAS_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
+                    isTotal
                     monthlyValues={totalDespesasMonthly}
                     average={totalDespesasAverage}
                     annualTotal={totalDespesasAnnualTotal}
@@ -349,15 +376,16 @@ export default function AnnualSummaryPage() {
                   ))}
                 </TableBody>
                 <tfoot>
-                  <InvestmentRow label="Total" monthlyValues={investmentAnnualResult.netPosition.monthlyValues} />
+                  <InvestmentRow label="Total" isTotal monthlyValues={investmentAnnualResult.netPosition.monthlyValues} />
                   <InvestmentRow
                     label="Month result"
+                    isTotal
                     monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
                   />
                 </tfoot>
               </Table>
 
-              <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for Investments">
+              <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for investments">
                 <div className="annual-summary-page__investment-total">
                   <span>Year progress</span>
                   <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>
@@ -396,50 +424,54 @@ export default function AnnualSummaryPage() {
                         isFiltered={isHistoricColumnFiltered('category')}
                       />
                     </SortableColumnHeader>
-                    {historicSummaryAverage && (
-                      historicSummaryAverage.map((y) => (
-                        <SortableColumnHeader
-                          key={y.year}
-                          label={y.year}
-                          columnKey={`year-${y.year}`}
-                          numeric
-                          sortDirection={
-                            historicSortState?.columnKey === `year-${y.year}` ? historicSortState.direction : undefined
-                          }
-                          onSort={requestHistoricSort}
-                        />
-                      ))
-                    )}
+                    {historicSummaryAverage.map((y) => (
+                      <SortableColumnHeader
+                        key={y.year}
+                        label={y.year}
+                        columnKey={`year-${y.year}`}
+                        numeric
+                        sortDirection={
+                          historicSortState?.columnKey === `year-${y.year}` ? historicSortState.direction : undefined
+                        }
+                        onSort={requestHistoricSort}
+                      />
+                    ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {historicSummaryAverage && sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
+                  {sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
                         {NO_FILTER_MATCH_MESSAGE}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    historicSummaryAverage &&
                     sortedHistoricCategoryRows.map((a) => (
-                        <Fragment key={a.category}>
-                          <TableRow className={HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category) ? 'data-table__row--emphasized' : undefined}>
-                            <DataTableCell label="Category">{a.category}</DataTableCell>
-                            {historicSummaryAverage.map((y) => (
-                              <DataTableCell key={y.year} label={String(y.year)} className="data-table__col--numeric">
-                                {formatN2(y.annualAverages.find((d) => d.category === a.category)?.value ?? 0)}
-                              </DataTableCell>
-                            ))}
+                      <Fragment key={a.category}>
+                        <HistoricRow category={a.category} years={historicSummaryAverage} averageOf={historic.averageOf} />
+                        {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
+                          <TableRow>
+                            <TableCell colSpan={historicSummaryAverage.length + 1} />
                           </TableRow>
-                          {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
-                            <TableRow>
-                              <TableCell colSpan={historicSummaryAverage.length + 1} />
-                            </TableRow>
-                          )}
-                        </Fragment>
+                        )}
+                      </Fragment>
                     ))
                   )}
                 </TableBody>
+                {historic.totalRows.length > 0 && (
+                  <tfoot>
+                    {historic.totalRows.map((total) => (
+                      <HistoricRow
+                        key={total.category}
+                        category={total.category}
+                        label={allItemsTotalLabel(total.category, 'categories', historicFilterSummary.isFiltered)}
+                        isTotal
+                        years={historicSummaryAverage}
+                        averageOf={historic.averageOf}
+                      />
+                    ))}
+                  </tfoot>
+                )}
               </Table>
             </section>
           )}

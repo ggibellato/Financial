@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
+import EmptyState from './EmptyState'
 import type { CorporateActionDto } from '../api/types'
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
@@ -10,6 +11,7 @@ import LoadingState from './LoadingState'
 import StatusBadge from './StatusBadge'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useCorporateActions } from '../hooks/useCorporateActions'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
@@ -156,16 +158,10 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
     return () => clearTimeout(timer)
   }, [focusRecordId, isLoading, corporateActions])
 
-  const [confirmingDelete, setConfirmingDelete] = useState<CorporateActionDto | null>(null)
+  const deletion = usePendingDelete((row: CorporateActionDto) => deleteCorporateAction(row.id))
   const regionRef = useRef<HTMLDivElement | null>(null)
   const newCorporateActionRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(regionRef, newCorporateActionRef, isLoading)
-
-  const confirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteCorporateAction(confirmingDelete.id)
-    setConfirmingDelete(null)
-  }
 
   if (isLoading) {
     return <LoadingState />
@@ -217,9 +213,9 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
       )}
 
       {corporateActions.length === 0 ? (
-        <p className="corporate-actions-tab__empty">
+        <EmptyState>
           No corporate actions yet — nothing has changed this holding through a split, merger, or spin-off.
-        </p>
+        </EmptyState>
       ) : (
         <div ref={regionRef} className="corporate-actions-tab__table-wrapper" onFocus={recordRowFocus}>
           <Table className="corporate-actions-tab__table data-table">
@@ -252,7 +248,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
                   isHighlighted={record.id === highlightedId}
                   isDeleting={deletingId === record.id}
                   onEdit={showEditForm}
-                  onDelete={setConfirmingDelete}
+                  onDelete={deletion.request}
                 />
               ))}
             </TableBody>
@@ -262,12 +258,12 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
 
       <ActionErrorAlert message={deleteError} />
 
-      {confirmingDelete && (
+      {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="corporate action"
-          message={`Delete the ${corporateActionName(confirmingDelete, affectedAssetName)}? This cannot be undone.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(null)}
+          message={`Delete the ${corporateActionName(deletion.pendingRow, affectedAssetName)}? This cannot be undone.`}
+          onConfirm={deletion.confirm}
+          onCancel={deletion.cancel}
         />
       )}
     </div>

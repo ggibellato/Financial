@@ -15,6 +15,14 @@ function renderComponent(scope: InvestmentScope = 'active') {
   )
 }
 
+function footerTotals() {
+  return within(screen.getByRole('group', { name: 'Totals for holdings' }))
+}
+
+function footerTotal(label: string) {
+  return footerTotals().getByText(label).nextElementSibling
+}
+
 const mockAggregatedRetry = vi.fn()
 const mockPortfolioRetry = vi.fn()
 
@@ -151,7 +159,7 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.queryByText('Realized gain/loss')).not.toBeInTheDocument()
     expect(screen.getByText('% Portfolio')).toBeInTheDocument()
     expect(screen.getAllByText('Total credits').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText('Current value')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Current value')).toBeInTheDocument()
     expect(screen.getByText('Average price')).toBeInTheDocument()
     expect(screen.getByText('Current price')).toBeInTheDocument()
     expect(screen.getByText('Profit')).toBeInTheDocument()
@@ -164,8 +172,8 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent('historic')
-    expect(screen.getByText('Realized gain/loss')).toBeInTheDocument()
-    expect(screen.getByText('Realized (shares only)')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Realized gain/loss')).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText('Realized (shares only)')).toBeInTheDocument()
     expect(screen.getByText('Sold price')).toBeInTheDocument()
     expect(screen.queryByText('Current value')).not.toBeInTheDocument()
     expect(screen.queryByText('Current price')).not.toBeInTheDocument()
@@ -247,9 +255,8 @@ describe('PortfolioHoldingsTab', () => {
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', realizedGainLoss: -20 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
-    const { container } = renderComponent('historic')
-    const input = container.querySelector('[data-label="Realized gain/loss"] + input') as HTMLInputElement
-    expect(input.value).toBe('-70.00')
+    renderComponent('historic')
+    expect(footerTotal('Realized gain/loss')).toHaveTextContent('-70.00')
   })
 
   it('renders_realized_gain_loss_shares_only_value_from_dto_field_for_historic_asset', () => {
@@ -271,9 +278,8 @@ describe('PortfolioHoldingsTab', () => {
     const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'MXRF11', realizedGainLossSharesOnly: -25 }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
-    const { container } = renderComponent('historic')
-    const input = container.querySelector('[data-label="Realized (shares only)"] + input') as HTMLInputElement
-    expect(input.value).toBe('225.00')
+    renderComponent('historic')
+    expect(footerTotal('Realized (shares only)')).toHaveTextContent('225.00')
   })
 
   it('applies_positive_or_negative_color_class_to_realized_gain_loss_shares_only_independent_of_realized_gain_loss_sign', () => {
@@ -341,9 +347,8 @@ describe('PortfolioHoldingsTab', () => {
   it('renders_dash_for_footer_current_value_when_no_row_has_price_data', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
-    const { container } = renderComponent()
-    const input = container.querySelector('[data-label="Current value"] + input') as HTMLInputElement
-    expect(input.value).toBe('—')
+    renderComponent()
+    expect(footerTotal('Current value')).toHaveTextContent('—')
   })
 
   it('renders_average_price_with_formatted_value', () => {
@@ -405,7 +410,28 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [rowPrice] })
     renderComponent()
-    expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText(/262[.,]50/)).toBeInTheDocument()
+  })
+
+  it('spells out what the manual badge means for screen readers, hiding the abbreviation', () => {
+    const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: true }
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [rowPrice] })
+    renderComponent()
+
+    const badge = screen.getByText('(M)')
+    expect(badge).toHaveAttribute('aria-hidden', 'true')
+    expect(badge.nextElementSibling).toHaveTextContent('This value came from a manually-entered price, not a live fetch.')
+  })
+
+  it('shows the totals as a named group of labelled bold values, not inputs', () => {
+    setAggregatedMock({ summary: SUMMARY })
+    setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
+    renderComponent()
+
+    const totals = screen.getByRole('group', { name: 'Totals for holdings' })
+    expect(within(totals).queryAllByRole('textbox')).toHaveLength(0)
+    expect(within(totals).getByText('Total invested').nextElementSibling?.tagName).toBe('STRONG')
   })
 
   it('renders_manual_badge_when_row_price_is_manual', () => {
@@ -530,7 +556,7 @@ describe('PortfolioHoldingsTab', () => {
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
     expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—')
     expect(cells[10].textContent?.replace('Profit % w/ credits:', '')).toBe('—')
-    expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText(/262[.,]50/)).toBeInTheDocument()
   })
 
   it('renders_dash_in_xirr_when_the_series_admits_no_rate', () => {
@@ -689,7 +715,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByText(/150[.,]00/)).toBeInTheDocument()
+    expect(within(screen.getByRole('table')).getByText(/150[.,]00/)).toBeInTheDocument()
   })
 
   it('renders_estimated_annual_credits_as_dash_when_null', () => {
@@ -732,8 +758,8 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(formatN2(SUMMARY.totalInvested))).toBeInTheDocument()
-    expect(screen.queryByDisplayValue(/3[,.]000[.,]00/)).not.toBeInTheDocument()
+    expect(footerTotals().getByText(formatN2(SUMMARY.totalInvested))).toBeInTheDocument()
+    expect(footerTotals().queryByText(/3[,.]000[.,]00/)).not.toBeInTheDocument()
   })
 
   it('renders_footer_total_credits_from_the_server_summary_not_a_client_sum', () => {
@@ -742,8 +768,8 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(formatN2(SUMMARY.totalCredits))).toBeInTheDocument()
-    expect(screen.queryByDisplayValue(/125[.,]00/)).not.toBeInTheDocument()
+    expect(footerTotals().getByText(formatN2(SUMMARY.totalCredits))).toBeInTheDocument()
+    expect(footerTotals().queryByText(/125[.,]00/)).not.toBeInTheDocument()
   })
 
   it('renders_footer_credits_label_with_current_month_and_year', () => {
@@ -765,7 +791,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(/30[.,]00/)).toBeInTheDocument()
+    expect(footerTotals().getByText(/30[.,]00/)).toBeInTheDocument()
   })
 
   it('renders_footer_estimated_annual_credits_sum_of_non_null', () => {
@@ -774,23 +800,22 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(/600[.,]00/)).toBeInTheDocument()
+    expect(footerTotals().getByText(/600[.,]00/)).toBeInTheDocument()
   })
 
   it('renders_footer_estimated_annual_credits_as_dash_when_all_null', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, estimatedAnnualCredits: null }
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item], rowPrices: [LOADING_ROW_PRICE] })
-    const { container } = renderComponent()
-    const input = container.querySelector('[data-label="Est. annual credits"] + input') as HTMLInputElement
-    expect(input.value).toBe('—')
+    renderComponent()
+    expect(footerTotal('Est. annual credits')).toHaveTextContent('—')
   })
 
   it('renders_footer_current_value_as_calculating_when_all_prices_pending', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue('Calculating…')).toBeInTheDocument()
+    expect(footerTotals().getByText('Calculating…')).toBeInTheDocument()
   })
 
   it('renders_footer_current_value_as_partial_sum_with_asterisk_while_prices_loading', () => {
@@ -800,7 +825,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [resolvedPrice, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(screen.getByDisplayValue(/50[.,]00 \*/)).toBeInTheDocument()
+    expect(footerTotals().getByText(/50[.,]00 \*/)).toBeInTheDocument()
     expect(screen.getByText('excludes assets with pending prices')).toBeInTheDocument()
   })
 
@@ -812,7 +837,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [price1, price2] })
     renderComponent()
-    expect(screen.getByDisplayValue(/100[.,]00/)).toBeInTheDocument()
+    expect(footerTotals().getByText(/100[.,]00/)).toBeInTheDocument()
     expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
   })
 
@@ -824,7 +849,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [livePrice, manualPrice] })
     renderComponent()
-    expect(screen.getByDisplayValue(/100[.,]00/)).toBeInTheDocument()
+    expect(footerTotals().getByText(/100[.,]00/)).toBeInTheDocument()
     expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
   })
 

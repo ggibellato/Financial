@@ -4,6 +4,7 @@ import { AddRegular, DeleteRegular } from '@fluentui/react-icons'
 import type { PotBalanceDto } from '../api/types'
 import { potNameError, potSplitError, useManagePots, type PotRow, type PotRowChange } from '../hooks/useManagePots'
 import { formatN2To4 } from '../utils/formatters'
+import EmptyState from './EmptyState'
 import EntityFormDialog from './EntityFormDialog'
 import './ManagePotsDialog.css'
 
@@ -88,7 +89,7 @@ export default function ManagePotsDialog({ potsAccountId, accountName, initialPo
       title="Manage pots"
       error={form.error}
       isSaving={form.isSaving}
-      canSave={form.canSave}
+      canSave={form.isDirty}
       isDirty={form.isDirty}
       onSave={form.save}
       onCancel={onClose}
@@ -102,7 +103,7 @@ export default function ManagePotsDialog({ potsAccountId, accountName, initialPo
             Add pot
           </Button>
         </div>
-        {form.rows.length === 0 && <Text>This account has no pots yet.</Text>}
+        {form.rows.length === 0 && <EmptyState>This account has no pots yet.</EmptyState>}
         {form.rows.map((row) => (
           <PotRowFields
             key={row.key}
@@ -111,8 +112,9 @@ export default function ManagePotsDialog({ potsAccountId, accountName, initialPo
             onRemove={() => removeNewPot(row.key)}
           />
         ))}
-        <p className="manage-pots__total" role="status">
-          Active pots total: <strong>{formatN2To4(form.activeTotal)}%</strong>.{form.guidance && ` ${form.guidance}`}
+        <p className="manage-pots__total">
+          Active pots total: <strong>{formatN2To4(form.activeTotal)}%</strong>.{' '}
+          <span role="status">{form.guidance}</span>
         </p>
       </div>
     </EntityFormDialog>

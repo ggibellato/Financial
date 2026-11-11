@@ -39,6 +39,10 @@ export function formatPercentFraction(value: number): string {
   return percentFractionFormatter.format(value)
 }
 
+export function formatPercentN2(value: number): string {
+  return `${formatN2(value)}%`
+}
+
 export function formatPercent1(value: number): string {
   return `${percent1Formatter.format(value)}%`
 }
@@ -147,12 +151,20 @@ export function getSaveErrorMessage(err: unknown, fallback: string): string {
   return isNetworkFailure(err) ? NETWORK_SAVE_ERROR : getErrorMessage(err, fallback)
 }
 
+export function deleteFailedMessage(noun: string): string {
+  return `The ${noun} could not be deleted. Try again.`
+}
+
 export function getDeleteErrorMessage(err: unknown, fallback: string): string {
   return isNetworkFailure(err) ? NETWORK_DELETE_ERROR : getErrorMessage(err, fallback)
 }
 
 export function formatCurrency(value: number, currency: string): string {
   return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(value)
+}
+
+export function formatAmount(value: number, currency: string | null | undefined): string {
+  return currency ? formatCurrency(value, currency) : formatN2(value)
 }
 
 export function toPence(value: number): number {

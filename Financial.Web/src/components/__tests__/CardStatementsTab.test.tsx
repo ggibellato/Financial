@@ -7,6 +7,7 @@ import { useCardStatements, type CardStatements, type StoredStatement } from '..
 import type { DueDateFormState, StatementDueDateFormHandle } from '../../hooks/useStatementDueDateForm'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import CardStatementsTab from '../CardStatementsTab'
+import { findErrorAlert, getErrorAlert } from '../../test-utils/errorAlert'
 
 const { getAccountStatementsMock, getAccountsMock, setStatementDueDateMock } = vi.hoisted(() => ({
   getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
@@ -343,8 +344,8 @@ describe('CardStatementsTab', () => {
 
     statements.rerenderWith({ payForm: { ...payForm, isSaving: false, error: 'Barclays is inactive.' } })
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Barclays is inactive.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('Barclays is inactive.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 
   it('submits and cancels the pay form', async () => {
@@ -468,9 +469,9 @@ describe('CardStatementsTab', () => {
 
       await userEvent.click(screen.getByRole('button', { name: 'Save due date' }))
 
-      expect(await screen.findByRole('alert')).toHaveTextContent('Amex is inactive.')
+      expect(await findErrorAlert()).toHaveTextContent('Amex is inactive.')
       expect(screen.getByLabelText(/^Due date/)).toHaveValue('2026-10-20')
-      expect(screen.getByRole('alert')).toHaveFocus()
+      expect(getErrorAlert()).toHaveFocus()
     })
 
     it.each([

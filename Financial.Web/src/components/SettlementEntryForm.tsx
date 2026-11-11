@@ -1,11 +1,12 @@
 import { Field, Input, makeStyles, mergeClasses, MessageBar, MessageBarBody, Radio, RadioGroup, Text, tokens } from '@fluentui/react-components'
-import { useAlertFocus } from '../hooks/useFormErrorFocus'
 import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/useSettlementEntryForm'
+import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
-import { PAID_BY_OTHER, PAID_BY_YOU } from './accountActions'
+import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 interface SettlementEntryFormProps {
   form: SettlementEntryFormModel
@@ -32,9 +33,6 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
     value: values[field],
     onChange: (event: { target: { value: string } }) => setField(field, event.target.value),
   })
-
-  const errorRef = useAlertFocus(saveError)
-
   const currencyChoice = asksCurrency && (
     <Field label="Currency" required {...validation('currency')}>
       <RadioGroup name="currency" layout="horizontal" className={styles.radioRow} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
@@ -57,15 +55,11 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
           if (firstInvalid) event.currentTarget.querySelector<HTMLElement>(`[name="${firstInvalid}"]`)?.focus()
         }}
       >
-        <fieldset disabled={isSaving} className={styles.savingFieldset}>
+        <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
           <Text as="h2" id="settlement-entry-title" weight="semibold" size={400}>
             {title}
           </Text>
-          {saveError && (
-            <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-              <MessageBarBody>{saveError}</MessageBarBody>
-            </MessageBar>
-          )}
+          <ActionErrorAlert message={saveError} />
           {warning && (
             <MessageBar role="status" intent="warning">
               <MessageBarBody>{warning}</MessageBarBody>
@@ -78,14 +72,12 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
             </Field>
             <Field label="Paid by" required {...validation('paidBy')}>
               <RadioGroup name="paidBy" layout="horizontal" className={styles.radioRow} value={values.paidBy} onChange={(_, data) => setField('paidBy', data.value)}>
-                <Radio value={PAID_BY_YOU} label="You" />
+                <Radio value={PAID_BY_YOU} label={PAID_BY_YOU} />
                 <Radio value={PAID_BY_OTHER} label={otherParticipant} />
               </RadioGroup>
             </Field>
             {isEditing && (
-              <Field label="Currency">
-                <Text weight="semibold">{values.currency}</Text>
-              </Field>
+              <LockedValue label="Currency" value={values.currency} />
             )}
             {!isSettling && currencyChoice}
             <Field label="Description" required className={mergeClasses(styles.spanTwo, entryStyles.startsRow)} {...validation('description')}>

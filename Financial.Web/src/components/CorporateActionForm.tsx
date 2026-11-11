@@ -10,6 +10,7 @@ import {
   Textarea,
 } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
+import ActionErrorAlert from './ActionErrorAlert'
 import type { CorporateActionFormField } from '../hooks/useCorporateActions'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -17,6 +18,7 @@ import ReadOnlyInput from './ReadOnlyInput'
 import TargetAssetPicker from './TargetAssetPicker'
 import type { TargetAssetPickerValue } from './targetAssetPickerValue'
 import { formatN2, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './CorporateActionForm.css'
 
 const CORPORATE_ACTION_TYPE_OPTIONS = [
@@ -330,11 +332,7 @@ export default function CorporateActionForm({
         )}
       </div>
 
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
     </div>
   )
 }

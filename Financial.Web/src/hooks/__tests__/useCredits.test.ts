@@ -551,6 +551,41 @@ describe('useCredits', () => {
     expect(result.current.credits).toHaveLength(2)
   })
 
+  it('clears an earlier delete error once a later save succeeds', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    deleteCreditMock.mockRejectedValue(new Error('Delete failed'))
+    addCreditMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [CREDIT_A, CREDIT_B] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    act(() => result.current.deleteCredit('aaa'))
+    await waitFor(() => expect(result.current.deleteError).toBe('Delete failed'))
+
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formValue', '50')
+    })
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledOnce())
+    await waitFor(() => expect(result.current.deleteError).toBeNull())
+  })
+
+  it('falls back to a delete-failure message with a recovery hint', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    deleteCreditMock.mockRejectedValue('no message')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+
+    act(() => result.current.deleteCredit('aaa'))
+
+    await waitFor(() => expect(result.current.deleteError).toBe('The credit could not be deleted. Try again.'))
+  })
+
   it('aggregateByMonth_computesByTypeDynamically', async () => {
     const creditA: CreditDto = {
       id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,

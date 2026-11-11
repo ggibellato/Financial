@@ -18,13 +18,13 @@
      every theme, which defeated dark mode wherever they were used. */
   --bg-subtle: #f9f9f9;
   --bg-hover: #f0f0f0;
-  --text-muted: #6e6e6e;
+  --text-muted: #6b6b6b;
   --success: #2e7d32;
   --danger: #c0392b;
   --error: #c0392b;
   --error-bg: #fdecea;
   --error-border: #f5c2bd;
-  --warning-text: #8a6d00;
+  --warning-text: #846800;
   --warning-bg: #fff8e1;
   --warning-border: #f0d878;
   --drop-target: #cce8ff;

@@ -170,22 +170,23 @@ describe('ManagePotsDialog', () => {
     expect(await screen.findByText('A pot named "Trips" already exists.')).toBeInTheDocument()
   })
 
-  it('blocks Save and says why on a blank name or a split out of range', async () => {
+  it('says why on a blank name or a split out of range, and Save then lists the problems instead of saving', async () => {
     const { user } = renderDialog()
 
     await setText(user, 'Home', NAME, '   ')
     expect(screen.getByText('Pot name is required.')).toBeInTheDocument()
     expect(total()).toHaveTextContent('Fix the marked pots to save.')
-    expect(button('Save')).toBeDisabled()
 
-    await setText(user, 'Home', NAME, 'Home')
     await setText(user, 'Home', SPLIT, '100.5')
     expect(screen.getByText('Split percentage must be between 0 and 100.')).toBeInTheDocument()
-    expect(button('Save')).toBeDisabled()
+    expect(button('Save')).toBeEnabled()
 
-    await setText(user, 'Home', SPLIT, '')
-    expect(screen.getByText('Split percentage must be between 0 and 100.')).toBeInTheDocument()
-    expect(button('Save')).toBeDisabled()
+    await user.click(button('Save'))
+
+    const summary = screen.getByRole('group', { name: 'Fix 2 fields before saving', hidden: true })
+    await waitFor(() => expect(summary).toHaveFocus())
+    expect(summary).toHaveTextContent('Pot Home: Pot name is required.')
+    expect(updatePotsMock).not.toHaveBeenCalled()
   })
 
   it('removes a pot added by mistake, leaving the list unchanged and focus on Add pot', async () => {
@@ -222,6 +223,17 @@ describe('ManagePotsDialog', () => {
     await user.click(button('Cancel'))
 
     expect(onClose).toHaveBeenCalledTimes(1)
+  })
+
+  it('closes on Cancel without the discard prompt after a new pot is added and removed again', async () => {
+    const { user, onClose } = renderDialog()
+    await user.click(button('Add pot'))
+    await user.click(screen.getByLabelText('Remove new pot 1'))
+
+    await user.click(button('Cancel'))
+
+    expect(onClose).toHaveBeenCalledOnce()
+    expect(screen.queryByText('Discard unsaved changes?')).not.toBeInTheDocument()
   })
 
   it('asks before discarding unsaved changes, and keeps them on Keep editing', async () => {

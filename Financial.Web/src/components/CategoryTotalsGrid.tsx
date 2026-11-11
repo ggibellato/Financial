@@ -20,6 +20,7 @@ export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum }
   return (
     <TotalsGrid
       label="Category totals"
+      totalsLabel="Totals for categories"
       columns={[
         {
           key: 'category',

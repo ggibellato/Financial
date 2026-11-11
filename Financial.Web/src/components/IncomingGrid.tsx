@@ -31,6 +31,7 @@ export default function IncomingGrid({
       )}
       <TotalsGrid
         label="Income totals"
+        totalsLabel="Totals for income"
         columns={[
           {
             key: 'source',

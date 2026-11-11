@@ -4,6 +4,7 @@ import BrokersPage from '../BrokersPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto } from '../../api/types'
 import { confirmDelete } from '../../test-utils/confirmDelete'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, setCostBasisMethodMock, deleteBrokerMock } =
   vi.hoisted(() => ({
@@ -44,6 +45,20 @@ describe('BrokersPage', () => {
 
     await waitFor(() => expect(screen.getByText('XPI')).toBeInTheDocument())
     expect(screen.getByText('Avenue')).toBeInTheDocument()
+  })
+
+  it('lists an active and a historic broker of the same name as two rows without a duplicate-key warning', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    getAdminBrokersMock.mockResolvedValue([
+      BROKERS[0],
+      { ...BROKERS[0], status: 'Historic', portfolioCount: 0 },
+    ])
+    render(<BrokersPage />)
+
+    await waitFor(() => expect(screen.getAllByText('XPI')).toHaveLength(2))
+    expect(screen.getByText('Historic')).toBeInTheDocument()
+    expect(consoleError.mock.calls.flat().join(' ')).not.toMatch(/same key/)
+    consoleError.mockRestore()
   })
 
   it('shows the empty state when there are no brokers', async () => {
@@ -244,7 +259,7 @@ describe('BrokersPage', () => {
     render(<BrokersPage />)
     await confirmDelete('Avenue', 'broker')
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Avenue could not be deleted.')
     await waitFor(() => expect(alert).toHaveFocus())
   })

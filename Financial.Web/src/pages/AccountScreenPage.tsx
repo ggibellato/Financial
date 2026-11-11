@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
-import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, TabList, Text } from '@fluentui/react-components'
+import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
+import PageTabList from '../components/PageTabList'
 import AccountActionBar from '../components/AccountActionBar'
 import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCreditRefund, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
@@ -373,8 +374,7 @@ export default function AccountScreenPage() {
       </div>
 
       {hasTabs && (
-        <TabList
-          className="account-screen__tabs"
+        <PageTabList
           aria-label={isCard ? 'Card views' : 'Pots views'}
           selectedValue={activeTab}
           onTabSelect={(_, data) => guardChange(() => screen.setTab(data.value as AccountScreenTab))}
@@ -384,7 +384,7 @@ export default function AccountScreenPage() {
               {tab.label}
             </Tab>
           ))}
-        </TabList>
+        </PageTabList>
       )}
 
       <section

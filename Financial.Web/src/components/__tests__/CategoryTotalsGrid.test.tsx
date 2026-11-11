@@ -37,6 +37,12 @@ describe('CategoryTotalsGrid', () => {
     expect(footer()).toBe('Total: 142.50')
   })
 
+  it('names its totals group once, not "Totals for Category totals"', () => {
+    render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
+
+    expect(screen.getByRole('group', { name: 'Totals for categories' })).toBeInTheDocument()
+  })
+
   it('sorts rows by Category ascending when its header is clicked', () => {
     render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
@@ -93,7 +99,7 @@ describe('CategoryTotalsGrid', () => {
       expect(await screen.findByText('Filtered: 1 of 2 rows')).toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
 
-      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(screen.getByRole('status')).toHaveTextContent('Filters cleared: showing all 2 rows')
       expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
       expect(within(document.querySelector('tbody')!).getByText('Mercado')).toBeInTheDocument()
       expect(screen.getByRole('table', { name: 'Category totals' })).toHaveFocus()

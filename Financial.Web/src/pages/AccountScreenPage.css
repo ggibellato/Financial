@@ -105,10 +105,6 @@
   padding-bottom: 24px;
 }
 
-.account-screen__tabs {
-  flex-shrink: 0;
-}
-
 .data-table tbody tr.card-statements__row--viewed {
   background-color: var(--colorBrandBackground2);
 }

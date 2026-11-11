@@ -17,6 +17,7 @@ import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources, type Income
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks } from '../utils/selectableBanks'
+import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import FundedFromSection from './FundedFromSection'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -91,7 +92,7 @@ export default function IncomeForm({
   const [openedBank] = useState(bank)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0 || Object.keys(funding.errors).length > 0
-  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
+  const formRef = useFormErrorFocus(saveErrorFields)
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
@@ -113,15 +114,11 @@ export default function IncomeForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
           {isEditing ? 'Edit income' : 'New income'}
         </Text>
-        {!hasFieldErrors && saveError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{saveError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={hasFieldErrors ? null : saveError} />
 
         <div className={styles.grid}>
           <Field

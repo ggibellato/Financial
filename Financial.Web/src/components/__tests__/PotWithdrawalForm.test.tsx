@@ -9,6 +9,7 @@ import { account, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import PotWithdrawalForm from '../PotWithdrawalForm'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const { createPotWithdrawalMock, updatePotWithdrawalMock, getPotsMock } = vi.hoisted(() => ({
   createPotWithdrawalMock: vi.fn<FinancialApiClient['createPotWithdrawal']>(),
@@ -351,7 +352,7 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     fireEvent.click(within(await findDialog()).getByText('Continue', { selector: 'button' }))
 
-    const alert = await screen.findByRole('alert')
+    const alert = await findErrorAlert()
     expect(alert).toHaveTextContent('Barclays is inactive.')
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
     await waitFor(() => expect(alert).toHaveFocus())
@@ -365,7 +366,7 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     save()
 
-    const alert = await screen.findByRole('alert')
+    const alert = await findErrorAlert()
     expect(alert).toHaveTextContent("Category 'Saude' cannot be used")
     await waitFor(() => expect(alert).toHaveFocus())
   })

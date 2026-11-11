@@ -6,6 +6,7 @@ import { BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
 import { formatN2 } from '../../utils/formatters'
 import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
 import CorporateActionsTab from '../CorporateActionsTab'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const mockRetry = vi.fn()
 const mockShowNewForm = vi.fn()
@@ -239,7 +240,7 @@ describe('CorporateActionsTab', () => {
     setMock({ corporateActions: [split({})], deleteError: 'Cannot delete: a later disposal depends on lots created by this split' })
     render(<CorporateActionsTab />)
 
-    const alert = screen.getByRole('alert')
+    const alert = getErrorAlert()
     expect(alert).toHaveTextContent('Cannot delete: a later disposal depends on lots created by this split')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(screen.getAllByRole('row')).toHaveLength(2)

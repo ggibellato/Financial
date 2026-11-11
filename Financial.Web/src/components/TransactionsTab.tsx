@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import {
   Bar,
   BarChart,
@@ -11,8 +11,9 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
+import EmptyState from './EmptyState'
 import type { TransactionDto } from '../api/types'
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
@@ -24,6 +25,7 @@ import LotAllocationPicker from './LotAllocationPicker'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useOpenLots } from '../hooks/useOpenLots'
@@ -32,10 +34,11 @@ import type { ChartDisplayMode, TransactionFormField, TransactionMonthBucket } f
 import { useTransactions } from '../hooks/useTransactions'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { formatN2, formatN8, formatShortDate, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
+import { formatAmount, formatN2, formatN8, formatShortDate, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
 
 // Matches the blue already established by CreditsTab/PriceHistoryTab
@@ -86,7 +89,7 @@ function typeDisplayLabel(type: string): string {
 }
 
 function transactionName(transaction: TransactionDto): string {
-  return `transaction ${typeDisplayLabel(transaction.type)} ${formatN2(transaction.netCash)}, ${formatShortDate(transaction.date)}`
+  return `transaction ${typeDisplayLabel(transaction.type)} ${formatAmount(transaction.netCash, transaction.currency)}, ${formatShortDate(transaction.date)}`
 }
 
 interface TransactionRowProps {
@@ -303,11 +306,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
     </div>
   )
 }
@@ -424,16 +423,10 @@ export default function TransactionsTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, SORT_ACCESSORS, DATE_DESC_SORT)
 
-  const [confirmingDelete, setConfirmingDelete] = useState<TransactionDto | null>(null)
+  const deletion = usePendingDelete((row: TransactionDto) => deleteTransaction(row.id))
   const regionRef = useRef<HTMLDivElement | null>(null)
   const newTransactionRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(regionRef, newTransactionRef, isLoading)
-
-  const confirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteTransaction(confirmingDelete.id)
-    setConfirmingDelete(null)
-  }
 
   if (isLoading) {
     return <LoadingState />
@@ -500,7 +493,7 @@ export default function TransactionsTab() {
       )}
 
       {transactions.length === 0 ? (
-        <p className="transactions-tab__empty">No transactions yet — nothing has been bought or sold in this holding.</p>
+        <EmptyState className="transactions-tab__empty">No transactions yet — nothing has been bought or sold in this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="transactions-tab__table-wrapper" onFocus={recordRowFocus}>
           <Table className="transactions-tab__table data-table">
@@ -564,7 +557,7 @@ export default function TransactionsTab() {
                   transaction={t}
                   isDeleting={deletingId === t.id}
                   onEdit={showEditForm}
-                  onDelete={setConfirmingDelete}
+                  onDelete={deletion.request}
                 />
               ))}
             </TableBody>
@@ -574,12 +567,12 @@ export default function TransactionsTab() {
 
       <ActionErrorAlert message={deleteError} className="transactions-tab__delete-error" />
 
-      {confirmingDelete && (
+      {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="transaction"
-          message={`Delete the ${transactionName(confirmingDelete)}? This cannot be undone.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(null)}
+          message={`Delete the ${transactionName(deletion.pendingRow)}? This cannot be undone.`}
+          onConfirm={deletion.confirm}
+          onCancel={deletion.cancel}
         />
       )}
     </div>

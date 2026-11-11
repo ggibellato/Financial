@@ -4,6 +4,7 @@ interface FocusedRowControl {
   element: HTMLElement
   body: HTMLElement
   bodyIndex: number
+  bodyCount: number
   rowIndex: number
   controlsAfter: number
 }
@@ -22,17 +23,26 @@ function locate(region: HTMLElement, element: HTMLElement): FocusedRowControl | 
   const controls = Array.from(row.querySelectorAll(CONTROL_SELECTOR))
   const controlIndex = controls.indexOf(element)
   if (controlIndex < 0) return null
+  const bodies = Array.from(region.querySelectorAll('tbody'))
   return {
     element,
     body,
-    bodyIndex: Array.from(region.querySelectorAll('tbody')).indexOf(body as HTMLTableSectionElement),
+    bodyIndex: bodies.indexOf(body as HTMLTableSectionElement),
+    bodyCount: bodies.length,
     rowIndex: Array.from(body.children).indexOf(row),
     controlsAfter: controls.length - 1 - controlIndex,
   }
 }
 
-function controlNear(region: HTMLElement, { body, bodyIndex, rowIndex, controlsAfter }: FocusedRowControl): HTMLElement | null {
-  const rows = (body.isConnected ? body : region.querySelectorAll('tbody')[bodyIndex])?.children ?? []
+function sameBody(region: HTMLElement, { body, bodyIndex, bodyCount }: FocusedRowControl): Element | undefined {
+  if (body.isConnected) return body
+  const bodies = region.querySelectorAll('tbody')
+  return bodies.length === bodyCount ? bodies[bodyIndex] : undefined
+}
+
+function controlNear(region: HTMLElement, focused: FocusedRowControl): HTMLElement | null {
+  const { rowIndex, controlsAfter } = focused
+  const rows = sameBody(region, focused)?.children ?? []
   const row = rows[Math.min(rowIndex, rows.length - 1)]
   if (!row) return null
   const controls = row.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)

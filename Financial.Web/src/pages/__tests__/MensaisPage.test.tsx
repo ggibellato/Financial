@@ -5,6 +5,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account } from '../../test/account'
 import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
+import { findErrorAlert } from '../../test-utils/errorAlert'
 
 const {
   getMensaisBillsMock,
@@ -251,8 +252,35 @@ describe('MensaisPage', () => {
     fireEvent.click(statusButtons[0])
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
 
-    await waitFor(() => expect(screen.getByText('Status is not recognized.')).toBeInTheDocument())
+    const alert = await findErrorAlert({ hidden: true })
+    expect(alert).toHaveTextContent('Status is not recognized.')
+    await waitFor(() => expect(alert).toHaveFocus())
     expect(screen.getAllByRole('button', { name: /^Status: Unset/ })).toHaveLength(2)
+  })
+
+  it('names the Brasil and UK grids with headings and shows an empty state for an area with no bills', async () => {
+    getMensaisBillsMock.mockResolvedValue([BILLS[0]])
+    render(<MensaisPage />)
+
+    await screen.findByText('INSS')
+    expect(screen.getByRole('region', { name: 'Brasil bills' })).toBeInTheDocument()
+    const ukBills = screen.getByRole('region', { name: 'UK bills' })
+    expect(within(ukBills).getByText('No UK bills yet. Add one with New bill.')).toBeInTheDocument()
+    expect(within(ukBills).queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('disables every other Delete while one bill is being deleted', async () => {
+    deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    await confirmDelete(INSS_NAME, 'bill')
+
+    await screen.findByRole('button', { name: `Deleting ${INSS_NAME}`, hidden: true })
+    const otherDeletes = screen.getAllByRole('button', { name: /^Delete bill/, hidden: true })
+    expect(otherDeletes.length).toBeGreaterThan(0)
+    otherDeletes.forEach((button) => expect(button).toHaveAttribute('aria-disabled', 'true'))
+    expect(deleteMensaisBillMock).toHaveBeenCalledOnce()
   })
 
   it('shows each bill\'s Note in both the Brasil and UK grids', async () => {
@@ -431,7 +459,7 @@ describe('MensaisPage', () => {
 
     await confirmDelete(INSS_NAME, 'bill')
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to delete')
     await waitFor(() => expect(alert).toHaveFocus())
     expect(screen.getByText('INSS')).toBeInTheDocument()
@@ -487,7 +515,7 @@ describe('MensaisPage', () => {
     const dialog = await requestReset()
     fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
 
-    const alert = await screen.findByRole('alert', { hidden: true })
+    const alert = await findErrorAlert({ hidden: true })
     expect(alert).toHaveTextContent('Failed to reset bills.')
     await waitFor(() => expect(alert).toHaveFocus())
   })

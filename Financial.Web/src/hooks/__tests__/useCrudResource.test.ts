@@ -172,6 +172,18 @@ describe('useCrudResource', () => {
     expect(result.current.data).toEqual(ITEMS)
   })
 
+  it('clears an earlier delete error once a later save succeeds', async () => {
+    const { result } = await renderLoaded()
+    act(() => result.current.runPendingMutation('a', () => Promise.reject(new Error('Still in use')), 'Failed to delete item'))
+    await waitFor(() => expect(result.current.pendingError).toBe('Still in use'))
+
+    await act(async () => {
+      await result.current.mutateAndRefresh(() => Promise.resolve('saved'))
+    })
+
+    expect(result.current.pendingError).toBeNull()
+  })
+
   it('runPendingMutation tracks the pending id and reloads on success', async () => {
     const { result } = await renderLoaded()
     const mutation = deferred<void>()

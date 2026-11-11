@@ -1,4 +1,4 @@
-import type { RefObject } from 'react'
+import { useState, type RefObject } from 'react'
 import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { FilterSummary } from '../../hooks/useColumnFilters'
@@ -16,6 +16,10 @@ const useStyles = makeStyles({
   },
 })
 
+function rowsNoun(count: number) {
+  return count === 1 ? 'row' : 'rows'
+}
+
 interface FilteredRowsNoticeProps extends FilterSummary {
   tableRef: RefObject<HTMLTableElement | null>
 }
@@ -25,6 +29,13 @@ export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount,
   const hidden = useVisuallyHiddenStyles()
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
   const isShown = isStackedLayout && isFiltered
+  const [lastChange, setLastChange] = useState<{ isFiltered: boolean; clearedCount: number | null }>({ isFiltered, clearedCount: null })
+  if (lastChange.isFiltered !== isFiltered) {
+    setLastChange({ isFiltered, clearedCount: isFiltered ? null : totalCount })
+  }
+  const message = isFiltered
+    ? `Filtered: ${shownCount} of ${totalCount} ${rowsNoun(totalCount)}`
+    : lastChange.clearedCount !== null && `Filters cleared: showing all ${lastChange.clearedCount} ${rowsNoun(lastChange.clearedCount)}`
 
   const clearFilters = () => {
     onClearFilters()
@@ -33,8 +44,8 @@ export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount,
 
   return (
     <div className={isShown ? styles.notice : undefined}>
-      <span role="status" className={isStackedLayout ? undefined : hidden.visuallyHidden}>
-        {isFiltered && `Filtered: ${shownCount} of ${totalCount} ${totalCount === 1 ? 'row' : 'rows'}`}
+      <span role="status" className={isShown ? undefined : hidden.visuallyHidden}>
+        {message}
       </span>
       {isShown && (
         <Button appearance="primary" onClick={clearFilters}>

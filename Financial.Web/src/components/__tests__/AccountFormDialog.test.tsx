@@ -5,6 +5,7 @@ import { account, cardAccount, potsAccount, settlementAccount } from '../../test
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'
 import AccountFormDialog from '../AccountFormDialog'
+import { findErrorAlert, getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANK: AccountTemplateDto = {
   name: 'Bank',
@@ -262,7 +263,7 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Barclays' } })
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(await findErrorAlert()).toHaveTextContent(message)
     expect(screen.getByLabelText(/Name/)).not.toHaveAttribute('aria-invalid', 'true')
   })
 
@@ -273,7 +274,7 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(message)
+    expect(await findErrorAlert()).toHaveTextContent(message)
     expect(screen.getByLabelText(/Name/)).not.toHaveAttribute('aria-invalid', 'true')
     expect(screen.getAllByText(message)).toHaveLength(1)
   })
@@ -284,10 +285,10 @@ describe('AccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Monzo' } })
     save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Bank accounts must be GBP.')
+    expect(await findErrorAlert()).toHaveTextContent('Bank accounts must be GBP.')
     expect(screen.getByLabelText(/Name/)).toHaveValue('Monzo')
     expect(screen.getByRole('button', { name: 'Add account' })).toBeEnabled()
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    await waitFor(() => expect(getErrorAlert()).toHaveFocus())
   })
 
   it('[AC P60-F06-admin-accounts-page-07] disables the fields and the buttons while saving', async () => {
@@ -484,15 +485,21 @@ describe('AccountFormDialog', () => {
       )
     })
 
-    it('requires a currency and the other participant, focusing the currencies first', () => {
+    it('requires a currency and the other participant, listing both in the focused error summary', async () => {
       const { onSubmit } = renderDialog({ templates: [SETTLEMENT] })
 
       fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
       save()
 
-      expect(screen.getByText('Choose at least one currency.')).toBeInTheDocument()
-      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Tick at least one. Choose at least one currency.')
-      expect(screen.getByText("Enter the other participant's name.")).toBeInTheDocument()
+      expect(screen.getByRole('group', { name: /Currencies/ })).toHaveAccessibleDescription('Choose at least one currency. Tick at least one.')
+      expect(currencyBox('BRL')).toHaveAttribute('aria-invalid', 'true')
+      const summary = screen.getByRole('group', { name: 'Fix 2 fields before saving' })
+      await waitFor(() => expect(summary).toHaveFocus())
+      expect(within(summary).getAllByRole('button').map((link) => link.textContent)).toEqual([
+        'Choose at least one currency.',
+        "Enter the other participant's name.",
+      ])
+      fireEvent.click(within(summary).getByRole('button', { name: 'Choose at least one currency.' }))
       expect(currencyBox('BRL')).toHaveFocus()
       expect(onSubmit).not.toHaveBeenCalled()
     })

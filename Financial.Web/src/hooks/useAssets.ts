@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AssetAdminCreateDto, AssetAdminDto, AssetAdminUpdateDto, InvestmentScope } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 /** Uniquely identifies an asset row: names are only unique within their own portfolio. */
 export function assetKey(brokerName: string, portfolioName: string, assetName: string): string {
@@ -64,7 +65,7 @@ export function useAssets(): AssetsData {
             assetName,
             destinationPortfolioName: portfolioName,
           }),
-        'Failed to delete asset.',
+        deleteFailedMessage('asset'),
       ),
     [runPendingMutation],
   )

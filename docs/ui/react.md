@@ -33,7 +33,12 @@ exists.
   Investments/Historic Summary Average): use Fluent's `TabList`/`Tab`, not a
   hand-rolled `<button>` group — it ships the ARIA tablist/keyboard-nav
   pattern (arrow-key navigation, `role="tablist"/tab"`, `aria-selected`) for
-  free. `MonthlyPage.tsx` is the reference. This is distinct from the chart
+  free. Render it through `components/PageTabList`, which requires an
+  `aria-label` naming the strip, never shrinks and wraps its tabs onto
+  another row at narrow widths instead of overflowing, so every tab strip
+  looks and reflows the same. `MonthlyPage.tsx` is the reference;
+  `AccountScreenPage.tsx` also wires `role="tabpanel"` and `aria-controls`,
+  which the other pages do not yet. This is distinct from the chart
   filter/mode "chip" pattern documented in `forms-data-and-visualisations.md`
   (same underlying component, different content role).
 

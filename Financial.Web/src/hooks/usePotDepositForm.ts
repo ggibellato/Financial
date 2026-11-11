@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { PotDepositRequestDto, PotOperationDto, TransferAccountOptionDto } from '../api/types'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
-import { getSaveErrorMessage, positiveAmount, todayIsoDate } from '../utils/formatters'
+import { getSaveErrorMessage, positiveAmount } from '../utils/formatters'
 import {
   comparableLines,
   fundingLineErrors,
@@ -18,6 +18,7 @@ import {
 import type { FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
+import { futureDateError } from '../utils/validators'
 
 const DATE_KEY = 'potDeposit.date'
 const NO_ERRORS: FieldErrors<string> = {}
@@ -49,8 +50,8 @@ function comparableValues({ lines, ...values }: DepositValues): string {
 
 function validate(values: DepositValues): FieldErrors<string> {
   const errors: FieldErrors<string> = {}
-  if (!values.date.trim()) errors.date = 'Enter the deposit date.'
-  else if (values.date > todayIsoDate()) errors.date = 'Date must not be in the future.'
+  const dateError = values.date.trim() ? futureDateError(values.date) : 'Enter the deposit date.'
+  if (dateError) errors.date = dateError
   if (values.into === 'OnePot' && !values.potId) errors.potId = 'Choose a pot.'
   if (positiveAmount(values.amount) === null) errors.amount = 'Amount must be greater than zero.'
   if (!values.description.trim()) errors.description = 'Enter a description.'

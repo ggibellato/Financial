@@ -47,7 +47,3 @@
 .integrations-page__detail-row dd {
   margin: 0;
 }
-
-.integrations-page__empty {
-  color: var(--text, #333);
-}

@@ -1,5 +1,5 @@
 import { useId, useState } from 'react'
-import { Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
+import { Checkbox, Field, Input, Select, Text } from '@fluentui/react-components'
 import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
@@ -8,8 +8,10 @@ import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { todayIsoDate } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
+import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import LockedValue from './LockedValue'
 
 const SETTLED_FIELD_HINT = 'Locked: its card statement is paid'
 
@@ -81,7 +83,7 @@ export default function ExpenseForm({
   const [openedPaymentSource] = useState(paymentSource)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0
-  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
+  const formRef = useFormErrorFocus(saveErrorFields)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
@@ -102,15 +104,11 @@ export default function ExpenseForm({
         onSave()
       }}
     >
-      <fieldset disabled={isSaving} className={styles.savingFieldset}>
+      <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
         <Text as="h2" id={titleId} weight="semibold" size={400}>
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
-        {!hasFieldErrors && saveError && (
-          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
-            <MessageBarBody>{saveError}</MessageBarBody>
-          </MessageBar>
-        )}
+        <ActionErrorAlert message={hasFieldErrors ? null : saveError} />
 
         <div className={styles.grid}>
           <Field
@@ -149,9 +147,7 @@ export default function ExpenseForm({
               </Text>
             </div>
           ) : lockedBank ? (
-            <Field label="Payment source">
-              <Text weight="semibold">{lockedBank.name}</Text>
-            </Field>
+            <LockedValue label="Payment source" value={lockedBank.name} />
           ) : paymentMode === 'bank' && !lockedCard ? (
             <Field
               label="Payment source"
@@ -225,7 +221,8 @@ export default function ExpenseForm({
               <Input
                 type="month"
                 value={invoiceDateDisplay}
-                disabled={isSettled}
+                readOnly={isSettled}
+                appearance={isSettled ? 'filled-darker' : undefined}
                 onChange={(e) => onFieldChange('invoiceDate', e.target.value)}
               />
             </Field>

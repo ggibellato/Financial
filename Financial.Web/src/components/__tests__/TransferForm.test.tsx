@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import TransferForm from '../TransferForm'
 import type { BankOption } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const BANKS: BankOption[] = [
   { id: 'bank-barclays', name: 'Barclays', roundUpEnabled: false, isActive: true },
@@ -225,8 +226,8 @@ describe('TransferForm', () => {
 
     rerender(<TransferForm {...baseProps} saveError="The service is unavailable." />)
 
-    expect(screen.getByRole('alert')).toHaveTextContent('The service is unavailable.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('The service is unavailable.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 
   it('does not save again while a save is in flight', () => {

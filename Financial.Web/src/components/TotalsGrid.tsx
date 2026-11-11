@@ -20,6 +20,7 @@ interface TotalsGridColumn<T> {
 
 interface TotalsGridProps<T> {
   label: string
+  totalsLabel?: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
@@ -28,7 +29,7 @@ interface TotalsGridProps<T> {
   emptyMessage: string
 }
 
-export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItems, filter, emptyMessage }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ label, totalsLabel = `Totals for ${label}`, columns, rows, rowKey, footerItems, filter, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
   const tableRef = useRef<HTMLTableElement>(null)
@@ -81,7 +82,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
       </div>
       {footerItems.length > 0 && (
         <SectionTotals
-          label={`Totals for ${label}`}
+          label={totalsLabel}
           items={filter ? footerItems.map((item) => ({ ...item, label: allItemsTotalLabel(item.label, filter.itemsNoun, filter.isFiltered) })) : footerItems}
         />
       )}

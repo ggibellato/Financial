@@ -67,6 +67,53 @@ describe('FilteredRowsNotice', () => {
     expect(screen.getByRole('status')).toBeEmptyDOMElement()
   })
 
+  it.each([false, true])('announces in the same live region when the last filter is cleared (stacked: %s)', (isStacked) => {
+    mockMatchMedia(isStacked)
+    const tableRef = createRef<HTMLTableElement>()
+    const notice = (isFiltered: boolean) => (
+      <FilteredRowsNotice isFiltered={isFiltered} shownCount={isFiltered ? 3 : 10} totalCount={10} onClearFilters={vi.fn()} tableRef={tableRef} />
+    )
+    const { rerender } = render(notice(true))
+    const liveRegion = screen.getByRole('status')
+
+    rerender(notice(false))
+
+    expect(screen.getByRole('status')).toBe(liveRegion)
+    expect(liveRegion).toHaveTextContent('Filters cleared: showing all 10 rows')
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+  })
+
+  it('does not re-announce the cleared filters when the row count later changes', () => {
+    mockMatchMedia(false)
+    const tableRef = createRef<HTMLTableElement>()
+    const notice = (isFiltered: boolean, totalCount: number) => (
+      <FilteredRowsNotice isFiltered={isFiltered} shownCount={1} totalCount={totalCount} onClearFilters={vi.fn()} tableRef={tableRef} />
+    )
+    const { rerender } = render(notice(true, 10))
+    rerender(notice(false, 10))
+
+    rerender(notice(false, 12))
+
+    expect(screen.getByRole('status')).toHaveTextContent('Filters cleared: showing all 10 rows')
+  })
+
+  it('announces nothing on first render with no filter, and the filtered count again once a filter returns', () => {
+    mockMatchMedia(false)
+    const tableRef = createRef<HTMLTableElement>()
+    const notice = (isFiltered: boolean) => (
+      <FilteredRowsNotice isFiltered={isFiltered} shownCount={1} totalCount={1} onClearFilters={vi.fn()} tableRef={tableRef} />
+    )
+    const { rerender } = render(notice(false))
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+
+    rerender(notice(true))
+    rerender(notice(false))
+    expect(screen.getByRole('status')).toHaveTextContent('Filters cleared: showing all 1 row')
+
+    rerender(notice(true))
+    expect(screen.getByRole('status')).toHaveTextContent('Filtered: 1 of 1 row')
+  })
+
   it('keeps the same live region and updates its text when the filtered count changes', () => {
     mockMatchMedia(false)
     const { showCount } = renderNotice()

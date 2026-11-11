@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { TaxRuleCreateDto, TaxRuleDto, TaxRuleUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface TaxRulesData {
   taxRules: TaxRuleDto[]
@@ -37,7 +38,7 @@ export function useTaxRules(): TaxRulesData {
 
   const deleteTaxRule = useCallback(
     (taxRule: TaxRuleDto) =>
-      runPendingMutation(taxRule.id, () => apiClient.deleteTaxRule(taxRule.id), 'Failed to delete tax rule.'),
+      runPendingMutation(taxRule.id, () => apiClient.deleteTaxRule(taxRule.id), deleteFailedMessage('tax rule')),
     [runPendingMutation],
   )
 

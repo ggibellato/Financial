@@ -117,6 +117,15 @@ describe('BillExpenseFields', () => {
     expect(screen.queryByRole('combobox', { name: /^Bank/ })).not.toBeInTheDocument()
   })
 
+  it('orders the fields date, bank, category, description, value', () => {
+    render(<BillExpenseFields values={VALID} banks={BANKS} categories={CATEGORIES} onFieldChange={vi.fn()} />)
+
+    const fields = ['Date', 'Bank', 'Category', 'Description', 'Value'].map((label) => screen.getByLabelText(new RegExp(`^${label}`)))
+    fields.slice(1).forEach((field, index) => {
+      expect(fields[index].compareDocumentPosition(field) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    })
+  })
+
   it('reports each field change', () => {
     const onFieldChange = vi.fn()
     render(<BillExpenseFields values={VALID} categories={CATEGORIES} onFieldChange={onFieldChange} />)

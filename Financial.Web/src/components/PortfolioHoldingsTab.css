@@ -94,24 +94,8 @@
   letter-spacing: 0.4px;
 }
 
-.portfolio-holdings__footer-label[data-label]::before {
-  content: attr(data-label);
-}
-
 .portfolio-holdings__footer-value {
   font-size: 13px;
-  font-weight: bold;
-  border: none;
-  background: transparent;
-  padding: 0;
-  cursor: default;
-  color: inherit;
-  font-family: inherit;
-  width: auto;
-}
-
-.portfolio-holdings__footer-value:focus {
-  outline: none;
 }
 
 .portfolio-holdings__footer-footnote {

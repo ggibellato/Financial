@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useRef } from 'react'
 import {
   CartesianGrid,
   DefaultLegendContent,
@@ -11,8 +11,9 @@ import {
   YAxis,
 } from 'recharts'
 import type { DefaultLegendContentProps } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import { Button, Field, Input, Table, TableBody, TableHeader, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
+import EmptyState from './EmptyState'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
@@ -23,6 +24,7 @@ import SplitPanel from './SplitPanel'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useFormPanelStyles } from './formPanelStyles'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import type { PriceHistoryFormField } from '../hooks/usePriceHistory'
@@ -33,6 +35,7 @@ import { formatN2, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { generalErrorOf } from '../utils/fieldErrors'
 import './PriceHistoryTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
@@ -165,11 +168,7 @@ function InlineForm({
         </Button>
       </div>
 
-      {Object.keys(saveErrorFields).length === 0 && saveError && (
-        <MessageBar intent="error">
-          <MessageBarBody>{saveError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={generalErrorOf(saveError, saveErrorFields)} />
     </div>
   )
 }
@@ -195,7 +194,7 @@ function ChartDot({ cx, cy, payload }: DotProps) {
     case 'automatic':
       return <circle cx={cx} cy={cy} r={3} fill={AUTOMATIC_DOT_COLOR} />
     case 'manual':
-      return <circle cx={cx} cy={cy} r={3} fill={MANUAL_DOT_COLOR} />
+      return <rect x={cx - 3} y={cy - 3} width={6} height={6} fill={MANUAL_DOT_COLOR} />
     case 'buy':
       return <polygon points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`} fill={BUY_COLOR} />
     case 'sell':
@@ -223,7 +222,7 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
 
 const LEGEND_PAYLOAD = [
   { value: 'Automatic', type: 'circle' as const, color: AUTOMATIC_DOT_COLOR },
-  { value: 'Manual', type: 'circle' as const, color: MANUAL_DOT_COLOR },
+  { value: 'Manual', type: 'square' as const, color: MANUAL_DOT_COLOR },
   { value: 'Buy', type: 'triangle' as const, color: BUY_COLOR },
   { value: 'Sell', type: 'diamond' as const, color: SELL_COLOR },
 ]
@@ -298,16 +297,10 @@ export default function PriceHistoryTab() {
 
   const { sortedRows, sortState, requestSort } = useSortableRows(entries, SORT_ACCESSORS, DATE_DESC_SORT)
 
-  const [confirmingDelete, setConfirmingDelete] = useState<AssetPriceSnapshotDto | null>(null)
+  const deletion = usePendingDelete((row: AssetPriceSnapshotDto) => deleteEntry(row.date))
   const regionRef = useRef<HTMLDivElement | null>(null)
   const newPriceRef = useRef<HTMLButtonElement | null>(null)
   const recordRowFocus = useRowFocusRecovery(regionRef, newPriceRef, isLoading)
-
-  const confirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteEntry(confirmingDelete.date)
-    setConfirmingDelete(null)
-  }
 
   if (isLoading) {
     return <LoadingState />
@@ -346,7 +339,7 @@ export default function PriceHistoryTab() {
       )}
 
       {entries.length === 0 ? (
-        <p className="price-history-tab__empty">No prices yet — add the first price for this holding.</p>
+        <EmptyState className="price-history-tab__empty">No prices yet — add the first price for this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="price-history-tab__table-wrapper" onFocus={recordRowFocus}>
           <Table className="price-history-tab__table data-table">
@@ -381,7 +374,7 @@ export default function PriceHistoryTab() {
                   entry={entry}
                   isDeleting={deletingDate === entry.date}
                   onEdit={showEditForm}
-                  onDelete={setConfirmingDelete}
+                  onDelete={deletion.request}
                 />
               ))}
             </TableBody>
@@ -391,12 +384,12 @@ export default function PriceHistoryTab() {
 
       <ActionErrorAlert message={deleteError} className="price-history-tab__delete-error" />
 
-      {confirmingDelete && (
+      {deletion.pendingRow && (
         <ConfirmDeleteDialog
           entityLabel="price"
-          message={`Delete the ${priceName(confirmingDelete)}? This cannot be undone.`}
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(null)}
+          message={`Delete the ${priceName(deletion.pendingRow)}? This cannot be undone.`}
+          onConfirm={deletion.confirm}
+          onCancel={deletion.cancel}
         />
       )}
     </div>

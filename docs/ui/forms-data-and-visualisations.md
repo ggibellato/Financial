@@ -41,6 +41,17 @@ For a transaction form, the normal sequence is:
 6. Notes
 7. Save and Cancel
 
+Documented exceptions:
+
+- **Paying a card statement** (`PayCardStatementForm` from the bank,
+  `CardStatementsTab`'s Pay form from the card): the payer or statement
+  choice comes before Date, because Date defaults to today and rarely
+  changes while that choice drives the amount (P60 F08 spec).
+- **Paying a recurring bill** (`PayRecurringBillForm`): the Bill picker comes
+  first, because the expense fields only appear, pre-filled, once a bill is
+  chosen; the fields themselves (`BillExpenseFields`) follow the default
+  order: Date, Bank, Category, Description, Value.
+
 ### Layout
 
 Use a content-aware responsive form grid:
@@ -93,6 +104,13 @@ asset on edit, a statement amount, the account of a snapshot) uses
 `disabled` input, which keyboard and screen-reader users skip. An input that
 locks only in some states (a settled expense) sets `readOnly` with the same
 `filled-darker` appearance while locked.
+
+**Fixed context:** the account a form was opened from (the locked bank of a
+pay or transfer form, the card of a refund, a settlement's currency) is not
+a form value but the context the form acts in. It uses
+`components/LockedValue`: a label and a bold value in a group named by the
+label, never a Fluent `Field` around static text. Use `ReadOnlyInput` when
+the value belongs to the record being edited.
 
 **Required indicator mechanism:** Web uses Fluent's `Field` component's
 first-class `required` prop (`<Field label="X" required>`), which renders a
@@ -441,16 +459,20 @@ Totals must:
   requires). A total computed from the filtered rows instead says so with
   its row count, as `MonthTransactionsGrid`'s "N of M rows" footer does.
 - Be marked up as totals, not only styled as them: total rows pinned below
-  a grid's data rows go in its `<tfoot>` (Annual Summary's Category Totals
-  and Investments tabs), and a totals line rendered below a grid is a
-  `role="group"` named after that grid, "Totals for {grid label}"
-  (`SectionTotals` through `TotalsGrid`, `MonthTransactionsGrid`'s footer,
-  Annual Summary's Investments summary), so several totals on one page stay
-  distinguishable. `data-table.css` makes `<tfoot>` cells bold with one top
-  border above the first footer row;
-  an emphasized total that has to stay among sortable body rows takes
-  `.data-table__row--emphasized`. Row borders go on the cells: the shared
-  `border-collapse: separate` never draws a `<tr>` border.
+  a grid's data rows go in its `<tfoot>` (Annual Summary's three tabs,
+  Investment Snapshots), outside sorting and filtering, and a totals line
+  rendered below a grid is a `role="group"` named after that grid, "Totals
+  for {grid label}" — or `TotalsGrid`'s `totalsLabel` when the grid label
+  already says "totals" ("Totals for categories", not "Totals for Category
+  totals") — (`SectionTotals` through `TotalsGrid`, `MonthTransactionsGrid`'s
+  footer, Annual Summary's Investments summary), so several totals on one
+  page stay distinguishable. `data-table.css` makes `<tfoot>` cells bold on
+  the page background (no zebra or hover); on desktop widths only, a single
+  1px `--text-muted` rule replaces the last body row's border above the first
+  footer row (stacked mobile cards keep their own borders). A footer row's
+  first cell carries the card label "Total", not the column's name. Row
+  borders go on the cells: the shared `border-collapse: separate` never draws
+  a `<tr>` border.
 - Use consistent calculation and formatting rules.
 - Update after relevant changes.
 - Avoid appearing editable unless they genuinely are editable.

@@ -3,6 +3,7 @@ import type { ExpenseDto } from '../../api/types'
 import type { MoveChargeFormState } from '../../hooks/useMoveChargeForm'
 import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import MoveChargeForm from '../MoveChargeForm'
+import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const CHARGE = { id: 'c1', description: 'Taxi', date: '2026-11-03', chargeDate: '2026-11-03', value: 30, invoiceDate: '2026-11-01', creditCardId: 'card-amex' } as ExpenseDto
 
@@ -103,8 +104,8 @@ describe('MoveChargeForm', () => {
   it('announces the server message and moves focus to it', () => {
     render(<MoveChargeForm moveForm={moveFormState({ form: { charge: CHARGE, target: '2026-12', isSaving: false, error: 'The statement is already paid.', targetError: null } })} onCancel={vi.fn()} />)
 
-    expect(screen.getByRole('alert')).toHaveTextContent('The statement is already paid.')
-    expect(screen.getByRole('alert')).toHaveFocus()
+    expect(getErrorAlert()).toHaveTextContent('The statement is already paid.')
+    expect(getErrorAlert()).toHaveFocus()
   })
 
   it('renders nothing without a charge', () => {

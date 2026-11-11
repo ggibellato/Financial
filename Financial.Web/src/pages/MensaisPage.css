@@ -11,7 +11,7 @@
 .mensais-page__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 16px;
   flex-shrink: 0;
 }
@@ -24,6 +24,7 @@
 
 .mensais-page__toolbar {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -59,11 +60,6 @@
 .mensais-page__table {
   width: 100%;
   max-width: none;
-}
-
-.mensais-page__error {
-  margin-top: 6px;
-  color: var(--error, #c0392b);
 }
 
 @media (max-width: 599px) {

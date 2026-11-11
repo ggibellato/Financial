@@ -121,6 +121,8 @@ describe('InvestmentSnapshotsPage', () => {
     const allRows = screen.getAllByRole('row')
     expect(allRows).toHaveLength(13)
     expect(allRows[allRows.length - 1]).toHaveTextContent('5,300.00')
+    expect(screen.getAllByRole('table')).toHaveLength(1)
+    expect(allRows[allRows.length - 1].closest('tfoot')).not.toBeNull()
   })
 
   it('opening suggest values panel closes an open edit snapshot panel and vice versa', async () => {

@@ -53,6 +53,11 @@ Web must remain usable at:
 - Errors explain how to correct the problem.
 - Error summaries and inline messages are accessible.
 - Server errors preserve entered data where possible.
+- A save or delete error that takes focus (`ActionErrorAlert`, named by its
+  own text) is not also a `role="alert"` live region: focus already reads it,
+  and both would announce it twice.
+- A delete failure says how to recover ("The credit could not be deleted.
+  Try again."), and the message clears once a later save succeeds.
 
 ## Charts, icons, and status
 

@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentAccountCreateDto, InvestmentAccountDto, InvestmentAccountUpdateDto } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface InvestmentAccountsData {
   investmentAccounts: InvestmentAccountDto[]
@@ -38,7 +39,7 @@ export function useInvestmentAccounts(): InvestmentAccountsData {
 
   const deleteInvestmentAccount = useCallback(
     (id: string) =>
-      runPendingMutation(id, () => apiClient.deleteInvestmentAccount(id), 'Failed to delete investment account.'),
+      runPendingMutation(id, () => apiClient.deleteInvestmentAccount(id), deleteFailedMessage('investment account')),
     [runPendingMutation],
   )
 

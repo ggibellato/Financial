@@ -56,15 +56,7 @@ function reducer(state: SummaryState, action: SummaryAction): SummaryState {
     case 'RESET':
       return INITIAL_STATE
     case 'ASSET_FETCH_START':
-      return {
-        ...state,
-        isLoadingAsset: true,
-        assetError: null,
-        asset: null,
-        price: null,
-        priceError: null,
-        portfolioWeight: null,
-      }
+      return { ...INITIAL_STATE, isLoadingAsset: true, assetRetryCount: state.assetRetryCount }
     case 'ASSET_FETCH_SUCCESS':
       return { ...state, isLoadingAsset: false, asset: action.payload }
     case 'ASSET_FETCH_ERROR':

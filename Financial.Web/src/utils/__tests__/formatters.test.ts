@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   currentYearMonth,
+  deleteFailedMessage,
+  formatAmount,
+  formatPercentN2,
   formatDateTime,
   formatDayMonthYearUtc,
   formatLongMonthYear,
@@ -39,6 +42,26 @@ describe('pad', () => {
 describe('formatN2', () => {
   it('formatN2_FormatsWithTwoDecimalsAndGrouping', () => {
     expect(formatN2(1234.5)).toBe('1,234.50')
+  })
+})
+
+describe('formatPercentN2', () => {
+  it('formats a percentage with two decimals and a percent sign', () => {
+    expect(formatPercentN2(12.5)).toBe('12.50%')
+    expect(formatPercentN2(-3)).toBe('-3.00%')
+  })
+})
+
+describe('formatAmount', () => {
+  it('shows the currency when the record has one, and a plain two-decimal number otherwise', () => {
+    expect(formatAmount(420.5, 'GBP')).toBe('£420.50')
+    expect(formatAmount(420.5, undefined)).toBe('420.50')
+  })
+})
+
+describe('deleteFailedMessage', () => {
+  it('names the record and says how to recover', () => {
+    expect(deleteFailedMessage('credit')).toBe('The credit could not be deleted. Try again.')
   })
 })
 

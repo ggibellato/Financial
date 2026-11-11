@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerCreateDto, BrokerDto, BrokerUpdateDto, CostBasisMethod, InvestmentScope } from '../api/types'
 import { useCrudResource } from './useCrudResource'
+import { deleteFailedMessage } from '../utils/formatters'
 
 export interface BrokersData {
   brokers: BrokerDto[]
@@ -44,7 +45,7 @@ export function useBrokers(): BrokersData {
   )
 
   const deleteBroker = useCallback(
-    (name: string) => runPendingMutation(name, () => apiClient.deleteBroker(name), 'Failed to delete broker.'),
+    (name: string) => runPendingMutation(name, () => apiClient.deleteBroker(name), deleteFailedMessage('broker')),
     [runPendingMutation],
   )
 
