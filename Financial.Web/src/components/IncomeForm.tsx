@@ -8,7 +8,6 @@ import {
   MessageBarActions,
   MessageBarBody,
   Select,
-  Spinner,
   Text,
 } from '@fluentui/react-components'
 import type { AccountDto, BankOption, IncomeSourceDto } from '../api/types'
@@ -18,6 +17,7 @@ import { INCOME_SOURCES_WITH_GROSS_VALUE, selectActiveIncomeSources, type Income
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks } from '../utils/selectableBanks'
+import FormSaveActions from './FormSaveActions'
 import FundedFromSection from './FundedFromSection'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -91,7 +91,7 @@ export default function IncomeForm({
   const [openedBank] = useState(bank)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0 || Object.keys(funding.errors).length > 0
-  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
+  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
   const activeIncomeSources = selectActiveIncomeSources(incomeSources)
   const showGrossValueField = INCOME_SOURCES_WITH_GROSS_VALUE.includes(
     incomeSources.find((s) => s.id === incomeSource)?.name ?? '',
@@ -116,7 +116,7 @@ export default function IncomeForm({
           {isEditing ? 'Edit Income' : 'New Income'}
         </Text>
         {!hasFieldErrors && saveError && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -246,22 +246,13 @@ export default function IncomeForm({
         )}
 
         {funding.isShown && <FundedFromSection funding={funding} banks={banks} />}
-
-        <div className={styles.actions}>
-          <Button
-            ref={saveRef}
-            type="submit"
-            appearance="primary"
-            disabled={isSaving || funding.mismatch !== null}
-            icon={isSaving ? <Spinner size="tiny" /> : undefined}
-          >
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : 'Add Income'}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions
+        saveLabel={isEditing ? 'Save' : 'Add Income'}
+        isSaving={isSaving}
+        isSaveDisabled={funding.mismatch !== null}
+        onCancel={onCancel}
+      />
     </form>
   )
 }

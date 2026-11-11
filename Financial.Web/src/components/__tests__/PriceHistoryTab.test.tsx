@@ -228,14 +228,14 @@ describe('PriceHistoryTab', () => {
 
   it('edit_and_delete_buttons_shown_for_manual_entry', async () => {
     await renderLoaded(MANUAL_ENTRY)
-    expect(screen.getByRole('button', { name: 'Edit price' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Delete price' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Edit price 15/03/2024' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Delete price 15/03/2024' })).toBeInTheDocument()
   })
 
   it('edit_and_delete_buttons_hidden_for_automatic_entry', async () => {
     await renderLoaded(AUTOMATIC_ENTRY)
-    expect(screen.queryByRole('button', { name: 'Edit price' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Delete price' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Edit price\b/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /^Delete price\b/ })).not.toBeInTheDocument()
   })
 
   it('empty_table_renders_no_rows', async () => {
@@ -267,7 +267,7 @@ describe('PriceHistoryTab', () => {
 
   it('edit_button_opens_form_populated_from_the_entry', async () => {
     await renderLoaded(MANUAL_ENTRY)
-    fireEvent.click(screen.getByRole('button', { name: 'Edit price' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit price\b/ }))
 
     expect(screen.getByRole('heading', { name: 'Edit price' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-03-15')
@@ -322,7 +322,7 @@ describe('PriceHistoryTab', () => {
     const table = await renderLoaded(MANUAL_ENTRY)
     setAssetPriceMock.mockResolvedValue(detailsWith({ ...MANUAL_ENTRY, price: 130 }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit price' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Edit price\b/ }))
     fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '130' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
@@ -379,7 +379,7 @@ describe('PriceHistoryTab', () => {
     const table = await renderLoaded(MANUAL_ENTRY, AUTOMATIC_ENTRY)
     deleteAssetPriceMock.mockResolvedValue(detailsWith(AUTOMATIC_ENTRY))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete price' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete price\b/ }))
 
     await waitFor(() => expect(within(table).queryByText('15/03/2024')).not.toBeInTheDocument())
     expect(within(table).getByText('10/01/2024')).toBeInTheDocument()
@@ -396,7 +396,7 @@ describe('PriceHistoryTab', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false)
     const table = await renderLoaded(MANUAL_ENTRY)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete price' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete price\b/ }))
 
     expect(deleteAssetPriceMock).not.toHaveBeenCalled()
     expect(within(table).getByText('15/03/2024')).toBeInTheDocument()
@@ -406,7 +406,7 @@ describe('PriceHistoryTab', () => {
     const table = await renderLoaded(MANUAL_ENTRY)
     deleteAssetPriceMock.mockRejectedValue(new Error('Failed to delete'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete price' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete price\b/ }))
 
     expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
     expect(within(table).getByText('15/03/2024')).toBeInTheDocument()

@@ -11,7 +11,7 @@ import {
   Text,
   Tooltip,
 } from '@fluentui/react-components'
-import { CalendarArrowRightRegular, DeleteRegular } from '@fluentui/react-icons'
+import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
@@ -21,6 +21,11 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, PAID_BY_YOU, recordNoun, rowKey, statementPath } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+
+function rowName(row: AccountTransactionDto): string {
+  const noun = row.description ? `${recordNoun(row.kind)} ${row.description}` : recordNoun(row.kind)
+  return `${noun}, ${formatShortDateUtc(row.date)}`
+}
 
 interface TransactionColumn {
   key: string
@@ -181,11 +186,12 @@ export default function AccountTransactionsGrid({
     open()
   }
   const renderActions = (row: AccountTransactionDto) => {
+    const name = rowName(row)
     if (row.canEdit) {
       return (
         <RowActionsCell
           className={actionClassName}
-          itemName={recordNoun(row.kind)}
+          itemName={name}
           editDisabled={isEditDisabled?.(row) ?? false}
           onEdit={(button) => onEdit(row, button)}
           onDelete={() => onDelete(row)}
@@ -196,7 +202,7 @@ export default function AccountTransactionsGrid({
                 appearance="subtle"
                 size="small"
                 icon={<CalendarArrowRightRegular />}
-                aria-label={`Move ${recordNoun(row.kind)} to a later statement`}
+                aria-label={`Move ${name} to a later statement`}
                 disabled={isMoveDisabled}
                 onClick={(event) => onMove(row, event.currentTarget)}
               />
@@ -206,13 +212,7 @@ export default function AccountTransactionsGrid({
       )
     }
     if (isCreditRefund(row) && canDeleteCreditRefunds) {
-      return (
-        <TableCell className={actionClassName}>
-          <div className="data-table__actions-cell">
-            <Button appearance="subtle" size="small" icon={<DeleteRegular />} aria-label={`Delete ${recordNoun(row.kind)}`} onClick={() => onDelete(row)} />
-          </div>
-        </TableCell>
-      )
+      return <RowActionsCell className={actionClassName} itemName={name} onDelete={() => onDelete(row)} />
     }
     return <TableCell className={actionClassName}>{isOlderIncomeLine(row) && <Text size={200}>Edit from the income</Text>}</TableCell>
   }

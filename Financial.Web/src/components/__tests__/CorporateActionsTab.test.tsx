@@ -187,7 +187,7 @@ describe('CorporateActionsTab', () => {
     setMock({ corporateActions: [record] })
     render(<CorporateActionsTab />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Edit corporate action' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit corporate action Split KLBN4, 01/07/2026' }))
 
     expect(mockShowEditForm).toHaveBeenCalledWith(record)
   })
@@ -197,7 +197,7 @@ describe('CorporateActionsTab', () => {
     setMock({ corporateActions: [record] })
     render(<CorporateActionsTab />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Delete corporate action' }))
+    fireEvent.click(screen.getByRole('button', { name: /^Delete corporate action\b/ }))
 
     expect(window.confirm).toHaveBeenCalled()
     expect(mockDeleteCorporateAction).toHaveBeenCalledWith('ca1')

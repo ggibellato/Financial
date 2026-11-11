@@ -7,12 +7,11 @@ import {
   Select,
   Table,
   TableBody,
-  TableCell,
   TableHeader,
   TableRow,
   Text,
 } from '@fluentui/react-components'
-import { AddRegular, ArrowResetRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { AddRegular, ArrowResetRegular } from '@fluentui/react-icons'
 import type { RecurringBillDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -28,6 +27,7 @@ import { useMensais } from '../hooks/useMensais'
 import { confirmThenRun } from '../utils/confirmThenRun'
 import { formatN2 } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import './MensaisPage.css'
 
 const STATUSES = ['Unset', 'Scheduled', 'Paid']
@@ -78,27 +78,12 @@ function BillRow({
           onChange={(status) => onStatusChange(bill.id, status)}
         />
       </DataTableCell>
-      <TableCell className="data-table__col--action">
-        <div className="data-table__actions-cell">
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<EditRegular />}
-            aria-label="Edit bill"
-            onClick={() => onEdit(bill)}
-          />
-          <Button
-            appearance="subtle"
-            size="small"
-            icon={<DeleteRegular />}
-            aria-label={isDeleting ? 'Deleting bill' : 'Delete bill'}
-            disabled={isDeleting}
-            onClick={() =>
-              confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))
-            }
-          />
-        </div>
-      </TableCell>
+      <RowActionsCell
+        itemName={`bill ${bill.description}`}
+        isDeleting={isDeleting}
+        onEdit={() => onEdit(bill)}
+        onDelete={() => confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))}
+      />
     </TableRow>
   )
 }

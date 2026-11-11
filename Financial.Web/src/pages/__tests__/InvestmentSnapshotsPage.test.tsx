@@ -74,8 +74,8 @@ describe('InvestmentSnapshotsPage', () => {
 
     await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
 
-    const editButtons = screen.getAllByRole('button', { name: 'Edit snapshot' })
-    fireEvent.click(editButtons[0])
+    expect(screen.getByRole('button', { name: 'Edit snapshot Account1 (liability)' })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Edit snapshot Account0' }))
 
     expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
     const valueInput = screen.getByDisplayValue('0')
@@ -92,7 +92,7 @@ describe('InvestmentSnapshotsPage', () => {
     render(<InvestmentSnapshotsPage />)
 
     await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit snapshot' })[0])
+    fireEvent.click(screen.getAllByRole('button', { name: /^Edit snapshot\b/ })[0])
 
     const accountInput = screen.getByLabelText('Account')
     expect(accountInput).toHaveValue('Account0')
@@ -126,7 +126,7 @@ describe('InvestmentSnapshotsPage', () => {
     render(<InvestmentSnapshotsPage />)
     await waitFor(() => expect(screen.getByText('Account0')).toBeInTheDocument())
 
-    const editButtons = screen.getAllByRole('button', { name: 'Edit snapshot' })
+    const editButtons = screen.getAllByRole('button', { name: /^Edit snapshot\b/ })
     fireEvent.click(editButtons[0])
     expect(screen.getByText('Edit Snapshot')).toBeInTheDocument()
 

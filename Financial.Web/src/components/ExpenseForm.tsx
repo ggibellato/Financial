@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Spinner, Text } from '@fluentui/react-components'
+import { Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
 import type { PaymentMode } from '../hooks/useExpenseForm'
@@ -8,6 +8,7 @@ import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { computeDefaultInvoiceMonth } from '../utils/expenseDefaults'
 import { todayIsoDate } from '../utils/formatters'
 import { selectableBanks } from '../utils/selectableBanks'
+import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
 const SETTLED_FIELD_HINT = 'Locked: its card statement is paid'
@@ -80,7 +81,7 @@ export default function ExpenseForm({
   const [openedPaymentSource] = useState(paymentSource)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0
-  const { formRef, saveRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
+  const { formRef, errorRef } = useFormErrorFocus(saveErrorFields, hasFieldErrors ? null : saveError)
   const selectedBank = banks.find((b) => b.id === paymentSource)
   const showRoundUpField = paymentMode === 'bank' && selectedBank?.roundUpEnabled === true
   const selectedCategory = categories.find((c) => c.id === categoryId)
@@ -104,7 +105,7 @@ export default function ExpenseForm({
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
         {!hasFieldErrors && saveError && (
-          <MessageBar role="alert" intent="error">
+          <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
             <MessageBarBody>{saveError}</MessageBarBody>
           </MessageBar>
         )}
@@ -236,16 +237,8 @@ export default function ExpenseForm({
             </div>
           )}
         </div>
-
-        <div className={styles.actions}>
-          <Button ref={saveRef} type="submit" appearance="primary" disabled={isSaving} icon={isSaving ? <Spinner size="tiny" /> : undefined}>
-            {isSaving ? 'Saving...' : isEditing ? 'Save' : `Add ${noun}`}
-          </Button>
-          <Button appearance="secondary" onClick={onCancel}>
-            Cancel
-          </Button>
-        </div>
       </fieldset>
+      <FormSaveActions saveLabel={isEditing ? 'Save' : `Add ${noun}`} isSaving={isSaving} onCancel={onCancel} />
     </form>
   )
 }

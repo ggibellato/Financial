@@ -42,4 +42,56 @@ describe('RowActionsCell', () => {
     expect(screen.getByRole('button', { name: 'Delete Chase' })).toBeDisabled()
     expect(screen.getByRole('button', { name: 'Edit Chase' })).toBeEnabled()
   })
+
+  it('announces a delete in progress and keeps the button focusable but inert', () => {
+    const onDelete = vi.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="bill INSS" isDeleting onEdit={vi.fn()} onDelete={onDelete} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    const deleting = screen.getByRole('button', { name: 'Deleting bill INSS' })
+    deleting.focus()
+    fireEvent.click(deleting)
+
+    expect(deleting).toHaveFocus()
+    expect(deleting).toHaveAttribute('aria-disabled', 'true')
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
+  it('shows only Edit for a row that cannot be deleted', () => {
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="snapshot Chase" onEdit={vi.fn()} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Edit snapshot Chase'])
+  })
+
+  it('shows only Delete for a row that cannot be edited, and nothing for a row with no actions', () => {
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="refund Chase" onDelete={vi.fn()} />
+          </TableRow>
+          <TableRow>
+            <RowActionsCell itemName="price 15/03/2024" />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Delete refund Chase'])
+  })
 })

@@ -11,8 +11,8 @@ import {
   YAxis,
 } from 'recharts'
 import type { DefaultLegendContentProps } from 'recharts'
-import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
-import { AddRegular, DeleteRegular, EditRegular } from '@fluentui/react-icons'
+import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableHeader, TableRow, Text } from '@fluentui/react-components'
+import { AddRegular } from '@fluentui/react-icons'
 import type { AssetPriceSnapshotDto, TransactionDto } from '../api/types'
 import ErrorState from './ErrorState'
 import FilterTabList from './FilterTabList'
@@ -30,6 +30,7 @@ import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+import RowActionsCell from './grid/RowActionsCell'
 import './PriceHistoryTab.css'
 
 const DEFAULT_LEFT_WIDTH = 400
@@ -79,26 +80,11 @@ function PriceRow({ entry, onEdit, onDelete }: PriceRowProps) {
       >
         <span title={entry.sourceReference ?? undefined}>{SOURCE_LABELS[entry.source]}</span>
       </DataTableCell>
-      <TableCell className="data-table__col--action">
-        {entry.isManual && (
-          <div className="data-table__actions-cell">
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<EditRegular />}
-              aria-label="Edit price"
-              onClick={() => onEdit(entry)}
-            />
-            <Button
-              appearance="subtle"
-              size="small"
-              icon={<DeleteRegular />}
-              aria-label="Delete price"
-              onClick={() => onDelete(entry.date)}
-            />
-          </div>
-        )}
-      </TableCell>
+      <RowActionsCell
+        itemName={`price ${formatShortDate(entry.date)}`}
+        onEdit={entry.isManual ? () => onEdit(entry) : undefined}
+        onDelete={entry.isManual ? () => onDelete(entry.date) : undefined}
+      />
     </TableRow>
   )
 }

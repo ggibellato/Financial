@@ -1,5 +1,4 @@
 import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableRow, Text } from '@fluentui/react-components'
-import { EditRegular } from '@fluentui/react-icons'
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
@@ -13,6 +12,7 @@ import { useInvestmentSnapshots } from '../hooks/useInvestmentSnapshots'
 import { useSuggestedValues } from '../hooks/useSuggestedValues'
 import { formatN2 } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import RowActionsCell from '../components/grid/RowActionsCell'
 import './InvestmentSnapshotsPage.css'
 
 function SnapshotColumns() {
@@ -41,15 +41,7 @@ function SnapshotRow({ snapshot, onEdit }: SnapshotRowProps) {
       <DataTableCell label="Value" className="data-table__col--numeric">
         {formatN2(snapshot.value)}
       </DataTableCell>
-      <TableCell>
-        <Button
-          appearance="subtle"
-          size="small"
-          icon={<EditRegular />}
-          aria-label="Edit snapshot"
-          onClick={() => onEdit(snapshot)}
-        />
-      </TableCell>
+      <RowActionsCell itemName={`snapshot ${snapshotLabel(snapshot)}`} onEdit={() => onEdit(snapshot)} />
     </TableRow>
   )
 }
