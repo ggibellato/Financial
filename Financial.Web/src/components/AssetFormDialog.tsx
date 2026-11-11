@@ -109,10 +109,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
       {isEditing ? (
         <>
           <Field label="Broker">
-            <Input value={asset.brokerName} readOnly />
+            <Input value={asset.brokerName} readOnly appearance="filled-darker" />
           </Field>
           <Field label="Portfolio">
-            <Input value={asset.portfolioName} readOnly />
+            <Input value={asset.portfolioName} readOnly appearance="filled-darker" />
           </Field>
         </>
       ) : (

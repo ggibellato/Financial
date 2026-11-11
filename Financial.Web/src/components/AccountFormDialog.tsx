@@ -269,7 +269,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
         validationMessage={fieldMessage('template')}
       >
         {isLocked ? (
-          <Input ref={templateRef} value={templateLabel} readOnly />
+          <Input ref={templateRef} value={templateLabel} readOnly appearance="filled-darker" />
         ) : (
           <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
             {templates.map((candidate) => (
@@ -294,7 +294,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
         >
           {isLocked ? (
-            <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly aria-labelledby={currenciesLabelId} />
+            <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly appearance="filled-darker" aria-labelledby={currenciesLabelId} />
           ) : (
             <FieldContextProvider value={undefined}>
               <div
@@ -324,7 +324,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('currency')}
         >
           {isCurrencyFixed ? (
-            <Input ref={currencyRef} value={values.currency} readOnly />
+            <Input ref={currencyRef} value={values.currency} readOnly appearance="filled-darker" />
           ) : (
             <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
               {currencies.map((currency) => (

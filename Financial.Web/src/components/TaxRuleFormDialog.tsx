@@ -62,31 +62,31 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
     >
       <div className={styles.grid}>
         <Field label="Jurisdiction">
-          <Select
-            value={jurisdiction}
-            onChange={(e) => setJurisdiction(e.target.value)}
-            disabled={isEditing}
-          >
-            {JURISDICTIONS.map((j) => (
-              <option key={j} value={j}>
-                {j}
-              </option>
-            ))}
-          </Select>
+          {isEditing ? (
+            <Input value={jurisdiction} readOnly appearance="filled-darker" />
+          ) : (
+            <Select value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)}>
+              {JURISDICTIONS.map((j) => (
+                <option key={j} value={j}>
+                  {j}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
 
         <Field label="Event category">
-          <Select
-            value={eventCategory}
-            onChange={(e) => setEventCategory(e.target.value)}
-            disabled={isEditing}
-          >
-            {EVENT_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </Select>
+          {isEditing ? (
+            <Input value={eventCategory} readOnly appearance="filled-darker" />
+          ) : (
+            <Select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)}>
+              {EVENT_CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
 
         <div className={styles.spanTwo}>

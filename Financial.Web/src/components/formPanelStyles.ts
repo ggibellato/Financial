@@ -1,4 +1,4 @@
-import { makeStyles, tokens } from '@fluentui/react-components'
+import { makeStyles, shorthands, tokens } from '@fluentui/react-components'
 
 export const useFormPanelStyles = makeStyles({
   panel: {
@@ -38,6 +38,19 @@ export const useFormPanelStyles = makeStyles({
   },
   savingFieldset: {
     display: 'contents',
+    ':disabled .fui-Input, :disabled .fui-Select__select, :disabled .fui-Textarea': {
+      cursor: 'not-allowed',
+      ...shorthands.borderColor(tokens.colorNeutralStrokeDisabled),
+    },
+    ':disabled .fui-Input__input, :disabled .fui-Select__select, :disabled .fui-Textarea__textarea, :disabled .fui-Label': {
+      color: tokens.colorNeutralForegroundDisabled,
+    },
+    ':disabled .fui-Button': {
+      cursor: 'not-allowed',
+      color: tokens.colorNeutralForegroundDisabled,
+      backgroundColor: tokens.colorNeutralBackgroundDisabled,
+      ...shorthands.borderColor(tokens.colorNeutralStrokeDisabled),
+    },
   },
   actions: {
     display: 'flex',

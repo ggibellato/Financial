@@ -31,8 +31,8 @@ describe('TaxRuleFormDialog', () => {
     expect(screen.getByLabelText('Description')).toHaveValue('Some notes')
     expect(screen.getByLabelText(/^Effective from/)).toHaveValue('2026-01-01')
     expect(screen.getByLabelText('Effective to')).toHaveValue('2026-12-31')
-    expect(screen.getByLabelText('Jurisdiction')).toBeDisabled()
-    expect(screen.getByLabelText('Event category')).toBeDisabled()
+    expect(screen.getByLabelText('Jurisdiction')).toHaveAttribute('readonly')
+    expect(screen.getByLabelText('Event category')).toHaveAttribute('readonly')
   })
 
   it('rejects an effective range where From is on or after To, inline before submission', () => {

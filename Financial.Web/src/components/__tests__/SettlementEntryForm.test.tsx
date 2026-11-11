@@ -294,6 +294,6 @@ describe('SettlementEntryForm', () => {
   it('[AC P60-F12-settlement-screen-04] shows the warning as status', () => {
     renderForm(addState({ warning: 'No exchange rate found for 31 Oct 2026; the GBP value is empty.' }))
 
-    expect(screen.getByText('No exchange rate found for 31 Oct 2026; the GBP value is empty.').closest('[role="status"]')).toBeInTheDocument()
+    expect(screen.getAllByRole('status').filter((region) => region.textContent?.includes('No exchange rate found for 31 Oct 2026; the GBP value is empty.'))).toHaveLength(1)
   })
 })

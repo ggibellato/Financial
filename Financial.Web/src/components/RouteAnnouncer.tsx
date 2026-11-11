@@ -5,7 +5,6 @@ import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 
 const APP_NAME = 'Financial'
 
-
 export default function RouteAnnouncer() {
   const styles = useVisuallyHiddenStyles()
   const { pathname } = useLocation()

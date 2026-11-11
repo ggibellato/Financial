@@ -42,7 +42,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
     >
       {isEditing ? (
         <Field label="Broker">
-          <Input value={portfolio.brokerName} readOnly />
+          <Input value={portfolio.brokerName} readOnly appearance="filled-darker" />
         </Field>
       ) : (
         <Field
