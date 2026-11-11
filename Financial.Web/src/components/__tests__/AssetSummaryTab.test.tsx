@@ -440,7 +440,7 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
-    const xirrWithCreditsLabel = screen.getByText('XIRR w/ Credits')
+    const xirrWithCreditsLabel = screen.getByText('XIRR w/ credits')
     expect(xirrWithCreditsLabel.nextElementSibling?.textContent).toBe('—')
   })
 

@@ -157,8 +157,8 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         </TableRow>
       )
     }
-    if (rows.length === 0) return renderMessage(`No transactions in ${formatLongMonthYear(year, month)}`)
-    if (sortedRows.length === 0) return renderMessage('No rows match the current filters')
+    if (rows.length === 0) return renderMessage(`No transactions in ${formatLongMonthYear(year, month)}.`)
+    if (sortedRows.length === 0) return renderMessage('No rows match the current filters.')
     return sortedRows.map((row) => (
       <TableRow key={rowKey(row)}>
         {COLUMNS.map((column) => (

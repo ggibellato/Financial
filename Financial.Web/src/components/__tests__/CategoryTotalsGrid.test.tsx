@@ -61,7 +61,7 @@ describe('CategoryTotalsGrid', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
   })
 
   it('shows its empty message when no expense was recorded in the month', () => {

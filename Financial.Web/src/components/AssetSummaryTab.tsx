@@ -247,7 +247,7 @@ export default function AssetSummaryTab() {
                   </span>
                 </div>
                 <div className="asset-summary__field">
-                  <span className="asset-summary__label">XIRR w/ Credits</span>
+                  <span className="asset-summary__label">XIRR w/ credits</span>
                   <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
                     {formatPercentFractionOrDash(xirrWithCredits)}
                   </span>

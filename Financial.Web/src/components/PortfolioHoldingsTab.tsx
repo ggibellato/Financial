@@ -127,7 +127,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
       </DataTableCell>
-      <DataTableCell label="Profit % w/ Credits">
+      <DataTableCell label="Profit % w/ credits">
         {renderGatedCell(cellLoading, cellUnavailable, item.resultWithCreditsPercent, v => (
           <span className={getProfitClass(v)}>{formatN2(v)}%</span>
         ))}
@@ -149,7 +149,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="Est. annual credits">
         {formatN2OrDash(item.estimatedAnnualCredits)}
       </DataTableCell>
-      <DataTableCell label="Est. Annual %">
+      <DataTableCell label="Est. annual %">
         {item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}
       </DataTableCell>
     </TableRow>
@@ -263,11 +263,11 @@ export default function PortfolioHoldingsTab() {
                 <TableHeaderCell colSpan={2} className="portfolio-holdings__group-header">Profit</TableHeaderCell>
                 <SortableColumnHeader rowSpan={2} numeric label="XIRR" columnKey="xirr" sortDirection={sortDirectionFor('xirr')} onSort={requestSort} />
                 <TableHeaderCell colSpan={3} className="portfolio-holdings__group-header portfolio-holdings__credits-separator">Last month</TableHeaderCell>
-                <TableHeaderCell colSpan={2} className="portfolio-holdings__group-header">Est. Annual</TableHeaderCell>
+                <TableHeaderCell colSpan={2} className="portfolio-holdings__group-header">Est. annual</TableHeaderCell>
               </TableRow>
               <TableRow>
                 <SortableColumnHeader numeric label="%" columnKey="profitPercent" sortDirection={sortDirectionFor('profitPercent')} onSort={requestSort} />
-                <SortableColumnHeader numeric label="w/ Credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
+                <SortableColumnHeader numeric label="w/ credits" columnKey="profitWithCreditsPercent" sortDirection={sortDirectionFor('profitWithCreditsPercent')} onSort={requestSort} />
                 <SortableColumnHeader numeric label="Credits" columnKey="lastMonthCredits" sortDirection={sortDirectionFor('lastMonthCredits')} onSort={requestSort} className="portfolio-holdings__credits-separator" />
                 <SortableColumnHeader numeric label="Month" columnKey="lastCreditMonth" sortDirection={sortDirectionFor('lastCreditMonth')} onSort={requestSort} />
                 <SortableColumnHeader numeric label="%" columnKey="lastMonthCreditsPercent" sortDirection={sortDirectionFor('lastMonthCreditsPercent')} onSort={requestSort} />

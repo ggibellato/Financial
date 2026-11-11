@@ -156,7 +156,7 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByText('Current price')).toBeInTheDocument()
     expect(screen.getByText('Profit')).toBeInTheDocument()
     expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(1)
-    expect(screen.getByText('w/ Credits')).toBeInTheDocument()
+    expect(screen.getByText('w/ credits')).toBeInTheDocument()
     expect(screen.getByText('XIRR')).toBeInTheDocument()
   })
 
@@ -327,7 +327,7 @@ describe('PortfolioHoldingsTab', () => {
     // rows[0]/[1] are the two header rows; rows[2] is the single data row.
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
     expect(cells[10].textContent?.replace('Profit %:', '')).toBe('—') // "Profit %" column
-    expect(cells[11].textContent?.replace('Profit % w/ Credits:', '')).toBe('—') // "Profit % w/ Credits" column
+    expect(cells[11].textContent?.replace('Profit % w/ credits:', '')).toBe('—') // "Profit % w/ credits" column
   })
 
   it('renders_historic_xirr_from_the_resolved_row_rate', () => {
@@ -502,7 +502,7 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
     expect(cells[9].textContent?.replace('Profit %:', '')).toBe('—')
-    expect(cells[10].textContent?.replace('Profit % w/ Credits:', '')).toBe('—')
+    expect(cells[10].textContent?.replace('Profit % w/ credits:', '')).toBe('—')
     expect(screen.getByText(/262[.,]50/)).toBeInTheDocument()
   })
 
@@ -599,10 +599,10 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
     expect(screen.getByText('Last month')).toBeInTheDocument()
     expect(screen.getByText('Month')).toBeInTheDocument()
-    expect(screen.getByText('Est. Annual')).toBeInTheDocument()
-    // "Credits" sub-header appears under both the Last month and Est. Annual groups
+    expect(screen.getByText('Est. annual')).toBeInTheDocument()
+    // "Credits" sub-header appears under both the Last month and Est. annual groups
     expect(screen.getAllByText('Credits').length).toBeGreaterThanOrEqual(2)
-    // "%" sub-header appears under Profit, Last month, and Est. Annual groups
+    // "%" sub-header appears under Profit, Last month, and Est. annual groups
     expect(screen.getAllByText('%').length).toBeGreaterThanOrEqual(3)
   })
 
@@ -898,8 +898,8 @@ describe('PortfolioHoldingsTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Average price' }))
     expect(screen.getByRole('columnheader', { name: 'Average price' })).toHaveAttribute('aria-sort', 'ascending')
 
-    fireEvent.click(screen.getByRole('button', { name: 'w/ Credits' }))
-    expect(screen.getByRole('columnheader', { name: 'w/ Credits' })).toHaveAttribute('aria-sort', 'ascending')
+    fireEvent.click(screen.getByRole('button', { name: 'w/ credits' }))
+    expect(screen.getByRole('columnheader', { name: 'w/ credits' })).toHaveAttribute('aria-sort', 'ascending')
 
     const creditsHeaders = screen.getAllByRole('columnheader', { name: 'Credits' })
     fireEvent.click(within(creditsHeaders[0]).getByRole('button'))

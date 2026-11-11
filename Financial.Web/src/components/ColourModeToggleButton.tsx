@@ -4,7 +4,7 @@ import { useColourMode } from '../context/ColourModeContext'
 
 function ColourModeToggleButton() {
   const { colourMode, toggleColourMode } = useColourMode()
-  const label = colourMode === 'light' ? 'Switch to Dark mode' : 'Switch to Light mode'
+  const label = colourMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'
 
   return (
     <Button

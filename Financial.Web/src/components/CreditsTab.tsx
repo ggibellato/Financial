@@ -293,7 +293,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
 
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
-      <p className="credits-tab__chart-title">Credits by Month</p>
+      <p className="credits-tab__chart-title">Credits by month</p>
       <div className="credits-tab__chart-container">
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartType === 'Bar' ? (

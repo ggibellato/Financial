@@ -86,7 +86,7 @@ describe('BanksGrid', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'Barclays' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 
-    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
   })
 
   it('renders exactly three data columns in the header', () => {

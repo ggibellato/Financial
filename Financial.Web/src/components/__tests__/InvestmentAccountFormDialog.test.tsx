@@ -101,7 +101,7 @@ describe('InvestmentAccountFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Holiday savings' } })
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'PotsAccountTotal' } })
 
-    expect(screen.getByText('Select a Pots account')).toBeInTheDocument()
+    expect(screen.getByText('Select a Pots account.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add investment account' })).toBeDisabled()
 
     fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p2' } })
@@ -125,8 +125,8 @@ describe('InvestmentAccountFormDialog', () => {
 
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled()
     expect(screen.getByRole('option', { name: 'No active Pots accounts' })).toBeInTheDocument()
-    expect(screen.getByText('Add a Pots account in Admin → Accounts first.')).toBeInTheDocument()
-    expect(screen.queryByText('Select a Pots account')).not.toBeInTheDocument()
+    expect(screen.getByText('Add a Pots account in Admin → CashFlow → Accounts first.')).toBeInTheDocument()
+    expect(screen.queryByText('Select a Pots account.')).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Add investment account' })).toBeDisabled()
   })
 
@@ -151,7 +151,7 @@ describe('InvestmentAccountFormDialog', () => {
     )
 
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toHaveValue('')
-    expect(screen.getByText('Select a Pots account')).toBeInTheDocument()
+    expect(screen.getByText('Select a Pots account.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
   })
 

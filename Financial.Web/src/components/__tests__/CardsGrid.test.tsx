@@ -152,6 +152,6 @@ describe('CardsGrid', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: 'BaAmex' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
 
-    expect(screen.getByText('No rows match the current filters')).toBeInTheDocument()
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
   })
 })

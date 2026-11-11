@@ -275,7 +275,7 @@ export default function AnnualSummaryPage() {
                   {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={SPACER_COL_SPAN}>
-                        No rows match the current filters
+                        No rows match the current filters.
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -416,7 +416,7 @@ export default function AnnualSummaryPage() {
                   {historicSummaryAverage && sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
                     <TableRow>
                       <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
-                        No rows match the current filters
+                        No rows match the current filters.
                       </TableCell>
                     </TableRow>
                   ) : (

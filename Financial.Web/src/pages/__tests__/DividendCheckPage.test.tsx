@@ -48,7 +48,7 @@ describe('DividendCheckPage', () => {
 
   it('shows placeholder text before first check', () => {
     render(<DividendCheckPage />)
-    expect(screen.getByText('Select a ticker and click Check')).toBeInTheDocument()
+    expect(screen.getByText('Select a ticker and click Check.')).toBeInTheDocument()
   })
 
   it('defaults to first watchlist item on load', async () => {

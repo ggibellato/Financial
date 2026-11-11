@@ -208,7 +208,7 @@ export default function DividendCheckPage() {
       ) : null}
 
       {!summary && !error ? (
-        <p className="dividend-check__placeholder">Select a ticker and click Check</p>
+        <p className="dividend-check__placeholder">Select a ticker and click Check.</p>
       ) : null}
     </section>
   )

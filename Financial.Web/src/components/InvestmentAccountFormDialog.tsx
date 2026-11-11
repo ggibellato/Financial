@@ -50,7 +50,7 @@ export default function InvestmentAccountFormDialog({
   const hasPotsAccountChoices = potsAccountOptions.length > 0
   const shownPotsAccountId = potsAccountOptions.some((account) => account.id === potsAccountId) ? potsAccountId : ''
   const isPotsAccountMissing = source === 'PotsAccountTotal' && shownPotsAccountId === ''
-  const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account' : ''
+  const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account.' : ''
   const canSubmit =
     validationMessage.length === 0 &&
     creditCardValidationMessage.length === 0 &&
@@ -142,7 +142,7 @@ export default function InvestmentAccountFormDialog({
           hint={
             hasPotsAccountChoices
               ? "Investment snapshots will suggest the Pots account's total at the end of the previous month."
-              : 'Add a Pots account in Admin → Accounts first.'
+              : 'Add a Pots account in Admin → CashFlow → Accounts first.'
           }
           validationState={potsAccountValidationMessage ? 'error' : 'none'}
           validationMessage={potsAccountValidationMessage}

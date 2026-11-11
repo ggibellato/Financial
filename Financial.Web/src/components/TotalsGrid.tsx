@@ -58,7 +58,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell className="data-table__cell--message" colSpan={columns.length}>
-                  {filter?.isFiltered ? 'No rows match the current filters' : emptyMessage}
+                  {filter?.isFiltered ? 'No rows match the current filters.' : emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (
