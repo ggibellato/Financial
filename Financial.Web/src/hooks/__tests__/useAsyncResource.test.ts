@@ -1,16 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useAsyncResource, type AsyncResourceOptions } from '../useAsyncResource'
-
-function deferred<T>() {
-  let resolve!: (value: T) => void
-  let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  return { promise, resolve, reject }
-}
+import { deferred } from '../../test-utils/deferred'
 
 function renderResource(fetcher: (key: string) => Promise<string> | null, options?: AsyncResourceOptions) {
   return renderHook(({ key }) => useAsyncResource<string>(() => fetcher(key), [key], 'Fallback message', options), {

@@ -45,6 +45,8 @@ field values), `saveForm` (validates date required and value > 0, calls `addCred
 success, hides form), and `deleteCredit` (prompts via `window.confirm`, calls API `deleteCredit`,
 updates credits on success). Return the full hook interface.
 
+> **Later change (post-P60 UI clean-up):** the tab now confirms in the in-app ConfirmDeleteDialog; the hook marks the row as deleting before calling the API.
+
 ---
 
 ### Phase 2: Component and Styles

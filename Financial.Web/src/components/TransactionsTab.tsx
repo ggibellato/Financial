@@ -499,80 +499,84 @@ export default function TransactionsTab() {
         />
       )}
 
-      <div ref={regionRef} className="transactions-tab__table-wrapper" onFocus={recordRowFocus}>
-        <Table className="transactions-tab__table data-table">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Date"
-                columnKey="date"
-                sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Type"
-                columnKey="type"
-                sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Quantity"
-                columnKey="quantity"
-                numeric
-                sortDirection={sortState?.columnKey === 'quantity' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Unit Price"
-                columnKey="unitPrice"
-                numeric
-                sortDirection={sortState?.columnKey === 'unitPrice' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Fees"
-                columnKey="fees"
-                numeric
-                sortDirection={sortState?.columnKey === 'fees' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Withheld"
-                columnKey="withheld"
-                numeric
-                sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Net"
-                columnKey="total"
-                numeric
-                sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <TableHeaderCell>FX</TableHeaderCell>
-              <ActionsColumnHeader />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedRows.map((t) => (
-              <TransactionRow
-                key={t.id}
-                transaction={t}
-                isDeleting={deletingId === t.id}
-                onEdit={showEditForm}
-                onDelete={setConfirmingDelete}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {transactions.length === 0 ? (
+        <p className="transactions-tab__empty">No transactions yet — nothing has been bought or sold in this holding.</p>
+      ) : (
+        <div ref={regionRef} className="transactions-tab__table-wrapper" onFocus={recordRowFocus}>
+          <Table className="transactions-tab__table data-table">
+            <TableHeader>
+              <TableRow>
+                <SortableColumnHeader
+                  label="Date"
+                  columnKey="date"
+                  sortDirection={sortState?.columnKey === 'date' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Type"
+                  columnKey="type"
+                  sortDirection={sortState?.columnKey === 'type' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Quantity"
+                  columnKey="quantity"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'quantity' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Unit Price"
+                  columnKey="unitPrice"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'unitPrice' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Fees"
+                  columnKey="fees"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'fees' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Withheld"
+                  columnKey="withheld"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'withheld' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Net"
+                  columnKey="total"
+                  numeric
+                  sortDirection={sortState?.columnKey === 'total' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <TableHeaderCell>FX</TableHeaderCell>
+                <ActionsColumnHeader />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedRows.map((t) => (
+                <TransactionRow
+                  key={t.id}
+                  transaction={t}
+                  isDeleting={deletingId === t.id}
+                  onEdit={showEditForm}
+                  onDelete={setConfirmingDelete}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       <ActionErrorAlert message={deleteError} className="transactions-tab__delete-error" />
 
       {confirmingDelete && (
         <ConfirmDeleteDialog
-          entityLabel="Transaction"
+          entityLabel="transaction"
           message={`Delete the ${transactionName(confirmingDelete)}? This cannot be undone.`}
           onConfirm={confirmDelete}
           onCancel={() => setConfirmingDelete(null)}

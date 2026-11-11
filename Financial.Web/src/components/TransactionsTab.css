@@ -50,6 +50,11 @@
 }
 
 
+.transactions-tab__empty {
+  margin: 8px 16px;
+  color: var(--text);
+}
+
 .transactions-tab__table-wrapper {
   flex: 1;
   min-height: 0;

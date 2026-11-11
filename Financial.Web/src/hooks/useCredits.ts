@@ -58,6 +58,7 @@ interface CreditsState {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
+  deletingId: string | null
   deleteError: string | null
 }
 
@@ -74,6 +75,7 @@ type CreditsAction =
   | { type: 'SHOW_EDIT_FORM'; payload: CreditDto }
   | InlineFormAction<CreditFormField>
   | { type: 'SAVE_SUCCESS'; payload: CreditDto[] }
+  | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS'; payload: CreditDto[] }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -101,6 +103,7 @@ const INITIAL_STATE: CreditsState = {
   selectedChartType: DEFAULT_CHART_TYPE,
   filterPersistence: new Map(),
   ...BLANK_FORM,
+  deletingId: null,
   deleteError: null,
 }
 
@@ -172,10 +175,18 @@ function reducer(state: CreditsState, action: CreditsAction): CreditsState {
       return reduceInlineForm(state, action, BLANK_FORM)
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, credits: action.payload, deleteError: state.deleteError }
+    case 'DELETE_START':
+      return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
-      return { ...state, credits: action.payload, deleteError: null }
+      return {
+        ...state,
+        ...(state.deletingId !== null && state.editingId === state.deletingId ? BLANK_FORM : {}),
+        credits: action.payload,
+        deletingId: null,
+        deleteError: null,
+      }
     case 'DELETE_ERROR':
-      return { ...state, deleteError: action.payload }
+      return { ...state, deletingId: null, deleteError: action.payload }
     default:
       return state
   }
@@ -240,6 +251,7 @@ export interface CreditsData {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CreditFormField, string>>
+  deletingId: string | null
   deleteError: string | null
   nodeType: string | undefined
   showNewForm: () => void
@@ -424,8 +436,9 @@ export function useCredits(): CreditsData {
 
   const deleteCredit = useCallback(
     (id: string) => {
-      if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+      if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
+      dispatch({ type: 'DELETE_START', payload: id })
       void apiClient
         .deleteCredit({
           brokerName: selectedNode.brokerName,
@@ -441,7 +454,7 @@ export function useCredits(): CreditsData {
           })
         })
     },
-    [selectedNode],
+    [selectedNode, state.deletingId],
   )
 
   return {
@@ -468,6 +481,7 @@ export function useCredits(): CreditsData {
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
+    deletingId: state.deletingId,
     deleteError: state.deleteError,
     nodeType: selectedNode?.nodeType,
     showNewForm,

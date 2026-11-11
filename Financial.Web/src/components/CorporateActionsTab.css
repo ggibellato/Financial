@@ -10,17 +10,11 @@
 }
 
 .corporate-actions-tab__empty {
-  color: var(--text-muted, #888);
+  color: var(--text);
 }
 
 .corporate-actions-tab__table-wrapper {
   overflow: auto;
-}
-
-.corporate-actions-tab__delete-error {
-  padding: 6px 0;
-  font-size: 12px;
-  color: var(--error);
 }
 
 .data-table tbody tr.corporate-actions-tab__row.corporate-actions-tab__row--highlighted {

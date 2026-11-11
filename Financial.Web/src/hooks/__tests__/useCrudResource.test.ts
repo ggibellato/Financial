@@ -1,6 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { useCrudResource, type CrudResourceOptions, type RefreshMode } from '../useCrudResource'
+import { deferred } from '../../test-utils/deferred'
 
 interface Item {
   id: string
@@ -8,16 +9,6 @@ interface Item {
 
 const ITEMS: Item[] = [{ id: 'a' }, { id: 'b' }]
 const NO_ITEMS: Item[] = []
-
-function deferred<T>() {
-  let resolve!: (value: T) => void
-  let reject!: (reason: unknown) => void
-  const promise = new Promise<T>((res, rej) => {
-    resolve = res
-    reject = rej
-  })
-  return { promise, resolve, reject }
-}
 
 describe('useCrudResource', () => {
   const load = vi.fn<() => Promise<Item[]>>()

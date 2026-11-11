@@ -41,6 +41,7 @@ interface PriceHistoryState {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<PriceHistoryFormField, string>>
+  deletingDate: string | null
   deleteError: string | null
 }
 
@@ -55,6 +56,7 @@ type PriceHistoryAction =
   | { type: 'SHOW_EDIT_FORM'; payload: AssetPriceSnapshotDto }
   | InlineFormAction<PriceHistoryFormField>
   | { type: 'SAVE_SUCCESS'; payload: AssetPriceHistoryResult }
+  | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS'; payload: AssetPriceHistoryResult }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -77,6 +79,7 @@ const INITIAL_STATE: PriceHistoryState = {
   selectedFilter: DEFAULT_FILTER,
   filterPersistence: new Map(),
   ...BLANK_FORM,
+  deletingDate: null,
   deleteError: null,
 }
 
@@ -131,10 +134,19 @@ function reducer(state: PriceHistoryState, action: PriceHistoryAction): PriceHis
         transactions: action.payload.transactions,
         deleteError: state.deleteError,
       }
+    case 'DELETE_START':
+      return { ...state, deletingDate: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
-      return { ...state, entries: action.payload.priceHistory, transactions: action.payload.transactions, deleteError: null }
+      return {
+        ...state,
+        ...(state.deletingDate !== null && state.editingDate === state.deletingDate ? BLANK_FORM : {}),
+        entries: action.payload.priceHistory,
+        transactions: action.payload.transactions,
+        deletingDate: null,
+        deleteError: null,
+      }
     case 'DELETE_ERROR':
-      return { ...state, deleteError: action.payload }
+      return { ...state, deletingDate: null, deleteError: action.payload }
     default:
       return state
   }
@@ -156,6 +168,7 @@ export interface PriceHistoryData {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<PriceHistoryFormField, string>>
+  deletingDate: string | null
   deleteError: string | null
   showNewForm: () => void
   showEditForm: (entry: AssetPriceSnapshotDto) => void
@@ -286,8 +299,9 @@ export function usePriceHistory(): PriceHistoryData {
 
   const deleteEntry = useCallback(
     (date: string) => {
-      if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+      if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingDate !== null) return
 
+      dispatch({ type: 'DELETE_START', payload: date })
       void apiClient
         .deleteAssetPrice({
           brokerName: selectedNode.brokerName,
@@ -308,7 +322,7 @@ export function usePriceHistory(): PriceHistoryData {
           })
         })
     },
-    [selectedNode],
+    [selectedNode, state.deletingDate],
   )
 
   return {
@@ -327,6 +341,7 @@ export function usePriceHistory(): PriceHistoryData {
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
+    deletingDate: state.deletingDate,
     deleteError: state.deleteError,
     showNewForm,
     showEditForm,

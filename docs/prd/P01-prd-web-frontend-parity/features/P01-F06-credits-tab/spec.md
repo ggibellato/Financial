@@ -360,7 +360,7 @@ context wrapper with `SelectedNodeProvider`, use `renderHook` + `act` + `waitFor
 | `save_sets_error_on_api_failure` | `addCredit` rejects → `saveForm()` | `saveError` non-null; `isFormVisible` remains true; `isSaving: false` |
 | `save_validates_date_required` | `formDate: ''` → `saveForm()` | `saveError` set; `addCredit` not called |
 | `save_validates_value_greater_than_zero` | `formValue: '0'` → `saveForm()` | `saveError` set; `addCredit` not called |
-| `delete_credit_calls_api_and_updates_asset` | `deleteCredit(id)`, `window.confirm` returns true | API `deleteCredit` called; credits updated |
+| `delete_credit_calls_api_and_updates_asset` | `deleteCredit(id)`, `window.confirm` returns true (**later change**: the tab confirms in the in-app dialog; the hook no longer prompts) | API `deleteCredit` called; credits updated |
 | `delete_failure_sets_delete_error` | API `deleteCredit` rejects | `deleteError` non-null; credits unchanged |
 | `sorts_credits_by_date_descending` | Multiple credits with different dates | `credits[0].date` is most recent |
 

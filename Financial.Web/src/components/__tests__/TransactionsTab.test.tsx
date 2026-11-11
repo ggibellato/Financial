@@ -190,7 +190,7 @@ function assetWith(
 async function renderAssetTab(transactions: TransactionDto[] = [TRANSACTION_BUY], costBasisMethod?: AssetDetailsDto['costBasisMethod']) {
   getAssetDetailsMock.mockResolvedValue(assetWith(transactions, costBasisMethod))
   renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
-  await screen.findByRole('table')
+  await screen.findByRole('button', { name: 'New transaction' })
 }
 
 async function openNewForm() {
@@ -218,8 +218,8 @@ function rowButton(name: string) {
   return screen.getByRole('button', { name, hidden: true })
 }
 
-const requestDelete = (name: string) => requestDeleteOf(name, 'Transaction')
-const confirmDelete = (name: string) => confirmDeleteOf(name, 'Transaction')
+const requestDelete = (name: string) => requestDeleteOf(name, 'transaction')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'transaction')
 
 function rowTypes() {
   return dataRows().map((row) => (within(row).queryByText('Buy') ? 'Buy' : 'Sell'))
@@ -391,9 +391,10 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('-420.50')).toHaveClass('transactions-tab__total')
   })
 
-  it('empty_table_renders_no_rows', async () => {
+  it('shows_an_empty_state_instead_of_the_table_when_the_holding_has_no_transactions', async () => {
     await renderAssetTab([])
-    expect(dataRows()).toHaveLength(0)
+    expect(screen.getByText('No transactions yet — nothing has been bought or sold in this holding.')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('new_button_shows_the_new_transaction_form', async () => {
@@ -722,6 +723,7 @@ describe('TransactionsTab', () => {
     await confirmDelete(BUY_NAME)
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New transaction' })).toHaveFocus())
+    expect(screen.getByText(/^No transactions yet/)).toBeInTheDocument()
   })
 
   it('announces_a_failed_delete_and_moves_focus_to_it', async () => {
