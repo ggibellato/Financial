@@ -43,6 +43,10 @@
   min-width: 900px;
 }
 
+.data-table.annual-summary-page__table {
+  table-layout: auto;
+}
+
 @media (max-width: 599px) {
   /* The 900px min-width protects the desktop month-by-month columns, which
      no longer exist once .data-table's mobile CSS stacks cells into cards -

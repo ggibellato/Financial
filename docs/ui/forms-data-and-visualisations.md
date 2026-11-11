@@ -405,6 +405,13 @@ Totals must:
   elements instead so only the values are bold — you cannot make part of a
   single formatted string bold.
 - State whether they are filtered subtotal, period total, or grand total.
+  A total that still covers every row while a column filter hides some of
+  them names what it covers — "Total (all categories)", "Bank Balance (all
+  banks)" — through `allItemsTotalLabel`
+  (`Financial.Web/src/utils/allItemsTotalLabel.ts`); `TotalsGrid` applies it
+  to its footer whenever it is given a `filter` (with the `itemsNoun` it
+  requires). A total computed from the filtered rows instead says so with
+  its row count, as `MonthTransactionsGrid`'s "N of M rows" footer does.
 - Use consistent calculation and formatting rules.
 - Update after relevant changes.
 - Avoid appearing editable unless they genuinely are editable.

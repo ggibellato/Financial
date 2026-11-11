@@ -37,6 +37,21 @@ describe('BanksGrid', () => {
     expect(screen.getByText('51.30')).toBeInTheDocument()
   })
 
+  it('labels the footer totals as covering all banks while a Bank filter is active, and plainly once it is cleared', () => {
+    render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
+
+    expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
+
+    expect(footer()).toBe('Bank Balance (all banks): 51.30 · Round-Up (all banks): 0.60')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
+
+    expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
+  })
+
   it('[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 

@@ -47,7 +47,7 @@ export default function CategoryTotalsGrid({ categoryTotals, categoryTotalsSum }
         },
       ]}
       rows={filteredRows}
-      filter={filterSummary}
+      filter={{ ...filterSummary, itemsNoun: 'categories' }}
       rowKey={(c) => c.category}
       emptyMessage="No expenses recorded for this month"
       footerItems={[{ label: 'Total', value: formatN2(categoryTotalsSum) }]}

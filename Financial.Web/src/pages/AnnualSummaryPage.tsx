@@ -12,6 +12,7 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
+import { allItemsTotalLabel } from '../utils/allItemsTotalLabel'
 import './AnnualSummaryPage.css'
 
 type InvestmentAccount = InvestmentAnnualResultDto['accounts'][number]
@@ -310,7 +311,7 @@ export default function AnnualSummaryPage() {
 
                   {incomeSummary && (
                     <AnnualSummaryRow
-                      label="Resultado (R-D-Inv)"
+                      label={allItemsTotalLabel('Resultado (R-D-Inv)', 'categories', categoryTotalsFilterSummary.isFiltered)}
                       monthlyValues={resultadoMonthly}
                       average={resultadoAverage}
                       annualTotal={resultadoAnnualTotal}
@@ -318,7 +319,7 @@ export default function AnnualSummaryPage() {
                     />
                   )}
                   <AnnualSummaryRow
-                    label="Total despesas"
+                    label={allItemsTotalLabel('Total despesas', 'categories', categoryTotalsFilterSummary.isFiltered)}
                     monthlyValues={totalDespesasMonthly}
                     average={totalDespesasAverage}
                     annualTotal={totalDespesasAnnualTotal}
