@@ -124,12 +124,29 @@ describe('EntityFormDialog', () => {
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument()
   })
 
-  it('shows progress on the save button while saving', () => {
-    renderDialog({ isSaving: true, canSave: false })
+  it('keeps Saving... focused and inert, with progress, while saving', () => {
+    const { rerender } = renderDialog()
+    screen.getByRole('button', { name: 'Save' }).focus()
 
-    const save = screen.getByRole('button', { name: 'Save' })
-    expect(save).toBeDisabled()
+    rerender(dialog({ isSaving: true, canSave: false }))
+
+    const save = screen.getByRole('button', { name: 'Saving...' })
+    expect(save).toHaveAttribute('aria-disabled', 'true')
+    expect(save).toHaveFocus()
     expect(save.querySelector('.fui-Spinner')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+  })
+
+  it('moves focus to Save when Enter in a field submits', async () => {
+    const user = userEvent.setup()
+    const onSave = vi.fn()
+    renderDialog({ onSave })
+
+    await user.click(screen.getByLabelText('Name'))
+    await user.keyboard('{Enter}')
+
+    expect(onSave).toHaveBeenCalledOnce()
+    expect(screen.getByRole('button', { name: 'Save' })).toHaveFocus()
   })
 
   it('shows the save error inside the dialog', () => {
