@@ -3,6 +3,7 @@ import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode } from '../../api/types'
+import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } from '../../test-utils/confirmDelete'
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import PriceHistoryTab from '../PriceHistoryTab'
@@ -148,6 +149,19 @@ async function renderLoaded(...entries: AssetPriceSnapshotDto[]) {
   return screen.findByRole('table')
 }
 
+async function renderEmpty() {
+  getAssetDetailsMock.mockResolvedValue(detailsWith())
+  renderWithSelectedNode(<PriceHistoryTab />, ASSET_NODE)
+  await screen.findByRole('button', { name: 'New price' })
+}
+
+const EARLIER_MANUAL_ENTRY: AssetPriceSnapshotDto = { ...MANUAL_ENTRY, date: '2024-02-10T00:00:00', price: 110 }
+const MANUAL_NAME = 'price 15/03/2024'
+const EARLIER_MANUAL_NAME = 'price 10/02/2024'
+const requestDelete = (name: string) => requestDeleteOf(name, 'Price')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'Price')
+const rowButton = (name: string) => screen.getByRole('button', { name, hidden: true })
+
 function dataRows(table: HTMLElement) {
   return within(table).getAllByRole('row').slice(1)
 }
@@ -159,7 +173,6 @@ describe('PriceHistoryTab', () => {
     getAssetDetailsMock.mockReset()
     setAssetPriceMock.mockReset()
     deleteAssetPriceMock.mockReset()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -238,19 +251,20 @@ describe('PriceHistoryTab', () => {
     expect(screen.queryByRole('button', { name: /^Delete price\b/ })).not.toBeInTheDocument()
   })
 
-  it('empty_table_renders_no_rows', async () => {
-    const table = await renderLoaded()
-    expect(within(table).getAllByRole('row')).toHaveLength(1)
+  it('shows_an_empty_state_instead_of_the_table_when_the_holding_has_no_prices', async () => {
+    await renderEmpty()
+    expect(screen.getByText('No prices yet — add the first price for this holding.')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('form_is_hidden_until_new_price_is_clicked', async () => {
-    await renderLoaded()
+    await renderEmpty()
     expect(screen.queryByLabelText(/^Date/)).not.toBeInTheDocument()
     expect(screen.queryByLabelText(/^Price/)).not.toBeInTheDocument()
   })
 
   it('new_button_shows_blank_form_with_todays_date', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
 
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-08-20')
@@ -258,7 +272,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('form_title_is_new_price_when_adding', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
 
     expect(screen.getByRole('heading', { name: 'New price' })).toBeInTheDocument()
@@ -276,7 +290,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('cancel_hides_the_form', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
@@ -284,7 +298,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('editing_each_form_field_updates_its_displayed_value', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
 
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
@@ -332,7 +346,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('save_button_disabled_while_saving', async () => {
-    await renderLoaded()
+    await renderEmpty()
     setAssetPriceMock.mockReturnValue(new Promise(() => {}))
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
@@ -343,7 +357,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('save_requires_a_date', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '' } })
     fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '50' } })
@@ -354,7 +368,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('save_requires_a_positive_price', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
@@ -364,7 +378,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('renders_save_error_below_form', async () => {
-    await renderLoaded()
+    await renderEmpty()
     setAssetPriceMock.mockRejectedValue(new Error('Failed'))
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
@@ -379,11 +393,12 @@ describe('PriceHistoryTab', () => {
     const table = await renderLoaded(MANUAL_ENTRY, AUTOMATIC_ENTRY)
     deleteAssetPriceMock.mockResolvedValue(detailsWith(AUTOMATIC_ENTRY))
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete price\b/ }))
+    const dialog = await requestDelete(MANUAL_NAME)
+    expect(dialog).toHaveAccessibleDescription(`Delete the ${MANUAL_NAME}? This cannot be undone.`)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(within(table).queryByText('15/03/2024')).not.toBeInTheDocument())
     expect(within(table).getByText('10/01/2024')).toBeInTheDocument()
-    expect(window.confirm).toHaveBeenCalledTimes(1)
     expect(deleteAssetPriceMock).toHaveBeenCalledWith({
       brokerName: 'XPI',
       portfolioName: 'Acoes',
@@ -392,40 +407,82 @@ describe('PriceHistoryTab', () => {
     })
   })
 
-  it('delete_button_does_nothing_when_the_user_declines', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('delete_button_does_nothing_when_the_user_cancels', async () => {
     const table = await renderLoaded(MANUAL_ENTRY)
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete price\b/ }))
+    const dialog = await requestDelete(MANUAL_NAME)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
+    await waitFor(() => expect(rowButton(`Delete ${MANUAL_NAME}`)).toHaveFocus())
     expect(deleteAssetPriceMock).not.toHaveBeenCalled()
     expect(within(table).getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_delete_error_below_table', async () => {
-    const table = await renderLoaded(MANUAL_ENTRY)
+  it('shows_the_row_as_deleting_and_keeps_focus_on_it_while_the_delete_is_in_progress', async () => {
+    deleteAssetPriceMock.mockReturnValue(new Promise(() => {}))
+    await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
+
+    await confirmDelete(MANUAL_NAME)
+
+    await waitFor(() => expect(rowButton(`Deleting ${MANUAL_NAME}`)).toHaveFocus())
+    expect(rowButton(`Deleting ${MANUAL_NAME}`)).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+    deleteAssetPriceMock.mockReturnValue(new Promise(() => {}))
+    await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
+    await confirmDelete(MANUAL_NAME)
+
+    await confirmDelete(EARLIER_MANUAL_NAME)
+
+    expect(deleteAssetPriceMock).toHaveBeenCalledOnce()
+  })
+
+  it('moves_focus_to_the_next_row_delete_after_a_delete', async () => {
+    deleteAssetPriceMock.mockResolvedValue(detailsWith(EARLIER_MANUAL_ENTRY))
+    await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
+
+    await confirmDelete(MANUAL_NAME)
+
+    await waitFor(() => expect(rowButton(`Delete ${EARLIER_MANUAL_NAME}`)).toHaveFocus())
+  })
+
+  it('moves_focus_to_new_price_and_shows_the_empty_state_after_deleting_the_only_row', async () => {
+    deleteAssetPriceMock.mockResolvedValue(detailsWith())
+    await renderLoaded(MANUAL_ENTRY)
+
+    await confirmDelete(MANUAL_NAME)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New price' })).toHaveFocus())
+    expect(screen.getByText(/^No prices yet/)).toBeInTheDocument()
+  })
+
+  it('announces_a_failed_delete_and_moves_focus_to_it', async () => {
     deleteAssetPriceMock.mockRejectedValue(new Error('Failed to delete'))
+    const table = await renderLoaded(MANUAL_ENTRY)
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete price\b/ }))
+    await confirmDelete(MANUAL_NAME)
 
-    expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
+    const alert = await screen.findByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Failed to delete')
+    await waitFor(() => expect(alert).toHaveFocus())
     expect(within(table).getByText('15/03/2024')).toBeInTheDocument()
   })
 
   it('renders_all_filter_buttons', async () => {
-    await renderLoaded()
+    await renderEmpty()
     for (const name of ['This month', 'Last 3 months', 'Last 6 months', 'Last 12 months', 'YTD', 'All time']) {
       expect(screen.getByRole('tab', { name })).toBeInTheDocument()
     }
   })
 
   it('active_filter_is_last_12_months_by_default', async () => {
-    await renderLoaded()
+    await renderEmpty()
     expect(screen.getByRole('tab', { name: 'Last 12 months' })).toHaveAttribute('aria-selected', 'true')
   })
 
   it('clicking_filter_selects_that_tab', async () => {
-    await renderLoaded()
+    await renderEmpty()
     fireEvent.click(screen.getByRole('tab', { name: 'Last 3 months' }))
 
     expect(screen.getByRole('tab', { name: 'Last 3 months' })).toHaveAttribute('aria-selected', 'true')
@@ -433,7 +490,7 @@ describe('PriceHistoryTab', () => {
   })
 
   it('renders_chart_legend_for_all_four_series', async () => {
-    await renderLoaded()
+    await renderEmpty()
     expect(screen.getByTestId('chart-legend')).toHaveTextContent('Automatic,Manual,Buy,Sell')
   })
 

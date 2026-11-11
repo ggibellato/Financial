@@ -67,6 +67,7 @@ interface CorporateActionsState {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
+  deletingId: string | null
   deleteError: string | null
 }
 
@@ -83,6 +84,7 @@ type CorporateActionsAction =
   | { type: 'SET_TARGET_ASSET'; payload: TargetAssetPickerValue }
   | { type: 'SET_NEW_ASSET'; payload: TargetAssetPickerValue }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
+  | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -125,6 +127,7 @@ const INITIAL_STATE: CorporateActionsState = {
   error: null,
   retryCount: 0,
   ...BLANK_FORM,
+  deletingId: null,
   deleteError: null,
 }
 
@@ -194,10 +197,12 @@ function reducer(state: CorporateActionsState, action: CorporateActionsAction): 
       return { ...state, formNewAsset: action.payload }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, asset: action.payload }
+    case 'DELETE_START':
+      return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS':
-      return { ...state, asset: action.payload, deleteError: null }
+      return { ...state, asset: action.payload, deletingId: null, deleteError: null }
     case 'DELETE_ERROR':
-      return { ...state, deleteError: action.payload }
+      return { ...state, deletingId: null, deleteError: action.payload }
     default:
       return state
   }
@@ -226,6 +231,7 @@ export interface CorporateActionsData {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<CorporateActionFormField, string>>
+  deletingId: string | null
   deleteError: string | null
   targetAssetOptions: AssetSearchOptionsData
   showNewForm: () => void
@@ -508,8 +514,9 @@ export function useCorporateActions(): CorporateActionsData {
 
   const deleteCorporateAction = useCallback(
     (id: string) => {
-      if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+      if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
+      dispatch({ type: 'DELETE_START', payload: id })
       void apiClient
         .deleteCorporateAction({
           brokerName: selectedNode.brokerName,
@@ -525,7 +532,7 @@ export function useCorporateActions(): CorporateActionsData {
           })
         })
     },
-    [selectedNode],
+    [selectedNode, state.deletingId],
   )
 
   return {
@@ -551,6 +558,7 @@ export function useCorporateActions(): CorporateActionsData {
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
+    deletingId: state.deletingId,
     deleteError: state.deleteError,
     targetAssetOptions,
     showNewForm,

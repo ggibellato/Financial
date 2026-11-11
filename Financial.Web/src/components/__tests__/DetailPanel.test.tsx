@@ -134,7 +134,6 @@ describe('DetailPanel', () => {
       clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     })
     vi.stubGlobal('alert', vi.fn())
-    vi.stubGlobal('confirm', vi.fn())
     getAssetDetailsMock.mockReset()
     getCurrentPriceMock.mockReset()
     getSummaryByBrokerMock.mockReset()
@@ -226,7 +225,7 @@ describe('DetailPanel', () => {
     act(() => screen.getByTestId('setter').click())
     fireEvent.click(screen.getByLabelText('Copy name'))
     expect(window.alert).not.toHaveBeenCalled()
-    expect(window.confirm).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument()
   })
 
   it('tab bar renders three tabs', () => {

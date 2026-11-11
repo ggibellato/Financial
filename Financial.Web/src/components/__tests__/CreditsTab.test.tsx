@@ -3,6 +3,7 @@ import React from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, CreditDto, SelectedNode } from '../../api/types'
+import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } from '../../test-utils/confirmDelete'
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import CreditsTab from '../CreditsTab'
@@ -141,7 +142,7 @@ function assetDetails(credits: CreditDto[]): AssetDetailsDto {
 async function renderAssetTab(credits: CreditDto[] = []) {
   getAssetDetailsMock.mockResolvedValue(assetDetails(credits))
   const result = renderWithSelectedNode(<CreditsTab />, ASSET_NODE)
-  await screen.findByRole('table')
+  await screen.findByRole('button', { name: 'New credit' })
   return result
 }
 
@@ -157,6 +158,12 @@ async function openNewForm() {
   await screen.findByRole('heading', { name: 'New credit' })
 }
 
+const DIVIDEND_NAME = 'credit Dividend 120.50, 15/03/2024'
+const JCP_NAME = 'credit JCP 75.00, 20/02/2024'
+const requestDelete = (name: string) => requestDeleteOf(name, 'Credit')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'Credit')
+const rowButton = (name: string) => screen.getByRole('button', { name, hidden: true })
+
 function dataRows() {
   return within(screen.getByRole('table')).getAllByRole('row').slice(1)
 }
@@ -170,7 +177,6 @@ describe('CreditsTab', () => {
     addCreditMock.mockReset()
     updateCreditMock.mockReset()
     deleteCreditMock.mockReset()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   afterEach(() => {
@@ -402,8 +408,9 @@ describe('CreditsTab', () => {
     await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
     deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_JCP]))
 
-    const dividendRow = screen.getByText('15/03/2024').closest('tr, [role="row"]') as HTMLElement
-    fireEvent.click(within(dividendRow).getByRole('button', { name: 'Delete credit Dividend 120.50, 15/03/2024' }))
+    const dialog = await requestDelete(DIVIDEND_NAME)
+    expect(dialog).toHaveAccessibleDescription(`Delete the ${DIVIDEND_NAME}? This cannot be undone.`)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
     expect(deleteCreditMock).toHaveBeenCalledWith({
@@ -416,23 +423,65 @@ describe('CreditsTab', () => {
   })
 
   it('delete_icon_does_not_delete_when_the_user_cancels_the_confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     await renderAssetTab([CREDIT_DIVIDEND])
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete credit\b/ }))
+    const dialog = await requestDelete(DIVIDEND_NAME)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
+    await waitFor(() => expect(rowButton(`Delete ${DIVIDEND_NAME}`)).toHaveFocus())
     expect(deleteCreditMock).not.toHaveBeenCalled()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_delete_error_below_table', async () => {
+  it('shows_the_row_as_deleting_and_keeps_focus_on_it_while_the_delete_is_in_progress', async () => {
+    deleteCreditMock.mockReturnValue(new Promise(() => {}))
+    await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
+
+    await confirmDelete(DIVIDEND_NAME)
+
+    await waitFor(() => expect(rowButton(`Deleting ${DIVIDEND_NAME}`)).toHaveFocus())
+    expect(rowButton(`Deleting ${DIVIDEND_NAME}`)).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+    deleteCreditMock.mockReturnValue(new Promise(() => {}))
+    await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
+    await confirmDelete(DIVIDEND_NAME)
+
+    await confirmDelete(JCP_NAME)
+
+    expect(deleteCreditMock).toHaveBeenCalledOnce()
+  })
+
+  it('moves_focus_to_the_next_row_delete_after_a_delete', async () => {
+    deleteCreditMock.mockResolvedValue(assetDetails([CREDIT_JCP]))
+    await renderAssetTab([CREDIT_DIVIDEND, CREDIT_JCP])
+
+    await confirmDelete(DIVIDEND_NAME)
+
+    await waitFor(() => expect(rowButton(`Delete ${JCP_NAME}`)).toHaveFocus())
+  })
+
+  it('moves_focus_to_new_credit_and_shows_the_empty_state_after_deleting_the_only_row', async () => {
+    deleteCreditMock.mockResolvedValue(assetDetails([]))
     await renderAssetTab([CREDIT_DIVIDEND])
+
+    await confirmDelete(DIVIDEND_NAME)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New credit' })).toHaveFocus())
+    expect(screen.getByText(/^No credits yet/)).toBeInTheDocument()
+  })
+
+  it('announces_a_failed_delete_and_moves_focus_to_it', async () => {
     deleteCreditMock.mockRejectedValue(new Error('Failed to delete'))
+    await renderAssetTab([CREDIT_DIVIDEND])
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete credit\b/ }))
+    await confirmDelete(DIVIDEND_NAME)
 
-    expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
-    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
+    const alert = await screen.findByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Failed to delete')
+    await waitFor(() => expect(alert).toHaveFocus())
+    expect(rowButton(`Delete ${DIVIDEND_NAME}`)).toBeInTheDocument()
   })
 
   it('renders_all_filter_buttons', async () => {
@@ -469,9 +518,10 @@ describe('CreditsTab', () => {
     expect(screen.getByRole('tab', { name: 'Stacked' })).toHaveAttribute('aria-selected', 'false')
   })
 
-  it('empty_table_renders_no_rows', async () => {
+  it('shows_an_empty_state_instead_of_the_table_when_the_holding_has_no_credits', async () => {
     await renderAssetTab([])
-    expect(dataRows()).toHaveLength(0)
+    expect(screen.getByText('No credits yet — no dividend, JCP, coupon or lending income has been recorded for this holding.')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('renders_bar_line_toggle_defaulting_to_bar', async () => {

@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CorporateActionsData } from '../../hooks/useCorporateActions'
 import type { AssetDetailsDto, CorporateActionDto } from '../../api/types'
 import { BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
 import { formatN2 } from '../../utils/formatters'
+import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
 import CorporateActionsTab from '../CorporateActionsTab'
 
 const mockRetry = vi.fn()
@@ -39,6 +40,7 @@ function split(overrides: Partial<CorporateActionDto>): CorporateActionDto {
 }
 
 const ASSET: AssetDetailsDto = { name: 'KLBN4' } as AssetDetailsDto
+const SPLIT_NAME = 'corporate action Split KLBN4, 01/07/2026'
 
 const DEFAULT_HOOK: CorporateActionsData = {
   asset: ASSET,
@@ -63,6 +65,7 @@ const DEFAULT_HOOK: CorporateActionsData = {
   isSaving: false,
   saveError: null,
   saveErrorFields: {},
+  deletingId: null,
   deleteError: null,
   targetAssetOptions: { options: [], isLoading: false, error: null, retry: vi.fn() },
   showNewForm: mockShowNewForm,
@@ -105,7 +108,6 @@ describe('CorporateActionsTab', () => {
     mockSaveForm.mockReset()
     mockDeleteCorporateAction.mockReset()
     mockHookValue = { ...DEFAULT_HOOK }
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
   })
 
   it('shows a loading state', () => {
@@ -192,25 +194,54 @@ describe('CorporateActionsTab', () => {
     expect(mockShowEditForm).toHaveBeenCalledWith(record)
   })
 
-  it('confirms before deleting a corporate action', () => {
-    const record = split({})
-    setMock({ corporateActions: [record] })
+  it('deletes a corporate action only after the user confirms in the dialog', async () => {
+    setMock({ corporateActions: [split({})] })
     render(<CorporateActionsTab />)
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete corporate action\b/ }))
+    const dialog = await requestDelete(SPLIT_NAME, 'Corporate action')
+    expect(dialog).toHaveAccessibleDescription(`Delete the ${SPLIT_NAME}? This cannot be undone.`)
+    expect(mockDeleteCorporateAction).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
-    expect(window.confirm).toHaveBeenCalled()
     expect(mockDeleteCorporateAction).toHaveBeenCalledWith('ca1')
   })
 
-  it('shows a delete error without hiding the history list', () => {
-    const record = split({})
-    setMock({ corporateActions: [record], deleteError: 'Cannot delete: a later disposal depends on lots created by this split' })
+  it('does not delete when the user cancels, and returns focus to the row delete', async () => {
+    setMock({ corporateActions: [split({})] })
     render(<CorporateActionsTab />)
 
-    expect(
-      screen.getByText('Cannot delete: a later disposal depends on lots created by this split'),
-    ).toBeInTheDocument()
+    const dialog = await requestDelete(SPLIT_NAME, 'Corporate action')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: `Delete ${SPLIT_NAME}`, hidden: true })).toHaveFocus())
+    expect(mockDeleteCorporateAction).not.toHaveBeenCalled()
+  })
+
+  it('shows the row being deleted as Deleting and unavailable', () => {
+    setMock({ corporateActions: [split({})], deletingId: 'ca1' })
+    render(<CorporateActionsTab />)
+
+    expect(screen.getByRole('button', { name: `Deleting ${SPLIT_NAME}` })).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('moves focus to New corporate action after the only row is deleted', async () => {
+    setMock({ corporateActions: [split({})] })
+    const { rerender } = render(<CorporateActionsTab />)
+    await confirmDelete(SPLIT_NAME, 'Corporate action')
+
+    setMock({ corporateActions: [] })
+    rerender(<CorporateActionsTab />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New corporate action' })).toHaveFocus())
+  })
+
+  it('announces a delete error and moves focus to it without hiding the history list', async () => {
+    setMock({ corporateActions: [split({})], deleteError: 'Cannot delete: a later disposal depends on lots created by this split' })
+    render(<CorporateActionsTab />)
+
+    const alert = screen.getByRole('alert')
+    expect(alert).toHaveTextContent('Cannot delete: a later disposal depends on lots created by this split')
+    await waitFor(() => expect(alert).toHaveFocus())
     expect(screen.getAllByRole('row')).toHaveLength(2)
   })
 

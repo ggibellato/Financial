@@ -4,6 +4,7 @@ import MensaisPage from '../MensaisPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account } from '../../test/account'
+import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
 
 const {
   getMensaisBillsMock,
@@ -71,6 +72,13 @@ const ACCOUNTS = [account({ id: 'bank-1', name: 'Barclays' })]
 const CATEGORIES: CategoryDto[] = [
   { id: 'cat-1', name: 'Bills', active: true, isInvestment: false, isTithe: false, hasReferences: false },
 ]
+
+const INSS_NAME = 'bill INSS'
+
+async function requestReset() {
+  fireEvent.click(await screen.findByRole('button', { name: 'Reset All to Unset' }))
+  return screen.findByRole('dialog', { name: 'Reset all bills', hidden: true })
+}
 
 describe('MensaisPage', () => {
   beforeEach(() => {
@@ -368,55 +376,120 @@ describe('MensaisPage', () => {
     )
   })
 
-  it('deletes a bill after confirming the prompt', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('deletes a bill after the user confirms in the dialog', async () => {
     deleteMensaisBillMock.mockResolvedValue(undefined)
     render(<MensaisPage />)
+    await screen.findByText('INSS')
 
-    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
-
+    const dialog = await requestDelete(INSS_NAME, 'Bill')
+    expect(dialog).toHaveAccessibleDescription('Delete the bill "INSS"? This cannot be undone.')
     getMensaisBillsMock.mockResolvedValue([BILLS[1]])
-    fireEvent.click(screen.getAllByRole('button', { name: /^Delete bill\b/ })[0])
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(deleteMensaisBillMock).toHaveBeenCalledWith('b1'))
     await waitFor(() => expect(screen.queryByText('INSS')).not.toBeInTheDocument())
   })
 
-  it('does not delete when the confirmation prompt is declined', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('does not delete when the user cancels, and returns focus to the row delete', async () => {
     render(<MensaisPage />)
+    await screen.findByText('INSS')
 
-    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    const dialog = await requestDelete(INSS_NAME, 'Bill')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
-    fireEvent.click(screen.getAllByRole('button', { name: /^Delete bill\b/ })[0])
-
+    await waitFor(() => expect(screen.getByRole('button', { name: `Delete ${INSS_NAME}`, hidden: true })).toHaveFocus())
     expect(deleteMensaisBillMock).not.toHaveBeenCalled()
   })
 
-  it('resets all bills to Unset after confirming the prompt', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
+  it('shows the bill as deleting and keeps focus on it while the delete is in progress', async () => {
+    deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    await confirmDelete(INSS_NAME, 'Bill')
+
+    const deleting = await screen.findByRole('button', { name: `Deleting ${INSS_NAME}`, hidden: true })
+    await waitFor(() => expect(deleting).toHaveFocus())
+    expect(deleting).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('moves focus to Add Bill after deleting the last bill of a grid', async () => {
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+    getMensaisBillsMock.mockResolvedValue([BILLS[1]])
+
+    await confirmDelete(INSS_NAME, 'Bill')
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Add Bill' })).toHaveFocus())
+  })
+
+  it('announces a failed delete and moves focus to it', async () => {
+    deleteMensaisBillMock.mockRejectedValue(new Error('Failed to delete'))
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    await confirmDelete(INSS_NAME, 'Bill')
+
+    const alert = await screen.findByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Failed to delete')
+    await waitFor(() => expect(alert).toHaveFocus())
+    expect(screen.getByText('INSS')).toBeInTheDocument()
+  })
+
+  it('resets all bills to Unset after the user confirms in the dialog', async () => {
     resetMensaisToUnsetMock.mockResolvedValue([
       { ...BILLS[0], status: 'Unset' },
       { ...BILLS[1], status: 'Unset' },
     ])
     render(<MensaisPage />)
+    await screen.findByText('INSS')
 
-    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
-
-    fireEvent.click(screen.getByRole('button', { name: 'Reset All to Unset' }))
+    const dialog = await requestReset()
+    expect(dialog).toHaveAccessibleDescription('Set the status of every bill back to Unset for the new month?')
+    expect(resetMensaisToUnsetMock).not.toHaveBeenCalled()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
 
     await waitFor(() => expect(resetMensaisToUnsetMock).toHaveBeenCalledTimes(1))
   })
 
-  it('does not reset when the confirmation prompt is declined', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
+  it('does not reset when the user cancels, and returns focus to Reset All to Unset', async () => {
     render(<MensaisPage />)
+    await screen.findByText('INSS')
+    screen.getByRole('button', { name: 'Reset All to Unset' }).focus()
 
-    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    const dialog = await requestReset()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset All to Unset' }))
-
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Reset All to Unset', hidden: true })).toHaveFocus())
     expect(resetMensaisToUnsetMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps focus on the reset button while the reset is in progress', async () => {
+    resetMensaisToUnsetMock.mockReturnValue(new Promise(() => {}))
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+    screen.getByRole('button', { name: 'Reset All to Unset' }).focus()
+
+    const dialog = await requestReset()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
+
+    const resetting = await screen.findByRole('button', { name: 'Resetting...', hidden: true })
+    await waitFor(() => expect(resetting).toHaveFocus())
+    expect(resetting).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('announces a failed reset and moves focus to it', async () => {
+    resetMensaisToUnsetMock.mockRejectedValue(new Error('Failed to reset bills'))
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    const dialog = await requestReset()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Reset all to Unset', hidden: true }))
+
+    const alert = await screen.findByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Failed to reset bills')
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 
   it('sorts the Brasil and UK grids independently by clicking their Description column headers', async () => {

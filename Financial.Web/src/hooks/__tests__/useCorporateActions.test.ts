@@ -359,6 +359,23 @@ describe('useCorporateActions', () => {
     })
   })
 
+  it('marks the corporate action as deleting until the delete finishes and ignores a second delete meanwhile', async () => {
+    let finishDelete: (asset: AssetDetailsDto) => void = () => {}
+    deleteCorporateActionMock.mockReturnValueOnce(new Promise((resolve) => (finishDelete = resolve)))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.deleteCorporateAction('ca1'))
+    expect(result.current.deletingId).toBe('ca1')
+    act(() => result.current.deleteCorporateAction('ca2'))
+
+    expect(deleteCorporateActionMock).toHaveBeenCalledOnce()
+    await act(async () => finishDelete({ ...ASSET_DETAILS, corporateActions: [] }))
+    expect(result.current.deletingId).toBeNull()
+  })
+
   it('surfaces a delete failure without discarding the current list', async () => {
     deleteCorporateActionMock.mockRejectedValueOnce(new Error('Cannot delete: a later disposal depends on lots created by this split'))
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -371,6 +388,7 @@ describe('useCorporateActions', () => {
     await waitFor(() =>
       expect(result.current.deleteError).toBe('Cannot delete: a later disposal depends on lots created by this split'),
     )
+    expect(result.current.deletingId).toBeNull()
     expect(result.current.corporateActions).toEqual([SPLIT_RECORD])
   })
 

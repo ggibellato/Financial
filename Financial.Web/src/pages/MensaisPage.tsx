@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import {
   Button,
   Field,
@@ -13,6 +14,9 @@ import {
 } from '@fluentui/react-components'
 import { AddRegular, ArrowResetRegular } from '@fluentui/react-icons'
 import type { RecurringBillDto } from '../api/types'
+import ActionErrorAlert from '../components/ActionErrorAlert'
+import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
+import ConfirmDialog from '../components/ConfirmDialog'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
@@ -24,7 +28,7 @@ import { useFormPanelStyles } from '../components/formPanelStyles'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { useFieldError } from '../hooks/useFieldError'
 import { useMensais } from '../hooks/useMensais'
-import { confirmThenRun } from '../utils/confirmThenRun'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2 } from '../utils/formatters'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
@@ -39,7 +43,7 @@ interface BillRowProps {
   isDeleting: boolean
   isUpdatingStatus: boolean
   onEdit: (bill: RecurringBillDto) => void
-  onDelete: (id: string) => void
+  onDelete: (bill: RecurringBillDto) => void
   onStatusChange: (id: string, status: string) => void
 }
 
@@ -82,7 +86,7 @@ function BillRow({
         itemName={`bill ${bill.description}`}
         isDeleting={isDeleting}
         onEdit={() => onEdit(bill)}
-        onDelete={() => confirmThenRun(`Delete "${bill.description}"? This removes it for good.`, () => onDelete(bill.id))}
+        onDelete={() => onDelete(bill)}
       />
     </TableRow>
   )
@@ -94,7 +98,7 @@ interface BillTableProps {
   deletingBillId: string | null
   updatingStatusBillId: string | null
   onEdit: (bill: RecurringBillDto) => void
-  onDelete: (id: string) => void
+  onDelete: (bill: RecurringBillDto) => void
   onStatusChange: (id: string, status: string) => void
 }
 
@@ -248,6 +252,22 @@ export default function MensaisPage() {
   const styles = useFormPanelStyles()
   const addFieldError = useFieldError(addErrorFields)
   const editFieldError = useFieldError(saveErrorFields)
+  const [confirmingDelete, setConfirmingDelete] = useState<RecurringBillDto | null>(null)
+  const [isConfirmingReset, setIsConfirmingReset] = useState(false)
+  const billsRegionRef = useRef<HTMLDivElement | null>(null)
+  const addBillRef = useRef<HTMLButtonElement | null>(null)
+  const recordRowFocus = useRowFocusRecovery(billsRegionRef, addBillRef, isLoading)
+
+  const confirmDelete = () => {
+    if (!confirmingDelete) return
+    deleteBill(confirmingDelete.id)
+    setConfirmingDelete(null)
+  }
+
+  const confirmReset = () => {
+    resetAllToUnset()
+    setIsConfirmingReset(false)
+  }
 
   return (
     <div className="mensais-page">
@@ -262,22 +282,22 @@ export default function MensaisPage() {
           />
         </div>
         <div className="mensais-page__toolbar">
-          <Button appearance="primary" icon={<AddRegular />} onClick={showAddForm}>
+          <Button ref={addBillRef} appearance="primary" icon={<AddRegular />} onClick={showAddForm}>
             Add Bill
           </Button>
           <Button
-            appearance="secondary"
+            appearance="primary"
             icon={<ArrowResetRegular />}
-            disabled={isResetting}
-            onClick={() => confirmThenRun('Reset every bill back to Unset for the new month?', resetAllToUnset)}
+            disabledFocusable={isResetting}
+            onClick={() => setIsConfirmingReset(true)}
           >
             {isResetting ? 'Resetting...' : 'Reset All to Unset'}
           </Button>
         </div>
       </div>
 
-      {deleteError && <p className="mensais-page__error">{deleteError}</p>}
-      {resetError && <p className="mensais-page__error">{resetError}</p>}
+      <ActionErrorAlert message={deleteError} />
+      <ActionErrorAlert message={resetError} />
       {statusUpdateError && <p className="mensais-page__error">{statusUpdateError}</p>}
 
       {isAddFormOpen && (
@@ -415,14 +435,14 @@ export default function MensaisPage() {
       ) : error ? (
         <ErrorState message={error} onRetry={retry} />
       ) : (
-        <div className="mensais-page__content">
+        <div ref={billsRegionRef} className="mensais-page__content" onFocus={recordRowFocus}>
           <BillTable
             bills={brasilBills}
             showBrasilFields
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
-            onDelete={deleteBill}
+            onDelete={setConfirmingDelete}
             onStatusChange={updateBillStatus}
           />
           <BillTable
@@ -431,11 +451,30 @@ export default function MensaisPage() {
             deletingBillId={deletingBillId}
             updatingStatusBillId={updatingStatusBillId}
             onEdit={showEditForm}
-            onDelete={deleteBill}
+            onDelete={setConfirmingDelete}
             onStatusChange={updateBillStatus}
           />
         </div>
       )}
+
+      {confirmingDelete && (
+        <ConfirmDeleteDialog
+          entityLabel="Bill"
+          message={`Delete the bill "${confirmingDelete.description}"? This cannot be undone.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(null)}
+        />
+      )}
+
+      <ConfirmDialog
+        open={isConfirmingReset}
+        title="Reset all bills"
+        message="Set the status of every bill back to Unset for the new month?"
+        confirmLabel="Reset all to Unset"
+        cancelLabel="Cancel"
+        onConfirm={confirmReset}
+        onCancel={() => setIsConfirmingReset(false)}
+      />
 
       {expensePromptBill && (
         <UkExpensePromptDialog

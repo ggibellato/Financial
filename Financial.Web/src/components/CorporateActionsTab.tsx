@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import type { CorporateActionDto } from '../api/types'
+import ActionErrorAlert from './ActionErrorAlert'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import CorporateActionForm from './CorporateActionForm'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
@@ -10,7 +12,7 @@ import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
 import { useCorporateActions } from '../hooks/useCorporateActions'
-import { confirmThenRun } from '../utils/confirmThenRun'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { corporateActionTypeLabel } from '../utils/corporateActionTypeLabel'
 import { formatN2, formatShortDate } from '../utils/formatters'
 import './CorporateActionsTab.css'
@@ -51,6 +53,10 @@ function resultingChange(record: CorporateActionDto): string {
   return '—'
 }
 
+function corporateActionName(record: CorporateActionDto, affectedAssetName: string): string {
+  return `corporate action ${corporateActionTypeLabel(record.type)} ${record.linkedAssetName ?? affectedAssetName}, ${formatShortDate(record.effectiveDate)}`
+}
+
 const SORT_ACCESSORS: Record<string, SortAccessor<CorporateActionDto>> = {
   date: (record) => new Date(record.effectiveDate),
   type: (record) => corporateActionTypeLabel(record.type),
@@ -60,11 +66,12 @@ interface CorporateActionRowProps {
   record: CorporateActionDto
   affectedAssetName: string
   isHighlighted: boolean
+  isDeleting: boolean
   onEdit: (record: CorporateActionDto) => void
-  onDelete: (id: string) => void
+  onDelete: (record: CorporateActionDto) => void
 }
 
-function CorporateActionRow({ record, affectedAssetName, isHighlighted, onEdit, onDelete }: CorporateActionRowProps) {
+function CorporateActionRow({ record, affectedAssetName, isHighlighted, isDeleting, onEdit, onDelete }: CorporateActionRowProps) {
   return (
     <TableRow
       data-corporate-action-id={record.id}
@@ -79,9 +86,10 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, onEdit, 
         {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}
       </DataTableCell>
       <RowActionsCell
-        itemName={`corporate action ${corporateActionTypeLabel(record.type)} ${record.linkedAssetName ?? affectedAssetName}, ${formatShortDate(record.effectiveDate)}`}
+        itemName={corporateActionName(record, affectedAssetName)}
+        isDeleting={isDeleting}
         onEdit={() => onEdit(record)}
-        onDelete={() => onDelete(record.id)}
+        onDelete={() => onDelete(record)}
       />
     </TableRow>
   )
@@ -115,6 +123,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
     isSaving,
     saveError,
     saveErrorFields,
+    deletingId,
     deleteError,
     showNewForm,
     showEditForm,
@@ -147,8 +156,16 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
     return () => clearTimeout(timer)
   }, [focusRecordId, isLoading, corporateActions])
 
-  const confirmAndDelete = (id: string) =>
-    confirmThenRun('Delete this corporate action?', () => deleteCorporateAction(id))
+  const [confirmingDelete, setConfirmingDelete] = useState<CorporateActionDto | null>(null)
+  const regionRef = useRef<HTMLDivElement | null>(null)
+  const newCorporateActionRef = useRef<HTMLButtonElement | null>(null)
+  const recordRowFocus = useRowFocusRecovery(regionRef, newCorporateActionRef, isLoading)
+
+  const confirmDelete = () => {
+    if (!confirmingDelete) return
+    deleteCorporateAction(confirmingDelete.id)
+    setConfirmingDelete(null)
+  }
 
   if (isLoading) {
     return <LoadingState />
@@ -163,7 +180,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
   return (
     <div className="corporate-actions-tab" ref={containerRef}>
       <div className="corporate-actions-tab__toolbar">
-        <Button appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
+        <Button ref={newCorporateActionRef} appearance="primary" icon={<AddRegular />} onClick={showNewForm}>
           New corporate action
         </Button>
       </div>
@@ -204,7 +221,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
           No corporate actions yet — nothing has changed this holding through a split, merger, or spin-off.
         </p>
       ) : (
-        <div className="corporate-actions-tab__table-wrapper">
+        <div ref={regionRef} className="corporate-actions-tab__table-wrapper" onFocus={recordRowFocus}>
           <Table className="corporate-actions-tab__table data-table">
             <TableHeader>
               <TableRow>
@@ -233,8 +250,9 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
                   record={record}
                   affectedAssetName={affectedAssetName}
                   isHighlighted={record.id === highlightedId}
+                  isDeleting={deletingId === record.id}
                   onEdit={showEditForm}
-                  onDelete={confirmAndDelete}
+                  onDelete={setConfirmingDelete}
                 />
               ))}
             </TableBody>
@@ -242,7 +260,16 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
         </div>
       )}
 
-      {deleteError && <p className="corporate-actions-tab__delete-error">{deleteError}</p>}
+      <ActionErrorAlert message={deleteError} />
+
+      {confirmingDelete && (
+        <ConfirmDeleteDialog
+          entityLabel="Corporate action"
+          message={`Delete the ${corporateActionName(confirmingDelete, affectedAssetName)}? This cannot be undone.`}
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmingDelete(null)}
+        />
+      )}
     </div>
   )
 }
