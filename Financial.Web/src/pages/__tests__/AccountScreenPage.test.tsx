@@ -1363,14 +1363,14 @@ describe('AccountScreenPage on a Settlement account', () => {
     expect(screen.getByLabelText(/^Description/)).toHaveValue('Mercado')
   })
 
-  it('closes the form and returns focus to Add entry on Cancel', async () => {
+  it('closes the form and returns focus to New entry on Cancel', async () => {
     const user = await openMaeScreen()
     const addEntry = screen.getByRole('button', { name: 'New entry' })
     await user.click(addEntry)
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
-    expect(screen.queryByRole('form', { name: 'Add entry' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'New entry' })).not.toBeInTheDocument()
     expect(addEntry).toHaveFocus()
   })
 

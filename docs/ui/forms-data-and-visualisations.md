@@ -257,9 +257,9 @@ exactly ("Admin → CashFlow → Accounts") and Pots, the account type's name,
 keeps its capital. Validation, error, load- and save-failure and
 empty-state messages are full sentences ending with a full stop ("Date is
 required.", "No income recorded for this month."); short labels, button text,
-headings and brief status toasts ("Expense added") have none. Progress text
-and truncation use the single ellipsis character ("Saving…", "Move…"), never
-three full stops.
+headings and brief status toasts ("Expense added") have none. Progress text,
+truncation and a button that opens a further step use the single ellipsis
+character ("Saving…", "Move…"), never three full stops.
 
 Do not let the form re-title itself into different wording once open (e.g.
 a "New transfer" trigger opening a form titled "Move money") — the trigger's
