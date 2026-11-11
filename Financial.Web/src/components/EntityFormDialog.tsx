@@ -8,8 +8,10 @@ import {
   MessageBar,
   MessageBarBody,
 } from '@fluentui/react-components'
+import DiscardChangesDialog from './DiscardChangesDialog'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
 
 const EDITABLE_FIELD =
   'input:not([type="hidden"]):not([readonly]):not([disabled]), select:not([disabled]), textarea:not([readonly]):not([disabled])'
@@ -19,7 +21,8 @@ interface EntityFormDialogProps {
   saveLabel?: string
   error: string | null
   isSaving: boolean
-  canSave: boolean
+  canSave?: boolean
+  isDirty?: boolean
   onSave: () => void
   onCancel: () => void
   children: ReactNode
@@ -30,7 +33,8 @@ export default function EntityFormDialog({
   saveLabel = 'Save',
   error,
   isSaving,
-  canSave,
+  canSave = true,
+  isDirty = false,
   onSave,
   onCancel,
   children,
@@ -38,6 +42,8 @@ export default function EntityFormDialog({
   const styles = useFormPanelStyles()
   const errorBar = useRef<HTMLDivElement | null>(null)
   const content = useRef<HTMLDivElement | null>(null)
+  const discardPrompt = useDiscardPrompt(isDirty)
+  const [saveAttempts, setSaveAttempts] = useState(0)
 
   const [opener] = useState(() => document.activeElement as HTMLElement | null)
 
@@ -53,6 +59,11 @@ export default function EntityFormDialog({
   }, [])
 
   useEffect(() => {
+    if (saveAttempts === 0 || content.current?.contains(document.activeElement)) return
+    content.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+  }, [saveAttempts])
+
+  useEffect(() => {
     if (!error) return
     errorBar.current?.scrollIntoView?.({ block: 'nearest' })
     errorBar.current?.focus()
@@ -60,30 +71,43 @@ export default function EntityFormDialog({
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (canSave) onSave()
+    if (!canSave || isSaving) return
+    onSave()
+    setSaveAttempts((attempts) => attempts + 1)
+  }
+
+  const requestClose = () => {
+    if (!isSaving) discardPrompt.confirmDiscard(onCancel)
   }
 
   return (
-    <Dialog open onOpenChange={(_, data) => { if (!data.open && !isSaving) onCancel() }}>
-      <DialogSurface aria-describedby={undefined}>
-        <form noValidate onSubmit={submit}>
-          <DialogBody>
-            <DialogTitle>{title}</DialogTitle>
-            <DialogContent ref={content}>
-              <fieldset disabled={isSaving} className={styles.savingFieldset}>
-                {children}
-              </fieldset>
+    <>
+      <Dialog open onOpenChange={(_, data) => { if (!data.open) requestClose() }}>
+        <DialogSurface aria-describedby={undefined}>
+          <form noValidate onSubmit={submit}>
+            <DialogBody>
+              <DialogTitle>{title}</DialogTitle>
+              <DialogContent ref={content}>
+                <fieldset disabled={isSaving} className={styles.savingFieldset}>
+                  {children}
+                </fieldset>
 
-              {error && (
-                <MessageBar ref={errorBar} role="alert" intent="error" tabIndex={-1}>
-                  <MessageBarBody>{error}</MessageBarBody>
-                </MessageBar>
-              )}
-            </DialogContent>
-            <FormSaveActions saveLabel={saveLabel} isSaving={isSaving} isSaveDisabled={!canSave} onCancel={onCancel} />
-          </DialogBody>
-        </form>
-      </DialogSurface>
-    </Dialog>
+                {error && (
+                  <MessageBar ref={errorBar} role="alert" intent="error" tabIndex={-1}>
+                    <MessageBarBody>{error}</MessageBarBody>
+                  </MessageBar>
+                )}
+              </DialogContent>
+              <FormSaveActions saveLabel={saveLabel} isSaving={isSaving} isSaveDisabled={!canSave} onCancel={requestClose} />
+            </DialogBody>
+          </form>
+        </DialogSurface>
+      </Dialog>
+      <DiscardChangesDialog
+        open={discardPrompt.isPromptOpen}
+        onKeepEditing={discardPrompt.keepEditing}
+        onDiscard={discardPrompt.discard}
+      />
+    </>
   )
 }

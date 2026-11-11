@@ -3,6 +3,7 @@ import { Field, Input, Select, Textarea } from '@fluentui/react-components'
 import type { RecurringBillDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 
 const AREA_OPTIONS = ['Brasil', 'UK']
 const STATUS_OPTIONS = ['Unset', 'Scheduled', 'Paid']
@@ -39,6 +40,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
   )
   const [status, setStatus] = useState(recurringBill?.status ?? STATUS_OPTIONS[0])
   const { isSaving, error, submit } = useDialogSubmit('The recurring bill could not be saved.')
+  const form = useEntityForm({ dueDay, description, value, area, note, nitNumber, minimumWageValue, status })
 
   const parsedDueDay = Number(dueDay)
   const parsedValue = Number(value)
@@ -50,9 +52,10 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
   const descriptionError = trimmedDescription.length === 0 ? 'Description is required.' : ''
   const valueError = value.trim().length === 0 || Number.isNaN(parsedValue) ? 'Value must be a number.' : ''
 
-  const canSubmit = !dueDayError && !descriptionError && !valueError && !isSaving
+  const canSubmit = !dueDayError && !descriptionError && !valueError
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(() =>
       onSubmit({
@@ -74,15 +77,15 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       saveLabel={isEditing ? 'Save' : 'Add recurring bill'}
       error={error}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >
       <Field
         label="Due day"
         required
-        validationState={dueDayError ? 'error' : 'none'}
-        validationMessage={dueDayError}
+        validationState={form.shown(dueDayError) ? 'error' : 'none'}
+        validationMessage={form.shown(dueDayError)}
       >
         <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
       </Field>
@@ -90,8 +93,8 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       <Field
         label="Description"
         required
-        validationState={descriptionError ? 'error' : 'none'}
-        validationMessage={descriptionError}
+        validationState={form.shown(descriptionError) ? 'error' : 'none'}
+        validationMessage={form.shown(descriptionError)}
       >
         <Input value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
@@ -99,8 +102,8 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       <Field
         label="Value"
         required
-        validationState={valueError ? 'error' : 'none'}
-        validationMessage={valueError}
+        validationState={form.shown(valueError) ? 'error' : 'none'}
+        validationMessage={form.shown(valueError)}
       >
         <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} />
       </Field>

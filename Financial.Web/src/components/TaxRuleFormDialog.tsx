@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Field, Input, MessageBar, MessageBarBody, Select, Textarea } from '@fluentui/react-components'
+import { Field, Input, Select, Textarea } from '@fluentui/react-components'
 import type { TaxRuleDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 
 const JURISDICTIONS = ['BR', 'UK']
 const EVENT_CATEGORIES = ['CapitalGain', 'Dividend', 'Interest', 'SecuritiesLendingIncome']
@@ -32,18 +33,20 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
   const [effectiveFrom, setEffectiveFrom] = useState(taxRule?.effectiveFrom ?? '')
   const [effectiveTo, setEffectiveTo] = useState(taxRule?.effectiveTo ?? '')
   const { isSaving, error, submit } = useDialogSubmit('The tax rule could not be saved.')
+  const form = useEntityForm({ jurisdiction, eventCategory, label, description, effectiveFrom, effectiveTo })
 
   const trimmedLabel = label.trim()
-  const validationMessage = trimmedLabel.length === 0
-    ? 'Label is required.'
-    : effectiveFrom.length === 0
+  const labelError = trimmedLabel.length === 0 ? 'Label is required.' : ''
+  const effectiveFromError =
+    effectiveFrom.length === 0
       ? 'Effective from is required.'
       : effectiveTo.length > 0 && effectiveFrom >= effectiveTo
         ? 'Effective from must be before effective to.'
         : ''
-  const canSubmit = validationMessage.length === 0 && !isSaving
+  const canSubmit = !labelError && !effectiveFromError
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(async () => {
       await onSubmit(jurisdiction, eventCategory, trimmedLabel, description, effectiveFrom, effectiveTo === '' ? null : effectiveTo)
@@ -57,7 +60,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
       saveLabel={isEditing ? 'Save' : 'Add tax rule'}
       error={error}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >
@@ -94,8 +97,8 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           <Field
             label="Label"
             required
-            validationState={trimmedLabel.length === 0 ? 'error' : 'none'}
-            validationMessage={trimmedLabel.length === 0 ? 'Label is required.' : ''}
+            validationState={form.shown(labelError) ? 'error' : 'none'}
+            validationMessage={form.shown(labelError)}
           >
             <Input value={label} onChange={(e) => setLabel(e.target.value)} />
           </Field>
@@ -107,7 +110,12 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           </Field>
         </div>
 
-        <Field label="Effective from" required>
+        <Field
+          label="Effective from"
+          required
+          validationState={form.shown(effectiveFromError) ? 'error' : 'none'}
+          validationMessage={form.shown(effectiveFromError)}
+        >
           <Input
             type="date"
             value={effectiveFrom}
@@ -123,12 +131,6 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           />
         </Field>
       </div>
-
-      {validationMessage && trimmedLabel.length > 0 && (
-        <MessageBar intent="error">
-          <MessageBarBody>{validationMessage}</MessageBarBody>
-        </MessageBar>
-      )}
     </EntityFormDialog>
   )
 }

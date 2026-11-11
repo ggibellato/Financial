@@ -74,16 +74,22 @@ describe('AssetFormDialog', () => {
     expect(screen.getByLabelText('Portfolio')).toHaveAttribute('readonly')
   })
 
-  it('disables Save and shows a validation message for an invalid ISIN format', () => {
+  it('shows the ISIN format message after Save and does not submit', async () => {
+    const onSubmit = vi.fn()
     render(
-      <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={vi.fn()} />,
+      <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={onSubmit} />,
     )
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'NEWASSET' } })
     fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
 
     fireEvent.change(screen.getByLabelText('ISIN'), { target: { value: 'NOT-AN-ISIN' } })
+    expect(screen.queryByText(/^ISIN must be/)).not.toBeInTheDocument()
 
-    expect(screen.getByRole('button', { name: 'Add asset' })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: 'Add asset' }))
+
+    expect(await screen.findByText(/^ISIN must be/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByLabelText('ISIN')).toHaveFocus())
+    expect(onSubmit).not.toHaveBeenCalled()
   })
 
   it('a blank ISIN is valid (optional field)', () => {

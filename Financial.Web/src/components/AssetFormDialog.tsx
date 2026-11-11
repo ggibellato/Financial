@@ -4,6 +4,7 @@ import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { isValidIsin } from '../utils/validators'
 
@@ -54,6 +55,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   const [localTypeCode, setLocalTypeCode] = useState(asset?.localTypeCode ?? '')
   const [assetClass, setAssetClass] = useState<string>(asset?.class ?? 'Unknown')
   const { isSaving, error, failure, submit } = useDialogSubmit('The asset could not be saved.')
+  const form = useEntityForm({ brokerName, portfolioName, name, isin, exchange, ticker, country, localTypeCode, assetClass })
 
   const brokerPortfolios = portfolios.filter((p) => p.brokerName === brokerName)
 
@@ -66,7 +68,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, JSON.stringify([brokerName, portfolioName, trimmedName]))
   const trimmedIsin = isin.trim()
   const nameValidationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
-  const nameMessage = nameValidationMessage || nameError
+  const nameMessage = form.shown(nameValidationMessage) || nameError
   const brokerValidationMessage = !isEditing && brokerName.length === 0 ? 'A broker is required.' : ''
   const portfolioValidationMessage = !isEditing && portfolioName.length === 0 ? 'A portfolio is required.' : ''
   const isinValidationMessage =
@@ -77,10 +79,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
     nameValidationMessage.length === 0 &&
     brokerValidationMessage.length === 0 &&
     portfolioValidationMessage.length === 0 &&
-    isinValidationMessage.length === 0 &&
-    !isSaving
+    isinValidationMessage.length === 0
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(() =>
       onSubmit({
@@ -103,7 +105,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
       saveLabel={isEditing ? 'Save' : 'Add asset'}
       error={summaryError}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >
@@ -121,8 +123,8 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
           <Field
             label="Broker"
             required
-            validationState={brokerValidationMessage ? 'error' : 'none'}
-            validationMessage={brokerValidationMessage}
+            validationState={form.shown(brokerValidationMessage) ? 'error' : 'none'}
+            validationMessage={form.shown(brokerValidationMessage)}
           >
             <Select value={brokerName} onChange={(e) => handleBrokerChange(e.target.value)}>
               {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
@@ -137,8 +139,8 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
           <Field
             label="Portfolio"
             required
-            validationState={portfolioValidationMessage ? 'error' : 'none'}
-            validationMessage={portfolioValidationMessage}
+            validationState={form.shown(portfolioValidationMessage) ? 'error' : 'none'}
+            validationMessage={form.shown(portfolioValidationMessage)}
           >
             <Select value={portfolioName} onChange={(e) => setPortfolioName(e.target.value)} disabled={brokerPortfolios.length === 0}>
               <option value="">
@@ -165,8 +167,8 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
 
       <Field
         label="ISIN"
-        validationState={isinValidationMessage ? 'error' : 'none'}
-        validationMessage={isinValidationMessage}
+        validationState={form.shown(isinValidationMessage) ? 'error' : 'none'}
+        validationMessage={form.shown(isinValidationMessage)}
       >
         <Input value={isin} onChange={(e) => setIsin(e.target.value)} />
       </Field>

@@ -3,6 +3,7 @@ import { Field, Input, Switch } from '@fluentui/react-components'
 import type { CategoryDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
+import { useEntityForm } from '../hooks/useEntityForm'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 
 interface CategoryFormDialogProps {
@@ -18,14 +19,16 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
   const [isInvestment, setIsInvestment] = useState(category?.isInvestment ?? false)
   const [isTithe, setIsTithe] = useState(category?.isTithe ?? false)
   const { isSaving, error, failure, submit } = useDialogSubmit('The category could not be saved.')
+  const form = useEntityForm({ name, active, isInvestment, isTithe })
 
   const trimmedName = name.trim()
   const { nameRef, nameError, summaryError } = useDuplicateNameField(failure, error, trimmedName)
   const validationMessage = trimmedName.length === 0 ? 'Name is required.' : ''
-  const nameMessage = validationMessage || nameError
-  const canSubmit = validationMessage.length === 0 && !isSaving
+  const nameMessage = form.shown(validationMessage) || nameError
+  const canSubmit = validationMessage.length === 0
 
   const handleSubmit = () => {
+    form.revealValidation()
     if (!canSubmit) return
     void submit(() => onSubmit(trimmedName, active, isInvestment, isTithe))
   }
@@ -36,7 +39,7 @@ export default function CategoryFormDialog({ category, onCancel, onSubmit }: Cat
       saveLabel={isEditing ? 'Save' : 'Add category'}
       error={summaryError}
       isSaving={isSaving}
-      canSave={canSubmit}
+      isDirty={form.isDirty}
       onSave={handleSubmit}
       onCancel={onCancel}
     >

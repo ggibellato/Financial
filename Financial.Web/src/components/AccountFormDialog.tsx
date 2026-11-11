@@ -2,12 +2,10 @@ import { useId, useRef, useState } from 'react'
 import { Checkbox, Field, FieldContextProvider, InfoLabel, Input, Select, Switch } from '@fluentui/react-components'
 import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
-import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
 import ReadOnlyInput from './ReadOnlyInput'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
-import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { todayIsoDate } from '../utils/formatters'
@@ -157,9 +155,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
   const categoryRef = useRef<FieldControl>(null)
   const openingBalanceRef = useRef<FieldControl>(null)
   const balanceStartDateRef = useRef<FieldControl>(null)
-  const discardPrompt = useDiscardPrompt(
-    hasChangedFields(values, initial, FORM_FIELDS) || values.currencies.join() !== initial.currencies.join(),
-  )
+  const isDirty = hasChangedFields(values, initial, FORM_FIELDS) || values.currencies.join() !== initial.currencies.join()
 
   const template = templates.find((candidate) => candidate.name === values.templateName)
   const capabilities = template?.capabilities ?? []
@@ -238,9 +234,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     void submit(() => onSubmit(toRequest()))
   }
 
-  const requestClose = () => {
-    if (!isSaving) discardPrompt.confirmDiscard(onCancel)
-  }
 
   const hasCategoryChoices = selectableCategories.length > 0
   const categoryHint = !hasCategoryChoices
@@ -258,9 +251,9 @@ export default function AccountFormDialog({ account, templates, categories, onCa
       saveLabel={isEditing ? 'Save' : 'Add account'}
       error={summaryError}
       isSaving={isSaving}
-      canSave={!isSaving}
+      isDirty={isDirty}
       onSave={handleSave}
-      onCancel={requestClose}
+      onCancel={onCancel}
     >
       <Field
         label="Template"
@@ -433,12 +426,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           <Switch checked={values.isActive} onChange={(_, data) => setField('isActive', data.checked)} />
         </Field>
       )}
-
-      <DiscardChangesDialog
-        open={discardPrompt.isPromptOpen}
-        onKeepEditing={discardPrompt.keepEditing}
-        onDiscard={discardPrompt.discard}
-      />
     </EntityFormDialog>
   )
 }

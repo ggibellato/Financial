@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import type { BrokerDto, PortfolioDto } from '../../api/types'
@@ -142,13 +142,19 @@ const handlers = (overrides: Partial<Handlers> = {}): Handlers => ({
 })
 
 describe('form dialog contract: invalid input', () => {
-  it.each(CASES)('$name disables the confirm button and shows a validation message', ({ renderDialog, makeInvalid, validationMessage, saveLabel }) => {
-    renderDialog(handlers())
+  it.each(CASES)('$name shows a validation message only after Save, focuses the invalid field and does not submit', async ({ renderDialog, makeInvalid, validationMessage, saveLabel }) => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    renderDialog(handlers({ onSubmit }))
 
     makeInvalid()
+    expect(screen.queryByText(validationMessage)).not.toBeInTheDocument()
 
-    expect(screen.getByText(validationMessage)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: saveLabel })).toBeDisabled()
+    fireEvent.click(screen.getByRole('button', { name: saveLabel }))
+
+    expect(await screen.findByText(validationMessage)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: saveLabel })).toBeEnabled()
+    expect(onSubmit).not.toHaveBeenCalled()
+    await waitFor(() => expect(document.activeElement).toHaveAttribute('aria-invalid', 'true'))
   })
 })
 
@@ -185,6 +191,19 @@ describe('form dialog contract: cancel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
+    expect(onCancel).toHaveBeenCalled()
+  })
+
+  it.each(CASES)('$name asks before discarding a change, and closes only after Discard', async ({ renderDialog, fillValid }) => {
+    const onCancel = vi.fn()
+    renderDialog(handlers({ onCancel }))
+    fillValid()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+    expect(onCancel).not.toHaveBeenCalled()
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Discard', hidden: true }))
     expect(onCancel).toHaveBeenCalled()
   })
 })
