@@ -7,5 +7,5 @@ export function renderWithSelectedNode(ui: ReactElement, node: SelectedNode, sco
   const { wrapper, setNode } = createSelectedNodeWrapper(scope)
   const result = render(ui, { wrapper })
   setNode(node)
-  return result
+  return { ...result, setNode }
 }

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -677,6 +677,23 @@ describe('TransactionsTab', () => {
     await confirmDelete(BUY_NAME)
 
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Edit transaction', hidden: true })).not.toBeInTheDocument())
+  })
+
+  it('keeps_a_new_form_open_when_a_delete_started_on_another_asset_finishes_late', async () => {
+    let finishDelete: (asset: AssetDetailsDto) => void = () => {}
+    deleteTransactionMock.mockReturnValue(new Promise((resolve) => (finishDelete = resolve)))
+    getAssetDetailsMock.mockResolvedValue(assetWith([TRANSACTION_BUY]))
+    const { setNode } = renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
+    await screen.findByRole('table')
+    await confirmDelete(BUY_NAME)
+
+    setNode({ ...ASSET_NODE, assetName: 'TAEE3' })
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledTimes(2))
+    await screen.findByRole('table')
+    await openNewForm()
+    await act(async () => finishDelete(assetWith([])))
+
+    expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
   })
 
   it('moves_focus_to_the_previous_row_delete_after_deleting_the_last_row', async () => {

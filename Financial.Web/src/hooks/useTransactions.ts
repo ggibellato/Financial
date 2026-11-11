@@ -248,7 +248,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS': {
-      const deletedRowWasBeingEdited = state.editingId === state.deletingId
+      const deletedRowWasBeingEdited = state.deletingId !== null && state.editingId === state.deletingId
       return {
         ...state,
         ...(deletedRowWasBeingEdited ? BLANK_FORM : {}),

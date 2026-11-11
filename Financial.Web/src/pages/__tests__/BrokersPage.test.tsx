@@ -251,4 +251,3 @@ describe('BrokersPage', () => {
 })
 
 const INTER: BrokerDto = { name: 'Inter', currency: 'BRL', status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' }
-
