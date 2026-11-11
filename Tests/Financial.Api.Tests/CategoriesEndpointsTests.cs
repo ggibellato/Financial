@@ -71,12 +71,14 @@ public class CategoriesEndpointsTests : ApiEndpointTests
         category.Id.Should().NotBe(Guid.Empty);
     }
 
-    [Fact]
-    public async Task CreateCategory_DuplicateName_ReturnsConflictWithMessage()
+    [Theory]
+    [InlineData("Mercado")]
+    [InlineData("mercado")]
+    public async Task CreateCategory_DuplicateNameInAnyCase_ReturnsConflictWithMessage(string name)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/categories", new CategoryCreateDTO
         {
-            Name = "Mercado",
+            Name = name,
             Active = true,
             IsInvestment = false,
             IsTithe = false
@@ -84,7 +86,7 @@ public class CategoriesEndpointsTests : ApiEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Mercado").And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
+        body.Should().Contain(name).And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

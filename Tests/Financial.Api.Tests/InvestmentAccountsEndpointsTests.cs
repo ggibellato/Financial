@@ -62,19 +62,21 @@ public class InvestmentAccountsEndpointsTests : ApiEndpointTests
         account.Id.Should().NotBe(Guid.Empty);
     }
 
-    [Fact]
-    public async Task CreateInvestmentAccount_DuplicateName_ReturnsConflictWithMessage()
+    [Theory]
+    [InlineData("ChaseSave")]
+    [InlineData("chasesave")]
+    public async Task CreateInvestmentAccount_DuplicateNameInAnyCase_ReturnsConflictWithMessage(string name)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/investment-accounts", new InvestmentAccountCreateDTO
         {
-            Name = "ChaseSave",
+            Name = name,
             IsActive = true,
             IsLiability = false
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("ChaseSave").And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
+        body.Should().Contain(name).And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

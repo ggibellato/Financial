@@ -19,16 +19,29 @@ public class PortfolioTests
         portfolio.Assets.Should().ContainSingle().Which.Should().Be(asset);
     }
 
-    [Fact]
-    public void RegisterAsset_WithDuplicateName_Throws()
+    [Theory]
+    [InlineData("Asset A")]
+    [InlineData("asset a")]
+    [InlineData("ASSET A")]
+    public void RegisterAsset_WithDuplicateNameInAnyCase_Throws(string name)
     {
         var portfolio = Broker.Create("Broker A", "USD").AddPortfolio("Default");
         portfolio.RegisterAsset(Asset.Create("Asset A", "ISIN123", "NYSE", "AAA"));
 
-        var act = () => portfolio.RegisterAsset(Asset.Create("Asset A", "ISIN456", "LSE", "BBB"));
+        var act = () => portfolio.RegisterAsset(Asset.Create(name, "ISIN456", "LSE", "BBB"));
 
         act.Should().Throw<InvestmentDuplicateNameException>()
-            .WithMessage("*already has an asset named \"Asset A\"*");
+            .WithMessage($"Portfolio \"Default\" already has an asset named \"{name}\".");
+        portfolio.Assets.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void FindAsset_IsStillAnExactNameLookup()
+    {
+        var portfolio = Broker.Create("Broker A", "USD").AddPortfolio("Default");
+        portfolio.RegisterAsset(Asset.Create("Asset A", "ISIN123", "NYSE", "AAA"));
+
+        portfolio.FindAsset("asset a").Should().BeNull();
     }
 
     [Fact]
@@ -64,17 +77,33 @@ public class PortfolioTests
     }
 
     [Fact]
-    public void UpdateAssetIdentity_ToAnotherAssetsName_Throws()
+    public void UpdateAssetIdentity_ToItsOwnNameInAnotherCase_Renames()
+    {
+        var portfolio = Broker.Create("Broker A", "USD").AddPortfolio("Default");
+        portfolio.RegisterAsset(Asset.Create("asset a", "ISIN123", "NYSE", "AAA"));
+
+        var updated = portfolio.UpdateAssetIdentity(
+            "asset a", "Asset A", "ISIN123", "NYSE", "AAA", CountryCode.Unknown, "", GlobalAssetClass.Unknown);
+
+        updated.Name.Should().Be("Asset A");
+    }
+
+    [Theory]
+    [InlineData("Asset B")]
+    [InlineData("asset b")]
+    [InlineData("ASSET B")]
+    public void UpdateAssetIdentity_ToAnotherAssetsNameInAnyCase_Throws(string newName)
     {
         var portfolio = Broker.Create("Broker A", "USD").AddPortfolio("Default");
         portfolio.RegisterAsset(Asset.Create("Asset A", "ISIN123", "NYSE", "AAA"));
         portfolio.RegisterAsset(Asset.Create("Asset B", "ISIN456", "NYSE", "BBB"));
 
         var act = () => portfolio.UpdateAssetIdentity(
-            "Asset A", "Asset B", "ISIN123", "NYSE", "AAA", CountryCode.Unknown, "", GlobalAssetClass.Unknown);
+            "Asset A", newName, "ISIN123", "NYSE", "AAA", CountryCode.Unknown, "", GlobalAssetClass.Unknown);
 
         act.Should().Throw<InvestmentDuplicateNameException>()
-            .WithMessage("*already has an asset named \"Asset B\"*");
+            .WithMessage($"Portfolio \"Default\" already has an asset named \"{newName}\".");
+        portfolio.FindAsset("Asset A").Should().NotBeNull();
     }
 
     [Fact]

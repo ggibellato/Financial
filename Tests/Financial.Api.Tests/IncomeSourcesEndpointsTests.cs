@@ -70,19 +70,21 @@ public class IncomeSourcesEndpointsTests : ApiEndpointTests
         source.Id.Should().NotBe(Guid.Empty);
     }
 
-    [Fact]
-    public async Task CreateIncomeSource_DuplicateName_ReturnsConflictWithMessage()
+    [Theory]
+    [InlineData("Gleison")]
+    [InlineData("gleison")]
+    public async Task CreateIncomeSource_DuplicateNameInAnyCase_ReturnsConflictWithMessage(string name)
     {
         var response = await Client.PostAsJsonAsync("/api/v1/financial/income-sources", new IncomeSourceCreateDTO
         {
-            Name = "Gleison",
+            Name = name,
             Group = "Salary",
             IsActive = true
         });
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
         var body = await response.Content.ReadAsStringAsync();
-        body.Should().Contain("Gleison").And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
+        body.Should().Contain(name).And.Contain("already exists").And.Contain("\"code\":\"duplicateName\"");
     }
 
     [Fact]

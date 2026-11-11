@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Financial.Investment.Domain.Exceptions;
 
@@ -52,7 +53,7 @@ public class Portfolio
     /// <exception cref="InvestmentRuleViolationException">An asset by that name already exists in this portfolio.</exception>
     public void RegisterAsset(Asset asset)
     {
-        if (FindAsset(asset.Name) is not null)
+        if (HasAssetNamed(asset.Name))
         {
             throw new InvestmentDuplicateNameException(
                 $"Portfolio \"{Name}\" already has an asset named \"{asset.Name}\".");
@@ -83,7 +84,7 @@ public class Portfolio
         var asset = FindAsset(currentName)
             ?? throw new KeyNotFoundException($"Asset \"{currentName}\" was not found in portfolio \"{Name}\".");
 
-        if (name != currentName && FindAsset(name) is not null)
+        if (HasAssetNamed(name, excluding: asset))
         {
             throw new InvestmentDuplicateNameException(
                 $"Portfolio \"{Name}\" already has an asset named \"{name}\".");
@@ -95,6 +96,9 @@ public class Portfolio
 
     /// <summary>Matches by name ordinally, the same way the repository addresses an asset.</summary>
     public Asset? FindAsset(string name) => _assets.FirstOrDefault(asset => asset.Name == name);
+
+    public bool HasAssetNamed(string name, Asset? excluding = null) =>
+        _assets.Any(asset => !ReferenceEquals(asset, excluding) && string.Equals(asset.Name, name, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Detaches an asset without destroying it, so a caller can attach it elsewhere. Deliberately

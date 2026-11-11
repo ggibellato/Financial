@@ -226,17 +226,20 @@ public class IncomeSourceServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateIncomeSourceAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("Gleison")]
+    [InlineData("gleison")]
+    [InlineData("GLEISON")]
+    public async Task CreateIncomeSourceAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         _repository.IncomeSources.Add(IncomeSource.Create("Gleison", IncomeGroup.Salary));
-        var request = new IncomeSourceCreateDTO { Name = "Gleison", Group = "Salary", IsActive = true };
+        var request = new IncomeSourceCreateDTO { Name = name, Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.CreateIncomeSourceAsync(request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).WithMessage($"An income source named \"{name}\" already exists.");
             _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
@@ -322,21 +325,41 @@ public class IncomeSourceServiceTests
         }
     }
 
-    [Fact]
-    public async Task UpdateIncomeSourceAsync_WithDuplicateName_ThrowsAndWritesNothing()
+    [Theory]
+    [InlineData("Ariana")]
+    [InlineData("ariana")]
+    [InlineData("ARIANA")]
+    public async Task UpdateIncomeSourceAsync_WithDuplicateNameInAnyCase_ThrowsAndWritesNothing(string name)
     {
         var gleison = IncomeSource.Create("Gleison", IncomeGroup.Salary);
         var ariana = IncomeSource.Create("Ariana", IncomeGroup.Salary);
         _repository.IncomeSources.Add(gleison);
         _repository.IncomeSources.Add(ariana);
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true };
+        var request = new IncomeSourceUpdateDTO { Name = name, Group = "Salary", IsActive = true };
 
         var act = async () => await _sut.UpdateIncomeSourceAsync(gleison.Id, request);
 
         using (new AssertionScope())
         {
-            await act.Should().ThrowAsync<DuplicateNameException>();
+            (await act.Should().ThrowAsync<DuplicateNameException>()).WithMessage($"An income source named \"{name}\" already exists.");
+            gleison.Name.Should().Be("Gleison");
             _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateIncomeSourceAsync_KeepingItsOwnNameInAnotherCase_Saves()
+    {
+        var gleison = IncomeSource.Create("gleison", IncomeGroup.Salary);
+        _repository.IncomeSources.Add(gleison);
+        var request = new IncomeSourceUpdateDTO { Name = "Gleison", Group = "Salary", IsActive = true };
+
+        await _sut.UpdateIncomeSourceAsync(gleison.Id, request);
+
+        using (new AssertionScope())
+        {
+            gleison.Name.Should().Be("Gleison");
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
     }
 

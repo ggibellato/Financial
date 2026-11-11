@@ -241,6 +241,23 @@ public class BrokerTests
     }
 
     [Fact]
+    public void MoveAsset_WhenDestinationHoldsThatNameInAnotherCase_IsRefusedAndChangesNothing()
+    {
+        var broker = CreateBrokerWithAsset(out _);
+        broker.AddPortfolio("ISA").AddAsset(Asset.Create("ASSET A", "ISIN999", "LSE", "ZZZ"));
+
+        var act = () => broker.MoveAsset("Default", "Asset A", "ISA");
+
+        act.Should().Throw<InvestmentDuplicateNameException>()
+            .WithMessage("Portfolio \"ISA\" already holds an asset named \"Asset A\".");
+        using (new AssertionScope())
+        {
+            broker.FindPortfolio("Default")!.Assets.Should().ContainSingle();
+            broker.FindPortfolio("ISA")!.Assets.Should().ContainSingle();
+        }
+    }
+
+    [Fact]
     public void MoveAsset_WhenANewNameDiffersOnlyByCase_IsRefusedRatherThanCreatingALookalike()
     {
         var broker = CreateBrokerWithAsset(out _);
@@ -266,16 +283,29 @@ public class BrokerTests
         }
     }
 
-    [Fact]
-    public void CreatePortfolio_WhenNameAlreadyExists_IsRefusedAndChangesNothing()
+    [Theory]
+    [InlineData("Default")]
+    [InlineData("default")]
+    [InlineData(" DEFAULT ")]
+    public void CreatePortfolio_WhenNameAlreadyExistsInAnyCase_IsRefusedAndChangesNothing(string name)
     {
         var broker = Broker.Create("Broker A", "USD");
         broker.CreatePortfolio("Default");
 
-        var act = () => broker.CreatePortfolio("Default");
+        var act = () => broker.CreatePortfolio(name);
 
-        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already has a portfolio named*");
+        act.Should().Throw<InvestmentDuplicateNameException>()
+            .WithMessage($"Broker \"Broker A\" already has a portfolio named \"{name.Trim()}\".");
         broker.Portfolios.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void FindPortfolio_IsStillAnExactNameLookup()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.CreatePortfolio("Default");
+
+        broker.FindPortfolio("default").Should().BeNull();
     }
 
     [Theory]
@@ -338,15 +368,34 @@ public class BrokerTests
     }
 
     [Fact]
-    public void RenamePortfolio_WhenNewNameAlreadyExists_IsRefusedAndChangesNothing()
+    public void RenamePortfolio_ToItsOwnNameInAnotherCase_Renames()
+    {
+        var broker = Broker.Create("Broker A", "USD");
+        broker.AddPortfolio("default");
+
+        var renamed = broker.RenamePortfolio("default", "Default");
+
+        using (new AssertionScope())
+        {
+            renamed.Name.Should().Be("Default");
+            broker.Portfolios.Should().ContainSingle();
+        }
+    }
+
+    [Theory]
+    [InlineData("Growth")]
+    [InlineData("growth")]
+    [InlineData("GROWTH")]
+    public void RenamePortfolio_WhenNewNameAlreadyExistsInAnyCase_IsRefusedAndChangesNothing(string newName)
     {
         var broker = Broker.Create("Broker A", "USD");
         broker.AddPortfolio("Default");
         broker.AddPortfolio("Growth");
 
-        var act = () => broker.RenamePortfolio("Default", "Growth");
+        var act = () => broker.RenamePortfolio("Default", newName);
 
-        act.Should().Throw<InvestmentDuplicateNameException>().WithMessage("*already has a portfolio named*");
+        act.Should().Throw<InvestmentDuplicateNameException>()
+            .WithMessage($"Broker \"Broker A\" already has a portfolio named \"{newName}\".");
         broker.FindPortfolio("Default").Should().NotBeNull();
     }
 
