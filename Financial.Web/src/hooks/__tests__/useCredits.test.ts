@@ -5,6 +5,7 @@ import type { AssetDetailsDto, CreditDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useCredits } from '../useCredits'
 import { pinDate } from '../../test-utils/pinDate'
+import { deferred } from '../../test-utils/deferred'
 
 const {
   getAssetDetailsMock,
@@ -647,5 +648,125 @@ describe('useCredits', () => {
     expect(result.current.selectedMode).toBe('Stacked')
     act(() => result.current.setChartType('Line'))
     expect(result.current.selectedMode).toBe('Stacked')
+  })
+
+  describe('responses for a node the user has already left', () => {
+    const OTHER_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, name: 'TASA4', credits: [CREDIT_B] }
+    const LEFT_NODE_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, credits: [] }
+
+    async function renderOnAsset() {
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const hook = renderHook(() => useCredits(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(hook.result.current.credits).not.toHaveLength(0))
+      return { result: hook.result, setNode }
+    }
+
+    async function startPendingLoad() {
+      const pending = deferred<AssetDetailsDto>()
+      getAssetDetailsMock.mockReturnValueOnce(pending.promise)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => useCredits(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledOnce())
+      return { result, setNode, pending }
+    }
+
+    async function startPendingSave() {
+      getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+      const pending = deferred<AssetDetailsDto>()
+      addCreditMock.mockReturnValue(pending.promise)
+      const { result, setNode } = await renderOnAsset()
+      act(() => result.current.showNewForm())
+      act(() => {
+        result.current.setFormField('formDate', '2024-06-01')
+        result.current.setFormField('formValue', '50')
+      })
+      act(() => result.current.saveForm())
+      expect(addCreditMock).toHaveBeenCalledOnce()
+      return { result, setNode, pending }
+    }
+
+    async function startPendingDelete() {
+      getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+      const pending = deferred<AssetDetailsDto>()
+      deleteCreditMock.mockReturnValue(pending.promise)
+      const { result, setNode } = await renderOnAsset()
+      act(() => result.current.deleteCredit('aaa'))
+      expect(deleteCreditMock).toHaveBeenCalledOnce()
+      return { result, setNode, pending }
+    }
+
+    async function moveToOtherAssetWithNewFormOpen({ result, setNode }: Awaited<ReturnType<typeof startPendingLoad>>) {
+      getAssetDetailsMock.mockResolvedValue(OTHER_DETAILS)
+      setNode(ASSET_NODE_B)
+      await waitFor(() => expect(result.current.credits).toEqual([CREDIT_B]))
+      act(() => result.current.showNewForm())
+      act(() => result.current.setFormField('formValue', '7'))
+    }
+
+    function expectOtherAssetUntouched({ result }: Awaited<ReturnType<typeof startPendingLoad>>) {
+      expect(result.current.credits).toEqual([CREDIT_B])
+      expect(result.current.isFormVisible).toBe(true)
+      expect(result.current.formValue).toBe('7')
+      expect(result.current.isSaving).toBe(false)
+      expect(result.current.saveError).toBeNull()
+      expect(result.current.deletingId).toBeNull()
+      expect(result.current.deleteError).toBeNull()
+      expect(result.current.error).toBeNull()
+    }
+
+    it('ignores_a_late_load_success_for_the_previous_asset', async () => {
+      const started = await startPendingLoad()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.resolve(LEFT_NODE_DETAILS))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_load_failure_for_the_previous_asset', async () => {
+      const started = await startPendingLoad()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Load failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_save_success_for_the_previous_asset', async () => {
+      const started = await startPendingSave()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.resolve(LEFT_NODE_DETAILS))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_save_failure_for_the_previous_asset', async () => {
+      const started = await startPendingSave()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Save failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_delete_success_for_the_previous_asset', async () => {
+      const started = await startPendingDelete()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.resolve(LEFT_NODE_DETAILS))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_delete_failure_for_the_previous_asset', async () => {
+      const started = await startPendingDelete()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Delete failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('still_applies_a_delete_that_finishes_on_the_same_asset_after_a_form_was_opened', async () => {
+      const { result, pending } = await startPendingDelete()
+      act(() => result.current.showNewForm())
+
+      await act(async () => pending.resolve(LEFT_NODE_DETAILS))
+
+      expect(result.current.credits).toEqual([])
+      expect(result.current.deletingId).toBeNull()
+      expect(result.current.isFormVisible).toBe(true)
+    })
   })
 })

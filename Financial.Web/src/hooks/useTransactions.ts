@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type {
   AssetDetailsDto,
@@ -16,7 +16,7 @@ import { isAllocationExact } from '../utils/lotAllocation'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { createSelectionPrefsStore } from './selectionPrefsStore'
-import { useAsyncResource } from './useAsyncResource'
+import { useAsyncResource, useSelectionGuard } from './useAsyncResource'
 
 export type TransactionFormField =
   | 'formDate'
@@ -310,13 +310,7 @@ export interface TransactionsData {
 export function useTransactions(): TransactionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
-  const selectionGeneration = useRef(0)
-  const dispatchForCurrentSelection = useCallback(() => {
-    const generation = selectionGeneration.current
-    return (action: TransactionsAction) => {
-      if (generation === selectionGeneration.current) dispatch(action)
-    }
-  }, [])
+  const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
   const {
     data: typeEffects,
     error: typeEffectsError,
@@ -328,8 +322,7 @@ export function useTransactions(): TransactionsData {
   )
 
   useEffect(() => {
-    selectionGeneration.current += 1
-    const settle = dispatchForCurrentSelection()
+    const settle = beginSelection()
     if (!selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -374,7 +367,7 @@ export function useTransactions(): TransactionsData {
     } else {
       dispatch({ type: 'RESET' })
     }
-  }, [selectedNode, scope, state.retryCount, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const transactions = useMemo(() => state.asset?.transactions ?? [], [state.asset])
 

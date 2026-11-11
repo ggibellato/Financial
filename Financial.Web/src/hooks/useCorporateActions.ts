@@ -20,6 +20,7 @@ import { isAssetSelection } from '../utils/assetSelection'
 import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from '../utils/formatters'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { useAssetSearchOptions, type AssetSearchOptionsData } from './useAssetSearchOptions'
+import { useSelectionGuard } from './useAsyncResource'
 
 function pickAffectedAsset(
   a: AssetDetailsDto | null,
@@ -256,11 +257,13 @@ export interface CorporateActionsData {
 export function useCorporateActions(): CorporateActionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
   const targetAssetOptions = useAssetSearchOptions(
     (state.formType === 'Merger' || state.formType === 'SpinOff') && state.isFormVisible && !state.editingId,
   )
 
   useEffect(() => {
+    const settle = beginSelection()
     if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
@@ -270,11 +273,11 @@ export function useCorporateActions(): CorporateActionsData {
 
     void apiClient
       .getAssetDetails(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
+      .then((result) => settle({ type: 'FETCH_SUCCESS', payload: result }))
       .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load corporate actions') })
+        settle({ type: 'FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load corporate actions') })
       })
-  }, [selectedNode, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
@@ -340,6 +343,7 @@ export function useCorporateActions(): CorporateActionsData {
       const note = formNote.trim() === '' ? null : formNote
 
       dispatch({ type: 'SAVE_START' })
+      const settle = dispatchForCurrentSelection()
 
       const call = editingId
         ? apiClient.updateMerger({
@@ -374,9 +378,9 @@ export function useCorporateActions(): CorporateActionsData {
         .then((result: CorporateActionMergerResultDto) => {
           const resolved = pickAffectedAsset(result.source, result.target, selectedNode.assetName)
           if (resolved) {
-            dispatch({ type: 'SAVE_SUCCESS', payload: resolved })
+            settle({ type: 'SAVE_SUCCESS', payload: resolved })
           } else {
-            dispatch({
+            settle({
               type: 'SAVE_ERROR',
               payload: { message: 'Merger saved but the asset could not be refreshed — reload the page.', fields: {} },
             })
@@ -387,7 +391,7 @@ export function useCorporateActions(): CorporateActionsData {
           const fields: Partial<Record<CorporateActionFormField, string>> = isDuplicateName(err)
             ? { formTargetAsset: message }
             : {}
-          dispatch({ type: 'SAVE_ERROR', payload: { message, fields } })
+          settle({ type: 'SAVE_ERROR', payload: { message, fields } })
         })
       return
     }
@@ -417,6 +421,7 @@ export function useCorporateActions(): CorporateActionsData {
       }
 
       dispatch({ type: 'SAVE_START' })
+      const settle = dispatchForCurrentSelection()
 
       const note = formNote.trim() === '' ? null : formNote
 
@@ -453,9 +458,9 @@ export function useCorporateActions(): CorporateActionsData {
         .then((result: CorporateActionSpinOffResultDto) => {
           const resolved = pickAffectedAsset(result.parent, result.new, selectedNode.assetName)
           if (resolved) {
-            dispatch({ type: 'SAVE_SUCCESS', payload: resolved })
+            settle({ type: 'SAVE_SUCCESS', payload: resolved })
           } else {
-            dispatch({
+            settle({
               type: 'SAVE_ERROR',
               payload: { message: 'Spin-off saved but the asset could not be refreshed — reload the page.', fields: {} },
             })
@@ -466,7 +471,7 @@ export function useCorporateActions(): CorporateActionsData {
           const fields: Partial<Record<CorporateActionFormField, string>> = isDuplicateName(err)
             ? { formNewAsset: message }
             : {}
-          dispatch({ type: 'SAVE_ERROR', payload: { message, fields } })
+          settle({ type: 'SAVE_ERROR', payload: { message, fields } })
         })
       return
     }
@@ -496,6 +501,7 @@ export function useCorporateActions(): CorporateActionsData {
     }
 
     dispatch({ type: 'SAVE_START' })
+    const settle = dispatchForCurrentSelection()
 
     const base = {
       brokerName: selectedNode.brokerName,
@@ -509,20 +515,21 @@ export function useCorporateActions(): CorporateActionsData {
     const call = editingId ? apiClient.updateSplit({ ...base, id: editingId }) : apiClient.addSplit(base)
 
     void call
-      .then((result) => dispatch({ type: 'SAVE_SUCCESS', payload: result }))
+      .then((result) => settle({ type: 'SAVE_SUCCESS', payload: result }))
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'SAVE_ERROR',
           payload: { message: getErrorMessage(err, 'Failed to save corporate action'), fields: {} },
         })
       })
-  }, [selectedNode, state, targetAssetOptions.options])
+  }, [selectedNode, state, targetAssetOptions.options, dispatchForCurrentSelection])
 
   const deleteCorporateAction = useCallback(
     (id: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
       dispatch({ type: 'DELETE_START', payload: id })
+      const settle = dispatchForCurrentSelection()
       void apiClient
         .deleteCorporateAction({
           brokerName: selectedNode.brokerName,
@@ -530,15 +537,15 @@ export function useCorporateActions(): CorporateActionsData {
           assetName: selectedNode.assetName,
           id,
         })
-        .then((result) => dispatch({ type: 'DELETE_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'DELETE_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'DELETE_ERROR',
             payload: getErrorMessage(err, 'Failed to delete corporate action'),
           })
         })
     },
-    [selectedNode, state.deletingId],
+    [selectedNode, state.deletingId, dispatchForCurrentSelection],
   )
 
   return {
