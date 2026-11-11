@@ -10,6 +10,7 @@ import { getErrorMessage, parseValidatedNumber, toInputDate, todayIsoDate } from
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
 import { createSelectionPrefsStore } from './selectionPrefsStore'
+import { useSelectionGuard } from './useAsyncResource'
 
 export type PriceHistoryFormField = 'formDate' | 'formPrice'
 
@@ -184,8 +185,10 @@ export interface PriceHistoryData {
 export function usePriceHistory(): PriceHistoryData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
 
   useEffect(() => {
+    const settle = beginSelection()
     if (!isAssetSelection(selectedNode)) {
       dispatch({ type: 'RESET' })
       return
@@ -197,18 +200,18 @@ export function usePriceHistory(): PriceHistoryData {
     void apiClient
       .getAssetDetails(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
       .then((result) =>
-        dispatch({
+        settle({
           type: 'FETCH_SUCCESS',
           payload: { priceHistory: result.priceSnapshots, transactions: result.transactions },
         }),
       )
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'FETCH_ERROR',
           payload: getErrorMessage(err, 'Unable to load price history.'),
         })
       })
-  }, [selectedNode, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount, beginSelection])
 
   const entries = state.entries
 
@@ -271,6 +274,7 @@ export function usePriceHistory(): PriceHistoryData {
     }
 
     dispatch({ type: 'SAVE_START' })
+    const settle = dispatchForCurrentSelection()
 
     void apiClient
       .setAssetPrice({
@@ -284,24 +288,25 @@ export function usePriceHistory(): PriceHistoryData {
       })
       .then((result) => {
         setStoredDefault(DATE_KEY, formDate)
-        dispatch({
+        settle({
           type: 'SAVE_SUCCESS',
           payload: { priceHistory: result.priceSnapshots, transactions: result.transactions },
         })
       })
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'SAVE_ERROR',
           payload: { message: getErrorMessage(err, 'Failed to save price.'), fields: {} },
         })
       })
-  }, [selectedNode, state])
+  }, [selectedNode, state, dispatchForCurrentSelection])
 
   const deleteEntry = useCallback(
     (date: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingDate !== null) return
 
       dispatch({ type: 'DELETE_START', payload: date })
+      const settle = dispatchForCurrentSelection()
       void apiClient
         .deleteAssetPrice({
           brokerName: selectedNode.brokerName,
@@ -310,19 +315,19 @@ export function usePriceHistory(): PriceHistoryData {
           date,
         })
         .then((result) =>
-          dispatch({
+          settle({
             type: 'DELETE_SUCCESS',
             payload: { priceHistory: result.priceSnapshots, transactions: result.transactions },
           }),
         )
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'DELETE_ERROR',
             payload: getErrorMessage(err, 'Failed to delete price.'),
           })
         })
     },
-    [selectedNode, state.deletingDate],
+    [selectedNode, state.deletingDate, dispatchForCurrentSelection],
   )
 
   return {
