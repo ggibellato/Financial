@@ -8,19 +8,20 @@ const originalMatchMedia = window.matchMedia
 
 function renderNotice({ isFiltered = true, shownCount = 3, totalCount = 10, onClearFilters = vi.fn() } = {}) {
   const tableRef = createRef<HTMLTableElement>()
-  render(
+  const noticeShowing = (shown: number) => (
     <>
       <FilteredRowsNotice
         isFiltered={isFiltered}
-        shownCount={shownCount}
+        shownCount={shown}
         totalCount={totalCount}
         onClearFilters={onClearFilters}
         tableRef={tableRef}
       />
       <table ref={tableRef} tabIndex={-1} aria-label="Totals" />
-    </>,
+    </>
   )
-  return { onClearFilters }
+  const { rerender } = render(noticeShowing(shownCount))
+  return { onClearFilters, showCount: (shown: number) => rerender(noticeShowing(shown)) }
 }
 
 describe('FilteredRowsNotice', () => {
@@ -68,14 +69,10 @@ describe('FilteredRowsNotice', () => {
 
   it('keeps the same live region and updates its text when the filtered count changes', () => {
     mockMatchMedia(false)
-    const tableRef = createRef<HTMLTableElement>()
-    const notice = (shownCount: number) => (
-      <FilteredRowsNotice isFiltered shownCount={shownCount} totalCount={10} onClearFilters={vi.fn()} tableRef={tableRef} />
-    )
-    const { rerender } = render(notice(3))
+    const { showCount } = renderNotice()
     const liveRegion = screen.getByRole('status')
 
-    rerender(notice(5))
+    showCount(5)
 
     expect(screen.getByRole('status')).toBe(liveRegion)
     expect(liveRegion).toHaveTextContent('Filtered: 5 of 10 rows')
