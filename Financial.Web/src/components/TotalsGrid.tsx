@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import DataTableCell from './grid/DataTableCell'
+import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import SectionTotals from './SectionTotals'
@@ -15,25 +16,40 @@ interface TotalsGridColumn<T> {
   filterSlot?: ReactNode
 }
 
+interface TotalsGridFilter {
+  isFiltered: boolean
+  allRowCount: number
+  onClearFilters: () => void
+}
+
 interface TotalsGridProps<T> {
   label: string
   columns: TotalsGridColumn<T>[]
   rows: T[]
   rowKey: (row: T) => string
   footerItems: SectionTotalItem[]
-  /** True when `rows` has already been narrowed by an active column filter (used only to pick the empty-state message). */
-  isFiltered?: boolean
+  filter?: TotalsGridFilter
   emptyMessage: string
 }
 
-export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItems, isFiltered, emptyMessage }: TotalsGridProps<T>) {
+export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItems, filter, emptyMessage }: TotalsGridProps<T>) {
   const accessors = Object.fromEntries(columns.map((col) => [col.key, col.sortAccessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(rows, accessors)
+  const tableRef = useRef<HTMLTableElement>(null)
 
   return (
     <section className="monthly-page__section monthly-page__section--grid">
+      {filter && (
+        <FilteredRowsNotice
+          isFiltered={filter.isFiltered}
+          shownCount={rows.length}
+          totalCount={filter.allRowCount}
+          onClearFilters={filter.onClearFilters}
+          tableRef={tableRef}
+        />
+      )}
       <div className="monthly-page__table-scroll">
-        <Table className="monthly-page__table data-table" aria-label={label}>
+        <Table ref={tableRef} tabIndex={-1} className="monthly-page__table data-table" aria-label={label}>
           <TableHeader>
             <TableRow>
               {columns.map((col) => (
@@ -54,7 +70,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell className="data-table__cell--message" colSpan={columns.length}>
-                  {isFiltered ? 'No rows match the current filters' : emptyMessage}
+                  {filter?.isFiltered ? 'No rows match the current filters' : emptyMessage}
                 </TableCell>
               </TableRow>
             ) : (

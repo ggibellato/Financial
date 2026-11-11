@@ -1,8 +1,9 @@
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { AccountTransactionDto, MonthTransactionDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { mockMatchMedia } from '../../test/mockMatchMedia'
 import MonthTransactionsGrid from '../MonthTransactionsGrid'
 
 interface AccountFields {
@@ -282,5 +283,28 @@ describe('MonthTransactionsGrid', () => {
     renderGrid({ rows: [ROWS[1]] })
 
     expect(footer()).toHaveTextContent('1 row · Total -45.20 GBP')
+  })
+
+  describe('in the stacked narrow layout, where the header row is clipped', () => {
+    const originalMatchMedia = window.matchMedia
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    it('shows the filtered row count with a single Clear filters that focuses the grid', async () => {
+      mockMatchMedia(true)
+      renderGrid()
+
+      filterTo('Account', 'Itau')
+
+      expect(await screen.findByRole('status')).toHaveTextContent('Filtered: 1 of 7 rows')
+      fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+      expect(bodyRows()).toHaveLength(7)
+      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+      expect(screen.getByRole('table', { name: 'All transactions' })).toHaveFocus()
+    })
   })
 })

@@ -38,7 +38,7 @@ function formatAccumulated(card: AccountGroupMemberDto): string {
 }
 
 export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsGridProps) {
-  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered } =
+  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, clearFilters } =
     useColumnFilters(cards, FILTER_ACCESSORS)
   const isMultiCurrency = currencyTotals.length > 1
 
@@ -88,7 +88,7 @@ export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsG
         },
       ]}
       rows={filteredRows}
-      isFiltered={isColumnFiltered('card')}
+      filter={{ isFiltered: isColumnFiltered('card'), allRowCount: cards.length, onClearFilters: clearFilters }}
       rowKey={(card) => card.accountId}
       emptyMessage="No cards in the default group for this month"
       footerItems={currencyFooterItems(currencyTotals, FOOTER_FIGURES)}
