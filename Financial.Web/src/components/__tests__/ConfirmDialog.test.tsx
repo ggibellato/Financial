@@ -54,6 +54,17 @@ describe('ConfirmDialog', () => {
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled()
   })
 
+  it('moves focus to an error that appears after a failed confirm', async () => {
+    const dialog = (error: string | null) => (
+      <ConfirmDialog open title="Delete Expense" message="Delete this expense?" confirmLabel="Delete" cancelLabel="Cancel" error={error} onConfirm={vi.fn()} onCancel={vi.fn()} />
+    )
+    const { rerender } = render(dialog(null))
+
+    rerender(dialog('Could not delete. Check the connection and try again.'))
+
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Could not delete. Check the connection and try again.', hidden: true })).toHaveFocus())
+  })
+
   it('disables both buttons while busy and ignores Escape', () => {
     const { onCancel } = renderDialog({ isBusy: true })
 

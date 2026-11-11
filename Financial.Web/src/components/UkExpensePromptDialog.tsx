@@ -7,13 +7,12 @@ import {
   DialogSurface,
   DialogTitle,
   makeStyles,
-  MessageBar,
-  MessageBarBody,
   tokens,
 } from '@fluentui/react-components'
 import type { BankOption, CategoryDto, RecurringBillDto } from '../api/types'
 import type { ExpensePromptValues } from '../hooks/useMensais'
 import { SAVING_LABEL, todayIsoDate } from '../utils/formatters'
+import ActionErrorAlert from './ActionErrorAlert'
 import BillExpenseFields from './BillExpenseFields'
 import { billExpenseValuesFor, parseBillExpense, type BillExpenseField } from './billExpenseValues'
 import { useFormPanelStyles } from './formPanelStyles'
@@ -86,13 +85,7 @@ export default function UkExpensePromptDialog({
                 onFieldChange={setField}
               />
 
-              {error && (
-                <div className={styles.spanTwo}>
-                  <MessageBar intent="error">
-                    <MessageBarBody>{error}</MessageBarBody>
-                  </MessageBar>
-                </div>
-              )}
+              <ActionErrorAlert message={error} className={styles.spanTwo} />
             </div>
           </DialogContent>
           <div className={styles.actions}>
