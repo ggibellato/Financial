@@ -3,6 +3,7 @@ import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { FilterSummary } from '../../hooks/useColumnFilters'
 import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
+import { visuallyHidden } from '../../styles/visuallyHidden'
 
 const useStyles = makeStyles({
   notice: {
@@ -13,6 +14,7 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalM,
     marginBottom: tokens.spacingVerticalM,
   },
+  visuallyHidden,
 })
 
 interface FilteredRowsNoticeProps extends FilterSummary {
@@ -31,7 +33,9 @@ export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount,
 
   return (
     <div className={isShown ? styles.notice : undefined}>
-      <span role="status">{isShown && `Filtered: ${shownCount} of ${totalCount} ${totalCount === 1 ? 'row' : 'rows'}`}</span>
+      <span role="status" className={isStackedLayout ? undefined : styles.visuallyHidden}>
+        {isFiltered && `Filtered: ${shownCount} of ${totalCount} ${totalCount === 1 ? 'row' : 'rows'}`}
+      </span>
       {isShown && (
         <Button appearance="primary" onClick={clearFilters}>
           Clear filters

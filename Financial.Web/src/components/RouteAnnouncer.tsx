@@ -2,18 +2,12 @@ import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { makeStyles } from '@fluentui/react-components'
 import { findNavLocation } from '../navigation/navTree'
+import { visuallyHidden } from '../styles/visuallyHidden'
 
 const APP_NAME = 'Financial'
 
 const useRouteAnnouncerStyles = makeStyles({
-  visuallyHidden: {
-    position: 'absolute',
-    width: '1px',
-    height: '1px',
-    overflow: 'hidden',
-    clip: 'rect(0 0 0 0)',
-    whiteSpace: 'nowrap',
-  },
+  visuallyHidden,
 })
 
 export default function RouteAnnouncer() {

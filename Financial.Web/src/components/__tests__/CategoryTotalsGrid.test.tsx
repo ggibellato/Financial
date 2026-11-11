@@ -99,17 +99,18 @@ describe('CategoryTotalsGrid', () => {
       expect(screen.getByRole('table', { name: 'Category totals' })).toHaveFocus()
     })
 
-    it('shows a filter set at desktop width once the window narrows, and hides it again at desktop width', async () => {
+    it('announces a filter set at desktop width, and adds Clear filters only once the window narrows', async () => {
       const media = mockMatchMedia(false)
       render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
       filterOutMercado()
-      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(await screen.findByRole('status')).toHaveTextContent('Filtered: 1 of 2 rows')
+      expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
 
       act(() => media.setMatches(true))
-      expect(await screen.findByText('Filtered: 1 of 2 rows')).toBeInTheDocument()
+      expect(await screen.findByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
 
       act(() => media.setMatches(false))
-      expect(screen.getByRole('status')).toBeEmptyDOMElement()
+      expect(screen.getByRole('status')).toHaveTextContent('Filtered: 1 of 2 rows')
       expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
     })
   })
