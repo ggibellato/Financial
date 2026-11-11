@@ -13,6 +13,7 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { CorporateActionFormField } from '../hooks/useCorporateActions'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormPanelStyles } from './formPanelStyles'
+import ReadOnlyInput from './ReadOnlyInput'
 import TargetAssetPicker from './TargetAssetPicker'
 import type { TargetAssetPickerValue } from './targetAssetPickerValue'
 import { formatN2, parseValidatedNumber, SAVING_LABEL } from '../utils/formatters'
@@ -179,12 +180,12 @@ export default function CorporateActionForm({
         {isMergerFieldsStep && (
           <>
             <Field label="Source asset">
-              <Input value={sourceAssetName} disabled readOnly />
+              <ReadOnlyInput value={sourceAssetName} />
             </Field>
 
             {editingId ? (
               <Field label="Target asset">
-                <Input value={formTargetAsset.assetName} disabled readOnly />
+                <ReadOnlyInput value={formTargetAsset.assetName} />
               </Field>
             ) : (
               <TargetAssetPicker
@@ -230,12 +231,12 @@ export default function CorporateActionForm({
         {isSpinOff && (
           <>
             <Field label="Parent asset">
-              <Input value={sourceAssetName} disabled readOnly />
+              <ReadOnlyInput value={sourceAssetName} />
             </Field>
 
             {editingId ? (
               <Field label="New asset">
-                <Input value={formNewAsset.assetName} disabled readOnly />
+                <ReadOnlyInput value={formNewAsset.assetName} />
               </Field>
             ) : (
               <TargetAssetPicker

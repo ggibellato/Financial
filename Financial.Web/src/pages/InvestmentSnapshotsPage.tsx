@@ -2,6 +2,7 @@ import { Button, Field, Input, MessageBar, MessageBarBody, Table, TableBody, Tab
 import type { InvestmentSnapshotDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import ReadOnlyInput from '../components/ReadOnlyInput'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import SuggestedValuesPanel from '../components/SuggestedValuesPanel'
@@ -133,7 +134,7 @@ export default function InvestmentSnapshotsPage() {
 
           <div className={styles.grid}>
             <Field label="Account">
-              <Input value={editingSnapshot ? snapshotLabel(editingSnapshot) : ''} disabled readOnly />
+              <ReadOnlyInput value={editingSnapshot ? snapshotLabel(editingSnapshot) : ''} />
             </Field>
             <Field
               label="Value"
