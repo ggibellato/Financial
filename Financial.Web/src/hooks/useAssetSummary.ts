@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { useSelectionGuard } from './useAsyncResource'
 import { getErrorMessage } from '../utils/formatters'
 
 interface SummaryState {
@@ -102,6 +103,7 @@ export interface AssetSummaryData {
 export function useAssetSummary(): AssetSummaryData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const { beginSelection, dispatchForCurrentSelection } = useSelectionGuard(dispatch)
 
   const isAsset =
     selectedNode?.nodeType === 'Asset' &&
@@ -122,28 +124,30 @@ export function useAssetSummary(): AssetSummaryData {
       assetName: string | undefined,
     ) => {
       dispatch({ type: 'PRICE_FETCH_START' })
+      const settle = dispatchForCurrentSelection()
       void apiClient
         .getCurrentPrice(exchange, ticker, assetClass, brokerName, name, portfolioName, assetName)
         .then((result) => {
-          dispatch({ type: 'PRICE_FETCH_SUCCESS', payload: result })
-          return brokerName && portfolioName && assetName
+          const isCurrent = settle({ type: 'PRICE_FETCH_SUCCESS', payload: result })
+          return isCurrent && brokerName && portfolioName && assetName
             ? apiClient.getAssetDetails(brokerName, portfolioName, assetName, 'active')
             : null
         })
         .then((refreshed) => {
-          if (refreshed) dispatch({ type: 'ASSET_REFRESHED', payload: refreshed })
+          if (refreshed) settle({ type: 'ASSET_REFRESHED', payload: refreshed })
         })
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'PRICE_FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to fetch current price.'),
           })
         })
     },
-    [],
+    [dispatchForCurrentSelection],
   )
 
   useEffect(() => {
+    const settle = beginSelection()
     if (!isAsset || !selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -165,9 +169,9 @@ export function useAssetSummary(): AssetSummaryData {
 
     void apiClient
       .getAssetDetails(brokerName, portfolioName, assetName, scope)
-      .then((result) => dispatch({ type: 'ASSET_FETCH_SUCCESS', payload: result }))
+      .then((result) => settle({ type: 'ASSET_FETCH_SUCCESS', payload: result }))
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'ASSET_FETCH_ERROR',
           payload: getErrorMessage(err, 'Unable to load asset details.'),
         })
@@ -178,13 +182,13 @@ export function useAssetSummary(): AssetSummaryData {
         .getPortfolioAssetsSummary(brokerName, portfolioName, 'historic')
         .then((items) => {
           const match = items.find((item) => item.assetName === assetName)
-          dispatch({ type: 'PORTFOLIO_WEIGHT_SUCCESS', portfolioWeight: match?.portfolioWeight ?? null })
+          settle({ type: 'PORTFOLIO_WEIGHT_SUCCESS', portfolioWeight: match?.portfolioWeight ?? null })
         })
         .catch(() => {
-          dispatch({ type: 'PORTFOLIO_WEIGHT_SUCCESS', portfolioWeight: null })
+          settle({ type: 'PORTFOLIO_WEIGHT_SUCCESS', portfolioWeight: null })
         })
     }
-  }, [selectedNode, isAsset, fetchPrice, scope, state.assetRetryCount])
+  }, [selectedNode, isAsset, fetchPrice, scope, state.assetRetryCount, beginSelection])
 
   const retryAsset = useCallback(() => dispatch({ type: 'ASSET_RETRY' }), [])
 

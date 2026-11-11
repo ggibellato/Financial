@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, AssetPriceDto, PortfolioAssetSummaryItemDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
+import { deferred, never } from '../../test-utils/deferred'
 import { useAssetSummary } from '../useAssetSummary'
 
 const { getAssetDetailsMock, getCurrentPriceMock, getPortfolioAssetsSummaryMock } = vi.hoisted(() => ({
@@ -377,5 +378,125 @@ describe('useAssetSummary', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
     expect(result.current.showCurrentSection).toBe(true)
+  })
+
+  describe('responses for an asset the user has already left', () => {
+    const OTHER_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, name: 'TRPL4' }
+    const OTHER_PRICE: AssetPriceDto = { ...PRICE, ticker: 'TRPL4', price: 30 }
+    type HookResult = { current: ReturnType<typeof useAssetSummary> }
+
+    function answerOtherAssetOnly() {
+      getAssetDetailsMock.mockImplementation((_broker, _portfolio, assetName) =>
+        assetName === 'TRPL4' ? Promise.resolve(OTHER_DETAILS) : never<AssetDetailsDto>())
+      getCurrentPriceMock.mockImplementation((_exchange, ticker) =>
+        ticker === 'TRPL4' ? Promise.resolve(OTHER_PRICE) : never<AssetPriceDto>())
+    }
+
+    async function moveToOtherAsset(setNode: (node: SelectedNode) => void, result: HookResult) {
+      answerOtherAssetOnly()
+      setNode(OTHER_ASSET_NODE)
+      await waitFor(() => {
+        expect(result.current.asset?.name).toBe('TRPL4')
+        expect(result.current.price?.price).toBe(30)
+      })
+    }
+
+    function expectOtherAssetUntouched(result: HookResult) {
+      expect(result.current.asset).toEqual(OTHER_DETAILS)
+      expect(result.current.price).toEqual(OTHER_PRICE)
+      expect(result.current.assetError).toBeNull()
+      expect(result.current.priceError).toBeNull()
+      expect(result.current.isLoadingPrice).toBe(false)
+    }
+
+    async function renderOnAssetThenLeave() {
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => useAssetSummary(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledOnce())
+      await moveToOtherAsset(setNode, result)
+      return result
+    }
+
+    async function startWithPendingDetails() {
+      const pending = deferred<AssetDetailsDto>()
+      getAssetDetailsMock.mockReturnValueOnce(pending.promise)
+      getCurrentPriceMock.mockReturnValueOnce(never())
+      return { result: await renderOnAssetThenLeave(), pending }
+    }
+
+    async function startWithPendingPrice() {
+      const pending = deferred<AssetPriceDto>()
+      getAssetDetailsMock.mockResolvedValueOnce(ASSET_DETAILS)
+      getCurrentPriceMock.mockReturnValueOnce(pending.promise)
+      return { result: await renderOnAssetThenLeave(), pending }
+    }
+
+    it('ignores_a_late_asset_details_success_for_the_previous_asset', async () => {
+      const { result, pending } = await startWithPendingDetails()
+
+      await act(async () => pending.resolve(ASSET_DETAILS))
+
+      expectOtherAssetUntouched(result)
+    })
+
+    it('ignores_a_late_asset_details_failure_for_the_previous_asset', async () => {
+      const { result, pending } = await startWithPendingDetails()
+
+      await act(async () => pending.reject(new Error('Load failed')))
+
+      expectOtherAssetUntouched(result)
+    })
+
+    it('ignores_a_late_price_and_skips_its_chained_refresh_for_the_previous_asset', async () => {
+      const { result, pending } = await startWithPendingPrice()
+      getAssetDetailsMock.mockResolvedValue(REFRESHED_ASSET_DETAILS)
+
+      await act(async () => pending.resolve(PRICE))
+
+      expectOtherAssetUntouched(result)
+      expect(getAssetDetailsMock.mock.calls.filter(([, , assetName]) => assetName === 'KLBN4')).toHaveLength(1)
+    })
+
+    it('ignores_a_late_price_failure_for_the_previous_asset', async () => {
+      const { result, pending } = await startWithPendingPrice()
+
+      await act(async () => pending.reject(new Error('Price fetch failed')))
+
+      expectOtherAssetUntouched(result)
+    })
+
+    it('ignores_a_late_chained_valuation_refresh_for_the_previous_asset', async () => {
+      const refresh = deferred<AssetDetailsDto>()
+      getAssetDetailsMock.mockResolvedValueOnce(ASSET_DETAILS).mockReturnValueOnce(refresh.promise)
+      getCurrentPriceMock.mockResolvedValueOnce(PRICE)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => useAssetSummary(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledTimes(2))
+      await moveToOtherAsset(setNode, result)
+
+      await act(async () => refresh.resolve(REFRESHED_ASSET_DETAILS))
+
+      expectOtherAssetUntouched(result)
+    })
+
+    it('ignores_a_late_historic_portfolio_weight_for_the_previous_asset', async () => {
+      const pending = deferred<PortfolioAssetSummaryItemDto[]>()
+      getAssetDetailsMock.mockImplementation((_broker, _portfolio, assetName) =>
+        Promise.resolve(assetName === 'TRPL4' ? OTHER_DETAILS : ASSET_DETAILS))
+      getPortfolioAssetsSummaryMock.mockReturnValueOnce(pending.promise).mockResolvedValue([])
+      const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+      const { result } = renderHook(() => useAssetSummary(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledOnce())
+      setNode(OTHER_ASSET_NODE)
+      await waitFor(() => expect(result.current.asset?.name).toBe('TRPL4'))
+      await waitFor(() => expect(getPortfolioAssetsSummaryMock).toHaveBeenCalledTimes(2))
+
+      await act(async () => pending.resolve([{ assetName: 'KLBN4', portfolioWeight: 55 } as PortfolioAssetSummaryItemDto]))
+
+      expect(result.current.portfolioWeight).toBeNull()
+    })
   })
 })

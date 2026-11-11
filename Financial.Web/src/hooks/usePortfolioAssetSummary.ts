@@ -2,6 +2,7 @@ import { useCallback, useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { useSelectionGuard } from './useAsyncResource'
 import { getErrorMessage } from '../utils/formatters'
 
 export interface RowPriceState {
@@ -91,10 +92,12 @@ export interface PortfolioAssetSummaryData {
 export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const { beginSelection } = useSelectionGuard(dispatch)
 
   const isPortfolio = selectedNode?.nodeType === 'Portfolio'
 
   useEffect(() => {
+    const settle = beginSelection()
     if (!isPortfolio || !selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -111,9 +114,9 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
     void apiClient
       .getPortfolioAssetsSummary(brokerName, portfolioName, scope)
       .then((items) => {
-        dispatch({ type: 'FETCH_SUCCESS', payload: items })
+        if (!settle({ type: 'FETCH_SUCCESS', payload: items })) return
         if (scope === 'historic') {
-          items.forEach((_, index) => dispatch({ type: 'ROW_PRICE_ERROR', index }))
+          items.forEach((_, index) => settle({ type: 'ROW_PRICE_ERROR', index }))
           return
         }
 
@@ -121,31 +124,28 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
           apiClient
             .getCurrentPrice(item.exchange, item.ticker, item.class, brokerName, item.assetName, portfolioName, item.assetName)
             .then(
-              (priceDto) => {
-                dispatch({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price, isManual: priceDto.isManual })
-              },
-              () => {
-                dispatch({ type: 'ROW_PRICE_ERROR', index })
-              },
+              (priceDto) => settle({ type: 'ROW_PRICE_SUCCESS', index, currentPrice: priceDto.price, isManual: priceDto.isManual }),
+              () => settle({ type: 'ROW_PRICE_ERROR', index }),
             ),
         )
 
         // Each fetch also records the price server-side, so once every row has settled the
         // grid re-reads the server-computed valuation rather than deriving it here.
-        void Promise.allSettled(rowFetches).then(() =>
-          apiClient
+        void Promise.all(rowFetches).then((rowsStillCurrent) => {
+          if (!rowsStillCurrent.every(Boolean)) return
+          return apiClient
             .getPortfolioAssetsSummary(brokerName, portfolioName, scope)
-            .then((refreshed) => dispatch({ type: 'VALUATION_REFRESHED', payload: refreshed }))
-            .catch(() => undefined),
-        )
+            .then((refreshed) => settle({ type: 'VALUATION_REFRESHED', payload: refreshed }))
+            .catch(() => undefined)
+        })
       })
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'FETCH_ERROR',
           payload: getErrorMessage(err, 'Unable to load portfolio assets.'),
         })
       })
-  }, [selectedNode, isPortfolio, scope, state.retryCount])
+  }, [selectedNode, isPortfolio, scope, state.retryCount, beginSelection])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
 
