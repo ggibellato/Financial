@@ -30,7 +30,7 @@ describe('CardsGrid', () => {
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 100.00')
   })
 
-  it('labels the adjustment figure as covering all rows while a Card filter is active, and plainly when none is', () => {
+  it('labels the adjustment figure as covering all cards while a Card filter is active, and plainly when none is', () => {
     renderGrid()
     const footer = () => document.querySelector('.monthly-page__section-total')!.textContent
 
@@ -39,7 +39,7 @@ describe('CardsGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Card' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
 
-    expect(footer()).toBe('Combined adjustment figure (all rows): 100.00')
+    expect(footer()).toBe('Combined adjustment figure (all cards): 100.00')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'ChaseMaster4023' }))
 

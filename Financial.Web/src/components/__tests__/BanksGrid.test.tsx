@@ -37,7 +37,7 @@ describe('BanksGrid', () => {
     expect(screen.getByText('51.30')).toBeInTheDocument()
   })
 
-  it('labels the footer totals as covering all rows while a Bank filter is active, and plainly once it is cleared', () => {
+  it('labels the footer totals as covering all banks while a Bank filter is active, and plainly once it is cleared', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
     expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
@@ -45,7 +45,7 @@ describe('BanksGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 
-    expect(footer()).toBe('Bank Balance (all rows): 51.30 · Round-Up (all rows): 0.60')
+    expect(footer()).toBe('Bank Balance (all banks): 51.30 · Round-Up (all banks): 0.60')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 

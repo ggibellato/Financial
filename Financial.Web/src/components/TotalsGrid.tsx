@@ -7,7 +7,7 @@ import type { FilterSummary } from '../hooks/useColumnFilters'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import SectionTotals from './SectionTotals'
 import type { SectionTotalItem } from '../utils/currencyFooterItems'
-import { allRowsTotalLabel } from '../utils/allRowsTotalLabel'
+import { allItemsTotalLabel } from '../utils/allItemsTotalLabel'
 
 interface TotalsGridColumn<T> {
   key: string
@@ -24,7 +24,7 @@ interface TotalsGridProps<T> {
   rows: T[]
   rowKey: (row: T) => string
   footerItems: SectionTotalItem[]
-  filter?: FilterSummary
+  filter?: FilterSummary & { itemsNoun: string }
   emptyMessage: string
 }
 
@@ -80,7 +80,9 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
         </Table>
       </div>
       {footerItems.length > 0 && (
-        <SectionTotals items={footerItems.map((item) => ({ ...item, label: allRowsTotalLabel(item.label, filter?.isFiltered) }))} />
+        <SectionTotals
+          items={filter ? footerItems.map((item) => ({ ...item, label: allItemsTotalLabel(item.label, filter.itemsNoun, filter.isFiltered) })) : footerItems}
+        />
       )}
     </section>
   )

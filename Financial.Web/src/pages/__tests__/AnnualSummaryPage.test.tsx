@@ -586,7 +586,7 @@ describe('AnnualSummaryPage', () => {
     expect(tbody.getByText(/^Total despesas/)).toBeInTheDocument()
   })
 
-  it('labels Resultado and Total despesas as covering all rows only while a Category filter is active', async () => {
+  it('labels Resultado and Total despesas as covering all categories only while a Category filter is active', async () => {
     getCategoryTotalsAnnualForYearMock.mockResolvedValue({
       ...CATEGORY_TOTALS_ANNUAL,
       categoryTotals: [
@@ -604,8 +604,8 @@ describe('AnnualSummaryPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(tbody().getByText('Total despesas (all rows)')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv) (all rows)')).toBeInTheDocument()
+    expect(tbody().getByText('Total despesas (all categories)')).toBeInTheDocument()
+    expect(tbody().getByText('Resultado (R-D-Inv) (all categories)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 

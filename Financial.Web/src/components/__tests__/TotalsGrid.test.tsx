@@ -69,7 +69,7 @@ describe('TotalsGrid', () => {
     expect(screen.getByText('25')).toBeInTheDocument()
   })
 
-  it('labels footer items as covering all rows only while its filter is active', () => {
+  it('labels footer items as covering all items only while its filter is active', () => {
     const renderWith = (isFiltered: boolean) => (
       <TotalsGrid
         label="Totals"
@@ -78,12 +78,12 @@ describe('TotalsGrid', () => {
         rows={ROWS}
         rowKey={(r) => r.id}
         footerItems={[{ label: 'Total', value: '25' }]}
-        filter={{ isFiltered, shownCount: 2, totalCount: 2, onClearFilters: vi.fn() }}
+        filter={{ isFiltered, shownCount: 2, totalCount: 2, onClearFilters: vi.fn(), itemsNoun: 'items' }}
       />
     )
     const { rerender } = render(renderWith(true))
 
-    expect(screen.getByText('Total (all rows):')).toBeInTheDocument()
+    expect(screen.getByText('Total (all items):')).toBeInTheDocument()
 
     rerender(renderWith(false))
 
@@ -111,7 +111,7 @@ describe('TotalsGrid', () => {
         rows={[]}
         rowKey={(r) => r.id}
         footerItems={[]}
-        filter={{ isFiltered: true, shownCount: 0, totalCount: 2, onClearFilters: vi.fn() }}
+        filter={{ isFiltered: true, shownCount: 0, totalCount: 2, onClearFilters: vi.fn(), itemsNoun: 'items' }}
       />,
     )
 

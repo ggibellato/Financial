@@ -12,7 +12,7 @@ import { useColumnFilters } from '../hooks/useColumnFilters'
 import { useAnnualSummary } from '../hooks/useAnnualSummary'
 import type { CategoryAnnualAverageDto, CategoryAnnualTotalDto, InvestmentAnnualResultDto } from '../api/types'
 import { formatN2 } from '../utils/formatters'
-import { allRowsTotalLabel } from '../utils/allRowsTotalLabel'
+import { allItemsTotalLabel } from '../utils/allItemsTotalLabel'
 import './AnnualSummaryPage.css'
 
 type InvestmentAccount = InvestmentAnnualResultDto['accounts'][number]
@@ -207,6 +207,7 @@ export default function AnnualSummaryPage() {
                     <SortableColumnHeader
                       label="Category"
                       columnKey="category"
+                      className="annual-summary-page__col--label"
                       sortDirection={categoryTotalsSortState?.columnKey === 'category' ? categoryTotalsSortState.direction : undefined}
                       onSort={requestCategoryTotalsSort}
                     >
@@ -311,7 +312,7 @@ export default function AnnualSummaryPage() {
 
                   {incomeSummary && (
                     <AnnualSummaryRow
-                      label={allRowsTotalLabel('Resultado (R-D-Inv)', categoryTotalsFilterSummary.isFiltered)}
+                      label={allItemsTotalLabel('Resultado (R-D-Inv)', 'categories', categoryTotalsFilterSummary.isFiltered)}
                       monthlyValues={resultadoMonthly}
                       average={resultadoAverage}
                       annualTotal={resultadoAnnualTotal}
@@ -319,7 +320,7 @@ export default function AnnualSummaryPage() {
                     />
                   )}
                   <AnnualSummaryRow
-                    label={allRowsTotalLabel('Total despesas', categoryTotalsFilterSummary.isFiltered)}
+                    label={allItemsTotalLabel('Total despesas', 'categories', categoryTotalsFilterSummary.isFiltered)}
                     monthlyValues={totalDespesasMonthly}
                     average={totalDespesasAverage}
                     annualTotal={totalDespesasAnnualTotal}

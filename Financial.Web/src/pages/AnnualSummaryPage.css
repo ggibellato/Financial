@@ -65,8 +65,8 @@
   border-top: 2px solid var(--border, #ccc);
 }
 
-.annual-summary-page__emphasized-row td:first-child {
-  white-space: normal;
+.annual-summary-page__col--label {
+  width: 280px;
 }
 
 .annual-summary-page__investment-totals {

@@ -88,7 +88,7 @@ export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsG
         },
       ]}
       rows={filteredRows}
-      filter={filterSummary}
+      filter={{ ...filterSummary, itemsNoun: 'cards' }}
       rowKey={(card) => card.accountId}
       emptyMessage="No cards in the default group for this month"
       footerItems={currencyFooterItems(currencyTotals, FOOTER_FIGURES)}

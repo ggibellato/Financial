@@ -20,7 +20,7 @@ describe('CategoryTotalsGrid', () => {
     expect(screen.getByText('142.50')).toBeInTheDocument()
   })
 
-  it('labels the footer total as covering all rows while a Category filter is active, and plainly when none is', () => {
+  it('labels the footer total as covering all categories while a Category filter is active, and plainly when none is', () => {
     render(<CategoryTotalsGrid categoryTotals={CATEGORY_TOTALS} categoryTotalsSum={142.5} />)
 
     const footer = () => document.querySelector('.monthly-page__section-total')!.textContent
@@ -30,7 +30,7 @@ describe('CategoryTotalsGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
-    expect(footer()).toBe('Total (all rows): 142.50')
+    expect(footer()).toBe('Total (all categories): 142.50')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
 
