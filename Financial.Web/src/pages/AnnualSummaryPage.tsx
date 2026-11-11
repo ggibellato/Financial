@@ -359,7 +359,7 @@ export default function AnnualSummaryPage() {
                 </tfoot>
               </Table>
 
-              <div className="annual-summary-page__investment-totals">
+              <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for Investments">
                 <div className="annual-summary-page__investment-total">
                   <span>Year Progress</span>
                   <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>

@@ -19,9 +19,9 @@
   width: 100px;
 }
 
-.annual-summary-page__tabs {
+.annual-summary-page .annual-summary-page__tabs {
   flex-shrink: 0;
-  overflow-x: auto;
+  flex-wrap: wrap;
 }
 
 .annual-summary-page__content {

@@ -3,7 +3,6 @@ import { Button, makeStyles, tokens } from '@fluentui/react-components'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { FilterSummary } from '../../hooks/useColumnFilters'
 import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
-import { visuallyHidden } from '../../styles/visuallyHidden'
 
 const useStyles = makeStyles({
   notice: {
@@ -14,7 +13,14 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalM,
     marginBottom: tokens.spacingVerticalM,
   },
-  visuallyHidden,
+  visuallyHidden: {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+  },
 })
 
 interface FilteredRowsNoticeProps extends FilterSummary {

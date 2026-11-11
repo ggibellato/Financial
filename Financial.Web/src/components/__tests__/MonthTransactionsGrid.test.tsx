@@ -57,11 +57,11 @@ function descriptions() {
 }
 
 function footer() {
-  return screen.getByRole('group', { name: 'Totals' })
+  return screen.getByRole('group', { name: 'Totals for All transactions' })
 }
 
 function queryFooter() {
-  return screen.queryByRole('group', { name: 'Totals' })
+  return screen.queryByRole('group', { name: 'Totals for All transactions' })
 }
 
 function filterToNone(label: string) {

@@ -65,7 +65,7 @@ describe('TotalsGrid', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Amount' }))
 
-    const totals = screen.getByRole('group', { name: 'Totals' })
+    const totals = screen.getByRole('group', { name: 'Totals for Totals' })
     expect(totals).toHaveTextContent('Total: 25')
     expect(screen.getByRole('table', { name: 'Totals' })).not.toContainElement(totals)
   })
