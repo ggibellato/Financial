@@ -65,8 +65,9 @@ describe('TotalsGrid', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Amount' }))
 
-    expect(screen.getByText('Total:')).toBeInTheDocument()
-    expect(screen.getByText('25')).toBeInTheDocument()
+    const totals = screen.getByRole('group', { name: 'Totals for Totals' })
+    expect(totals).toHaveTextContent('Total: 25')
+    expect(screen.getByRole('table', { name: 'Totals' })).not.toContainElement(totals)
   })
 
   it('labels footer items as covering all items only while its filter is active', () => {

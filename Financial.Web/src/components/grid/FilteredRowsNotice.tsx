@@ -13,6 +13,14 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalM,
     marginBottom: tokens.spacingVerticalM,
   },
+  visuallyHidden: {
+    position: 'absolute',
+    width: '1px',
+    height: '1px',
+    overflow: 'hidden',
+    clip: 'rect(0 0 0 0)',
+    whiteSpace: 'nowrap',
+  },
 })
 
 interface FilteredRowsNoticeProps extends FilterSummary {
@@ -31,7 +39,9 @@ export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount,
 
   return (
     <div className={isShown ? styles.notice : undefined}>
-      <span role="status">{isShown && `Filtered: ${shownCount} of ${totalCount} ${totalCount === 1 ? 'row' : 'rows'}`}</span>
+      <span role="status" className={isStackedLayout ? undefined : styles.visuallyHidden}>
+        {isFiltered && `Filtered: ${shownCount} of ${totalCount} ${totalCount === 1 ? 'row' : 'rows'}`}
+      </span>
       {isShown && (
         <Button appearance="primary" onClick={clearFilters}>
           Clear filters

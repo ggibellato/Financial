@@ -412,6 +412,17 @@ Totals must:
   to its footer whenever it is given a `filter` (with the `itemsNoun` it
   requires). A total computed from the filtered rows instead says so with
   its row count, as `MonthTransactionsGrid`'s "N of M rows" footer does.
+- Be marked up as totals, not only styled as them: total rows pinned below
+  a grid's data rows go in its `<tfoot>` (Annual Summary's Category Totals
+  and Investments tabs), and a totals line rendered below a grid is a
+  `role="group"` named after that grid, "Totals for {grid label}"
+  (`SectionTotals` through `TotalsGrid`, `MonthTransactionsGrid`'s footer,
+  Annual Summary's Investments summary), so several totals on one page stay
+  distinguishable. `data-table.css` makes `<tfoot>` cells bold with one top
+  border above the first footer row;
+  an emphasized total that has to stay among sortable body rows takes
+  `.data-table__row--emphasized`. Row borders go on the cells: the shared
+  `border-collapse: separate` never draws a `<tr>` border.
 - Use consistent calculation and formatting rules.
 - Update after relevant changes.
 - Avoid appearing editable unless they genuinely are editable.

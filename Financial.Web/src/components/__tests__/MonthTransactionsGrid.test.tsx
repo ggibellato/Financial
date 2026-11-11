@@ -56,14 +56,14 @@ function descriptions() {
   return bodyRows().map((row) => within(row).getAllByRole('cell')[3].textContent)
 }
 
-const FOOTER = /rows?\b/
+const FOOTER = { name: 'Totals for All transactions' }
 
 function footer() {
-  return screen.getByText(FOOTER, { selector: 'p' })
+  return screen.getByRole('group', FOOTER)
 }
 
 function queryFooter() {
-  return screen.queryByText(FOOTER, { selector: 'p' })
+  return screen.queryByRole('group', FOOTER)
 }
 
 function filterToNone(label: string) {

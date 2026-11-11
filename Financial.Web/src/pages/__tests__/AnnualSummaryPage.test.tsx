@@ -217,14 +217,39 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     // Total despesas annual total comes straight from the mocked API response, not a client recomputation.
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
-    expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(totalDespesasRow.closest('tfoot')).not.toBeNull()
     expect(within(totalDespesasRow).getByText('1,860.00')).toBeInTheDocument()
 
     // Resultado annual total also comes straight from the mocked API response (corrected formula,
     // excludes Dividendo/Juros) - proves no client-side recomputation occurs.
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
-    expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(resultadoRow.closest('tfoot')).not.toBeNull()
     expect(within(resultadoRow).getByText('27,740.00')).toBeInTheDocument()
+  })
+
+  it('pins Resultado and Total despesas in the table footer, after every body row', async () => {
+    render(<AnnualSummaryPage />)
+
+    const table = await screen.findByRole('table', { name: 'Category totals' })
+    const footerRows = within(table.querySelector('tfoot')!).getAllByRole('row')
+    expect(footerRows.map((row) => row.querySelector('td')?.textContent?.replace('Category:', ''))).toEqual([
+      'Resultado (R-D-Inv)',
+      'Total despesas',
+    ])
+    expect(within(table.querySelector('tbody')!).queryByText('Total despesas')).not.toBeInTheDocument()
+  })
+
+  it('names the Investments table and pins its Total and Month Result rows in the table footer', async () => {
+    render(<AnnualSummaryPage />)
+
+    fireEvent.click(await screen.findByRole('tab', { name: 'Investments' }))
+    const table = await screen.findByRole('table', { name: 'Investments' })
+
+    const footer = table.querySelector('tfoot')!
+    expect(within(footer).getByText('Total')).toBeInTheDocument()
+    expect(within(footer).getByText('Month Result')).toBeInTheDocument()
+    expect(within(footer).queryByText('ChaseSave')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Totals for Investments' })).toHaveTextContent('Year Progress')
   })
 
   it('shows only the Investments tab content after clicking Investments', async () => {
@@ -266,7 +291,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Total')).toBeInTheDocument())
 
     const totalRow = screen.getByText('Total').closest('tr')!
-    expect(totalRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(totalRow.closest('tfoot')).not.toBeNull()
     expect(within(totalRow).getByText('800.00')).toBeInTheDocument()
     expect(within(totalRow).getByText('1,350.00')).toBeInTheDocument()
   })
@@ -278,7 +303,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Month Result')).toBeInTheDocument())
 
     const monthResultRow = screen.getByText('Month Result').closest('tr')!
-    expect(monthResultRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(monthResultRow.closest('tfoot')).not.toBeNull()
     const cells = within(monthResultRow).getAllByRole('cell')
     // cells[0] is the label; cells[1] is January
     expect(cells[1].textContent?.replace('Jan:', '')).toBe('75.00')
@@ -477,12 +502,12 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
-    expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
-    expect(within(resultadoRow).getByText('720.00').closest('strong')).toBeInTheDocument()
+    expect(resultadoRow).toHaveClass('data-table__row--emphasized')
+    expect(within(resultadoRow).getByText('720.00')).toBeInTheDocument()
 
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
-    expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
-    expect(within(totalDespesasRow).getByText('155.00').closest('strong')).toBeInTheDocument()
+    expect(totalDespesasRow).toHaveClass('data-table__row--emphasized')
+    expect(within(totalDespesasRow).getByText('155.00')).toBeInTheDocument()
   })
 
   it('does not affect the Category Totals tab content when viewing Historic Summary Average', async () => {
@@ -582,8 +607,9 @@ describe('AnnualSummaryPage', () => {
     expect(tbody.queryByText('Casa')).not.toBeInTheDocument()
     expect(tbody.getByText('Mercado')).toBeInTheDocument()
     expect(tbody.getByText('Salary')).toBeInTheDocument()
-    expect(tbody.getByText(/^Resultado \(R-D-Inv\)/)).toBeInTheDocument()
-    expect(tbody.getByText(/^Total despesas/)).toBeInTheDocument()
+    const tfoot = within(document.querySelector('tfoot')!)
+    expect(tfoot.getByText(/^Resultado \(R-D-Inv\)/)).toBeInTheDocument()
+    expect(tfoot.getByText(/^Total despesas/)).toBeInTheDocument()
   })
 
   it('labels Resultado and Total despesas as covering all categories only while a Category filter is active', async () => {
@@ -597,20 +623,20 @@ describe('AnnualSummaryPage', () => {
     render(<AnnualSummaryPage />)
 
     await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
-    const tbody = () => within(document.querySelector('tbody')!)
-    expect(tbody().getByText('Total despesas')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
+    const tfoot = () => within(document.querySelector('tfoot')!)
+    expect(tfoot().getByText('Total despesas')).toBeInTheDocument()
+    expect(tfoot().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(tbody().getByText('Total despesas (all categories)')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv) (all categories)')).toBeInTheDocument()
+    expect(tfoot().getByText('Total despesas (all categories)')).toBeInTheDocument()
+    expect(tfoot().getByText('Resultado (R-D-Inv) (all categories)')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Casa' }))
 
-    expect(tbody().getByText('Total despesas')).toBeInTheDocument()
-    expect(tbody().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
+    expect(tfoot().getByText('Total despesas')).toBeInTheDocument()
+    expect(tfoot().getByText('Resultado (R-D-Inv)')).toBeInTheDocument()
   })
 
   it('filters the Historic Summary Average table by Category', async () => {

@@ -8,19 +8,20 @@ const originalMatchMedia = window.matchMedia
 
 function renderNotice({ isFiltered = true, shownCount = 3, totalCount = 10, onClearFilters = vi.fn() } = {}) {
   const tableRef = createRef<HTMLTableElement>()
-  render(
+  const noticeShowing = (shown: number) => (
     <>
       <FilteredRowsNotice
         isFiltered={isFiltered}
-        shownCount={shownCount}
+        shownCount={shown}
         totalCount={totalCount}
         onClearFilters={onClearFilters}
         tableRef={tableRef}
       />
       <table ref={tableRef} tabIndex={-1} aria-label="Totals" />
-    </>,
+    </>
   )
-  return { onClearFilters }
+  const { rerender } = render(noticeShowing(shownCount))
+  return { onClearFilters, showCount: (shown: number) => rerender(noticeShowing(shown)) }
 }
 
 describe('FilteredRowsNotice', () => {
@@ -51,12 +52,30 @@ describe('FilteredRowsNotice', () => {
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
   })
 
-  it('shows nothing at desktop width, where the header shows the filter', () => {
+  it('still announces the filtered rows at desktop width, without the visible notice the header filter replaces', () => {
     mockMatchMedia(false)
     renderNotice()
 
-    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+    expect(screen.getByRole('status')).toHaveTextContent('Filtered: 3 of 10 rows')
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+  })
+
+  it('announces nothing at desktop width while no filter is active', () => {
+    mockMatchMedia(false)
+    renderNotice({ isFiltered: false })
+
+    expect(screen.getByRole('status')).toBeEmptyDOMElement()
+  })
+
+  it('keeps the same live region and updates its text when the filtered count changes', () => {
+    mockMatchMedia(false)
+    const { showCount } = renderNotice()
+    const liveRegion = screen.getByRole('status')
+
+    showCount(5)
+
+    expect(screen.getByRole('status')).toBe(liveRegion)
+    expect(liveRegion).toHaveTextContent('Filtered: 5 of 10 rows')
   })
 
   it('clears the filters and moves focus to the grid', () => {

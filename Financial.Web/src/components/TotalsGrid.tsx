@@ -81,6 +81,7 @@ export default function TotalsGrid<T>({ label, columns, rows, rowKey, footerItem
       </div>
       {footerItems.length > 0 && (
         <SectionTotals
+          label={`Totals for ${label}`}
           items={filter ? footerItems.map((item) => ({ ...item, label: allItemsTotalLabel(item.label, filter.itemsNoun, filter.isFiltered) })) : footerItems}
         />
       )}
