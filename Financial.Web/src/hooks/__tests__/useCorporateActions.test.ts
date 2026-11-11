@@ -887,7 +887,7 @@ describe('useCorporateActions', () => {
       return { result, setNode, pending }
     }
 
-    async function moveToOtherAssetWithNewFormOpen({ result, setNode }: Pick<Awaited<ReturnType<typeof startPendingLoad>>, 'result' | 'setNode'>) {
+    async function moveToOtherAssetWithNewFormOpen({ result, setNode }: Awaited<ReturnType<typeof renderOnAsset>>) {
       getAssetDetailsMock.mockResolvedValue(OTHER_DETAILS)
       setNode(ASSET_NODE_B)
       await waitFor(() => expect(result.current.corporateActions).toEqual([MERGER_RECORD]))
@@ -895,7 +895,7 @@ describe('useCorporateActions', () => {
       act(() => result.current.setFormField('formRatioNumerator', '7'))
     }
 
-    function expectOtherAssetUntouched({ result }: Pick<Awaited<ReturnType<typeof startPendingLoad>>, 'result' | 'setNode'>) {
+    function expectOtherAssetUntouched({ result }: Awaited<ReturnType<typeof renderOnAsset>>) {
       expect(result.current.corporateActions).toEqual([MERGER_RECORD])
       expect(result.current.isFormVisible).toBe(true)
       expect(result.current.formRatioNumerator).toBe('7')
