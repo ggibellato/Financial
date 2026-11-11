@@ -4,7 +4,7 @@ import type { PayableStatementDto } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
 import type { LockedBank } from './formSettings'
 import { useAsyncResource } from './useAsyncResource'
-import { paymentDateError } from './useCardStatements'
+import { paymentDateError } from '../utils/validators'
 
 const PAYABLE_STATEMENTS_LOAD_ERROR = 'Unable to load the card statements.'
 

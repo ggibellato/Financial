@@ -19,7 +19,8 @@ import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, PAID_BY_YOU, recordNoun, rowKey, statementPath } from './accountActions'
+import { paidByLabel } from '../utils/paidBy'
+import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, recordNoun, rowKey, statementPath } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 
 function rowName(row: AccountTransactionDto): string {
@@ -91,11 +92,11 @@ const CONVERTED_COLUMN: TransactionColumn = {
 }
 
 function settlementColumns(otherParticipant: string, showsConverted: boolean): TransactionColumn[] {
-  const paidByLabel = (row: AccountTransactionDto) => (row.settlement?.paidBy === PAID_BY_YOU ? PAID_BY_YOU : otherParticipant)
+  const paidByOf = (row: AccountTransactionDto) => paidByLabel(row.settlement?.paidBy, otherParticipant)
   return [
     DATE_COLUMN,
     DESCRIPTION_COLUMN,
-    { key: 'paidBy', header: 'Paid by', accessor: paidByLabel, render: (row) => <TruncatedText text={paidByLabel(row)} /> },
+    { key: 'paidBy', header: 'Paid by', accessor: paidByOf, render: (row) => <TruncatedText text={paidByOf(row)} /> },
     {
       ...AMOUNT_COLUMN,
       accessor: (row) => Math.abs(row.amount),

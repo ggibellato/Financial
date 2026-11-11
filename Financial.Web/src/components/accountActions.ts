@@ -20,9 +20,6 @@ export type AccountFormAction =
   | 'AddEntry'
   | 'Settle'
 
-export const PAID_BY_YOU = 'You'
-export const PAID_BY_OTHER = 'Other'
-
 export const ACTION_LABELS: Record<AccountFormAction, string> = {
   AddExpense: 'New expense',
   AddCharge: 'New charge',

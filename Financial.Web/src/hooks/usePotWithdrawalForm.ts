@@ -4,11 +4,12 @@ import { apiClient } from '../api/financialApiClient'
 import type { AccountDto, CategoryDto, PotOperationDto, PotWithdrawalRequestDto } from '../api/types'
 import { accountsWith } from '../utils/accountCapabilities'
 import { getCreateFormDate, setStoredDefault } from '../utils/createFormDefaults'
-import { formatCurrency, getSaveErrorMessage, positiveAmount, todayIsoDate, toPence } from '../utils/formatters'
+import { formatCurrency, getSaveErrorMessage, positiveAmount, toPence } from '../utils/formatters'
 import { accountCategoryIds, defaultExpenseCategoryId, eligibleWithdrawalCategories } from '../utils/withdrawalExpenseCategories'
 import { hasChangedFields, type FieldErrors } from './inlineFormSlice'
 import type { YearMonth } from './useMonthSelection'
 import { usePots } from './usePots'
+import { futureDateError } from '../utils/validators'
 
 const DATE_KEY = 'potWithdrawal.date'
 const MINUS_SIGN = '−'
@@ -35,8 +36,8 @@ const NO_ERRORS: FieldErrors<PotWithdrawalField> = {}
 function validate(values: WithdrawalValues): FieldErrors<PotWithdrawalField> {
   const errors: FieldErrors<PotWithdrawalField> = {}
   if (!values.potId) errors.potId = 'Choose a pot.'
-  if (!values.date.trim()) errors.date = 'Enter the withdrawal date.'
-  else if (values.date > todayIsoDate()) errors.date = 'Date must not be in the future.'
+  const dateError = values.date.trim() ? futureDateError(values.date) : 'Enter the withdrawal date.'
+  if (dateError) errors.date = dateError
   if (!values.description.trim()) errors.description = 'Enter a description.'
   if (positiveAmount(values.amount) === null) errors.amount = 'Amount must be greater than zero.'
   if (values.bankId && !values.categoryId) errors.categoryId = 'Category is required when a bank is selected.'

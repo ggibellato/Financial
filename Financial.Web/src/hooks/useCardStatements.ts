@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountStatementDto, BankOption } from '../api/types'
 import { getSaveErrorMessage, todayIsoDate } from '../utils/formatters'
+import { paymentDateError } from '../utils/validators'
 import { billPayingAccounts } from './useAccountFormOptions'
 import { useAsyncResource } from './useAsyncResource'
 import { useStatementDueDateForm } from './useStatementDueDateForm'
@@ -32,12 +33,6 @@ interface UnmarkRequest {
   statement: StoredStatement
   isBusy: boolean
   error: string | null
-}
-
-export function paymentDateError(date: string): string | undefined {
-  if (!date) return 'Enter a date.'
-  if (date > todayIsoDate()) return 'Date must not be in the future.'
-  return undefined
 }
 
 function validatePayForm(bankId: string, date: string): Partial<Record<PayStatementField, string>> {

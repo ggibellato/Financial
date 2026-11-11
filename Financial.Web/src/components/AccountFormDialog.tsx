@@ -9,11 +9,11 @@ import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { accountTemplateLabel } from '../utils/accountTemplateLabel'
 import { todayIsoDate } from '../utils/formatters'
+import { PAID_BY_YOU } from '../utils/paidBy'
 
 const UNSET_START_DATE = '0001-01-01'
 const NAME_MAX_LENGTH = 60
 const OTHER_PARTICIPANT_MAX_LENGTH = 60
-const SELF_PARTICIPANT_NAME = 'You'
 const LOCKED_HINT = "Can't change once the account has transactions."
 const CURRENCIES_HINT = 'Tick at least one.'
 const CATEGORY_REQUIRED = "Choose the category for this account's bank expenses."
@@ -118,8 +118,8 @@ function validateAccountForm(
     if (otherParticipant.length === 0) errors.otherParticipant = "Enter the other participant's name."
     else if (otherParticipant.length > OTHER_PARTICIPANT_MAX_LENGTH)
       errors.otherParticipant = `The other participant's name must be ${OTHER_PARTICIPANT_MAX_LENGTH} characters or fewer.`
-    else if (otherParticipant.toLowerCase() === SELF_PARTICIPANT_NAME.toLowerCase())
-      errors.otherParticipant = `The other participant can't be called ${SELF_PARTICIPANT_NAME}.`
+    else if (otherParticipant.toLowerCase() === PAID_BY_YOU.toLowerCase())
+      errors.otherParticipant = `The other participant can't be called ${PAID_BY_YOU}.`
   }
   if (template?.capabilities.includes('HasOpeningBalance')) {
     if (values.openingBalance.trim().length === 0) errors.openingBalance = 'Opening balance is required.'

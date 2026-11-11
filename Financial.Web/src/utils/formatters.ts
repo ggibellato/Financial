@@ -39,6 +39,10 @@ export function formatPercentFraction(value: number): string {
   return percentFractionFormatter.format(value)
 }
 
+export function formatPercentN2(value: number): string {
+  return `${formatN2(value)}%`
+}
+
 export function formatPercent1(value: number): string {
   return `${percent1Formatter.format(value)}%`
 }

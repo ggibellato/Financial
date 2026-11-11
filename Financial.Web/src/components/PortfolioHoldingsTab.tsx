@@ -12,7 +12,7 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { formatMonthYear, formatN2, formatN2OrDash, formatN8, formatShortDate, signClass } from '../utils/formatters'
+import { formatMonthYear, formatN2, formatN2OrDash, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
 import './PortfolioHoldingsTab.css'
 
 function parseCreditMonth(yearMonth: string): Date {
@@ -42,10 +42,6 @@ const DEFAULT_ROW_PRICE: RowPriceState = {
   currentPrice: null,
   fetchFailed: false,
   isManual: false,
-}
-
-function formatPercentValue(value: number): string {
-  return `${formatN2(value)}%`
 }
 
 function renderOptional<T>(value: T | null, render: (v: T) => ReactNode) {
@@ -95,7 +91,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="First investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
       <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
       <DataTableCell label="% Portfolio">
-        {renderOptional(item.portfolioWeight, formatPercentValue)}
+        {renderOptional(item.portfolioWeight, formatPercentN2)}
       </DataTableCell>
       <DataTableCell label="Total invested">{formatN2(item.totalInvested)}</DataTableCell>
       {isHistoric && (
@@ -143,17 +139,17 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       </DataTableCell>
       <DataTableCell label="Profit %">
         {renderGatedCell(cellLoading, cellUnavailable, item.resultPercent, v => (
-          <span className={getProfitClass(v)}>{formatN2(v)}%</span>
+          <span className={getProfitClass(v)}>{formatPercentN2(v)}</span>
         ))}
       </DataTableCell>
       <DataTableCell label="Profit % w/ credits">
         {renderGatedCell(cellLoading, cellUnavailable, item.resultWithCreditsPercent, v => (
-          <span className={getProfitClass(v)}>{formatN2(v)}%</span>
+          <span className={getProfitClass(v)}>{formatPercentN2(v)}</span>
         ))}
       </DataTableCell>
       <DataTableCell label="XIRR">
         {renderGatedCell(cellLoading, false, xirrValue, v => (
-          <span className={getProfitClass(v)}>{formatN2(v * 100)}%</span>
+          <span className={getProfitClass(v)}>{formatPercentN2(v * 100)}</span>
         ))}
       </DataTableCell>
       <DataTableCell label="Last month credits" className="portfolio-holdings__credits-separator">
@@ -163,13 +159,13 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         {renderOptional(item.lastCreditMonth, formatCreditMonth)}
       </DataTableCell>
       <DataTableCell label="Last month credits %">
-        {renderOptional(item.lastMonthCreditsPercent, formatPercentValue)}
+        {renderOptional(item.lastMonthCreditsPercent, formatPercentN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual credits">
         {renderOptional(item.estimatedAnnualCredits, formatN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual %">
-        {renderOptional(item.estimatedAnnualPercent, formatPercentValue)}
+        {renderOptional(item.estimatedAnnualPercent, formatPercentN2)}
       </DataTableCell>
     </TableRow>
   )

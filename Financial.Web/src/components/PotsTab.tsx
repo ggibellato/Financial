@@ -1,7 +1,7 @@
 import { Badge, Skeleton, SkeletonItem, Text } from '@fluentui/react-components'
 import type { PotBalanceDto, PotsSummaryDto } from '../api/types'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
-import { formatLongMonthYear, formatN2 } from '../utils/formatters'
+import { formatLongMonthYear, formatN2, formatPercentN2 } from '../utils/formatters'
 import ErrorState from './ErrorState'
 import TotalsGrid from './TotalsGrid'
 import TruncatedText from './TruncatedText'
@@ -26,7 +26,7 @@ const COLUMNS = [
     key: 'splitPercentage',
     header: 'Split %',
     numeric: true,
-    render: (pot: PotBalanceDto) => `${formatN2(pot.splitPercentage)}%`,
+    render: (pot: PotBalanceDto) => formatPercentN2(pot.splitPercentage),
     sortAccessor: (pot: PotBalanceDto) => pot.splitPercentage,
   },
   {

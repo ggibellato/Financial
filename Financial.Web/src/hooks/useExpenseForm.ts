@@ -9,6 +9,7 @@ import { selectableBanks } from '../utils/selectableBanks'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 import { isCardChargeStatus, isLockedByPaidStatement } from '../utils/expensePaymentStatus'
+import { futureDateError } from '../utils/validators'
 
 export type PaymentMode = 'bank' | 'card'
 
@@ -298,8 +299,9 @@ export function useExpenseForm(
     const requiresDateAndDescription = !state.isEditing || state.isRefund
     if (requiresDateAndDescription && !state.date.trim()) {
       errors.date = 'Date is required.'
-    } else if (state.isRefund && state.date > todayIsoDate()) {
-      errors.date = 'Date must not be in the future.'
+    } else if (state.isRefund) {
+      const futureError = futureDateError(state.date)
+      if (futureError) errors.date = futureError
     }
 
     if (requiresDateAndDescription && !state.description.trim()) {

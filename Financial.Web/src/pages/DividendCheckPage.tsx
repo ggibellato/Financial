@@ -8,7 +8,7 @@ import TickerCombobox, { type TickerGroup } from '../components/TickerCombobox'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, DATE_DESC_SORT, type SortAccessor } from '../hooks/useSortableRows'
-import { formatN2, formatShortDateUtc, getErrorMessage } from '../utils/formatters'
+import { formatN2, formatPercentN2, formatShortDateUtc, getErrorMessage } from '../utils/formatters'
 import './DividendCheckPage.css'
 
 const FIXED_EXCHANGE = 'BVMF'
@@ -115,11 +115,11 @@ export default function DividendCheckPage() {
             </p>
             <p>Current price: {formatN2(summary.currentPrice)}</p>
             <p className="summary-card__avg-dividend">
-              Average dividend: {formatN2(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatN2(summary.dividendYieldPercent)}%
+              Average dividend: {formatN2(summary.averageDividendLastFiveYears)} (last 5 years) — Yield: {formatPercentN2(summary.dividendYieldPercent)}
             </p>
             <p className={`summary-card__price-max ${priceMaxBuyClass}`}>
               Price max buy: {formatN2(summary.priceMaxBuy)}&nbsp;&nbsp;&nbsp;Discount{' '}
-              {formatN2(summary.discountPercent)}%
+              {formatPercentN2(summary.discountPercent)}
             </p>
           </section>
 

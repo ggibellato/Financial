@@ -3,7 +3,7 @@ import type { SettlementEntryField, SettlementEntryFormModel } from '../hooks/us
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDialog from './ConfirmDialog'
 import { todayIsoDate } from '../utils/formatters'
-import { PAID_BY_OTHER, PAID_BY_YOU } from './accountActions'
+import { PAID_BY_OTHER, PAID_BY_YOU } from '../utils/paidBy'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 import LockedValue from './LockedValue'
@@ -72,7 +72,7 @@ export default function SettlementEntryForm({ form, onCancel }: SettlementEntryF
             </Field>
             <Field label="Paid by" required {...validation('paidBy')}>
               <RadioGroup name="paidBy" layout="horizontal" className={styles.radioRow} value={values.paidBy} onChange={(_, data) => setField('paidBy', data.value)}>
-                <Radio value={PAID_BY_YOU} label="You" />
+                <Radio value={PAID_BY_YOU} label={PAID_BY_YOU} />
                 <Radio value={PAID_BY_OTHER} label={otherParticipant} />
               </RadioGroup>
             </Field>
