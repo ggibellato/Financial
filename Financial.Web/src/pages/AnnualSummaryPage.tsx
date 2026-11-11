@@ -200,7 +200,7 @@ export default function AnnualSummaryPage() {
           {activeTab === 'categoryTotals' && (
             <section className="annual-summary-page__section">
               <FilteredRowsNotice {...categoryTotalsFilterSummary} tableRef={filterableTableRef} />
-              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table">
+              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Category totals">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader
@@ -391,7 +391,7 @@ export default function AnnualSummaryPage() {
           {activeTab === 'historicSummaryAverage' && (
             <section className="annual-summary-page__section">
               <FilteredRowsNotice {...historicFilterSummary} tableRef={filterableTableRef} />
-              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table">
+              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Historic summary average">
                 <TableHeader>
                   <TableRow>
                     <SortableColumnHeader

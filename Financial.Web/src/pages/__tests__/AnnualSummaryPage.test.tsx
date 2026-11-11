@@ -622,6 +622,7 @@ describe('AnnualSummaryPage', () => {
 
       expect(screen.getByRole('status')).toBeEmptyDOMElement()
       expect(within(document.querySelector('tbody')!).getByText('Mercado')).toBeInTheDocument()
+      expect(screen.getByRole('table', { name: 'Historic summary average' })).toHaveFocus()
     })
   })
 })
