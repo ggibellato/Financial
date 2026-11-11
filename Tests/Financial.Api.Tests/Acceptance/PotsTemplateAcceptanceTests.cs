@@ -10,7 +10,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class PotsTemplateAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "9a1c0000-0000-0000-0000-000000000001";
     private const string ReservaId = "9a1c0000-0000-0000-0000-000000000002";
     private const string HolidaysId = "9a1c0000-0000-0000-0000-000000000003";

@@ -9,7 +9,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class MonthTransactionsViewAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "f1600000-0000-0000-0000-000000000001";
     private const string ChaseId = "f1600000-0000-0000-0000-000000000002";
     private const string DormantId = "f1600000-0000-0000-0000-000000000003";

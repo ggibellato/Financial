@@ -10,7 +10,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "8f3b1c1a-2e3a-4b1a-9a7f-100000000001";
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string AmexId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000001";
@@ -114,14 +113,14 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_DatedAfterToday_Returns400()
     {
-        await ShouldBeRefusedAsync(await PostCardChargeAsync(new DateOnly(2026, 11, 16), -40m), HttpStatusCode.BadRequest, "Date must not be in the future.");
+        await ShouldBeProblemAsync(await PostCardChargeAsync(new DateOnly(2026, 11, 16), -40m), HttpStatusCode.BadRequest, "Date must not be in the future.");
     }
 
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-01")]
     public async Task AddRefund_IntoAPaidStatement_Returns400()
     {
-        await ShouldBeRefusedAsync(await PostCardChargeAsync(new DateOnly(2026, 9, 20), -40m), HttpStatusCode.BadRequest, "This charge's statement is paid; unmark it first.");
+        await ShouldBeProblemAsync(await PostCardChargeAsync(new DateOnly(2026, 9, 20), -40m), HttpStatusCode.BadRequest, "This charge's statement is paid; unmark it first.");
     }
 
     [Fact]
@@ -298,16 +297,6 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
             Amount = amount
         });
 
-    private static async Task ShouldBeRefusedAsync(HttpResponseMessage response, HttpStatusCode status, string message)
-    {
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(status);
-            problem!.Detail.Should().Be(message);
-        }
-    }
-
     [Fact]
     [Trait("AC", "P60-F15-card-refunds-and-credit-05")]
     public async Task CreditRefund_WritesOneTransfer_LowersCredit_CappedAtCredit_TransferRoutesReturn409()
@@ -316,7 +305,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         await AddCardChargeAsync(10, 8, -60m);
         var bankBefore = (await Client.GetFromJsonAsync<AccountDetailDTO>($"{Api}/accounts/{BarclaysId}/2026/11"))!.Balance;
 
-        await ShouldBeRefusedAsync(await PostCreditRefundAsync(60.01m), HttpStatusCode.BadRequest, "The card's credit is 60.00 GBP.");
+        await ShouldBeProblemAsync(await PostCreditRefundAsync(60.01m), HttpStatusCode.BadRequest, "The card's credit is 60.00 GBP.");
 
         var created = await PostCreditRefundAsync(35m);
         created.EnsureSuccessStatusCode();
@@ -327,9 +316,9 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         var bankRows = await Client.GetFromJsonAsync<List<AccountTransactionDTO>>($"{Api}/accounts/{BarclaysId}/transactions/2026/11");
 
         var accountUpdate = new AccountTransferUpdateDTO { Date = refund.Date, SourceAccountId = Guid.Parse(BarclaysId), DestinationAccountId = Guid.Parse(BarclaysId), Amount = 1m };
-        await ShouldBeRefusedAsync(await Client.PutAsJsonAsync($"{Api}/accounts/transfers/{refund.Id}", accountUpdate), HttpStatusCode.Conflict, RefundsCreditMessage);
-        await ShouldBeRefusedAsync(await Client.DeleteAsync($"{Api}/accounts/transfers/{refund.Id}"), HttpStatusCode.Conflict, RefundsCreditMessage);
-        await ShouldBeRefusedAsync(await PostCreditRefundAsync(25.01m), HttpStatusCode.BadRequest, "The card's credit is 25.00 GBP.");
+        await ShouldBeProblemAsync(await Client.PutAsJsonAsync($"{Api}/accounts/transfers/{refund.Id}", accountUpdate), HttpStatusCode.Conflict, RefundsCreditMessage);
+        await ShouldBeProblemAsync(await Client.DeleteAsync($"{Api}/accounts/transfers/{refund.Id}"), HttpStatusCode.Conflict, RefundsCreditMessage);
+        await ShouldBeProblemAsync(await PostCreditRefundAsync(25.01m), HttpStatusCode.BadRequest, "The card's credit is 25.00 GBP.");
 
         using (new AssertionScope())
         {
@@ -375,7 +364,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
         var refused = await Client.DeleteAsync($"{Api}/accounts/credit-refunds/{SeptemberPaymentId}");
         var unknown = await Client.DeleteAsync($"{Api}/accounts/credit-refunds/{Guid.NewGuid()}");
 
-        await ShouldBeRefusedAsync(refused, HttpStatusCode.BadRequest, "This transfer is not a card credit refund.");
+        await ShouldBeProblemAsync(refused, HttpStatusCode.BadRequest, "This transfer is not a card credit refund.");
         unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 
@@ -470,7 +459,7 @@ public class CardRefundsAndCreditAcceptanceTests : ApiEndpointTests
     {
         await AddCardChargeAsync(11, 2, -60m);
 
-        await ShouldBeRefusedAsync(
+        await ShouldBeProblemAsync(
             await PostCreditRefundAsync(35m, month: 10),
             HttpStatusCode.BadRequest,
             "On that date the card had less credit than this refund; choose a later date.");

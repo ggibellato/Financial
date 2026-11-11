@@ -6,7 +6,6 @@ using Financial.CashFlow.Domain.Enums;
 using Financial.Shared.Abstractions.Currencies;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
@@ -14,7 +13,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class SettlementScreenAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "5e771e00-0000-0000-0000-000000000001";
     private const string MaeId = "5e771e00-0000-0000-0000-000000000002";
     private const string SamuelId = "5e771e00-0000-0000-0000-000000000003";
@@ -71,9 +69,6 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
 
     private IEnumerable<Financial.CashFlow.Domain.Entities.SettlementTransaction> StoredEntries(IServiceProvider? services = null) =>
         (services ?? Services).GetRequiredService<ICashFlowRepository>().GetSettlementTransactions();
-
-    private static async Task<string?> DetailOf(HttpResponseMessage response) =>
-        (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;
 
     [Fact]
     [Trait("AC", "P60-F12-settlement-screen-04")]
@@ -229,7 +224,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(response)).Should().Be(message);
+            (await ProblemDetailAsync(response)).Should().Be(message);
             StoredEntries().Should().HaveCount(3);
         }
     }
@@ -250,9 +245,9 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(blank)).Should().Be("Description is required.");
+            (await ProblemDetailAsync(blank)).Should().Be("Description is required.");
             future.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(future)).Should().Be("Date must not be in the future.");
+            (await ProblemDetailAsync(future)).Should().Be("Date must not be in the future.");
         }
     }
 
@@ -266,10 +261,10 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            (await DetailOf(future)).Should().Be("Date must not be in the future.");
-            (await DetailOf(negative)).Should().Be("The converted value must be greater than zero.");
-            (await DetailOf(oneCurrency)).Should().Be("Samuel has one currency, so an entry has no converted value.");
-            (await DetailOf(inactive)).Should().Be("Pai is inactive.");
+            (await ProblemDetailAsync(future)).Should().Be("Date must not be in the future.");
+            (await ProblemDetailAsync(negative)).Should().Be("The converted value must be greater than zero.");
+            (await ProblemDetailAsync(oneCurrency)).Should().Be("Samuel has one currency, so an entry has no converted value.");
+            (await ProblemDetailAsync(inactive)).Should().Be("Pai is inactive.");
             new[] { future, negative, oneCurrency, inactive }.Should().OnlyContain(response => response.StatusCode == HttpStatusCode.BadRequest);
             StoredEntries().Single(entry => entry.Id == Guid.Parse(MaeEntryId)).Description.Should().Be("Farmácia");
         }
@@ -297,7 +292,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         var response = await Client.DeleteAsync(EntryUrl(PaiId, PaiEntryId));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        (await DetailOf(response)).Should().Be("Pai is inactive.");
+        (await ProblemDetailAsync(response)).Should().Be("Pai is inactive.");
         StoredEntries().Should().HaveCount(3);
     }
 
@@ -460,7 +455,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(response)).Should().Be("Nothing to settle.");
+            (await ProblemDetailAsync(response)).Should().Be("Nothing to settle.");
             StoredEntries().Should().HaveCount(4);
         }
     }
@@ -477,7 +472,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(response)).Should().Be(message);
+            (await ProblemDetailAsync(response)).Should().Be(message);
             StoredEntries().Should().HaveCount(3);
         }
     }
@@ -492,7 +487,7 @@ public class SettlementScreenAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             future.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(future)).Should().Be("Date must not be in the future.");
+            (await ProblemDetailAsync(future)).Should().Be("Date must not be in the future.");
             unknown.StatusCode.Should().Be(HttpStatusCode.NotFound);
             nullBody.StatusCode.Should().Be(HttpStatusCode.BadRequest);
             StoredEntries().Should().HaveCount(3);

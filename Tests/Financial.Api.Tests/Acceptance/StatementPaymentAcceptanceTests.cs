@@ -4,7 +4,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
@@ -12,7 +11,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class StatementPaymentAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "8f3b1c1a-2e3a-4b1a-9a7f-100000000001";
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string CasaId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000002";
@@ -55,7 +53,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         """;
 
     public StatementPaymentAcceptanceTests()
-        : base(timeProvider: TestClock.At(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.FromHours(1))))
+        : base(timeProvider: TestClock.At(TestClock.MidOctober))
     {
         ReplaceCashFlowDataBeforeStart(SeededData);
     }
@@ -94,17 +92,6 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
             CountsAsTithe = countsAsTithe
         });
 
-    private static async Task ShouldBeRefused(HttpResponseMessage response, HttpStatusCode status, string message)
-    {
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(status);
-            problem!.Detail.Should().Be(message);
-        }
-    }
-
     [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-05")]
     public async Task MarkPaid_AlreadyPaidOrEmpty_IsRejectedAndSavesNothing()
@@ -112,8 +99,8 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         var alreadyPaid = await MarkPaidAsync(SeptemberStatementId);
         var empty = await MarkPaidAsync(NovemberStatementId);
 
-        await ShouldBeRefused(alreadyPaid, HttpStatusCode.Conflict, "This statement is already paid.");
-        await ShouldBeRefused(empty, HttpStatusCode.BadRequest, "There is nothing to pay on this statement.");
+        await ShouldBeProblemAsync(alreadyPaid, HttpStatusCode.Conflict, "This statement is already paid.");
+        await ShouldBeProblemAsync(empty, HttpStatusCode.BadRequest, "There is nothing to pay on this statement.");
         using (new AssertionScope())
         {
             (await StoredStatementAsync(2026, 9))!.IsPaid.Should().BeTrue();
@@ -127,7 +114,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
     {
         var response = await Client.PostAsync($"{Api}/card-statements/{OctoberStatementId}/unmark-paid", null);
 
-        await ShouldBeRefused(response, HttpStatusCode.Conflict, "This statement is not paid.");
+        await ShouldBeProblemAsync(response, HttpStatusCode.Conflict, "This statement is not paid.");
     }
 
     [Fact]
@@ -177,7 +164,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
         foreach (var refused in new[] { added, valueChanged, dateChanged, cardChanged, movedOut, movedIn, deleted })
         {
-            await ShouldBeRefused(refused, HttpStatusCode.BadRequest, PaidStatementMessage);
+            await ShouldBeProblemAsync(refused, HttpStatusCode.BadRequest, PaidStatementMessage);
         }
 
         var saved = await edited.Content.ReadFromJsonAsync<ExpenseDTO>();
@@ -393,7 +380,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
 
         foreach (var refused in refusals)
         {
-            await ShouldBeRefused(refused, HttpStatusCode.Conflict, PaymentTransferMessage);
+            await ShouldBeProblemAsync(refused, HttpStatusCode.Conflict, PaymentTransferMessage);
         }
 
         repository.GetTransfers().Should().ContainSingle().Which.Amount.Should().Be(30m);
@@ -432,7 +419,7 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
                 Year = 2026, Month = 9, Total = 17m, IsPaid = true, DueDate = new DateOnly(2026, 10, 3),
                 PaidOn = new DateOnly(2026, 10, 2), PaidFromAccountName = "Barclays"
             });
-            await ShouldBeRefused(bankResponse, HttpStatusCode.BadRequest, "Barclays is not a card account.");
+            await ShouldBeProblemAsync(bankResponse, HttpStatusCode.BadRequest, "Barclays is not a card account.");
         }
     }
 
@@ -480,8 +467,8 @@ public class StatementPaymentAcceptanceTests : ApiEndpointTests
         var intoEarlier = await MoveToStatementAsync(chargeId, 2026, 9);
         var intoLater = await MoveToStatementAsync(chargeId, 2027, 1);
 
-        await ShouldBeRefused(intoPaid, HttpStatusCode.BadRequest, laterUnpaidMessage);
-        await ShouldBeRefused(intoEarlier, HttpStatusCode.BadRequest, laterUnpaidMessage);
+        await ShouldBeProblemAsync(intoPaid, HttpStatusCode.BadRequest, laterUnpaidMessage);
+        await ShouldBeProblemAsync(intoEarlier, HttpStatusCode.BadRequest, laterUnpaidMessage);
         using (new AssertionScope())
         {
             intoLater.StatusCode.Should().Be(HttpStatusCode.OK);

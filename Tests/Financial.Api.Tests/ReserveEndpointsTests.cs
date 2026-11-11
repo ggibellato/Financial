@@ -8,7 +8,6 @@ namespace Financial.Api.Tests;
 [Trait("Category", "Integration")]
 public class ReserveEndpointsTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private static readonly Guid ArianaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-300000000003");
     private static readonly Guid ArianaIncomeSourceId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-000000000002");
     private static readonly Guid ReservaId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-900000000001");

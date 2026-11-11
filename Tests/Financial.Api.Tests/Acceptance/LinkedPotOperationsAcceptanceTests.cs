@@ -15,7 +15,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "9a1d0000-0000-0000-0000-000000000001";
     private const string ReservaId = "9a1d0000-0000-0000-0000-000000000002";
     private const string ChaseId = "9a1d0000-0000-0000-0000-000000000003";
@@ -81,9 +80,6 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
 
     private IReadOnlyList<Pot> ReservaPots => Repository.GetAccounts().Single(account => account.Id == Guid.Parse(ReservaId)).Pots!;
 
-    private static async Task<string?> DetailOf(HttpResponseMessage response) =>
-        (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;
-
     private List<Expense> ExpensesOf(Guid? operationId) =>
         Repository.GetExpenses().Where(expense => expense.OperationId == operationId).ToList();
 
@@ -131,7 +127,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
                     (Guid.Parse(ReservaCategoryId), 5m, Guid.Parse(ChaseId), "Deposit to Reserva"));
             MovementsOf(created.OperationId).Should().Equal((Guid.Parse(InvestimentoId), 54m), (Guid.Parse(HouseTreatsId), 36m));
             mismatch.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(mismatch)).Should().Be("Funding lines must add up to £90.00.");
+            (await ProblemDetailAsync(mismatch)).Should().Be("Funding lines must add up to £90.00.");
             Repository.GetExpenses().Should().HaveCount(2);
         }
     }
@@ -311,13 +307,13 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             expenseUpdate.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(expenseUpdate)).Should().Be(ExpenseMessage);
+            (await ProblemDetailAsync(expenseUpdate)).Should().Be(ExpenseMessage);
             expenseDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(expenseDelete)).Should().Be(ExpenseMessage);
+            (await ProblemDetailAsync(expenseDelete)).Should().Be(ExpenseMessage);
             movementUpdate.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(movementUpdate)).Should().Be(MovementMessage);
+            (await ProblemDetailAsync(movementUpdate)).Should().Be(MovementMessage);
             movementDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(movementDelete)).Should().Be(MovementMessage);
+            (await ProblemDetailAsync(movementDelete)).Should().Be(MovementMessage);
             Repository.GetExpenses().Select(e => (e.Description, e.Value)).Should().BeEquivalentTo([("Boots", -38.25m), ("Boots", 38.25m)]);
             Repository.GetPotTransactions().Single(m => m.Id == created.Id).Amount.Should().Be(-38.25m);
         }
@@ -432,7 +428,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(response)).Should().Be("Active pots must total 100% (now 95%).");
+            (await ProblemDetailAsync(response)).Should().Be("Active pots must total 100% (now 95%).");
             ReservaPots.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
         }
     }
@@ -467,13 +463,13 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             missing.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(missing)).Should().Be("Every pot must be in the list; pots can't be deleted.");
+            (await ProblemDetailAsync(missing)).Should().Be("Every pot must be in the list; pots can't be deleted.");
             duplicate.StatusCode.Should().Be(HttpStatusCode.Conflict);
             var duplicateProblem = await duplicate.Content.ReadFromJsonAsync<ProblemDetails>();
             duplicateProblem!.Detail.Should().Be("A pot named \"HOLIDAYS\" already exists.");
             duplicateProblem.Extensions["code"]!.ToString().Should().Be("duplicateName");
             blank.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(blank)).Should().Be("Pot name is required.");
+            (await ProblemDetailAsync(blank)).Should().Be("Pot name is required.");
             ReservaPots.Select(pot => pot.Name).Should().Equal("Investimento", "HouseTreats", "Holidays");
         }
     }
@@ -569,7 +565,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             ExpensesOfIncome(income!.Id).Select(e => (e.PaymentSourceAccount!.Id, e.Value))
                 .Should().Equal((Guid.Parse(BarclaysId), 85m), (Guid.Parse(ChaseId), 5m));
             mismatch.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(mismatch)).Should().Be("Funding lines must add up to \u00a390.00.");
+            (await ProblemDetailAsync(mismatch)).Should().Be("Funding lines must add up to \u00a390.00.");
             Repository.GetIncomes().Should().ContainSingle();
         }
     }
@@ -595,7 +591,7 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             (editedExpense.Value, editedExpense.OperationId).Should().Be((180m, (Guid?)operationId));
             editedMovements.Should().Equal((Guid.Parse(InvestimentoId), 108m), (Guid.Parse(HouseTreatsId), 72m));
             rejected.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            (await DetailOf(rejected)).Should().Be("Funding lines must add up to \u00a3270.00.");
+            (await ProblemDetailAsync(rejected)).Should().Be("Funding lines must add up to \u00a3270.00.");
             incomeAfterRejection.Should().Be(200m);
             expensesAfterRejection.Should().Equal(180m);
             delete.IsSuccessStatusCode.Should().BeTrue();
@@ -638,11 +634,11 @@ public class LinkedPotOperationsAcceptanceTests : ApiEndpointTests
             read!.IncomeId.Should().Be(created.Id);
             read.FundingLines.Select(line => line.Amount).Should().Equal(90m);
             update.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(update)).Should().Be(IncomeDepositMessage);
+            (await ProblemDetailAsync(update)).Should().Be(IncomeDepositMessage);
             delete.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(delete)).Should().Be(IncomeDepositMessage);
+            (await ProblemDetailAsync(delete)).Should().Be(IncomeDepositMessage);
             expenseDelete.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            (await DetailOf(expenseDelete)).Should().Be(ExpenseMessage);
+            (await ProblemDetailAsync(expenseDelete)).Should().Be(ExpenseMessage);
             Repository.GetExpenses().Should().ContainSingle();
             MovementsOf(operationId).Should().HaveCount(2);
         }

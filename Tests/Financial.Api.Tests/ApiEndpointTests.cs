@@ -1,5 +1,10 @@
+using System.Net;
+using System.Net.Http.Json;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.Shared.Abstractions.Currencies;
+using FluentAssertions;
+using FluentAssertions.Execution;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Financial.Api.Tests;
@@ -12,6 +17,8 @@ namespace Financial.Api.Tests;
 /// </summary>
 public abstract class ApiEndpointTests : IAsyncLifetime
 {
+    protected const string Api = "/api/v1/financial";
+
     private readonly ApiTestFactory _factory;
     private HttpClient? _client;
 
@@ -36,6 +43,20 @@ public abstract class ApiEndpointTests : IAsyncLifetime
     protected IServiceProvider Services => _factory.Services;
 
     protected void ReplaceCashFlowDataBeforeStart(string json) => _factory.ReplaceCashFlowData(json);
+
+    protected static async Task<string?> ProblemDetailAsync(HttpResponseMessage response) =>
+        (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;
+
+    protected static async Task ShouldBeProblemAsync(HttpResponseMessage response, HttpStatusCode status, string detail)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
+
+        using (new AssertionScope())
+        {
+            response.StatusCode.Should().Be(status);
+            problem!.Detail.Should().Be(detail);
+        }
+    }
 
     public virtual Task InitializeAsync() => Task.CompletedTask;
 

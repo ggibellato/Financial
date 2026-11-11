@@ -6,7 +6,6 @@ using Financial.CashFlow.Application.Models;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
@@ -14,13 +13,11 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class StatementDueDateAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "8f3b1c1a-2e3a-4b1a-9a7f-100000000001";
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string AmexId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000001";
     private const string OldVisaId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000002";
     private const string UnknownId = "8f3b1c1a-2e3a-4b1a-9a7f-999999999999";
-    private static readonly DateTimeOffset Now = new(2026, 10, 15, 12, 0, 0, TimeSpan.FromHours(1));
     private static readonly TimeSpan SyncTimeout = TimeSpan.FromSeconds(10);
 
     private const string SeededData = $$"""
@@ -56,7 +53,7 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     }
 
     private StatementDueDateAcceptanceTests(FakeCalendarProvider provider)
-        : base(timeProvider: TestClock.At(Now), calendarProvider: provider)
+        : base(timeProvider: TestClock.At(TestClock.MidOctober), calendarProvider: provider)
     {
         _provider = provider;
         ReplaceCashFlowDataBeforeStart(SeededData);
@@ -64,7 +61,7 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
 
     private void Connect() =>
         Services.GetRequiredService<ICalendarConnectionStore>().Save(new CalendarConnection(
-            "user@gmail.com", "cal-1", "access-token", "refresh-token", Now.AddHours(1), Now.AddDays(-1), new Dictionary<Guid, string>()));
+            "user@gmail.com", "cal-1", "access-token", "refresh-token", TestClock.MidOctober.AddHours(1), TestClock.MidOctober.AddDays(-1), new Dictionary<Guid, string>()));
 
     private Task<HttpResponseMessage> PutDueDateAsync(string accountId, int year, int month, DateOnly? dueDate) =>
         Client.PutAsJsonAsync($"{Api}/accounts/{accountId}/statements/{year}/{month}/due-date", new StatementDueDateUpdateDTO { DueDate = dueDate });
@@ -170,8 +167,7 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     {
         var response = await PutDueDateAsync(accountId, year, month, dueDate is null ? null : DateOnly.Parse(dueDate, System.Globalization.CultureInfo.InvariantCulture));
 
-        response.StatusCode.Should().Be(status);
-        (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail.Should().Be(message);
+        await ShouldBeProblemAsync(response, status, message);
     }
 
     [Theory]

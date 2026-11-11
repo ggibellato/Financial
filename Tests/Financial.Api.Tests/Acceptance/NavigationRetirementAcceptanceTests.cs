@@ -8,7 +8,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class NavigationRetirementAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string ZetaCategoryId = "0a710000-0000-0000-0000-000000000001";
     private const string AlphaCategoryId = "0a710000-0000-0000-0000-000000000002";
 
