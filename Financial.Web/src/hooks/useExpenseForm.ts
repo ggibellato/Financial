@@ -61,7 +61,7 @@ function withOpenedValues(state: ExpenseFormState): ExpenseFormState {
 
 function invoiceMonthMovedFrom(state: ExpenseFormState): string | null {
   const openedMonth = state.openedValues?.invoiceDate
-  return state.isEditing && !state.invoiceMonthPinned && openedMonth && openedMonth !== state.invoiceDate ? openedMonth : null
+  return state.isEditing && !state.invoiceMonthPinned && openedMonth && state.invoiceDate && openedMonth !== state.invoiceDate ? openedMonth : null
 }
 
 interface ExpenseFormState {
@@ -301,15 +301,15 @@ export function useExpenseForm(
   function submit() {
     const errors: Partial<Record<ExpenseFormField, string>> = {}
 
-    const requiresDateAndDescription = !state.isEditing || state.isRefund
-    if (requiresDateAndDescription && !state.date.trim()) {
+    const requiresDescription = !state.isEditing || state.isRefund
+    if (!state.date.trim()) {
       errors.date = 'Date is required.'
     } else if (state.isRefund) {
       const futureError = futureDateError(state.date)
       if (futureError) errors.date = futureError
     }
 
-    if (requiresDateAndDescription && !state.description.trim()) {
+    if (requiresDescription && !state.description.trim()) {
       errors.description = 'Description is required.'
     }
 

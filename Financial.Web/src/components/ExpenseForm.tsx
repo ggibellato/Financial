@@ -11,6 +11,7 @@ import { selectableBanks } from '../utils/selectableBanks'
 import ActionErrorAlert from './ActionErrorAlert'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
+import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 import LockedValue from './LockedValue'
 
 const SETTLED_FIELD_HINT = 'Locked: its card statement is paid'
@@ -82,6 +83,7 @@ export default function ExpenseForm({
   onCancel,
 }: ExpenseFormProps) {
   const styles = useFormPanelStyles()
+  const hidden = useVisuallyHiddenStyles()
   const [openedPaymentSource] = useState(paymentSource)
   const fieldError = useFieldError(saveErrorFields)
   const hasFieldErrors = Object.keys(saveErrorFields).length > 0
@@ -93,6 +95,9 @@ export default function ExpenseForm({
   const cardName = lockedCard?.name || creditCardName || creditCardId
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date)
   const invoiceMonthFieldLabel = lockedCard ? 'Statement month' : 'Invoice month'
+  const invoiceMonthMovedHint = invoiceMonthMovedFrom
+    ? `${invoiceMonthFieldLabel} moved to ${formatStatementMonthLabel(invoiceDateDisplay)} with the date (was ${formatStatementMonthLabel(invoiceMonthMovedFrom)}).`
+    : undefined
   const noun = isRefund ? 'refund' : lockedCard ? 'charge' : 'expense'
   const titleId = useId()
 
@@ -220,22 +225,20 @@ export default function ExpenseForm({
           )}
 
           {(isSettled || paymentMode === 'card') && (
-            <Field
-              label={invoiceMonthFieldLabel}
-              hint={
-                invoiceMonthMovedFrom
-                  ? `${invoiceMonthFieldLabel} moved to ${formatStatementMonthLabel(invoiceDateDisplay)} with the date (was ${formatStatementMonthLabel(invoiceMonthMovedFrom)}).`
-                  : undefined
-              }
-            >
-              <Input
-                type="month"
-                value={invoiceDateDisplay}
-                readOnly={isSettled}
-                appearance={isSettled ? 'filled-darker' : undefined}
-                onChange={(e) => onFieldChange('invoiceDate', e.target.value)}
-              />
-            </Field>
+            <>
+              <Field label={invoiceMonthFieldLabel} hint={invoiceMonthMovedHint}>
+                <Input
+                  type="month"
+                  value={invoiceDateDisplay}
+                  readOnly={isSettled}
+                  appearance={isSettled ? 'filled-darker' : undefined}
+                  onChange={(e) => onFieldChange('invoiceDate', e.target.value)}
+                />
+              </Field>
+              <span role="status" className={hidden.visuallyHidden}>
+                {invoiceMonthMovedHint}
+              </span>
+            </>
           )}
 
           {showCountsAsTitheField && (

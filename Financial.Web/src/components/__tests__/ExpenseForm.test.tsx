@@ -403,7 +403,9 @@ describe('ExpenseForm with a locked card', () => {
       <ExpenseForm {...cardProps} isEditing date="2026-10-05" invoiceDate="2026-10" invoiceMonthMovedFrom="2026-11" lockedCard={{ id: 'card-baamex', name: 'BaAmex' }} />,
     )
 
-    expect(screen.getByLabelText('Statement month')).toHaveAccessibleDescription('Statement month moved to October 2026 with the date (was November 2026).')
+    const hint = 'Statement month moved to October 2026 with the date (was November 2026).'
+    expect(screen.getByLabelText('Statement month')).toHaveAccessibleDescription(hint)
+    expect(screen.getAllByRole('status').map((status) => status.textContent)).toContain(hint)
   })
 
   it('shows no statement month hint while the date has not moved it', () => {

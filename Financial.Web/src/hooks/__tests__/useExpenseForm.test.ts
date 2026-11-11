@@ -385,6 +385,19 @@ describe('useExpenseForm', () => {
     expect(result.current.invoiceMonthMovedFrom).toBeNull()
   })
 
+  it('reports no moved statement month and refuses to save while the date of an edited charge is cleared', async () => {
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+
+    act(() => result.current.showEditForm({ ...LATER_STATEMENT_CHARGE, invoiceDate: '2026-11-01' }))
+    act(() => result.current.setField('date', ''))
+    expect(result.current.invoiceMonthMovedFrom).toBeNull()
+
+    await act(() => result.current.submit())
+
+    expect(result.current.saveErrorFields.date).toBe('Date is required.')
+    expect(updateExpenseMock).not.toHaveBeenCalled()
+  })
+
   it('saves a settled expense with its payment fields unchanged', async () => {
     const settled: ExpenseDto = {
       ...EXPENSE,
