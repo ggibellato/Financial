@@ -63,7 +63,7 @@ Do not force every field to equal width.
 
 When an entity's Add/Create and Edit forms are separate views with different
 field sets by design, any field that appears in both variants — plus the
-trailing validation-error and Save/Cancel action rows — must occupy the same
+general error under the title and the trailing Save/Cancel action row — must occupy the same
 absolute grid row in both views. Reserve empty, fixed-height rows in the
 shorter variant for fields it doesn't show, rather than compacting its
 shared field/action rows upward, so the value someone is editing and the

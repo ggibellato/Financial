@@ -336,8 +336,10 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     fireEvent.click(within(await findDialog()).getByText('Continue', { selector: 'button' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Barclays is inactive.')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent('Barclays is inactive.')
     await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    await waitFor(() => expect(alert).toHaveFocus())
   })
 
   it('shows a server refusal in an alert and moves focus to it', async () => {

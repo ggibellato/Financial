@@ -90,14 +90,14 @@ interface TransactionRowProps {
 
 function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) {
   const date = formatShortDate(transaction.date)
-  const type = typeDisplayLabel(transaction.type)
+  const typeLabel = typeDisplayLabel(transaction.type)
   const net = formatN2(transaction.netCash)
 
   return (
     <TableRow>
       <DataTableCell label="Date">{date}</DataTableCell>
       <DataTableCell label="Type" className={typeDisplayClass(transaction.type)}>
-        {type}
+        {typeLabel}
       </DataTableCell>
       <DataTableCell label="Quantity" className="data-table__col--numeric">{formatN8(transaction.quantity)}</DataTableCell>
       <DataTableCell label="Unit Price" className="data-table__col--numeric">{formatN2(transaction.unitPrice)}</DataTableCell>
@@ -110,7 +110,7 @@ function TransactionRow({ transaction, onEdit, onDelete }: TransactionRowProps) 
         <FxProvenanceTooltip currency={transaction.currency} fxRateSnapshot={transaction.fxRateSnapshot} />
       </DataTableCell>
       <RowActionsCell
-        itemName={`transaction ${type} ${net}, ${date}`}
+        itemName={`transaction ${typeLabel} ${net}, ${date}`}
         onEdit={() => onEdit(transaction)}
         onDelete={() => onDelete(transaction.id)}
       />
