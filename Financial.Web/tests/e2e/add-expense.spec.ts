@@ -22,7 +22,7 @@ test('@smoke an added expense appears on the account screen', async ({ page, run
   await fillValidExpense(page, description)
   await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
 
-  await expect(page.getByRole('cell', { name: description })).toBeVisible()
+  await expect(page.getByRole('cell', { name: description, exact: true })).toBeVisible()
 })
 
 test('@smoke a blank value is rejected with a validation message and nothing is sent', async ({ page }) => {
