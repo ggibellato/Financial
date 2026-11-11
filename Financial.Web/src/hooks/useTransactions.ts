@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type {
   AssetDetailsDto,
@@ -248,7 +248,7 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
     case 'DELETE_START':
       return { ...state, deletingId: action.payload, deleteError: null }
     case 'DELETE_SUCCESS': {
-      const deletedRowWasBeingEdited = state.deletingId !== null && state.editingId === state.deletingId
+      const deletedRowWasBeingEdited = state.editingId === state.deletingId
       return {
         ...state,
         ...(deletedRowWasBeingEdited ? BLANK_FORM : {}),
@@ -310,6 +310,13 @@ export interface TransactionsData {
 export function useTransactions(): TransactionsData {
   const { selectedNode, scope } = useSelectedNode()
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const selectionGeneration = useRef(0)
+  const dispatchForCurrentSelection = useCallback(() => {
+    const generation = selectionGeneration.current
+    return (action: TransactionsAction) => {
+      if (generation === selectionGeneration.current) dispatch(action)
+    }
+  }, [])
   const {
     data: typeEffects,
     error: typeEffectsError,
@@ -321,6 +328,8 @@ export function useTransactions(): TransactionsData {
   )
 
   useEffect(() => {
+    selectionGeneration.current += 1
+    const settle = dispatchForCurrentSelection()
     if (!selectedNode) {
       dispatch({ type: 'RESET' })
       return
@@ -333,9 +342,9 @@ export function useTransactions(): TransactionsData {
       dispatch({ type: 'FETCH_START', payload: { key } })
       void apiClient
         .getAssetDetails(brokerName, portfolioName, assetName, scope)
-        .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'FETCH_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to load asset details'),
           })
@@ -344,9 +353,9 @@ export function useTransactions(): TransactionsData {
       dispatch({ type: 'FETCH_START', payload: { key } })
       void apiClient
         .getTransactionsByBroker(brokerName, scope)
-        .then((result) => dispatch({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to load transactions'),
           })
@@ -355,9 +364,9 @@ export function useTransactions(): TransactionsData {
       dispatch({ type: 'FETCH_START', payload: { key } })
       void apiClient
         .getTransactionsByPortfolio(brokerName, portfolioName, scope)
-        .then((result) => dispatch({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'FETCH_TRANSACTIONS_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'FETCH_ERROR',
             payload: getErrorMessage(err, 'Unable to load transactions'),
           })
@@ -365,7 +374,7 @@ export function useTransactions(): TransactionsData {
     } else {
       dispatch({ type: 'RESET' })
     }
-  }, [selectedNode, scope, state.retryCount])
+  }, [selectedNode, scope, state.retryCount, dispatchForCurrentSelection])
 
   const transactions = useMemo(() => state.asset?.transactions ?? [], [state.asset])
 
@@ -492,6 +501,7 @@ export function useTransactions(): TransactionsData {
     const withheld = formWithheld.trim() === '' ? 0 : parseFloat(formWithheld)
 
     dispatch({ type: 'SAVE_START' })
+    const settle = dispatchForCurrentSelection()
 
     const base = {
       brokerName: selectedNode.brokerName,
@@ -513,21 +523,22 @@ export function useTransactions(): TransactionsData {
       .then((result) => {
         setStoredDefault(DATE_KEY, formDate)
         setStoredDefault(TYPE_KEY, formType)
-        dispatch({ type: 'SAVE_SUCCESS', payload: result })
+        settle({ type: 'SAVE_SUCCESS', payload: result })
       })
       .catch((err: unknown) => {
-        dispatch({
+        settle({
           type: 'SAVE_ERROR',
           payload: { message: getErrorMessage(err, 'Failed to save transaction'), fields: {} },
         })
       })
-  }, [selectedNode, state, typeEffects, requiresLotAllocation])
+  }, [selectedNode, state, typeEffects, requiresLotAllocation, dispatchForCurrentSelection])
 
   const deleteTransaction = useCallback(
     (id: string) => {
       if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
       dispatch({ type: 'DELETE_START', payload: id })
+      const settle = dispatchForCurrentSelection()
       void apiClient
         .deleteTransaction({
           brokerName: selectedNode.brokerName,
@@ -535,15 +546,15 @@ export function useTransactions(): TransactionsData {
           assetName: selectedNode.assetName,
           id,
         })
-        .then((result) => dispatch({ type: 'DELETE_SUCCESS', payload: result }))
+        .then((result) => settle({ type: 'DELETE_SUCCESS', payload: result }))
         .catch((err: unknown) => {
-          dispatch({
+          settle({
             type: 'DELETE_ERROR',
             payload: getErrorMessage(err, 'Failed to delete transaction'),
           })
         })
     },
-    [selectedNode, state.deletingId],
+    [selectedNode, state.deletingId, dispatchForCurrentSelection],
   )
 
   return {
