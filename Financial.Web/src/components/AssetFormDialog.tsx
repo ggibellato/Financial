@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Field, Input, Select } from '@fluentui/react-components'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
+import ReadOnlyInput from './ReadOnlyInput'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDuplicateNameField } from '../hooks/useDuplicateNameField'
 import { isValidIsin } from '../utils/validators'
@@ -109,10 +110,10 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
       {isEditing ? (
         <>
           <Field label="Broker">
-            <Input value={asset.brokerName} readOnly appearance="filled-darker" />
+            <ReadOnlyInput value={asset.brokerName} />
           </Field>
           <Field label="Portfolio">
-            <Input value={asset.portfolioName} readOnly appearance="filled-darker" />
+            <ReadOnlyInput value={asset.portfolioName} />
           </Field>
         </>
       ) : (

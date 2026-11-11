@@ -4,6 +4,7 @@ import type { LabelProps } from '@fluentui/react-components'
 import type { AccountDto, AccountTemplateDto, AccountUpdateDto, CategoryDto } from '../api/types'
 import DiscardChangesDialog from './DiscardChangesDialog'
 import EntityFormDialog from './EntityFormDialog'
+import ReadOnlyInput from './ReadOnlyInput'
 import { hasChangedFields } from '../hooks/inlineFormSlice'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
@@ -269,7 +270,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
         validationMessage={fieldMessage('template')}
       >
         {isLocked ? (
-          <Input ref={templateRef} value={templateLabel} readOnly appearance="filled-darker" />
+          <ReadOnlyInput ref={templateRef} value={templateLabel} />
         ) : (
           <Select ref={templateRef} value={values.templateName} onChange={(_, data) => changeTemplate(data.value)}>
             {templates.map((candidate) => (
@@ -294,7 +295,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('currencies') && { children: fieldMessage('currencies'), id: currenciesMessageId }}
         >
           {isLocked ? (
-            <Input ref={currenciesRef} value={values.currencies.join(', ')} readOnly appearance="filled-darker" aria-labelledby={currenciesLabelId} />
+            <ReadOnlyInput ref={currenciesRef} value={values.currencies.join(', ')} aria-labelledby={currenciesLabelId} />
           ) : (
             <FieldContextProvider value={undefined}>
               <div
@@ -324,7 +325,7 @@ export default function AccountFormDialog({ account, templates, categories, onCa
           validationMessage={fieldMessage('currency')}
         >
           {isCurrencyFixed ? (
-            <Input ref={currencyRef} value={values.currency} readOnly appearance="filled-darker" />
+            <ReadOnlyInput ref={currencyRef} value={values.currency} />
           ) : (
             <Select ref={currencyRef} value={values.currency} onChange={(_, data) => setField('currency', data.value)}>
               {currencies.map((currency) => (

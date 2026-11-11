@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Field, Input, MessageBar, MessageBarBody, Select, Textarea } from '@fluentui/react-components'
 import type { TaxRuleDto } from '../api/types'
 import EntityFormDialog from './EntityFormDialog'
+import ReadOnlyInput from './ReadOnlyInput'
 import { useFormPanelStyles } from './formPanelStyles'
 import { useDialogSubmit } from '../hooks/useDialogSubmit'
 
@@ -63,7 +64,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
       <div className={styles.grid}>
         <Field label="Jurisdiction">
           {isEditing ? (
-            <Input value={jurisdiction} readOnly appearance="filled-darker" />
+            <ReadOnlyInput value={jurisdiction} />
           ) : (
             <Select value={jurisdiction} onChange={(e) => setJurisdiction(e.target.value)}>
               {JURISDICTIONS.map((j) => (
@@ -77,7 +78,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
 
         <Field label="Event category">
           {isEditing ? (
-            <Input value={eventCategory} readOnly appearance="filled-darker" />
+            <ReadOnlyInput value={eventCategory} />
           ) : (
             <Select value={eventCategory} onChange={(e) => setEventCategory(e.target.value)}>
               {EVENT_CATEGORIES.map((c) => (
