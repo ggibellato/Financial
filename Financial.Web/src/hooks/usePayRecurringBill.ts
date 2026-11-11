@@ -17,7 +17,7 @@ import { getSaveErrorMessage } from '../utils/formatters'
 import type { AccountFormSettings, LockedBank } from './formSettings'
 import { useAsyncResource } from './useAsyncResource'
 
-export const BILLS_LOAD_ERROR = 'Unable to load the recurring bills'
+export const BILLS_LOAD_ERROR = 'Unable to load the recurring bills.'
 export const ALREADY_PAID_ERROR = 'This bill is already paid.'
 export const CHOOSE_BILL_ERROR = 'Choose a bill.'
 export const BILL_CURRENCY = 'GBP'
@@ -130,7 +130,7 @@ export function usePayRecurringBill(
         onPaid()
       })
       .catch((err: unknown) => {
-        const message = getSaveErrorMessage(err, 'Failed to pay the bill')
+        const message = getSaveErrorMessage(err, 'Failed to pay the bill.')
         return err instanceof ApiError && err.status === BAD_REQUEST_STATUS
           ? refreshAfterRejection(billId, message)
           : setSaveError(message)

@@ -76,7 +76,7 @@ export default function DashboardPage() {
       ) : (
         <div className="dashboard-page__panels">
           <section className="dashboard-page__panel dashboard-page__panel--kpis" aria-labelledby="dashboard-kpis-heading">
-            <h3 id="dashboard-kpis-heading">Portfolio Summary</h3>
+            <h3 id="dashboard-kpis-heading">Portfolio summary</h3>
             <DashboardKpiTiles
               summary={dashboard.summary}
               isLoading={dashboard.isLoading}
@@ -90,7 +90,7 @@ export default function DashboardPage() {
             className="dashboard-page__panel dashboard-page__panel--allocation"
             aria-labelledby="dashboard-allocation-heading"
           >
-            <h3 id="dashboard-allocation-heading">Allocation Breakdown</h3>
+            <h3 id="dashboard-allocation-heading">Allocation breakdown</h3>
             <AllocationBreakdownPanel
               breakdown={allocation.breakdown}
               isLoading={allocation.isLoading}
@@ -104,7 +104,7 @@ export default function DashboardPage() {
             className="dashboard-page__panel dashboard-page__panel--warnings"
             aria-labelledby="dashboard-warnings-heading"
           >
-            <h3 id="dashboard-warnings-heading">Data Quality Warnings</h3>
+            <h3 id="dashboard-warnings-heading">Data quality warnings</h3>
             <DataQualityWarningsPanel
               ref={warningsPanelRef}
               report={dataQuality.report}
@@ -118,7 +118,7 @@ export default function DashboardPage() {
             className="dashboard-page__panel dashboard-page__panel--upcoming-income"
             aria-labelledby="dashboard-upcoming-income-heading"
           >
-            <h3 id="dashboard-upcoming-income-heading">Upcoming Income</h3>
+            <h3 id="dashboard-upcoming-income-heading">Upcoming income</h3>
             <UpcomingIncomePanel
               entries={upcomingIncome.entries}
               isLoading={upcomingIncome.isLoading}

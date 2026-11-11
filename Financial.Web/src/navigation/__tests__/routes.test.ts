@@ -31,7 +31,7 @@ describe('route and sidebar agreement', () => {
   it('orders the CashFlow menu as the PRD', () => {
     const cashFlowLabels = NAV_TREE.find((category) => category.id === 'cashflow')!.children.map((child) => child.label)
 
-    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots'])
+    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual summary', 'Mensais', 'Investment snapshots'])
   })
 
   it('declares no duplicate route paths', () => {

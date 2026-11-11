@@ -47,7 +47,7 @@ export function usePotTransactionEditForm(onSaved: () => void) {
         onSaved()
       })
       .catch((err: unknown) => {
-        setEdit((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to update the pot transaction') })
+        setEdit((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to update the pot transaction.') })
       })
   }
 

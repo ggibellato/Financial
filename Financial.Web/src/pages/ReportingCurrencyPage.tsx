@@ -28,7 +28,7 @@ export default function ReportingCurrencyPage() {
   return (
     <section className="reporting-currency-page">
       <header className="reporting-currency-page__header">
-        <h2>Reporting Currency</h2>
+        <h2>Reporting currency</h2>
       </header>
       <Switch label="Show converted totals" checked={enabled ?? true} onChange={handleEnabledChange} />
       <div className="reporting-currency-page__field">

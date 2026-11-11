@@ -40,16 +40,16 @@ describe('BanksGrid', () => {
   it('labels the footer totals as covering all banks while a Bank filter is active, and plainly once it is cleared', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
-    expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
+    expect(footer()).toBe('Bank balance: 51.30 · Round-up: 0.60')
 
     fireEvent.click(screen.getByRole('button', { name: 'Filter by Bank' }))
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 
-    expect(footer()).toBe('Bank Balance (all banks): 51.30 · Round-Up (all banks): 0.60')
+    expect(footer()).toBe('Bank balance (all banks): 51.30 · Round-up (all banks): 0.60')
 
     fireEvent.click(screen.getByRole('checkbox', { name: 'Trading212' }))
 
-    expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
+    expect(footer()).toBe('Bank balance: 51.30 · Round-up: 0.60')
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-02] links each row to its account screen at the viewed month', () => {
@@ -62,7 +62,7 @@ describe('BanksGrid', () => {
   it('renders no expand control and no row-level action buttons, only the sort and filter buttons', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
-    // 3 header sort buttons (Bank, Bank Balance, Round-Up) + 1 filter button (Bank).
+    // 3 header sort buttons (Bank, Bank balance, Round-up) + 1 filter button (Bank).
     expect(screen.getAllByRole('button')).toHaveLength(4)
   })
 
@@ -94,14 +94,14 @@ describe('BanksGrid', () => {
 
     expect(screen.getAllByRole('columnheader')).toHaveLength(3)
     expect(screen.getByRole('columnheader', { name: 'Bank' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Bank Balance' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Round-Up' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Bank balance' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Round-up' })).toBeInTheDocument()
   })
 
-  it('sorts rows by Bank Balance ascending when its header is clicked', () => {
+  it('sorts rows by Bank balance ascending when its header is clicked', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Bank Balance' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Bank balance' }))
 
     const dataRows = screen.getAllByRole('row').slice(1)
     expect(within(dataRows[0]).getByText('Trading212')).toBeInTheDocument()
@@ -111,7 +111,7 @@ describe('BanksGrid', () => {
   it('keeps the single-currency footer unlabelled by currency', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={BANK_TOTALS} currencyTotals={GBP_TOTALS} />)
 
-    expect(footer()).toBe('Bank Balance: 51.30 · Round-Up: 0.60')
+    expect(footer()).toBe('Bank balance: 51.30 · Round-up: 0.60')
   })
 
   it('labels each footer total with its currency when the members hold several currencies', () => {
@@ -123,19 +123,19 @@ describe('BanksGrid', () => {
       />,
     )
 
-    expect(footer()).toBe('Bank Balance GBP: 51.30 · Round-Up GBP: 0.60 · Bank Balance BRL: 640.50 · Round-Up BRL: 0.00')
+    expect(footer()).toBe('Bank balance GBP: 51.30 · Round-up GBP: 0.60 · Bank balance BRL: 640.50 · Round-up BRL: 0.00')
   })
 
   it('shows zero footer totals when there are no currency totals', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={[]} currencyTotals={[]} />)
 
-    expect(footer()).toBe('Bank Balance: 0.00 · Round-Up: 0.00')
+    expect(footer()).toBe('Bank balance: 0.00 · Round-up: 0.00')
   })
 
   it('shows its empty message when no account is in the default group', () => {
     render(<BanksGrid viewedMonth="2026-07" bankTotals={[]} currencyTotals={[]} />)
 
-    expect(screen.getByText('No accounts in the default group for this month')).toBeInTheDocument()
+    expect(screen.getByText('No accounts in the default group for this month.')).toBeInTheDocument()
   })
 
   it('keys rows by account Id, so two accounts with the same name render without a key clash', () => {

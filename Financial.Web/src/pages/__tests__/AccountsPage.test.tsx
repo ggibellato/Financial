@@ -315,7 +315,7 @@ describe('AccountsPage', () => {
 
     renderPage()
 
-    expect(await screen.findByText('Unable to load the accounts')).toBeInTheDocument()
+    expect(await screen.findByText('Unable to load the accounts.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
@@ -323,12 +323,12 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(2)
   })
 
-  it('shows "No accounts this month" when no template has a listed account', async () => {
+  it('shows "No accounts this month." when no template has a listed account', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([])
 
     renderPage()
 
-    expect(await screen.findByText('No accounts this month')).toBeInTheDocument()
+    expect(await screen.findByText('No accounts this month.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

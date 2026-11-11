@@ -90,7 +90,7 @@ export default function InvestmentAccountsPage() {
   return (
     <AdminEntityPage
       title="Investment accounts"
-      createLabel="Create Investment Account"
+      createLabel="New investment account"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       belowActionError={
@@ -126,7 +126,7 @@ export default function InvestmentAccountsPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Investment Account"
+              entityLabel="investment account"
               message={
                 confirmingDelete.hasNonZeroInvestmentSnapshot ? (
                   <>&ldquo;{confirmingDelete.name}&rdquo; has a non-zero balance and cannot be deleted.</>

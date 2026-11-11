@@ -103,7 +103,7 @@ describe('Sidebar', () => {
     const cashFlowLinks = within(screen.getByRole('navigation', { name: 'Main' }))
       .getAllByRole('link')
       .filter((link) => link.getAttribute('href')?.startsWith('/cashflow/'))
-    expect(cashFlowLinks.map((link) => link.textContent)).toEqual(['Accounts', 'Monthly', 'Annual Summary', 'Mensais', 'Investment Snapshots'])
+    expect(cashFlowLinks.map((link) => link.textContent)).toEqual(['Accounts', 'Monthly', 'Annual summary', 'Mensais', 'Investment snapshots'])
 
     fireEvent.click(screen.getAllByText('CashFlow').find((el) => el.closest('.sidebar__group-header'))!)
 
@@ -123,12 +123,12 @@ describe('Sidebar', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
 
     expect(screen.getByRole('navigation', { name: 'Main' })).toHaveClass('sidebar--collapsed')
-    expect(screen.queryByRole('link', { name: 'Active Investments' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Active investments' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }))
 
     expect(screen.getByRole('navigation', { name: 'Main' })).not.toHaveClass('sidebar--collapsed')
-    expect(screen.getByRole('link', { name: 'Active Investments' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Active investments' })).toBeInTheDocument()
   })
 
   it('persists collapsed state to localStorage on toggle', () => {
@@ -145,14 +145,14 @@ describe('Sidebar', () => {
     renderSidebar()
 
     expect(screen.getByRole('navigation', { name: 'Main' })).toHaveClass('sidebar--collapsed')
-    expect(screen.queryByRole('link', { name: 'Active Investments' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Active investments' })).not.toBeInTheDocument()
   })
 
   it('highlights only the nav item matching the current route', () => {
     renderSidebar('/cashflow/monthly')
 
     expect(screen.getByRole('link', { name: 'Monthly' })).toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Active Investments' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Active investments' })).not.toHaveClass('active')
     expect(screen.getByRole('link', { name: 'Mensais' })).not.toHaveClass('active')
   })
 
@@ -321,14 +321,14 @@ describe('Sidebar', () => {
     it('renders nothing when closed (OverlayDrawer unmounts its content)', () => {
       renderSidebar(undefined, { mobileOpen: false })
 
-      expect(screen.queryByRole('link', { name: 'Active Investments' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Active investments' })).not.toBeInTheDocument()
     })
 
     it('renders the full, uncollapsed nav tree inside an accessible dialog when open', () => {
       renderSidebar(undefined, { mobileOpen: true })
 
       const dialog = screen.getByRole('dialog')
-      expect(within(dialog).getByRole('link', { name: 'Active Investments' })).toBeInTheDocument()
+      expect(within(dialog).getByRole('link', { name: 'Active investments' })).toBeInTheDocument()
       expect(within(dialog).getByText('Investments')).toBeInTheDocument()
       expect(within(dialog).getByText('Admin')).toBeInTheDocument()
     })

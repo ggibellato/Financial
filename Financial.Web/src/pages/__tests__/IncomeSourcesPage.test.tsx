@@ -67,7 +67,7 @@ describe('IncomeSourcesPage', () => {
   })
 
   it('shows a warning and keeps the list usable when accounts fail to load', async () => {
-    getAccountsMock.mockRejectedValue(new Error('Unable to load accounts'))
+    getAccountsMock.mockRejectedValue(new Error('Unable to load accounts.'))
     render(<IncomeSourcesPage />)
 
     await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
@@ -99,7 +99,7 @@ describe('IncomeSourcesPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('creates an income source through the Create Income Source dialog', async () => {
+  it('creates an income source through the New income source dialog', async () => {
     createIncomeSourceMock.mockResolvedValue({
       id: 's3',
       name: 'Freelance',
@@ -111,12 +111,12 @@ describe('IncomeSourcesPage', () => {
     render(<IncomeSourcesPage />)
     await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Income Source' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New income source' }))
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Freelance' } })
     fireEvent.change(screen.getByLabelText('Group'), { target: { value: 'NonReportable' } })
     await waitFor(() => expect(screen.getByRole('option', { name: 'Reserva' })).toBeInTheDocument())
     fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add income source' }))
 
     await waitFor(() =>
       expect(createIncomeSourceMock).toHaveBeenCalledWith({
@@ -127,7 +127,7 @@ describe('IncomeSourcesPage', () => {
       }),
     )
     await waitFor(() =>
-      expect(screen.queryByRole('heading', { name: 'Create Income Source' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('heading', { name: 'New income source' })).not.toBeInTheDocument(),
     )
   })
 
@@ -144,7 +144,7 @@ describe('IncomeSourcesPage', () => {
     await waitFor(() => expect(screen.getByText('Gleison')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Gleison' }))
-    expect(screen.getByRole('heading', { name: 'Edit Income Source' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit income source' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Gleison Renamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

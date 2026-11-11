@@ -16,7 +16,7 @@ interface KpiTileDefinition {
 
 const KPI_TILES: KpiTileDefinition[] = [
   {
-    label: 'Market Value',
+    label: 'Market value',
     isPercent: false,
     isSigned: false,
     value: (summary) => summary.convertedMarketValue,
@@ -28,13 +28,13 @@ const KPI_TILES: KpiTileDefinition[] = [
     value: (summary) => summary.convertedInvested,
   },
   {
-    label: 'Unrealised Gain/Loss',
+    label: 'Unrealised gain/loss',
     isPercent: false,
     isSigned: true,
     value: (summary) => summary.convertedUnrealisedGainLoss,
   },
   {
-    label: 'Realised Gain/Loss (Lifetime)',
+    label: 'Realised gain/loss (lifetime)',
     isPercent: false,
     isSigned: true,
     value: (summary) => summary.convertedRealisedGainLoss,
@@ -46,7 +46,7 @@ const KPI_TILES: KpiTileDefinition[] = [
     value: (summary) => summary.convertedIncomeYtd,
   },
   {
-    label: 'Income Lifetime',
+    label: 'Income lifetime',
     isPercent: false,
     isSigned: false,
     value: (summary) => summary.convertedIncomeLifetime,
@@ -58,7 +58,7 @@ const KPI_TILES: KpiTileDefinition[] = [
     value: (summary) => summary.convertedGrossXirr,
   },
   {
-    label: 'Net XIRR (of Tax)',
+    label: 'Net XIRR (of tax)',
     isPercent: true,
     isSigned: true,
     value: (summary) => summary.convertedNetXirr,
@@ -77,7 +77,7 @@ function tileValueClass(value: number | null, isSigned: boolean): string {
 function unvaluedHoldingsMessage(summary: PortfolioDashboardDto): string | null {
   if (!summary.isPartial || summary.unvaluedHoldingCount === 0) return null
   const noun = summary.unvaluedHoldingCount === 1 ? 'holding' : 'holdings'
-  return `${summary.unvaluedHoldingCount} ${noun} could not be valued; Market Value, Unrealised Gain/Loss and both XIRR figures are incomplete.`
+  return `${summary.unvaluedHoldingCount} ${noun} could not be valued; Market value, Unrealised gain/loss and both XIRR figures are incomplete.`
 }
 
 function tileLabel(label: string, summary: PortfolioDashboardDto | null): string {

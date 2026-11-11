@@ -55,11 +55,11 @@ describe('RecurringBillsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('sorts by Due Day when the column header is clicked', async () => {
+  it('sorts by Due day when the column header is clicked', async () => {
     render(<RecurringBillsPage />)
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Due Day' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Due day' }))
 
     const rows = screen.getAllByRole('row').slice(1)
     expect(rows[0]).toHaveTextContent('Rent')
@@ -84,7 +84,7 @@ describe('RecurringBillsPage', () => {
     expect(descriptionsOf()).toEqual([expect.stringContaining('INSS'), expect.stringContaining('Rent')])
   })
 
-  it('creates a recurring bill through the Create Recurring Bill dialog', async () => {
+  it('creates a recurring bill through the New recurring bill dialog', async () => {
     createMensaisBillMock.mockResolvedValue({
       id: 'b3',
       dueDay: 20,
@@ -99,11 +99,11 @@ describe('RecurringBillsPage', () => {
     render(<RecurringBillsPage />)
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Recurring Bill' }))
-    fireEvent.change(screen.getByLabelText(/^Due Day/), { target: { value: '20' } })
+    fireEvent.click(screen.getByRole('button', { name: 'New recurring bill' }))
+    fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '20' } })
     fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Utilities' } })
     fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '300' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add recurring bill' }))
 
     await waitFor(() =>
       expect(createMensaisBillMock).toHaveBeenCalledWith({
@@ -115,7 +115,7 @@ describe('RecurringBillsPage', () => {
       }),
     )
     await waitFor(() =>
-      expect(screen.queryByRole('heading', { name: 'Create Recurring Bill' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('heading', { name: 'New recurring bill' })).not.toBeInTheDocument(),
     )
   })
 
@@ -135,7 +135,7 @@ describe('RecurringBillsPage', () => {
     await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit INSS' }))
-    expect(screen.getByRole('heading', { name: 'Edit Recurring Bill' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit recurring bill' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'INSS Renamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

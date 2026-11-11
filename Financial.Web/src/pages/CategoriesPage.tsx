@@ -54,7 +54,7 @@ export default function CategoriesPage() {
   return (
     <AdminEntityPage
       title="Categories"
-      createLabel="Create Category"
+      createLabel="New category"
       onCreate={() => setIsCreating(true)}
       belowHeader={
         <Switch
@@ -76,7 +76,7 @@ export default function CategoriesPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Category"
+              entityLabel="category"
               message={
                 confirmingDelete.hasReferences ? (
                   <>&ldquo;{confirmingDelete.name}&rdquo; is still used by a transaction and cannot be deleted.</>

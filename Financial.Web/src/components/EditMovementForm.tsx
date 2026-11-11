@@ -29,7 +29,7 @@ interface EditMovementFormProps {
 }
 
 export default function EditMovementForm({
-  title = 'Edit Movement',
+  title = 'Edit movement',
   potLabel = 'Bucket',
   bucketId,
   amount,

@@ -56,7 +56,7 @@ describe('useUpcomingIncome', () => {
 
     const { result } = renderHook(() => useUpcomingIncome())
 
-    await waitFor(() => expect(result.current.error).toBe('Unable to load upcoming income'))
+    await waitFor(() => expect(result.current.error).toBe('Unable to load upcoming income.'))
   })
 
   it('retry_re_issues_the_request', async () => {

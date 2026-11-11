@@ -19,7 +19,7 @@ export function useDashboardSummary(
         ? apiClient.getDashboard(displayCurrency, brokerCurrencyFilter === 'ALL' ? undefined : brokerCurrencyFilter)
         : null,
     [displayCurrency, brokerCurrencyFilter],
-    'Unable to load dashboard summary',
+    'Unable to load dashboard summary.',
   )
 
   return { summary: data, isLoading, error, retry }

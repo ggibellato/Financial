@@ -80,7 +80,7 @@ describe('DividendCheckPage', () => {
 
     expect(await screen.findByText('KLBN4 - Klabin SA')).toBeInTheDocument()
     expect(screen.getByText(/Current price:/)).toBeInTheDocument()
-    expect(screen.getByText(/Average Dividend:/)).toBeInTheDocument()
+    expect(screen.getByText(/Average dividend:/)).toBeInTheDocument()
     expect(screen.getByText(/Price max buy:/)).toBeInTheDocument()
   })
 
@@ -120,7 +120,7 @@ describe('DividendCheckPage', () => {
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
-    await screen.findByText('Dividend History')
+    await screen.findByText('Dividend history')
 
     const tables = screen.getAllByRole('table')
     const historyRows = within(tables[0]).getAllByRole('row')
@@ -142,7 +142,7 @@ describe('DividendCheckPage', () => {
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
-    await screen.findByText('By Year')
+    await screen.findByText('By year')
 
     const tables = screen.getAllByRole('table')
     const yearRows = within(tables[1]).getAllByRole('row')
@@ -164,7 +164,7 @@ describe('DividendCheckPage', () => {
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
-    await screen.findByText('Dividend History')
+    await screen.findByText('Dividend history')
 
     const tables = screen.getAllByRole('table')
     const dateHeaderButton = within(tables[0]).getByRole('button', { name: 'Date' })
@@ -217,7 +217,7 @@ describe('DividendCheckPage', () => {
     render(<DividendCheckPage />)
     await screen.findByDisplayValue('KLBN4')
     fireEvent.click(screen.getByRole('button', { name: 'Check' }))
-    await screen.findByText('By Year')
+    await screen.findByText('By year')
 
     const tables = screen.getAllByRole('table')
     fireEvent.click(within(tables[1]).getByRole('button', { name: 'Year' }))

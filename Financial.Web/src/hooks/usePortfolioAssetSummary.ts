@@ -142,7 +142,7 @@ export function usePortfolioAssetSummary(): PortfolioAssetSummaryData {
       .catch((err: unknown) => {
         dispatch({
           type: 'FETCH_ERROR',
-          payload: getErrorMessage(err, 'Unable to load portfolio assets'),
+          payload: getErrorMessage(err, 'Unable to load portfolio assets.'),
         })
       })
   }, [selectedNode, isPortfolio, scope, state.retryCount])

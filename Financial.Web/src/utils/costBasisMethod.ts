@@ -1,7 +1,7 @@
 import type { CostBasisMethod } from '../api/types'
 
 export const COST_BASIS_METHOD_LABELS: Record<CostBasisMethod, string> = {
-  AverageCost: 'Average Cost',
+  AverageCost: 'Average cost',
   FIFO: 'FIFO',
   SpecificId: 'Specific ID',
 }

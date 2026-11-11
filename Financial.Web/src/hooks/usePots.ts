@@ -1,7 +1,7 @@
 import { apiClient } from '../api/financialApiClient'
 import { useAsyncResource } from './useAsyncResource'
 
-export const POTS_LOAD_ERROR = 'Unable to load the pots'
+export const POTS_LOAD_ERROR = 'Unable to load the pots.'
 
 export function usePots(potsAccountId: string | null, year: number, month: number) {
   return useAsyncResource(

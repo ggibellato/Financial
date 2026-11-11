@@ -18,7 +18,7 @@ export function useAssetSearchOptions(enabled = true): AssetSearchOptionsData {
   const { data, isLoading, error, retry } = useAsyncResource<AssetAdminDto[]>(
     () => (hasHoldingScope ? apiClient.getAdminAssets() : null),
     [enabled, selectedNode?.brokerName, selectedNode?.portfolioName, selectedNode?.assetName],
-    'Unable to load assets',
+    'Unable to load assets.',
   )
 
   const options = useMemo(() => {

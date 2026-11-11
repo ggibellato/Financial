@@ -111,7 +111,7 @@ export default function AdminAccountsPage() {
       loadError={error}
       onRetry={retry}
       isEmpty={accounts.length === 0}
-      emptyMessage="No accounts yet"
+      emptyMessage="No accounts yet."
       dialogs={
         <>
           {formTarget && (

@@ -13,7 +13,7 @@ export function useUpcomingIncome(): UpcomingIncomeData {
   const { data, isLoading, error, retry } = useAsyncResource<UpcomingIncomeDto[]>(
     () => apiClient.getUpcomingIncome(),
     [],
-    'Unable to load upcoming income',
+    'Unable to load upcoming income.',
   )
 
   return { entries: data, isLoading, error, retry }

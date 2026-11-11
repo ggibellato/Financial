@@ -131,7 +131,7 @@ describe('AdminAccountsPage', () => {
       'aria-disabled',
       'true',
     )
-    expect(await screen.findByText('No accounts yet')).toBeInTheDocument()
+    expect(await screen.findByText('No accounts yet.')).toBeInTheDocument()
   })
 
   it('shows a load error with a retry that loads again', async () => {

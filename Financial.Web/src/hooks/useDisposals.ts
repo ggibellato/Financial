@@ -78,7 +78,7 @@ export function useDisposals(): DisposalsData {
         .then((result) => result.disposalRecords)
     },
     [selectedNode, scope],
-    'Unable to load disposals',
+    'Unable to load disposals.',
   )
 
   useEffect(() => dispatch({ type: 'RESET' }), [selectedNode, scope])

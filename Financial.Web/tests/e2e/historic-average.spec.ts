@@ -6,7 +6,7 @@ const EXPECTED_MERCADO_AVERAGE = '25.00'
 const BARCLAYS_BANK_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
 const MERCADO_CATEGORY_ID = '8f3b1c1a-2e3a-4b1a-9a7f-600000000008'
 
-test('@smoke the Historic Summary Average shows the value computed from seeded expenses', async ({ page, request }, testInfo) => {
+test('@smoke the Historic summary average shows the value computed from seeded expenses', async ({ page, request }, testInfo) => {
   const months = testInfo.retry === 0 ? ['01', '02', '03'] : []
   for (const month of months) {
     const response = await request.post(`${API_PATH}/expenses`, {
@@ -23,7 +23,7 @@ test('@smoke the Historic Summary Average shows the value computed from seeded e
   }
 
   await page.goto('/cashflow/annual-summary')
-  await page.getByRole('tab', { name: 'Historic Summary Average' }).click()
+  await page.getByRole('tab', { name: 'Historic summary average' }).click()
 
   const mercadoRow = page.getByRole('row').filter({ has: page.getByRole('cell', { name: 'Mercado', exact: true }) })
   await expect(mercadoRow).toContainText(EXPECTED_MERCADO_AVERAGE)

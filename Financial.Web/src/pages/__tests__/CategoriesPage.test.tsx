@@ -66,7 +66,7 @@ describe('CategoriesPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('creates a category through the Create Category dialog', async () => {
+  it('creates a category through the New category dialog', async () => {
     createCategoryMock.mockResolvedValue({
       id: 'c4',
       name: 'Lazer',
@@ -78,14 +78,14 @@ describe('CategoriesPage', () => {
     render(<CategoriesPage />)
     await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Category' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New category' }))
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Lazer' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add category' }))
 
     await waitFor(() =>
       expect(createCategoryMock).toHaveBeenCalledWith({ name: 'Lazer', active: true, isInvestment: false, isTithe: false }),
     )
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Category' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New category' })).not.toBeInTheDocument())
   })
 
   it('edits a category through its row action', async () => {
@@ -101,7 +101,7 @@ describe('CategoriesPage', () => {
     await waitFor(() => expect(screen.getByText('Mercado')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit Mercado' }))
-    expect(screen.getByRole('heading', { name: 'Edit Category' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit category' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Mercado Renamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

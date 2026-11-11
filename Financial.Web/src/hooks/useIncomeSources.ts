@@ -21,7 +21,7 @@ export function useIncomeSources(): IncomeSourcesData {
   const resource = useCrudResource({
     load: () => apiClient.getIncomeSources(),
     initialData: NO_INCOME_SOURCES,
-    loadErrorMessage: 'Unable to load income sources',
+    loadErrorMessage: 'Unable to load income sources.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -36,7 +36,7 @@ export function useIncomeSources(): IncomeSourcesData {
   )
 
   const deleteIncomeSource = useCallback(
-    (id: string) => runPendingMutation(id, () => apiClient.deleteIncomeSource(id), 'Failed to delete income source'),
+    (id: string) => runPendingMutation(id, () => apiClient.deleteIncomeSource(id), 'Failed to delete income source.'),
     [runPendingMutation],
   )
 

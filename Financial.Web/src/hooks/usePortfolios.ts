@@ -31,7 +31,7 @@ export function usePortfolios(): PortfoliosData {
   const resource = useCrudResource({
     load: () => apiClient.getAdminPortfolios(),
     initialData: NO_PORTFOLIOS,
-    loadErrorMessage: 'Unable to load portfolios',
+    loadErrorMessage: 'Unable to load portfolios.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -51,7 +51,7 @@ export function usePortfolios(): PortfoliosData {
       runPendingMutation(
         portfolioKey(brokerName, portfolioName),
         () => apiClient.deleteEmptyPortfolio(brokerName, portfolioName, brokerScope),
-        'Failed to delete portfolio',
+        'Failed to delete portfolio.',
       ),
     [runPendingMutation],
   )

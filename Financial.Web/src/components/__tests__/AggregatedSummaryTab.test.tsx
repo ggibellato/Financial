@@ -81,16 +81,16 @@ describe('AggregatedSummaryTab', () => {
   })
 
   it('renders_error_state_with_retry_on_failure', () => {
-    setMock({ error: 'Unable to load summary' })
+    setMock({ error: 'Unable to load summary.' })
     renderComponent()
-    expect(screen.getByText('Unable to load summary')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load summary.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument()
   })
 
   it.each([
-    ['Total Bought', 'aggregated-summary__value--green'],
-    ['Total Sold', 'aggregated-summary__value--red'],
-    ['Total Credits', 'aggregated-summary__value--blue'],
+    ['Total bought', 'aggregated-summary__value--green'],
+    ['Total sold', 'aggregated-summary__value--red'],
+    ['Total credits', 'aggregated-summary__value--blue'],
   ])('renders_%s_value_with_its_colour_class', (label, colourClass) => {
     setMock({ summary: SUMMARY })
     renderComponent()
@@ -102,37 +102,37 @@ describe('AggregatedSummaryTab', () => {
     renderComponent()
     const labels = screen.getAllByText(/^Total /).map((el) => el.textContent)
     expect(labels).toEqual([
-      'Total Bought',
-      'Total Sold',
-      'Total Credits',
-      'Total Invested',
-      'Total Return (Gross)',
-      'Total Return (Net of Tax)',
-      'Total Return (converted to GBP)',
-      'Total Return Net of Tax (converted to GBP)',
+      'Total bought',
+      'Total sold',
+      'Total credits',
+      'Total invested',
+      'Total return (gross)',
+      'Total return (net of tax)',
+      'Total return (converted to GBP)',
+      'Total return net of tax (converted to GBP)',
     ])
   })
 
   it('renders_market_value', () => {
     setMock({ summary: SUMMARY })
     renderComponent()
-    const label = screen.getByText('Market Value')
+    const label = screen.getByText('Market value')
     expect(label.nextElementSibling?.textContent).toMatch(/18[.,]000[.,]00/)
   })
 
   it('renders_dash_for_unavailable_market_value', () => {
     setMock({ summary: { ...SUMMARY, marketValue: null, unvaluedHoldingCount: 3 } })
     renderComponent()
-    const label = screen.getByText('Market Value')
+    const label = screen.getByText('Market value')
     expect(label.nextElementSibling?.textContent).toBe('—')
   })
 
   it('renders_price_only_and_total_return_as_percentages', () => {
     setMock({ summary: SUMMARY })
     renderComponent()
-    expect(screen.getByText('Price-Only Return').nextElementSibling?.textContent).toBe('8.00%')
-    expect(screen.getByText('Total Return (Gross)').nextElementSibling?.textContent).toBe('10.00%')
-    expect(screen.getByText('Total Return (Net of Tax)').nextElementSibling?.textContent).toBe('9.00%')
+    expect(screen.getByText('Price-only return').nextElementSibling?.textContent).toBe('8.00%')
+    expect(screen.getByText('Total return (gross)').nextElementSibling?.textContent).toBe('10.00%')
+    expect(screen.getByText('Total return (net of tax)').nextElementSibling?.textContent).toBe('9.00%')
   })
 
   it('renders_dash_for_withheld_returns', () => {
@@ -140,9 +140,9 @@ describe('AggregatedSummaryTab', () => {
       summary: { ...SUMMARY, priceOnlyReturn: null, totalReturn: null, totalReturnNetOfTax: null, unvaluedHoldingCount: 1 },
     })
     renderComponent()
-    expect(screen.getByText('Price-Only Return').nextElementSibling?.textContent).toBe('—')
-    expect(screen.getByText('Total Return (Gross)').nextElementSibling?.textContent).toBe('—')
-    expect(screen.getByText('Total Return (Net of Tax)').nextElementSibling?.textContent).toBe('—')
+    expect(screen.getByText('Price-only return').nextElementSibling?.textContent).toBe('—')
+    expect(screen.getByText('Total return (gross)').nextElementSibling?.textContent).toBe('—')
+    expect(screen.getByText('Total return (net of tax)').nextElementSibling?.textContent).toBe('—')
   })
 
   it('does_not_render_incomplete_notice_when_fully_valued', () => {
@@ -168,7 +168,7 @@ describe('AggregatedSummaryTab', () => {
   it('renders_total_invested_in_green_when_non_negative', () => {
     setMock({ summary: { ...SUMMARY, totalInvested: 0 } })
     renderComponent()
-    const label = screen.getByText('Total Invested')
+    const label = screen.getByText('Total invested')
     const valueEl = label.nextElementSibling
     expect(valueEl).toHaveClass('aggregated-summary__value--green')
   })
@@ -176,7 +176,7 @@ describe('AggregatedSummaryTab', () => {
   it('renders_total_invested_in_red_when_negative', () => {
     setMock({ summary: { ...SUMMARY, totalInvested: -125.5 } })
     renderComponent()
-    const label = screen.getByText('Total Invested')
+    const label = screen.getByText('Total invested')
     const valueEl = label.nextElementSibling
     expect(valueEl).toHaveClass('aggregated-summary__value--red')
   })
@@ -206,9 +206,9 @@ describe('AggregatedSummaryTab', () => {
       },
     })
     renderComponent()
-    const label = screen.getByText('Total Bought')
+    const label = screen.getByText('Total bought')
     expect(label.nextElementSibling?.textContent).toMatch(/\d+[.,]\d{2}$/)
-    const investedLabel = screen.getByText('Total Invested')
+    const investedLabel = screen.getByText('Total invested')
     expect(investedLabel.nextElementSibling?.textContent).toMatch(/\d+[.,]\d{2}$/)
   })
 
@@ -237,10 +237,10 @@ describe('AggregatedSummaryTab', () => {
       },
     })
     renderComponent()
-    expect(screen.getByText('Total Bought')).toBeInTheDocument()
-    expect(screen.getByText('Total Sold')).toBeInTheDocument()
-    expect(screen.getByText('Total Credits')).toBeInTheDocument()
-    expect(screen.getByText('Total Invested')).toBeInTheDocument()
+    expect(screen.getByText('Total bought')).toBeInTheDocument()
+    expect(screen.getByText('Total sold')).toBeInTheDocument()
+    expect(screen.getByText('Total credits')).toBeInTheDocument()
+    expect(screen.getByText('Total invested')).toBeInTheDocument()
   })
 
   it('renders_broker_breakdown_charts_for_broker_node_selection', () => {
@@ -269,14 +269,14 @@ describe('AggregatedSummaryTab', () => {
     })
     renderComponent()
 
-    expect(screen.getByText('Market Value (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Market value (converted to GBP)')).toBeInTheDocument()
     expect(screen.getByText('Invested (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Unrealised Gain/Loss (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Total Return (converted to GBP)')).toBeInTheDocument()
-    expect(screen.getByText('Total Return Net of Tax (converted to GBP)')).toBeInTheDocument()
-    const marketValueLabel = screen.getByText('Market Value (converted to GBP)')
+    expect(screen.getByText('Unrealised gain/loss (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Total return (converted to GBP)')).toBeInTheDocument()
+    expect(screen.getByText('Total return net of tax (converted to GBP)')).toBeInTheDocument()
+    const marketValueLabel = screen.getByText('Market value (converted to GBP)')
     expect(marketValueLabel.nextElementSibling?.textContent).toMatch(/20[.,]880[.,]00/)
-    expect(screen.getByText('Total Bought')).toBeInTheDocument()
+    expect(screen.getByText('Total bought')).toBeInTheDocument()
   })
 
   it('shows a visible inline warning when the converted total is Partial', () => {
@@ -298,9 +298,9 @@ describe('AggregatedSummaryTab', () => {
     renderComponent()
 
     expect(screen.getByRole('alert')).toHaveTextContent(/Converted totals unavailable/)
-    expect(screen.queryByText(/Market Value \(converted to/)).not.toBeInTheDocument()
-    expect(screen.getByText('Total Bought')).toBeInTheDocument()
-    expect(screen.getByText('Market Value')).toBeInTheDocument()
+    expect(screen.queryByText(/Market value \(converted to/)).not.toBeInTheDocument()
+    expect(screen.getByText('Total bought')).toBeInTheDocument()
+    expect(screen.getByText('Market value')).toBeInTheDocument()
   })
 
   it('retrying_after_ReportingCurrencyUnavailable_calls_retry', () => {
@@ -317,8 +317,8 @@ describe('AggregatedSummaryTab', () => {
     renderComponent()
 
     expect(screen.queryByText(/Converted totals unavailable/)).not.toBeInTheDocument()
-    expect(screen.queryByText(/Market Value \(converted to/)).not.toBeInTheDocument()
-    expect(screen.getByText('Total Bought')).toBeInTheDocument()
-    expect(screen.getByText('Market Value')).toBeInTheDocument()
+    expect(screen.queryByText(/Market value \(converted to/)).not.toBeInTheDocument()
+    expect(screen.getByText('Total bought')).toBeInTheDocument()
+    expect(screen.getByText('Market value')).toBeInTheDocument()
   })
 })

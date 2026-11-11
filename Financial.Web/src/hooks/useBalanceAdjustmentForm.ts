@@ -152,7 +152,7 @@ export function useBalanceAdjustmentForm(
     const errors: Partial<Record<BalanceAdjustmentFormField, string>> = {}
 
     if (!state.date.trim()) {
-      errors.date = 'Date is required'
+      errors.date = 'Date is required.'
     }
 
     const targetBalance = parseValidatedNumber(state.targetBalance, { min: 0 })
@@ -186,7 +186,7 @@ export function useBalanceAdjustmentForm(
         onSaved(state.isEditing)
       })
       .catch((err: unknown) => {
-        const message = getSaveErrorMessage(err, 'Failed to save balance adjustment')
+        const message = getSaveErrorMessage(err, 'Failed to save balance adjustment.')
         const field = mapBalanceAdjustmentErrorToField(message)
         setState((s) => ({
           ...s,

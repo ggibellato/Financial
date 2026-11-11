@@ -20,7 +20,7 @@ test('@smoke an added expense appears on the account screen', async ({ page, run
   await openNewExpenseForm(page)
 
   await fillValidExpense(page, description)
-  await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
+  await page.getByRole('form', { name: 'New expense' }).getByRole('button', { name: 'Add expense', exact: true }).click()
 
   await expect(page.getByRole('cell', { name: description, exact: true })).toBeVisible()
 })
@@ -33,10 +33,10 @@ test('@smoke a blank value is rejected with a validation message and nothing is 
   await openNewExpenseForm(page)
 
   await page.getByLabel('Description').fill('blank value')
-  await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
+  await page.getByRole('form', { name: 'New expense' }).getByRole('button', { name: 'Add expense', exact: true }).click()
 
-  await expect(page.getByText('Value must be a non-zero number')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Add Expense', exact: true })).toBeVisible()
+  await expect(page.getByText('Value must be a non-zero number.')).toBeVisible()
+  await expect(page.getByRole('form', { name: 'New expense' }).getByRole('button', { name: 'Add expense', exact: true })).toBeVisible()
   expect(posts).toEqual([])
 })
 
@@ -50,8 +50,8 @@ test('@smoke a server error is shown and the form can be submitted again', async
   await openNewExpenseForm(page)
 
   await fillValidExpense(page, `e2e-fail-${runId}`)
-  await page.getByRole('button', { name: 'Add Expense', exact: true }).click()
+  await page.getByRole('form', { name: 'New expense' }).getByRole('button', { name: 'Add expense', exact: true }).click()
 
   await expect(page.getByText('forced failure')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Add Expense', exact: true })).toBeEnabled()
+  await expect(page.getByRole('form', { name: 'New expense' }).getByRole('button', { name: 'Add expense', exact: true })).toBeEnabled()
 })

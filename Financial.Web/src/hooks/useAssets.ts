@@ -33,7 +33,7 @@ export function useAssets(): AssetsData {
   const resource = useCrudResource({
     load: () => apiClient.getAdminAssets(),
     initialData: NO_ASSETS,
-    loadErrorMessage: 'Unable to load assets',
+    loadErrorMessage: 'Unable to load assets.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -64,7 +64,7 @@ export function useAssets(): AssetsData {
             assetName,
             destinationPortfolioName: portfolioName,
           }),
-        'Failed to delete asset',
+        'Failed to delete asset.',
       ),
     [runPendingMutation],
   )

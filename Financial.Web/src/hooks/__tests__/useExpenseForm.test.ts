@@ -780,7 +780,7 @@ describe('useExpenseForm account settings', () => {
   })
 
   it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
-    createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
+    createExpenseMock.mockRejectedValue(new ApiError('Failed to fetch.', 0))
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     await addExpense(result)
@@ -882,7 +882,7 @@ describe('useExpenseForm with a locked card', () => {
 
       act(() => result.current.setField('date', ''))
       await act(async () => result.current.submit())
-      expect(result.current.saveErrorFields.date).toBe('Date is required')
+      expect(result.current.saveErrorFields.date).toBe('Date is required.')
       expect(createExpenseMock).not.toHaveBeenCalled()
     })
 
@@ -948,7 +948,7 @@ describe('useExpenseForm with a locked card', () => {
 
       await act(async () => result.current.submit())
 
-      expect(result.current.saveErrorFields.description).toBe('Description is required')
+      expect(result.current.saveErrorFields.description).toBe('Description is required.')
       expect(updateExpenseMock).not.toHaveBeenCalled()
     })
 

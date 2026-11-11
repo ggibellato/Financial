@@ -34,7 +34,8 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Broker' : 'Create Broker'}
+      title={isEditing ? 'Edit broker' : 'New broker'}
+      saveLabel={isEditing ? 'Save' : 'Add broker'}
       error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
@@ -67,7 +68,7 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
               {...props}
               info="Changing this for an existing broker recalculates every disposal record under it."
             >
-              Cost Basis Method
+              Cost basis method
             </InfoLabel>
           ),
         }}

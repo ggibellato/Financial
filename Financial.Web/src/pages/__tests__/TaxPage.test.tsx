@@ -129,9 +129,9 @@ describe('TaxPage', () => {
   })
 
   it('renders_error_state_with_retry_on_options_failure', () => {
-    setMock({ optionsError: 'Unable to load tax years' })
+    setMock({ optionsError: 'Unable to load tax years.' })
     render(<TaxPage />)
-    expect(screen.getByText('Unable to load tax years')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load tax years.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(mockRetryOptions).toHaveBeenCalled()
   })
@@ -151,7 +151,7 @@ describe('TaxPage', () => {
   it('selecting_a_tax_year_calls_the_hook', () => {
     setMock({ taxYearsForJurisdiction: ['2025', '2026'] })
     render(<TaxPage />)
-    fireEvent.change(screen.getByLabelText('Tax Year'), { target: { value: '2025' } })
+    fireEvent.change(screen.getByLabelText('Tax year'), { target: { value: '2025' } })
     expect(mockSelectTaxYear).toHaveBeenCalledWith('2025')
   })
 
@@ -200,16 +200,16 @@ describe('TaxPage', () => {
   })
 
   it('renders_error_state_with_retry_on_workbook_failure', () => {
-    setMock({ workbookError: 'Unable to load the tax workbook', workbook: null })
+    setMock({ workbookError: 'Unable to load the tax workbook.', workbook: null })
     render(<TaxPage />)
-    expect(screen.getByText('Unable to load the tax workbook')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load the tax workbook.')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
     expect(mockRetryWorkbook).toHaveBeenCalled()
   })
 
   it('renders_category_totals', () => {
     render(<TaxPage />)
-    expect(screen.getByText('Category Totals')).toBeInTheDocument()
+    expect(screen.getByText('Category totals')).toBeInTheDocument()
     expect(screen.getAllByText('Dividend').length).toBeGreaterThan(0)
   })
 })

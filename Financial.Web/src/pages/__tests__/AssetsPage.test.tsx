@@ -103,22 +103,22 @@ describe('AssetsPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('creates an asset through the Create Asset dialog', async () => {
+  it('creates an asset through the New asset dialog', async () => {
     createAssetMock.mockResolvedValue({ ...ASSETS[0], name: 'NEWASSET', quantity: 0 })
     render(<AssetsPage />)
     await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Asset' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New asset' }))
     fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'NEWASSET' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add asset' }))
 
     await waitFor(() =>
       expect(createAssetMock).toHaveBeenCalledWith(
         expect.objectContaining({ brokerName: 'XPI', portfolioName: 'Default', name: 'NEWASSET' }),
       ),
     )
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Asset' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New asset' })).not.toBeInTheDocument())
   })
 
   it('edits an asset through its row action', async () => {
@@ -127,7 +127,7 @@ describe('AssetsPage', () => {
     await waitFor(() => expect(screen.getByText('BCIA11')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit BCIA11' }))
-    expect(screen.getByRole('heading', { name: 'Edit Asset' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit asset' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'BCIA11B' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
@@ -144,7 +144,7 @@ describe('AssetsPage', () => {
     await waitFor(() => expect(screen.getByText('CLOSEDASSET')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit CLOSEDASSET' }))
-    fireEvent.change(screen.getByLabelText(/^Local Type Code/), { target: { value: 'FII' } })
+    fireEvent.change(screen.getByLabelText(/^Local type code/), { target: { value: 'FII' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() =>
@@ -170,7 +170,7 @@ describe('AssetsPage', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete CLOSEDASSET' }))
 
-    expect(screen.getByText(/will be archived into Historic Investments/)).toBeInTheDocument()
+    expect(screen.getByText(/will be archived into Historic investments/)).toBeInTheDocument()
     const confirmButtons = screen.getAllByRole('button', { name: 'Delete' })
     fireEvent.click(confirmButtons[confirmButtons.length - 1])
 

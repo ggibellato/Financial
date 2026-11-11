@@ -19,7 +19,7 @@ export function useAllocationBreakdown(
         ? apiClient.getAllocationBreakdown(displayCurrency, brokerCurrencyFilter === 'ALL' ? undefined : brokerCurrencyFilter)
         : null,
     [displayCurrency, brokerCurrencyFilter],
-    'Unable to load allocation breakdown',
+    'Unable to load allocation breakdown.',
   )
 
   return { breakdown: data, isLoading, error, retry }

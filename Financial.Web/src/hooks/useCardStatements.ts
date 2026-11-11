@@ -6,8 +6,8 @@ import { billPayingAccounts } from './useAccountFormOptions'
 import { useAsyncResource } from './useAsyncResource'
 import { useStatementDueDateForm } from './useStatementDueDateForm'
 
-export const STATEMENTS_LOAD_ERROR = 'Unable to load the statements'
-export const PAYERS_LOAD_ERROR = 'Unable to load the banks'
+export const STATEMENTS_LOAD_ERROR = 'Unable to load the statements.'
+export const PAYERS_LOAD_ERROR = 'Unable to load the banks.'
 
 const NO_PAYERS: BankOption[] = []
 
@@ -111,7 +111,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
         afterSave('Statement paid')
       })
       .catch((err: unknown) => {
-        setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement') })
+        setPayForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to pay the statement.') })
         void statements.refresh()
       })
   }
@@ -130,7 +130,7 @@ export function useCardStatements(cardId: string | null, onChanged: (message: st
         afterSave('Statement unmarked')
       })
       .catch((err: unknown) => {
-        setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement') })
+        setUnmark((current) => current && { ...current, isBusy: false, error: getSaveErrorMessage(err, 'Failed to unmark the statement.') })
         void statements.refresh()
       })
   }

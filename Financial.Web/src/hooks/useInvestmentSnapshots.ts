@@ -122,7 +122,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
         if (!isLatest()) return
         dispatch({
           type: 'FETCH_ERROR',
-          payload: getErrorMessage(err, 'Unable to load investment snapshots'),
+          payload: getErrorMessage(err, 'Unable to load investment snapshots.'),
         })
       })
   }, [beginRequest])
@@ -164,8 +164,8 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       dispatch({
         type: 'SAVE_ERROR',
         payload: {
-          message: 'Value must be a number',
-          fields: { editValue: 'Value must be a number' },
+          message: 'Value must be a number.',
+          fields: { editValue: 'Value must be a number.' },
         },
       })
       return
@@ -182,7 +182,7 @@ export function useInvestmentSnapshots(): InvestmentSnapshotsData {
       .catch((err: unknown) => {
         dispatch({
           type: 'SAVE_ERROR',
-          payload: { message: getErrorMessage(err, 'Failed to update snapshot'), fields: {} },
+          payload: { message: getErrorMessage(err, 'Failed to update snapshot.'), fields: {} },
         })
       })
   }

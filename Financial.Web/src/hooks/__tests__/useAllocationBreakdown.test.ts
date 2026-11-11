@@ -73,7 +73,7 @@ describe('useAllocationBreakdown', () => {
 
     const { result } = renderBreakdownHook('GBP')
 
-    await waitFor(() => expect(result.current.error).toBe('Unable to load allocation breakdown'))
+    await waitFor(() => expect(result.current.error).toBe('Unable to load allocation breakdown.'))
   })
 
   it('retry_re_issues_the_request', async () => {

@@ -80,7 +80,8 @@ export default function InvestmentAccountFormDialog({
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Investment Account' : 'Create Investment Account'}
+      title={isEditing ? 'Edit investment account' : 'New investment account'}
+      saveLabel={isEditing ? 'Save' : 'Add investment account'}
       error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
@@ -111,14 +112,14 @@ export default function InvestmentAccountFormDialog({
           disabled={isSaving}
         >
           <option value="None">None</option>
-          <option value="CreditCard">Credit Card</option>
+          <option value="CreditCard">Credit card</option>
           <option value="PotsAccountTotal">Pots account total</option>
         </Select>
       </Field>
 
       {source === 'CreditCard' && (
         <Field
-          label="Credit Card"
+          label="Credit card"
           required
           validationState={creditCardValidationMessage ? 'error' : 'none'}
           validationMessage={creditCardValidationMessage}
@@ -140,7 +141,7 @@ export default function InvestmentAccountFormDialog({
           required
           hint={
             hasPotsAccountChoices
-              ? "Investment Snapshots will suggest the Pots account's total at the end of the previous month."
+              ? "Investment snapshots will suggest the Pots account's total at the end of the previous month."
               : 'Add a Pots account in Admin → Accounts first.'
           }
           validationState={potsAccountValidationMessage ? 'error' : 'none'}

@@ -153,7 +153,7 @@ export function usePotDepositForm(potsAccount: TransferAccountOptionDto | undefi
         onSaved()
       })
       .catch((err: unknown) => {
-        setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to save the deposit') })
+        setForm((current) => current && { ...current, isSaving: false, error: getSaveErrorMessage(err, 'Failed to save the deposit.') })
       })
   }
 

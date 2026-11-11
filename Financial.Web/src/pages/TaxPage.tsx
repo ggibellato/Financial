@@ -32,8 +32,8 @@ function EntryRow({ entry }: { entry: TaxWorkbookEntryDto }) {
       <DataTableCell label="Date">{formatShortDateUtc(entry.date)}</DataTableCell>
       <DataTableCell label="Category">{entry.eventCategory}</DataTableCell>
       {amountCell('Proceeds', entry.proceeds)}
-      {amountCell('Cost Basis', entry.costBasis)}
-      {amountCell('Gain/Loss', entry.gainLoss)}
+      {amountCell('Cost basis', entry.costBasis)}
+      {amountCell('Gain/loss', entry.gainLoss)}
       {amountCell('Gross', entry.grossAmount)}
       {amountCell('Withheld', entry.withheldAmount)}
       {amountCell('Net', entry.netAmount)}
@@ -52,8 +52,8 @@ function CategoryTotalRow({ total }: { total: TaxCategoryTotalDto }) {
     <TableRow>
       <DataTableCell label="Category">{total.eventCategory}</DataTableCell>
       {amountCell('Proceeds', total.totalProceeds)}
-      {amountCell('Cost Basis', total.totalCostBasis)}
-      {amountCell('Gain/Loss', total.totalGainLoss)}
+      {amountCell('Cost basis', total.totalCostBasis)}
+      {amountCell('Gain/loss', total.totalGainLoss)}
       {amountCell('Gross', total.totalGrossAmount)}
       {amountCell('Withheld', total.totalWithheldAmount)}
       {amountCell('Net', total.totalNetAmount)}
@@ -107,7 +107,7 @@ export default function TaxPage() {
                 ))}
               </Select>
             </Field>
-            <Field label="Tax Year">
+            <Field label="Tax year">
               <Select value={taxYear ?? ''} onChange={(e) => selectTaxYear(e.target.value)}>
                 {taxYearsForJurisdiction.map((y) => (
                   <option key={y} value={y}>
@@ -151,8 +151,8 @@ export default function TaxPage() {
                       <TableHeaderCell>Date</TableHeaderCell>
                       <TableHeaderCell>Category</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Proceeds</TableHeaderCell>
-                      <TableHeaderCell className="data-table__col--numeric">Cost Basis</TableHeaderCell>
-                      <TableHeaderCell className="data-table__col--numeric">Gain/Loss</TableHeaderCell>
+                      <TableHeaderCell className="data-table__col--numeric">Cost basis</TableHeaderCell>
+                      <TableHeaderCell className="data-table__col--numeric">Gain/loss</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Gross</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Withheld</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Net</TableHeaderCell>
@@ -168,15 +168,15 @@ export default function TaxPage() {
                 </Table>
               </div>
 
-              <h3 className="tax-page__section-title">Category Totals</h3>
+              <h3 className="tax-page__section-title">Category totals</h3>
               <div className="tax-page__table-scroll">
                 <Table aria-label="Tax category totals" className="data-table tax-page__totals-table">
                   <TableHeader>
                     <TableRow>
                       <TableHeaderCell>Category</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Proceeds</TableHeaderCell>
-                      <TableHeaderCell className="data-table__col--numeric">Cost Basis</TableHeaderCell>
-                      <TableHeaderCell className="data-table__col--numeric">Gain/Loss</TableHeaderCell>
+                      <TableHeaderCell className="data-table__col--numeric">Cost basis</TableHeaderCell>
+                      <TableHeaderCell className="data-table__col--numeric">Gain/loss</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Gross</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Withheld</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Net</TableHeaderCell>

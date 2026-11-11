@@ -57,7 +57,7 @@ export default function PortfoliosPage() {
   return (
     <AdminEntityPage
       title="Portfolios"
-      createLabel="Create Portfolio"
+      createLabel="New portfolio"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       isLoading={isLoading}
@@ -77,7 +77,7 @@ export default function PortfoliosPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Portfolio"
+              entityLabel="portfolio"
               message={
                 confirmingDelete.assetCount > 0 ? (
                   <>
@@ -101,7 +101,7 @@ export default function PortfoliosPage() {
           <TableRow>
             <TableHeaderCell>Name</TableHeaderCell>
             <TableHeaderCell>Broker</TableHeaderCell>
-            <TableHeaderCell>Broker Status</TableHeaderCell>
+            <TableHeaderCell>Broker status</TableHeaderCell>
             <TableHeaderCell>Assets</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
@@ -113,7 +113,7 @@ export default function PortfoliosPage() {
               <TableRow key={key}>
                 <DataTableCell label="Name">{portfolio.name}</DataTableCell>
                 <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
-                <DataTableCell label="Broker Status">{portfolio.brokerStatus}</DataTableCell>
+                <DataTableCell label="Broker status">{portfolio.brokerStatus}</DataTableCell>
                 <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
                 <RowActionsCell
                   itemName={portfolio.name}

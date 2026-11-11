@@ -19,7 +19,7 @@ import { formatN2, parseValidatedNumber } from '../utils/formatters'
 import './CorporateActionForm.css'
 
 const CORPORATE_ACTION_TYPE_OPTIONS = [
-  { value: 'Split', label: 'Split / Reverse Split' },
+  { value: 'Split', label: 'Split / reverse split' },
   { value: 'Merger', label: 'Merger' },
   { value: 'SpinOff', label: 'Spin-off' },
 ]
@@ -110,7 +110,7 @@ export default function CorporateActionForm({
 
       <div className={styles.grid}>
         <Field
-          label="Effective Date"
+          label="Effective date"
           required
           validationState={fieldError('formEffectiveDate') ? 'error' : 'none'}
           validationMessage={fieldError('formEffectiveDate')}
@@ -178,17 +178,17 @@ export default function CorporateActionForm({
 
         {isMergerFieldsStep && (
           <>
-            <Field label="Source Asset">
+            <Field label="Source asset">
               <Input value={sourceAssetName} disabled readOnly />
             </Field>
 
             {editingId ? (
-              <Field label="Target Asset">
+              <Field label="Target asset">
                 <Input value={formTargetAsset.assetName} disabled readOnly />
               </Field>
             ) : (
               <TargetAssetPicker
-                label="Target Asset"
+                label="Target asset"
                 value={formTargetAsset}
                 onChange={onTargetAssetChange}
                 disabled={isSaving}
@@ -197,7 +197,7 @@ export default function CorporateActionForm({
             )}
 
             <Field
-              label="Exchange Ratio"
+              label="Exchange ratio"
               required
               validationState={fieldError('formExchangeRatio') ? 'error' : 'none'}
               validationMessage={fieldError('formExchangeRatio')}
@@ -212,7 +212,7 @@ export default function CorporateActionForm({
             </Field>
 
             <Field
-              label="Cash-in-Lieu Amount"
+              label="Cash-in-lieu amount"
               validationState={fieldError('formCashInLieu') ? 'error' : 'none'}
               validationMessage={fieldError('formCashInLieu')}
             >
@@ -229,17 +229,17 @@ export default function CorporateActionForm({
 
         {isSpinOff && (
           <>
-            <Field label="Parent Asset">
+            <Field label="Parent asset">
               <Input value={sourceAssetName} disabled readOnly />
             </Field>
 
             {editingId ? (
-              <Field label="New Asset">
+              <Field label="New asset">
                 <Input value={formNewAsset.assetName} disabled readOnly />
               </Field>
             ) : (
               <TargetAssetPicker
-                label="New Asset"
+                label="New asset"
                 value={formNewAsset}
                 onChange={onNewAssetChange}
                 disabled={isSaving}
@@ -248,7 +248,7 @@ export default function CorporateActionForm({
             )}
 
             <Field
-              label="Quantity Received"
+              label="Quantity received"
               required
               validationState={fieldError('formQuantityReceived') ? 'error' : 'none'}
               validationMessage={fieldError('formQuantityReceived')}

@@ -68,7 +68,7 @@ export default function PotsTab({ summary, hasError, onRetry, year, month }: Pot
             columns={COLUMNS}
             rows={summary.pots}
             rowKey={(pot) => pot.id}
-            emptyMessage="This account has no pots yet"
+            emptyMessage="This account has no pots yet."
             footerItems={summary.pots.length > 0 ? [{ label: `Pots total ${summary.currency}`, value: formatN2(summary.total) }] : []}
           />
         </div>

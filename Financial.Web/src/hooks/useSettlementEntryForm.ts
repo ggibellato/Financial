@@ -222,7 +222,7 @@ export function useSettlementEntryForm(
         onSaved(isSettling ? settlementSavedMessage(saved.warning) : isEditing ? 'Entry updated' : 'Entry added')
       })
       .catch((err: unknown) => {
-        const message = getSaveErrorMessage(err, isSettling ? 'Failed to save the settlement' : 'Failed to save the entry')
+        const message = getSaveErrorMessage(err, isSettling ? 'Failed to save the settlement.' : 'Failed to save the entry.')
         setState((previous) => (previous.isSaving ? { ...previous, isSaving: false, saveError: message } : previous))
       })
   }

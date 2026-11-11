@@ -54,7 +54,7 @@ export function useAdminAccounts(): AdminAccountsData {
   const resource = useCrudResource({
     load: loadAccountsReferenceData,
     initialData: NOTHING_LOADED,
-    loadErrorMessage: 'Unable to load accounts',
+    loadErrorMessage: 'Unable to load accounts.',
     refreshMode: 'silent',
   })
   const { mutateAndRefresh, runPendingMutation } = resource

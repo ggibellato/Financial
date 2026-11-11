@@ -83,7 +83,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11'))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => {
       expect(getCurrentPriceMock).toHaveBeenCalledWith('BVMF', 'BCIA11', 'RealEstate', 'XPI', expect.any(String), expect.any(String), expect.any(String))
@@ -93,7 +93,7 @@ describe('CurrentValuesPage', () => {
   })
 
   // Broker, portfolio and asset name together are what make the API record the fetched price
-  // into Price History. Without them this screen took the lookup-only path and built no history.
+  // into Price history. Without them this screen took the lookup-only path and built no history.
   it('supplies the asset identity that enables recording', async () => {
     getBrokersMock.mockResolvedValue([
       makeBroker([{ name: 'Acoes', assets: [{ name: 'KLBN4', ticker: 'KLBN4' }] }]),
@@ -101,7 +101,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('KLBN4'))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() =>
       expect(getCurrentPriceMock).toHaveBeenCalledWith(
@@ -120,7 +120,7 @@ describe('CurrentValuesPage', () => {
     getBrokersMock.mockResolvedValue([makeBroker([{ name: 'Default', assets: [] }])])
 
     render(<CurrentValuesPage />)
-    await screen.findByRole('button', { name: 'Check Prices' })
+    await screen.findByRole('button', { name: 'Check prices' })
 
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
   })
@@ -132,7 +132,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11'))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
@@ -150,7 +150,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11', 85.5))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     expect(await screen.findByText('85.50')).toBeInTheDocument()
   })
@@ -162,7 +162,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => expect(screen.getByRole('progressbar')).toBeInTheDocument())
     expect(screen.getByText(/Fetching 0 of 1/)).toBeInTheDocument()
@@ -180,7 +180,7 @@ describe('CurrentValuesPage', () => {
       .mockReturnValueOnce(new Promise(() => {}))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() =>
       expect(screen.getByText('Fetching 1 of 2: BCIA11...')).toBeInTheDocument(),
@@ -194,20 +194,20 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11'))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     expect(await screen.findByText('Completed! Loaded 1 assets.')).toBeInTheDocument()
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
   })
 
-  it('Check Prices button is disabled while running', async () => {
+  it('Check prices button is disabled while running', async () => {
     getBrokersMock.mockResolvedValue([
       makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }]),
     ])
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Checking...' })).toBeDisabled(),
@@ -231,7 +231,7 @@ describe('CurrentValuesPage', () => {
       .mockResolvedValueOnce(makePrice('KLBN4', 20.0))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
@@ -258,7 +258,7 @@ describe('CurrentValuesPage', () => {
       .mockResolvedValueOnce(makePrice('KLBN4', 10.0))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Price' }))
@@ -274,7 +274,7 @@ describe('CurrentValuesPage', () => {
     render(<CurrentValuesPage />)
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Check Prices' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Check prices' })).not.toBeInTheDocument()
   })
 
   it('retries broker tree load on Retry click', async () => {
@@ -285,7 +285,7 @@ describe('CurrentValuesPage', () => {
     render(<CurrentValuesPage />)
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
 
-    expect(await screen.findByRole('button', { name: 'Check Prices' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Check prices' })).toBeInTheDocument()
   })
 
   it('does not exclude flat or short assets from fetch scope', async () => {
@@ -304,7 +304,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11'))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
@@ -329,7 +329,7 @@ describe('CurrentValuesPage', () => {
     getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11'))
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
 
@@ -367,7 +367,7 @@ describe('CurrentValuesPage', () => {
     } satisfies AssetPriceDto)
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => {
       expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', expect.any(String), expect.any(String), expect.any(String))
@@ -401,7 +401,7 @@ describe('CurrentValuesPage', () => {
     } satisfies AssetPriceDto)
 
     render(<CurrentValuesPage />)
-    fireEvent.click(await screen.findByRole('button', { name: 'Check Prices' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
 
     await waitFor(() => expect(getCurrentPriceMock).toHaveBeenCalledTimes(1))
   })

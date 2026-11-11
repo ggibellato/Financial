@@ -32,7 +32,8 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Portfolio' : 'Create Portfolio'}
+      title={isEditing ? 'Edit portfolio' : 'New portfolio'}
+      saveLabel={isEditing ? 'Save' : 'Add portfolio'}
       error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}

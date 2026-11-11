@@ -2,7 +2,7 @@ import type { ReserveMovementDto, ReserveMovementUpdateDto } from '../api/types'
 import type { FieldErrors } from '../hooks/inlineFormSlice'
 import { parseValidatedNumber } from './formatters'
 
-const BUCKET_REQUIRED_ERROR = 'Bucket is required'
+const BUCKET_REQUIRED_ERROR = 'Bucket is required.'
 
 export const EDIT_MOVEMENT_FIELDS = ['editMovementBucketId', 'editMovementAmount', 'editMovementDate', 'editMovementDescription'] as const
 
@@ -23,7 +23,7 @@ export function validateEditMovement(values: EditMovementValues): FieldErrors<Ed
   const errors: FieldErrors<EditMovementField> = {}
 
   if (!values.editMovementDate.trim()) {
-    errors.editMovementDate = 'Date is required'
+    errors.editMovementDate = 'Date is required.'
   }
 
   if (!values.editMovementBucketId.trim()) {
@@ -31,11 +31,11 @@ export function validateEditMovement(values: EditMovementValues): FieldErrors<Ed
   }
 
   if (!values.editMovementDescription.trim()) {
-    errors.editMovementDescription = 'Description is required'
+    errors.editMovementDescription = 'Description is required.'
   }
 
   if (parseValidatedNumber(values.editMovementAmount) === null) {
-    errors.editMovementAmount = 'Amount must be a number'
+    errors.editMovementAmount = 'Amount must be a number.'
   }
 
   return errors

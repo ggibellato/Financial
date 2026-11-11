@@ -67,7 +67,7 @@ describe('CategoryTotalsGrid', () => {
   it('shows its empty message when no expense was recorded in the month', () => {
     render(<CategoryTotalsGrid categoryTotals={[]} categoryTotalsSum={0} />)
 
-    expect(screen.getByText('No expenses recorded for this month')).toBeInTheDocument()
+    expect(screen.getByText('No expenses recorded for this month.')).toBeInTheDocument()
     expect(screen.getByText('0.00')).toBeInTheDocument()
   })
 

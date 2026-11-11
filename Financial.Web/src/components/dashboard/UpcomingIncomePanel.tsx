@@ -57,8 +57,8 @@ export default function UpcomingIncomePanel({ entries, isLoading, error, retry }
               <TableRow>
                 <TableHeaderCell>Asset</TableHeaderCell>
                 <TableHeaderCell>Broker</TableHeaderCell>
-                <TableHeaderCell>Projected Date</TableHeaderCell>
-                <TableHeaderCell className="data-table__col--numeric">Projected Amount</TableHeaderCell>
+                <TableHeaderCell>Projected date</TableHeaderCell>
+                <TableHeaderCell className="data-table__col--numeric">Projected amount</TableHeaderCell>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -66,8 +66,8 @@ export default function UpcomingIncomePanel({ entries, isLoading, error, retry }
                 <TableRow key={`${entry.brokerName}-${entry.assetName}-${entry.projectedNextDate}`}>
                   <DataTableCell label="Asset"><TruncatedText text={entry.assetName} /></DataTableCell>
                   <DataTableCell label="Broker"><TruncatedText text={entry.brokerName} /></DataTableCell>
-                  <DataTableCell label="Projected Date">{formatShortDate(entry.projectedNextDate)}</DataTableCell>
-                  <DataTableCell label="Projected Amount" className="data-table__col--numeric">
+                  <DataTableCell label="Projected date">{formatShortDate(entry.projectedNextDate)}</DataTableCell>
+                  <DataTableCell label="Projected amount" className="data-table__col--numeric">
                     {formatN2(entry.projectedAmount)}
                   </DataTableCell>
                 </TableRow>

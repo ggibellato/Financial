@@ -102,7 +102,7 @@ export function useTaxWorkbook(): TaxWorkbookData {
       .getTaxWorkbookOptions()
       .then((options) => dispatch({ type: 'OPTIONS_FETCH_SUCCESS', payload: options }))
       .catch((err: unknown) => {
-        dispatch({ type: 'OPTIONS_FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load tax years') })
+        dispatch({ type: 'OPTIONS_FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load tax years.') })
       })
   }, [state.optionsRetryCount])
 
@@ -114,7 +114,7 @@ export function useTaxWorkbook(): TaxWorkbookData {
       .getTaxWorkbook(state.jurisdiction, state.taxYear)
       .then((workbook) => dispatch({ type: 'WORKBOOK_FETCH_SUCCESS', payload: workbook }))
       .catch((err: unknown) => {
-        dispatch({ type: 'WORKBOOK_FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load the tax workbook') })
+        dispatch({ type: 'WORKBOOK_FETCH_ERROR', payload: getErrorMessage(err, 'Unable to load the tax workbook.') })
       })
   }, [state.jurisdiction, state.taxYear, state.workbookRetryCount])
 

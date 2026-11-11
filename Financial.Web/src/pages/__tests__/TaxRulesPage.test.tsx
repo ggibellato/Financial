@@ -71,15 +71,15 @@ describe('TaxRulesPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Network down')
   })
 
-  it('creates a tax rule through the Create Tax Rule dialog', async () => {
+  it('creates a tax rule through the New tax rule dialog', async () => {
     createTaxRuleMock.mockResolvedValue(RULES[0])
     render(<TaxRulesPage />)
     await waitFor(() => expect(screen.getByText('BR dividend withholding')).toBeInTheDocument())
 
-    fireEvent.click(screen.getByRole('button', { name: 'Create Tax Rule' }))
+    fireEvent.click(screen.getByRole('button', { name: 'New tax rule' }))
     fireEvent.change(screen.getByLabelText(/^Label/), { target: { value: 'New rule' } })
-    fireEvent.change(screen.getByLabelText(/^Effective From/), { target: { value: '2026-01-01' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.change(screen.getByLabelText(/^Effective from/), { target: { value: '2026-01-01' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add tax rule' }))
 
     await waitFor(() =>
       expect(createTaxRuleMock).toHaveBeenCalledWith({
@@ -91,7 +91,7 @@ describe('TaxRulesPage', () => {
         effectiveTo: null,
       }),
     )
-    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Create Tax Rule' })).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'New tax rule' })).not.toBeInTheDocument())
   })
 
   it('edits a tax rule through its row action', async () => {
@@ -100,7 +100,7 @@ describe('TaxRulesPage', () => {
     await waitFor(() => expect(screen.getByText('BR dividend withholding')).toBeInTheDocument())
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit BR dividend withholding' }))
-    expect(screen.getByRole('heading', { name: 'Edit Tax Rule' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit tax rule' })).toBeInTheDocument()
     fireEvent.change(screen.getByLabelText(/^Label/), { target: { value: 'Renamed' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 

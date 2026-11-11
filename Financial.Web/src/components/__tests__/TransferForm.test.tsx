@@ -33,7 +33,7 @@ describe('TransferForm', () => {
   it('renders the create form title and pre-filled values', () => {
     render(<TransferForm {...baseProps} />)
 
-    expect(screen.getByRole('heading', { name: 'New Transfer' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New transfer' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-07-25')
     expect(screen.getByLabelText(/^From/)).toHaveValue('bank-barclays')
     expect(screen.getByLabelText(/^To/)).toHaveValue('bank-trading212')
@@ -52,7 +52,7 @@ describe('TransferForm', () => {
   it('renders the edit form title', () => {
     render(<TransferForm {...baseProps} isEditing />)
 
-    expect(screen.getByText('Edit Transfer')).toBeInTheDocument()
+    expect(screen.getByText('Edit transfer')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
@@ -70,7 +70,7 @@ describe('TransferForm', () => {
     render(<TransferForm {...baseProps} sourceBank="bank-barclays" destinationBank="bank-barclays" amount="100" />)
 
     expect(screen.getByText('Source and destination must be different banks.')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Add Transfer' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add transfer' })).toBeDisabled()
   })
 
   it('does not show the same-bank error when source and destination differ', () => {
@@ -84,7 +84,7 @@ describe('TransferForm', () => {
     const onCancel = vi.fn()
     render(<TransferForm {...baseProps} onSave={onSave} onCancel={onCancel} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Transfer' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add transfer' }))
     expect(onSave).toHaveBeenCalled()
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))

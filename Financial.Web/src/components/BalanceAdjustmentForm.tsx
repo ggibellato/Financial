@@ -147,7 +147,7 @@ export default function BalanceAdjustmentForm({
                       {...props}
                       info="Enter the balance you want this bank to show after the adjustment — the app calculates and records the difference."
                     >
-                      Target Balance
+                      Target balance
                     </InfoLabel>
                   ),
                 }}

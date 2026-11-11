@@ -88,7 +88,7 @@ describe('useDashboardSummary', () => {
 
     const { result } = renderSummaryHook('GBP')
 
-    await waitFor(() => expect(result.current.error).toBe('Unable to load dashboard summary'))
+    await waitFor(() => expect(result.current.error).toBe('Unable to load dashboard summary.'))
   })
 
   it('retry_re_issues_the_request', async () => {

@@ -64,7 +64,7 @@ describe('PotsTab', () => {
     const onRetry = vi.fn()
     renderTab({ hasError: true, onRetry })
 
-    expect(screen.getByText('Unable to load the pots')).toBeInTheDocument()
+    expect(screen.getByText('Unable to load the pots.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
@@ -75,7 +75,7 @@ describe('PotsTab', () => {
   it('says when there are no pots, with no total', () => {
     renderTab({ summary: { ...SUMMARY, total: 0, pots: [] } })
 
-    expect(screen.getByText('This account has no pots yet')).toBeInTheDocument()
+    expect(screen.getByText('This account has no pots yet.')).toBeInTheDocument()
     expect(screen.queryByText(/Pots total/)).not.toBeInTheDocument()
   })
 })

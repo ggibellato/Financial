@@ -50,14 +50,14 @@ describe('UpcomingIncomePanel', () => {
     renderPanel([entry('VUSA', 10, 42.5)])
 
     const headers = screen.getAllByRole('columnheader').map((header) => header.textContent)
-    expect(headers).toEqual(['Asset', 'Broker', 'Projected Date', 'Projected Amount'])
+    expect(headers).toEqual(['Asset', 'Broker', 'Projected date', 'Projected amount'])
 
     const cells = within(screen.getAllByRole('row')[1])
       .getAllByRole('cell')
       .map((cell) => cell.textContent)
     expect(cells[0]).toBe('Asset:VUSA')
     expect(cells[1]).toBe('Broker:VUSA Broker')
-    expect(cells[3]).toBe('Projected Amount:42.50')
+    expect(cells[3]).toBe('Projected amount:42.50')
   })
 
   it('re_filters_the_already_held_list_when_the_window_changes_keeping_the_backend_order', () => {

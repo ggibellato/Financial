@@ -17,7 +17,7 @@ export function useAccounts(): AccountsData {
   const resource = useCrudResource({
     load: () => apiClient.getAccounts(),
     initialData: NO_ACCOUNTS,
-    loadErrorMessage: 'Unable to load accounts',
+    loadErrorMessage: 'Unable to load accounts.',
   })
   const status: AccountsStatus = resource.error ? 'failed' : resource.isLoading ? 'loading' : 'ready'
   return { accounts: resource.data, status, error: resource.error, retry: resource.retry }

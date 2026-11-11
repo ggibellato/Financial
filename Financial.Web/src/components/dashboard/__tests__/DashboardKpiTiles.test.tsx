@@ -5,14 +5,14 @@ import type { PortfolioDashboardDto } from '../../../api/types'
 import DashboardKpiTiles from '../DashboardKpiTiles'
 
 const TILE_ORDER = [
-  'Market Value',
+  'Market value',
   'Invested',
-  'Unrealised Gain/Loss',
-  'Realised Gain/Loss (Lifetime)',
+  'Unrealised gain/loss',
+  'Realised gain/loss (lifetime)',
   'Income YTD',
-  'Income Lifetime',
+  'Income lifetime',
   'Gross XIRR',
-  'Net XIRR (of Tax)',
+  'Net XIRR (of tax)',
 ]
 
 const SUMMARY: PortfolioDashboardDto = {
@@ -87,29 +87,29 @@ describe('DashboardKpiTiles', () => {
   it('formats_money_tiles_to_two_decimals_and_xirr_tiles_as_percentages', () => {
     renderTiles()
 
-    expect(valueOf('Market Value (GBP)')?.textContent).toMatch(/20[.,]880[.,]00/)
+    expect(valueOf('Market value (GBP)')?.textContent).toMatch(/20[.,]880[.,]00/)
     expect(valueOf('Invested (GBP)')?.textContent).toMatch(/14[.,]175[.,]78/)
     expect(valueOf('Income YTD (GBP)')?.textContent).toMatch(/394[.,]69/)
     expect(valueOf('Gross XIRR (GBP)')?.textContent).toBe('11.02%')
-    expect(valueOf('Net XIRR (of Tax) (GBP)')?.textContent).toBe('8.91%')
+    expect(valueOf('Net XIRR (of tax) (GBP)')?.textContent).toBe('8.91%')
   })
 
   it('leaves_unsigned_money_tiles_uncoloured', () => {
     renderTiles()
 
-    expect(valueOf('Market Value (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Market value (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
     expect(valueOf('Invested (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
     expect(valueOf('Income YTD (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
-    expect(valueOf('Income Lifetime (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Income lifetime (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
   })
 
   it('colours_gain_loss_and_xirr_tiles_green_when_not_negative', () => {
     renderTiles()
 
-    expect(valueOf('Unrealised Gain/Loss (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
-    expect(valueOf('Realised Gain/Loss (Lifetime) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Unrealised gain/loss (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Realised gain/loss (lifetime) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
     expect(valueOf('Gross XIRR (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
-    expect(valueOf('Net XIRR (of Tax) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
+    expect(valueOf('Net XIRR (of tax) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--green')
   })
 
   it('colours_gain_loss_and_xirr_tiles_red_when_negative', () => {
@@ -123,25 +123,25 @@ describe('DashboardKpiTiles', () => {
       },
     })
 
-    expect(valueOf('Unrealised Gain/Loss (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
-    expect(valueOf('Realised Gain/Loss (Lifetime) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Unrealised gain/loss (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Realised gain/loss (lifetime) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
     expect(valueOf('Gross XIRR (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
-    expect(valueOf('Net XIRR (of Tax) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
+    expect(valueOf('Net XIRR (of tax) (GBP)')).toHaveClass('dashboard-kpi-tiles__value--red')
   })
 
   it('renders_a_dash_without_colour_when_an_xirr_is_null', () => {
     renderTiles({ summary: { ...SUMMARY, convertedGrossXirr: null, convertedNetXirr: null } })
 
     expect(valueOf('Gross XIRR (GBP)')?.textContent).toBe('—')
-    expect(valueOf('Net XIRR (of Tax) (GBP)')?.textContent).toBe('—')
+    expect(valueOf('Net XIRR (of tax) (GBP)')?.textContent).toBe('—')
     expect(valueOf('Gross XIRR (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
-    expect(valueOf('Net XIRR (of Tax) (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
+    expect(valueOf('Net XIRR (of tax) (GBP)')?.className).toBe('dashboard-kpi-tiles__value')
   })
 
   it('renders_a_dash_for_a_converted_figure_that_could_not_be_converted', () => {
     renderTiles({ summary: { ...SUMMARY, convertedMarketValue: null } })
 
-    expect(valueOf('Market Value (GBP)')?.textContent).toBe('—')
+    expect(valueOf('Market value (GBP)')?.textContent).toBe('—')
   })
 
   it('does_not_render_the_partial_notice_when_every_holding_is_valued', () => {
@@ -154,7 +154,7 @@ describe('DashboardKpiTiles', () => {
     renderTiles({ summary: { ...SUMMARY, isPartial: true, unvaluedHoldingCount: 3 } })
 
     expect(screen.getByRole('status')).toHaveTextContent(
-      '3 holdings could not be valued; Market Value, Unrealised Gain/Loss and both XIRR figures are incomplete.',
+      '3 holdings could not be valued; Market value, Unrealised gain/loss and both XIRR figures are incomplete.',
     )
   })
 
@@ -207,10 +207,10 @@ describe('DashboardKpiTiles', () => {
   })
 
   it('replaces_the_panel_with_a_retryable_error_state_when_the_request_failed', () => {
-    renderTiles({ summary: null, error: 'Unable to load dashboard summary' })
+    renderTiles({ summary: null, error: 'Unable to load dashboard summary.' })
 
-    expect(screen.getByRole('alert')).toHaveTextContent('Unable to load dashboard summary')
-    expect(screen.queryByText('Market Value')).not.toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to load dashboard summary.')
+    expect(screen.queryByText('Market value')).not.toBeInTheDocument()
 
     screen.getByRole('button', { name: 'Try again' }).click()
 

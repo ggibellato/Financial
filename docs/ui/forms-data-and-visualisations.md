@@ -186,9 +186,9 @@ detail panel's contextual Move/Delete action row, and a form's Save button.
 - **Style: primary-appearance, always.** `appearance="primary"`, using the
   pinned brand blue from `decisions/ADR-005-brand-and-status-colors.md` — the
   same blue, same size, everywhere. Don't hand-draw a "+" as a text character
-  — that is the drift this rule exists to prevent. Two peer action buttons sitting side by side (New Income
-  Split/New Withdrawal; Move.../Delete Portfolio; New Transfer/New Balance
-  Correction) both stay primary, left-aligned, in the same style — never
+  — that is the drift this rule exists to prevent. Two peer action buttons sitting side by side (New income
+  split/New withdrawal; Move.../Delete portfolio; New transfer/New balance
+  correction) both stay primary, left-aligned, in the same style — never
   demote one to a lesser style just because there are two, and never treat
   a Move/Delete pair as if it were a Save/Cancel pair.
 - **Position: left**, directly above or beside the content it acts on —
@@ -230,8 +230,8 @@ wording.
 
 ### Grid create/new actions
 
-A button that creates a new row for a grid (New Expense, New Income, New
-Transfer, New Balance Correction, etc.) follows the "Action buttons" rule
+A button that creates a new row for a grid (New expense, New income, New
+transfer, New balance correction, etc.) follows the "Action buttons" rule
 above like every other action button. The one grid-specific detail: position
 it **directly above the grid it creates rows for**, left-aligned — not
 floating in an unrelated toolbar elsewhere on the page.
@@ -243,13 +243,18 @@ action must all name the same thing, so cause and effect are traceable
 without re-reading anything: **trigger button → form title → confirm
 button**. The account screen's expense action (`AccountActionBar.tsx` →
 `ExpenseForm.tsx`) is the reference: the trigger reads "Add expense", the
-form's own title reads "New Expense" (and "Edit Expense" once populated from
-an existing row), and the confirm button reads "Add Expense" (and "Save" once
+form's own title reads "New expense" (and "Edit expense" once populated from
+an existing row), and the confirm button reads "Add expense" (and "Save" once
 editing) — never a generic
-"Submit"/"Confirm"/"OK" that drops the entity name.
+"Submit"/"Confirm"/"OK" that drops the entity name. Admin dialogs follow the
+same shape: the page's "New broker" button opens a dialog titled "New broker"
+whose confirm reads "Add broker"; editing a row opens "Edit broker" with
+"Save". All of these labels, like every other piece of UI text, use sentence
+case (`design-tokens.md`): only the first word, proper nouns and acronyms are
+capitalised.
 
 Do not let the form re-title itself into different wording once open (e.g.
-a "New Transfer" trigger opening a form titled "Move Money") — the trigger's
+a "New transfer" trigger opening a form titled "Move money") — the trigger's
 noun carries through unchanged into both the form title and the confirm
 button, in every mode (create and edit).
 
@@ -401,7 +406,7 @@ Totals must:
 - Have a clear label.
 - Be visually distinct from ordinary rows — in practice, bold the value
   (`<strong>`). If a total's text is otherwise one formatted string (e.g.
-  "Bank Balance: 45.00 · Round-Up: 0.00"), split it into separate label/value
+  "Bank balance: 45.00 · Round-up: 0.00"), split it into separate label/value
   elements instead so only the values are bold — you cannot make part of a
   single formatted string bold.
 - State whether they are filtered subtotal, period total, or grand total.
@@ -514,7 +519,7 @@ Transactions/Credits/Price History) defaults to one layout rule, decided by
 how much width the grid's columns actually need — not by convention or
 habit — unless a specific page has a documented exception (see below):
 
-- **Filters/period controls (e.g. "This Month", "Last 3 Months") always go at
+- **Filters/period controls (e.g. "This month", "Last 3 months") always go at
   the top of the page**, above both the grid and the chart — never below
   either.
 - **If the grid's columns fit comfortably in a fixed side panel** (roughly
@@ -582,8 +587,8 @@ Use a dedicated page for complex, long, or multi-stage workflows.
 
 ### "New X" create actions are inline forms, not popup dialogs
 
-A "New X" / "+ New X" button (New Expense, New Income, New Transfer, New
-Transaction, New Credit, New Price, etc.) creating one row for the grid
+A "New X" / "+ New X" button (New expense, New income, New transfer, New
+transaction, New credit, New price, etc.) creating one row for the grid
 immediately below it **always expands an inline form in place on the same
 tab/page** — it never opens a separate modal dialog.
 The account screen (`AccountScreenPage.tsx` with `AccountActionBar.tsx`) is

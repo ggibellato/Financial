@@ -13,7 +13,7 @@ describe('PortfolioFormDialog', () => {
   it('renders in create mode with an empty name and the first active broker selected', () => {
     render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={vi.fn()} />)
 
-    expect(screen.getByRole('heading', { name: 'Create Portfolio' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New portfolio' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText(/^Broker/)).toHaveValue('XPI')
   })
@@ -35,7 +35,7 @@ describe('PortfolioFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Portfolio' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit portfolio' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('Default')
     expect(screen.getByLabelText(/^Broker/)).toHaveValue('XPI')
     expect(screen.getByLabelText(/^Broker/)).toBeDisabled()
@@ -47,7 +47,7 @@ describe('PortfolioFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Broker/), { target: { value: 'Avenue' } })
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  Growth  ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add portfolio' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Avenue', 'Growth'))
   })
@@ -58,7 +58,7 @@ describe('PortfolioFormDialog', () => {
     render(<PortfolioFormDialog portfolio={null} activeBrokers={ACTIVE_BROKERS} onCancel={vi.fn()} onSubmit={onSubmit} />)
 
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Default' } })
-    saveFromTheSaveButton()
+    saveFromTheSaveButton('Add portfolio')
 
     await expectDuplicateUnderName(message)
   })

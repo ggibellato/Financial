@@ -70,7 +70,8 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Recurring Bill' : 'Create Recurring Bill'}
+      title={isEditing ? 'Edit recurring bill' : 'New recurring bill'}
+      saveLabel={isEditing ? 'Save' : 'Add recurring bill'}
       error={error}
       isSaving={isSaving}
       canSave={canSubmit}
@@ -78,7 +79,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       onCancel={onCancel}
     >
       <Field
-        label="Due Day"
+        label="Due day"
         required
         validationState={dueDayError ? 'error' : 'none'}
         validationMessage={dueDayError}
@@ -118,11 +119,11 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
         <Textarea value={note} onChange={(e) => setNote(e.target.value)} disabled={isSaving} />
       </Field>
 
-      <Field label="NIT Number">
+      <Field label="NIT number">
         <Input value={nitNumber} onChange={(e) => setNitNumber(e.target.value)} disabled={isSaving} />
       </Field>
 
-      <Field label="Minimum Wage Value">
+      <Field label="Minimum wage value">
         <Input
           type="number"
           value={minimumWageValue}

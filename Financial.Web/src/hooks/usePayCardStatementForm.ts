@@ -6,7 +6,7 @@ import type { LockedBank } from './formSettings'
 import { useAsyncResource } from './useAsyncResource'
 import { paymentDateError } from './useCardStatements'
 
-const PAYABLE_STATEMENTS_LOAD_ERROR = 'Unable to load the card statements'
+const PAYABLE_STATEMENTS_LOAD_ERROR = 'Unable to load the card statements.'
 
 export type PayCardStatementField = 'cardId' | 'statementId' | 'date'
 
@@ -108,7 +108,7 @@ export function usePayCardStatementForm(lockedBank: (LockedBank & { currency: st
         onPaid()
       })
       .catch((err: unknown) => {
-        setSaveError(getSaveErrorMessage(err, 'Failed to pay the statement'))
+        setSaveError(getSaveErrorMessage(err, 'Failed to pay the statement.'))
         void payable.refresh()
       })
       .finally(() => setIsSaving(false))

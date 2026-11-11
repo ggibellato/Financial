@@ -98,7 +98,8 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Asset' : 'Create Asset'}
+      title={isEditing ? 'Edit asset' : 'New asset'}
+      saveLabel={isEditing ? 'Save' : 'Add asset'}
       error={summaryError}
       isSaving={isSaving}
       canSave={canSubmit}
@@ -187,7 +188,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
         </Select>
       </Field>
 
-      <Field label="Local Type Code">
+      <Field label="Local type code">
         <Input value={localTypeCode} onChange={(e) => setLocalTypeCode(e.target.value)} disabled={isSaving} />
       </Field>
 

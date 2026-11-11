@@ -31,7 +31,7 @@ describe('EditMovementForm', () => {
   it('keeps the Reserva wording by default', () => {
     renderForm()
 
-    expect(screen.getByRole('heading', { name: 'Edit Movement' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit movement' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Bucket/)).toHaveValue('p1')
   })
 
@@ -59,17 +59,17 @@ describe('EditMovementForm', () => {
   })
 
   it('focuses the first invalid field and shows its message', () => {
-    renderForm({ description: '', errorFields: { editMovementDescription: 'Description is required' }, error: 'Description is required' })
+    renderForm({ description: '', errorFields: { editMovementDescription: 'Description is required.' }, error: 'Description is required.' })
 
     expect(screen.getByLabelText(/^Description/)).toHaveFocus()
-    expect(screen.getAllByText('Description is required')).toHaveLength(1)
+    expect(screen.getAllByText('Description is required.')).toHaveLength(1)
   })
 
   it('announces a failed save without a field and moves focus to it', () => {
-    renderForm({ error: 'Failed to update' })
+    renderForm({ error: 'Failed to update.' })
 
     const alert = screen.getByRole('alert')
-    expect(alert).toHaveTextContent('Failed to update')
+    expect(alert).toHaveTextContent('Failed to update.')
     expect(alert).toHaveFocus()
   })
 

@@ -36,7 +36,7 @@ describe('AssetFormDialog', () => {
       <AssetFormDialog asset={null} activeBrokers={ACTIVE_BROKERS} portfolios={PORTFOLIOS} onCancel={vi.fn()} onSubmit={vi.fn()} />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Create Asset' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New asset' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('')
     expect(screen.getByLabelText(/^Broker/)).toHaveValue('XPI')
     const portfolioOptions = screen.getByLabelText(/^Portfolio/).querySelectorAll('option')
@@ -66,7 +66,7 @@ describe('AssetFormDialog', () => {
       />,
     )
 
-    expect(screen.getByRole('heading', { name: 'Edit Asset' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Edit asset' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Name/)).toHaveValue('BCIA11')
     expect(screen.getByLabelText('Broker')).toHaveValue('XPI')
     expect(screen.getByLabelText('Broker')).toBeDisabled()
@@ -83,7 +83,7 @@ describe('AssetFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText('ISIN'), { target: { value: 'NOT-AN-ISIN' } })
 
-    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add asset' })).toBeDisabled()
   })
 
   it('a blank ISIN is valid (optional field)', () => {
@@ -93,7 +93,7 @@ describe('AssetFormDialog', () => {
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'NEWASSET' } })
     fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
 
-    expect(screen.getByRole('button', { name: 'Save' })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Add asset' })).not.toBeDisabled()
   })
 
   it('submits the selected broker/portfolio and trimmed identity fields', async () => {
@@ -104,7 +104,7 @@ describe('AssetFormDialog', () => {
 
     fireEvent.change(screen.getByLabelText(/^Portfolio/), { target: { value: 'Default' } })
     fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: '  NEWASSET  ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add asset' }))
 
     await waitFor(() =>
       expect(onSubmit).toHaveBeenCalledWith(

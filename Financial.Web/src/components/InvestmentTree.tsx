@@ -16,7 +16,7 @@ import './InvestmentTree.css'
 
 const ASSET_CLASS_OPTIONS: { value: number; name: string; label: string }[] = [
   { value: 1, name: 'Equity', label: 'Equity' },
-  { value: 2, name: 'RealEstate', label: 'Real Estate' },
+  { value: 2, name: 'RealEstate', label: 'Real estate' },
   { value: 3, name: 'Bond', label: 'Bond' },
   { value: 4, name: 'Fund', label: 'Fund' },
   { value: 5, name: 'ETF', label: 'ETF' },
@@ -24,7 +24,7 @@ const ASSET_CLASS_OPTIONS: { value: number; name: string; label: string }[] = [
   { value: 7, name: 'Pension', label: 'Pension' },
   { value: 8, name: 'Other', label: 'Other' },
   { value: 9, name: 'Cryptocurrency', label: 'Cryptocurrency' },
-  { value: 10, name: 'PrivateCredit', label: 'Private Credit' },
+  { value: 10, name: 'PrivateCredit', label: 'Private credit' },
 ]
 
 const ALL_CLASSES = 'all'

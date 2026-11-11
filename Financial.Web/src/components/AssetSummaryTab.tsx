@@ -73,7 +73,7 @@ export default function AssetSummaryTab() {
           <span className="asset-summary__value">{formatN8(asset.quantity)}</span>
         </div>
         <div className="asset-summary__field">
-          <span className="asset-summary__label">Average Price</span>
+          <span className="asset-summary__label">Average price</span>
           <span className="asset-summary__value">{formatN2(asset.averagePrice)}</span>
         </div>
 
@@ -87,38 +87,38 @@ export default function AssetSummaryTab() {
         </div>
 
         <div className="asset-summary__field">
-          <span className="asset-summary__label">Tax Jurisdiction</span>
+          <span className="asset-summary__label">Tax jurisdiction</span>
           <span className="asset-summary__value">
             {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : '—'}
           </span>
         </div>
 
         <div className="asset-summary__field">
-          <span className="asset-summary__label">Local Type</span>
+          <span className="asset-summary__label">Local type</span>
           <span className="asset-summary__value">{asset.localTypeCode || '—'}</span>
         </div>
         <div className="asset-summary__field">
-          <span className="asset-summary__label">Asset Class</span>
+          <span className="asset-summary__label">Asset class</span>
           <span className="asset-summary__value">{asset.class}</span>
         </div>
 
         <div className="asset-summary__separator" />
 
         <div className="asset-summary__field">
-          <span className="asset-summary__label">Total Bought</span>
+          <span className="asset-summary__label">Total bought</span>
           <span className="asset-summary__value asset-summary__value--green">
             {formatN2(asset.totalBought)}
           </span>
         </div>
         <div className="asset-summary__field">
-          <span className="asset-summary__label">Total Sold</span>
+          <span className="asset-summary__label">Total sold</span>
           <span className="asset-summary__value asset-summary__value--red">
             {formatN2(asset.totalSold)}
           </span>
         </div>
 
         <div className="asset-summary__field asset-summary__field--full">
-          <span className="asset-summary__label">Total Credits</span>
+          <span className="asset-summary__label">Total credits</span>
           <span className="asset-summary__value asset-summary__value--blue">
             {formatN2(asset.totalCredits)}
           </span>
@@ -133,7 +133,7 @@ export default function AssetSummaryTab() {
             </div>
 
             <div className="asset-summary__field">
-              <span className="asset-summary__label">Realized Gain/Loss</span>
+              <span className="asset-summary__label">Realized gain/loss</span>
               <span
                 className={`asset-summary__value ${signClass(asset.realizedGainLoss, 'asset-summary__value')}`}
               >
@@ -141,7 +141,7 @@ export default function AssetSummaryTab() {
               </span>
             </div>
             <div className="asset-summary__field">
-              <span className="asset-summary__label">Realized (Shares Only)</span>
+              <span className="asset-summary__label">Realized (shares only)</span>
               <span
                 className={`asset-summary__value ${signClass(asset.realizedGainLossSharesOnly, 'asset-summary__value')}`}
               >
@@ -161,7 +161,7 @@ export default function AssetSummaryTab() {
               </span>
             </div>
             <div className="asset-summary__field">
-              <span className="asset-summary__label">Portfolio Weight</span>
+              <span className="asset-summary__label">Portfolio weight</span>
               <span className="asset-summary__value">
                 {portfolioWeight === null ? '—' : formatPercentFraction(portfolioWeight / 100)}
               </span>
@@ -181,7 +181,7 @@ export default function AssetSummaryTab() {
             </div>
 
             <div className="asset-summary__field">
-              <span className="asset-summary__label">Current Value</span>
+              <span className="asset-summary__label">Current value</span>
               <span className="asset-summary__value">
                 {isLoadingPrice || !price ? '—' : formatN2(price.price)}
                 {!isLoadingPrice && price?.isManual && (
@@ -217,7 +217,7 @@ export default function AssetSummaryTab() {
             {!isLoadingPrice && (
               <>
                 <div className="asset-summary__field">
-                  <span className="asset-summary__label">Total Current Value</span>
+                  <span className="asset-summary__label">Total current value</span>
                   <span className="asset-summary__value">{formatN2OrDash(marketValue)}</span>
                 </div>
                 <div className="asset-summary__field">
@@ -228,7 +228,7 @@ export default function AssetSummaryTab() {
                 </div>
 
                 <div className="asset-summary__field">
-                  <span className="asset-summary__label">Total Current + Credits</span>
+                  <span className="asset-summary__label">Total current + credits</span>
                   <span className="asset-summary__value">
                     {formatN2OrDash(totalCurrentPlusCredits)}
                   </span>

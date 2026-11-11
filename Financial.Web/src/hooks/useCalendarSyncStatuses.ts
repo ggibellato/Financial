@@ -88,7 +88,7 @@ export function useCalendarSyncStatuses(): CalendarSyncStatusesData {
   const { data, isLoading, error, retry, setData } = useAsyncResource<CalendarSyncStatusRow[]>(
     fetchRows,
     [],
-    'Unable to load the calendar sync status list',
+    'Unable to load the calendar sync status list.',
     { initialLoading: true, keepDataWhileLoading: true },
   )
 
@@ -105,7 +105,7 @@ export function useCalendarSyncStatuses(): CalendarSyncStatusesData {
         .catch((err: unknown) => {
           dispatch({
             type: 'RESYNC_ERROR',
-            payload: { creditCardId: id, message: getErrorMessage(err, 'Failed to retry the calendar sync') },
+            payload: { creditCardId: id, message: getErrorMessage(err, 'Failed to retry the calendar sync.') },
           })
         })
     },

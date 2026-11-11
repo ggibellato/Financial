@@ -297,18 +297,18 @@ export function useExpenseForm(
 
     const requiresDateAndDescription = !state.isEditing || state.isRefund
     if (requiresDateAndDescription && !state.date.trim()) {
-      errors.date = 'Date is required'
+      errors.date = 'Date is required.'
     } else if (state.isRefund && state.date > todayIsoDate()) {
       errors.date = 'Date must not be in the future.'
     }
 
     if (requiresDateAndDescription && !state.description.trim()) {
-      errors.description = 'Description is required'
+      errors.description = 'Description is required.'
     }
 
     const value = state.isRefund ? positiveAmount(state.value) : parseValidatedNumber(state.value)
     if (value === null || value === 0) {
-      errors.value = state.isRefund ? 'Amount must be greater than zero.' : 'Value must be a non-zero number'
+      errors.value = state.isRefund ? 'Amount must be greater than zero.' : 'Value must be a non-zero number.'
     }
 
     const selectedBank = banks.find((b) => b.id === state.paymentSource)
@@ -318,7 +318,7 @@ export function useExpenseForm(
     if (roundUpEligible && state.roundUpAmount.trim() !== '') {
       roundUpAmount = parseValidatedNumber(state.roundUpAmount, { min: MIN_ROUND_UP_AMOUNT, max: MAX_ROUND_UP_AMOUNT })
       if (roundUpAmount === null) {
-        errors.roundUpAmount = `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}`
+        errors.roundUpAmount = `Round-up amount must be between £${MIN_ROUND_UP_AMOUNT.toFixed(2)} and £${MAX_ROUND_UP_AMOUNT.toFixed(2)}.`
       }
     }
 
@@ -375,7 +375,7 @@ export function useExpenseForm(
         dispatch({
           type: 'SAVE_ERROR',
           payload: {
-            message: getSaveErrorMessage(err, state.isEditing ? `Failed to update ${record}` : `Failed to create ${record}`),
+            message: getSaveErrorMessage(err, state.isEditing ? `Failed to update ${record}.` : `Failed to create ${record}.`),
             fields: {},
           },
         })

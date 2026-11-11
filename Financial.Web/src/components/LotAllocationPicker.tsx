@@ -48,9 +48,9 @@ export default function LotAllocationPicker({
       <Table className="lot-allocation-picker__table data-table" aria-label="Open lots">
         <TableHeader>
           <TableRow>
-            <TableHeaderCell>Purchase Date</TableHeaderCell>
+            <TableHeaderCell>Purchase date</TableHeaderCell>
             <TableHeaderCell className="data-table__col--numeric">Remaining</TableHeaderCell>
-            <TableHeaderCell className="data-table__col--numeric">Unit Cost</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--numeric">Unit cost</TableHeaderCell>
             <TableHeaderCell className="data-table__col--numeric">Allocate</TableHeaderCell>
           </TableRow>
         </TableHeader>
@@ -62,11 +62,11 @@ export default function LotAllocationPicker({
             const rowErrorId = `lot-allocation-error-${lot.sourceTransactionId}`
             return (
               <TableRow key={lot.sourceTransactionId}>
-                <DataTableCell label="Purchase Date">{dateLabel}</DataTableCell>
+                <DataTableCell label="Purchase date">{dateLabel}</DataTableCell>
                 <DataTableCell label="Remaining" className="data-table__col--numeric">
                   {formatN8(lot.remainingQuantity)}
                 </DataTableCell>
-                <DataTableCell label="Unit Cost" className="data-table__col--numeric">
+                <DataTableCell label="Unit cost" className="data-table__col--numeric">
                   {formatN2(lot.unitCost)}
                 </DataTableCell>
                 <DataTableCell label="Allocate" className="data-table__col--numeric">

@@ -478,10 +478,10 @@ describe('InvestmentTree', () => {
     expect(option.value).toBe('9')
   })
 
-  it('asset class filter shows Private Credit option', async () => {
+  it('asset class filter shows Private credit option', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
-    const option = screen.getByRole('option', { name: 'Private Credit' }) as HTMLOptionElement
+    const option = screen.getByRole('option', { name: 'Private credit' }) as HTMLOptionElement
     expect(option.value).toBe('10')
   })
 

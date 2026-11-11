@@ -21,7 +21,7 @@ export function useInvestmentAccounts(): InvestmentAccountsData {
   const resource = useCrudResource({
     load: () => apiClient.getInvestmentAccounts(),
     initialData: NO_INVESTMENT_ACCOUNTS,
-    loadErrorMessage: 'Unable to load investment accounts',
+    loadErrorMessage: 'Unable to load investment accounts.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -38,7 +38,7 @@ export function useInvestmentAccounts(): InvestmentAccountsData {
 
   const deleteInvestmentAccount = useCallback(
     (id: string) =>
-      runPendingMutation(id, () => apiClient.deleteInvestmentAccount(id), 'Failed to delete investment account'),
+      runPendingMutation(id, () => apiClient.deleteInvestmentAccount(id), 'Failed to delete investment account.'),
     [runPendingMutation],
   )
 

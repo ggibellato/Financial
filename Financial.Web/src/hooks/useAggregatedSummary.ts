@@ -25,7 +25,7 @@ export function useAggregatedSummary(): AggregatedSummaryData {
         : apiClient.getSummaryByPortfolio(selectedNode.brokerName, selectedNode.portfolioName!, scope)
     },
     [selectedNode, shouldFetch, isBroker, apiClient, scope],
-    'Unable to load summary',
+    'Unable to load summary.',
   )
 
   return { summary: data, isLoading, error, retry }

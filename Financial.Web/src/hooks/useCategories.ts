@@ -21,7 +21,7 @@ export function useCategories(): CategoriesData {
   const resource = useCrudResource({
     load: () => apiClient.getCategories(),
     initialData: NO_CATEGORIES,
-    loadErrorMessage: 'Unable to load categories',
+    loadErrorMessage: 'Unable to load categories.',
   })
   const { mutateAndRefresh, runPendingMutation } = resource
 
@@ -36,7 +36,7 @@ export function useCategories(): CategoriesData {
   )
 
   const deleteCategory = useCallback(
-    (id: string) => runPendingMutation(id, () => apiClient.deleteCategory(id), 'Failed to delete category'),
+    (id: string) => runPendingMutation(id, () => apiClient.deleteCategory(id), 'Failed to delete category.'),
     [runPendingMutation],
   )
 

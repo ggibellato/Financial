@@ -58,7 +58,7 @@ describe('useDataQualityReport', () => {
 
     const { result } = renderHook(() => useDataQualityReport())
 
-    await waitFor(() => expect(result.current.error).toBe('Unable to load the data-quality report'))
+    await waitFor(() => expect(result.current.error).toBe('Unable to load the data-quality report.'))
   })
 
   it('retry_re_issues_the_request', async () => {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { Checkbox, Field, Input, MessageBar, MessageBarBody, Select, Text } from '@fluentui/react-components'
 import type { BankOption, CategoryDto } from '../api/types'
 import type { LockedBank, LockedCard } from '../hooks/formSettings'
@@ -88,11 +88,13 @@ export default function ExpenseForm({
   const showCountsAsTitheField = selectedCategory?.isTithe === true
   const cardName = lockedCard?.name || creditCardName || creditCardId
   const invoiceDateDisplay = invoiceDate || computeDefaultInvoiceMonth(date)
-  const noun = isRefund ? 'Refund' : lockedCard ? 'Charge' : 'Expense'
+  const noun = isRefund ? 'refund' : lockedCard ? 'charge' : 'expense'
+  const titleId = useId()
 
   return (
     <form
       ref={formRef}
+      aria-labelledby={titleId}
       className={styles.panel}
       noValidate
       onSubmit={(event) => {
@@ -101,7 +103,7 @@ export default function ExpenseForm({
       }}
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
-        <Text as="h2" weight="semibold" size={400}>
+        <Text as="h2" id={titleId} weight="semibold" size={400}>
           {isEditing ? `Edit ${noun}` : `New ${noun}`}
         </Text>
         {!hasFieldErrors && saveError && (
@@ -146,12 +148,12 @@ export default function ExpenseForm({
               </Text>
             </div>
           ) : lockedBank ? (
-            <Field label="Payment Source">
+            <Field label="Payment source">
               <Text weight="semibold">{lockedBank.name}</Text>
             </Field>
           ) : paymentMode === 'bank' && !lockedCard ? (
             <Field
-              label="Payment Source"
+              label="Payment source"
               required
               validationState={fieldError('paymentSource') ? 'error' : 'none'}
               validationMessage={fieldError('paymentSource')}
@@ -203,7 +205,7 @@ export default function ExpenseForm({
 
           {!isSettled && paymentMode === 'bank' && showRoundUpField && (
             <Field
-              label="Round-Up"
+              label="Round-up"
               validationState={fieldError('roundUpAmount') ? 'error' : 'none'}
               validationMessage={fieldError('roundUpAmount')}
             >
@@ -217,7 +219,7 @@ export default function ExpenseForm({
           )}
 
           {(isSettled || paymentMode === 'card') && (
-            <Field label={lockedCard ? 'Statement month' : 'Invoice Month'}>
+            <Field label={lockedCard ? 'Statement month' : 'Invoice month'}>
               <Input
                 type="month"
                 value={invoiceDateDisplay}

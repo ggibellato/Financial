@@ -91,7 +91,7 @@ describe('CardsGrid', () => {
   it('shows its empty message and a zero adjustment figure when the group has no card', () => {
     renderGrid([], [])
 
-    expect(screen.getByText('No cards in the default group for this month')).toBeInTheDocument()
+    expect(screen.getByText('No cards in the default group for this month.')).toBeInTheDocument()
     expect(screen.getByText(/Combined adjustment figure/)).toHaveTextContent('Combined adjustment figure: 0.00')
   })
 

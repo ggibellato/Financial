@@ -36,9 +36,9 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
   const validationMessage = trimmedLabel.length === 0
     ? 'Label is required.'
     : effectiveFrom.length === 0
-      ? 'Effective From is required.'
+      ? 'Effective from is required.'
       : effectiveTo.length > 0 && effectiveFrom >= effectiveTo
-        ? 'Effective From must be before Effective To.'
+        ? 'Effective from must be before effective to.'
         : ''
   const canSubmit = validationMessage.length === 0 && !isSaving
 
@@ -52,7 +52,8 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
 
   return (
     <EntityFormDialog
-      title={isEditing ? 'Edit Tax Rule' : 'Create Tax Rule'}
+      title={isEditing ? 'Edit tax rule' : 'New tax rule'}
+      saveLabel={isEditing ? 'Save' : 'Add tax rule'}
       error={error}
       isSaving={isSaving}
       canSave={canSubmit}
@@ -74,7 +75,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           </Select>
         </Field>
 
-        <Field label="Event Category">
+        <Field label="Event category">
           <Select
             value={eventCategory}
             onChange={(e) => setEventCategory(e.target.value)}
@@ -105,7 +106,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           </Field>
         </div>
 
-        <Field label="Effective From" required>
+        <Field label="Effective from" required>
           <Input
             type="date"
             value={effectiveFrom}
@@ -114,7 +115,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           />
         </Field>
 
-        <Field label="Effective To">
+        <Field label="Effective to">
           <Input
             type="date"
             value={effectiveTo}

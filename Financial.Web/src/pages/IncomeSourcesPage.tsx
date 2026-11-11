@@ -70,7 +70,7 @@ export default function IncomeSourcesPage() {
   return (
     <AdminEntityPage
       title="Income sources"
-      createLabel="Create Income Source"
+      createLabel="New income source"
       onCreate={() => setIsCreating(true)}
       actionError={deleteError}
       belowActionError={
@@ -106,7 +106,7 @@ export default function IncomeSourcesPage() {
           )}
           {confirmingDelete && (
             <ConfirmDeleteDialog
-              entityLabel="Income Source"
+              entityLabel="income source"
               message={
                 confirmingDelete.hasReferences ? (
                   <>&ldquo;{confirmingDelete.name}&rdquo; is still used by an income entry and cannot be deleted.</>

@@ -26,7 +26,7 @@ export function useOpenLots(enabled: boolean): OpenLotsData {
       return apiClient.getOpenLots(selectedNode.brokerName, selectedNode.portfolioName, selectedNode.assetName, scope)
     },
     [enabled, selectedNode, scope],
-    'Unable to load open lots',
+    'Unable to load open lots.',
     { keepDataWhileLoading: true },
   )
 

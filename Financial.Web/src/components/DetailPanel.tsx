@@ -28,9 +28,9 @@ const BASE_TABS: { id: TabId; label: string }[] = [
 ]
 
 const HOLDINGS_TAB: { id: TabId; label: string } = { id: 'holdings', label: 'Holdings' }
-const PRICE_HISTORY_TAB: { id: TabId; label: string } = { id: 'priceHistory', label: 'Price History' }
+const PRICE_HISTORY_TAB: { id: TabId; label: string } = { id: 'priceHistory', label: 'Price history' }
 const DISPOSALS_TAB: { id: TabId; label: string } = { id: 'disposals', label: 'Disposals' }
-const CORPORATE_ACTIONS_TAB: { id: TabId; label: string } = { id: 'corporateActions', label: 'Corporate Actions' }
+const CORPORATE_ACTIONS_TAB: { id: TabId; label: string } = { id: 'corporateActions', label: 'Corporate actions' }
 
 function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string {
   if (!n) return ''
@@ -117,7 +117,7 @@ export default function DetailPanel() {
               onClick={handleDeletePortfolio}
               title="Delete this empty portfolio"
             >
-              Delete Portfolio
+              Delete portfolio
             </Button>
           )}
           {isAsset && selectedNode.positionType && (

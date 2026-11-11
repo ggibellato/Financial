@@ -102,7 +102,7 @@ export default function SuggestedValuesPanel({
   return (
     <div className={formStyles.panel}>
       <Text as="h2" weight="semibold" size={400}>
-        Suggest Values
+        Suggest values
       </Text>
 
       {phase === 'loading' && <LoadingState message="Loading suggestions..." />}
@@ -114,12 +114,12 @@ export default function SuggestedValuesPanel({
           {rows.length === 0 ? (
             <p>No suggestions available for this month.</p>
           ) : (
-            <Table className="data-table" aria-label="Suggested Values">
+            <Table className="data-table" aria-label="Suggested values">
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell>Account</TableHeaderCell>
-                  <TableHeaderCell className="data-table__col--numeric">Current Value</TableHeaderCell>
-                  <TableHeaderCell className="data-table__col--numeric">Suggested Value</TableHeaderCell>
+                  <TableHeaderCell className="data-table__col--numeric">Current value</TableHeaderCell>
+                  <TableHeaderCell className="data-table__col--numeric">Suggested value</TableHeaderCell>
                   <TableHeaderCell>Source</TableHeaderCell>
                   <TableHeaderCell>Include</TableHeaderCell>
                 </TableRow>
@@ -128,14 +128,14 @@ export default function SuggestedValuesPanel({
                 {rows.map((row) => (
                   <TableRow key={row.accountId}>
                     <DataTableCell label="Account"><TruncatedText text={row.accountName} /></DataTableCell>
-                    <DataTableCell label="Current Value" className="data-table__col--numeric">
+                    <DataTableCell label="Current value" className="data-table__col--numeric">
                       {row.included && row.currentValue !== 0 ? (
                         <span className={styles.mutedValue}>{formatN2(row.currentValue)}</span>
                       ) : (
                         formatN2(row.currentValue)
                       )}
                     </DataTableCell>
-                    <DataTableCell label="Suggested Value" className="data-table__col--numeric">
+                    <DataTableCell label="Suggested value" className="data-table__col--numeric">
                       <Input
                         type="number"
                         step="0.01"
@@ -188,7 +188,7 @@ export default function SuggestedValuesPanel({
             )}
             {phase === 'completed' && failedRows.length > 0 && (
               <Button appearance="primary" onClick={onRetryFailed}>
-                Retry Failed
+                Retry failed
               </Button>
             )}
             <Button appearance="secondary" disabled={isApplying} onClick={onClose}>
