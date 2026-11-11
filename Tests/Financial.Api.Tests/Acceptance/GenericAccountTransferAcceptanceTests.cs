@@ -34,7 +34,7 @@ public class GenericAccountTransferAcceptanceTests : ApiEndpointTests
         """;
 
     public GenericAccountTransferAcceptanceTests()
-        : base(timeProvider: TestClock.At(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.FromHours(1))))
+        : base(timeProvider: TestClock.At(TestClock.MidOctober))
     {
         ReplaceCashFlowDataBeforeStart(SeededData);
     }

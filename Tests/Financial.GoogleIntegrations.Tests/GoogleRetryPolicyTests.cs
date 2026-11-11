@@ -17,7 +17,12 @@ public class GoogleRetryPolicyTests
     private static readonly RetryRunner Async = (action, maxRetries, logger, delay) =>
         GoogleRetryPolicy.ExecuteWithRetryAsync(() => Task.FromResult(action()), maxRetries, logger, delay);
 
-    public static TheoryData<string, RetryRunner> Runners() => new() { { "sync", Sync }, { "async", Async } };
+    public sealed record NamedRunner(string Mode, RetryRunner Run)
+    {
+        public override string ToString() => Mode;
+    }
+
+    public static TheoryData<NamedRunner> Runners() => new() { new NamedRunner("sync", Sync), new NamedRunner("async", Async) };
 
     private readonly List<TimeSpan> _requestedDelays = [];
 
@@ -32,11 +37,11 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_ActionSucceedsImmediately_ReturnsResultWithoutRetrying(string mode, RetryRunner run)
+    public async Task ExecuteWithRetry_ActionSucceedsImmediately_ReturnsResultWithoutRetrying(NamedRunner runner)
     {
         var callCount = 0;
 
-        var result = await run(() =>
+        var result = await runner.Run(() =>
         {
             callCount++;
             return 42;
@@ -49,12 +54,12 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_RateLimitedOnce_RetriesAndReturnsResult_InvokingLogger(string mode, RetryRunner run)
+    public async Task ExecuteWithRetry_RateLimitedOnce_RetriesAndReturnsResult_InvokingLogger(NamedRunner runner)
     {
         var callCount = 0;
         var logMessages = new List<string>();
 
-        var result = await run(
+        var result = await runner.Run(
             () =>
             {
                 callCount++;
@@ -76,11 +81,11 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_RateLimitedRepeatedly_BacksOffExponentially(string mode, RetryRunner run)
+    public async Task ExecuteWithRetry_RateLimitedRepeatedly_BacksOffExponentially(NamedRunner runner)
     {
         var callCount = 0;
 
-        var result = await run(
+        var result = await runner.Run(
             () =>
             {
                 callCount++;
@@ -100,9 +105,9 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal(string mode, RetryRunner run)
+    public async Task ExecuteWithRetry_ExceedsMaxRetries_ThrowsHttpRequestExceptionWrappingOriginal(NamedRunner runner)
     {
-        var act = async () => await run(() => throw RateLimitedException(), 0, null, RecordDelay);
+        var act = async () => await runner.Run(() => throw RateLimitedException(), 0, null, RecordDelay);
 
         var thrown = await act.Should().ThrowAsync<HttpRequestException>();
         thrown.Which.InnerException.Should().BeOfType<GoogleApiException>();
@@ -111,11 +116,11 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_NonRateLimitStatusCode_PropagatesImmediatelyWithoutRetrying(string mode, RetryRunner run)
+    public async Task ExecuteWithRetry_NonRateLimitStatusCode_PropagatesImmediatelyWithoutRetrying(NamedRunner runner)
     {
         var callCount = 0;
 
-        var act = async () => await run(() =>
+        var act = async () => await runner.Run(() =>
         {
             callCount++;
             throw new GoogleApiException("sheets", "Bad request") { HttpStatusCode = HttpStatusCode.BadRequest };
@@ -128,9 +133,9 @@ public class GoogleRetryPolicyTests
 
     [Theory]
     [MemberData(nameof(Runners))]
-    public async Task ExecuteWithRetry_NonGoogleApiException_PropagatesImmediately(string mode, RetryRunner run)
+    public async Task ExecuteWithRetry_NonGoogleApiException_PropagatesImmediately(NamedRunner runner)
     {
-        var act = async () => await run(() => throw new InvalidOperationException("Unrelated failure"), 5, null, RecordDelay);
+        var act = async () => await runner.Run(() => throw new InvalidOperationException("Unrelated failure"), 5, null, RecordDelay);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

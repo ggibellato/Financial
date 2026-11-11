@@ -13,7 +13,6 @@ using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migratio
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.Incomes;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.IncomeSources;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ReserveBuckets;
-using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.ExpenseChargeDate;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Migrations.InvestmentAccounts;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
@@ -58,40 +57,38 @@ if (ExistingOutputVersionGuard.RefusalFor(outputPath) is { } versionRefusal)
     return 1;
 }
 
-if (!mensaisOnly && File.Exists(outputPath))
-{
-    try
-    {
-        Console.WriteLine(NonCarriedRecordsReport.FromJson(File.ReadAllText(outputPath)).Render());
-    }
-    catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
-    {
-        Console.Error.WriteLine($"Cannot read existing output to report non-carried records: {ex.Message}");
-        return 3;
-    }
-}
-
-string? legacyRawJson = null;
-if (File.Exists(outputPath))
-{
-    var backupPath = MigrationBackup.Create(outputPath);
-    Console.WriteLine($"Backed up data file to '{backupPath}'.");
-    // Captured before any typed load happens: this raw text is the only place a pre-existing
-    // settled expense's SettledAt value can still be read from, since Expense no longer
-    // declares that property and a normal deserialization silently drops it.
-    legacyRawJson = File.ReadAllText(backupPath);
-}
-
-var report = new ImportReport();
 var serializer = new CashFlowSerializerAdapter();
 var storage = new LocalJsonStorage(outputPath);
-var today = DateOnly.FromDateTime(DateTime.Now);
 
 // Loaded once up front regardless of mode: this is also where Banks/CardStatements come from
 // for a full rebuild below, since the spreadsheet never produces those itself (Incomes are
 // carried over here too, but also get backfilled from the spreadsheet separately below via
 // IncomeMigrator/IncomeBackfillImporter).
-var existingData = CashFlowLoader.LoadSync(storage, serializer);
+CashFlowData existingData;
+try
+{
+    existingData = CashFlowLoader.LoadSync(storage, serializer);
+}
+catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
+{
+    Console.Error.WriteLine($"Cannot read existing output: {ex.Message}");
+    return 3;
+}
+
+if (File.Exists(outputPath))
+{
+    if (!mensaisOnly)
+    {
+        Console.WriteLine(NonCarriedRecordsReport.From(existingData).Render());
+    }
+
+    var backupPath = MigrationBackup.Create(outputPath);
+    Console.WriteLine($"Backed up data file to '{backupPath}'.");
+}
+
+var report = new ImportReport();
+var today = DateOnly.FromDateTime(DateTime.Now);
+
 var data = mensaisOnly ? existingData : CashFlowData.Create();
 
 // Carrying over data the spreadsheet doesn't own, and seeding/backfilling the investment
@@ -173,7 +170,6 @@ var categorySummary = CategoryMigrator.Migrate(data);
 // Re-run (seeding is idempotent) so the reported summary's movement audit and split-percentage
 // warning reflect the reserve movements ImportReservasSheet just added above.
 var reserveBucketSummary = ReserveBucketMigrator.Migrate(data);
-var expenseChargeDateSummary = ExpenseChargeDateMigrator.Migrate(data, legacyRawJson);
 // Re-run (seeding is idempotent) so the reported summary's snapshot audit reflects the
 // snapshots ImportResumoSheets just added above, not the empty pre-import state.
 var investmentAccountSummary = InvestmentAccountMigrator.Migrate(data);
@@ -193,7 +189,6 @@ Console.WriteLine(incomeSourceSummary.Render());
 Console.WriteLine(creditCardSummary.Render());
 Console.WriteLine(categorySummary.Render());
 Console.WriteLine(reserveBucketSummary.Render());
-Console.WriteLine(expenseChargeDateSummary.Render());
 Console.WriteLine(investmentAccountSummary.Render());
 return 0;
 

@@ -4,7 +4,6 @@ using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Interfaces;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests.Acceptance;
@@ -12,7 +11,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "8f3b1c1a-2e3a-4b1a-9a7f-100000000001";
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string AmexId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000001";
@@ -53,7 +51,7 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
         """;
 
     public CreditCardTemplateAcceptanceTests()
-        : base(timeProvider: TestClock.At(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.FromHours(1))))
+        : base(timeProvider: TestClock.At(TestClock.MidOctober))
     {
         ReplaceCashFlowDataBeforeStart(SeededData);
     }
@@ -64,27 +62,8 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
     private async Task<List<MonthTransactionDTO>> OctoberTransactionsAsync() =>
         (await Client.GetFromJsonAsync<List<MonthTransactionDTO>>($"{Api}/accounts/transactions/2026/10"))!;
 
-    private static async Task ShouldBeRefusedAsCardPayer(HttpResponseMessage response)
-    {
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            problem!.Detail.Should().Be(CardPayerMessage);
-        }
-    }
-
-    private static async Task ShouldBeInUse(HttpResponseMessage response, string message)
-    {
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
-            problem!.Detail.Should().Be(message);
-        }
-    }
+    private static Task ShouldBeRefusedAsCardPayer(HttpResponseMessage response) =>
+        ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, CardPayerMessage);
 
     [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-04")]
@@ -150,9 +129,9 @@ public class CreditCardTemplateAcceptanceTests : ApiEndpointTests
 
         using (new AssertionScope())
         {
-            await ShouldBeInUse(charged, "BA Amex has transactions and cannot be deleted. Deactivate it instead.");
-            await ShouldBeInUse(linked, "Linked has transactions and cannot be deleted. Deactivate it instead.");
-            await ShouldBeInUse(chargedOnly, "Platinum Visa 8003 has transactions and cannot be deleted. Deactivate it instead.");
+            await ShouldBeProblemAsync(charged, HttpStatusCode.Conflict, "BA Amex has transactions and cannot be deleted. Deactivate it instead.");
+            await ShouldBeProblemAsync(linked, HttpStatusCode.Conflict, "Linked has transactions and cannot be deleted. Deactivate it instead.");
+            await ShouldBeProblemAsync(chargedOnly, HttpStatusCode.Conflict, "Platinum Visa 8003 has transactions and cannot be deleted. Deactivate it instead.");
             unused.StatusCode.Should().Be(HttpStatusCode.NoContent);
             (await CardsAsync()).Select(card => card.Name).Should().Equal("BA Amex", "Linked", "Platinum Visa 8003");
         }

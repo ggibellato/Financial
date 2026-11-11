@@ -96,7 +96,7 @@ graph TD
 - Tithe carry-forwards are counted as `TitheCarryForwards.Count`; a set `TitheCarryForwardEffectiveFrom` is reported as part of the same line (`Tithe carry-forwards 1 (effective from 2026-04-01)`).
 - The non-carried report is printed only in full-rebuild mode. In `--mensais-only` mode `data == existingData`, nothing is dropped, and the line is omitted.
 - When the output file does not exist yet, there is nothing to report and no line is printed.
-- The counts are read from the raw JSON of the existing output file (`Transfers`, `BalanceAdjustments`, `TitheCarryForwards`, `Categories`), not from a typed `CashFlowData`: the typed loader rejects legacy shapes that the migrations only fix later, and raw reading keeps the check free of side effects so a corrupt file exits 3 before anything is written. `NonCarriedRecordsReport.FromJson(string)` replaces the planned data-based constructor.
+- The counts are read from the typed `CashFlowData` the tool loads once from the existing output file (`NonCarriedRecordsReport.From(CashFlowData)`). The version guard only admits a current-version file, so no legacy shape reaches the loader; a corrupt or unreadable file exits 3 before the backup or anything else is written. (Originally shipped as raw-JSON reading via `FromJson(string)`; switched to typed data in the post-P60 backend tidy-ups.)
 - Exit codes: `0` success, `1` workbook not found (unchanged), `2` argument/guard refusal, `3` existing output unreadable.
 
 ## 4. Component Overview

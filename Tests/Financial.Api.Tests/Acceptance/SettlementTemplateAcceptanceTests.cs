@@ -15,7 +15,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class SettlementTemplateAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string BarclaysId = "5e771e00-0000-0000-0000-000000000001";
 
     private const string SeededData = $$"""
@@ -154,13 +153,8 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
     public async Task AdminAccounts_SettlementInUsd_Returns400WithTheCurrencyMessage()
     {
         var response = await Client.PostAsJsonAsync($"{Api}/accounts", Settlement("Mãe", "USD", ["USD"], "Mãe"));
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            problem!.Detail.Should().Be("Settlement accounts must be BRL or GBP.");
-        }
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, "Settlement accounts must be BRL or GBP.");
     }
 
     [Fact]
@@ -178,13 +172,8 @@ public class SettlementTemplateAcceptanceTests : ApiEndpointTests
             RoundUpEnabled = false,
             IsActive = true
         });
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
 
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            problem!.Detail.Should().Be("Barclays has no participants.");
-        }
+        await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, "Barclays has no participants.");
     }
 
     private const string PaidByYouId = "5e771e00-0000-0000-0000-000000000101";

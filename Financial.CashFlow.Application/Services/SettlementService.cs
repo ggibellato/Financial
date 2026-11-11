@@ -166,7 +166,7 @@ public sealed class SettlementService : ISettlementService
             throw new ArgumentException($"{account.Name} can't be settled.");
         }
 
-        var currentBalances = AccountBalanceRule.Balances(account, DateOnly.MaxValue, AccountTransactionReader.Read(_repository));
+        var currentBalances = AccountBalanceRule.CurrentBalances(account, AccountTransactionReader.Read(_repository));
         if (AccountActions.DisabledFor(account, currentBalances).TryGetValue(AccountAction.Settle, out var reason))
         {
             throw new ArgumentException(reason);
@@ -190,13 +190,7 @@ public sealed class SettlementService : ISettlementService
     private SettlementTransaction EntryOf(Account account, Guid entryId) =>
         _repository.GetSettlementTransactions().FirstOrThrow(entry => entry.Id == entryId && entry.Account.Id == account.Id, "Settlement entry", entryId);
 
-    private void EnsureNotInTheFuture(DateOnly date)
-    {
-        if (date > _timeProvider.GetLocalToday())
-        {
-            throw new ArgumentException("Date must not be in the future.");
-        }
-    }
+    private void EnsureNotInTheFuture(DateOnly date) => TransactionDateRule.EnsureNotInFuture(date, _timeProvider.GetLocalToday());
 
     private async Task<string?> ApplyConvertedValueAsync(SettlementTransaction entry)
     {

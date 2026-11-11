@@ -276,10 +276,7 @@ public sealed class PotsService : IPotsService
             throw new ArgumentException("Description is required.");
         }
 
-        if (date > _timeProvider.GetLocalToday())
-        {
-            throw new ArgumentException("Date must not be in the future.");
-        }
+        TransactionDateRule.EnsureNotInFuture(date, _timeProvider.GetLocalToday());
     }
 
     private static Account FindPotsAccount(IEnumerable<Account> accounts, Guid potsAccountId) =>

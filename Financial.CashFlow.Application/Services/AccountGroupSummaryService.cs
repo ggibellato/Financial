@@ -130,9 +130,7 @@ public sealed class AccountGroupSummaryService : IAccountGroupSummaryService
             Currency = account.Currency.ToString(),
             IsActive = account.IsActive,
             Balance = balances.First(balance => balance.Currency == account.Currency).Balance,
-            CurrencyBalances = balances
-                .Select(balance => new CurrencyBalanceDTO { Currency = balance.Currency.ToString(), Balance = balance.Balance })
-                .ToList(),
+            CurrencyBalances = CurrencyBalanceMapper.ToDtos(balances),
             OtherParticipant = account.OtherParticipant,
             RoundUpTotal = account.Has(Capability.SupportsRoundUp)
                 ? listedExpenses.Where(e => e.PaymentSourceAccount?.Id == account.Id).Sum(e => e.RoundUpAmount ?? 0m)

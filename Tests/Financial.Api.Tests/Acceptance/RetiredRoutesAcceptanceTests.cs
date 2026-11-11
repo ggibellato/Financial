@@ -7,7 +7,6 @@ namespace Financial.Api.Tests.Acceptance;
 [Trait("Category", "Integration")]
 public class RetiredRoutesAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string MaeId = "5e771e00-0000-0000-0000-000000000002";
     private const string EntryId = "5e771e00-0000-0000-0000-000000000101";
     private const string ReservaId = "5e771e00-0000-0000-0000-000000000003";

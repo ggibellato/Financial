@@ -24,5 +24,5 @@ public class MigratorNullDataTests
     [Theory]
     [MemberData(nameof(MigratorsOverData))]
     public void Migrate_WithNullData_Throws(string migrator, Action migrate) =>
-        migrate.Should().Throw<ArgumentNullException>();
+        migrate.Should().Throw<ArgumentNullException>("{0} must reject null data", migrator);
 }

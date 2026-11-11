@@ -3,14 +3,12 @@ using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Financial.Api.Tests.Acceptance;
 
 [Trait("Category", "Integration")]
 public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
 {
-    private const string Api = "/api/v1/financial";
     private const string InactiveMessage = "Chase is inactive.";
     private static readonly Guid BarclaysId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000001");
     private static readonly Guid ChaseId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-100000000003");
@@ -78,16 +76,8 @@ public class InactiveAccountRecordsAcceptanceTests : ApiEndpointTests
         return (await response.Content.ReadFromJsonAsync<T>())!;
     }
 
-    private static async Task ShouldBeRefusedAsInactive(HttpResponseMessage response)
-    {
-        var problem = await response.Content.ReadFromJsonAsync<ProblemDetails>();
-
-        using (new AssertionScope())
-        {
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            problem!.Detail.Should().Be(InactiveMessage);
-        }
-    }
+    private static Task ShouldBeRefusedAsInactive(HttpResponseMessage response) =>
+        ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, InactiveMessage);
 
     [Fact]
     [Trait("AC", "P60-F06-admin-accounts-page-06")]
