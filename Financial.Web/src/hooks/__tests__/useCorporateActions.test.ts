@@ -2,7 +2,14 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AssetAdminDto, AssetDetailsDto, CorporateActionDto, SelectedNode } from '../../api/types'
+import type {
+  AssetAdminDto,
+  AssetDetailsDto,
+  CorporateActionDto,
+  CorporateActionMergerResultDto,
+  CorporateActionSpinOffResultDto,
+  SelectedNode,
+} from '../../api/types'
 import { BLANK_TARGET_ASSET_IDENTITY } from '../../components/targetAssetPickerValue'
 import { deferred } from '../../test-utils/deferred'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
@@ -880,7 +887,7 @@ describe('useCorporateActions', () => {
       return { result, setNode, pending }
     }
 
-    async function moveToOtherAssetWithNewFormOpen({ result, setNode }: Awaited<ReturnType<typeof startPendingLoad>>) {
+    async function moveToOtherAssetWithNewFormOpen({ result, setNode }: Pick<Awaited<ReturnType<typeof startPendingLoad>>, 'result' | 'setNode'>) {
       getAssetDetailsMock.mockResolvedValue(OTHER_DETAILS)
       setNode(ASSET_NODE_B)
       await waitFor(() => expect(result.current.corporateActions).toEqual([MERGER_RECORD]))
@@ -888,7 +895,7 @@ describe('useCorporateActions', () => {
       act(() => result.current.setFormField('formRatioNumerator', '7'))
     }
 
-    function expectOtherAssetUntouched({ result }: Awaited<ReturnType<typeof startPendingLoad>>) {
+    function expectOtherAssetUntouched({ result }: Pick<Awaited<ReturnType<typeof startPendingLoad>>, 'result' | 'setNode'>) {
       expect(result.current.corporateActions).toEqual([MERGER_RECORD])
       expect(result.current.isFormVisible).toBe(true)
       expect(result.current.formRatioNumerator).toBe('7')
@@ -938,6 +945,76 @@ describe('useCorporateActions', () => {
       const started = await startPendingDelete()
       await moveToOtherAssetWithNewFormOpen(started)
       await act(async () => started.pending.reject(new Error('Delete failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    async function startPendingMerger() {
+      getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+      const pending = deferred<CorporateActionMergerResultDto>()
+      addMergerMock.mockReturnValue(pending.promise)
+      const { result, setNode } = await renderOnAsset()
+      act(() => result.current.showNewForm())
+      act(() => result.current.setFormField('formType', 'Merger'))
+      await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+      act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+      act(() => {
+        result.current.setFormField('formExchangeRatio', '0.5')
+        result.current.setFormField('formEffectiveDate', '2024-05-01')
+      })
+      act(() => result.current.advanceToConfirm())
+      act(() => result.current.saveForm())
+      expect(addMergerMock).toHaveBeenCalledOnce()
+      return { result, setNode, pending }
+    }
+
+    async function startPendingSpinOff() {
+      getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+      const pending = deferred<CorporateActionSpinOffResultDto>()
+      addSpinOffMock.mockReturnValue(pending.promise)
+      const { result, setNode } = await renderOnAsset()
+      act(() => result.current.showNewForm())
+      act(() => result.current.setFormField('formType', 'SpinOff'))
+      await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+      act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+      act(() => {
+        result.current.setFormField('formQuantityReceived', '40')
+        result.current.setFormField('formAllocationPercentage', '25')
+        result.current.setFormField('formEffectiveDate', '2024-06-01')
+      })
+      act(() => result.current.saveForm())
+      expect(addSpinOffMock).toHaveBeenCalledOnce()
+      return { result, setNode, pending }
+    }
+
+    it('ignores_a_late_merger_save_success_for_the_previous_asset', async () => {
+      const started = await startPendingMerger()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () =>
+        started.pending.resolve({ source: LEFT_NODE_DETAILS, target: { ...LEFT_NODE_DETAILS, name: 'Company B' } }),
+      )
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_merger_save_failure_for_the_previous_asset', async () => {
+      const started = await startPendingMerger()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Save failed')))
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_spin_off_save_success_for_the_previous_asset', async () => {
+      const started = await startPendingSpinOff()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () =>
+        started.pending.resolve({ parent: LEFT_NODE_DETAILS, new: { ...LEFT_NODE_DETAILS, name: 'Company D' } }),
+      )
+      expectOtherAssetUntouched(started)
+    })
+
+    it('ignores_a_late_spin_off_save_failure_for_the_previous_asset', async () => {
+      const started = await startPendingSpinOff()
+      await moveToOtherAssetWithNewFormOpen(started)
+      await act(async () => started.pending.reject(new Error('Save failed')))
       expectOtherAssetUntouched(started)
     })
 
