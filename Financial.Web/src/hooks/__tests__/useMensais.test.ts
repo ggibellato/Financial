@@ -365,6 +365,18 @@ describe('useMensais', () => {
     expect([...result.current.brasilBills, ...result.current.ukBills]).toEqual(loadedBills)
   })
 
+  it('ignores a second delete while one is still running', async () => {
+    deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
+    const { result } = renderHook(() => useMensais())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.deleteBill('b1'))
+
+    act(() => result.current.deleteBill('b2'))
+
+    expect(deleteMensaisBillMock).toHaveBeenCalledExactlyOnceWith('b1')
+    expect(result.current.deletingBillId).toBe('b1')
+  })
+
   it('surfaces a delete error without crashing', async () => {
     deleteMensaisBillMock.mockRejectedValue(new Error('Recurring bill not found.'))
     const { result } = renderHook(() => useMensais())

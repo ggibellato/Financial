@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import {
   Button,
   Field,
@@ -15,6 +15,7 @@ import type { RecurringBillDto } from '../api/types'
 import ActionErrorAlert from '../components/ActionErrorAlert'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
+import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatusMenuButton from '../components/StatusMenuButton'
@@ -40,6 +41,7 @@ interface BillRowProps {
   bill: RecurringBillDto
   showBrasilFields: boolean
   isDeleting: boolean
+  deleteDisabled: boolean
   isUpdatingStatus: boolean
   onEdit: (bill: RecurringBillDto) => void
   onDelete: (bill: RecurringBillDto) => void
@@ -50,6 +52,7 @@ function BillRow({
   bill,
   showBrasilFields,
   isDeleting,
+  deleteDisabled,
   isUpdatingStatus,
   onEdit,
   onDelete,
@@ -84,6 +87,7 @@ function BillRow({
       <RowActionsCell
         itemName={`bill ${bill.description}`}
         isDeleting={isDeleting}
+        deleteDisabled={deleteDisabled}
         onEdit={() => onEdit(bill)}
         onDelete={() => onDelete(bill)}
       />
@@ -120,80 +124,90 @@ function BillTable({
     status: (bill) => bill.status,
   }
   const { sortedRows: sortedBills, sortState, requestSort } = useSortableRows(bills, accessors)
+  const headingId = useId()
+  const area = showBrasilFields ? 'Brasil' : 'UK'
 
   return (
-    <section className="mensais-page__section">
-      <div className="mensais-page__table-scroll">
-        <Table className="mensais-page__table data-table">
-          <TableHeader>
-            <TableRow>
-              <SortableColumnHeader
-                label="Due day"
-                columnKey="dueDay"
-                sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Description"
-                columnKey="description"
-                sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Note"
-                columnKey="note"
-                sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              {showBrasilFields && (
+    <section className="mensais-page__section" aria-labelledby={headingId}>
+      <Text as="h2" id={headingId} weight="semibold" size={400}>
+        {area} bills
+      </Text>
+      {bills.length === 0 ? (
+        <EmptyState>No {area} bills yet. Add one with New bill.</EmptyState>
+      ) : (
+        <div className="mensais-page__table-scroll">
+          <Table className="mensais-page__table data-table">
+            <TableHeader>
+              <TableRow>
                 <SortableColumnHeader
-                  label="NIT"
-                  columnKey="nit"
-                  sortDirection={sortState?.columnKey === 'nit' ? sortState.direction : undefined}
+                  label="Due day"
+                  columnKey="dueDay"
+                  sortDirection={sortState?.columnKey === 'dueDay' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-              )}
-              {showBrasilFields && (
                 <SortableColumnHeader
-                  label="Min. Wage"
-                  columnKey="minWage"
+                  label="Description"
+                  columnKey="description"
+                  sortDirection={sortState?.columnKey === 'description' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <SortableColumnHeader
+                  label="Note"
+                  columnKey="note"
+                  sortDirection={sortState?.columnKey === 'note' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                {showBrasilFields && (
+                  <SortableColumnHeader
+                    label="NIT"
+                    columnKey="nit"
+                    sortDirection={sortState?.columnKey === 'nit' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                )}
+                {showBrasilFields && (
+                  <SortableColumnHeader
+                    label="Min. Wage"
+                    columnKey="minWage"
+                    numeric
+                    sortDirection={sortState?.columnKey === 'minWage' ? sortState.direction : undefined}
+                    onSort={requestSort}
+                  />
+                )}
+                <SortableColumnHeader
+                  label="Value"
+                  columnKey="value"
                   numeric
-                  sortDirection={sortState?.columnKey === 'minWage' ? sortState.direction : undefined}
+                  sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
                   onSort={requestSort}
                 />
-              )}
-              <SortableColumnHeader
-                label="Value"
-                columnKey="value"
-                numeric
-                sortDirection={sortState?.columnKey === 'value' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <SortableColumnHeader
-                label="Status"
-                columnKey="status"
-                sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-              <ActionsColumnHeader />
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedBills.map((bill) => (
-              <BillRow
-                key={bill.id}
-                bill={bill}
-                showBrasilFields={showBrasilFields}
-                isDeleting={deletingBillId === bill.id}
-                isUpdatingStatus={updatingStatusBillId === bill.id}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                onStatusChange={onStatusChange}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+                <SortableColumnHeader
+                  label="Status"
+                  columnKey="status"
+                  sortDirection={sortState?.columnKey === 'status' ? sortState.direction : undefined}
+                  onSort={requestSort}
+                />
+                <ActionsColumnHeader />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sortedBills.map((bill) => (
+                <BillRow
+                  key={bill.id}
+                  bill={bill}
+                  showBrasilFields={showBrasilFields}
+                  isDeleting={deletingBillId === bill.id}
+                  deleteDisabled={deletingBillId !== null && deletingBillId !== bill.id}
+                  isUpdatingStatus={updatingStatusBillId === bill.id}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onStatusChange={onStatusChange}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </section>
   )
 }
@@ -279,7 +293,7 @@ export default function MensaisPage() {
             New bill
           </Button>
           <Button
-            appearance="secondary"
+            appearance="primary"
             icon={<ArrowResetRegular />}
             disabledFocusable={isResetting}
             onClick={() => setIsConfirmingReset(true)}
@@ -291,7 +305,7 @@ export default function MensaisPage() {
 
       <ActionErrorAlert message={deleteError} />
       <ActionErrorAlert message={resetError} />
-      {statusUpdateError && <p className="mensais-page__error">{statusUpdateError}</p>}
+      <ActionErrorAlert message={expensePromptBill ? null : statusUpdateError} />
 
       {isAddFormOpen && (
         <div className={styles.panel}>

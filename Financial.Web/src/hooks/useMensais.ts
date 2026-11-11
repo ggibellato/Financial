@@ -391,6 +391,7 @@ export function useMensais(): MensaisData {
   }
 
   function deleteBill(id: string) {
+    if (state.deletingBillId !== null) return
     dispatch({ type: 'DELETE_START', payload: id })
 
     void apiClient
