@@ -97,8 +97,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
           <Field
             label="Label"
             required
-            validationState={form.shown(labelError) ? 'error' : 'none'}
-            validationMessage={form.shown(labelError)}
+            {...form.fieldValidation(labelError)}
           >
             <Input value={label} onChange={(e) => setLabel(e.target.value)} />
           </Field>
@@ -113,8 +112,7 @@ export default function TaxRuleFormDialog({ taxRule, onCancel, onSubmit }: TaxRu
         <Field
           label="Effective from"
           required
-          validationState={form.shown(effectiveFromError) ? 'error' : 'none'}
-          validationMessage={form.shown(effectiveFromError)}
+          {...form.fieldValidation(effectiveFromError)}
         >
           <Input
             type="date"

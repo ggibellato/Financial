@@ -112,7 +112,7 @@ describe('InvestmentAccountFormDialog', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Holiday savings', true, false, 'PotsAccountTotal', null, 'p2'))
   })
 
-  it('says when there is no active Pots account to choose, and Save sends nothing', () => {
+  it('says when there is no active Pots account to choose, and Save asks for another source', async () => {
     const onSubmit = vi.fn()
     render(
       <InvestmentAccountFormDialog
@@ -124,6 +124,7 @@ describe('InvestmentAccountFormDialog', () => {
       />,
     )
 
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Holiday savings' } })
     fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'PotsAccountTotal' } })
 
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled()
@@ -131,6 +132,11 @@ describe('InvestmentAccountFormDialog', () => {
     expect(screen.getByText('Add a Pots account in Admin → CashFlow → Accounts first.')).toBeInTheDocument()
     expect(screen.queryByText('Select a Pots account.')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
+
+    expect(
+      await screen.findByText('No active Pots accounts. Add one in Admin → CashFlow → Accounts, or choose another source.'),
+    ).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByLabelText('Source')).toHaveFocus())
     expect(onSubmit).not.toHaveBeenCalled()
   })
 

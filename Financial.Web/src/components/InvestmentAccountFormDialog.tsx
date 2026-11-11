@@ -53,6 +53,10 @@ export default function InvestmentAccountFormDialog({
   const shownPotsAccountId = potsAccountOptions.some((account) => account.id === potsAccountId) ? potsAccountId : ''
   const isPotsAccountMissing = source === 'PotsAccountTotal' && shownPotsAccountId === ''
   const potsAccountValidationMessage = isPotsAccountMissing && hasPotsAccountChoices ? 'Select a Pots account.' : ''
+  const sourceValidationMessage =
+    isPotsAccountMissing && !hasPotsAccountChoices
+      ? 'No active Pots accounts. Add one in Admin → CashFlow → Accounts, or choose another source.'
+      : ''
   const canSubmit =
     validationMessage.length === 0 &&
     creditCardValidationMessage.length === 0 &&
@@ -107,7 +111,7 @@ export default function InvestmentAccountFormDialog({
         <Switch checked={isLiability} onChange={(e) => setIsLiability(e.target.checked)} />
       </Field>
 
-      <Field label="Source">
+      <Field label="Source" {...form.fieldValidation(sourceValidationMessage)}>
         <Select
           value={source}
           onChange={(e) => setSource(e.target.value as InvestmentAccountSourceOption)}
@@ -122,8 +126,7 @@ export default function InvestmentAccountFormDialog({
         <Field
           label="Credit card"
           required
-          validationState={form.shown(creditCardValidationMessage) ? 'error' : 'none'}
-          validationMessage={form.shown(creditCardValidationMessage)}
+          {...form.fieldValidation(creditCardValidationMessage)}
         >
           <Select value={creditCardId} onChange={(e) => setCreditCardId(e.target.value)}>
             <option value="">Select card…</option>
@@ -145,8 +148,7 @@ export default function InvestmentAccountFormDialog({
               ? "Investment snapshots will suggest the Pots account's total at the end of the previous month."
               : 'Add a Pots account in Admin → CashFlow → Accounts first.'
           }
-          validationState={form.shown(potsAccountValidationMessage) ? 'error' : 'none'}
-          validationMessage={form.shown(potsAccountValidationMessage)}
+          {...form.fieldValidation(potsAccountValidationMessage)}
         >
           <Select
             value={shownPotsAccountId}

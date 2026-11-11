@@ -84,8 +84,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       <Field
         label="Due day"
         required
-        validationState={form.shown(dueDayError) ? 'error' : 'none'}
-        validationMessage={form.shown(dueDayError)}
+        {...form.fieldValidation(dueDayError)}
       >
         <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} />
       </Field>
@@ -93,8 +92,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       <Field
         label="Description"
         required
-        validationState={form.shown(descriptionError) ? 'error' : 'none'}
-        validationMessage={form.shown(descriptionError)}
+        {...form.fieldValidation(descriptionError)}
       >
         <Input value={description} onChange={(e) => setDescription(e.target.value)} />
       </Field>
@@ -102,8 +100,7 @@ export default function RecurringBillFormDialog({ recurringBill, onCancel, onSub
       <Field
         label="Value"
         required
-        validationState={form.shown(valueError) ? 'error' : 'none'}
-        validationMessage={form.shown(valueError)}
+        {...form.fieldValidation(valueError)}
       >
         <Input type="number" value={value} onChange={(e) => setValue(e.target.value)} />
       </Field>

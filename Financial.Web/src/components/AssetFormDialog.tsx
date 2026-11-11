@@ -123,8 +123,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
           <Field
             label="Broker"
             required
-            validationState={form.shown(brokerValidationMessage) ? 'error' : 'none'}
-            validationMessage={form.shown(brokerValidationMessage)}
+            {...form.fieldValidation(brokerValidationMessage)}
           >
             <Select value={brokerName} onChange={(e) => handleBrokerChange(e.target.value)}>
               {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
@@ -139,8 +138,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
           <Field
             label="Portfolio"
             required
-            validationState={form.shown(portfolioValidationMessage) ? 'error' : 'none'}
-            validationMessage={form.shown(portfolioValidationMessage)}
+            {...form.fieldValidation(portfolioValidationMessage)}
           >
             <Select value={portfolioName} onChange={(e) => setPortfolioName(e.target.value)} disabled={brokerPortfolios.length === 0}>
               <option value="">
@@ -167,8 +165,7 @@ export default function AssetFormDialog({ asset, activeBrokers, portfolios, onCa
 
       <Field
         label="ISIN"
-        validationState={form.shown(isinValidationMessage) ? 'error' : 'none'}
-        validationMessage={form.shown(isinValidationMessage)}
+        {...form.fieldValidation(isinValidationMessage)}
       >
         <Input value={isin} onChange={(e) => setIsin(e.target.value)} />
       </Field>

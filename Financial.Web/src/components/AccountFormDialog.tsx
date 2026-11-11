@@ -234,7 +234,6 @@ export default function AccountFormDialog({ account, templates, categories, onCa
     void submit(() => onSubmit(toRequest()))
   }
 
-
   const hasCategoryChoices = selectableCategories.length > 0
   const categoryHint = !hasCategoryChoices
     ? 'Add a category in Admin → CashFlow → Categories first.'

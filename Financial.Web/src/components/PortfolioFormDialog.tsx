@@ -52,8 +52,7 @@ export default function PortfolioFormDialog({ portfolio, activeBrokers, onCancel
         <Field
           label="Broker"
           required
-          validationState={form.shown(brokerValidationMessage) ? 'error' : 'none'}
-          validationMessage={form.shown(brokerValidationMessage)}
+          {...form.fieldValidation(brokerValidationMessage)}
         >
           <Select value={brokerName} onChange={(e) => setBrokerName(e.target.value)}>
             {activeBrokers.length === 0 && <option value="">No active brokers available</option>}
