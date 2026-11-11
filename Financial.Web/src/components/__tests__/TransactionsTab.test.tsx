@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -10,6 +10,7 @@ import type {
   TransactionSummaryItemDto,
   TransactionTypeEffectDto,
 } from '../../api/types'
+import { confirmDelete as confirmDeleteOf, requestDelete as requestDeleteOf } from '../../test-utils/confirmDelete'
 import { pinDate } from '../../test-utils/pinDate'
 import { renderWithSelectedNode } from '../../test-utils/renderWithSelectedNode'
 import TransactionsTab from '../TransactionsTab'
@@ -209,6 +210,17 @@ function dataRows() {
   return within(screen.getByRole('table')).getAllByRole('row').slice(1)
 }
 
+const BUY_NAME = 'transaction Buy -420.50, 15/03/2024'
+const SELL_NAME = 'transaction Sell 251.00, 10/01/2024'
+const FX_SNAPSHOT = { rate: 1.27, toCurrency: 'USD', source: 'Frankfurter', retrievedAt: '2024-01-10T00:00:00Z' }
+
+function rowButton(name: string) {
+  return screen.getByRole('button', { name, hidden: true })
+}
+
+const requestDelete = (name: string) => requestDeleteOf(name, 'Transaction')
+const confirmDelete = (name: string) => confirmDeleteOf(name, 'Transaction')
+
 function rowTypes() {
   return dataRows().map((row) => (within(row).queryByText('Buy') ? 'Buy' : 'Sell'))
 }
@@ -217,7 +229,6 @@ describe('TransactionsTab', () => {
   beforeEach(() => {
     pinDate('2024-06-01T12:00:00+01:00')
     sessionStorage.clear()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     getAssetDetailsMock.mockReset()
     getTransactionsByBrokerMock.mockReset()
     getTransactionsByPortfolioMock.mockReset()
@@ -581,7 +592,9 @@ describe('TransactionsTab', () => {
     deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL]))
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
 
-    fireEvent.click(within(dataRows()[0]).getByRole('button', { name: /^Delete transaction / }))
+    const dialog = await requestDelete(BUY_NAME)
+    expect(dialog).toHaveAccessibleDescription(`Delete the ${BUY_NAME}? This cannot be undone.`)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
     await waitFor(() => expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument())
     expect(screen.getByText('10/01/2024')).toBeInTheDocument()
@@ -602,23 +615,125 @@ describe('TransactionsTab', () => {
   })
 
   it('delete_icon_does_not_delete_when_the_user_cancels_the_confirmation', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     await renderAssetTab()
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete transaction / }))
+    const dialog = await requestDelete(BUY_NAME)
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel', hidden: true }))
 
+    await waitFor(() => expect(rowButton(`Delete ${BUY_NAME}`)).toHaveFocus())
     expect(deleteTransactionMock).not.toHaveBeenCalled()
     expect(screen.getByText('15/03/2024')).toBeInTheDocument()
   })
 
-  it('renders_delete_error_below_table', async () => {
+  it('keeps_focus_on_the_row_while_the_delete_is_in_progress', async () => {
+    deleteTransactionMock.mockReturnValue(new Promise(() => {}))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(rowButton(`Deleting ${BUY_NAME}`)).toHaveFocus())
+    expect(rowButton(`Deleting ${BUY_NAME}`)).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('moves_focus_to_the_next_row_delete_after_a_delete', async () => {
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL]))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: `Delete ${SELL_NAME}` })).toHaveFocus())
+  })
+
+  it('moves_focus_to_the_next_transaction_not_the_lot_picker_when_the_sale_form_is_open', async () => {
+    getOpenLotsMock.mockResolvedValue([OPEN_LOT])
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL], 'SpecificId'))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL], 'SpecificId')
+    await openNewForm()
+    fillValidSale()
+    await screen.findByRole('spinbutton', { name: /Allocate quantity/ })
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(rowButton(`Delete ${SELL_NAME}`)).toHaveFocus())
+  })
+
+  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+    deleteTransactionMock.mockReturnValue(new Promise(() => {}))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+    await confirmDelete(BUY_NAME)
+
+    await confirmDelete(SELL_NAME)
+
+    expect(deleteTransactionMock).toHaveBeenCalledOnce()
+    expect(rowButton(`Delete ${SELL_NAME}`)).not.toHaveAttribute('aria-disabled')
+  })
+
+  it('closes_the_edit_form_when_the_transaction_being_edited_is_deleted', async () => {
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_SELL]))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+    fireEvent.click(rowButton(`Edit ${BUY_NAME}`))
+    await screen.findByRole('heading', { name: 'Edit transaction' })
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Edit transaction', hidden: true })).not.toBeInTheDocument())
+  })
+
+  it('keeps_a_new_form_open_when_a_delete_started_on_another_asset_finishes_late', async () => {
+    let finishDelete: (asset: AssetDetailsDto) => void = () => {}
+    deleteTransactionMock.mockReturnValue(new Promise((resolve) => (finishDelete = resolve)))
+    getAssetDetailsMock.mockResolvedValue(assetWith([TRANSACTION_BUY]))
+    const { setNode } = renderWithSelectedNode(<TransactionsTab />, ASSET_NODE)
+    await screen.findByRole('table')
+    await confirmDelete(BUY_NAME)
+
+    setNode({ ...ASSET_NODE, assetName: 'TAEE3' })
+    await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledTimes(2))
+    await screen.findByRole('table')
+    await openNewForm()
+    await act(async () => finishDelete(assetWith([])))
+
+    expect(screen.getByRole('heading', { name: 'New transaction' })).toBeInTheDocument()
+  })
+
+  it('moves_focus_to_the_previous_row_delete_after_deleting_the_last_row', async () => {
+    deleteTransactionMock.mockResolvedValue(assetWith([TRANSACTION_BUY]))
+    await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+    await confirmDelete(SELL_NAME)
+
+    await waitFor(() => expect(rowButton(`Delete ${BUY_NAME}`)).toHaveFocus())
+  })
+
+  it('lands_on_the_delete_of_a_row_with_an_fx_button_after_deleting_a_row_without_one', async () => {
+    const sellWithFx = { ...TRANSACTION_SELL, fxRateSnapshot: FX_SNAPSHOT }
+    deleteTransactionMock.mockResolvedValue(assetWith([sellWithFx]))
+    await renderAssetTab([TRANSACTION_BUY, sellWithFx])
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(rowButton(`Delete ${SELL_NAME}`)).toHaveFocus())
+  })
+
+  it('moves_focus_to_new_transaction_after_deleting_the_only_row', async () => {
+    deleteTransactionMock.mockResolvedValue(assetWith([]))
+    await renderAssetTab()
+
+    await confirmDelete(BUY_NAME)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'New transaction' })).toHaveFocus())
+  })
+
+  it('announces_a_failed_delete_and_moves_focus_to_it', async () => {
     deleteTransactionMock.mockRejectedValue(new Error('Failed to delete'))
     await renderAssetTab()
 
-    fireEvent.click(screen.getByRole('button', { name: /^Delete transaction / }))
+    await confirmDelete(BUY_NAME)
 
-    expect(await screen.findByText('Failed to delete')).toBeInTheDocument()
-    expect(screen.getByText('15/03/2024')).toBeInTheDocument()
+    const alert = await screen.findByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Failed to delete')
+    await waitFor(() => expect(alert).toHaveFocus())
+    expect(rowButton(`Delete ${BUY_NAME}`)).toBeInTheDocument()
   })
 
   it('does_not_show_the_lot_allocation_picker_for_a_sale_on_a_non_specific_id_asset', async () => {

@@ -1,6 +1,7 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react'
-import { Button, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
+import { useId, useRef, type ReactNode } from 'react'
+import { Button, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
+import ActionErrorAlert from './ActionErrorAlert'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
@@ -41,13 +42,8 @@ export default function AdminEntityPage({
 }: AdminEntityPageProps) {
   const sectionRef = useRef<HTMLElement | null>(null)
   const headingRef = useRef<HTMLHeadingElement | null>(null)
-  const actionErrorRef = useRef<HTMLDivElement | null>(null)
   const reasonId = useId()
   const recordRowFocus = useRowFocusRecovery(sectionRef, headingRef, isLoading)
-
-  useEffect(() => {
-    if (actionError) actionErrorRef.current?.focus()
-  }, [actionError])
 
   return (
     <section ref={sectionRef} className="admin-entity-page" onFocus={recordRowFocus}>
@@ -71,11 +67,7 @@ export default function AdminEntityPage({
 
       {belowHeader}
 
-      {actionError && (
-        <MessageBar ref={actionErrorRef} role="alert" intent="error" tabIndex={-1}>
-          <MessageBarBody>{actionError}</MessageBarBody>
-        </MessageBar>
-      )}
+      <ActionErrorAlert message={actionError} />
 
       {belowActionError}
 

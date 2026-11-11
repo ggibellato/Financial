@@ -121,6 +121,7 @@ interface TransactionsState {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
+  deletingId: string | null
   deleteError: string | null
 }
 
@@ -138,6 +139,7 @@ type TransactionsAction =
   | InlineFormAction<TransactionFormField>
   | { type: 'SET_LOT_ALLOCATION'; payload: { sourceTransactionId: string; value: string } }
   | { type: 'SAVE_SUCCESS'; payload: AssetDetailsDto }
+  | { type: 'DELETE_START'; payload: string }
   | { type: 'DELETE_SUCCESS'; payload: AssetDetailsDto }
   | { type: 'DELETE_ERROR'; payload: string }
 
@@ -166,6 +168,7 @@ const INITIAL_STATE: TransactionsState = {
   selectedChartMode: DEFAULT_CHART_MODE,
   filterPersistence: new Map(),
   ...BLANK_FORM,
+  deletingId: null,
   deleteError: null,
 }
 
@@ -242,10 +245,20 @@ function reducer(state: TransactionsState, action: TransactionsAction): Transact
       }
     case 'SAVE_SUCCESS':
       return { ...state, ...BLANK_FORM, asset: action.payload, deleteError: state.deleteError }
-    case 'DELETE_SUCCESS':
-      return { ...state, asset: action.payload, deleteError: null }
+    case 'DELETE_START':
+      return { ...state, deletingId: action.payload, deleteError: null }
+    case 'DELETE_SUCCESS': {
+      const deletedRowWasBeingEdited = state.deletingId !== null && state.editingId === state.deletingId
+      return {
+        ...state,
+        ...(deletedRowWasBeingEdited ? BLANK_FORM : {}),
+        asset: action.payload,
+        deletingId: null,
+        deleteError: null,
+      }
+    }
     case 'DELETE_ERROR':
-      return { ...state, deleteError: action.payload }
+      return { ...state, deletingId: null, deleteError: action.payload }
     default:
       return state
   }
@@ -274,6 +287,7 @@ export interface TransactionsData {
   isSaving: boolean
   saveError: string | null
   saveErrorFields: Partial<Record<TransactionFormField, string>>
+  deletingId: string | null
   deleteError: string | null
   nodeType: string | undefined
   /** Whether the selected form type has a quantity effect - when false, Quantity/UnitPrice are not required (FR-022). */
@@ -511,8 +525,9 @@ export function useTransactions(): TransactionsData {
 
   const deleteTransaction = useCallback(
     (id: string) => {
-      if (!selectedNode?.portfolioName || !selectedNode.assetName) return
+      if (!selectedNode?.portfolioName || !selectedNode.assetName || state.deletingId !== null) return
 
+      dispatch({ type: 'DELETE_START', payload: id })
       void apiClient
         .deleteTransaction({
           brokerName: selectedNode.brokerName,
@@ -528,7 +543,7 @@ export function useTransactions(): TransactionsData {
           })
         })
     },
-    [selectedNode],
+    [selectedNode, state.deletingId],
   )
 
   return {
@@ -554,6 +569,7 @@ export function useTransactions(): TransactionsData {
     isSaving: state.isSaving,
     saveError: state.saveError,
     saveErrorFields: state.saveErrorFields,
+    deletingId: state.deletingId,
     deleteError: state.deleteError,
     formTypeHasQuantityEffect,
     typeEffectsLoaded: typeEffects !== null,

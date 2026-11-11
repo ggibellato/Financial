@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import BrokersPage from '../BrokersPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { BrokerDto } from '../../api/types'
+import { confirmDelete } from '../../test-utils/confirmDelete'
 
 const { getAdminBrokersMock, createBrokerMock, updateBrokerMock, setCostBasisMethodMock, deleteBrokerMock } =
   vi.hoisted(() => ({
@@ -222,4 +223,31 @@ describe('BrokersPage', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Delete XPI', hidden: true })).toHaveFocus())
   })
+
+  it('keeps focus on the deleting row, then moves it to the next row once the delete completes', async () => {
+    let completeDelete: () => void = () => {}
+    deleteBrokerMock.mockReturnValue(new Promise<void>((resolve) => (completeDelete = resolve)))
+    getAdminBrokersMock.mockResolvedValue([...BROKERS, INTER])
+    render(<BrokersPage />)
+    await confirmDelete('Avenue', 'Broker')
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Deleting Avenue', hidden: true })).toHaveFocus())
+
+    getAdminBrokersMock.mockResolvedValue([BROKERS[0], INTER])
+    completeDelete()
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Inter' })).toHaveFocus())
+  })
+
+  it('moves focus to the announced error when a delete fails', async () => {
+    deleteBrokerMock.mockRejectedValue(new Error('Avenue could not be deleted.'))
+    render(<BrokersPage />)
+    await confirmDelete('Avenue', 'Broker')
+
+    const alert = await screen.findByRole('alert', { hidden: true })
+    expect(alert).toHaveTextContent('Avenue could not be deleted.')
+    await waitFor(() => expect(alert).toHaveFocus())
+  })
 })
+
+const INTER: BrokerDto = { name: 'Inter', currency: 'BRL', status: 'Active', portfolioCount: 0, costBasisMethod: 'AverageCost' }

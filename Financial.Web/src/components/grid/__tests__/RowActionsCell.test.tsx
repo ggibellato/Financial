@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { Table, TableBody, TableRow } from '@fluentui/react-components'
 import { describe, expect, it, vi } from 'vitest'
 import RowActionsCell from '../RowActionsCell'
@@ -54,6 +54,7 @@ describe('RowActionsCell', () => {
 
     expect(deleting).toHaveFocus()
     expect(deleting).toHaveAttribute('aria-disabled', 'true')
+    expect(within(deleting).getByRole('progressbar')).toBeInTheDocument()
     expect(onDelete).not.toHaveBeenCalled()
   })
 

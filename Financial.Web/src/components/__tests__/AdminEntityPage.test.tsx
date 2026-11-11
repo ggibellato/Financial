@@ -129,6 +129,29 @@ describe('AdminEntityPage', () => {
     expect(document.body).toHaveFocus()
   })
 
+  it('moves focus to the next row of the same table when another table precedes it', async () => {
+    const withOtherTable = (names: string[]) => (
+      <>
+        <table aria-label="Lots">
+          <tbody>
+            <tr>
+              <td>
+                <input aria-label="Allocate lot" />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        {rows(names)}
+      </>
+    )
+    const { rerender } = renderPage({ children: withOtherTable(['Barclays', 'Monzo']) })
+
+    screen.getByRole('button', { name: 'Delete Barclays' }).focus()
+    rerender({ children: withOtherTable(['Monzo']) })
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Monzo' })).toHaveFocus())
+  })
+
   it('moves focus to the heading when the nearest row control is disabled', async () => {
     const { rerender } = renderPage({ children: rows(['Barclays', 'Monzo']) })
 

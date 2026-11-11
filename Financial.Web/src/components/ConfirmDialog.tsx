@@ -46,10 +46,11 @@ export default function ConfirmDialog({
   }, [open])
 
   useEffect(() => {
-    if (open || !restoreFocusTarget.current) return
+    if (!open) return
     const target = restoreFocusTarget.current
-    restoreFocusTarget.current = null
-    if (target.isConnected) target.focus()
+    return () => {
+      if (target?.isConnected) target.focus()
+    }
   }, [open])
 
   return (

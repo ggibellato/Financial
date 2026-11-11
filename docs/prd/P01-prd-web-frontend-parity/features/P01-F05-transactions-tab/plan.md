@@ -18,6 +18,8 @@
 
 **4. Mutation operations** — Implement `saveForm` (validates required fields, builds the correct DTO based on whether `editingId` is set, calls `addTransaction` or `updateTransaction`, then on success dispatches the returned `AssetDetailsDto` as `FETCH_SUCCESS` and hides the form) and `deleteTransaction` (prompts via `window.confirm`, calls `deleteTransaction` on the API client, and dispatches accordingly).
 
+> **Later change (PR #1238):** the tab now confirms in the in-app ConfirmDeleteDialog; the hook marks the row as deleting before calling the API.
+
 **5. Sorted output** — Derive `transactions` by sorting `asset.transactions` by date descending and expose it through the returned interface. Return the full hook interface including all state flags and action callbacks.
 
 ---
