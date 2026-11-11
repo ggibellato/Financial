@@ -231,7 +231,7 @@ interface MonthTransactionsFooterProps {
 function MonthTransactionsFooter({ rows, allRowCount, isFiltered, showsSpend }: MonthTransactionsFooterProps) {
   const totals = monthTransactionTotals(rows)
   return (
-    <p className="monthly-page__section-total">
+    <p className="monthly-page__section-total" role="group" aria-label="Totals">
       <strong>{rows.length}</strong>
       {isFiltered && (
         <>

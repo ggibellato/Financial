@@ -217,13 +217,13 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Category Totals')).toBeInTheDocument())
     // Total despesas annual total comes straight from the mocked API response, not a client recomputation.
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
-    expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(totalDespesasRow.closest('tfoot')).not.toBeNull()
     expect(within(totalDespesasRow).getByText('1,860.00')).toBeInTheDocument()
 
     // Resultado annual total also comes straight from the mocked API response (corrected formula,
     // excludes Dividendo/Juros) - proves no client-side recomputation occurs.
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
-    expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(resultadoRow.closest('tfoot')).not.toBeNull()
     expect(within(resultadoRow).getByText('27,740.00')).toBeInTheDocument()
   })
 
@@ -290,7 +290,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Total')).toBeInTheDocument())
 
     const totalRow = screen.getByText('Total').closest('tr')!
-    expect(totalRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(totalRow.closest('tfoot')).not.toBeNull()
     expect(within(totalRow).getByText('800.00')).toBeInTheDocument()
     expect(within(totalRow).getByText('1,350.00')).toBeInTheDocument()
   })
@@ -302,7 +302,7 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByText('Month Result')).toBeInTheDocument())
 
     const monthResultRow = screen.getByText('Month Result').closest('tr')!
-    expect(monthResultRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(monthResultRow.closest('tfoot')).not.toBeNull()
     const cells = within(monthResultRow).getAllByRole('cell')
     // cells[0] is the label; cells[1] is January
     expect(cells[1].textContent?.replace('Jan:', '')).toBe('75.00')
@@ -501,11 +501,11 @@ describe('AnnualSummaryPage', () => {
     await waitFor(() => expect(screen.getByRole('columnheader', { name: '2025' })).toBeInTheDocument())
 
     const resultadoRow = screen.getByText('Resultado (R-D-Inv)').closest('tr')!
-    expect(resultadoRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(resultadoRow).toHaveClass('data-table__row--emphasized')
     expect(within(resultadoRow).getByText('720.00').closest('strong')).toBeInTheDocument()
 
     const totalDespesasRow = screen.getByText('Total despesas').closest('tr')!
-    expect(totalDespesasRow).toHaveClass('annual-summary-page__emphasized-row')
+    expect(totalDespesasRow).toHaveClass('data-table__row--emphasized')
     expect(within(totalDespesasRow).getByText('155.00').closest('strong')).toBeInTheDocument()
   })
 

@@ -70,12 +70,6 @@
   }
 }
 
-@media (min-width: 600px) {
-  .annual-summary-page__emphasized-row > td {
-    border-top: 2px solid var(--border, #ccc);
-  }
-}
-
 .annual-summary-page__investment-totals {
   display: flex;
   flex-wrap: wrap;

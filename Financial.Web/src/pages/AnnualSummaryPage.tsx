@@ -40,20 +40,18 @@ function AnnualSummaryRow({
   monthlyValues,
   average,
   annualTotal,
-  emphasized = false,
 }: {
   label: string
   monthlyValues: number[]
   average: number
   annualTotal: number
-  emphasized?: boolean
 }) {
   return (
-    <TableRow className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-      <DataTableCell label="Category">{optionalEmphasize(label, emphasized)}</DataTableCell>
+    <TableRow>
+      <DataTableCell label="Category">{label}</DataTableCell>
       {monthlyValues.map((v, i) => (
         <DataTableCell key={i} label={MONTH_LABELS[i]} className="data-table__col--numeric">
-          {optionalEmphasize(formatN2(v), emphasized)}
+          {formatN2(v)}
         </DataTableCell>
       ))}
       <DataTableCell label="Average" className="data-table__col--numeric">
@@ -66,21 +64,13 @@ function AnnualSummaryRow({
   )
 }
 
-function InvestmentRow({
-  label,
-  monthlyValues,
-  emphasized = false,
-}: {
-  label: string
-  monthlyValues: (number | null)[]
-  emphasized?: boolean
-}) {
+function InvestmentRow({ label, monthlyValues }: { label: string; monthlyValues: (number | null)[] }) {
   return (
-    <TableRow className={emphasized ? 'annual-summary-page__emphasized-row' : undefined}>
-      <DataTableCell label="Account">{optionalEmphasize(label, emphasized)}</DataTableCell>
+    <TableRow>
+      <DataTableCell label="Account">{label}</DataTableCell>
       {monthlyValues.map((v, i) => (
         <DataTableCell key={i} label={MONTH_LABELS[i]} className="data-table__col--numeric">
-          {v === null ? null : optionalEmphasize(formatN2(v), emphasized)}
+          {v === null ? null : formatN2(v)}
         </DataTableCell>
       ))}
     </TableRow>
@@ -111,10 +101,6 @@ export default function AnnualSummaryPage() {
   const HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER = new Set(['Tax difference', 'Dividendo/Juros', 'Reserva'])
   const HISTORIC_SUMMARY_AVERAGE_EMPHASIZED = new Set(['Resultado (R-D-Inv)', 'Total despesas'])
 
-  // Only the homogeneous data rows (category totals / accounts / historic categories) are
-  // sortable/filterable; the fixed income-summary lines, spacer rows, and the <tfoot> total rows
-  // on the Category Totals and Investments tabs render outside these arrays and stay pinned in
-  // place regardless of sort or filter state.
   const {
     filteredRows: filteredCategoryTotals,
     availableValues: categoryTotalsAvailableValues,
@@ -317,7 +303,6 @@ export default function AnnualSummaryPage() {
                       monthlyValues={resultadoMonthly}
                       average={resultadoAverage}
                       annualTotal={resultadoAnnualTotal}
-                      emphasized
                     />
                   )}
                   <AnnualSummaryRow
@@ -325,7 +310,6 @@ export default function AnnualSummaryPage() {
                     monthlyValues={totalDespesasMonthly}
                     average={totalDespesasAverage}
                     annualTotal={totalDespesasAnnualTotal}
-                    emphasized
                   />
                 </tfoot>
               </Table>
@@ -367,11 +351,10 @@ export default function AnnualSummaryPage() {
                   ))}
                 </TableBody>
                 <tfoot>
-                  <InvestmentRow label="Total" monthlyValues={investmentAnnualResult.netPosition.monthlyValues} emphasized />
+                  <InvestmentRow label="Total" monthlyValues={investmentAnnualResult.netPosition.monthlyValues} />
                   <InvestmentRow
                     label="Month Result"
                     monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
-                    emphasized
                   />
                 </tfoot>
               </Table>
@@ -444,7 +427,7 @@ export default function AnnualSummaryPage() {
                       const isEmphasized = HISTORIC_SUMMARY_AVERAGE_EMPHASIZED.has(a.category)
                       return (
                         <Fragment key={a.category}>
-                          <TableRow className={isEmphasized ? 'annual-summary-page__emphasized-row' : undefined}>
+                          <TableRow className={isEmphasized ? 'data-table__row--emphasized' : undefined}>
                             <DataTableCell label="Category">{optionalEmphasize(a.category, isEmphasized)}</DataTableCell>
                             {historicSummaryAverage.map((y) => (
                               <DataTableCell key={y.year} label={String(y.year)} className="data-table__col--numeric">
