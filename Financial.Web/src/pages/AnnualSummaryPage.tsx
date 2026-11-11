@@ -208,7 +208,8 @@ export default function AnnualSummaryPage() {
         />
       </div>
 
-      <PageTabList aria-label="Annual summary views"
+      <PageTabList
+        aria-label="Annual summary views"
         selectedValue={activeTab}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as AnnualSummaryTabId)}
       >

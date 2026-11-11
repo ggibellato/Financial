@@ -1,6 +1,7 @@
-import { Tab, TabList } from '@fluentui/react-components'
+import { Tab } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { useState } from 'react'
+import PageTabList from '../components/PageTabList'
 import type { MonthTransactionDto } from '../api/types'
 import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
@@ -67,13 +68,13 @@ export default function MonthlyPage() {
         </div>
       </div>
 
-      <TabList selectedValue={activeTab} onTabSelect={handleTabSelect}>
+      <PageTabList aria-label="Monthly views" selectedValue={activeTab} onTabSelect={handleTabSelect}>
         {MONTHLY_TABS.map((tab) => (
           <Tab key={tab.id} value={tab.id}>
             {tab.label}
           </Tab>
         ))}
-      </TabList>
+      </PageTabList>
 
       {activeTab === 'transactions' ? (
         <div className="monthly-page__content">

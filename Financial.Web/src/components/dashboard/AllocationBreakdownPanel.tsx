@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Tab, TabList } from '@fluentui/react-components'
+import { Tab } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import ErrorState from '../ErrorState'
 import LoadingState from '../LoadingState'
+import PageTabList from '../PageTabList'
 import AllocationPieChart, { type AllocationChartEntry } from './AllocationPieChart'
 import type { AllocationBreakdownDto, BrokerCurrencyFilter } from '../../api/types'
 import './AllocationBreakdownPanel.css'
@@ -117,7 +118,8 @@ export default function AllocationBreakdownPanel({
           Some figures could not be converted to {breakdown.displayCurrency} — showing partial totals.
         </p>
       )}
-      <TabList
+      <PageTabList
+        aria-label="Allocation dimensions"
         selectedValue={activeDimension}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) =>
           setActiveDimension(data.value as AllocationDimension)
@@ -128,7 +130,7 @@ export default function AllocationBreakdownPanel({
             {candidate.label}
           </Tab>
         ))}
-      </TabList>
+      </PageTabList>
 
       {entries.length === 0 ? (
         <p className="allocation-breakdown__empty">

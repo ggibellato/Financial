@@ -1,7 +1,8 @@
 import { useCallback, useState, lazy, Suspense } from 'react'
-import { Button, Tab, TabList } from '@fluentui/react-components'
+import { Button, Tab } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { ArrowMoveRegular, CopyRegular, DeleteRegular } from '@fluentui/react-icons'
+import PageTabList from './PageTabList'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { usePortfolioDeletion } from '../hooks/usePortfolioDeletion'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
@@ -155,7 +156,8 @@ export default function DetailPanel() {
         />
       )}
 
-      <TabList
+      <PageTabList
+        aria-label="Detail views"
         selectedValue={activeTab}
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as TabId)}
       >
@@ -169,7 +171,7 @@ export default function DetailPanel() {
             {tab.label}
           </Tab>
         ))}
-      </TabList>
+      </PageTabList>
 
       <div className="detail-panel__content">
         <Suspense fallback={<LoadingState />}>
