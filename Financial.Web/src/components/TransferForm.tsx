@@ -5,6 +5,7 @@ import type { TransferFormField } from '../hooks/transferFormField'
 import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { selectableBanks, type SelectableBank } from '../utils/selectableBanks'
+import { ACTION_LABELS } from './accountActions'
 import FormSaveActions from './FormSaveActions'
 import { useFormPanelStyles } from './formPanelStyles'
 
@@ -55,6 +56,7 @@ export default function TransferForm({
   onCancel,
 }: TransferFormProps) {
   const styles = useFormPanelStyles()
+  const title = isEditing ? 'Edit transfer' : ACTION_LABELS[lockedSide?.side === 'destination' ? 'TransferFrom' : 'TransferTo']
   const [openedSourceBank] = useState(sourceBank)
   const [openedDestinationBank] = useState(destinationBank)
   const sameBankError =
@@ -118,7 +120,7 @@ export default function TransferForm({
     >
       <fieldset disabled={isSaving} className={styles.savingFieldset}>
         <Text as="h2" weight="semibold" size={400}>
-          {isEditing ? 'Edit transfer' : lockedSide?.side === 'destination' ? 'Transfer from' : 'Transfer to'}
+          {title}
         </Text>
         {generalError && (
           <MessageBar ref={errorRef} role="alert" intent="error" tabIndex={-1}>
