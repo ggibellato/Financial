@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import ConfirmDialog, { type ConfirmDialogProps } from '../ConfirmDialog'
 
 function renderDialog(overrides: Partial<ConfirmDialogProps> = {}) {
@@ -68,4 +68,39 @@ describe('ConfirmDialog', () => {
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+
+  it('returns focus to the opener when it unmounts while open', async () => {
+    const { rerender } = render(<Opener showOpener showDialog={false} />)
+    screen.getByRole('button', { name: 'Delete Chase' }).focus()
+
+    rerender(<Opener showOpener showDialog />)
+    await screen.findByRole('dialog', { hidden: true })
+    rerender(<Opener showOpener showDialog={false} />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Chase', hidden: true })).toHaveFocus())
+  })
+
+  it('leaves focus alone when the opener unmounted with it', async () => {
+    const { rerender } = render(<Opener showOpener showDialog={false} />)
+    const opener = screen.getByRole('button', { name: 'Delete Chase' })
+    opener.focus()
+
+    rerender(<Opener showOpener showDialog />)
+    await screen.findByRole('dialog', { hidden: true })
+    rerender(<Opener showOpener={false} showDialog={false} />)
+
+    expect(opener).not.toHaveFocus()
+    expect(document.body).toHaveFocus()
+  })
 })
+
+function Opener({ showOpener, showDialog }: { showOpener: boolean; showDialog: boolean }) {
+  return (
+    <>
+      {showOpener && <button>Delete Chase</button>}
+      {showDialog && (
+        <ConfirmDialog open title="Delete Account" message="Delete Chase?" cancelLabel="Cancel" onConfirm={vi.fn()} onCancel={vi.fn()} />
+      )}
+    </>
+  )
+}

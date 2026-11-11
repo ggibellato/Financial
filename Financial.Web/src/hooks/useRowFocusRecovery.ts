@@ -3,7 +3,7 @@ import { useEffect, useRef, type FocusEvent, type RefObject } from 'react'
 interface FocusedRowControl {
   element: HTMLElement
   rowIndex: number
-  controlIndex: number
+  controlsAfter: number
 }
 
 const ROW_SELECTOR = 'tbody tr'
@@ -17,16 +17,17 @@ function locate(element: HTMLElement): FocusedRowControl | null {
   const row = element.closest<HTMLTableRowElement>(ROW_SELECTOR)
   if (!row?.parentElement) return null
   const rowIndex = Array.from(row.parentElement.children).indexOf(row)
-  const controlIndex = Array.from(row.querySelectorAll(CONTROL_SELECTOR)).indexOf(element)
-  return controlIndex < 0 ? null : { element, rowIndex, controlIndex }
+  const controls = Array.from(row.querySelectorAll(CONTROL_SELECTOR))
+  const controlIndex = controls.indexOf(element)
+  return controlIndex < 0 ? null : { element, rowIndex, controlsAfter: controls.length - 1 - controlIndex }
 }
 
-function controlNear(region: HTMLElement, { rowIndex, controlIndex }: FocusedRowControl): HTMLElement | null {
+function controlNear(region: HTMLElement, { rowIndex, controlsAfter }: FocusedRowControl): HTMLElement | null {
   const rows = region.querySelectorAll(ROW_SELECTOR)
   const row = rows[Math.min(rowIndex, rows.length - 1)]
   if (!row) return null
   const controls = row.querySelectorAll<HTMLElement>(CONTROL_SELECTOR)
-  const control = controls[Math.min(controlIndex, controls.length - 1)]
+  const control = controls[Math.max(controls.length - 1 - controlsAfter, 0)]
   return control && !control.matches(':disabled') ? control : null
 }
 

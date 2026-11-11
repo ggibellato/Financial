@@ -76,9 +76,7 @@
 }
 
 .transactions-tab__delete-error {
-  padding: 6px 16px;
-  font-size: 12px;
-  color: var(--error);
+  margin: 6px 16px;
   flex-shrink: 0;
 }
 
