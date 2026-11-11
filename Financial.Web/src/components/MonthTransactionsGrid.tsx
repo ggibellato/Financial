@@ -1,4 +1,5 @@
 import { useRef, type ReactNode } from 'react'
+import { useFocusReloadedContent } from '../hooks/useFocusReloadedContent'
 import {
   Badge,
   Button,
@@ -90,6 +91,7 @@ interface MonthTransactionsGridProps {
 export default function MonthTransactionsGrid({ year, month, rows, isLoading, error, onRetry }: MonthTransactionsGridProps) {
   const styles = useStyles()
   const gridRef = useRef<HTMLElement>(null)
+  useFocusReloadedContent(gridRef, isLoading)
   const tableRef = useRef<HTMLTableElement>(null)
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =

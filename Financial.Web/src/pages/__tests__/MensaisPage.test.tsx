@@ -113,6 +113,16 @@ describe('MensaisPage', () => {
     expect(screen.getByText('Network down')).toBeInTheDocument()
   })
 
+  it('moves focus into the reloaded page after Try again succeeds', async () => {
+    getMensaisBillsMock.mockRejectedValueOnce(new Error('Network down'))
+    render(<MensaisPage />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    await screen.findByText('INSS')
+    await waitFor(() => expect(screen.getByLabelText('Month')).toHaveFocus())
+  })
+
   it('renders Brasil and UK as two separate grouped sections', async () => {
     render(<MensaisPage />)
 

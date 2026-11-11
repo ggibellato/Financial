@@ -1,28 +1,21 @@
 import { useEffect, useRef } from 'react'
 import { Button } from '@fluentui/react-components'
+import { awaitRetryOutcome, claimFocusForRetryOutcome } from '../utils/retryOutcomeFocus'
 
 interface ErrorStateProps {
   message: string
   onRetry?: () => void
 }
 
-let isRetryAwaitingOutcome = false
-
-function isFocusLost() {
-  return document.activeElement === null || document.activeElement === document.body
-}
-
 export default function ErrorState({ message, onRetry }: ErrorStateProps) {
   const alertRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (isRetryAwaitingOutcome && isFocusLost()) alertRef.current?.focus()
-    isRetryAwaitingOutcome = false
+    if (claimFocusForRetryOutcome()) alertRef.current?.focus()
   }, [])
 
   const retry = () => {
-    isRetryAwaitingOutcome = true
-    document.addEventListener('focusin', () => (isRetryAwaitingOutcome = false), { once: true })
+    awaitRetryOutcome()
     onRetry?.()
   }
 

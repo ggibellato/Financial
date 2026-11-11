@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import ErrorState from '../ErrorState'
+import LoadingState from '../LoadingState'
 
 describe('ErrorState', () => {
   it('renders the error message', () => {
@@ -86,5 +87,63 @@ describe('ErrorState', () => {
     )
 
     expect(screen.getByRole('textbox', { name: 'Amount' })).toHaveFocus()
+  })
+
+  describe('after Try again succeeds', () => {
+    function RetryThatLoads({ outcome }: { outcome: 'loaded' | 'failed' }) {
+      const [phase, setPhase] = useState<'error' | 'loading' | 'done'>('error')
+      return (
+        <section aria-label="Bills">
+          {phase === 'error' && <ErrorState message="Unable to load" onRetry={() => setPhase('loading')} />}
+          {phase === 'loading' && (
+            <>
+              <LoadingState />
+              <button onClick={() => setPhase('done')}>Finish loading</button>
+            </>
+          )}
+          {phase === 'done' && outcome === 'loaded' && <button>First bill</button>}
+          {phase === 'done' && outcome === 'failed' && <ErrorState message="Still unable to load" onRetry={() => setPhase('loading')} />}
+        </section>
+      )
+    }
+
+    function retryAndFinish() {
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+      const finish = screen.getByRole('button', { name: 'Finish loading' })
+      fireEvent.click(finish)
+    }
+
+    it('moves focus to the reloaded content', async () => {
+      render(<RetryThatLoads outcome="loaded" />)
+
+      retryAndFinish()
+
+      await waitFor(() => expect(screen.getByRole('button', { name: 'First bill' })).toHaveFocus())
+    })
+
+    it('moves focus to the error again when the retry fails after loading', async () => {
+      render(<RetryThatLoads outcome="failed" />)
+
+      retryAndFinish()
+
+      await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus())
+    })
+
+    it('leaves focus alone when the user moved on while it reloaded', async () => {
+      render(
+        <>
+          <input aria-label="Search" />
+          <RetryThatLoads outcome="loaded" />
+        </>,
+      )
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+      const search = screen.getByRole('textbox', { name: 'Search' })
+      search.focus()
+      fireEvent.click(screen.getByRole('button', { name: 'Finish loading' }))
+
+      await screen.findByRole('button', { name: 'First bill' })
+      expect(search).toHaveFocus()
+    })
   })
 })

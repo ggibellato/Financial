@@ -28,6 +28,7 @@ import { useDiscardPrompt } from '../hooks/useDiscardPrompt'
 import { BILL_STATUSES, useMensais } from '../hooks/useMensais'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { formatN2 } from '../utils/formatters'
+import { isFocusLost } from '../utils/focus'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 import RowActionsCell from '../components/grid/RowActionsCell'
 import { rowDeleteState, type RowDeleteState } from '../components/grid/rowDeleteState'
@@ -278,7 +279,7 @@ export default function MensaisPage() {
     const wasOpen = previousFormKey.current !== null
     previousFormKey.current = openFormKey
     if (openFormKey) formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD)?.focus()
-    else if (wasOpen && (document.activeElement === null || document.activeElement === document.body)) restoreFocus()
+    else if (wasOpen && isFocusLost()) restoreFocus()
   }, [openFormKey])
 
   const openForm = (open: () => void) => {
