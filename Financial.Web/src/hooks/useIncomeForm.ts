@@ -110,7 +110,7 @@ interface FundingFields {
 }
 
 const DEFAULT_FUNDING: FundingFields = { isOlderSplit: false, fundingLines: [] }
-const DEPOSIT_LINE_KEY = 'deposit-line'
+const WHOLE_DEPOSIT_LINE_KEY = 'whole-deposit-line'
 
 function comparableFunding({ fundingLines }: FundingFields): string {
   return JSON.stringify(comparableLines(fundingLines))
@@ -345,10 +345,12 @@ export function useIncomeForm(
   const fundingCurrency = findAccount(accounts, state.potsAccountId)?.currency ?? DEFAULT_DEPOSIT_CURRENCY
   const wholeDeposit = depositAmount?.toFixed(2) ?? ''
   const followsDeposit = !state.isEditing && incomeBankLock !== undefined && state.fundingLines.length === 0
-  const fundingLines = followsDeposit ? [{ key: DEPOSIT_LINE_KEY, bankId: incomeBankLock.id, amount: wholeDeposit }] : state.fundingLines
+  const fundingLines = followsDeposit
+    ? [{ key: WHOLE_DEPOSIT_LINE_KEY, bankId: incomeBankLock.id, amount: wholeDeposit }]
+    : state.fundingLines
   const isHandSplit = fundingLines.length > 0
-  const editsFundingLines = isFundingShown && isHandSplit
-  const fundingMismatch = editsFundingLines ? fundingLinesMismatch(fundingLines, depositAmount, fundingCurrency) : null
+  const sendsFundingLines = isFundingShown && isHandSplit && !followsDeposit
+  const fundingMismatch = sendsFundingLines ? fundingLinesMismatch(fundingLines, depositAmount, fundingCurrency) : null
 
   const potsAccountName = (potsAccountId: string | null | undefined): string | null =>
     potsAccountId == null ? null : (findAccount(accounts, potsAccountId)?.name ?? UNNAMED_POTS_ACCOUNT)
@@ -440,7 +442,7 @@ export function useIncomeForm(
     if (fundingMismatch) return
 
     const errors: Partial<Record<IncomeFormField, string>> = {}
-    const fundingErrors = editsFundingLines ? fundingLineErrors(fundingLines) : NO_FUNDING_ERRORS
+    const fundingErrors = sendsFundingLines ? fundingLineErrors(fundingLines) : NO_FUNDING_ERRORS
 
     if (!state.date.trim()) {
       errors.date = 'Date is required.'
@@ -488,7 +490,7 @@ export function useIncomeForm(
       bankId: incomeBankId || null,
       description: state.description || null,
       potsAccountId: requestedPotsAccountId(state, incomeSources),
-      fundingLines: editsFundingLines && !followsDeposit ? toFundingLineRequests(fundingLines) : null,
+      fundingLines: sendsFundingLines ? toFundingLineRequests(fundingLines) : null,
     }
 
     const request =

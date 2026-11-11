@@ -878,6 +878,17 @@ describe('useIncomeForm on a bank screen', () => {
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: 'bank-barclays', potsAccountId: 'p1', fundingLines: null }))
   })
 
+  it('reports a missing net value on the Net value field only, not on the untouched line', async () => {
+    const result = await openNewIncomeOnBankScreen()
+    act(() => result.current.setIncomeField('netValue', ''))
+
+    await act(async () => result.current.submitIncome())
+
+    expect(result.current.saveIncomeErrorFields.netValue).toBe('Net value must be a non-negative number.')
+    expect(result.current.incomeFunding.errors).toEqual({})
+    expect(createIncomeMock).not.toHaveBeenCalled()
+  })
+
   it('sends the lines once they are edited', async () => {
     const result = await openNewIncomeOnBankScreen()
     const [line] = result.current.incomeFunding.lines
