@@ -29,7 +29,7 @@
 
 .asset-summary__label {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -57,7 +57,7 @@
 }
 
 .asset-summary__manual-badge {
-  color: #e65100;
+  color: var(--warning-text);
   font-style: italic;
   font-size: 12px;
 }

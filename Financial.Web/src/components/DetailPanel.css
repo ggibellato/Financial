@@ -7,7 +7,7 @@
 .detail-panel--empty {
   justify-content: center;
   align-items: center;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .detail-panel__header {
@@ -56,7 +56,7 @@
 
 .detail-panel__breadcrumb {
   font-size: 12px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   margin: 4px 0 0;
 }
 
@@ -67,7 +67,7 @@
 }
 
 .detail-panel__placeholder {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
   font-style: italic;
 }
 

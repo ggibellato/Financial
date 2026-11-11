@@ -18,7 +18,7 @@
      every theme, which defeated dark mode wherever they were used. */
   --bg-subtle: #f9f9f9;
   --bg-hover: #f0f0f0;
-  --text-muted: #888;
+  --text-muted: #6e6e6e;
   --success: #2e7d32;
   --danger: #c0392b;
   --error: #c0392b;
@@ -67,7 +67,7 @@
 
   --bg-subtle: #1f2028;
   --bg-hover: #262832;
-  --text-muted: #6b7280;
+  --text-muted: #8b93a1;
   --success: #66bb6a;
   --danger: #ff7b72;
   --error: #ff7b72;

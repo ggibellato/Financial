@@ -41,9 +41,9 @@
 
 .tax-page__evidence-cell {
   font-size: 11px;
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }
 
 .tax-page__empty {
-  color: var(--text-muted, #888);
+  color: var(--text-muted);
 }

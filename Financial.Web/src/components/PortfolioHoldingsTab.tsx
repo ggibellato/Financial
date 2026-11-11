@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import MissingValue from './MissingValue'
 import TruncatedText from './TruncatedText'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -43,15 +44,33 @@ const DEFAULT_ROW_PRICE: RowPriceState = {
   isManual: false,
 }
 
+function formatPercentValue(value: number): string {
+  return `${formatN2(value)}%`
+}
+
+function renderOptional<T>(value: T | null, render: (v: T) => ReactNode) {
+  return value === null ? <MissingValue /> : render(value)
+}
+
+const LOADING_ANNOUNCED = { role: 'img', 'aria-label': 'Loading' } as const
+const LOADING_SILENT = { 'aria-hidden': true } as const
+
 function renderGatedCell(
   loading: boolean,
   unavailable: boolean,
   value: number | null,
   render: (v: number) => ReactNode,
+  { announcesLoading = false } = {},
 ) {
-  if (loading) return <span className="portfolio-holdings__loading-cell" role="img" aria-label="Loading">…</span>
-  if (unavailable || value === null) return '—'
-  return render(value)
+  if (loading) {
+    return (
+      <span className="portfolio-holdings__loading-cell" {...(announcesLoading ? LOADING_ANNOUNCED : LOADING_SILENT)}>
+        …
+      </span>
+    )
+  }
+  if (unavailable) return <MissingValue />
+  return renderOptional(value, render)
 }
 
 interface AssetRowProps {
@@ -69,14 +88,14 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
   const cellUnavailable = !isHistoric && rowPrice.fetchFailed
 
   return (
-    <TableRow>
+    <TableRow aria-busy={cellLoading || undefined}>
       <DataTableCell label="Asset name" className="portfolio-holdings__name-cell">
         <TruncatedText text={item.assetName} />
       </DataTableCell>
       <DataTableCell label="First investment">{formatShortDate(item.firstInvestmentDate)}</DataTableCell>
       <DataTableCell label="Quantity">{formatN8(item.currentQuantity)}</DataTableCell>
       <DataTableCell label="% Portfolio">
-        {item.portfolioWeight === null ? '—' : `${formatN2(item.portfolioWeight)}%`}
+        {renderOptional(item.portfolioWeight, formatPercentValue)}
       </DataTableCell>
       <DataTableCell label="Total invested">{formatN2(item.totalInvested)}</DataTableCell>
       {isHistoric && (
@@ -93,7 +112,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       )}
       {!isHistoric && (
         <DataTableCell label="Current value">
-          {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, v => formatN2(v))}
+          {renderGatedCell(rowPrice.isLoading, rowPrice.fetchFailed, currentValue, formatN2)}
           {!rowPrice.isLoading && !rowPrice.fetchFailed && rowPrice.isManual && (
             <span
               className="portfolio-holdings__manual-badge"
@@ -108,7 +127,7 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
       <DataTableCell label="Total credits">{formatN2(item.totalCredits)}</DataTableCell>
       <DataTableCell label="Average price">{formatN2(item.averagePrice)}</DataTableCell>
       <DataTableCell label={isHistoric ? 'Sold price' : 'Current price'}>
-        {renderGatedCell(cellLoading, cellUnavailable, priceValue, v => formatN2(v))}
+        {renderGatedCell(cellLoading, cellUnavailable, priceValue, formatN2, { announcesLoading: true })}
         {!isHistoric && !cellLoading && !cellUnavailable && item.marketStatus === 'Stale' && (
           <span className="portfolio-holdings__stale-badge" title="This price is older than the most recent weekday.">
             {' '}
@@ -138,19 +157,19 @@ function AssetRow({ item, rowPrice, isHistoric }: AssetRowProps) {
         ))}
       </DataTableCell>
       <DataTableCell label="Last month credits" className="portfolio-holdings__credits-separator">
-        {item.lastCreditMonth === null ? '—' : formatN2(item.lastMonthCredits)}
+        {item.lastCreditMonth === null ? <MissingValue /> : formatN2(item.lastMonthCredits)}
       </DataTableCell>
       <DataTableCell label="Last credit month">
-        {item.lastCreditMonth === null ? '—' : formatCreditMonth(item.lastCreditMonth)}
+        {renderOptional(item.lastCreditMonth, formatCreditMonth)}
       </DataTableCell>
       <DataTableCell label="Last month credits %">
-        {item.lastMonthCreditsPercent === null ? '—' : `${formatN2(item.lastMonthCreditsPercent)}%`}
+        {renderOptional(item.lastMonthCreditsPercent, formatPercentValue)}
       </DataTableCell>
       <DataTableCell label="Est. annual credits">
-        {formatN2OrDash(item.estimatedAnnualCredits)}
+        {renderOptional(item.estimatedAnnualCredits, formatN2)}
       </DataTableCell>
       <DataTableCell label="Est. annual %">
-        {item.estimatedAnnualPercent === null ? '—' : `${formatN2(item.estimatedAnnualPercent)}%`}
+        {renderOptional(item.estimatedAnnualPercent, formatPercentValue)}
       </DataTableCell>
     </TableRow>
   )

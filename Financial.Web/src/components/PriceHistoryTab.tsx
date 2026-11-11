@@ -38,7 +38,7 @@ import './PriceHistoryTab.css'
 const DEFAULT_LEFT_WIDTH = 400
 const MIN_LEFT_WIDTH = 200
 const LINE_COLOR = '#4682b4'
-const MANUAL_DOT_COLOR = '#e65100'
+const MANUAL_DOT_COLOR = 'var(--warning-text)'
 const AUTOMATIC_DOT_COLOR = '#4682b4'
 // Same Buy/Sell colors as TransactionsTab.css - keep the two in sync.
 const BUY_COLOR = '#2e7d32'
