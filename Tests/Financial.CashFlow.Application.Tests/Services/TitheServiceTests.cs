@@ -393,6 +393,119 @@ public class TitheServiceTests
     }
 
     [Fact]
+    [Trait("AC", "P61-F03-tithe-tab-and-history-01")]
+    public async Task GetTitheSummary_ReturnsIncomeBaseAndTithePaid()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 3000m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 9), Source("Ariana"), null, 500m, Chase));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 1), Source("Gleison"), null, 9000m, Barclays));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 10), "Tithe payment", 200m, Dizimo, Barclays, null));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 11), "Offer", 40m, Dizimo, Barclays, null, countsAsTithe: false));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 12), "Groceries", 70m, Mercado, Barclays, null));
+
+        var result = await _sut.GetTitheSummaryAsync(2026, 7);
+
+        result.IncomeBase.Should().Be(3500m);
+        result.CalculatedTithe.Should().Be(350m);
+        result.TithePaid.Should().Be(200m);
+        result.TitheBalance.Should().Be(150m);
+    }
+
+    [Fact]
+    public async Task GetTitheSummary_EmptyMonth_ReturnsZeroBaseAndPaid()
+    {
+        var result = await _sut.GetTitheSummaryAsync(2026, 7);
+
+        result.IncomeBase.Should().Be(0m);
+        result.TithePaid.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetTitheSummary_BanklessIncome_InIncomeBase()
+    {
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Source("Gleison"), null, 1000m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 15), Source("DividendoJuros"), null, 420m, null, "Chip ISA dividend"));
+
+        var result = await _sut.GetTitheSummaryAsync(2026, 7);
+
+        result.IncomeBase.Should().Be(1420m);
+        result.CalculatedTithe.Should().Be(142m);
+    }
+
+    [Fact]
+    [Trait("AC", "P61-F03-tithe-tab-and-history-04")]
+    public async Task GetTitheYear_TwelveMonths_EachEqualsTheMonthSummary()
+    {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 3, 1));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 1), Source("Gleison"), null, 2000m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 1), Source("Gleison"), null, 1000m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 4, 2), Source("DividendoJuros"), null, 500m, null, "Dividend"));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 6, 1), Source("Gleison"), null, 3000m, Barclays));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 4, 10), "Tithe", 20m, Dizimo, Barclays, null));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 6, 10), "Tithe", 500m, Dizimo, Barclays, null));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 9, 10), "Tithe", 50m, Dizimo, Barclays, null));
+        _repository.AddTitheCarryForward(TitheCarryForward.Create(2026, 5, false));
+
+        var year = await _sut.GetTitheYearAsync(2026);
+
+        year.Select(m => (m.Year, m.Month)).Should().Equal(Enumerable.Range(1, 12).Select(m => (2026, m)));
+        foreach (var item in year)
+        {
+            var month = await _sut.GetTitheSummaryAsync(2026, item.Month);
+            item.Summary.Should().BeEquivalentTo(month, $"month {item.Month} must equal the month route");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P61-F03-tithe-tab-and-history-04")]
+    public async Task GetTitheYear_CarryChainsAcrossMonths()
+    {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 3, 1));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 2, 1), Source("Gleison"), null, 2000m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 1), Source("Gleison"), null, 1000m, Barclays));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 4, 1), Source("Gleison"), null, 500m, Barclays));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 4, 10), "Tithe", 20m, Dizimo, Barclays, null));
+
+        var year = await _sut.GetTitheYearAsync(2026);
+
+        year[1].Summary.CarryForward.Should().BeNull();
+        year[1].Summary.TitheBalance.Should().Be(200m);
+        year[2].Summary.CarryForward.Should().BeNull("the anchor month never carries in");
+        year[2].Summary.TitheBalance.Should().Be(100m);
+        year[3].Summary.CarryForward!.Amount.Should().Be(100m);
+        year[3].Summary.CarryForward!.FromMonth.Should().Be(3);
+        year[3].Summary.TitheBalance.Should().Be(130m);
+        year[4].Summary.CarryForward!.Amount.Should().Be(130m);
+        year[4].Summary.TitheBalance.Should().Be(130m);
+        year[11].Summary.TitheBalance.Should().Be(130m);
+    }
+
+    [Fact]
+    public async Task GetTitheYear_JanuaryCarriesInThePreviousDecember()
+    {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2025, 12, 1));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2025, 12, 1), Source("Gleison"), null, 1000m, Barclays));
+
+        var year = await _sut.GetTitheYearAsync(2026);
+
+        year[0].Summary.CarryForward!.FromYear.Should().Be(2025);
+        year[0].Summary.CarryForward!.FromMonth.Should().Be(12);
+        year[0].Summary.TitheBalance.Should().Be(100m);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10000)]
+    public async Task GetTitheYear_InvalidYear_ThrowsAndFailsTheSpan(int year)
+    {
+        var act = async () => await _sut.GetTitheYearAsync(year);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentOutOfRangeException>("CashFlow.TitheService.GetTitheYearAsync");
+        _repository.GetTitheCarryForwardEffectiveFrom().Should().BeNull();
+    }
+
+    [Fact]
     public async Task GetTitheSummaryAsync_WhenRepositoryThrowsUnexpectedly_RecordsFailedSpanAndRethrows()
     {
         _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");

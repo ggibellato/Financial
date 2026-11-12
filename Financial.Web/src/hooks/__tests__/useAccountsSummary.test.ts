@@ -37,7 +37,7 @@ const SUMMARY: AccountGroupSummaryDto = {
   totalIncoming: 720,
 }
 
-const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245, carryForward: null }
+const TITHE_SUMMARY: TitheSummaryDto = { incomeBase: 0, calculatedTithe: 245, tithePaid: 0, titheBalance: 245, carryForward: null }
 
 async function renderLoaded(year = 2026, month = 7) {
   const rendered = renderHook(() => useAccountsSummary(year, month))
@@ -124,7 +124,7 @@ describe('useAccountsSummary', () => {
   })
 
   it('toggles carry-forward inclusion and shows the returned tithe summary without a reload', async () => {
-    const updated: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 295, carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 6 } }
+    const updated: TitheSummaryDto = { incomeBase: 0, calculatedTithe: 245, tithePaid: 0, titheBalance: 295, carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 6 } }
     updateTitheCarryForwardMock.mockResolvedValue(updated)
     const { result } = await renderLoaded()
 

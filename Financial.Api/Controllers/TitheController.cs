@@ -30,6 +30,15 @@ public sealed class TitheController : ControllerBase
         return Ok(result);
     }
 
+    [HttpGet("year/{year:int}")]
+    [ProducesResponseType(typeof(IReadOnlyList<TitheMonthDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyList<TitheMonthDTO>>> GetTitheYear(int year)
+    {
+        var result = await _titheService.GetTitheYearAsync(year);
+        return Ok(result);
+    }
+
     /// <summary>Includes or excludes the previous month's carried-forward amount from this month's Tithe Balance.</summary>
     /// <param name="year">The year.</param>
     /// <param name="month">The month (1-12).</param>

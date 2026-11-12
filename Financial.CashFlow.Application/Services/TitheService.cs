@@ -43,6 +43,32 @@ public sealed class TitheService : ITitheService
         }
     }
 
+    public async Task<IReadOnlyList<TitheMonthDTO>> GetTitheYearAsync(int year)
+    {
+        using var span = StartSpan("GetTitheYearAsync");
+        try
+        {
+            if (year < DateOnly.MinValue.Year || year > DateOnly.MaxValue.Year)
+            {
+                throw new ArgumentOutOfRangeException(nameof(year), year, "Year must be between 1 and 9999.");
+            }
+
+            var anchor = await ResolveAnchorAsync().ConfigureAwait(false);
+            var result = Enumerable.Range(1, 12)
+                .Select(month => new TitheMonthDTO { Year = year, Month = month, Summary = Resolve(year, month, anchor) })
+                .ToList();
+
+            span.MarkSuccess();
+            _logger.LogInformation("{Operation} completed", "GetTitheYearAsync");
+            return result;
+        }
+        catch (Exception ex)
+        {
+            span.MarkFailed(ex);
+            throw;
+        }
+    }
+
     public async Task<TitheSummaryDTO> UpdateCarryForwardInclusionAsync(int year, int month, bool included)
     {
         using var span = StartSpan("UpdateCarryForwardInclusionAsync");
@@ -117,7 +143,7 @@ public sealed class TitheService : ITitheService
 
     private TitheSummaryDTO Resolve(int year, int month, DateOnly anchor)
     {
-        var baseBalance = ComputeBaseBalance(year, month, out var calculatedTithe);
+        var figures = ComputeMonthFigures(year, month);
         var (prevYear, prevMonth) = PreviousMonth(year, month);
 
         var carryAmount = 0m;
@@ -125,7 +151,7 @@ public sealed class TitheService : ITitheService
         if (new DateOnly(year, month, 1) > anchor)
         {
             var previousBalance = new DateOnly(prevYear, prevMonth, 1) <= anchor
-                ? ComputeBaseBalance(prevYear, prevMonth, out _)
+                ? ComputeMonthFigures(prevYear, prevMonth).BaseBalance
                 : Resolve(prevYear, prevMonth, anchor).TitheBalance;
 
             if (previousBalance > 0)
@@ -137,8 +163,10 @@ public sealed class TitheService : ITitheService
 
         return new TitheSummaryDTO
         {
-            CalculatedTithe = calculatedTithe,
-            TitheBalance = baseBalance + (included ? carryAmount : 0m),
+            IncomeBase = figures.IncomeBase,
+            CalculatedTithe = figures.CalculatedTithe,
+            TithePaid = figures.TithePaid,
+            TitheBalance = figures.BaseBalance + (included ? carryAmount : 0m),
             CarryForward = carryAmount > 0
                 ? new TitheCarryForwardDTO
                 {
@@ -151,19 +179,22 @@ public sealed class TitheService : ITitheService
         };
     }
 
-    private decimal ComputeBaseBalance(int year, int month, out decimal calculatedTithe)
+    private MonthFigures ComputeMonthFigures(int year, int month)
     {
-        var titheBase = _repository.GetIncomes()
+        var incomeBase = _repository.GetIncomes()
             .Where(i => i.Date.Year == year && i.Date.Month == month)
             .Sum(i => i.NetValue);
 
-        calculatedTithe = TitheRule.CalculateTithe(titheBase);
-
-        var dizimoTotal = _repository.GetExpenses()
+        var tithePaid = _repository.GetExpenses()
             .Where(e => e.ReportingDate.Year == year && e.ReportingDate.Month == month && e.Category.IsTithe && e.CountsAsTithe)
             .Sum(e => e.Value);
 
-        return calculatedTithe - dizimoTotal;
+        return new MonthFigures(incomeBase, TitheRule.CalculateTithe(incomeBase), tithePaid);
+    }
+
+    private sealed record MonthFigures(decimal IncomeBase, decimal CalculatedTithe, decimal TithePaid)
+    {
+        public decimal BaseBalance => CalculatedTithe - TithePaid;
     }
 
     private static (int Year, int Month) PreviousMonth(int year, int month) =>

@@ -107,6 +107,7 @@ import type {
   TaxWorkbookDto,
   TaxWorkbookOptionDto,
   TitheCarryForwardUpdateDto,
+  TitheMonthDto,
   TitheSummaryDto,
   TransactionCreateDto,
   TransactionDeleteDto,
@@ -261,6 +262,7 @@ export interface FinancialApiClient {
   moveChargeToStatement: (id: string, request: MoveChargeToStatementDto) => Promise<ExpenseDto>
   getIncomesByMonth: (year: number, month: number) => Promise<IncomeDto[]>
   getTitheSummaryByMonth: (year: number, month: number) => Promise<TitheSummaryDto>
+  getTitheYear: (year: number) => Promise<TitheMonthDto[]>
   updateTitheCarryForward: (year: number, month: number, request: TitheCarryForwardUpdateDto) => Promise<TitheSummaryDto>
   createIncome: (request: IncomeCreateDto) => Promise<IncomeDto>
   updateIncome: (id: string, request: IncomeUpdateDto) => Promise<IncomeDto>
@@ -746,6 +748,7 @@ export function createFinancialApiClient(options: FinancialApiClientOptions = {}
       }),
     getIncomesByMonth: (year, month) => request<IncomeDto[]>(`/incomes/month/${year}/${month}`),
     getTitheSummaryByMonth: (year, month) => request<TitheSummaryDto>(`/tithe/month/${year}/${month}`),
+    getTitheYear: (year) => request<TitheMonthDto[]>(`/tithe/year/${year}`),
     updateTitheCarryForward: (year, month, requestBody) =>
       request<TitheSummaryDto>(`/tithe/month/${year}/${month}/carry-forward`, {
         method: 'PUT',

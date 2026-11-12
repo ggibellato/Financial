@@ -47,7 +47,9 @@ const SUMMARY: AccountGroupSummaryDto = {
 }
 
 const TITHE_SUMMARY: TitheSummaryDto = {
+  incomeBase: 0,
   calculatedTithe: 418.52,
+  tithePaid: 0,
   titheBalance: 368.52,
   carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 9 },
 }

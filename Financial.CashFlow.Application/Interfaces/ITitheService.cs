@@ -5,5 +5,6 @@ namespace Financial.CashFlow.Application.Interfaces;
 public interface ITitheService
 {
     Task<TitheSummaryDTO> GetTitheSummaryAsync(int year, int month);
+    Task<IReadOnlyList<TitheMonthDTO>> GetTitheYearAsync(int year);
     Task<TitheSummaryDTO> UpdateCarryForwardInclusionAsync(int year, int month, bool included);
 }

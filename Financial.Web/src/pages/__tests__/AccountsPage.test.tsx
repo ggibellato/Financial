@@ -183,7 +183,7 @@ describe('AccountsPage', () => {
     getAccountTemplateGroupsMock.mockReset().mockResolvedValue([BANKS, CARDS, POTS])
     getCategoryTotalsByMonthMock.mockReset().mockResolvedValue([{ category: 'Mercado', totalValue: 42.5 }])
     getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
-    getTitheSummaryByMonthMock.mockReset().mockResolvedValue({ calculatedTithe: 10, titheBalance: 10, carryForward: null })
+    getTitheSummaryByMonthMock.mockReset().mockResolvedValue({ incomeBase: 0, calculatedTithe: 10, tithePaid: 0, titheBalance: 10, carryForward: null })
     getMonthTransactionsMock.mockReset().mockResolvedValue(MONTH_TRANSACTIONS)
     getIncomesByMonthMock.mockReset().mockResolvedValue([])
     getIncomeSourcesMock.mockReset().mockResolvedValue([])

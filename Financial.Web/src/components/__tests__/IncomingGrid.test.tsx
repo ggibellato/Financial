@@ -34,7 +34,7 @@ describe('IncomingGrid', () => {
   })
 
   it('shows the calculated tithe and tithe balance when a tithe summary is provided', () => {
-    renderGrid({ titheSummary: { calculatedTithe: 245, titheBalance: 245, carryForward: null } })
+    renderGrid({ titheSummary: { incomeBase: 0, calculatedTithe: 245, tithePaid: 0, titheBalance: 245, carryForward: null } })
 
     expect(screen.getByText(/Calculated tithe:/)).toBeInTheDocument()
     expect(screen.getByText(/Tithe balance:/)).toBeInTheDocument()
@@ -51,7 +51,7 @@ describe('IncomingGrid', () => {
   })
 
   it('does not render a carry-forward control when nothing is available to carry', () => {
-    renderGrid({ titheSummary: { calculatedTithe: 245, titheBalance: 245, carryForward: null } })
+    renderGrid({ titheSummary: { incomeBase: 0, calculatedTithe: 245, tithePaid: 0, titheBalance: 245, carryForward: null } })
 
     expect(screen.queryByText(/Carry forward:/)).not.toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
@@ -60,7 +60,9 @@ describe('IncomingGrid', () => {
   it('renders the carry-forward checkbox, pre-checked, with the amount and source month, when available', () => {
     renderGrid({
       titheSummary: {
+        incomeBase: 0,
         calculatedTithe: 200,
+        tithePaid: 0,
         titheBalance: 150,
         carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
       },
@@ -74,7 +76,9 @@ describe('IncomingGrid', () => {
   it('reflects an excluded carry-forward as unchecked', () => {
     renderGrid({
       titheSummary: {
+        incomeBase: 0,
         calculatedTithe: 200,
+        tithePaid: 0,
         titheBalance: 100,
         carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 8 },
       },
@@ -87,7 +91,9 @@ describe('IncomingGrid', () => {
     const onToggle = vi.fn()
     renderGrid({
       titheSummary: {
+        incomeBase: 0,
         calculatedTithe: 200,
+        tithePaid: 0,
         titheBalance: 150,
         carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
       },
@@ -102,7 +108,9 @@ describe('IncomingGrid', () => {
   it('disables the checkbox while the toggle is in flight', () => {
     renderGrid({
       titheSummary: {
+        incomeBase: 0,
         calculatedTithe: 200,
+        tithePaid: 0,
         titheBalance: 150,
         carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
       },
