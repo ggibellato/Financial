@@ -133,12 +133,12 @@ type AccountTransactionsGridProps = ColumnSelection & {
   isEditDisabled?: (row: AccountTransactionDto) => boolean
   onEdit: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   onDelete: (row: AccountTransactionDto) => void
-  accountIsActive?: boolean
+  accountIsActive: boolean
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
-  onOpenStatement?: (path: string) => void
-  onOpenOperation?: (operation: AccountTransactionOperationDto, button: HTMLButtonElement) => void
-  onDeleteOperation?: (operation: AccountTransactionOperationDto, noun: PotOperationNoun) => void
+  onOpenStatement: (path: string) => void
+  onOpenOperation: (operation: AccountTransactionOperationDto, button: HTMLButtonElement) => void
+  onDeleteOperation: (operation: AccountTransactionOperationDto, noun: PotOperationNoun) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -150,7 +150,7 @@ export default function AccountTransactionsGrid({
   isEditDisabled,
   onEdit,
   onDelete,
-  accountIsActive = true,
+  accountIsActive,
   onMove,
   isMoveDisabled = false,
   onOpenStatement,
@@ -170,17 +170,16 @@ export default function AccountTransactionsGrid({
       case 'record':
         return (button) => onEdit(row, button)
       case 'statement':
-        return onOpenStatement && (() => onOpenStatement(statementPath(edit.statement)))
+        return () => onOpenStatement(statementPath(edit.statement))
       case 'operation':
-        return onOpenOperation && ((button) => onOpenOperation(edit.operation, button))
+        return (button) => onOpenOperation(edit.operation, button)
       default:
-        return () => undefined
+        return undefined
     }
   }
-  const deleteHandler = (row: AccountTransactionDto): (() => void) | undefined => {
+  const deleteHandler = (row: AccountTransactionDto) => {
     const { operation } = row
-    if (!operation) return () => onDelete(row)
-    return onDeleteOperation && (() => onDeleteOperation(operation, operationNoun(operation, withdrawalIds)))
+    return operation ? () => onDeleteOperation(operation, operationNoun(operation, withdrawalIds)) : () => onDelete(row)
   }
   const renderActions = (row: AccountTransactionDto) => {
     const name = transactionRowName(row, withdrawalIds)
@@ -190,11 +189,11 @@ export default function AccountTransactionsGrid({
       <RowActionsCell
         className={actionClassName}
         itemName={name}
-        editDisabled={edit.kind !== 'statement' && edit.kind !== 'blocked' && (isEditDisabled?.(row) ?? false)}
+        editDisabled={edit.kind !== 'statement' && isEditDisabled?.(row)}
         editBlockedReason={edit.kind === 'blocked' ? edit.reason : undefined}
         deleteBlockedReason={deleteBlockedReason}
         onEdit={editHandler(edit, row)}
-        onDelete={deleteBlockedReason ? undefined : deleteHandler(row)}
+        onDelete={deleteHandler(row)}
       >
         {onMove && edit.kind === 'record' && canMoveToStatement(row) && (
           <Tooltip content="Move to a later statement" relationship="inaccessible">

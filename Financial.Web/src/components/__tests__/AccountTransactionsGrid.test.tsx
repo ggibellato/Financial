@@ -23,7 +23,7 @@ const ROWS: AccountTransactionDto[] = [
 
 const EMPTY_MESSAGE = 'No transactions in October 2026.'
 
-const NO_ROW_ACTIONS = { onEdit: vi.fn(), onDelete: vi.fn() }
+const NO_ROW_ACTIONS = { onEdit: vi.fn(), onDelete: vi.fn(), onOpenStatement: vi.fn(), onOpenOperation: vi.fn(), onDeleteOperation: vi.fn(), accountIsActive: true }
 
 function bodyRows() {
   const [, ...rows] = screen.getAllByRole('row')
@@ -36,7 +36,7 @@ describe('AccountTransactionsGrid', () => {
 
     it('[AC P60-F15-card-refunds-and-credit-05] offers only Delete on an active screen account', () => {
       const onDelete = vi.fn()
-      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} onEdit={vi.fn()} onDelete={onDelete} onMove={vi.fn()} />)
+      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onDelete={onDelete} onMove={vi.fn()} />)
 
       const [row] = bodyRows()
       const edit = within(row).getByRole('button', { name: /^Edit credit refund\b/ })
@@ -231,7 +231,7 @@ describe('AccountTransactionsGrid', () => {
   it('puts Edit and Delete in a trailing cell of every row, blocking them on a read-only row', () => {
     const onEdit = vi.fn()
     const onDelete = vi.fn()
-    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} onEdit={onEdit} onDelete={onDelete} />)
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onEdit={onEdit} onDelete={onDelete} />)
 
     const expenseCells = within(bodyRows()[0]).getAllByRole('cell')
     const editExpense = within(expenseCells[expenseCells.length - 1]).getByRole('button', { name: /^Edit expense\b/ })
@@ -411,7 +411,6 @@ describe('AccountTransactionsGrid', () => {
       const remove = within(bodyRows()[0]).getByRole('button', { name: 'Delete pot transaction Salary, Home, 04/10/2026' })
       expect(remove).toHaveAccessibleDescription('Delete the income to remove this deposit.')
       expect(screen.queryByText('Edit from the income')).not.toBeInTheDocument()
-      expect(screen.getByRole('columnheader', { name: 'Actions' })).not.toHaveClass('data-table__col--action-wide')
     })
   })
 

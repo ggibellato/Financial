@@ -39,12 +39,12 @@ import {
   deleteConfirmation,
   deletedMessage,
   kindLabel,
-  monthRowDeleteBlockedReason,
   monthRowEdit,
   operationDeleteConfirmation,
   operationDeletedMessage,
   operationNoun,
   recordNoun,
+  rowDeleteBlockedReason,
   shownDescription,
   transactionRowName,
   withdrawalOperationIds,
@@ -196,7 +196,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   const renderActions = (row: MonthTransactionDto) => {
     const { path, blockedReason: editBlockedReason } = monthRowEdit(row, monthValue)
-    const deleteBlockedReason = monthRowDeleteBlockedReason(row)
+    const deleteBlockedReason = rowDeleteBlockedReason(row.transaction, row.accountId, row.accountIsActive)
     const isDeleting = isDeletingRow(row)
     return (
       <RowActionsCell
@@ -205,8 +205,8 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         deleteBlockedReason={deleteBlockedReason}
         isDeleting={isDeleting}
         isOtherDeleting={isAnyDeleting && !isDeleting}
-        onEdit={() => path && navigate(path)}
-        onDelete={deleteBlockedReason ? undefined : () => requestDelete(row)}
+        onEdit={path ? () => navigate(path) : undefined}
+        onDelete={() => requestDelete(row)}
       />
     )
   }
