@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api/types'
-import { rowKey, type AccountFormAction } from '../components/accountActions'
+import { rowKey, type AccountFormAction, type PotOperationNoun } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
 import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
@@ -42,8 +42,6 @@ export interface PotsContext {
 }
 
 const NO_POTS: PotsContext = { accounts: [], hasPots: false }
-
-type PotOperationNoun = 'deposit' | 'withdrawal'
 
 interface OperationDeleteTarget {
   operationId: string
@@ -258,9 +256,9 @@ export function useAccountActionForms(
   const operationDelete = useConfirmedDelete<OperationDeleteTarget>(
     ({ operationId }) => apiClient.deletePotOperation(operationId),
     ({ noun }) => deleteFailedMessage(noun),
-    ({ noun }) => {
-      closeForms()
-      saved(`${OPERATION_TITLES[noun]} deleted`)
+    ({ operationId, noun }) => {
+      if (editingRowKey === operationRowKey(operationId)) closeForms()
+      onSaved(`${OPERATION_TITLES[noun]} deleted`)
     },
   )
 
@@ -314,14 +312,14 @@ export function useAccountActionForms(
       else withdrawalForm.openEdit(operation)
     })
 
-  const followOperationLink = (operationId: string, link: HTMLAnchorElement, navigate: () => void) => {
+  const followOperation = (operationId: string, opener: HTMLElement, navigate: () => void) => {
     if (isOperationFormOpen && editedRowKey === operationRowKey(operationId)) {
       formAreaRef.current?.querySelector<HTMLElement>(FIRST_FIELD_SELECTOR)?.focus()
       return
     }
     discardPrompt.confirmDiscard(() => {
       closeForms()
-      openerRef.current = link
+      openerRef.current = opener
       navigate()
     })
   }
@@ -368,7 +366,7 @@ export function useAccountActionForms(
     openRowMove,
     openDepositFromIncome,
     openOperation,
-    followOperationLink,
+    followOperation,
     closeActiveForm,
     restoreFocus,
     closeFormsOf,
