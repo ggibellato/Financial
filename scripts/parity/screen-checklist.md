@@ -14,8 +14,8 @@ Mark a row *Same* only when every value matches to the penny. When done, stop bo
 | Page | Month | Value | Before (5291) | After (5292) | Same? |
 |------|-------|-------|---------------|--------------|-------|
 | Monthly (before) / Accounts → Accounts tab (after) | M1, M2, M3 | Each bank's balance and round-up total | | | |
-| Monthly (before) / Accounts → Accounts tab (after) | M1, M2, M3 | Bank totals sum and round-up totals sum | | | |
-| Monthly (before) / Accounts → Accounts tab (after) | M1, M2, M3 | Each card's statement outstanding and paid status; card outstanding total | | | |
+| Monthly (before) / Accounts → Accounts tab (after) | M1, M2, M3 | Bank totals sum | | | |
+| Monthly (before) / each card's Statements tab (after) | M1, M2, M3 | Each card's statement outstanding and paid status; card outstanding total | | | |
 | Monthly (before) / each card's Transactions tab (after) | M1, M2, M3 | Unpaid card charges (count and total): before, Monthly's Credit Card expenses list; after, each card's Transactions tab for that statement month | | | |
 | Monthly (before) / Accounts → Summary tab (after) | M1, M2, M3 | Category totals and category totals sum | | | |
 | Monthly (before) / Accounts → Summary tab (after) | M1, M2, M3 | Income totals per source (net and gross) and total incoming | | | |
