@@ -601,7 +601,10 @@
             ]
           },
           "currency": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "date": {
             "format": "date",
@@ -4507,17 +4510,26 @@
       "MonthTransactionDTO": {
         "properties": {
           "accountCurrency": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "accountId": {
             "format": "uuid",
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "accountIsActive": {
             "type": "boolean"
           },
           "accountName": {
-            "type": "string"
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "transaction": {
             "$ref": "#/components/schemas/AccountTransactionDTO"
