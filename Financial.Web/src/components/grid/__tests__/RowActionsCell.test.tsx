@@ -110,13 +110,12 @@ describe('RowActionsCell', () => {
     expect(onDelete).not.toHaveBeenCalled()
   })
 
-  it('keeps Delete focusable but inert when the row says why it cannot be deleted here', () => {
-    const onDelete = vi.fn()
+  it('shows a Delete that cannot run here as focusable but inert, saying why, with no delete handler', () => {
     render(
       <Table>
         <TableBody>
           <TableRow>
-            <RowActionsCell itemName="card payment" deleteBlockedReason="Unmark the statement to remove this payment." onEdit={vi.fn()} onDelete={onDelete} />
+            <RowActionsCell itemName="card payment" deleteBlockedReason="Unmark the statement to remove this payment." onEdit={vi.fn()} />
           </TableRow>
         </TableBody>
       </Table>,
@@ -127,7 +126,6 @@ describe('RowActionsCell', () => {
 
     expect(blocked).toHaveAttribute('aria-disabled', 'true')
     expect(blocked).toHaveAccessibleDescription('Unmark the statement to remove this payment.')
-    expect(onDelete).not.toHaveBeenCalled()
   })
 
   it('gives an available Delete no blocked description', () => {

@@ -206,18 +206,17 @@ export default function AccountTransactionsGrid({
           itemName={name}
           deleteBlockedReason={STATEMENT_PAYMENT_DELETE_REASON}
           onEdit={() => onOpenStatement(statementPath(statement))}
-          onDelete={() => {}}
         />
       )
     }
-    if (operation && onOpenOperation && onDeleteOperation) {
+    if (operation && onOpenOperation) {
       return (
         <RowActionsCell
           className={actionClassName}
           itemName={name}
           deleteBlockedReason={operationDeleteBlockedReason(operation, accountId)}
           onEdit={(button) => onOpenOperation(operation, button)}
-          onDelete={() => onDeleteOperation(operation, potOperationNoun(row))}
+          onDelete={onDeleteOperation && (() => onDeleteOperation(operation, potOperationNoun(row)))}
         />
       )
     }

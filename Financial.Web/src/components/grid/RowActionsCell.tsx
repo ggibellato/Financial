@@ -73,13 +73,13 @@ export default function RowActionsCell({
             onClick={(event) => onEdit(event.currentTarget)}
           />
         )}
-        {onDelete && (
+        {(onDelete || deleteBlockedReason) && (
           <IconAction
             label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
             icon={isDeleting ? <Spinner size="tiny" /> : <DeleteRegular />}
             blockedReason={deleteReason}
             disabledFocusable={isDeleting || !!deleteReason}
-            onClick={onDelete}
+            onClick={() => onDelete?.()}
           />
         )}
       </div>

@@ -140,10 +140,13 @@ export function statementPath(statement: AccountTransactionStatementDto): string
   return `/cashflow/accounts/${statement.accountId}?month=${formatMonthInputValue(statement.year, statement.month)}&tab=statements`
 }
 
+function isOnPotsScreen(operation: AccountTransactionOperationDto, screenAccountId: string): boolean {
+  return operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase()
+}
+
 export function operationPath(operation: AccountTransactionOperationDto, screenAccountId: string): string {
   const month = formatMonthInputValue(operation.year, operation.month)
-  const isOnPotsScreen = operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase()
-  return operation.incomeId != null && !isOnPotsScreen
+  return operation.incomeId != null && !isOnPotsScreen(operation, screenAccountId)
     ? `/cashflow/accounts/${screenAccountId}?month=${month}&operation=${operation.operationId}`
     : `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
 }
@@ -151,12 +154,12 @@ export function operationPath(operation: AccountTransactionOperationDto, screenA
 export type PotOperationNoun = 'deposit' | 'withdrawal'
 
 export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove this payment.'
-export const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
-export const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
+const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
+const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
 
 export function operationDeleteBlockedReason(operation: AccountTransactionOperationDto, screenAccountId: string): string | undefined {
   if (operation.incomeId != null) return INCOME_DEPOSIT_DELETE_REASON
-  return operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase() ? undefined : OTHER_SCREEN_OPERATION_DELETE_REASON
+  return isOnPotsScreen(operation, screenAccountId) ? undefined : OTHER_SCREEN_OPERATION_DELETE_REASON
 }
 
 export function potOperationNoun(row: AccountTransactionDto): PotOperationNoun {
