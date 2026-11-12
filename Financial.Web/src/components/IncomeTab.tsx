@@ -1,5 +1,4 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import {
   Button,
   MessageBar,
@@ -147,23 +146,7 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
     useColumnFilters(incomes, FILTER_ACCESSORS)
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
   const formKey = incomeForm.isIncomeFormOpen ? (incomeForm.editingIncomeId ?? 'new') : null
-  const [searchParams, setSearchParams] = useSearchParams()
-  const editRoute = useRowEditRoute({
-    editedKey: searchParams.get('edit'),
-    rows: incomes,
-    keyOf: (income) => income.id,
-    isLoaded: !isLoading && !error,
-    open: openEditForm,
-    clear: () =>
-      setSearchParams(
-        (params) => {
-          const next = new URLSearchParams(params)
-          next.delete('edit')
-          return next
-        },
-        { replace: true },
-      ),
-  })
+  const editRoute = useRowEditRoute({ rows: incomes, keyOf: (income) => income.id, isLoaded: !isLoading && !error, open: openEditForm })
 
   useEffect(() => {
     if (formKey) {

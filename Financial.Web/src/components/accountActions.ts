@@ -157,7 +157,7 @@ export type PotOperationNoun = 'deposit' | 'withdrawal'
 
 export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove this payment.'
 const INACTIVE_ACCOUNT_REASON = 'This account is inactive, so its rows cannot be changed.'
-const INCOME_LINE_EDIT_REASON = 'Edit it from the income.'
+const INCOME_LINE_EDIT_REASON = 'Edit from the income.'
 const CREDIT_REFUND_EDIT_REASON = 'A credit refund cannot be edited. Delete it and refund the credit again.'
 const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
 const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
@@ -203,9 +203,10 @@ export function transactionRowName(row: AccountTransactionDto, withdrawalIds: Se
   return `${description ? `${kind} ${description}` : kind}, ${formatShortDateUtc(row.date)}`
 }
 
-export type MonthRowEdit = { path: string; blockedReason?: never } | { path?: never; blockedReason: string }
-
-export type MonthRowDelete = { target: 'record' | 'operation'; blockedReason?: never } | { target?: never; blockedReason: string }
+interface MonthRowEdit {
+  path?: string
+  blockedReason?: string
+}
 
 export function monthRowEdit({ accountId, accountIsActive, transaction: row }: MonthTransactionDto, month: string): MonthRowEdit {
   if (row.statement) return { path: statementPath(row.statement) }
@@ -221,12 +222,9 @@ export function monthRowEdit({ accountId, accountIsActive, transaction: row }: M
   return { blockedReason: isCreditRefund(row) && accountIsActive ? CREDIT_REFUND_EDIT_REASON : INACTIVE_ACCOUNT_REASON }
 }
 
-export function monthRowDelete({ accountId, accountIsActive, transaction: row }: MonthTransactionDto): MonthRowDelete {
-  if (row.statement) return { blockedReason: STATEMENT_PAYMENT_DELETE_REASON }
-  if (row.operation && accountId) {
-    const blockedReason = operationDeleteBlockedReason(row.operation, accountId)
-    return blockedReason ? { blockedReason } : { target: 'operation' }
-  }
-  if (row.canEdit || (isCreditRefund(row) && accountIsActive)) return { target: 'record' }
-  return { blockedReason: isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : INACTIVE_ACCOUNT_REASON }
+export function monthRowDeleteBlockedReason({ accountId, accountIsActive, transaction: row }: MonthTransactionDto): string | undefined {
+  if (row.statement) return STATEMENT_PAYMENT_DELETE_REASON
+  if (row.operation && accountId) return operationDeleteBlockedReason(row.operation, accountId)
+  if (row.canEdit || (isCreditRefund(row) && accountIsActive)) return undefined
+  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : INACTIVE_ACCOUNT_REASON
 }

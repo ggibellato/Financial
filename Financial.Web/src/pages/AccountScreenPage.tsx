@@ -117,13 +117,11 @@ export default function AccountScreenPage() {
   const isRowEditDisabled = (row: AccountTransactionDto) =>
     !isAccountCurrent || (!row.settlement && !row.operation && (row.movement ? pots.data === null : !formOptions.isReady))
   const rowEditRoute = useRowEditRoute({
-    editedKey: screen.editedRowKey,
     rows: screen.transactions,
     keyOf: rowKey,
     isLoaded: isAccountCurrent && !screen.isLoading,
     isEditDisabled: (row) => row.canEdit && isRowEditDisabled(row),
     open: (row) => row.canEdit && openRowEdit(row, null),
-    clear: screen.clearEditedRow,
   })
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {

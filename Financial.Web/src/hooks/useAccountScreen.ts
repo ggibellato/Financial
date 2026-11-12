@@ -71,8 +71,6 @@ export interface AccountScreen {
   setTab: (tab: AccountScreenTab) => void
   operationId: string | null
   clearOperation: () => void
-  editedRowKey: string | null
-  clearEditedRow: () => void
   selectAccount: (accountId: string) => void
   accounts: AccountDto[]
   account: AccountDetailDto | null
@@ -142,11 +140,6 @@ export function useAccountScreen(): AccountScreen {
     [setSearchParams],
   )
 
-  const clearEditedRow = useCallback(
-    () => setSearchParams((params) => withParam(params, 'edit', null), { replace: true }),
-    [setSearchParams],
-  )
-
   const selectAccount = useCallback(
     (nextAccountId: string) => navigate(`/cashflow/accounts/${nextAccountId}?month=${monthInputValue}`),
     [navigate, monthInputValue],
@@ -163,8 +156,6 @@ export function useAccountScreen(): AccountScreen {
     setTab,
     operationId: searchParams.get('operation'),
     clearOperation,
-    editedRowKey: searchParams.get('edit'),
-    clearEditedRow,
     selectAccount,
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
