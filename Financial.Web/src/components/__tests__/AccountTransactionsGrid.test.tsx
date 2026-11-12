@@ -345,6 +345,19 @@ describe('AccountTransactionsGrid', () => {
       expect(onDeleteOperation).not.toHaveBeenCalled()
     })
 
+    it('names both bank rows of a withdrawal through the bank as the withdrawal, and a lone outflow as a deposit', () => {
+      const spend = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Boots', amount: -50, canEdit: false, operation: OPERATION })
+      const inflow = accountTransactionRow({ id: 'e2', kind: 'Expense', date: '2026-10-10', description: 'From Reserva', amount: 50, canEdit: false, operation: OPERATION })
+      const deposit = accountTransactionRow({ id: 'e3', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...OPERATION, operationId: 'op2' } })
+      render(<AccountTransactionsGrid accountId="bank-1" transactions={[spend, inflow, deposit]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onOpenOperation={vi.fn()} onDeleteOperation={vi.fn()} />)
+
+      for (const description of ['Boots', 'From Reserva']) {
+        expect(screen.getByRole('button', { name: `Edit withdrawal ${description}, 10/10/2026` })).toBeInTheDocument()
+        expect(screen.getByRole('button', { name: `Delete withdrawal ${description}, 10/10/2026` })).toBeInTheDocument()
+      }
+      expect(screen.getByRole('button', { name: 'Edit deposit Deposit to Reserva, 10/10/2026' })).toBeInTheDocument()
+    })
+
     it.each([
       [30, 'deposit'],
       [-30, 'withdrawal'],

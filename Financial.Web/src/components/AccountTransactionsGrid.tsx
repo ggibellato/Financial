@@ -27,7 +27,8 @@ import {
   isOlderIncomeLine,
   kindLabel,
   operationDeleteBlockedReason,
-  potOperationNoun,
+  operationNoun,
+  withdrawalOperationIds,
   recordNoun,
   rowKey,
   STATEMENT_PAYMENT_DELETE_REASON,
@@ -41,8 +42,8 @@ function shownDescription(row: AccountTransactionDto): string | null {
   return row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)
 }
 
-function rowName(row: AccountTransactionDto, screenAccountId: string): string {
-  const kind = row.operation ? potOperationNoun(row, row.operation, screenAccountId) : recordNoun(row.kind)
+function rowName(row: AccountTransactionDto, withdrawalIds: Set<string>): string {
+  const kind = row.operation ? operationNoun(row.operation, withdrawalIds) : recordNoun(row.kind)
   const description = shownDescription(row)
   return `${description ? `${kind} ${description}` : kind}, ${formatShortDateUtc(row.date)}`
 }
@@ -176,8 +177,9 @@ export default function AccountTransactionsGrid({
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
+  const withdrawalIds = withdrawalOperationIds(transactions, accountId)
   const renderActions = (row: AccountTransactionDto) => {
-    const name = rowName(row, accountId)
+    const name = rowName(row, withdrawalIds)
     if (row.canEdit) {
       return (
         <RowActionsCell
@@ -221,7 +223,7 @@ export default function AccountTransactionsGrid({
           editDisabled={isEditDisabled?.(row) ?? false}
           deleteBlockedReason={operationDeleteBlockedReason(operation, accountId)}
           onEdit={(button) => onOpenOperation(operation, button)}
-          onDelete={onDeleteOperation && (() => onDeleteOperation(operation, potOperationNoun(row, operation, accountId)))}
+          onDelete={onDeleteOperation && (() => onDeleteOperation(operation, operationNoun(operation, withdrawalIds)))}
         />
       )
     }
