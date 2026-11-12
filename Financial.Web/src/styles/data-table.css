@@ -46,6 +46,10 @@
   text-align: right;
 }
 
+.data-table .data-table__col--numeric .fui-TableHeaderCell__button {
+  justify-content: flex-end;
+}
+
 .truncated-text {
   display: inline-block;
   max-width: 100%;
