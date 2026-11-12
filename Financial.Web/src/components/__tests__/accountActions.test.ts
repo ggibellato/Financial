@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import type { AccountTransactionDto, MonthTransactionDto, ReserveMovementDto } from '../../api/types'
+import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, monthRowEdit, rowDeleteBlockedReason, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
 
@@ -207,10 +207,22 @@ describe('All transactions row actions', () => {
   })
 
   it('sends a charge on a paid statement to its statement', () => {
-    const paid = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-28', amount: -1.1, canEdit: false })
+    const paid = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-28', amount: -1.1, canEdit: false, expense: { id: 'c1', creditCardId: 'card-1', paymentStatus: 'CreditCardCharge' } as ExpenseDto })
     const reason = 'Its card statement is paid. Unmark the statement to change it.'
     expect(monthRowEdit(monthRow(paid, 'card-1'), MONTH)).toEqual({ blockedReason: reason })
     expect(monthRowDelete(monthRow(paid, 'card-1'))).toBe(reason)
+  })
+
+  it('tells an old settled charge, a bank copy of a charge and an inactive pots operation apart', () => {
+    const charge = (fields: Partial<ExpenseDto>) =>
+      accountTransactionRow({ id: 'c9', kind: 'CardCharge', date: '2026-10-02', amount: -9, canEdit: false, expense: { id: 'c9', creditCardId: 'card-1', creditCardName: 'BA Amex', paymentStatus: 'CreditCardCharge', ...fields } as ExpenseDto })
+    const settled = charge({ paymentStatus: 'CreditCardSettled' })
+    expect(monthRowEdit(monthRow(settled, 'card-1'), MONTH)).toEqual({ blockedReason: 'It was settled before card statements were kept, so it cannot be changed.' })
+    expect(monthRowDelete(monthRow(charge({}), 'card-1'))).toBe('Its card statement is paid. Unmark the statement to change it.')
+    expect(monthRowDelete(monthRow(charge({}), 'bank-1'))).toBe('Change it on the BA Amex account.')
+    const potsSide = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: 90, canEdit: false, operation: deposit })
+    expect(monthRowEdit(monthRow(potsSide, 'pots-1', false), MONTH)).toEqual({ blockedReason: INACTIVE })
+    expect(monthRowDelete(monthRow(potsSide, 'pots-1', false))).toBe(INACTIVE)
   })
 
   it("says an inactive account's rows cannot be changed", () => {

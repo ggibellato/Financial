@@ -189,7 +189,7 @@ export default function AccountTransactionsGrid({
       <RowActionsCell
         className={actionClassName}
         itemName={name}
-        editDisabled={edit.kind !== 'statement' && isEditDisabled?.(row)}
+        editDisabled={(edit.kind === 'record' || edit.kind === 'operation') && isEditDisabled?.(row)}
         editBlockedReason={edit.kind === 'blocked' ? edit.reason : undefined}
         deleteBlockedReason={deleteBlockedReason}
         onEdit={editHandler(edit, row)}

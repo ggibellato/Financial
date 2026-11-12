@@ -160,6 +160,7 @@ const INACTIVE_ACCOUNT_REASON = 'This account is inactive, so its rows cannot be
 const INCOME_LINE_EDIT_REASON = 'Edit from the income.'
 const CREDIT_REFUND_EDIT_REASON = 'A credit refund cannot be edited. Delete it and refund the credit again.'
 const PAID_STATEMENT_REASON = 'Its card statement is paid. Unmark the statement to change it.'
+const SETTLED_CHARGE_REASON = 'It was settled before card statements were kept, so it cannot be changed.'
 const READ_ONLY_REASON = 'This row cannot be changed here.'
 const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
 const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
@@ -214,27 +215,37 @@ export type RowEdit =
 
 export function rowEdit(row: AccountTransactionDto, accountId: string | null, accountIsActive: boolean): RowEdit {
   if (row.statement) return { kind: 'statement', statement: row.statement }
+  if (!accountIsActive) return { kind: 'blocked', reason: INACTIVE_ACCOUNT_REASON }
   if (row.operation && accountId) return { kind: 'operation', operation: row.operation, accountId }
   if (row.canEdit) return { kind: 'record' }
-  if (!accountIsActive) return { kind: 'blocked', reason: INACTIVE_ACCOUNT_REASON }
   if (isOlderIncomeLine(row)) return { kind: 'blocked', reason: INCOME_LINE_EDIT_REASON }
   if (isCreditRefund(row)) return { kind: 'blocked', reason: CREDIT_REFUND_EDIT_REASON }
-  return { kind: 'blocked', reason: readOnlyReason(row) }
+  return { kind: 'blocked', reason: readOnlyReason(row, accountId) }
 }
 
-function readOnlyReason(row: AccountTransactionDto): string {
-  return canMoveToStatement(row) ? PAID_STATEMENT_REASON : READ_ONLY_REASON
+function readOnlyReason(row: AccountTransactionDto, accountId: string | null): string {
+  const { expense } = row
+  if (!canMoveToStatement(row) || !expense) return READ_ONLY_REASON
+  if (expense.creditCardId && accountId && expense.creditCardId.toLowerCase() !== accountId.toLowerCase()) {
+    return `Change it on the ${expense.creditCardName ?? 'card'} account.`
+  }
+  return expense.paymentStatus === 'CreditCardSettled' ? SETTLED_CHARGE_REASON : PAID_STATEMENT_REASON
 }
 
 export function rowDeleteBlockedReason(row: AccountTransactionDto, accountId: string | null, accountIsActive: boolean): string | undefined {
   if (row.statement) return STATEMENT_PAYMENT_DELETE_REASON
-  if (row.operation && accountId) return operationDeleteBlockedReason(row.operation, accountId)
   if (!accountIsActive) return INACTIVE_ACCOUNT_REASON
+  if (row.operation && accountId) return operationDeleteBlockedReason(row.operation, accountId)
   if (row.canEdit || isCreditRefund(row)) return undefined
-  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : readOnlyReason(row)
+  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : readOnlyReason(row, accountId)
 }
 
-export function monthRowEdit({ accountId, accountIsActive, transaction: row }: MonthTransactionDto, month: string): { path?: string; blockedReason?: string } {
+interface MonthRowEdit {
+  path?: string
+  blockedReason?: string
+}
+
+export function monthRowEdit({ accountId, accountIsActive, transaction: row }: MonthTransactionDto, month: string): MonthRowEdit {
   const edit = rowEdit(row, accountId, accountIsActive)
   switch (edit.kind) {
     case 'statement':

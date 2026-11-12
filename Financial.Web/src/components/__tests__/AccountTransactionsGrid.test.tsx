@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { AccountTransactionDto, SettlementEntryDto } from '../../api/types'
+import type { AccountTransactionDto, ExpenseDto, SettlementEntryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountTransactionsGrid from '../AccountTransactionsGrid'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
@@ -22,6 +22,8 @@ const ROWS: AccountTransactionDto[] = [
 ]
 
 const EMPTY_MESSAGE = 'No transactions in October 2026.'
+
+const AMAZON_ON_AMEX = { id: 'c1', creditCardId: 'card-1', creditCardName: 'BA Amex', paymentStatus: 'CreditCardCharge' } as ExpenseDto
 
 const NO_ROW_ACTIONS = { onEdit: vi.fn(), onDelete: vi.fn(), onOpenStatement: vi.fn(), onOpenOperation: vi.fn(), onDeleteOperation: vi.fn(), accountIsActive: true }
 
@@ -47,6 +49,16 @@ describe('AccountTransactionsGrid', () => {
       expect(onDelete).toHaveBeenCalledWith(CREDIT_REFUND)
     })
 
+    it('sends the bank copy of a card charge to its card', () => {
+      const charge = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Amazon', amount: -60, canEdit: false, expense: AMAZON_ON_AMEX })
+      render(<AccountTransactionsGrid accountId="bank-1" transactions={[charge]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+      for (const button of within(bodyRows()[0]).getAllByRole('button')) {
+        expect(button).toHaveAttribute('aria-disabled', 'true')
+        expect(button).toHaveAccessibleDescription('Change it on the BA Amex account.')
+      }
+    })
+
     it('blocks both actions, saying why, when the screen account is inactive', () => {
       render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} accountIsActive={false} />)
 
@@ -57,7 +69,7 @@ describe('AccountTransactionsGrid', () => {
     })
 
     it('sends a charge on a paid statement to its statement, with both actions blocked', () => {
-      const charge = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Amazon', amount: -60, canEdit: false })
+      const charge = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Amazon', amount: -60, canEdit: false, expense: AMAZON_ON_AMEX })
       render(<AccountTransactionsGrid accountId="card-1" transactions={[charge]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onMove={vi.fn()} />)
 
       const [edit, remove] = within(bodyRows()[0]).getAllByRole('button')
