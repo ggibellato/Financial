@@ -109,7 +109,7 @@ function columnClass({ numeric }: HistoryColumn): string | undefined {
   return numeric ? 'data-table__col--numeric' : undefined
 }
 
-function sumInPence(rows: TitheMonthDto[], value: (summary: TitheSummaryDto) => number): number {
+function sumInPounds(rows: TitheMonthDto[], value: (summary: TitheSummaryDto) => number): number {
   return sumPence(rows, (row) => value(row.summary)) / 100
 }
 
@@ -156,7 +156,7 @@ function TitheHistory({ year, month, rows, onSelectMonth }: { year: number; mont
             {HISTORY_COLUMNS.map((column) =>
               column.total ? (
                 <DataTableCell key={column.label} label={column.label} className={columnClass(column)}>
-                  {formatN2(sumInPence(rows, column.total))}
+                  {formatN2(sumInPounds(rows, column.total))}
                 </DataTableCell>
               ) : (
                 <DataTableCell key={column.label} label={column.label}>

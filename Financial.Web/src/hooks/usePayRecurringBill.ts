@@ -130,9 +130,8 @@ export function usePayRecurringBill(
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, 'Failed to pay the bill.')
-        return isBadRequest(err)
-          ? refreshAfterRejection(billId, message)
-          : setSaveError(message)
+        if (isBadRequest(err)) return refreshAfterRejection(billId, message)
+        setSaveError(message)
       })
       .finally(() => setIsSaving(false))
   }
