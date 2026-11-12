@@ -330,7 +330,7 @@ describe('MonthTransactionsGrid', () => {
       expect(await screen.findByText('at:/cashflow/accounts/bank-1?month=2026-10&tab=transactions&edit=Expense-e1')).toBeInTheDocument()
     })
 
-    it('opens a pot operation where it lives and a statement payment on its Statements tab', async () => {
+    it('[AC P60-F16-month-transactions-view-03] opens a pot operation where it lives and a statement payment on its Statements tab', async () => {
       renderGrid()
 
       fireEvent.click(screen.getByRole('button', { name: 'Edit deposit Deposit to Reserva, 10/10/2026, Barclays' }))

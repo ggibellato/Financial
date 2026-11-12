@@ -395,10 +395,20 @@ Statements tab, and pot-operation rows open the deposit or withdrawal, in
 place or on its Pots account). A Delete that cannot run here stays focusable
 but inert, with a tooltip that says where to do it (the `RowActionsCell`
 `deleteBlockedReason` prop): for example "Unmark the statement to remove this
-payment." or "Delete it from the pots account." Known exception, to follow in
-its own change: `MonthTransactionsGrid.tsx` (the Accounts page's All
-transactions tab) still opens a pot operation through its description link and
-has no Actions column.
+payment." or "Delete it from the pots account." An Edit that cannot run
+anywhere works the same way (the `editBlockedReason` prop), for example "Edit
+it from the income.".
+
+A grid that lists rows owned by several screens edits each row where it
+lives and deletes it in place. `MonthTransactionsGrid.tsx` (the Accounts
+page's All transactions tab) is the reference: Edit opens the account screen
+with that row's form open (`?edit={kind}-{id}` beside `?month=`), a pot
+operation as on the account screen (`?operation=`), a statement payment on the
+card's Statements tab, and a bankless income on the Income tab
+(`?tab=income&edit={id}`); Delete confirms, deletes and refreshes the month
+without leaving the grid, under the account screen's rules. Its accessible
+names add the account ("Edit expense Tesco, 28/10/2026, Barclays"), so the two
+sides of one transfer or card payment differ.
 
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
