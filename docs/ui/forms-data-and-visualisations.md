@@ -395,7 +395,10 @@ Statements tab, and pot-operation rows open the deposit or withdrawal, in
 place or on its Pots account). A Delete that cannot run here stays focusable
 but inert, with a tooltip that says where to do it (the `RowActionsCell`
 `deleteBlockedReason` prop): for example "Unmark the statement to remove this
-payment." or "Delete it from the pots account."
+payment." or "Delete it from the pots account." Known exception until P61
+moves it onto the Accounts page: `MonthTransactionsGrid.tsx` (Monthly's All
+transactions) still opens a pot operation through its description link and has
+no Actions column.
 
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way

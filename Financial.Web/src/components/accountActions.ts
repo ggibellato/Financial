@@ -151,6 +151,8 @@ export function operationPath(operation: AccountTransactionOperationDto, screenA
     : `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
 }
 
+export const BLANK_OPERATION_DESCRIPTION = 'Deposit from an income'
+
 export type PotOperationNoun = 'deposit' | 'withdrawal'
 
 export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove this payment.'

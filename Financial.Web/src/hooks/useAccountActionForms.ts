@@ -256,8 +256,8 @@ export function useAccountActionForms(
   const operationDelete = useConfirmedDelete<OperationDeleteTarget>(
     ({ operationId }) => apiClient.deletePotOperation(operationId),
     ({ noun }) => deleteFailedMessage(noun),
-    ({ noun }) => {
-      closeForms()
+    ({ operationId, noun }) => {
+      if (editingRowKey === operationRowKey(operationId)) closeForms()
       saved(`${OPERATION_TITLES[noun]} deleted`)
     },
   )

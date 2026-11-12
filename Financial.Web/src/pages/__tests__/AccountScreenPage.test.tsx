@@ -614,6 +614,23 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     expect(getPotOperationMock).not.toHaveBeenCalled()
   })
 
+  it('keeps an unrelated open form and its input when a row deletes an operation', async () => {
+    const user = userEvent.setup()
+    deletePotOperationMock.mockResolvedValue(undefined)
+    withPotsAccount([linkedRow()])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+    const deposit = await screen.findByRole('button', { name: 'New deposit' })
+    await waitFor(() => expect(deposit).toBeEnabled())
+    await user.click(deposit)
+    await user.type(within(await operationForm('New deposit')).getByLabelText(/^Description/), 'typed')
+
+    await user.click(screen.getByRole('button', { name: LINKED_ROW_DELETE }))
+    await user.click(await dialogButton('Delete deposit', 'Delete'))
+
+    expect(await screen.findByText('Deposit deleted')).toBeInTheDocument()
+    expect(within(screen.getByRole('form', { name: 'New deposit' })).getByLabelText(/^Description/)).toHaveValue('typed')
+  })
+
   it('opens a withdrawal from the address alone, saves it and clears the address', async () => {
     const user = userEvent.setup()
     getPotOperationMock.mockResolvedValue(WITHDRAWAL)
@@ -715,7 +732,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
       expect(remove).toHaveAccessibleDescription('Delete it from the pots account.')
       await user.click(remove)
       expect(deletePotOperationMock).not.toHaveBeenCalled()
-      await user.click(screen.getByRole('button', { name: BANK_ROW_EDIT }))
+      const edit = screen.getByRole('button', { name: BANK_ROW_EDIT })
+      await waitFor(() => expect(edit).toBeEnabled())
+      await user.click(edit)
 
       await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions&operation=op1`)).toBeInTheDocument())
     })
@@ -728,7 +747,9 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
       getIncomesByMonthMock.mockResolvedValue([INCOME])
       renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
-      await user.click(await screen.findByRole('button', { name: BANK_ROW_EDIT }))
+      const edit = await screen.findByRole('button', { name: BANK_ROW_EDIT })
+      await waitFor(() => expect(edit).toBeEnabled())
+      await user.click(edit)
 
       expect(await screen.findByRole('heading', { name: 'Edit income' })).toBeInTheDocument()
       expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op1`)).toBeInTheDocument()

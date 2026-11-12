@@ -21,6 +21,7 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 import { paidByLabel } from '../utils/paidBy'
 import {
+  BLANK_OPERATION_DESCRIPTION,
   canMoveToStatement,
   isCreditRefund,
   isOlderIncomeLine,
@@ -50,8 +51,6 @@ interface TransactionColumn {
 }
 
 const DATE_COLUMN: TransactionColumn = { key: 'date', header: 'Date', accessor: (row) => row.date, render: (row) => formatShortDateUtc(row.date) }
-
-const BLANK_OPERATION_DESCRIPTION = 'Deposit from an income'
 
 const DESCRIPTION_COLUMN: TransactionColumn = {
   key: 'description',
@@ -214,6 +213,7 @@ export default function AccountTransactionsGrid({
         <RowActionsCell
           className={actionClassName}
           itemName={name}
+          editDisabled={isEditDisabled?.(row) ?? false}
           deleteBlockedReason={operationDeleteBlockedReason(operation, accountId)}
           onEdit={(button) => onOpenOperation(operation, button)}
           onDelete={onDeleteOperation && (() => onDeleteOperation(operation, potOperationNoun(row)))}
