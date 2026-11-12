@@ -1,4 +1,3 @@
-import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import type { AccountTransactionDto, SettlementEntryDto } from '../../api/types'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
@@ -258,36 +257,38 @@ describe('AccountTransactionsGrid', () => {
     expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
   })
 
-  it('[AC P60-F08-statement-payment-and-card-screen-02] links a card payment row to the statement it paid', () => {
+  it('[AC P60-F08-statement-payment-and-card-screen-02] opens the statement a card payment row paid from its Edit icon and says where to delete it', () => {
     const onOpenStatement = vi.fn()
     render(
-      <MemoryRouter>
-        <AccountTransactionsGrid accountId="bank-1"
-          transactions={[
-            accountTransactionRow({
-              id: 'p1',
-              kind: 'CardPayment',
-              date: '2026-11-12',
-              description: 'Platinum Visa 6007 payment – Oct 2026 statement',
-              counterpart: 'Platinum Visa 6007',
-              amount: -512.3,
-              canEdit: false,
-              statement: { accountId: 'visa-id', year: 2026, month: 10 },
-            }),
-            accountTransactionRow({ id: 'p2', kind: 'CardPayment', date: '2026-11-02', counterpart: 'Amex', amount: -20, canEdit: false }),
-          ]}
-          emptyMessage={EMPTY_MESSAGE}
-          {...NO_ROW_ACTIONS}
-          onOpenStatement={onOpenStatement}
-        />
-      </MemoryRouter>,
+      <AccountTransactionsGrid accountId="bank-1"
+        transactions={[
+          accountTransactionRow({
+            id: 'p1',
+            kind: 'CardPayment',
+            date: '2026-11-12',
+            description: 'Platinum Visa 6007 payment – Oct 2026 statement',
+            counterpart: 'Platinum Visa 6007',
+            amount: -512.3,
+            canEdit: false,
+            statement: { accountId: 'visa-id', year: 2026, month: 10 },
+          }),
+          accountTransactionRow({ id: 'p2', kind: 'CardPayment', date: '2026-11-02', counterpart: 'Amex', amount: -20, canEdit: false }),
+        ]}
+        emptyMessage={EMPTY_MESSAGE}
+        {...NO_ROW_ACTIONS}
+        onOpenStatement={onOpenStatement}
+      />,
     )
 
-    const link = screen.getByRole('link', { name: 'Platinum Visa 6007 payment – Oct 2026 statement' })
-    expect(link).toHaveAttribute('href', '/cashflow/accounts/visa-id?month=2026-10&tab=statements')
-    expect(screen.getAllByRole('link')).toHaveLength(1)
-    fireEvent.click(link)
+    const [paid, unlinked] = bodyRows()
+    expect(screen.queryByRole('link')).not.toBeInTheDocument()
+    expect(within(unlinked).queryByRole('button')).not.toBeInTheDocument()
+    const name = 'card payment Platinum Visa 6007 payment – Oct 2026 statement, 12/11/2026'
+    fireEvent.click(within(paid).getByRole('button', { name: `Edit ${name}` }))
     expect(onOpenStatement).toHaveBeenCalledWith('/cashflow/accounts/visa-id?month=2026-10&tab=statements')
+    const remove = within(paid).getByRole('button', { name: `Delete ${name}` })
+    expect(remove).toHaveAttribute('aria-disabled', 'true')
+    expect(remove).toHaveAccessibleDescription('Unmark the statement to remove this payment.')
   })
 
   it('offers Move beside Edit and Delete on an editable card charge only', () => {
@@ -322,42 +323,48 @@ describe('AccountTransactionsGrid', () => {
     const OPERATION = { operationId: 'op1', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
     const linkedExpense = (incomeId: string | null) =>
       accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...OPERATION, incomeId } })
+    const potLine = (amount: number, incomeId: string | null = null, description = 'Deposit to Reserva') =>
+      accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description, counterpart: 'Home', amount, canEdit: false, operation: { ...OPERATION, incomeId } })
 
-    it('links a linked bank row to its operation on the Pots screen and leaves it read-only', () => {
-      const onOpenOperation = vi.fn()
-      render(
-        <MemoryRouter>
-          <AccountTransactionsGrid accountId="bank-1" transactions={[linkedExpense(null)]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onOpenOperation={onOpenOperation} />
-        </MemoryRouter>,
-      )
+    function renderLinked(accountId: string, row: AccountTransactionDto) {
+      const handlers = { onOpenOperation: vi.fn(), onDeleteOperation: vi.fn() }
+      render(<AccountTransactionsGrid accountId={accountId} transactions={[row]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} {...handlers} />)
+      return handlers
+    }
 
-      const link = screen.getByRole('link', { name: 'Deposit to Reserva' })
-      expect(link).toHaveAttribute('href', '/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=op1')
-      expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+    it('opens a linked bank row from its Edit icon and says its operation is deleted from the pots account', () => {
+      const { onOpenOperation, onDeleteOperation } = renderLinked('bank-1', linkedExpense(null))
 
-      fireEvent.click(link)
-      expect(onOpenOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), link)
+      expect(screen.queryByRole('link')).not.toBeInTheDocument()
+      const edit = screen.getByRole('button', { name: 'Edit expense Deposit to Reserva, 10/10/2026' })
+      fireEvent.click(edit)
+      expect(onOpenOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), edit)
+      const remove = screen.getByRole('button', { name: 'Delete expense Deposit to Reserva, 10/10/2026' })
+      fireEvent.click(remove)
+      expect(remove).toHaveAccessibleDescription('Delete it from the pots account.')
+      expect(onDeleteOperation).not.toHaveBeenCalled()
     })
 
-    it('still links a Pots row whose income has no description', () => {
-      const blank = accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description: '', counterpart: 'Home', amount: 30, canEdit: false, operation: { ...OPERATION, incomeId: 'i1' } })
-      render(
-        <MemoryRouter>
-          <AccountTransactionsGrid accountId="pots-1" columns="pots" transactions={[blank]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />
-        </MemoryRouter>,
-      )
+    it.each([
+      [30, 'deposit'],
+      [-30, 'withdrawal'],
+    ])('deletes the whole operation of a Pots line of %d as a %s', (amount, noun) => {
+      const { onDeleteOperation } = renderLinked('pots-1', potLine(amount))
 
-      expect(screen.getByRole('link', { name: 'Deposit from an income' })).toHaveAttribute('href', '/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=op1')
+      fireEvent.click(screen.getByRole('button', { name: 'Delete pot transaction Deposit to Reserva, 10/10/2026' }))
+
+      expect(onDeleteOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), noun)
     })
 
-    it("links a bank row of an income's deposit to the income on this bank screen", () => {
-      render(
-        <MemoryRouter>
-          <AccountTransactionsGrid accountId="bank-1" transactions={[linkedExpense('i1')]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />
-        </MemoryRouter>,
-      )
+    it("names a Pots line of an income's deposit with no description and sends its delete to the income", () => {
+      const { onDeleteOperation } = renderLinked('pots-1', potLine(30, 'i1', ''))
 
-      expect(screen.getByRole('link', { name: 'Deposit to Reserva' })).toHaveAttribute('href', '/cashflow/accounts/bank-1?month=2026-10&operation=op1')
+      expect(screen.getByText('Deposit from an income')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Edit pot transaction, 10/10/2026' })).toBeEnabled()
+      const remove = screen.getByRole('button', { name: 'Delete pot transaction, 10/10/2026' })
+      fireEvent.click(remove)
+      expect(remove).toHaveAccessibleDescription('Delete the income to remove this deposit.')
+      expect(onDeleteOperation).not.toHaveBeenCalled()
     })
   })
 

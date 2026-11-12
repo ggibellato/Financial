@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import {
   Button,
   Skeleton,
@@ -20,7 +20,19 @@ import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 import { paidByLabel } from '../utils/paidBy'
-import { canMoveToStatement, isCreditRefund, isOlderIncomeLine, kindLabel, operationPath, recordNoun, rowKey, statementPath } from './accountActions'
+import {
+  canMoveToStatement,
+  isCreditRefund,
+  isOlderIncomeLine,
+  kindLabel,
+  operationDeleteBlockedReason,
+  potOperationNoun,
+  recordNoun,
+  rowKey,
+  STATEMENT_PAYMENT_DELETE_REASON,
+  statementPath,
+  type PotOperationNoun,
+} from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
 
@@ -39,11 +51,13 @@ interface TransactionColumn {
 
 const DATE_COLUMN: TransactionColumn = { key: 'date', header: 'Date', accessor: (row) => row.date, render: (row) => formatShortDateUtc(row.date) }
 
+const BLANK_OPERATION_DESCRIPTION = 'Deposit from an income'
+
 const DESCRIPTION_COLUMN: TransactionColumn = {
   key: 'description',
   header: 'Description',
   accessor: (row) => row.description,
-  render: (row) => <TruncatedText text={row.description} />,
+  render: (row) => <TruncatedText text={row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)} />,
 }
 
 const COUNTERPART_COLUMN: TransactionColumn = {
@@ -113,8 +127,6 @@ function columnsOf(selection: ColumnSelection): TransactionColumn[] {
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 
-const BLANK_OPERATION_LINK = 'Deposit from an income'
-
 function actionColumnClass(hasHint: boolean, hasMove: boolean): string {
   if (hasHint) return 'data-table__col--action data-table__col--action-wide'
   return hasMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
@@ -133,7 +145,8 @@ type AccountTransactionsGridProps = ColumnSelection & {
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
   onOpenStatement?: (path: string) => void
-  onOpenOperation?: (operation: AccountTransactionOperationDto, link: HTMLAnchorElement) => void
+  onOpenOperation?: (operation: AccountTransactionOperationDto, button: HTMLButtonElement) => void
+  onDeleteOperation?: (operation: AccountTransactionOperationDto, noun: PotOperationNoun) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -150,6 +163,7 @@ export default function AccountTransactionsGrid({
   isMoveDisabled = false,
   onOpenStatement,
   onOpenOperation,
+  onDeleteOperation,
   ...columnSelection
 }: AccountTransactionsGridProps) {
   const columns = columnsOf(columnSelection)
@@ -158,33 +172,6 @@ export default function AccountTransactionsGrid({
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
-  const renderCell = (column: TransactionColumn, row: AccountTransactionDto) => {
-    if (column.key !== 'description') return column.render(row)
-    if (row.statement) {
-      const path = statementPath(row.statement)
-      const open = onOpenStatement && (() => onOpenStatement(path))
-      return <TruncatedText text={row.description} to={path} onClick={(event) => followLink(event, open)} />
-    }
-    if (row.operation) {
-      const { operation } = row
-      return (
-        <TruncatedText
-          text={row.description || BLANK_OPERATION_LINK}
-          to={operationPath(operation, accountId)}
-          onClick={(event) => {
-            const link = event.currentTarget
-            followLink(event, onOpenOperation && (() => onOpenOperation(operation, link)))
-          }}
-        />
-      )
-    }
-    return column.render(row)
-  }
-  const followLink = (event: MouseEvent<HTMLAnchorElement>, open: (() => void) | undefined) => {
-    if (!open || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-    event.preventDefault()
-    open()
-  }
   const renderActions = (row: AccountTransactionDto) => {
     const name = rowName(row)
     if (row.canEdit) {
@@ -209,6 +196,29 @@ export default function AccountTransactionsGrid({
             </Tooltip>
           )}
         </RowActionsCell>
+      )
+    }
+    const { statement, operation } = row
+    if (statement && onOpenStatement) {
+      return (
+        <RowActionsCell
+          className={actionClassName}
+          itemName={name}
+          deleteBlockedReason={STATEMENT_PAYMENT_DELETE_REASON}
+          onEdit={() => onOpenStatement(statementPath(statement))}
+          onDelete={() => {}}
+        />
+      )
+    }
+    if (operation && onOpenOperation && onDeleteOperation) {
+      return (
+        <RowActionsCell
+          className={actionClassName}
+          itemName={name}
+          deleteBlockedReason={operationDeleteBlockedReason(operation, accountId)}
+          onEdit={(button) => onOpenOperation(operation, button)}
+          onDelete={() => onDeleteOperation(operation, potOperationNoun(row))}
+        />
       )
     }
     if (isCreditRefund(row) && canDeleteCreditRefunds) {
@@ -261,7 +271,7 @@ export default function AccountTransactionsGrid({
                     label={headerOf(column)}
                     className={column.numeric ? 'data-table__col--numeric' : undefined}
                   >
-                    {renderCell(column, row)}
+                    {column.render(row)}
                   </DataTableCell>
                 ))}
                 {renderActions(row)}

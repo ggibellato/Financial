@@ -148,6 +148,21 @@ export function operationPath(operation: AccountTransactionOperationDto, screenA
     : `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
 }
 
+export type PotOperationNoun = 'deposit' | 'withdrawal'
+
+export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove this payment.'
+export const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
+export const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
+
+export function operationDeleteBlockedReason(operation: AccountTransactionOperationDto, screenAccountId: string): string | undefined {
+  if (operation.incomeId != null) return INCOME_DEPOSIT_DELETE_REASON
+  return operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase() ? undefined : OTHER_SCREEN_OPERATION_DELETE_REASON
+}
+
+export function potOperationNoun(row: AccountTransactionDto): PotOperationNoun {
+  return row.amount < 0 ? 'withdrawal' : 'deposit'
+}
+
 export function rowKey(row: AccountTransactionDto): string {
   return `${row.kind}-${row.id}`
 }

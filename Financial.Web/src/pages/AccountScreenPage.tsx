@@ -440,7 +440,8 @@ export default function AccountScreenPage() {
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}
-              onOpenOperation={(operation, link) => forms.followOperationLink(operation.operationId, link, () => navigate(operationPath(operation, screen.accountId)))}
+              onOpenOperation={(operation, button) => forms.followOperation(operation.operationId, button, () => navigate(operationPath(operation, screen.accountId)))}
+              onDeleteOperation={({ operationId }, noun) => operationDelete.request({ operationId, noun })}
             />
           </>
         )}

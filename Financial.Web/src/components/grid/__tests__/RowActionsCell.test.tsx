@@ -110,6 +110,26 @@ describe('RowActionsCell', () => {
     expect(onDelete).not.toHaveBeenCalled()
   })
 
+  it('keeps Delete focusable but inert when the row says why it cannot be deleted here', () => {
+    const onDelete = vi.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="card payment" deleteBlockedReason="Unmark the statement to remove this payment." onEdit={vi.fn()} onDelete={onDelete} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    const blocked = screen.getByRole('button', { name: 'Delete card payment' })
+    fireEvent.click(blocked)
+
+    expect(blocked).toHaveAttribute('aria-disabled', 'true')
+    expect(blocked).toHaveAccessibleDescription('Unmark the statement to remove this payment.')
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
   it('gives an available Delete no blocked description', () => {
     renderCell()
 
