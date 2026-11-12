@@ -1,5 +1,5 @@
-import type { AccountTransactionDto, AccountTransactionOperationDto, AccountTransactionStatementDto } from '../api/types'
-import { formatMonthInputValue } from '../utils/formatters'
+import type { AccountTransactionDto, AccountTransactionOperationDto, AccountTransactionStatementDto, MonthTransactionDto } from '../api/types'
+import { formatMonthInputValue, formatShortDateUtc } from '../utils/formatters'
 
 export type AccountFormAction =
   | 'AddExpense'
@@ -156,6 +156,10 @@ export const BLANK_OPERATION_DESCRIPTION = 'Deposit from an income'
 export type PotOperationNoun = 'deposit' | 'withdrawal'
 
 export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove this payment.'
+const INACTIVE_ACCOUNT_REASON = 'This account is inactive, so its rows cannot be changed.'
+const INCOME_LINE_EDIT_REASON = 'Edit from the income.'
+const CREDIT_REFUND_EDIT_REASON = 'A credit refund cannot be edited. Delete it and refund the credit again.'
+const PAID_STATEMENT_REASON = 'Its card statement is paid. Unmark the statement to change it.'
 const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
 const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
 
@@ -178,4 +182,52 @@ export function operationNoun({ operationId }: AccountTransactionOperationDto, w
 
 export function rowKey(row: AccountTransactionDto): string {
   return `${row.kind}-${row.id}`
+}
+
+export function operationDeleteConfirmation(noun: PotOperationNoun): string {
+  return `Delete this ${noun}? Its pot lines and any bank expenses are deleted with it. This cannot be undone.`
+}
+
+const OPERATION_TITLES: Record<PotOperationNoun, string> = { deposit: 'Deposit', withdrawal: 'Withdrawal' }
+
+export function operationDeletedMessage(noun: PotOperationNoun): string {
+  return `${OPERATION_TITLES[noun]} deleted`
+}
+
+export function shownDescription(row: AccountTransactionDto): string | null {
+  return row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)
+}
+
+export function transactionRowName(row: AccountTransactionDto, withdrawalIds: Set<string>): string {
+  const kind = row.operation ? operationNoun(row.operation, withdrawalIds) : recordNoun(row.kind)
+  const description = shownDescription(row)
+  return `${description ? `${kind} ${description}` : kind}, ${formatShortDateUtc(row.date)}`
+}
+
+interface MonthRowEdit {
+  path?: string
+  blockedReason?: string
+}
+
+export function monthRowEdit({ accountId, accountIsActive, transaction: row }: MonthTransactionDto, month: string): MonthRowEdit {
+  if (row.statement) return { path: statementPath(row.statement) }
+  if (row.operation && accountId) return { path: operationPath(row.operation, accountId) }
+  if (row.canEdit) {
+    return {
+      path: accountId
+        ? `/cashflow/accounts/${accountId}?month=${month}&tab=transactions&edit=${rowKey(row)}`
+        : `/cashflow/accounts?month=${month}&tab=income&edit=${row.id}`,
+    }
+  }
+  if (!accountIsActive) return { blockedReason: INACTIVE_ACCOUNT_REASON }
+  if (isOlderIncomeLine(row)) return { blockedReason: INCOME_LINE_EDIT_REASON }
+  return { blockedReason: isCreditRefund(row) ? CREDIT_REFUND_EDIT_REASON : PAID_STATEMENT_REASON }
+}
+
+export function monthRowDeleteBlockedReason({ accountId, accountIsActive, transaction: row }: MonthTransactionDto): string | undefined {
+  if (row.statement) return STATEMENT_PAYMENT_DELETE_REASON
+  if (row.operation && accountId) return operationDeleteBlockedReason(row.operation, accountId)
+  if (!accountIsActive) return INACTIVE_ACCOUNT_REASON
+  if (row.canEdit || isCreditRefund(row)) return undefined
+  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : PAID_STATEMENT_REASON
 }

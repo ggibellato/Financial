@@ -1,10 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
+import type { AccountTransactionDto } from '../api/types'
 import PageTabList from '../components/PageTabList'
 import { useTabPanel } from '../hooks/useTabPanel'
 import AccountActionBar from '../components/AccountActionBar'
-import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCreditRefund, isTransferAction, needsFormOptions, operationPath, recordNoun } from '../components/accountActions'
+import { canTransfer, deleteConfirmation, deletedMessage, formActionsOf, isCreditRefund, isTransferAction, needsFormOptions, operationDeleteConfirmation, operationPath, recordNoun, rowKey } from '../components/accountActions'
 import AccountHeader from '../components/AccountHeader'
 import AccountTransactionsGrid from '../components/AccountTransactionsGrid'
 import CardCreditRefundForm from '../components/CardCreditRefundForm'
@@ -32,12 +33,14 @@ import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../
 import { useCardStatements } from '../hooks/useCardStatements'
 import { OPERATION_LOAD_ERROR, OPERATION_NOT_FOUND, useOperationRoute } from '../hooks/useOperationRoute'
 import { POTS_LOAD_ERROR, usePots } from '../hooks/usePots'
+import { useRowEditRoute } from '../hooks/useRowEditRoute'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import { formatLongMonthYear } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
 import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
+const EDITED_ROW_UNAVAILABLE = 'This transaction is no longer in this month or can no longer be edited.'
 
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
@@ -111,6 +114,16 @@ export default function AccountScreenPage() {
     forms.openOperation,
     screen.clearOperation,
   )
+  const isRowEditDisabled = (row: AccountTransactionDto) =>
+    !isAccountCurrent || (!row.settlement && !row.operation && (row.movement ? pots.data === null : !formOptions.isReady))
+  const rowEditRoute = useRowEditRoute({
+    rows: screen.transactions,
+    keyOf: rowKey,
+    isLoaded: isAccountCurrent && !screen.isLoading,
+    isEditable: (row) => row.canEdit,
+    isEditDisabled: isRowEditDisabled,
+    open: (row) => openRowEdit(row, null),
+  })
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
@@ -197,14 +210,15 @@ export default function AccountScreenPage() {
           </div>
         )}
         {operationRoute.error && <ErrorState message={OPERATION_LOAD_ERROR} onRetry={operationRoute.retry} />}
-        {operationRoute.isNotFound && (
+        {(operationRoute.isNotFound || rowEditRoute.isUnavailable) && (
           <MessageBar role="alert" intent="error">
-            <MessageBarBody>{OPERATION_NOT_FOUND}</MessageBarBody>
+            <MessageBarBody>{operationRoute.isNotFound ? OPERATION_NOT_FOUND : EDITED_ROW_UNAVAILABLE}</MessageBarBody>
             <MessageBarActions>
               <Button
                 appearance="primary"
                 onClick={() => {
-                  screen.clearOperation()
+                  if (operationRoute.isNotFound) screen.clearOperation()
+                  else rowEditRoute.dismiss()
                   forms.restoreFocus()
                 }}
               >
@@ -433,7 +447,7 @@ export default function AccountScreenPage() {
               isLoading={screen.isLoading}
               emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}.`}
               dateHeader={isCard ? 'Purchased' : 'Date'}
-              isEditDisabled={(row) => !isAccountCurrent || (!row.settlement && !row.operation && (row.movement ? pots.data === null : !formOptions.isReady))}
+              isEditDisabled={isRowEditDisabled}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
               canDeleteCreditRefunds={isAccountActive}
@@ -460,7 +474,7 @@ export default function AccountScreenPage() {
       <ConfirmDeleteDialog
         open={operationDelete.isOpen}
         entityLabel={operationDelete.target?.noun ?? ''}
-        message={`Delete this ${operationDelete.target?.noun ?? ''}? Its pot lines and any bank expenses are deleted with it. This cannot be undone.`}
+        message={operationDelete.target ? operationDeleteConfirmation(operationDelete.target.noun) : ''}
         isBusy={operationDelete.isDeleting}
         error={operationDelete.error}
         onConfirm={operationDelete.confirm}

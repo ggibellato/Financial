@@ -1,5 +1,11 @@
 import { useRef, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { apiClient } from '../api/financialApiClient'
+import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
+import { useConfirmedDelete } from '../hooks/useConfirmedDelete'
 import { useFocusReloadedContent } from '../hooks/useFocusReloadedContent'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
+import { useSuccessToast } from '../hooks/useSuccessToast'
 import {
   Badge,
   Button,
@@ -18,15 +24,32 @@ import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFil
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
-import { formatLongMonthYear, formatMonthInputValue, formatN2, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { deleteFailedMessage, formatLongMonthYear, formatMonthInputValue, formatN2, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import { monthTransactionTotals } from '../utils/monthTransactionTotals'
+import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import ErrorState from './ErrorState'
+import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
+import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { BLANK_OPERATION_DESCRIPTION, kindLabel, operationPath } from './accountActions'
+import {
+  deleteConfirmation,
+  deletedMessage,
+  kindLabel,
+  monthRowDeleteBlockedReason,
+  monthRowEdit,
+  operationDeleteConfirmation,
+  operationDeletedMessage,
+  operationNoun,
+  recordNoun,
+  shownDescription,
+  transactionRowName,
+  withdrawalOperationIds,
+  type PotOperationNoun,
+} from './accountActions'
 
 const useStyles = makeStyles({
   toolbar: {
@@ -75,8 +98,21 @@ const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
 
 const GRID_LABEL = 'All transactions'
 
+const COLUMN_COUNT = COLUMNS.length + 1
+
 function rowKey(row: MonthTransactionDto): string {
   return `${row.accountId ?? NO_BANK}-${row.transaction.kind}-${row.transaction.id}`
+}
+
+const withdrawalIdsOf = ({ accountId, transaction }: MonthTransactionDto) =>
+  accountId ? withdrawalOperationIds([transaction], accountId) : new Set<string>()
+
+const rowName = (row: MonthTransactionDto) =>
+  [transactionRowName(row.transaction, withdrawalIdsOf(row)), accountName(row), categoryName(row)].filter(Boolean).join(', ')
+
+interface OperationDeleteTarget {
+  operationId: string
+  noun: PotOperationNoun
 }
 
 interface MonthTransactionsGridProps {
@@ -86,13 +122,31 @@ interface MonthTransactionsGridProps {
   isLoading: boolean
   error: string | null
   onRetry: () => void
+  onDeleted: () => void
 }
 
-export default function MonthTransactionsGrid({ year, month, rows, isLoading, error, onRetry }: MonthTransactionsGridProps) {
+export default function MonthTransactionsGrid({ year, month, rows, isLoading, error, onRetry, onDeleted }: MonthTransactionsGridProps) {
   const styles = useStyles()
+  const navigate = useNavigate()
+  const { showSuccess } = useSuccessToast()
   const gridRef = useRef<HTMLElement>(null)
   useFocusReloadedContent(gridRef, isLoading)
   const tableRef = useRef<HTMLTableElement>(null)
+  const recordRowFocus = useRowFocusRecovery(gridRef, tableRef, isLoading)
+  const notifyDeleted = (message: string) => {
+    showSuccess(message)
+    onDeleted()
+  }
+  const rowDelete = useAccountRowDelete((transaction) => notifyDeleted(deletedMessage(transaction)))
+  const operationDelete = useConfirmedDelete<OperationDeleteTarget>(
+    ({ operationId }) => apiClient.deletePotOperation(operationId),
+    ({ noun }) => deleteFailedMessage(noun),
+    ({ noun }) => notifyDeleted(operationDeletedMessage(noun)),
+  )
+  const isAnyDeleting = rowDelete.isDeleting || operationDelete.isDeleting
+  const isDeletingRow = ({ transaction }: MonthTransactionDto) =>
+    (rowDelete.isDeleting && rowDelete.row === transaction) ||
+    (operationDelete.isDeleting && operationDelete.target?.operationId === transaction.operation?.operationId)
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =
     useColumnFilters(rows, FILTER_ACCESSORS)
@@ -126,11 +180,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'kind':
         return typeLabel(row)
       case 'description':
-        return transaction.operation && row.accountId != null ? (
-          <TruncatedText text={transaction.description || BLANK_OPERATION_DESCRIPTION} to={operationPath(transaction.operation, row.accountId)} />
-        ) : (
-          <TruncatedText text={transaction.description} />
-        )
+        return <TruncatedText text={shownDescription(transaction)} />
       case 'category':
         return <TruncatedText text={transaction.categoryName} />
       default:
@@ -138,9 +188,32 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
     }
   }
 
+  const requestDelete = (row: MonthTransactionDto) => {
+    const { operation } = row.transaction
+    if (operation) operationDelete.request({ operationId: operation.operationId, noun: operationNoun(operation, withdrawalIdsOf(row)) })
+    else rowDelete.requestDelete(row.transaction)
+  }
+
+  const renderActions = (row: MonthTransactionDto) => {
+    const { path, blockedReason: editBlockedReason } = monthRowEdit(row, monthValue)
+    const deleteBlockedReason = monthRowDeleteBlockedReason(row)
+    const isDeleting = isDeletingRow(row)
+    return (
+      <RowActionsCell
+        itemName={rowName(row)}
+        editBlockedReason={editBlockedReason}
+        deleteBlockedReason={deleteBlockedReason}
+        isDeleting={isDeleting}
+        isOtherDeleting={isAnyDeleting && !isDeleting}
+        onEdit={() => path && navigate(path)}
+        onDelete={deleteBlockedReason ? undefined : () => requestDelete(row)}
+      />
+    )
+  }
+
   const renderMessage = (message: string) => (
     <TableRow>
-      <TableCell className="data-table__cell--message" colSpan={COLUMNS.length}>
+      <TableCell className="data-table__cell--message" colSpan={COLUMN_COUNT}>
         {message}
       </TableCell>
     </TableRow>
@@ -150,7 +223,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
     if (isLoading) {
       return (
         <TableRow>
-          <TableCell colSpan={COLUMNS.length}>
+          <TableCell colSpan={COLUMN_COUNT}>
             <Skeleton aria-label="Loading transactions">
               <SkeletonItem />
               <SkeletonItem />
@@ -169,12 +242,13 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
             {renderCell(column, row)}
           </DataTableCell>
         ))}
+        {renderActions(row)}
       </TableRow>
     ))
   }
 
   return (
-    <section ref={gridRef} className="monthly-page__section monthly-page__section--grid">
+    <section ref={gridRef} className="monthly-page__section monthly-page__section--grid" onFocus={recordRowFocus}>
       <FilteredRowsNotice {...filterSummary} tableRef={tableRef} />
       {isFiltered && !isStackedLayout && (
         <div className={styles.toolbar}>
@@ -209,6 +283,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
                   )}
                 </SortableColumnHeader>
               ))}
+              <ActionsColumnHeader />
             </TableRow>
           </TableHeader>
           <TableBody>{renderBody()}</TableBody>
@@ -222,6 +297,24 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
           showsSpend={isColumnFiltered('category')}
         />
       )}
+      <ConfirmDeleteDialog
+        open={rowDelete.isOpen}
+        entityLabel={recordNoun(rowDelete.row?.kind ?? '')}
+        message={rowDelete.row ? deleteConfirmation(rowDelete.row) : ''}
+        isBusy={rowDelete.isDeleting}
+        error={rowDelete.error}
+        onConfirm={rowDelete.confirm}
+        onCancel={rowDelete.cancel}
+      />
+      <ConfirmDeleteDialog
+        open={operationDelete.isOpen}
+        entityLabel={operationDelete.target?.noun ?? ''}
+        message={operationDelete.target ? operationDeleteConfirmation(operationDelete.target.noun) : ''}
+        isBusy={operationDelete.isDeleting}
+        error={operationDelete.error}
+        onConfirm={operationDelete.confirm}
+        onCancel={operationDelete.cancel}
+      />
     </section>
   )
 }

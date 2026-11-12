@@ -21,7 +21,6 @@ import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
 import { paidByLabel } from '../utils/paidBy'
 import {
-  BLANK_OPERATION_DESCRIPTION,
   canMoveToStatement,
   isCreditRefund,
   isOlderIncomeLine,
@@ -29,24 +28,15 @@ import {
   operationDeleteBlockedReason,
   operationNoun,
   withdrawalOperationIds,
-  recordNoun,
   rowKey,
+  shownDescription,
   STATEMENT_PAYMENT_DELETE_REASON,
   statementPath,
+  transactionRowName,
   type PotOperationNoun,
 } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
-
-function shownDescription(row: AccountTransactionDto): string | null {
-  return row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)
-}
-
-function rowName(row: AccountTransactionDto, withdrawalIds: Set<string>): string {
-  const kind = row.operation ? operationNoun(row.operation, withdrawalIds) : recordNoun(row.kind)
-  const description = shownDescription(row)
-  return `${description ? `${kind} ${description}` : kind}, ${formatShortDateUtc(row.date)}`
-}
 
 interface TransactionColumn {
   key: string
@@ -179,7 +169,7 @@ export default function AccountTransactionsGrid({
   const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
   const withdrawalIds = withdrawalOperationIds(transactions, accountId)
   const renderActions = (row: AccountTransactionDto) => {
-    const name = rowName(row, withdrawalIds)
+    const name = transactionRowName(row, withdrawalIds)
     if (row.canEdit) {
       return (
         <RowActionsCell
