@@ -30,7 +30,8 @@ public sealed class TitheService : ITitheService
         using var span = StartSpan("GetTitheSummaryAsync");
         try
         {
-            var result = await ResolveMonthAsync(year, month).ConfigureAwait(false);
+            var anchor = await ResolveAnchorAsync().ConfigureAwait(false);
+            var result = Resolve(year, month, anchor);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "GetTitheSummaryAsync");
@@ -98,7 +99,7 @@ public sealed class TitheService : ITitheService
                 return true;
             }).ConfigureAwait(false);
 
-            var result = await ResolveMonthAsync(year, month).ConfigureAwait(false);
+            var result = Resolve(year, month, anchor);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "UpdateCarryForwardInclusionAsync");
@@ -130,12 +131,6 @@ public sealed class TitheService : ITitheService
         return anchor;
     }
 
-    private async Task<TitheSummaryDTO> ResolveMonthAsync(int year, int month)
-    {
-        var anchor = await ResolveAnchorAsync().ConfigureAwait(false);
-        return Resolve(year, month, anchor);
-    }
-
     private TitheCarryForward? FindDecision(int year, int month) =>
         _repository.GetTitheCarryForwards().FirstOrDefault(d => d.Year == year && d.Month == month);
 
@@ -159,36 +154,39 @@ public sealed class TitheService : ITitheService
             .DistinctBy(d => (d.Year, d.Month))
             .ToDictionary(d => new DateOnly(d.Year, d.Month, 1), d => d.Included);
 
+        var start = first > anchorMonth ? anchorMonth : first;
+        var count = (last.Year - start.Year) * 12 + last.Month - start.Month + 1;
         var months = new List<TitheMonthDTO>();
         var previousBalance = 0m;
-        for (var month = first > anchorMonth ? anchorMonth : first; ; month = month.AddMonths(1))
+        for (var i = 0; i < count; i++)
         {
+            var month = start.AddMonths(i);
             var incomeBase = incomeBases.GetValueOrDefault(month);
             var calculatedTithe = TitheRule.CalculateTithe(incomeBase);
             var tithePaid = tithePayments.GetValueOrDefault(month);
             var carryAmount = month > anchorMonth && previousBalance > 0 ? previousBalance : 0m;
             var included = carryAmount > 0 && decisions.GetValueOrDefault(month, true);
-
-            var summary = new TitheSummaryDTO
-            {
-                IncomeBase = incomeBase,
-                CalculatedTithe = calculatedTithe,
-                TithePaid = tithePaid,
-                TitheBalance = calculatedTithe - tithePaid + (included ? carryAmount : 0m),
-                CarryForward = carryAmount > 0 ? CarryIn(month, carryAmount, included) : null
-            };
-            previousBalance = summary.TitheBalance;
+            previousBalance = calculatedTithe - tithePaid + (included ? carryAmount : 0m);
 
             if (month >= first)
             {
-                months.Add(new TitheMonthDTO { Year = month.Year, Month = month.Month, Summary = summary });
-            }
-
-            if (month == last)
-            {
-                return months;
+                months.Add(new TitheMonthDTO
+                {
+                    Year = month.Year,
+                    Month = month.Month,
+                    Summary = new TitheSummaryDTO
+                    {
+                        IncomeBase = incomeBase,
+                        CalculatedTithe = calculatedTithe,
+                        TithePaid = tithePaid,
+                        TitheBalance = previousBalance,
+                        CarryForward = carryAmount > 0 ? CarryIn(month, carryAmount, included) : null
+                    }
+                });
             }
         }
+
+        return months;
     }
 
     private static TitheCarryForwardDTO CarryIn(DateOnly month, decimal amount, bool included)
