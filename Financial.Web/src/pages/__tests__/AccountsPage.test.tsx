@@ -12,6 +12,7 @@ const {
   getCategoryTotalsByMonthMock,
   getDefaultGroupSummaryMock,
   getTitheSummaryByMonthMock,
+  getTitheYearMock,
   getMonthTransactionsMock,
   getIncomesByMonthMock,
   getIncomeSourcesMock,
@@ -21,6 +22,7 @@ const {
   getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
   getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
+  getTitheYearMock: vi.fn<FinancialApiClient['getTitheYear']>(),
   getMonthTransactionsMock: vi.fn<FinancialApiClient['getMonthTransactions']>(),
   getIncomesByMonthMock: vi.fn<FinancialApiClient['getIncomesByMonth']>(),
   getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
@@ -33,6 +35,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getDefaultGroupSummary: getDefaultGroupSummaryMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
+    getTitheYear: getTitheYearMock,
     getMonthTransactions: getMonthTransactionsMock,
     getIncomesByMonth: getIncomesByMonthMock,
     getIncomeSources: getIncomeSourcesMock,
@@ -41,6 +44,10 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const AC = (n: string) => `[AC P61-F01-accounts-overview-tabs-and-monthly-fold-${n}]`
+
+const TITHE_SUMMARY = { incomeBase: 100, calculatedTithe: 10, tithePaid: 0, titheBalance: 10, carryForward: null }
+
+const TITHE_YEAR = Array.from({ length: 12 }, (_, index) => ({ year: 2026, month: index + 1, summary: TITHE_SUMMARY }))
 
 function member(accountId: string, name: string, templateName: string, fields: Partial<AccountGroupMemberDto> = {}): AccountGroupMemberDto {
   return {
@@ -183,7 +190,8 @@ describe('AccountsPage', () => {
     getAccountTemplateGroupsMock.mockReset().mockResolvedValue([BANKS, CARDS, POTS])
     getCategoryTotalsByMonthMock.mockReset().mockResolvedValue([{ category: 'Mercado', totalValue: 42.5 }])
     getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
-    getTitheSummaryByMonthMock.mockReset().mockResolvedValue({ incomeBase: 0, calculatedTithe: 10, tithePaid: 0, titheBalance: 10, carryForward: null })
+    getTitheSummaryByMonthMock.mockReset().mockResolvedValue(TITHE_SUMMARY)
+    getTitheYearMock.mockReset().mockResolvedValue(TITHE_YEAR)
     getMonthTransactionsMock.mockReset().mockResolvedValue(MONTH_TRANSACTIONS)
     getIncomesByMonthMock.mockReset().mockResolvedValue([])
     getIncomeSourcesMock.mockReset().mockResolvedValue([])
@@ -473,8 +481,8 @@ describe('AccountsPage', () => {
     renderPage()
 
     expect(screen.getByRole('tablist', { name: 'Accounts views' })).toBeInTheDocument()
-    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('value'))).toEqual(['accounts', 'summary', 'income', 'transactions'])
-    expect(screen.getAllByRole('tab').map((tab) => tab.querySelector('.fui-Tab__content')?.textContent)).toEqual(['Accounts', 'Summary', 'Income', 'All transactions'])
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('value'))).toEqual(['accounts', 'summary', 'income', 'tithe', 'transactions'])
+    expect(screen.getAllByRole('tab').map((tab) => tab.querySelector('.fui-Tab__content')?.textContent)).toEqual(['Accounts', 'Summary', 'Income', 'Tithe', 'All transactions'])
     expect(screen.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true')
     expect(await screen.findByRole('tabpanel', { name: 'Accounts' })).toContainElement(await screen.findByRole('table', { name: 'Banks' }))
   })
@@ -487,7 +495,7 @@ describe('AccountsPage', () => {
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 9)
     unmount()
 
-    renderPage('/cashflow/accounts?tab=tithe')
+    renderPage('/cashflow/accounts?tab=unknown')
     expect(screen.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true')
   })
 
@@ -502,6 +510,34 @@ describe('AccountsPage', () => {
 
     expect(await screen.findByRole('tabpanel', { name: 'Income' })).toContainElement(await screen.findByRole('table', { name: 'Incomes' }))
     expect(getIncomesByMonthMock).toHaveBeenCalledExactlyOnceWith(2026, 9)
+  })
+
+  it('[AC P61-cross-01] shows the Tithe tab fourth and loads the tithe only while it is open', async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+    await screen.findByRole('table', { name: 'Banks' })
+
+    expect(screen.getAllByRole('tab')[3]).toHaveAccessibleName('Tithe')
+    expect(getTitheSummaryByMonthMock).not.toHaveBeenCalled()
+    expect(getTitheYearMock).not.toHaveBeenCalled()
+
+    selectTab('Tithe')
+
+    expect(await screen.findByRole('tabpanel', { name: 'Tithe' })).toContainElement(await screen.findByRole('table', { name: 'Tithe by month, 2026' }))
+    expect(getTitheSummaryByMonthMock).toHaveBeenCalledExactlyOnceWith(2026, 9)
+    expect(getTitheYearMock).toHaveBeenCalledExactlyOnceWith(2026)
+  })
+
+  it('[AC P61-F03-tithe-tab-and-history-03] selects a month from the tithe history, keeping the Tithe tab and the loaded history', async () => {
+    renderPage('/cashflow/accounts?month=2026-09&tab=tithe')
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Show March 2026' }))
+
+    await waitFor(() => expect(getTitheSummaryByMonthMock).toHaveBeenLastCalledWith(2026, 3))
+    const params = new URLSearchParams(screen.getByText(/^Address: /).textContent?.replace('Address: ', ''))
+    expect(params.get('month')).toBe('2026-03')
+    expect(params.get('tab')).toBe('tithe')
+    expect(getTitheYearMock).toHaveBeenCalledOnce()
+    expect(screen.getByRole('table', { name: 'Tithe by month, 2026' })).toBeInTheDocument()
   })
 
   it(`${AC('01')} writes the selected tab to the address, keeping the month`, async () => {

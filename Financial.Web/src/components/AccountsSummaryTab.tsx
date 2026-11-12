@@ -32,14 +32,7 @@ export default function AccountsSummaryTab({ year, month }: { year: number; mont
           <CategoryTotalsGrid categoryTotals={summary.categoryTotals} categoryTotalsSum={summary.categoryTotalsSum} />
         </SummarySection>
         <SummarySection heading="Income by source">
-          <IncomingGrid
-            incomeTotals={summary.incomeTotals}
-            totalIncoming={summary.totalIncoming}
-            titheSummary={summary.titheSummary}
-            carryForwardUpdating={summary.carryForwardUpdating}
-            onToggleCarryForward={summary.updateCarryForwardInclusion}
-            carryForwardActionError={summary.carryForwardError}
-          />
+          <IncomingGrid incomeTotals={summary.incomeTotals} totalIncoming={summary.totalIncoming} />
         </SummarySection>
       </div>
       <SectionTotals label="Month result" items={[{ label: 'Result', value: `${formatSignedN2(summary.result.value)} ${summary.result.label}` }]} />

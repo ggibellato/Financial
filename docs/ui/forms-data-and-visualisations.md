@@ -448,7 +448,9 @@ nothing. Every row icon button shows its own label as a hover tooltip.
 A grid gets no default sort only when it genuinely has no per-row
 date/month/year field to sort by — an aggregate/summary grid pivoting
 months or years into separate columns (Annual Summary), a grid scoped to
-a single month with no row-level date (Investment Snapshots), or a field
+a single month with no row-level date (Investment Snapshots), a fixed
+calendar of one row per month of one year that selects a month rather than
+listing records (the Accounts page's Tithe history, January to December), or a field
 that's a plain integer rather than a date (Recurring Bills'/Mensais'
 day-of-month `dueDay`).
 

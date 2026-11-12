@@ -8,6 +8,7 @@ import IncomeTab from '../components/IncomeTab'
 import LoadingState from '../components/LoadingState'
 import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
 import PageTabList from '../components/PageTabList'
+import TitheTab from '../components/TitheTab'
 import TotalsGrid from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
 import { useMonthTransactions } from '../hooks/useMonthTransactions'
@@ -166,6 +167,7 @@ const OVERVIEW_TABS = [
   { id: 'accounts', label: 'Accounts', isGrid: false },
   { id: 'summary', label: 'Summary', isGrid: false },
   { id: 'income', label: 'Income', isGrid: true },
+  { id: 'tithe', label: 'Tithe', isGrid: false },
   { id: 'transactions', label: 'All transactions', isGrid: true },
 ] as const
 
@@ -213,6 +215,7 @@ export default function AccountsPage() {
             <IncomeTab key={monthKey} year={year} month={month} />
           </div>
         )}
+        {tab === 'tithe' && <TitheTab key={year} year={year} month={month} onSelectMonth={setMonthInputValue} />}
         {tab === 'transactions' && (
           <div className="monthly-page__content">
             <AllTransactionsTab key={monthKey} year={year} month={month} />

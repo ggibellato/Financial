@@ -218,11 +218,11 @@ describe('MensaisPage', () => {
     const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
     fireEvent.click(statusButtons[1])
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
-    await screen.findByRole('heading', { name: 'Generate expense for this payment?' })
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?', hidden: true })
 
     fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-1' } })
     fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'cat-1' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Confirm', hidden: true }))
 
     await waitFor(() => expect(markMensaisBillPaidMock).toHaveBeenCalledTimes(1))
     expect(markMensaisBillPaidMock).toHaveBeenCalledWith(
@@ -233,7 +233,7 @@ describe('MensaisPage', () => {
     )
     expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
     await waitFor(() =>
-      expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument(),
+      expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?', hidden: true })).not.toBeInTheDocument(),
     )
   })
 
@@ -244,11 +244,11 @@ describe('MensaisPage', () => {
     const statusButtons = screen.getAllByRole('button', { name: /^Status: Unset/ })
     fireEvent.click(statusButtons[1])
     fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
-    await screen.findByRole('heading', { name: 'Generate expense for this payment?' })
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?', hidden: true })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Cancel', hidden: true }))
 
-    expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?' })).not.toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Generate expense for this payment?', hidden: true })).not.toBeInTheDocument())
     expect(markMensaisBillPaidMock).not.toHaveBeenCalled()
     expect(updateMensaisBillStatusMock).not.toHaveBeenCalled()
   })

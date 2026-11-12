@@ -1,19 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountGroupSummaryDto, CategoryTotalDto, TitheSummaryDto } from '../../api/types'
-import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
+import type { AccountGroupSummaryDto, CategoryTotalDto } from '../../api/types'
+import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import AccountsSummaryTab from '../AccountsSummaryTab'
 
 const {
   getCategoryTotalsByMonthMock,
   getDefaultGroupSummaryMock,
   getTitheSummaryByMonthMock,
-  updateTitheCarryForwardMock,
 } = vi.hoisted(() => ({
   getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
   getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
-  updateTitheCarryForwardMock: vi.fn<FinancialApiClient['updateTitheCarryForward']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -21,12 +19,12 @@ vi.mock('../../api/financialApiClient', () => ({
     getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
     getDefaultGroupSummary: getDefaultGroupSummaryMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
-    updateTitheCarryForward: updateTitheCarryForwardMock,
   } as Partial<FinancialApiClient>,
 }))
 
 const AC_03 = '[AC P61-F01-accounts-overview-tabs-and-monthly-fold-03]'
 const AC_07 = '[AC P61-F01-accounts-overview-tabs-and-monthly-fold-07]'
+const F03_AC_05 = '[AC P61-F03-tithe-tab-and-history-05]'
 
 const CATEGORY_TOTALS: CategoryTotalDto[] = [
   { category: 'Groceries', totalValue: 412.37 },
@@ -46,14 +44,6 @@ const SUMMARY: AccountGroupSummaryDto = {
   totalIncoming: 4185.2,
 }
 
-const TITHE_SUMMARY: TitheSummaryDto = {
-  incomeBase: 0,
-  calculatedTithe: 418.52,
-  tithePaid: 0,
-  titheBalance: 368.52,
-  carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 9 },
-}
-
 function result() {
   return screen.getByRole('group', { name: 'Month result' })
 }
@@ -62,8 +52,7 @@ describe('AccountsSummaryTab', () => {
   beforeEach(() => {
     getCategoryTotalsByMonthMock.mockReset().mockResolvedValue(CATEGORY_TOTALS)
     getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
-    getTitheSummaryByMonthMock.mockReset().mockResolvedValue(TITHE_SUMMARY)
-    updateTitheCarryForwardMock.mockReset()
+    getTitheSummaryByMonthMock.mockReset()
   })
 
   it(`${AC_03} shows Category totals, Income by source with Total incoming, then the Result as a Surplus`, async () => {
@@ -99,29 +88,14 @@ describe('AccountsSummaryTab', () => {
     expect(screen.queryByText(/Bank balance:|Combined adjustment figure/)).not.toBeInTheDocument()
   })
 
-  it(`${AC_03} keeps the tithe lines and the carry-forward checkbox, and the checkbox updates the month`, async () => {
-    updateTitheCarryForwardMock.mockResolvedValue({ ...TITHE_SUMMARY, titheBalance: 418.52, carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 9 } })
+  it(`${F03_AC_05} shows no tithe lines or carry-forward checkbox and makes no tithe request`, async () => {
     render(<AccountsSummaryTab year={2026} month={10} />)
 
     const totals = await screen.findByRole('group', { name: 'Totals for income' })
-    expect(totals).toHaveTextContent('Calculated tithe: 418.52')
-    expect(totals).toHaveTextContent('Tithe balance: 368.52')
-    fireEvent.click(screen.getByRole('checkbox', { name: /^50\.00 from/ }))
-
-    await waitFor(() => expect(screen.getByRole('checkbox', { name: /^50\.00 from/ })).not.toBeChecked())
-    expect(updateTitheCarryForwardMock).toHaveBeenCalledWith(2026, 10, { included: false })
-    expect(totals).toHaveTextContent('Tithe balance: 418.52')
-    expect(screen.getByRole('table', { name: 'Category totals' })).toBeInTheDocument()
-  })
-
-  it('shows a refused carry-forward toggle as an alert and keeps the grids', async () => {
-    updateTitheCarryForwardMock.mockRejectedValue(new Error('No carry-forward is available for this month.'))
-    render(<AccountsSummaryTab year={2026} month={10} />)
-
-    fireEvent.click(await screen.findByRole('checkbox', { name: /^50\.00 from/ }))
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('No carry-forward is available for this month.')
-    expect(screen.getByRole('table', { name: 'Category totals' })).toBeInTheDocument()
+    expect(totals).toHaveTextContent('Total incoming: 4,185.20')
+    expect(screen.queryByText(/tithe/i)).not.toBeInTheDocument()
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+    expect(getTitheSummaryByMonthMock).not.toHaveBeenCalled()
   })
 
   it(`${AC_07} shows one loading state and no grid while the summary is pending`, () => {
