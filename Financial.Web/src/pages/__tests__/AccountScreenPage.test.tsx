@@ -427,8 +427,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     categoryId: 'category-home',
     fundingLines: [],
   }
-  const LINKED_ROW_EDIT = /^Edit pot transaction Ramsay bonus, /
-  const LINKED_ROW_DELETE = /^Delete pot transaction Ramsay bonus, /
+  const LINKED_ROW_EDIT = /^Edit deposit Ramsay bonus, /
+  const LINKED_ROW_DELETE = /^Delete deposit Ramsay bonus, /
   const linkedRow = (operation = OPERATION_LINK, description = 'Ramsay bonus') =>
     movementRow({ id: `m-${operation.operationId}`, description }, { canEdit: false, operation })
 
@@ -628,7 +628,10 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await user.click(await dialogButton('Delete deposit', 'Delete'))
 
     expect(await screen.findByText('Deposit deleted')).toBeInTheDocument()
-    expect(within(screen.getByRole('form', { name: 'New deposit' })).getByLabelText(/^Description/)).toHaveValue('typed')
+    const form = screen.getByRole('form', { name: 'New deposit' })
+    expect(within(form).getByLabelText(/^Description/)).toHaveValue('typed')
+    await waitFor(() => expect(screen.queryByRole('dialog', { hidden: true })).not.toBeInTheDocument())
+    expect(form).not.toContainElement(document.activeElement as HTMLElement)
   })
 
   it('opens a withdrawal from the address alone, saves it and clears the address', async () => {
@@ -717,8 +720,8 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
       bankId: BARCLAYS_ID, bankName: 'Barclays', description: 'Ramsay bonus', potsAccountId: RESERVA_ID, hasLinkedDeposit: true,
       fundingLines: [{ bankId: BARCLAYS_ID, amount: 90 }],
     }
-    const BANK_ROW_EDIT = /^Edit expense Deposit to Reserva, /
-    const BANK_ROW_DELETE = /^Delete expense Deposit to Reserva, /
+    const BANK_ROW_EDIT = /^Edit deposit Deposit to Reserva, /
+    const BANK_ROW_DELETE = /^Delete deposit Deposit to Reserva, /
     const bankRow = (incomeId: string | null) =>
       accountTransactionRow({ id: 'e-linked', kind: 'Expense', date: '2026-10-05', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...BANK_ROW_LINK, incomeId } })
 
@@ -1019,8 +1022,8 @@ describe('AccountScreenPage on a Pots account', () => {
 
     const row = (await screen.findByText('Ramsay bonus')).closest('tr') as HTMLElement
     expect(within(row).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
-      expect.stringMatching(/^Edit pot transaction Ramsay bonus, /),
-      expect.stringMatching(/^Delete pot transaction Ramsay bonus, /),
+      expect.stringMatching(/^Edit deposit Ramsay bonus, /),
+      expect.stringMatching(/^Delete deposit Ramsay bonus, /),
     ])
   })
 

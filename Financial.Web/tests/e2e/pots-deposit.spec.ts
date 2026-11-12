@@ -27,7 +27,7 @@ test('@smoke [AC P60-F13-consolidated-navigation-and-retirement-07] a manual dep
   const depositRows = page.getByRole('row').filter({ hasText: description })
   await expect(depositRows.first()).toBeVisible()
 
-  await depositRows.first().getByRole('button', { name: new RegExp(`^Delete pot transaction ${description}, `) }).click()
+  await depositRows.first().getByRole('button', { name: new RegExp(`^Delete deposit ${description}, `) }).click()
   await page.getByRole('dialog').getByRole('button', { name: 'Delete', exact: true }).click()
   await expect(depositRows).toHaveCount(0)
 })

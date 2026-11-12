@@ -258,7 +258,7 @@ export function useAccountActionForms(
     ({ noun }) => deleteFailedMessage(noun),
     ({ operationId, noun }) => {
       if (editingRowKey === operationRowKey(operationId)) closeForms()
-      saved(`${OPERATION_TITLES[noun]} deleted`)
+      onSaved(`${OPERATION_TITLES[noun]} deleted`)
     },
   )
 

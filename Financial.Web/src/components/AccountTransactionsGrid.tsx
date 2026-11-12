@@ -37,9 +37,14 @@ import {
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
 
-function rowName(row: AccountTransactionDto): string {
-  const noun = row.description ? `${recordNoun(row.kind)} ${row.description}` : recordNoun(row.kind)
-  return `${noun}, ${formatShortDateUtc(row.date)}`
+function shownDescription(row: AccountTransactionDto): string | null {
+  return row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)
+}
+
+function rowName(row: AccountTransactionDto, screenAccountId: string): string {
+  const kind = row.operation ? potOperationNoun(row, row.operation, screenAccountId) : recordNoun(row.kind)
+  const description = shownDescription(row)
+  return `${description ? `${kind} ${description}` : kind}, ${formatShortDateUtc(row.date)}`
 }
 
 interface TransactionColumn {
@@ -56,7 +61,7 @@ const DESCRIPTION_COLUMN: TransactionColumn = {
   key: 'description',
   header: 'Description',
   accessor: (row) => row.description,
-  render: (row) => <TruncatedText text={row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)} />,
+  render: (row) => <TruncatedText text={shownDescription(row)} />,
 }
 
 const COUNTERPART_COLUMN: TransactionColumn = {
@@ -172,7 +177,7 @@ export default function AccountTransactionsGrid({
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
   const renderActions = (row: AccountTransactionDto) => {
-    const name = rowName(row)
+    const name = rowName(row, accountId)
     if (row.canEdit) {
       return (
         <RowActionsCell
@@ -216,7 +221,7 @@ export default function AccountTransactionsGrid({
           editDisabled={isEditDisabled?.(row) ?? false}
           deleteBlockedReason={operationDeleteBlockedReason(operation, accountId)}
           onEdit={(button) => onOpenOperation(operation, button)}
-          onDelete={onDeleteOperation && (() => onDeleteOperation(operation, potOperationNoun(row)))}
+          onDelete={onDeleteOperation && (() => onDeleteOperation(operation, potOperationNoun(row, operation, accountId)))}
         />
       )
     }

@@ -336,10 +336,10 @@ describe('AccountTransactionsGrid', () => {
       const { onOpenOperation, onDeleteOperation } = renderLinked('bank-1', linkedExpense(null))
 
       expect(screen.queryByRole('link')).not.toBeInTheDocument()
-      const edit = screen.getByRole('button', { name: 'Edit expense Deposit to Reserva, 10/10/2026' })
+      const edit = screen.getByRole('button', { name: 'Edit deposit Deposit to Reserva, 10/10/2026' })
       fireEvent.click(edit)
       expect(onOpenOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), edit)
-      const remove = screen.getByRole('button', { name: 'Delete expense Deposit to Reserva, 10/10/2026' })
+      const remove = screen.getByRole('button', { name: 'Delete deposit Deposit to Reserva, 10/10/2026' })
       fireEvent.click(remove)
       expect(remove).toHaveAccessibleDescription('Delete it from the pots account.')
       expect(onDeleteOperation).not.toHaveBeenCalled()
@@ -351,7 +351,7 @@ describe('AccountTransactionsGrid', () => {
     ])('deletes the whole operation of a Pots line of %d as a %s', (amount, noun) => {
       const { onDeleteOperation } = renderLinked('pots-1', potLine(amount))
 
-      fireEvent.click(screen.getByRole('button', { name: 'Delete pot transaction Deposit to Reserva, 10/10/2026' }))
+      fireEvent.click(screen.getByRole('button', { name: `Delete ${noun} Deposit to Reserva, 10/10/2026` }))
 
       expect(onDeleteOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), noun)
     })
@@ -360,8 +360,8 @@ describe('AccountTransactionsGrid', () => {
       const { onDeleteOperation } = renderLinked('pots-1', potLine(30, 'i1', ''))
 
       expect(screen.getByText('Deposit from an income')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Edit pot transaction, 10/10/2026' })).toBeEnabled()
-      const remove = screen.getByRole('button', { name: 'Delete pot transaction, 10/10/2026' })
+      expect(screen.getByRole('button', { name: 'Edit deposit Deposit from an income, 10/10/2026' })).toBeEnabled()
+      const remove = screen.getByRole('button', { name: 'Delete deposit Deposit from an income, 10/10/2026' })
       fireEvent.click(remove)
       expect(remove).toHaveAccessibleDescription('Delete the income to remove this deposit.')
       expect(onDeleteOperation).not.toHaveBeenCalled()

@@ -164,8 +164,9 @@ export function operationDeleteBlockedReason(operation: AccountTransactionOperat
   return isOnPotsScreen(operation, screenAccountId) ? undefined : OTHER_SCREEN_OPERATION_DELETE_REASON
 }
 
-export function potOperationNoun(row: AccountTransactionDto): PotOperationNoun {
-  return row.amount < 0 ? 'withdrawal' : 'deposit'
+export function potOperationNoun(row: AccountTransactionDto, operation: AccountTransactionOperationDto, screenAccountId: string): PotOperationNoun {
+  const isIntoPots = isOnPotsScreen(operation, screenAccountId) ? row.amount >= 0 : row.amount < 0
+  return isIntoPots ? 'deposit' : 'withdrawal'
 }
 
 export function rowKey(row: AccountTransactionDto): string {
