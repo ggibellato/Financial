@@ -115,7 +115,7 @@ describe('useTithe', () => {
     expect(result.current.carryForwardError).toBeNull()
   })
 
-  it(`${AC_02} keeps an update error with its own month`, async () => {
+  it(`${AC_02} drops an update error once its month is left, so returning to it shows none`, async () => {
     updateTitheCarryForwardMock.mockRejectedValue(new ApiError('Server error', 500))
     const { result, rerender } = renderHook(({ month }) => useTithe(2026, month), { initialProps: { month: 10 } })
     await waitFor(() => expect(result.current.detail.isLoading).toBe(false))
@@ -128,5 +128,27 @@ describe('useTithe', () => {
     expect(result.current.carryForwardError).toBeNull()
     await waitFor(() => expect(getTitheSummaryByMonthMock).toHaveBeenLastCalledWith(2026, 11))
     expect(getTitheYearMock).toHaveBeenCalledOnce()
+
+    rerender({ month: 10 })
+
+    expect(result.current.carryForwardError).toBeNull()
+  })
+
+  it(`${AC_02} keeps a later month busy when an earlier month's update finishes first`, async () => {
+    let resolveOctober!: (value: TitheSummaryDto) => void
+    updateTitheCarryForwardMock
+      .mockReturnValueOnce(new Promise((resolve) => { resolveOctober = resolve }))
+      .mockReturnValueOnce(new Promise(() => {}))
+    const { result, rerender } = renderHook(({ month }) => useTithe(2026, month), { initialProps: { month: 10 } })
+    await waitFor(() => expect(result.current.detail.isLoading).toBe(false))
+
+    act(() => result.current.updateCarryForwardInclusion(false))
+    rerender({ month: 11 })
+    act(() => result.current.updateCarryForwardInclusion(true))
+    expect(result.current.carryForwardUpdating).toBe(true)
+
+    await act(async () => resolveOctober(EXCLUDED))
+
+    expect(result.current.carryForwardUpdating).toBe(true)
   })
 })

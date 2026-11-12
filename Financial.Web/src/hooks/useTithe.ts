@@ -40,10 +40,12 @@ export function useTithe(year: number, month: number): TitheData {
         }
         setCarryForwardFailure({ month, message: CARRY_FORWARD_UPDATE_ERROR })
       })
-      .finally(() => setUpdatingMonth(null))
+      .finally(() => setUpdatingMonth((current) => (current === month ? null : current)))
   }
 
-  const carryForwardError = carryForwardFailure?.month === month ? carryForwardFailure.message : null
+  if (carryForwardFailure && carryForwardFailure.month !== month) setCarryForwardFailure(null)
+
+  const carryForwardError = carryForwardFailure?.message ?? null
   const carryForwardUpdating = updatingMonth === month
 
   return { detail, history, carryForwardUpdating, carryForwardError, updateCarryForwardInclusion }
