@@ -248,7 +248,7 @@ function MonthTransactionsFooter({ rows, allRowCount, isFiltered, showsSpend }: 
       {totals.map(({ currency, total }) => (
         <span key={`total-${currency ?? NO_BANK}`}>
           {` · ${currency ? 'Total' : NO_BANK} `}
-          <strong>{formatSignedN2(total)}</strong> {currency}
+          <strong>{formatSignedN2(total)}</strong>{currency && ` ${currency}`}
         </span>
       ))}
       {showsSpend &&

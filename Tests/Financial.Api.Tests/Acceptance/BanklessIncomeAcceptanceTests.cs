@@ -152,7 +152,7 @@ public class BanklessIncomeAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P61-F02-income-tab-and-bankless-income-05")]
     public async Task CreateIncome_NoBankWithPotsSplit_Returns400()
     {
-        var incomesBefore = SavedCashFlowData();
+        var savedBefore = SavedCashFlowData();
 
         var response = await Client.PostAsJsonAsync($"{Api}/incomes", new IncomeCreateDTO
         {
@@ -167,7 +167,7 @@ public class BanklessIncomeAcceptanceTests : ApiEndpointTests
         using (new AssertionScope())
         {
             await ShouldBeProblemAsync(response, HttpStatusCode.BadRequest, "Choose the bank this income landed in.");
-            SavedCashFlowData().Should().Be(incomesBefore);
+            SavedCashFlowData().Should().Be(savedBefore);
         }
     }
 

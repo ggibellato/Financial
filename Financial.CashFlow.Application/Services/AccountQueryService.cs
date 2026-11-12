@@ -152,7 +152,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
                 .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
-                .Concat(records.Records.OfType<Income>().Where(income => income.Account is null).Select(income => ToMonthRow(account: null, ToRow(income, account: null))))
+                .Concat(BanklessRowsOf(records))
                 .OrderByDescending(row => row.Transaction.Date)
                 .ToList();
 
@@ -302,6 +302,11 @@ public sealed class AccountQueryService : IAccountQueryService
         month.Records
             .SelectMany(record => ToRows(record, account, month.Statements))
             .Concat(account.Has(Capability.HasStatements) ? CardChargeRows(account, month) : []);
+
+    private IEnumerable<MonthTransactionDTO> BanklessRowsOf(MonthRecords records) =>
+        records.Records.OfType<Income>()
+            .Where(income => income.Account is null)
+            .Select(income => ToMonthRow(account: null, ToRow(income, account: null)));
 
     private static MonthTransactionDTO ToMonthRow(Account? account, AccountTransactionDTO row) => new()
     {
