@@ -239,16 +239,16 @@ Every criterion is traced by tests named with the project's AC-tracing conventio
 - [x] Parity on the latest live copy: 0 differences; no API route or data file change
 
 ### F02. Income Tab and Bankless Income
-- [ ] The Income tab lists every income of the chosen month (bank and no bank) with Date, Source, Bank ("No bank"), Description, Gross, Net and row icons; its count equals `GET /incomes/month/{y}/{m}`'s and its Total net equals Summary's Total incoming
-- [ ] New income with "— No bank —" saves an income with no account: no account balance changes, and the month's Total incoming, Result and tithe base rise by its net value
-- [ ] New income with a bank from the Income tab saves exactly as from the account screen, and the income appears on that bank's Transactions grid
-- [ ] Edit changes any field, including bank to No bank and back; Delete asks for confirmation and removes the income (and its linked pots deposit, if any)
-- [ ] A bankless income can't be split into pots: the form asks for a bank before saving a split, and the server refuses it with "Choose the bank this income landed in."
-- [ ] Validation (net empty or negative, no source), 404 on a stale row, and save or delete failure each show the specified message and persist nothing
-- [ ] All transactions lists each bankless income once with Type Income, Account "No bank", no category, with no link; the Account filter offers "No bank"; the footer shows a "Total (no bank)" total; category Spend figures are unchanged
-- [ ] The OpenAPI snapshot and generated types are regenerated for the month-transaction row's optional account fields; `openapiFreshness.test.ts` and `OpenApiContractTests` pass
-- [ ] Saving, validation, server-error, success, empty, loading and unsaved-changes states pass the review checklist; row icons have accessible names; the form is keyboard operable
-- [ ] The data file version is unchanged and a file with bankless incomes loads and saves unchanged; parity on the latest live copy: 0 differences
+- [x] The Income tab lists every income of the chosen month (bank and no bank) with Date, Source, Bank ("No bank"), Description, Gross, Net and row icons; its count equals `GET /incomes/month/{y}/{m}`'s and its Total net equals Summary's Total incoming
+- [x] New income with "— No bank —" saves an income with no account: no account balance changes, and the month's Total incoming, Result and tithe base rise by its net value
+- [x] New income with a bank from the Income tab saves exactly as from the account screen, and the income appears on that bank's Transactions grid
+- [x] Edit changes any field, including bank to No bank and back; Delete asks for confirmation and removes the income (and its linked pots deposit, if any)
+- [x] A bankless income can't be split into pots: the form asks for a bank before saving a split, and the server refuses it with "Choose the bank this income landed in."
+- [x] Validation (net empty or negative, no source), 404 on a stale row, and save or delete failure each show the specified message and persist nothing
+- [x] All transactions lists each bankless income once with Type Income, Account "No bank", no category, with no link; the Account filter offers "No bank"; the footer shows a "Total (no bank)" total; category Spend figures are unchanged
+- [x] The OpenAPI snapshot and generated types are regenerated for the month-transaction row's optional account fields; `openapiFreshness.test.ts` and `OpenApiContractTests` pass
+- [x] Saving, validation, server-error, success, empty, loading and unsaved-changes states pass the review checklist; row icons have accessible names; the form is keyboard operable
+- [x] The data file version is unchanged and a file with bankless incomes loads and saves unchanged; parity on the latest live copy: 0 differences
 
 ### F03. Tithe Tab and History
 - [ ] The Tithe tab shows, for the chosen month, Income base, Tithe (10%), Tithe paid, Carry-in with its source month, and Balance, matching the existing month tithe calculation
@@ -262,7 +262,7 @@ Every criterion is traced by tests named with the project's AC-tracing conventio
 
 ### Cross-Feature Integration
 - [ ] The Income tab (F02) and Tithe tab (F03) appear in the F01 tab list in the fixed order Accounts · Summary · Income · Tithe · All transactions, use F01's month picker and address, and load only when open
-- [ ] A bankless income saved on the Income tab (F02) appears in All transactions on the same Accounts page (F01) for its month
+- [x] A bankless income saved on the Income tab (F02) appears in All transactions on the same Accounts page (F01) for its month
 - [ ] A bankless income saved on the Income tab (F02) raises the Tithe tab's (F03) Income base by its net value and Tithe by 10% of it for its month, and the same month's history row
 - [ ] The carry-forward checkbox is reachable at every point: on Summary (F01) until F03 ships, then only on the Tithe tab (F03)
 - [ ] After every feature, every figure the parity toolkit reads (incomes, tithe, category totals, default group summary, by-template groups, month transactions, account figures) shows 0 differences on the latest live copy, with no data file version change
