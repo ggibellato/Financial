@@ -14,9 +14,9 @@
 
 **2. Bankless rows** - Add one month-view row per income of the month with no bank, ordered with the others. See spec §3 "Bankless rows".
 
-**3. API types** - Regenerate the OpenAPI snapshot and the web's generated types, and keep the account screen grid's amounts on its account's currency. See spec §3 "Account screen currency".
+**3. API types** - Regenerate the OpenAPI snapshot and the web's generated types, and keep the account screen grid compiling with no visible change. See spec §3 "Account screen currency".
 
-**4. All transactions "No bank"** - Show bankless rows as "No bank" with their filter value, their link to the Income tab and their own footer total. See spec §3 "Grid "No bank"" and "Footer".
+**4. All transactions "No bank"** - Show bankless rows as "No bank" with their filter value, plain-text Description (no link) and their own footer total. See spec §3 "Grid "No bank"" and "Footer".
 
 **5. Parity self-test** - Pin that a bankless row changes no parity figure. See spec §3 "Parity".
 
