@@ -311,7 +311,7 @@ describe('MonthTransactionsGrid', () => {
   })
 
   describe('row actions', () => {
-    it('names each Edit by kind, description, date and account, so same-day rows differ', () => {
+    it('names each Edit by kind, description, date, account and category, so same-day rows differ', () => {
       renderGrid()
 
       const names = screen.getAllByRole('button', { name: /^Edit / }).map((button) => button.getAttribute('aria-label'))
@@ -319,13 +319,22 @@ describe('MonthTransactionsGrid', () => {
       expect(names).toContain('Edit card payment BA Amex payment, 05/10/2026, BA Amex')
       expect(names).toContain('Edit deposit Deposit from an income, 10/10/2026, Reserva')
       expect(new Set(names).size).toBe(ROWS.length)
+    })
+
+    it('tells the lines of a split expense apart by their category', () => {
+      const line = (id: string, categoryName: string) =>
+        monthRow(BARCLAYS, accountTransactionRow({ id, kind: 'Expense', date: '2026-10-24', description: 'Toby Carvery', categoryName, amount: -7 }))
+      renderGrid({ rows: [line('s1', 'Extras'), line('s2', 'Reserva')] })
+
+      expect(screen.getByRole('button', { name: 'Edit expense Toby Carvery, 24/10/2026, Barclays, Extras' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Edit expense Toby Carvery, 24/10/2026, Barclays, Reserva' })).toBeInTheDocument()
       expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument()
     })
 
     it('opens an account row on its account screen with its edit form', async () => {
       renderGrid()
 
-      fireEvent.click(screen.getByRole('button', { name: 'Edit expense Tesco, 28/10/2026, Barclays' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Edit expense Tesco, 28/10/2026, Barclays, Groceries' }))
 
       expect(await screen.findByText('at:/cashflow/accounts/bank-1?month=2026-10&tab=transactions&edit=Expense-e1')).toBeInTheDocument()
     })
@@ -333,7 +342,7 @@ describe('MonthTransactionsGrid', () => {
     it('[AC P60-F16-month-transactions-view-03] opens a pot operation where it lives and a statement payment on its Statements tab', async () => {
       renderGrid()
 
-      fireEvent.click(screen.getByRole('button', { name: 'Edit deposit Deposit to Reserva, 10/10/2026, Barclays' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Edit deposit Deposit to Reserva, 10/10/2026, Barclays, Reserva' }))
       expect(await screen.findByText('at:/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=o1')).toBeInTheDocument()
 
       fireEvent.click(screen.getByRole('button', { name: 'Edit card payment BA Amex payment, 05/10/2026, Barclays' }))
@@ -355,13 +364,13 @@ describe('MonthTransactionsGrid', () => {
     it('says where to change rows it cannot change here', () => {
       renderGrid()
 
-      const bankDeposit = screen.getByRole('button', { name: 'Delete deposit Deposit to Reserva, 10/10/2026, Barclays' })
+      const bankDeposit = screen.getByRole('button', { name: 'Delete deposit Deposit to Reserva, 10/10/2026, Barclays, Reserva' })
       expect(bankDeposit).toHaveAttribute('aria-disabled', 'true')
       expect(bankDeposit).toHaveAccessibleDescription('Delete it from the pots account.')
       expect(screen.getByRole('button', { name: 'Delete card payment BA Amex payment, 05/10/2026, Barclays' })).toHaveAccessibleDescription(
         'Unmark the statement to remove this payment.',
       )
-      const inactiveEdit = screen.getByRole('button', { name: 'Edit expense Padaria, 03/10/2026, Itau' })
+      const inactiveEdit = screen.getByRole('button', { name: 'Edit expense Padaria, 03/10/2026, Itau, Groceries' })
       expect(inactiveEdit).toHaveAttribute('aria-disabled', 'true')
       expect(inactiveEdit).toHaveAccessibleDescription('This account is inactive, so its rows cannot be changed.')
       fireEvent.click(inactiveEdit)
@@ -373,7 +382,7 @@ describe('MonthTransactionsGrid', () => {
       const onDeleted = vi.fn()
       renderGrid({ onDeleted })
 
-      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays', 'expense')
+      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays, Groceries', 'expense')
       expect(dialog).toHaveTextContent('Delete this expense? This cannot be undone.')
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
@@ -400,10 +409,10 @@ describe('MonthTransactionsGrid', () => {
       deleteExpenseMock.mockReturnValue(never())
       renderGrid()
 
-      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays', 'expense')
+      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays, Groceries', 'expense')
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
-      expect(await screen.findByRole('button', { name: 'Deleting expense Tesco, 28/10/2026, Barclays', hidden: true })).toHaveAttribute('aria-disabled', 'true')
+      expect(await screen.findByRole('button', { name: 'Deleting expense Tesco, 28/10/2026, Barclays, Groceries', hidden: true })).toHaveAttribute('aria-disabled', 'true')
       expect(screen.getByRole('button', { name: 'Delete deposit Deposit from an income, 10/10/2026, Reserva', hidden: true })).toHaveAccessibleDescription(
         'Another delete is in progress.',
       )
@@ -414,7 +423,7 @@ describe('MonthTransactionsGrid', () => {
       const onDeleted = vi.fn()
       renderGrid({ onDeleted })
 
-      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays', 'expense')
+      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays, Groceries', 'expense')
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
       expect(await within(dialog).findByText(/boom|could not be deleted/)).toBeInTheDocument()

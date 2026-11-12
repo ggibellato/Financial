@@ -407,8 +407,9 @@ operation as on the account screen (`?operation=`), a statement payment on the
 card's Statements tab, and a bankless income on the Income tab
 (`?tab=income&edit={id}`); Delete confirms, deletes and refreshes the month
 without leaving the grid, under the account screen's rules. Its accessible
-names add the account ("Edit expense Tesco, 28/10/2026, Barclays"), so the two
-sides of one transfer or card payment differ.
+names add the account and category ("Edit expense Tesco, 28/10/2026, Barclays,
+Groceries"), so the two sides of one transfer or card payment, and the lines of
+a split expense, differ.
 
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way

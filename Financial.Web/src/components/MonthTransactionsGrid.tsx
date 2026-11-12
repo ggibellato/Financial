@@ -107,7 +107,8 @@ function rowKey(row: MonthTransactionDto): string {
 const withdrawalIdsOf = ({ accountId, transaction }: MonthTransactionDto) =>
   accountId ? withdrawalOperationIds([transaction], accountId) : new Set<string>()
 
-const rowName = (row: MonthTransactionDto) => `${transactionRowName(row.transaction, withdrawalIdsOf(row))}, ${accountName(row)}`
+const rowName = (row: MonthTransactionDto) =>
+  [transactionRowName(row.transaction, withdrawalIdsOf(row)), accountName(row), categoryName(row)].filter(Boolean).join(', ')
 
 interface OperationDeleteTarget {
   operationId: string
