@@ -149,8 +149,18 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
 const NO_ROWS: MonthTransactionDto[] = []
 
 function AllTransactionsTab({ year, month }: { year: number; month: number }) {
-  const { data, isLoading, error, retry } = useMonthTransactions(year, month)
-  return <MonthTransactionsGrid year={year} month={month} rows={data ?? NO_ROWS} isLoading={isLoading} error={error} onRetry={retry} />
+  const { data, isLoading, error, retry, refresh } = useMonthTransactions(year, month)
+  return (
+    <MonthTransactionsGrid
+      year={year}
+      month={month}
+      rows={data ?? NO_ROWS}
+      isLoading={isLoading}
+      error={error}
+      onRetry={retry}
+      onDeleted={() => void refresh()}
+    />
+  )
 }
 
 const OVERVIEW_TABS = [

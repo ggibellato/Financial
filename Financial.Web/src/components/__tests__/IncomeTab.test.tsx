@@ -1,4 +1,5 @@
 import { Toaster } from '@fluentui/react-components'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
@@ -75,12 +76,18 @@ const DIVIDENDS = income({ id: 'dividends-1', date: '2026-10-15', netValue: 85.2
 const INTEREST = income({ id: 'interest', date: '2026-10-02', netValue: 0.1, description: 'Interest' })
 const INCOMES = [DIVIDENDS, SALARY, INTEREST]
 
-function renderTab() {
+function LocationText() {
+  const { search } = useLocation()
+  return <p>{`search:${search}`}</p>
+}
+
+function renderTab(entry = '/cashflow/accounts?month=2026-10&tab=income') {
   return render(
-    <>
+    <MemoryRouter initialEntries={[entry]}>
       <IncomeTab year={2026} month={10} />
       <Toaster toasterId={APP_TOASTER_ID} />
-    </>,
+      <LocationText />
+    </MemoryRouter>,
   )
 }
 
@@ -233,6 +240,25 @@ describe('IncomeTab', () => {
     const form = await screen.findByRole('form', { name: 'Edit income' })
     expect(field(form, 'Bank')).toHaveValue('old')
     expect(within(field(form, 'Bank')).getAllByRole('option').map((option) => option.textContent)).toEqual(['— No bank —', 'Barclays', 'Old bank'])
+  })
+
+  it('opens the income named by the edit address in its edit form and drops the address', async () => {
+    renderTab('/cashflow/accounts?month=2026-10&tab=income&edit=dividends-1')
+
+    const form = await screen.findByRole('form', { name: 'Edit income' })
+    expect(field(form, 'Description')).toHaveValue('XP dividends')
+    expect(await screen.findByText('search:?month=2026-10&tab=income')).toBeInTheDocument()
+  })
+
+  it('says when the edit address names an income the month no longer has, and dismissing drops it', async () => {
+    renderTab('/cashflow/accounts?month=2026-10&tab=income&edit=gone')
+
+    expect(await screen.findByText('This income is no longer in this month.')).toBeInTheDocument()
+    expect(screen.queryByRole('form', { name: 'Edit income' })).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss warning' }))
+
+    expect(screen.queryByText('This income is no longer in this month.')).not.toBeInTheDocument()
+    expect(screen.getByText('search:?month=2026-10&tab=income')).toBeInTheDocument()
   })
 
   it(`${AC('04')} deletes an income after confirmation, toasting and refreshing the list`, async () => {

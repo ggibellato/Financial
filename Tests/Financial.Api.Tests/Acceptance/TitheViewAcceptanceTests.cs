@@ -115,6 +115,25 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
         }
     }
 
+    [Fact]
+    public async Task TitheMonth_LastSupportedMonth_ReturnsTheCarriedBalance()
+    {
+        var month = await Client.GetFromJsonAsync<TitheSummaryDTO>($"{Api}/tithe/month/9999/12");
+
+        month!.TitheBalance.Should().Be(50m);
+        month.CarryForward!.Amount.Should().Be(50m);
+    }
+
+    [Theory]
+    [InlineData(2500)]
+    [InlineData(9999)]
+    public async Task TitheYear_FarFutureYear_ReturnsTheCarriedBalanceEveryMonth(int year)
+    {
+        var months = await Client.GetFromJsonAsync<List<TitheMonthDTO>>($"{Api}/tithe/year/{year}");
+
+        months!.Select(m => m.Summary.TitheBalance).Should().AllBeEquivalentTo(50m);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(10000)]

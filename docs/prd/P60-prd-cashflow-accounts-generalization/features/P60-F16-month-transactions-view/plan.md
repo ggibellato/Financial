@@ -27,7 +27,7 @@
 
 **8. Totals** - Add the helper that sums a set of rows per currency into a Total and a Spend, exactly to the penny. See spec §3 "Footer".
 
-**9. All transactions grid** - Add the read-only grid with its columns, sorting, Category, Account and Type filters, Clear filters, footer, Inactive marker, account and operation links, and its loading, empty month, no match and load error states, stacking at narrow widths. See spec §3 "Columns", "Filters", "Footer", "Clear filters", "Links", "States" and "Narrow layout and keyboard".
+**9. All transactions grid** - Add the grid with its columns, sorting, Category, Account and Type filters, Clear filters, footer, Inactive marker, account and operation links, and its loading, empty month, no match and load error states, stacking at narrow widths. See spec §3 "Columns", "Filters", "Footer", "Clear filters", "Links", "States" and "Narrow layout and keyboard".
 
 **10. Monthly tab** - Add "All transactions" as Monthly's second tab, using Monthly's month picker and showing even while Monthly's own load is pending or failed.
 

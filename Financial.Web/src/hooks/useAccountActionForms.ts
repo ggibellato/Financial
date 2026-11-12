@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../api/types'
-import { rowKey, type AccountFormAction, type PotOperationNoun } from '../components/accountActions'
+import { operationDeletedMessage, rowKey, type AccountFormAction, type PotOperationNoun } from '../components/accountActions'
 import type { AccountFormOptions } from './useAccountFormOptions'
 import { useAccountTransferForm } from './useAccountTransferForm'
 import { useBalanceAdjustmentForm } from './useBalanceAdjustmentForm'
@@ -47,8 +47,6 @@ interface OperationDeleteTarget {
 const OPERATION_ROW_KEY_PREFIX = 'operation:'
 const operationRowKey = (operationId: string) => `${OPERATION_ROW_KEY_PREFIX}${operationId}`
 const isOperationRowKey = (key: string) => key.startsWith(OPERATION_ROW_KEY_PREFIX)
-
-const OPERATION_TITLES: Record<PotOperationNoun, string> = { deposit: 'Deposit', withdrawal: 'Withdrawal' }
 
 export function useAccountActionForms(
   routeAccountId: string,
@@ -254,7 +252,7 @@ export function useAccountActionForms(
     ({ noun }) => deleteFailedMessage(noun),
     ({ operationId, noun }) => {
       if (editingRowKey === operationRowKey(operationId)) closeForms()
-      onSaved(`${OPERATION_TITLES[noun]} deleted`)
+      onSaved(operationDeletedMessage(noun))
     },
   )
 
@@ -267,7 +265,7 @@ export function useAccountActionForms(
     })
   }
 
-  const openRowEdit = (row: AccountTransactionDto, button: HTMLButtonElement) => {
+  const openRowEdit = (row: AccountTransactionDto, button: HTMLButtonElement | null) => {
     discardPrompt.confirmDiscard(() => {
       closeForms()
       openerRef.current = button

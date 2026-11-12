@@ -493,6 +493,55 @@ public class TitheServiceTests
         year[0].Summary.TitheBalance.Should().Be(100m);
     }
 
+    [Fact]
+    public async Task GetTitheSummary_LastSupportedMonth_CarriesTheBalanceAllTheWayWithoutOverflowing()
+    {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 3, 1));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 1), Source("Gleison"), null, 1000m, Barclays));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2500, 6, 10), "Tithe", 30m, Dizimo, Barclays, null));
+
+        var result = await _sut.GetTitheSummaryAsync(9999, 12);
+
+        result.CarryForward!.Amount.Should().Be(70m);
+        result.CarryForward.FromYear.Should().Be(9999);
+        result.CarryForward.FromMonth.Should().Be(11);
+        result.TitheBalance.Should().Be(70m);
+    }
+
+    [Fact]
+    public async Task GetTitheYear_FarFutureYear_EachMonthEqualsTheMonthSummary()
+    {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 3, 1));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 1), Source("Gleison"), null, 1000m, Barclays));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2500, 6, 10), "Tithe", 30m, Dizimo, Barclays, null));
+        _repository.AddTitheCarryForward(TitheCarryForward.Create(2500, 9, false));
+
+        var year = await _sut.GetTitheYearAsync(2500);
+
+        year[4].Summary.TitheBalance.Should().Be(100m);
+        year[5].Summary.TitheBalance.Should().Be(70m);
+        year[8].Summary.TitheBalance.Should().Be(0m);
+        year[9].Summary.CarryForward.Should().BeNull();
+        foreach (var item in year)
+        {
+            var month = await _sut.GetTitheSummaryAsync(2500, item.Month);
+            item.Summary.Should().BeEquivalentTo(month, $"month {item.Month} must equal the month route");
+        }
+    }
+
+    [Fact]
+    public async Task GetTitheSummary_AnchorMidMonth_TreatsTheWholeMonthAsTheAnchor()
+    {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 3, 15));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 3, 1), Source("Gleison"), null, 1000m, Barclays));
+
+        var march = await _sut.GetTitheSummaryAsync(2026, 3);
+        var april = await _sut.GetTitheSummaryAsync(2026, 4);
+
+        march.CarryForward.Should().BeNull();
+        april.CarryForward!.Amount.Should().Be(100m);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(10000)]
