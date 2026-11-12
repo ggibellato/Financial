@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   Button,
   MessageBar,
@@ -20,6 +21,7 @@ import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFil
 import { useFocusReloadedContent } from '../hooks/useFocusReloadedContent'
 import { INCOME_GONE_WARNING, useIncomeTab } from '../hooks/useIncomeTab'
 import { useMediaQuery } from '../hooks/useMediaQuery'
+import { useRowEditRoute } from '../hooks/useRowEditRoute'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
@@ -62,6 +64,7 @@ const NO_BANK = 'No bank'
 const GRID_LABEL = 'Incomes'
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const SAVE_IN_PROGRESS = 'Wait for the save to finish.'
+const EDITED_INCOME_NOT_FOUND = 'This income no longer exists.'
 
 const SOURCE_HEADER = 'Source'
 
@@ -144,6 +147,23 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
     useColumnFilters(incomes, FILTER_ACCESSORS)
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
   const formKey = incomeForm.isIncomeFormOpen ? (incomeForm.editingIncomeId ?? 'new') : null
+  const [searchParams, setSearchParams] = useSearchParams()
+  const editRoute = useRowEditRoute({
+    editedKey: searchParams.get('edit'),
+    rows: incomes,
+    keyOf: (income) => income.id,
+    isLoaded: !isLoading && !error,
+    open: openEditForm,
+    clear: () =>
+      setSearchParams(
+        (params) => {
+          const next = new URLSearchParams(params)
+          next.delete('edit')
+          return next
+        },
+        { replace: true },
+      ),
+  })
 
   useEffect(() => {
     if (formKey) {
@@ -169,6 +189,7 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
 
   const dismissWarning = () => {
     dismissGoneNotice()
+    editRoute.dismiss()
     newIncomeRef.current?.focus()
   }
 
@@ -233,9 +254,9 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
           </Button>
         )}
       </div>
-      {isGoneNoticeShown && (
+      {(isGoneNoticeShown || editRoute.isNotFound) && (
         <MessageBar intent="warning">
-          <MessageBarBody>{INCOME_GONE_WARNING}</MessageBarBody>
+          <MessageBarBody>{isGoneNoticeShown ? INCOME_GONE_WARNING : EDITED_INCOME_NOT_FOUND}</MessageBarBody>
           <MessageBarActions
             containerAction={<Button appearance="transparent" aria-label="Dismiss warning" icon={<DismissRegular />} onClick={dismissWarning} />}
           />
