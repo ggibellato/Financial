@@ -85,7 +85,7 @@ function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroup
 }
 
 export default function AccountsPage() {
-  const { year, month, monthInputValue: monthParam, setMonthInputValue } = useOverviewAddress()
+  const { year, month, monthInputValue, setMonthInputValue } = useOverviewAddress()
   const { data: groups, isLoading, error, retry } = useAccountTemplateGroups(year, month)
   const { state } = useLocation()
   const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
@@ -99,42 +99,44 @@ export default function AccountsPage() {
       )}
       <div className="monthly-page__header">
         <Field label="Month">
-          <Input type="month" value={monthParam} onChange={(_event, data) => setMonthInputValue(data.value)} />
+          <Input type="month" value={monthInputValue} onChange={(_event, data) => setMonthInputValue(data.value)} />
         </Field>
       </div>
       <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
 
-      {isLoading ? (
-        <LoadingState />
-      ) : error || !groups ? (
-        <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
-      ) : groups.length === 0 ? (
-        <Text>No accounts this month.</Text>
-      ) : (
-        groups.map((group) => {
-          const grid = accountTemplateGrid(group.templateName)
-          const formatFooterTotal = grid.columns === 'card' ? formatOwedOrCredit : formatN2
-          const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
-          const renderName = grid.linksRows
-            ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthParam}${tabParam}`}>{row.name}</Link>
-            : (row: AccountGroupMemberDto) => row.name
-          return (
-            <div key={group.templateName} className="accounts-page__section">
-              <Text as="h2" weight="semibold" size={400}>
-                {grid.heading}
-              </Text>
-              <TotalsGrid
-                label={grid.heading}
-                columns={gridColumns(grid.columns, renderName)}
-                rows={group.members}
-                rowKey={(row) => row.accountId}
-                emptyMessage="No accounts this month."
-                footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
-              />
-            </div>
-          )
-        })
-      )}
+      <div className="accounts-page__groups">
+        {isLoading ? (
+          <LoadingState />
+        ) : error || !groups ? (
+          <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
+        ) : groups.length === 0 ? (
+          <Text>No accounts this month.</Text>
+        ) : (
+          groups.map((group) => {
+            const grid = accountTemplateGrid(group.templateName)
+            const formatFooterTotal = grid.columns === 'card' ? formatOwedOrCredit : formatN2
+            const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
+            const renderName = grid.linksRows
+              ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
+              : (row: AccountGroupMemberDto) => row.name
+            return (
+              <div key={group.templateName} className="accounts-page__section">
+                <Text as="h2" weight="semibold" size={400}>
+                  {grid.heading}
+                </Text>
+                <TotalsGrid
+                  label={grid.heading}
+                  columns={gridColumns(grid.columns, renderName)}
+                  rows={group.members}
+                  rowKey={(row) => row.accountId}
+                  emptyMessage="No accounts this month."
+                  footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
+                />
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

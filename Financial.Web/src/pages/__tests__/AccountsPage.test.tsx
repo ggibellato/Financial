@@ -2,7 +2,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountGroupMemberDto, AccountTemplateGroupDto } from '../../api/types'
-import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
 
@@ -331,6 +331,17 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(2)
   })
 
+  it('moves focus into the reloaded Banks grid, not the month picker, after Try again', async () => {
+    getAccountTemplateGroupsMock.mockRejectedValueOnce(new Error('boom'))
+
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    await waitFor(() => expect(within(banks).getByRole('button', { name: 'Account' })).toHaveFocus())
+    expect(screen.getByLabelText('Month')).not.toHaveFocus()
+  })
+
   it('shows "No accounts this month." when no template has a listed account', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([])
 
@@ -349,6 +360,7 @@ describe('AccountsPage', () => {
 
   it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] opens on the month in the address', async () => {
     renderPageAt('/cashflow/accounts?month=2026-09')
+
     expect(await screen.findByText('Balances at end of September 2026')).toBeInTheDocument()
     expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 9)
   })
