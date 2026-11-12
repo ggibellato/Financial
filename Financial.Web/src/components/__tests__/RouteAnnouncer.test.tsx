@@ -7,7 +7,7 @@ const renderAt = (initialEntry: string) =>
   render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <RouteAnnouncer />
-      <Link to="/cashflow/monthly">Go to Monthly</Link>
+      <Link to="/cashflow/mensais">Go to Mensais</Link>
       <Link to="/admin/investment/tax-rules">Go to Tax rules</Link>
       <Link to="/cashflow/accounts/acc-1">Go to an account</Link>
       <Link to="/not-a-page">Go nowhere</Link>
@@ -24,10 +24,10 @@ describe('RouteAnnouncer', () => {
   it('announces the new page in a polite status region after navigation', async () => {
     renderAt('/investments/dashboard')
 
-    fireEvent.click(screen.getByRole('link', { name: 'Go to Monthly' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Go to Mensais' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Monthly')
-    await waitFor(() => expect(document.title).toBe('Monthly - CashFlow - Financial'))
+    expect(await screen.findByRole('status')).toHaveTextContent('Mensais')
+    await waitFor(() => expect(document.title).toBe('Mensais - CashFlow - Financial'))
   })
 
   it('covers admin pages nested under a group', async () => {
@@ -40,7 +40,7 @@ describe('RouteAnnouncer', () => {
   })
 
   it('uses the detail label for a detail page', async () => {
-    renderAt('/cashflow/monthly')
+    renderAt('/cashflow/mensais')
 
     fireEvent.click(screen.getByRole('link', { name: 'Go to an account' }))
 
@@ -49,7 +49,7 @@ describe('RouteAnnouncer', () => {
   })
 
   it('falls back to the app name and an empty announcement for an unknown route', async () => {
-    renderAt('/cashflow/monthly')
+    renderAt('/cashflow/mensais')
 
     fireEvent.click(screen.getByRole('link', { name: 'Go nowhere' }))
 

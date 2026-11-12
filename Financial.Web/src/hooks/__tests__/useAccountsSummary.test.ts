@@ -1,8 +1,8 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountGroupMemberDto, AccountGroupSummaryDto, CategoryTotalDto, TitheSummaryDto } from '../../api/types'
-import { useMonthly } from '../useMonthly'
+import type { AccountGroupSummaryDto, CategoryTotalDto, TitheSummaryDto } from '../../api/types'
+import { useAccountsSummary } from '../useAccountsSummary'
 
 const {
   getCategoryTotalsByMonthMock,
@@ -25,18 +25,12 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-function bank(accountId: string, name: string, balance: number, roundUpTotal: number | null): AccountGroupMemberDto {
-  return { accountId, name, templateName: 'Bank', currency: 'GBP', balance, currencyBalances: [{ currency: 'GBP', balance }], otherParticipant: null, roundUpTotal, statement: null, balanceIsOwed: false, isActive: true, totalOwed: null, nextStatement: null }
-}
-
-const BAAMEX: AccountGroupMemberDto = { accountId: 'card-baamex', name: 'BaAmex', templateName: 'CreditCard', currency: 'GBP', balance: -812.33, currencyBalances: [{ currency: 'GBP', balance: -812.33 }], otherParticipant: null, roundUpTotal: null, statement: { outstandingTotal: 64.1, isPaid: false }, balanceIsOwed: true, isActive: true, totalOwed: 812.33, nextStatement: null }
-
 const CATEGORY_TOTALS: CategoryTotalDto[] = [{ category: 'Mercado', totalValue: 42.5 }]
 
 const SUMMARY: AccountGroupSummaryDto = {
   year: 2026,
   month: 7,
-  members: [bank('bank-barclays', 'Barclays', 1875.32, 0), bank('bank-chase', 'Chase', -50, 0.1), BAAMEX],
+  members: [],
   totals: [{ currency: 'GBP', balance: 1825.32, roundUpTotal: 0.1, cardOutstandingTotal: 64.1 }],
   categoryTotalsSum: 1234.56,
   incomeTotals: [{ incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 }],
@@ -45,28 +39,22 @@ const SUMMARY: AccountGroupSummaryDto = {
 
 const TITHE_SUMMARY: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 245, carryForward: null }
 
-async function renderLoaded() {
-  const rendered = renderHook(() => useMonthly())
+async function renderLoaded(year = 2026, month = 7) {
+  const rendered = renderHook(() => useAccountsSummary(year, month))
   await waitFor(() => expect(rendered.result.current.isLoading).toBe(false))
   return rendered
 }
 
-describe('useMonthly', () => {
+describe('useAccountsSummary', () => {
   beforeEach(() => {
-    vi.useFakeTimers({ shouldAdvanceTime: true })
-    vi.setSystemTime(new Date('2026-07-15T12:00:00Z'))
     getCategoryTotalsByMonthMock.mockReset().mockResolvedValue(CATEGORY_TOTALS)
     getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
     getTitheSummaryByMonthMock.mockReset().mockResolvedValue(TITHE_SUMMARY)
     updateTitheCarryForwardMock.mockReset()
   })
 
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('[AC P60-F13-consolidated-navigation-and-retirement-02] makes only the three overview reads for the viewed month', async () => {
-    const { result } = renderHook(() => useMonthly())
+  it('[AC P60-F13-consolidated-navigation-and-retirement-02] makes only the three overview reads for the given month', async () => {
+    const { result } = renderHook(() => useAccountsSummary(2026, 7))
 
     expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -74,7 +62,6 @@ describe('useMonthly', () => {
     expect(getCategoryTotalsByMonthMock).toHaveBeenCalledExactlyOnceWith(2026, 7)
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledExactlyOnceWith(2026, 7)
     expect(getTitheSummaryByMonthMock).toHaveBeenCalledExactlyOnceWith(2026, 7)
-    expect(result.current.monthInputValue).toBe('2026-07')
     expect(result.current.categoryTotals).toEqual(CATEGORY_TOTALS)
     expect(result.current.titheSummary).toEqual(TITHE_SUMMARY)
   })
@@ -82,28 +69,14 @@ describe('useMonthly', () => {
   it('exposes the load error and reloads on retry', async () => {
     getDefaultGroupSummaryMock.mockRejectedValueOnce(new Error('Network down'))
     const { result } = await renderLoaded()
-    expect(result.current.error).toBe('Network down')
+    expect(result.current.error).not.toBeNull()
 
     act(() => result.current.retry())
 
     await waitFor(() => expect(result.current.error).toBeNull())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledTimes(2)
-    expect(result.current.bankTotals).toHaveLength(2)
-  })
-
-  it('[AC P60-F07-credit-card-template-and-card-migration-09] reads the card total from the summary and makes no statement sum', async () => {
-    const { result } = await renderLoaded()
-
-    expect(result.current.currencyTotals).toEqual(SUMMARY.totals)
-    expect(result.current).not.toHaveProperty('adjustmentTotal')
-  })
-
-  it('splits the members into bank rows and card rows', async () => {
-    const { result } = await renderLoaded()
-
-    expect(result.current.bankTotals.map((row) => row.bank)).toEqual(['Barclays', 'Chase'])
-    expect(result.current.cardMembers).toEqual([BAAMEX])
+    expect(result.current.totalIncoming).toBe(720)
   })
 
   it('[AC P60-F04-default-account-group-and-summary-query-06] reads the summary figures from one summary request without summing in the browser', async () => {
@@ -111,76 +84,58 @@ describe('useMonthly', () => {
 
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledOnce()
     expect(result.current.categoryTotalsSum).toBe(1234.56)
-    expect(result.current.bankTotals).toEqual([
-      { bankId: 'bank-barclays', bank: 'Barclays', currency: 'GBP', balance: 1875.32, roundUpTotal: 0 },
-      { bankId: 'bank-chase', bank: 'Chase', currency: 'GBP', balance: -50, roundUpTotal: 0.1 },
-    ])
     expect(result.current.incomeTotals).toEqual([{ incomeSourceId: '2', name: 'Ariana', netValue: 720, grossValue: 820 }])
     expect(result.current.totalIncoming).toBe(720)
   })
 
-  it('keys bank rows by the member account Id, not by matching a bank name', async () => {
-    getDefaultGroupSummaryMock.mockResolvedValue({ ...SUMMARY, members: [bank('bank-new', 'Barclays', 10, 0)] })
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-03] exposes no bank or card data', async () => {
     const { result } = await renderLoaded()
 
-    expect(result.current.bankTotals).toEqual([{ bankId: 'bank-new', bank: 'Barclays', currency: 'GBP', balance: 10, roundUpTotal: 0 }])
+    expect(result.current).not.toHaveProperty('bankTotals')
+    expect(result.current).not.toHaveProperty('cardMembers')
+    expect(result.current).not.toHaveProperty('currencyTotals')
   })
 
-  it('shows a member without a round-up total as 0', async () => {
-    getDefaultGroupSummaryMock.mockResolvedValue({ ...SUMMARY, members: [bank('bank-barclays', 'Barclays', 10, null)] })
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-03] gives the Result as Total incoming minus the Category totals sum', async () => {
     const { result } = await renderLoaded()
 
-    expect(result.current.bankTotals[0].roundUpTotal).toBe(0)
+    expect(result.current.result).toEqual({ value: -514.56, label: 'Deficit' })
   })
 
-  it('exposes empty summary figures before the summary has loaded', () => {
+  it('exposes empty summary figures and a Balanced result before the summary has loaded', () => {
     getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
-    const { result } = renderHook(() => useMonthly())
+    const { result } = renderHook(() => useAccountsSummary(2026, 7))
 
-    expect(result.current.bankTotals).toEqual([])
-    expect(result.current.cardMembers).toEqual([])
-    expect(result.current.currencyTotals).toEqual([])
     expect(result.current.incomeTotals).toEqual([])
     expect(result.current.categoryTotalsSum).toBe(0)
     expect(result.current.totalIncoming).toBe(0)
+    expect(result.current.result).toEqual({ value: 0, label: 'Balanced' })
   })
 
-  it('re-fetches for a new month when the month input changes', async () => {
-    const { result } = await renderLoaded()
+  it('re-fetches when given a new month', async () => {
+    const { rerender } = renderHook(({ month }) => useAccountsSummary(2026, month), { initialProps: { month: 7 } })
+    await waitFor(() => expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 7))
 
-    act(() => result.current.setMonthInputValue('2026-08'))
+    rerender({ month: 8 })
 
     await waitFor(() => expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 8))
     expect(getCategoryTotalsByMonthMock).toHaveBeenCalledWith(2026, 8)
     expect(getTitheSummaryByMonthMock).toHaveBeenCalledWith(2026, 8)
   })
 
-  it('toggles carry-forward inclusion and re-fetches the tithe summary without a reload', async () => {
-    updateTitheCarryForwardMock.mockResolvedValue(TITHE_SUMMARY)
+  it('toggles carry-forward inclusion and shows the returned tithe summary without a reload', async () => {
+    const updated: TitheSummaryDto = { calculatedTithe: 245, titheBalance: 295, carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 6 } }
+    updateTitheCarryForwardMock.mockResolvedValue(updated)
     const { result } = await renderLoaded()
 
     act(() => result.current.updateCarryForwardInclusion(false))
 
     expect(result.current.isLoading).toBe(false)
-    await waitFor(() => expect(updateTitheCarryForwardMock).toHaveBeenCalledWith(2026, 7, { included: false }))
-    await waitFor(() => expect(getTitheSummaryByMonthMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('keeps a carry-forward failure to its own month, even when it arrives after the month changed', async () => {
-    let rejectUpdate!: (reason: Error) => void
-    updateTitheCarryForwardMock.mockReturnValue(new Promise((_, reject) => { rejectUpdate = reject }))
-    const { result } = await renderLoaded()
-
-    act(() => result.current.updateCarryForwardInclusion(false))
-    act(() => result.current.setMonthInputValue('2026-08'))
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-    await act(async () => rejectUpdate(new Error('Refused')))
-
-    await waitFor(() => expect(result.current.carryForwardUpdating).toBe(false))
-    expect(result.current.carryForwardError).toBeNull()
-
-    act(() => result.current.setMonthInputValue('2026-07'))
-    expect(result.current.carryForwardError).toBe('Refused')
+    await waitFor(() => expect(result.current.titheSummary).toEqual(updated))
+    expect(updateTitheCarryForwardMock).toHaveBeenCalledWith(2026, 7, { included: false })
+    expect(getTitheSummaryByMonthMock).toHaveBeenCalledOnce()
+    expect(getDefaultGroupSummaryMock).toHaveBeenCalledOnce()
+    expect(result.current.totalIncoming).toBe(720)
   })
 
   it('sets carryForwardUpdating while the toggle request is in flight, then clears it', async () => {

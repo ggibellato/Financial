@@ -78,7 +78,7 @@ vi.mock('../../api/financialApiClient', () => ({
 `getMensaisBillsMock.mockResolvedValue(BILLS)`, `render(<MensaisPage />)` (through
 `renderWithFluent` when Fluent components are on the page), `await screen.findByRole(...)`,
 interact with `fireEvent`/`userEvent`, assert with `within(row)`. For routed pages wrap in
-`<MemoryRouter initialEntries={['/cashflow/monthly']}>` as `App.test.tsx` does.
+`<MemoryRouter initialEntries={['/cashflow/mensais']}>` as `App.test.tsx` does.
 
 ## When to skip
 

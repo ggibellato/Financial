@@ -36,7 +36,7 @@ exists.
   free. Render it through `components/PageTabList`, which requires an
   `aria-label` naming the strip, never shrinks and wraps its tabs onto
   another row at narrow widths instead of overflowing, so every tab strip
-  looks and reflows the same. `MonthlyPage.tsx` is the reference. Wire each
+  looks and reflows the same. `AccountsPage.tsx` is the reference. Wire each
   tab to the panel it switches with `hooks/useTabPanel(activeTab)`: spread
   `tabProps(value)` on every `Tab` (its `id` and `aria-controls`) and
   `panelProps` on the one element that holds every state of the panel

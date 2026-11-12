@@ -1,18 +1,37 @@
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { type InitialEntry, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountGroupMemberDto, AccountTemplateGroupDto } from '../../api/types'
-import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
+import type { AccountGroupMemberDto, AccountGroupSummaryDto, AccountTemplateGroupDto, MonthTransactionDto } from '../../api/types'
+import { accountTransactionRow } from '../../test/accountTransactionRow'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
 
-const { getAccountTemplateGroupsMock } = vi.hoisted(() => ({
+const {
+  getAccountTemplateGroupsMock,
+  getCategoryTotalsByMonthMock,
+  getDefaultGroupSummaryMock,
+  getTitheSummaryByMonthMock,
+  getMonthTransactionsMock,
+} = vi.hoisted(() => ({
   getAccountTemplateGroupsMock: vi.fn<FinancialApiClient['getAccountTemplateGroups']>(),
+  getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
+  getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
+  getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
+  getMonthTransactionsMock: vi.fn<FinancialApiClient['getMonthTransactions']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
-  apiClient: { getAccountTemplateGroups: getAccountTemplateGroupsMock } as Partial<FinancialApiClient>,
+  apiClient: {
+    getAccountTemplateGroups: getAccountTemplateGroupsMock,
+    getCategoryTotalsByMonth: getCategoryTotalsByMonthMock,
+    getDefaultGroupSummary: getDefaultGroupSummaryMock,
+    getTitheSummaryByMonth: getTitheSummaryByMonthMock,
+    getMonthTransactions: getMonthTransactionsMock,
+  } as Partial<FinancialApiClient>,
 }))
+
+const AC = (n: string) => `[AC P61-F01-accounts-overview-tabs-and-monthly-fold-${n}]`
 
 function member(accountId: string, name: string, templateName: string, fields: Partial<AccountGroupMemberDto> = {}): AccountGroupMemberDto {
   return {
@@ -89,20 +108,48 @@ const SETTLEMENT: AccountTemplateGroupDto = {
   totals: [],
 }
 
-function renderPage() {
+const SUMMARY: AccountGroupSummaryDto = {
+  year: 2026,
+  month: 10,
+  members: [],
+  totals: [],
+  categoryTotalsSum: 42.5,
+  incomeTotals: [{ incomeSourceId: '1', name: 'Salary', netValue: 100, grossValue: 120 }],
+  totalIncoming: 100,
+}
+
+const MONTH_TRANSACTIONS: MonthTransactionDto[] = [
+  {
+    accountId: 'barclays',
+    accountName: 'Barclays',
+    accountCurrency: 'GBP',
+    accountIsActive: true,
+    transaction: accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-05', description: 'Lidl UK', categoryName: 'Mercado', amount: -42.5 }),
+  },
+]
+
+function Address() {
+  const location = useLocation()
+  return <p>{`Address: ${location.search}`}</p>
+}
+
+function renderPage(entry: InitialEntry = '/cashflow/accounts') {
   return render(
-    <MemoryRouter>
+    <MemoryRouter initialEntries={[entry]}>
       <AccountsPage />
+      <Address />
     </MemoryRouter>,
   )
 }
 
-function renderPageAfterMovedRedirect() {
-  return render(
-    <MemoryRouter initialEntries={[{ pathname: '/cashflow/accounts', state: { movedNotice: true } }]}>
-      <AccountsPage />
-    </MemoryRouter>,
-  )
+function selectTab(name: string) {
+  fireEvent.click(screen.getByRole('tab', { name }))
+}
+
+async function openAllTransactions() {
+  selectTab('All transactions')
+  const grid = await screen.findByRole('table', { name: 'All transactions' })
+  await waitFor(() => expect(within(grid).getByText('Lidl UK')).toBeInTheDocument())
 }
 
 function bodyRows(table: HTMLElement) {
@@ -125,6 +172,10 @@ describe('AccountsPage', () => {
   beforeEach(() => {
     pinDate('2026-10-15T12:00:00+01:00')
     getAccountTemplateGroupsMock.mockReset().mockResolvedValue([BANKS, CARDS, POTS])
+    getCategoryTotalsByMonthMock.mockReset().mockResolvedValue([{ category: 'Mercado', totalValue: 42.5 }])
+    getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
+    getTitheSummaryByMonthMock.mockReset().mockResolvedValue({ calculatedTithe: 10, titheBalance: 10, carryForward: null })
+    getMonthTransactionsMock.mockReset().mockResolvedValue(MONTH_TRANSACTIONS)
   })
 
   afterEach(() => {
@@ -132,7 +183,7 @@ describe('AccountsPage', () => {
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-04] shows the moved notice above the grids when a redirect found no account', async () => {
-    renderPageAfterMovedRedirect()
+    renderPage({ pathname: '/cashflow/accounts', state: { movedNotice: true } })
 
     const banks = await screen.findByRole('table', { name: 'Banks' })
     const notice = screen.getByRole('status')
@@ -154,7 +205,7 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(1)
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 10)
     expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots'])
-    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance'])
+    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance', 'Round-up'])
     expect(accountNames(banks)).toEqual(['Barclays', 'Chase', 'Itau', 'Old SavingsInactive'])
     expect(within(bodyRows(banks)[0]).getByText('2,800.25')).toBeInTheDocument()
     expect(within(bodyRows(banks)[2]).getByText('BRL')).toBeInTheDocument()
@@ -323,6 +374,17 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(2)
   })
 
+  it('moves focus into the reloaded Banks grid, not the month picker, after Try again', async () => {
+    getAccountTemplateGroupsMock.mockRejectedValueOnce(new Error('boom'))
+
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    await waitFor(() => expect(within(banks).getByRole('button', { name: 'Account' })).toHaveFocus())
+    expect(screen.getByLabelText('Month')).not.toHaveFocus()
+  })
+
   it('shows "No accounts this month." when no template has a listed account', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([])
 
@@ -330,6 +392,36 @@ describe('AccountsPage', () => {
 
     expect(await screen.findByText('No accounts this month.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] shows the month picker on the current month', async () => {
+    renderPage()
+
+    expect(screen.getByLabelText('Month')).toHaveValue('2026-10')
+    expect(await screen.findByText('Balances at end of October 2026')).toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] opens on the month in the address', async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+
+    expect(await screen.findByText('Balances at end of September 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 9)
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-02] shows the groups, heading and links for the chosen month', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Banks' })
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Balances at end of August 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 8)
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(within(banks).getByRole('link', { name: 'Barclays' })).toHaveAttribute('href', '/cashflow/accounts/barclays?month=2026-08')
+    expect(within(screen.getByRole('table', { name: 'Pots' })).getByRole('link', { name: 'Reserva' })).toHaveAttribute(
+      'href',
+      '/cashflow/accounts/reserva?month=2026-08&tab=pots',
+    )
   })
 
   it('opens the account screen when a row link is followed', async () => {
@@ -345,5 +437,159 @@ describe('AccountsPage', () => {
     fireEvent.click(await screen.findByRole('link', { name: 'Chase' }))
 
     expect(screen.getByText('Account screen')).toBeInTheDocument()
+  })
+
+  it(`${AC('02')} shows each bank's round-up for the chosen month, and no Round-up column on other balance grids`, async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 9)
+    const [barclays, chase] = bodyRows(banks)
+    expect(within(barclays).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]*:/, ''))).toEqual(['Barclays', 'GBP', '2,800.25', '1.20'])
+    expect(within(chase).getAllByRole('cell').at(-1)?.textContent).toContain('0.00')
+    expect(headers(screen.getByRole('table', { name: 'Pots' }))).toEqual(['Account', 'Currency', 'Balance'])
+  })
+
+  it('names the page with one level-1 heading above the grids’ level-2 headings', async () => {
+    renderPage()
+
+    await screen.findByRole('table', { name: 'Banks' })
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Accounts')
+  })
+
+  it(`${AC('01')} shows the month picker and the tabs in order, Accounts selected`, async () => {
+    renderPage()
+
+    expect(screen.getByRole('tablist', { name: 'Accounts views' })).toBeInTheDocument()
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('value'))).toEqual(['accounts', 'summary', 'transactions'])
+    expect(screen.getAllByRole('tab').map((tab) => tab.querySelector('.fui-Tab__content')?.textContent)).toEqual(['Accounts', 'Summary', 'All transactions'])
+    expect(screen.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('tabpanel', { name: 'Accounts' })).toContainElement(await screen.findByRole('table', { name: 'Banks' }))
+  })
+
+  it(`${AC('01')} opens the tab in the address and falls back to Accounts for an unknown one`, async () => {
+    const { unmount } = renderPage('/cashflow/accounts?tab=summary&month=2026-09')
+
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('table', { name: 'Category totals' })).toBeInTheDocument()
+    expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 9)
+    unmount()
+
+    renderPage('/cashflow/accounts?tab=income')
+    expect(screen.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it(`${AC('01')} writes the selected tab to the address, keeping the month`, async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+
+    selectTab('Summary')
+
+    const params = new URLSearchParams(screen.getByText(/^Address: /).textContent?.replace('Address: ', ''))
+    expect(params.get('tab')).toBe('summary')
+    expect(params.get('month')).toBe('2026-09')
+    expect(await screen.findByRole('tabpanel', { name: 'Summary' })).toBeInTheDocument()
+  })
+
+  it(`${AC('03')} shows the Summary with its Result and no bank or card grid`, async () => {
+    renderPage('/cashflow/accounts?tab=summary')
+
+    expect(await screen.findByRole('group', { name: 'Month result' })).toHaveTextContent('Result: +57.50 Surplus')
+    expect(screen.queryByRole('table', { name: 'Banks' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Credit cards' })).not.toBeInTheDocument()
+  })
+
+  it(`${AC('04')} renders All transactions with F16's grid for the chosen month`, async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+
+    await openAllTransactions()
+
+    expect(getMonthTransactionsMock).toHaveBeenCalledWith(2026, 9)
+    expect(screen.getByRole('tabpanel', { name: 'All transactions' })).toContainElement(screen.getByRole('table', { name: 'All transactions' }))
+  })
+
+  it(`${AC('05')} requests only the open tab's data`, async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Banks' })
+
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledOnce()
+    expect(getDefaultGroupSummaryMock).not.toHaveBeenCalled()
+    expect(getMonthTransactionsMock).not.toHaveBeenCalled()
+
+    selectTab('Summary')
+    await screen.findByRole('table', { name: 'Category totals' })
+
+    expect(getDefaultGroupSummaryMock).toHaveBeenCalledOnce()
+    expect(getMonthTransactionsMock).not.toHaveBeenCalled()
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledOnce()
+  })
+
+  it(`${AC('05')} reloads the open tab for a new month and keeps it selected`, async () => {
+    renderPage('/cashflow/accounts?tab=summary')
+    await screen.findByRole('table', { name: 'Category totals' })
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(getDefaultGroupSummaryMock).toHaveBeenLastCalledWith(2026, 8))
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
+    expect(await screen.findByRole('table', { name: 'Category totals' })).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).not.toHaveBeenCalled()
+    expect(getMonthTransactionsMock).not.toHaveBeenCalled()
+  })
+
+  it(`${AC('05')} never shows the previous month's figures while the new month loads`, async () => {
+    renderPage('/cashflow/accounts?tab=summary')
+    await screen.findByRole('table', { name: 'Category totals' })
+    getDefaultGroupSummaryMock.mockReturnValue(new Promise(() => {}))
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Loading…')).toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: 'Category totals' })).not.toBeInTheDocument()
+  })
+
+  it('reloads All transactions on a month change and starts again with no filter', async () => {
+    renderPage()
+    await openAllTransactions()
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Account' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
+    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    await waitFor(() => expect(getMonthTransactionsMock).toHaveBeenLastCalledWith(2026, 8))
+    await screen.findByText('Lidl UK')
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+  })
+
+  it('reloads a tab every time it is reopened', async () => {
+    renderPage()
+    await openAllTransactions()
+
+    selectTab('Summary')
+    selectTab('All transactions')
+
+    await waitFor(() => expect(getMonthTransactionsMock).toHaveBeenCalledTimes(2))
+  })
+
+  it(`${AC('07')} keeps a load error to its tab and leaves the others selectable and working`, async () => {
+    getDefaultGroupSummaryMock.mockRejectedValue(new Error('boom'))
+    renderPage('/cashflow/accounts?tab=summary')
+
+    expect(await screen.findByText('Unable to load the summary.')).toBeInTheDocument()
+
+    await openAllTransactions()
+    expect(screen.queryByText('Unable to load the summary.')).not.toBeInTheDocument()
+    selectTab('Accounts')
+    expect(await screen.findByRole('table', { name: 'Banks' })).toBeInTheDocument()
+  })
+
+  it(`${AC('07')} keeps the month picker and tabs usable while a tab loads`, () => {
+    getAccountTemplateGroupsMock.mockReturnValue(new Promise(() => {}))
+    renderPage()
+
+    expect(screen.getByText('Loading…')).toBeInTheDocument()
+    expect(screen.getByLabelText('Month')).toBeEnabled()
+    selectTab('Summary')
+    expect(screen.getByRole('tab', { name: 'Summary' })).toHaveAttribute('aria-selected', 'true')
   })
 })

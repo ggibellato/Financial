@@ -120,8 +120,7 @@ The following features are currently built and available in the React web app. (
 
 The following features are built as React pages.
 
-* **Accounts** — the CashFlow landing page: every account grouped by template with its balance. Each account opens its account screen, where all entry happens for that account: expenses, card charges and refunds, incomes, transfers, balance adjustments, card statements (pay, unmark, due date), pot deposits and withdrawals, and settlement entries. Admin → Accounts creates and edits accounts.
-* **Monthly** — the month overview: a Summary tab (category totals, cards, banks, income and tithe, each bank and card linking to its account screen at that month) and an All transactions tab with a category filter. It has no entry forms.
+* **Accounts** — the CashFlow landing page, with a month picker and three tabs, the month and tab kept in the address (`?month=yyyy-MM&tab=…`): **Accounts** (every account grouped by template with its balance at the end of the chosen month), **Summary** (category totals, income by source with the tithe lines and carry-forward checkbox, and the month's Result: total incoming minus category totals, shown as Surplus, Deficit or Balanced) and **All transactions** (every transaction of the month, with filters). Only the open tab loads. Each account opens its account screen, where all entry happens for that account: expenses, card charges and refunds, incomes, transfers, balance adjustments, card statements (pay, unmark, due date), pot deposits and withdrawals, and settlement entries. Admin → Accounts creates and edits accounts.
 * **Mensais** — the monthly recurring-bill checklist.
 * **Recurring Bills** — CRUD management of fixed recurring monthly bills.
 * **Investment Snapshots** — monthly snapshot of quick-access accounts (savings, ISAs, Trading 212 brokerage balance, etc.) for net-worth tracking; lighter-weight than the Investment domain's full transaction-level tracking.

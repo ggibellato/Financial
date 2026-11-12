@@ -57,7 +57,6 @@ export const NAV_TREE: NavCategory[] = [
         route: '/cashflow/accounts',
         detail: { label: 'Account', route: '/cashflow/accounts/:accountId' },
       },
-      { id: 'monthly', label: 'Monthly', route: '/cashflow/monthly' },
       { id: 'annual-summary', label: 'Annual summary', route: '/cashflow/annual-summary' },
       { id: 'mensais', label: 'Mensais', route: '/cashflow/mensais' },
       { id: 'investment-snapshots', label: 'Investment snapshots', route: '/cashflow/investment-snapshots' },

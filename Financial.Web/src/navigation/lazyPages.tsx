@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { Navigate, useSearchParams } from 'react-router-dom'
 
 // Split into its own module (rather than declared inline in routes.tsx) so that file can export
 // only route data: react-refresh/only-export-components requires a file to export components
@@ -23,9 +24,15 @@ export const DividendCheckPage = lazy(() => import('../pages/DividendCheckPage')
 export const HistoricInvestmentsPage = lazy(() => import('../pages/HistoricInvestmentsPage'))
 export const InvestmentSnapshotsPage = lazy(() => import('../pages/InvestmentSnapshotsPage'))
 export const MensaisPage = lazy(() => import('../pages/MensaisPage'))
-export const MonthlyPage = lazy(() => import('../pages/MonthlyPage'))
 export const RecurringBillsPage = lazy(() => import('../pages/RecurringBillsPage'))
 export const ReportingCurrencyPage = lazy(() => import('../pages/ReportingCurrencyPage'))
 export const MovedPageRedirect = lazy(() => import('../pages/MovedPageRedirect'))
 export const TaxPage = lazy(() => import('../pages/TaxPage'))
 export const TaxRulesPage = lazy(() => import('../pages/TaxRulesPage'))
+
+export function MonthlyRedirect() {
+  const [searchParams] = useSearchParams()
+  const month = searchParams.get('month')
+  const target = new URLSearchParams({ tab: 'summary', ...(month ? { month } : {}) })
+  return <Navigate replace to={`/cashflow/accounts?${target}`} />
+}
