@@ -213,13 +213,13 @@ describe('All transactions row actions', () => {
     expect(monthRowDelete(monthRow(paid, 'card-1'))).toBe(reason)
   })
 
-  it('tells an old settled charge, a bank copy of a charge and an inactive pots operation apart', () => {
+  it('sends a settled charge to its statement, its bank copy to the card, and blocks an inactive pots operation', () => {
     const charge = (fields: Partial<ExpenseDto>) =>
       accountTransactionRow({ id: 'c9', kind: 'CardCharge', date: '2026-10-02', amount: -9, canEdit: false, expense: { id: 'c9', creditCardId: 'card-1', creditCardName: 'BA Amex', paymentStatus: 'CreditCardCharge', ...fields } as ExpenseDto })
     const settled = charge({ paymentStatus: 'CreditCardSettled' })
-    expect(monthRowEdit(monthRow(settled, 'card-1'), MONTH)).toEqual({ blockedReason: 'It was settled before card statements were kept, so it cannot be changed.' })
+    expect(monthRowEdit(monthRow(settled, 'card-1'), MONTH)).toEqual({ blockedReason: 'Its card statement is paid. Unmark the statement to change it.' })
     expect(monthRowDelete(monthRow(charge({}), 'card-1'))).toBe('Its card statement is paid. Unmark the statement to change it.')
-    expect(monthRowDelete(monthRow(charge({}), 'bank-1'))).toBe('Change it on the BA Amex account.')
+    expect(monthRowDelete(monthRow(settled, 'bank-1'))).toBe('Its BA Amex statement is paid. Unmark it on the BA Amex account to change it.')
     const potsSide = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: 90, canEdit: false, operation: deposit })
     expect(monthRowEdit(monthRow(potsSide, 'pots-1', false), MONTH)).toEqual({ blockedReason: INACTIVE })
     expect(monthRowDelete(monthRow(potsSide, 'pots-1', false))).toBe(INACTIVE)

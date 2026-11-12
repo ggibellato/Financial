@@ -55,7 +55,7 @@ describe('AccountTransactionsGrid', () => {
 
       for (const button of within(bodyRows()[0]).getAllByRole('button')) {
         expect(button).toHaveAttribute('aria-disabled', 'true')
-        expect(button).toHaveAccessibleDescription('Change it on the BA Amex account.')
+        expect(button).toHaveAccessibleDescription('Its BA Amex statement is paid. Unmark it on the BA Amex account to change it.')
       }
     })
 

@@ -160,7 +160,6 @@ const INACTIVE_ACCOUNT_REASON = 'This account is inactive, so its rows cannot be
 const INCOME_LINE_EDIT_REASON = 'Edit from the income.'
 const CREDIT_REFUND_EDIT_REASON = 'A credit refund cannot be edited. Delete it and refund the credit again.'
 const PAID_STATEMENT_REASON = 'Its card statement is paid. Unmark the statement to change it.'
-const SETTLED_CHARGE_REASON = 'It was settled before card statements were kept, so it cannot be changed.'
 const READ_ONLY_REASON = 'This row cannot be changed here.'
 const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
 const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
@@ -227,9 +226,10 @@ function readOnlyReason(row: AccountTransactionDto, accountId: string | null): s
   const { expense } = row
   if (!canMoveToStatement(row) || !expense) return READ_ONLY_REASON
   if (expense.creditCardId && accountId && expense.creditCardId.toLowerCase() !== accountId.toLowerCase()) {
-    return `Change it on the ${expense.creditCardName ?? 'card'} account.`
+    const card = expense.creditCardName ?? 'card'
+    return `Its ${card} statement is paid. Unmark it on the ${card} account to change it.`
   }
-  return expense.paymentStatus === 'CreditCardSettled' ? SETTLED_CHARGE_REASON : PAID_STATEMENT_REASON
+  return PAID_STATEMENT_REASON
 }
 
 export function rowDeleteBlockedReason(row: AccountTransactionDto, accountId: string | null, accountIsActive: boolean): string | undefined {
