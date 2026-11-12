@@ -140,12 +140,40 @@ export function statementPath(statement: AccountTransactionStatementDto): string
   return `/cashflow/accounts/${statement.accountId}?month=${formatMonthInputValue(statement.year, statement.month)}&tab=statements`
 }
 
+function isOnPotsScreen(operation: AccountTransactionOperationDto, screenAccountId: string): boolean {
+  return operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase()
+}
+
 export function operationPath(operation: AccountTransactionOperationDto, screenAccountId: string): string {
   const month = formatMonthInputValue(operation.year, operation.month)
-  const isOnPotsScreen = operation.potsAccountId.toLowerCase() === screenAccountId.toLowerCase()
-  return operation.incomeId != null && !isOnPotsScreen
+  return operation.incomeId != null && !isOnPotsScreen(operation, screenAccountId)
     ? `/cashflow/accounts/${screenAccountId}?month=${month}&operation=${operation.operationId}`
     : `/cashflow/accounts/${operation.potsAccountId}?month=${month}&tab=transactions&operation=${operation.operationId}`
+}
+
+export const BLANK_OPERATION_DESCRIPTION = 'Deposit from an income'
+
+export type PotOperationNoun = 'deposit' | 'withdrawal'
+
+export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove this payment.'
+const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
+const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
+
+export function operationDeleteBlockedReason(operation: AccountTransactionOperationDto, screenAccountId: string): string | undefined {
+  if (operation.incomeId != null) return INCOME_DEPOSIT_DELETE_REASON
+  return isOnPotsScreen(operation, screenAccountId) ? undefined : OTHER_SCREEN_OPERATION_DELETE_REASON
+}
+
+export function withdrawalOperationIds(rows: AccountTransactionDto[], screenAccountId: string): Set<string> {
+  const ids = new Set<string>()
+  for (const { operation, amount } of rows) {
+    if (operation && (isOnPotsScreen(operation, screenAccountId) ? amount < 0 : amount > 0)) ids.add(operation.operationId)
+  }
+  return ids
+}
+
+export function operationNoun({ operationId }: AccountTransactionOperationDto, withdrawalIds: Set<string>): PotOperationNoun {
+  return withdrawalIds.has(operationId) ? 'withdrawal' : 'deposit'
 }
 
 export function rowKey(row: AccountTransactionDto): string {

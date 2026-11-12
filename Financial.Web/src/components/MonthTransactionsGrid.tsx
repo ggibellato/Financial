@@ -26,7 +26,7 @@ import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
-import { kindLabel, operationPath } from './accountActions'
+import { BLANK_OPERATION_DESCRIPTION, kindLabel, operationPath } from './accountActions'
 
 const useStyles = makeStyles({
   toolbar: {
@@ -72,8 +72,6 @@ const SORT_ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, c
 const FILTER_ACCESSORS = { account: accountName, kind: typeLabel, category: categoryName }
 
 const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
-
-const BLANK_OPERATION_LINK = 'Deposit from an income'
 
 const GRID_LABEL = 'All transactions'
 
@@ -129,7 +127,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
         return typeLabel(row)
       case 'description':
         return transaction.operation && row.accountId ? (
-          <TruncatedText text={transaction.description || BLANK_OPERATION_LINK} to={operationPath(transaction.operation, row.accountId)} />
+          <TruncatedText text={transaction.description || BLANK_OPERATION_DESCRIPTION} to={operationPath(transaction.operation, row.accountId)} />
         ) : (
           <TruncatedText text={transaction.description} />
         )

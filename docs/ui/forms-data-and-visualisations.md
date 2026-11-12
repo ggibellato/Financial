@@ -387,6 +387,19 @@ row (user decision 2026-11-04).
 exception: they are named text buttons in `.data-table__col--action-wide`, as
 the P60 F08 and F13 specs define them.
 
+A row's Edit and Delete are never reached through a link on its description:
+the description stays plain text. A row that another screen or record owns
+still gets the Edit and Delete icons. Its Edit opens that record where it
+lives (the account screen's statement-payment rows open the card's
+Statements tab, and pot-operation rows open the deposit or withdrawal, in
+place or on its Pots account). A Delete that cannot run here stays focusable
+but inert, with a tooltip that says where to do it (the `RowActionsCell`
+`deleteBlockedReason` prop): for example "Unmark the statement to remove this
+payment." or "Delete it from the pots account." Known exception, to follow in
+its own change: `MonthTransactionsGrid.tsx` (the Accounts page's All
+transactions tab) still opens a pot operation through its description link and
+has no Actions column.
+
 Each action column sizes to its icon button's own width plus comfortable
 padding — never auto/flex-adjusted to share the grid's leftover space the way
 the identifying/label column does above. A narrow, fixed action column next

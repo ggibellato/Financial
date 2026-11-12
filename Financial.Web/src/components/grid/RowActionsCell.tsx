@@ -37,6 +37,7 @@ interface RowActionsCellProps {
   itemName: string
   editDisabled?: boolean
   editBlockedReason?: string
+  deleteBlockedReason?: string
   isDeleting?: boolean
   isOtherDeleting?: boolean
   onEdit?: (button: HTMLButtonElement) => void
@@ -49,6 +50,7 @@ export default function RowActionsCell({
   itemName,
   editDisabled,
   editBlockedReason,
+  deleteBlockedReason,
   isDeleting = false,
   isOtherDeleting = false,
   onEdit,
@@ -56,6 +58,7 @@ export default function RowActionsCell({
   children,
   className = 'data-table__col--action',
 }: RowActionsCellProps) {
+  const deleteReason = isOtherDeleting ? OTHER_DELETE_RUNNING : deleteBlockedReason
   return (
     <TableCell className={className}>
       <div className="data-table__actions-cell">
@@ -70,13 +73,13 @@ export default function RowActionsCell({
             onClick={(event) => onEdit(event.currentTarget)}
           />
         )}
-        {onDelete && (
+        {(onDelete || deleteBlockedReason) && (
           <IconAction
             label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
             icon={isDeleting ? <Spinner size="tiny" /> : <DeleteRegular />}
-            blockedReason={isOtherDeleting ? OTHER_DELETE_RUNNING : undefined}
-            disabledFocusable={isDeleting || isOtherDeleting}
-            onClick={onDelete}
+            blockedReason={deleteReason}
+            disabledFocusable={isDeleting || !!deleteReason}
+            onClick={() => onDelete?.()}
           />
         )}
       </div>

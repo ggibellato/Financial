@@ -433,14 +433,15 @@ export default function AccountScreenPage() {
               isLoading={screen.isLoading}
               emptyMessage={`No transactions in ${formatLongMonthYear(screen.year, screen.month)}.`}
               dateHeader={isCard ? 'Purchased' : 'Date'}
-              isEditDisabled={(row) => !isAccountCurrent || (!row.settlement && (row.movement ? pots.data === null : !formOptions.isReady))}
+              isEditDisabled={(row) => !isAccountCurrent || (!row.settlement && !row.operation && (row.movement ? pots.data === null : !formOptions.isReady))}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
               canDeleteCreditRefunds={isAccountActive}
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}
-              onOpenOperation={(operation, link) => forms.followOperationLink(operation.operationId, link, () => navigate(operationPath(operation, screen.accountId)))}
+              onOpenOperation={(operation, button) => forms.followOperation(operation.operationId, button, () => navigate(operationPath(operation, screen.accountId)))}
+              onDeleteOperation={({ operationId }, noun) => operationDelete.request({ operationId, noun })}
             />
           </>
         )}
