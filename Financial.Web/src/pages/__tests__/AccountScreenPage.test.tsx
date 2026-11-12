@@ -2079,6 +2079,25 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     return screen.getByText(text).closest('tr') as HTMLElement
   }
 
+  it('opens the row named by the edit address in its edit form and drops the address', async () => {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=transactions&edit=TransferOut-t1`)
+
+    expect(await screen.findByRole('heading', { name: 'Edit transfer' })).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=transactions`)).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Edit transfer' }).closest('form')).toContainElement(document.activeElement as HTMLElement))
+    expect(screen.queryByRole('heading', { name: 'Edit expense' })).not.toBeInTheDocument()
+  })
+
+  it('says when the edit address names a row the month no longer has, and Dismiss drops it', async () => {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&edit=Expense-gone`)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('This transaction is no longer in this month.')
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+    expect(screen.getByText(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)).toBeInTheDocument()
+  })
+
   it('Transfer to sends from this account to the chosen destination, then closes and returns focus', async () => {
     const user = userEvent.setup()
     await openScreen()

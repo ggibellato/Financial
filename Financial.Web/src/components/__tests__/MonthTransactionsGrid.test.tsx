@@ -1,10 +1,24 @@
-import { MemoryRouter } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { AccountTransactionDto, MonthTransactionDto } from '../../api/types'
+import { Toaster } from '@fluentui/react-components'
+import { MemoryRouter, useLocation } from 'react-router-dom'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FinancialApiClient } from '../../api/financialApiClient'
+import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
+import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
 import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
+import { requestDelete } from '../../test-utils/confirmDelete'
+import { never } from '../../test-utils/deferred'
 import MonthTransactionsGrid from '../MonthTransactionsGrid'
+
+const { deleteExpenseMock, deletePotOperationMock } = vi.hoisted(() => ({
+  deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
+  deletePotOperationMock: vi.fn<FinancialApiClient['deletePotOperation']>(),
+}))
+
+vi.mock('../../api/financialApiClient', () => ({
+  apiClient: { deleteExpense: deleteExpenseMock, deletePotOperation: deletePotOperationMock } as Partial<FinancialApiClient>,
+}))
 
 type AccountFields = Omit<MonthTransactionDto, 'transaction'>
 
@@ -14,6 +28,8 @@ const AMEX: AccountFields = { accountId: 'card-1', accountName: 'BA Amex', accou
 const ITAU: AccountFields = { accountId: 'bank-9', accountName: 'Itau', accountCurrency: 'BRL', accountIsActive: false }
 
 const DEPOSIT = { operationId: 'o1', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
+const PAID_STATEMENT = { accountId: 'card-1', year: 2026, month: 9 }
+const TESCO = { id: 'e1' } as ExpenseDto
 
 function monthRow(account: AccountFields, transaction: AccountTransactionDto): MonthTransactionDto {
   return { ...account, transaction }
@@ -21,12 +37,12 @@ function monthRow(account: AccountFields, transaction: AccountTransactionDto): M
 
 const ROWS: MonthTransactionDto[] = [
   monthRow(AMEX, accountTransactionRow({ id: 'c2', kind: 'CardCharge', date: '2026-09-28', description: 'Amazon', categoryName: 'Clothing', amount: -39.99 })),
-  monthRow(BARCLAYS, accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-28', description: 'Tesco', categoryName: 'Groceries', amount: -45.2, roundUp: -0.8 })),
-  monthRow(BARCLAYS, accountTransactionRow({ id: 'e9', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', categoryName: 'Reserva', amount: -90, operation: DEPOSIT })),
-  monthRow(RESERVA, accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', description: '', counterpart: 'Casa', amount: 90, operation: DEPOSIT })),
-  monthRow(BARCLAYS, accountTransactionRow({ id: 'cp1', kind: 'CardPayment', date: '2026-10-05', description: 'BA Amex payment', amount: -100 })),
-  monthRow(AMEX, accountTransactionRow({ id: 'cp1', kind: 'CardPayment', date: '2026-10-05', description: 'BA Amex payment', amount: 100 })),
-  monthRow(ITAU, accountTransactionRow({ id: 'x1', kind: 'Expense', date: '2026-10-03', description: 'Padaria', categoryName: 'Groceries', amount: -12.5, currency: 'BRL' })),
+  monthRow(BARCLAYS, accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-28', description: 'Tesco', categoryName: 'Groceries', amount: -45.2, roundUp: -0.8, expense: TESCO })),
+  monthRow(BARCLAYS, accountTransactionRow({ id: 'e9', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', categoryName: 'Reserva', amount: -90, canEdit: false, operation: DEPOSIT })),
+  monthRow(RESERVA, accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', description: '', counterpart: 'Casa', amount: 90, canEdit: false, operation: DEPOSIT })),
+  monthRow(BARCLAYS, accountTransactionRow({ id: 'cp1', kind: 'CardPayment', date: '2026-10-05', description: 'BA Amex payment', amount: -100, canEdit: false, statement: PAID_STATEMENT })),
+  monthRow(AMEX, accountTransactionRow({ id: 'cp1', kind: 'CardPayment', date: '2026-10-05', description: 'BA Amex payment', amount: 100, canEdit: false, statement: PAID_STATEMENT })),
+  monthRow(ITAU, accountTransactionRow({ id: 'x1', kind: 'Expense', date: '2026-10-03', description: 'Padaria', categoryName: 'Groceries', amount: -12.5, currency: 'BRL', canEdit: false })),
 ]
 
 interface GridOptions {
@@ -34,13 +50,28 @@ interface GridOptions {
   isLoading?: boolean
   error?: string | null
   onRetry?: () => void
+  onDeleted?: () => void
 }
 
-function renderGrid({ rows = ROWS, isLoading = false, error = null, onRetry = vi.fn() }: GridOptions = {}) {
-  return render(<MonthTransactionsGrid year={2026} month={10} rows={rows} isLoading={isLoading} error={error} onRetry={onRetry} />, {
-    wrapper: MemoryRouter,
-  })
+function LocationText() {
+  const { pathname, search } = useLocation()
+  return <p>{`at:${pathname}${search}`}</p>
 }
+
+function renderGrid({ rows = ROWS, isLoading = false, error = null, onRetry = vi.fn(), onDeleted = vi.fn() }: GridOptions = {}) {
+  return render(
+    <MemoryRouter initialEntries={['/cashflow/accounts?month=2026-10&tab=transactions']}>
+      <MonthTransactionsGrid year={2026} month={10} rows={rows} isLoading={isLoading} error={error} onRetry={onRetry} onDeleted={onDeleted} />
+      <Toaster toasterId={APP_TOASTER_ID} />
+      <LocationText />
+    </MemoryRouter>,
+  )
+}
+
+beforeEach(() => {
+  deleteExpenseMock.mockReset()
+  deletePotOperationMock.mockReset()
+})
 
 function bodyRows() {
   const [, ...rows] = within(screen.getByRole('table', { name: 'All transactions' })).getAllByRole('row')
@@ -75,8 +106,8 @@ describe('MonthTransactionsGrid', () => {
   it("[AC P60-F16-month-transactions-view-01] lists every account's rows with account, type, category and signed amount", () => {
     renderGrid()
 
-    const headers = screen.getAllByRole('columnheader').map((header) => within(header).getAllByRole('button')[0].textContent)
-    expect(headers.slice(0, 6)).toEqual(['Date', 'Account', 'Type', 'Description', 'Category', 'Amount'])
+    const headers = screen.getAllByRole('columnheader').map((header) => within(header).queryAllByRole('button')[0]?.textContent ?? header.textContent)
+    expect(headers).toEqual(['Date', 'Account', 'Type', 'Description', 'Category', 'Amount', ''])
     expect(bodyRows()).toHaveLength(7)
     const [tesco] = bodyRows()
     expect(within(tesco).getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
@@ -86,6 +117,7 @@ describe('MonthTransactionsGrid', () => {
       'Description:Tesco',
       'Category:Groceries',
       'Amount:-45.20 GBP',
+      '',
     ])
     expect(within(tesco).getAllByRole('cell')[5]).toHaveClass('data-table__col--numeric')
   })
@@ -110,6 +142,7 @@ describe('MonthTransactionsGrid', () => {
         'Description:Taxa',
         'Category:',
         'Amount:+80.00 GBP',
+        '',
       ])
       expect(footer()).toHaveTextContent('4 rows · Total -150.00 BRL · Total +31.80 GBP')
     })
@@ -152,6 +185,7 @@ describe('MonthTransactionsGrid', () => {
         'Description:XP dividends',
         'Category:',
         'Amount:+85.20',
+        '',
       ])
       expect(within(dividends).queryByRole('link')).not.toBeInTheDocument()
       expect(within(bodyRows()[0]).queryByRole('link')).not.toBeInTheDocument()
@@ -263,22 +297,129 @@ describe('MonthTransactionsGrid', () => {
     expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveFocus()
   })
 
-  it('[AC P60-F16-month-transactions-view-03] links rows to the account screen and operation rows to their operation', () => {
+  it('[AC P60-F16-month-transactions-view-03] links the account and keeps every description plain text', () => {
     renderGrid()
 
     expect(within(bodyRows()[0]).getByRole('link', { name: 'Barclays' })).toHaveAttribute('href', '/cashflow/accounts/bank-1?month=2026-10&tab=transactions')
     const amazon = bodyRows().find((row) => within(row).queryByText('Amazon'))!
     expect(within(amazon).getByRole('link', { name: 'BA Amex' })).toHaveAttribute('href', '/cashflow/accounts/card-1?month=2026-10&tab=transactions')
-    expect(screen.getByRole('link', { name: 'Deposit to Reserva' })).toHaveAttribute(
-      'href',
-      '/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=o1',
-    )
-    expect(screen.getByRole('link', { name: 'Deposit from an income' })).toHaveAttribute(
-      'href',
-      '/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=o1',
-    )
+    expect(screen.queryByRole('link', { name: 'Deposit to Reserva' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Deposit from an income' })).not.toBeInTheDocument()
+    expect(screen.getByText('Deposit from an income')).toBeInTheDocument()
     const payments = bodyRows().filter((row) => within(row).queryByText('Card payment'))
     expect(payments.map((row) => within(row).getAllByRole('link'))).toEqual([[expect.anything()], [expect.anything()]])
+  })
+
+  describe('row actions', () => {
+    it('names each Edit by kind, description, date and account, so same-day rows differ', () => {
+      renderGrid()
+
+      const names = screen.getAllByRole('button', { name: /^Edit / }).map((button) => button.getAttribute('aria-label'))
+      expect(names).toContain('Edit card payment BA Amex payment, 05/10/2026, Barclays')
+      expect(names).toContain('Edit card payment BA Amex payment, 05/10/2026, BA Amex')
+      expect(names).toContain('Edit deposit Deposit from an income, 10/10/2026, Reserva')
+      expect(new Set(names).size).toBe(ROWS.length)
+      expect(screen.getByRole('columnheader', { name: 'Actions' })).toBeInTheDocument()
+    })
+
+    it('opens an account row on its account screen with its edit form', async () => {
+      renderGrid()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Edit expense Tesco, 28/10/2026, Barclays' }))
+
+      expect(await screen.findByText('at:/cashflow/accounts/bank-1?month=2026-10&tab=transactions&edit=Expense-e1')).toBeInTheDocument()
+    })
+
+    it('opens a pot operation where it lives and a statement payment on its Statements tab', async () => {
+      renderGrid()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Edit deposit Deposit to Reserva, 10/10/2026, Barclays' }))
+      expect(await screen.findByText('at:/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=o1')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Edit card payment BA Amex payment, 05/10/2026, Barclays' }))
+      expect(await screen.findByText('at:/cashflow/accounts/card-1?month=2026-09&tab=statements')).toBeInTheDocument()
+    })
+
+    it('opens a bankless income on the Income tab', async () => {
+      const income = monthRow(
+        { accountId: null, accountName: null, accountCurrency: null, accountIsActive: true },
+        accountTransactionRow({ id: 'i1', kind: 'Income', date: '2026-10-15', description: 'XP dividends', amount: 85.2, currency: null }),
+      )
+      renderGrid({ rows: [income] })
+
+      fireEvent.click(screen.getByRole('button', { name: 'Edit income XP dividends, 15/10/2026, No bank' }))
+
+      expect(await screen.findByText('at:/cashflow/accounts?month=2026-10&tab=income&edit=i1')).toBeInTheDocument()
+    })
+
+    it('says where to change rows it cannot change here', () => {
+      renderGrid()
+
+      const bankDeposit = screen.getByRole('button', { name: 'Delete deposit Deposit to Reserva, 10/10/2026, Barclays' })
+      expect(bankDeposit).toHaveAttribute('aria-disabled', 'true')
+      expect(bankDeposit).toHaveAccessibleDescription('Delete it from the pots account.')
+      expect(screen.getByRole('button', { name: 'Delete card payment BA Amex payment, 05/10/2026, Barclays' })).toHaveAccessibleDescription(
+        'Unmark the statement to remove this payment.',
+      )
+      const inactiveEdit = screen.getByRole('button', { name: 'Edit expense Padaria, 03/10/2026, Itau' })
+      expect(inactiveEdit).toHaveAttribute('aria-disabled', 'true')
+      expect(inactiveEdit).toHaveAccessibleDescription('This account is inactive, so its rows cannot be changed.')
+      fireEvent.click(inactiveEdit)
+      expect(screen.getByText('at:/cashflow/accounts?month=2026-10&tab=transactions')).toBeInTheDocument()
+    })
+
+    it('deletes a record in place after confirmation, toasting and refreshing the month', async () => {
+      deleteExpenseMock.mockResolvedValue()
+      const onDeleted = vi.fn()
+      renderGrid({ onDeleted })
+
+      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays', 'expense')
+      expect(dialog).toHaveTextContent('Delete this expense? This cannot be undone.')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+      expect(await screen.findAllByText('Expense deleted')).not.toHaveLength(0)
+      expect(deleteExpenseMock).toHaveBeenCalledExactlyOnceWith('e1')
+      expect(onDeleted).toHaveBeenCalledTimes(1)
+    })
+
+    it('deletes a pot operation from its Pots account row with its pot lines', async () => {
+      deletePotOperationMock.mockResolvedValue()
+      const onDeleted = vi.fn()
+      renderGrid({ onDeleted })
+
+      const dialog = await requestDelete('deposit Deposit from an income, 10/10/2026, Reserva', 'deposit')
+      expect(dialog).toHaveTextContent('Delete this deposit? Its pot lines and any bank expenses are deleted with it. This cannot be undone.')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+      expect(await screen.findAllByText('Deposit deleted')).not.toHaveLength(0)
+      expect(deletePotOperationMock).toHaveBeenCalledExactlyOnceWith('o1')
+      expect(onDeleted).toHaveBeenCalledTimes(1)
+    })
+
+    it('shows the running delete on its row and blocks the others', async () => {
+      deleteExpenseMock.mockReturnValue(never())
+      renderGrid()
+
+      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays', 'expense')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+      expect(await screen.findByRole('button', { name: 'Deleting expense Tesco, 28/10/2026, Barclays', hidden: true })).toHaveAttribute('aria-disabled', 'true')
+      expect(screen.getByRole('button', { name: 'Delete deposit Deposit from an income, 10/10/2026, Reserva', hidden: true })).toHaveAccessibleDescription(
+        'Another delete is in progress.',
+      )
+    })
+
+    it('keeps the dialog open with the error when the delete fails, and does not refresh', async () => {
+      deleteExpenseMock.mockRejectedValue(new Error('boom'))
+      const onDeleted = vi.fn()
+      renderGrid({ onDeleted })
+
+      const dialog = await requestDelete('expense Tesco, 28/10/2026, Barclays', 'expense')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+      expect(await within(dialog).findByText(/boom|could not be deleted/)).toBeInTheDocument()
+      expect(onDeleted).not.toHaveBeenCalled()
+    })
   })
 
   it('[AC P60-F16-month-transactions-view-04] shows a skeleton under the headers while loading, with no footer', () => {
