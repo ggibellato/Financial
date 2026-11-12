@@ -6372,6 +6372,27 @@
         ],
         "type": "object"
       },
+      "TitheMonthDTO": {
+        "properties": {
+          "month": {
+            "format": "int32",
+            "type": "integer"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/TitheSummaryDTO"
+          },
+          "year": {
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "year",
+          "month",
+          "summary"
+        ],
+        "type": "object"
+      },
       "TitheSummaryDTO": {
         "properties": {
           "calculatedTithe": {
@@ -6388,13 +6409,23 @@
               }
             ]
           },
+          "incomeBase": {
+            "format": "double",
+            "type": "number"
+          },
           "titheBalance": {
+            "format": "double",
+            "type": "number"
+          },
+          "tithePaid": {
             "format": "double",
             "type": "number"
           }
         },
         "required": [
+          "incomeBase",
           "calculatedTithe",
+          "tithePaid",
           "titheBalance"
         ],
         "type": "object"
@@ -15152,6 +15183,52 @@
           }
         },
         "summary": "Includes or excludes the previous month\u0027s carried-forward amount from this month\u0027s Tithe Balance.",
+        "tags": [
+          "Tithe"
+        ]
+      }
+    },
+    "/tithe/year/{year}": {
+      "get": {
+        "parameters": [
+          {
+            "description": "",
+            "in": "path",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TitheMonthDTO"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "summary": "",
         "tags": [
           "Tithe"
         ]

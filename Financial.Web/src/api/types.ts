@@ -169,6 +169,7 @@ export type CurrencyTotalDto = Schema<'CurrencyTotalDTO'>
 export type AccountTemplateGroupDto = Schema<'AccountTemplateGroupDTO'>
 export type IncomeSourceTotalDto = Schema<'IncomeSourceTotalDTO'>
 export type TitheSummaryDto = Schema<'TitheSummaryDTO'>
+export type TitheMonthDto = Schema<'TitheMonthDTO'>
 export type TitheCarryForwardUpdateDto = Schema<'TitheCarryForwardUpdateDTO'>
 export type IncomeDto = Schema<'IncomeDTO'>
 export type IncomeCreateDto = Schema<'IncomeCreateDTO'>

@@ -67,6 +67,7 @@ import type {
   RecurringBillCreateDto,
   SetAssetPriceDto,
   TitheCarryForwardUpdateDto,
+  TitheMonthDto,
   TitheSummaryDto,
   TransactionDeleteDto,
   TransactionSummaryItemDto,
@@ -2225,7 +2226,7 @@ describe('financialApiClient', () => {
   })
 
   it('gets tithe summary by month', async () => {
-    const responseBody: TitheSummaryDto = { calculatedTithe: 100, titheBalance: 0, carryForward: null }
+    const responseBody: TitheSummaryDto = { incomeBase: 1000, calculatedTithe: 100, tithePaid: 100, titheBalance: 0, carryForward: null }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 
@@ -2235,9 +2236,22 @@ describe('financialApiClient', () => {
     expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/tithe/month/2026/7`)
   })
 
+  it('[AC P61-F03-tithe-tab-and-history-04] gets the tithe months of a year', async () => {
+    const responseBody: TitheMonthDto[] = [
+      { year: 2026, month: 1, summary: { incomeBase: 1000, calculatedTithe: 100, tithePaid: 100, titheBalance: 0, carryForward: null } },
+    ]
+    const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
+    const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
+
+    const result = await client.getTitheYear(2026)
+
+    expect(result).toEqual(responseBody)
+    expect(fetchMock.mock.calls[0][0]).toBe(`${API_BASE_URL}/tithe/year/2026`)
+  })
+
   it('puts a tithe carry-forward update', async () => {
     const requestBody: TitheCarryForwardUpdateDto = { included: true }
-    const responseBody: TitheSummaryDto = { calculatedTithe: 100, titheBalance: 0, carryForward: { amount: 50, fromMonth: 6, fromYear: 2026, included: true } }
+    const responseBody: TitheSummaryDto = { incomeBase: 1000, calculatedTithe: 100, tithePaid: 150, titheBalance: 0, carryForward: { amount: 50, fromMonth: 6, fromYear: 2026, included: true } }
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
 

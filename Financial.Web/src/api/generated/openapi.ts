@@ -6694,6 +6694,52 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/tithe/year/{year}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    year: number;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TitheMonthDTO"][];
+                    };
+                };
+                /** @description Bad Request */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ProblemDetails"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/transactions": {
         parameters: {
             query?: never;
@@ -8900,12 +8946,23 @@ export interface components {
         TitheCarryForwardUpdateDTO: {
             included: boolean;
         };
+        TitheMonthDTO: {
+            /** Format: int32 */
+            month: number;
+            summary: components["schemas"]["TitheSummaryDTO"];
+            /** Format: int32 */
+            year: number;
+        };
         TitheSummaryDTO: {
             /** Format: double */
             calculatedTithe: number;
             carryForward?: null | components["schemas"]["TitheCarryForwardDTO"];
             /** Format: double */
+            incomeBase: number;
+            /** Format: double */
             titheBalance: number;
+            /** Format: double */
+            tithePaid: number;
         };
         TransactionCreateDTO: {
             assetName: string;
