@@ -15,14 +15,17 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import IncomeSourceFormDialog from '../components/IncomeSourceFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { type AccountsStatus, useAccounts } from '../hooks/useAccounts'
 import { useIncomeSources } from '../hooks/useIncomeSources'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { AccountDto, IncomeSourceDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import { orMissing } from '../utils/orMissing'
 
-function splitsToDisplay(incomeSource: IncomeSourceDto, accounts: AccountDto[], accountsStatus: AccountsStatus): string {
-  if (incomeSource.potsAccountId == null) return '—'
+function splitsToDisplay(incomeSource: IncomeSourceDto, accounts: AccountDto[], accountsStatus: AccountsStatus): string | null {
+  if (incomeSource.potsAccountId == null) return null
   const potsAccount = accounts.find((a) => a.id === incomeSource.potsAccountId)
   if (potsAccount) return potsAccount.isActive ? potsAccount.name : `${potsAccount.name} (inactive)`
   return accountsStatus === 'loading' ? 'Loading…' : 'Pots account (not loaded)'
@@ -43,7 +46,8 @@ export default function IncomeSourcesPage() {
   const { accounts, status: accountsStatus, error: accountsError, retry: retryAccounts } = useAccounts()
   const [editingIncomeSource, setEditingIncomeSource] = useState<IncomeSourceDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<IncomeSourceDto | null>(null)
+  const deletion = usePendingDelete((row: IncomeSourceDto) => deleteIncomeSource(row.id))
+  const pendingDelete = deletion.pendingRow
 
   const handleSubmit = (name: string, group: string, isActive: boolean, potsAccountId: string | null) =>
     editingIncomeSource
@@ -59,12 +63,6 @@ export default function IncomeSourcesPage() {
     const result = await handleSubmit(name, group, isActive, potsAccountId)
     closeFormDialog()
     return result
-  }
-
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteIncomeSource(confirmingDelete.id)
-    setConfirmingDelete(null)
   }
 
   return (
@@ -104,19 +102,19 @@ export default function IncomeSourcesPage() {
               onSubmit={handleFormSubmit}
             />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="income source"
               message={
-                confirmingDelete.hasReferences ? (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; is still used by an income entry and cannot be deleted.</>
+                pendingDelete.hasReferences ? (
+                  <>&ldquo;{pendingDelete.name}&rdquo; is still used by an income entry and cannot be deleted.</>
                 ) : (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                  <>&ldquo;{pendingDelete.name}&rdquo; will be permanently removed.</>
                 )
               }
-              confirmDisabled={confirmingDelete.hasReferences}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              confirmDisabled={pendingDelete.hasReferences}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -139,13 +137,13 @@ export default function IncomeSourcesPage() {
               <DataTableCell label="Group"><TruncatedText text={incomeSource.group} /></DataTableCell>
               <DataTableCell label="Active">{incomeSource.isActive ? 'Yes' : 'No'}</DataTableCell>
               <DataTableCell label="Splits to">
-                <TruncatedText text={splitsToDisplay(incomeSource, accounts, accountsStatus)} />
+                {orMissing(splitsToDisplay(incomeSource, accounts, accountsStatus), (text) => <TruncatedText text={text} />, 'None')}
               </DataTableCell>
               <RowActionsCell
                 itemName={incomeSource.name}
-                isDeleting={deletingId === incomeSource.id}
+                {...rowDeleteState(deletingId, incomeSource.id)}
                 onEdit={() => setEditingIncomeSource(incomeSource)}
-                onDelete={() => setConfirmingDelete(incomeSource)}
+                onDelete={() => deletion.request(incomeSource)}
               />
             </TableRow>
           ))}

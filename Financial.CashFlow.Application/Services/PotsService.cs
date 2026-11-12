@@ -242,14 +242,14 @@ public sealed class PotsService : IPotsService
     private PotOperation BuildWithdrawal(
         Guid potsAccountId, PotWithdrawalRequestDTO request, Guid operationId, IEnumerable<PotTransaction> balanceTransactions)
     {
-        EnsureDescriptionAndDate(request.Description, request.Date);
+        EnsureDescription(request.Description);
 
         var accounts = _repository.GetAccounts().ToList();
         var potsAccount = FindPotsAccount(accounts, potsAccountId);
         var pot = potsAccount.FindPot(request.PotId);
         var (bank, category) = PotWithdrawalValidator.ResolveBankAndCategory(
             request.BankId, request.CategoryId, request.Description, accounts, _repository.GetCategories());
-        var operation = PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId);
+        var operation = PotWithdrawal.Build(potsAccount, pot, request.Amount, request.Date, request.Description, bank, category, operationId, _timeProvider.GetLocalToday());
         PotWithdrawalValidator.EnsureWithinBalance(pot, request.Amount, request.Confirmed, balanceTransactions);
 
         return operation;
@@ -257,7 +257,7 @@ public sealed class PotsService : IPotsService
 
     private PotOperation BuildDeposit(Guid potsAccountId, PotDepositRequestDTO request, Guid operationId)
     {
-        EnsureDescriptionAndDate(request.Description, request.Date);
+        EnsureDescription(request.Description);
 
         var accounts = _repository.GetAccounts().ToList();
         var potsAccount = FindPotsAccount(accounts, potsAccountId);
@@ -266,17 +266,15 @@ public sealed class PotsService : IPotsService
             .Select(line => new PotFundingLine(CashFlowReferenceResolver.ResolvePaymentSource(accounts, line.BankId), line.Amount))
             .ToList();
 
-        return PotDeposit.Build(potsAccount, request.Amount, request.Date, request.Description, pot, fundingLines, operationId);
+        return PotDeposit.Build(potsAccount, request.Amount, request.Date, request.Description, pot, fundingLines, operationId, _timeProvider.GetLocalToday());
     }
 
-    private void EnsureDescriptionAndDate(string description, DateOnly date)
+    private static void EnsureDescription(string description)
     {
         if (string.IsNullOrWhiteSpace(description))
         {
             throw new ArgumentException("Description is required.");
         }
-
-        TransactionDateRule.EnsureNotInFuture(date, _timeProvider.GetLocalToday());
     }
 
     private static Account FindPotsAccount(IEnumerable<Account> accounts, Guid potsAccountId) =>

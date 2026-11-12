@@ -5,7 +5,9 @@ import BrokerFormDialog from '../components/BrokerFormDialog'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useBrokers } from '../hooks/useBrokers'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { BrokerDto, CostBasisMethod } from '../api/types'
 import { getErrorMessage } from '../utils/formatters'
 import TruncatedText from '../components/TruncatedText'
@@ -44,7 +46,8 @@ export default function BrokersPage() {
   } = useBrokers()
   const [editingBroker, setEditingBroker] = useState<BrokerDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<BrokerDto | null>(null)
+  const deletion = usePendingDelete((row: BrokerDto) => deleteBroker(row.name))
+  const pendingDelete = deletion.pendingRow
 
   const closeFormDialog = () => {
     setEditingBroker(null)
@@ -81,12 +84,6 @@ export default function BrokersPage() {
     }
   }
 
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteBroker(confirmingDelete.name)
-    setConfirmingDelete(null)
-  }
-
   return (
     <AdminEntityPage
       title="Brokers"
@@ -103,13 +100,13 @@ export default function BrokersPage() {
           {(isCreating || editingBroker) && (
             <BrokerFormDialog broker={editingBroker} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="broker"
-              message={deleteMessage(confirmingDelete)}
-              confirmDisabled={confirmingDelete.portfolioCount > 0}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              message={deleteMessage(pendingDelete)}
+              confirmDisabled={pendingDelete.portfolioCount > 0}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -121,7 +118,7 @@ export default function BrokersPage() {
             <TableHeaderCell>Name</TableHeaderCell>
             <TableHeaderCell>Currency</TableHeaderCell>
             <TableHeaderCell>Status</TableHeaderCell>
-            <TableHeaderCell>Portfolios</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--numeric">Portfolios</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
@@ -131,12 +128,14 @@ export default function BrokersPage() {
               <DataTableCell label="Name"><TruncatedText text={broker.name} /></DataTableCell>
               <DataTableCell label="Currency">{broker.currency}</DataTableCell>
               <DataTableCell label="Status">{broker.status}</DataTableCell>
-              <DataTableCell label="Portfolios">{broker.portfolioCount}</DataTableCell>
+              <DataTableCell label="Portfolios" className="data-table__col--numeric">
+                {broker.portfolioCount}
+              </DataTableCell>
               <RowActionsCell
                 itemName={broker.name}
-                isDeleting={deletingName === broker.name}
+                {...rowDeleteState(deletingName, broker.name)}
                 onEdit={() => setEditingBroker(broker)}
-                onDelete={() => setConfirmingDelete(broker)}
+                onDelete={() => deletion.request(broker)}
               />
             </TableRow>
           ))}

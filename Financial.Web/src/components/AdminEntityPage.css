@@ -8,6 +8,12 @@
   overflow: auto;
 }
 
+.admin-entity-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .admin-entity-page__header {
   display: flex;
   flex-wrap: wrap;

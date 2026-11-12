@@ -1,4 +1,4 @@
-import { type FormEvent, useCallback, useEffect, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useId, useState } from 'react'
 import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
@@ -25,6 +25,8 @@ function toTickerGroups(items: WatchlistItemDto[]): TickerGroup[] {
 }
 
 export default function DividendCheckPage() {
+  const historyHeadingId = useId()
+  const yearHeadingId = useId()
   const [groups, setGroups] = useState<TickerGroup[]>([])
   const [ticker, setTicker] = useState('')
 
@@ -124,11 +126,11 @@ export default function DividendCheckPage() {
 
           <section className="dividend-check__tables">
             <div className="dividend-check__table-column">
-              <h3>Dividend history</h3>
+              <h3 id={historyHeadingId}>Dividend history</h3>
               {displayedHistory.length === 0 ? (
                 <EmptyState>No dividend history found.</EmptyState>
               ) : (
-                <Table className="data-table">
+                <Table className="data-table" aria-labelledby={historyHeadingId}>
                   <TableHeader>
                     <TableRow>
                       <SortableColumnHeader
@@ -167,11 +169,11 @@ export default function DividendCheckPage() {
               )}
             </div>
             <div className="dividend-check__table-column">
-              <h3>By year</h3>
+              <h3 id={yearHeadingId}>By year</h3>
               {displayedYearTotals.length === 0 ? (
                 <p>No annual totals available.</p>
               ) : (
-                <Table className="data-table">
+                <Table className="data-table" aria-labelledby={yearHeadingId}>
                   <TableHeader>
                     <TableRow>
                       <SortableColumnHeader

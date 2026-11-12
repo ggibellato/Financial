@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   Button,
   MessageBar,
@@ -15,22 +15,25 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import InvestmentAccountFormDialog, { type InvestmentAccountSourceOption } from '../components/InvestmentAccountFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useAccounts } from '../hooks/useAccounts'
 import { useInvestmentAccounts } from '../hooks/useInvestmentAccounts'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { AccountDto, InvestmentAccountDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import MissingValue from '../components/MissingValue'
 
-function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): string {
+function sourceDisplay(account: InvestmentAccountDto, accounts: AccountDto[]): ReactNode {
   if (account.source === 'CreditCard') {
-    return accounts.find((a) => a.id === account.creditCardId)?.name ?? '—'
+    return accounts.find((a) => a.id === account.creditCardId)?.name ?? <MissingValue label="None" />
   }
   if (account.source === 'PotsAccountTotal') {
     const potsAccount = accounts.find((a) => a.id === account.potsAccountId)
-    if (!potsAccount) return '—'
+    if (!potsAccount) return <MissingValue label="None" />
     return potsAccount.isActive ? `${potsAccount.name} total` : `${potsAccount.name} total (inactive)`
   }
-  return '—'
+  return <MissingValue label="None" />
 }
 
 export default function InvestmentAccountsPage() {
@@ -49,7 +52,8 @@ export default function InvestmentAccountsPage() {
   const creditCards = accounts.filter((account) => account.capabilities.includes('HasStatements'))
   const [editingAccount, setEditingAccount] = useState<InvestmentAccountDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<InvestmentAccountDto | null>(null)
+  const deletion = usePendingDelete((row: InvestmentAccountDto) => deleteInvestmentAccount(row.id))
+  const pendingDelete = deletion.pendingRow
 
   const handleSubmit = (
     name: string,
@@ -79,12 +83,6 @@ export default function InvestmentAccountsPage() {
     const result = await handleSubmit(name, isActive, isLiability, source, creditCardId, potsAccountId)
     closeFormDialog()
     return result
-  }
-
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteInvestmentAccount(confirmingDelete.id)
-    setConfirmingDelete(null)
   }
 
   return (
@@ -124,19 +122,19 @@ export default function InvestmentAccountsPage() {
               onSubmit={handleFormSubmit}
             />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="investment account"
               message={
-                confirmingDelete.hasNonZeroInvestmentSnapshot ? (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; has a non-zero balance and cannot be deleted.</>
+                pendingDelete.hasNonZeroInvestmentSnapshot ? (
+                  <>&ldquo;{pendingDelete.name}&rdquo; has a non-zero balance and cannot be deleted.</>
                 ) : (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                  <>&ldquo;{pendingDelete.name}&rdquo; will be permanently removed.</>
                 )
               }
-              confirmDisabled={confirmingDelete.hasNonZeroInvestmentSnapshot}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              confirmDisabled={pendingDelete.hasNonZeroInvestmentSnapshot}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -161,9 +159,9 @@ export default function InvestmentAccountsPage() {
               <DataTableCell label="Source">{sourceDisplay(account, accounts)}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
-                isDeleting={deletingId === account.id}
+                {...rowDeleteState(deletingId, account.id)}
                 onEdit={() => setEditingAccount(account)}
-                onDelete={() => setConfirmingDelete(account)}
+                onDelete={() => deletion.request(account)}
               />
             </TableRow>
           ))}

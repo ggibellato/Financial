@@ -6,6 +6,7 @@ import type { CategoryDto, RecurringBillDto } from '../../api/types'
 import { account } from '../../test/account'
 import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { never } from '../../test-utils/deferred'
 
 const {
   getMensaisBillsMock,
@@ -110,6 +111,16 @@ describe('MensaisPage', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument())
     expect(screen.getByText('Network down')).toBeInTheDocument()
+  })
+
+  it('moves focus into the reloaded page after Try again succeeds', async () => {
+    getMensaisBillsMock.mockRejectedValueOnce(new Error('Network down'))
+    render(<MensaisPage />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    const brasilBills = await screen.findByRole('table', { name: 'Brasil bills' })
+    await waitFor(() => expect(brasilBills).toContainElement(document.activeElement as HTMLElement))
   })
 
   it('renders Brasil and UK as two separate grouped sections', async () => {
@@ -279,7 +290,10 @@ describe('MensaisPage', () => {
     await screen.findByRole('button', { name: `Deleting ${INSS_NAME}`, hidden: true })
     const otherDeletes = screen.getAllByRole('button', { name: /^Delete bill/, hidden: true })
     expect(otherDeletes.length).toBeGreaterThan(0)
-    otherDeletes.forEach((button) => expect(button).toHaveAttribute('aria-disabled', 'true'))
+    otherDeletes.forEach((button) => {
+      expect(button).toHaveAttribute('aria-disabled', 'true')
+      expect(button).toHaveAccessibleDescription('Another delete is in progress.')
+    })
     expect(deleteMensaisBillMock).toHaveBeenCalledOnce()
   })
 
@@ -290,6 +304,23 @@ describe('MensaisPage', () => {
     expect(screen.getAllByText('Note')).toHaveLength(2)
     expect(screen.getByText('Paga via boleto')).toBeInTheDocument()
     expect(screen.getByText('Direct debit')).toBeInTheDocument()
+  })
+
+  it('names each bills table after its section heading', async () => {
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    expect(within(screen.getByRole('table', { name: 'Brasil bills' })).getByText('INSS')).toBeInTheDocument()
+    expect(within(screen.getByRole('table', { name: 'UK bills' })).getByText('Council Tax')).toBeInTheDocument()
+  })
+
+  it('names a missing NIT None and a missing Min. Wage Not available instead of leaving the cells blank', async () => {
+    render(<MensaisPage />)
+    await screen.findByText('INSS')
+
+    const inssRow = screen.getByText('INSS').closest('tr') as HTMLElement
+    expect(within(inssRow).getByRole('img', { name: 'None' })).toBeInTheDocument()
+    expect(within(inssRow).getByRole('img', { name: 'Not available' })).toBeInTheDocument()
   })
 
   it('shows NIT and Min. Wage columns only in the Brasil section', async () => {
@@ -597,5 +628,190 @@ describe('MensaisPage', () => {
 
     fireEvent.click(within(brasilTable).getByRole('button', { name: 'Status' }))
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
+  })
+
+  describe('bill forms', () => {
+    async function openNewBill() {
+      render(<MensaisPage />)
+      fireEvent.click(await screen.findByRole('button', { name: 'New bill' }))
+      return screen.findByRole('form', { name: 'New bill' })
+    }
+
+    async function openEditInss() {
+      render(<MensaisPage />)
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit bill INSS' }))
+      return screen.findByRole('form', { name: 'Edit bill' })
+    }
+
+    function fillNewBill() {
+      fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Aluguel' } })
+      fireEvent.change(screen.getByLabelText(/^Due day/), { target: { value: '5' } })
+      fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '1000' } })
+    }
+
+    it('names the bill being edited and focuses Value, the first field it can change', async () => {
+      await openEditInss()
+
+      expect(screen.getByLabelText('Bill')).toHaveValue('INSS · Brasil · due day 10')
+      expect(screen.getByLabelText('Bill')).toHaveAttribute('readonly')
+      await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
+    })
+
+    it('keeps a saving Edit open and blocks New bill and the other Edits until it settles', async () => {
+      updateMensaisBillMock.mockReturnValue(never())
+      const form = await openEditInss()
+      fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '900' } })
+      fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
+      await within(form).findByRole('button', { name: 'Saving…', hidden: true })
+
+      const otherEdit = screen.getByRole('button', { name: 'Edit bill Council Tax', hidden: true })
+      const newBill = screen.getByRole('button', { name: 'New bill', hidden: true })
+      fireEvent.click(otherEdit)
+      fireEvent.click(newBill)
+
+      expect(screen.getByRole('form', { name: 'Edit bill', hidden: true })).toBe(form)
+      expect(screen.getByLabelText(/^Value/)).toHaveValue(900)
+      expect(screen.queryByRole('form', { name: 'New bill', hidden: true })).not.toBeInTheDocument()
+      expect(otherEdit).toHaveAttribute('aria-disabled', 'true')
+      expect(otherEdit).toHaveAccessibleDescription('A bill is being saved.')
+      expect(newBill).toHaveAttribute('aria-disabled', 'true')
+      expect(newBill).toHaveAccessibleDescription('A bill is being saved.')
+    })
+
+    it('keeps a saving New bill open and blocks the row Edits', async () => {
+      createMensaisBillMock.mockReturnValue(never())
+      const form = await openNewBill()
+      fillNewBill()
+      fireEvent.click(within(form).getByRole('button', { name: 'Add bill' }))
+      await within(form).findByRole('button', { name: 'Saving…', hidden: true })
+
+      const edit = screen.getByRole('button', { name: 'Edit bill INSS', hidden: true })
+      fireEvent.click(edit)
+
+      expect(edit).toHaveAttribute('aria-disabled', 'true')
+      expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })).not.toBeInTheDocument()
+      expect(screen.getByRole('form', { name: 'New bill', hidden: true })).toBe(form)
+      expect(screen.queryByRole('form', { name: 'Edit bill', hidden: true })).not.toBeInTheDocument()
+      expect(screen.getByLabelText(/^Description/)).toHaveValue('Aluguel')
+    })
+
+    it('focuses the first field when New bill opens', async () => {
+      await openNewBill()
+
+      await waitFor(() => expect(screen.getByLabelText(/^Area/)).toHaveFocus())
+    })
+
+    it('validates only after Save, then focuses the first invalid field', async () => {
+      const form = await openNewBill()
+
+      expect(screen.getByLabelText(/^Description/)).not.toHaveAttribute('aria-invalid', 'true')
+      fireEvent.click(within(form).getByRole('button', { name: 'Add bill' }))
+
+      expect(await screen.findByText('Description is required.')).toBeInTheDocument()
+      expect(screen.getByText('Due day must be a number.')).toBeInTheDocument()
+      await waitFor(() => expect(screen.getByLabelText(/^Description/)).toHaveFocus())
+      expect(createMensaisBillMock).not.toHaveBeenCalled()
+    })
+
+    it('submits from a field with Enter', async () => {
+      createMensaisBillMock.mockReturnValue(never())
+      await openNewBill()
+      fillNewBill()
+
+      fireEvent.submit(screen.getByLabelText(/^Value/))
+
+      await waitFor(() => expect(createMensaisBillMock).toHaveBeenCalledTimes(1))
+    })
+
+    it('keeps Save focusable and reads Saving… while the bill is being added', async () => {
+      createMensaisBillMock.mockReturnValue(never())
+      const form = await openNewBill()
+      fillNewBill()
+
+      fireEvent.click(within(form).getByRole('button', { name: 'Add bill' }))
+
+      const saving = await within(form).findByRole('button', { name: 'Saving…' })
+      expect(saving).toHaveAttribute('aria-disabled', 'true')
+      expect(saving).not.toBeDisabled()
+      fireEvent.click(saving)
+      expect(createMensaisBillMock).toHaveBeenCalledTimes(1)
+    })
+
+    it('closes a clean form on Cancel without asking and returns focus to New bill', async () => {
+      const form = await openNewBill()
+
+      fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+
+      expect(screen.queryByRole('form', { name: 'New bill' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'New bill' })).toHaveFocus()
+    })
+
+    it('asks before discarding a changed New bill on Cancel; Keep editing keeps the values', async () => {
+      const form = await openNewBill()
+      fireEvent.change(screen.getByLabelText(/^Description/), { target: { value: 'Aluguel' } })
+
+      fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+      const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+      fireEvent.click(within(prompt).getByRole('button', { name: 'Keep editing', hidden: true }))
+
+      await waitFor(() =>
+        expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })).not.toBeInTheDocument(),
+      )
+      expect(screen.getByLabelText(/^Description/)).toHaveValue('Aluguel')
+    })
+
+    it('discards a changed New bill after confirming and returns focus to New bill', async () => {
+      const form = await openNewBill()
+      const area = screen.getByLabelText(/^Area/)
+      fireEvent.change(area, { target: { value: (area as HTMLSelectElement).value === 'UK' ? 'Brasil' : 'UK' } })
+
+      fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+      const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+      fireEvent.click(within(prompt).getByRole('button', { name: 'Discard', hidden: true }))
+
+      await waitFor(() => expect(screen.queryByRole('form', { name: 'New bill' })).not.toBeInTheDocument())
+      await waitFor(() => expect(screen.getByRole('button', { name: 'New bill' })).toHaveFocus())
+    })
+
+    it('sends Escape on a changed form through the discard prompt, and closes a clean one', async () => {
+      const form = await openEditInss()
+
+      fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '900' } })
+      fireEvent.keyDown(screen.getByLabelText(/^Value/), { key: 'Escape' })
+      const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+      expect(form).toBeInTheDocument()
+
+      fireEvent.click(within(prompt).getByRole('button', { name: 'Keep editing', hidden: true }))
+      fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '850' } })
+      fireEvent.keyDown(screen.getByLabelText(/^Value/), { key: 'Escape' })
+      await waitFor(() => expect(screen.queryByRole('form', { name: 'Edit bill' })).not.toBeInTheDocument())
+    })
+
+    it('asks before opening another form over a changed one', async () => {
+      await openEditInss()
+      fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '900' } })
+
+      fireEvent.click(screen.getByRole('button', { name: 'New bill' }))
+
+      const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+      expect(screen.queryByRole('form', { name: 'New bill' })).not.toBeInTheDocument()
+      fireEvent.click(within(prompt).getByRole('button', { name: 'Discard', hidden: true }))
+      expect(await screen.findByRole('form', { name: 'New bill' })).toBeInTheDocument()
+      expect(screen.queryByRole('form', { name: 'Edit bill' })).not.toBeInTheDocument()
+    })
+
+    it('keeps the entered values and moves focus to the server error when adding fails', async () => {
+      createMensaisBillMock.mockRejectedValue(new Error('Server down'))
+      const form = await openNewBill()
+      fillNewBill()
+
+      fireEvent.click(within(form).getByRole('button', { name: 'Add bill' }))
+
+      const alert = await findErrorAlert()
+      expect(alert).toHaveTextContent('Server down')
+      await waitFor(() => expect(alert).toHaveFocus())
+      expect(screen.getByLabelText(/^Description/)).toHaveValue('Aluguel')
+    })
   })
 })

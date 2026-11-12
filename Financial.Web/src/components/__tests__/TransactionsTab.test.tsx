@@ -392,6 +392,12 @@ describe('TransactionsTab', () => {
     expect(screen.getByText('-420.50')).toHaveClass('transactions-tab__total')
   })
 
+  it('names_the_transactions_table', async () => {
+    await renderAssetTab([TRANSACTION_BUY])
+
+    expect(screen.getByRole('table', { name: 'Transactions' })).toBeInTheDocument()
+  })
+
   it('shows_an_empty_state_instead_of_the_table_when_the_holding_has_no_transactions', async () => {
     await renderAssetTab([])
     expect(screen.getByText('No transactions yet — nothing has been bought or sold in this holding.')).toBeInTheDocument()
@@ -659,15 +665,18 @@ describe('TransactionsTab', () => {
     await waitFor(() => expect(rowButton(`Delete ${SELL_NAME}`)).toHaveFocus())
   })
 
-  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+  it('blocks_a_second_delete_while_one_is_in_progress', async () => {
     deleteTransactionMock.mockReturnValue(new Promise(() => {}))
     await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
     await confirmDelete(BUY_NAME)
 
-    await confirmDelete(SELL_NAME)
+    const blocked = await screen.findByRole('button', { name: `Delete ${SELL_NAME}`, hidden: true })
+    await waitFor(() => expect(blocked).toHaveAttribute('aria-disabled', 'true'))
+    fireEvent.click(blocked)
+    expect(screen.queryByRole('dialog', { name: /^Delete/, hidden: true })).not.toBeInTheDocument()
 
+    expect(blocked).toHaveAccessibleDescription('Another delete is in progress.')
     expect(deleteTransactionMock).toHaveBeenCalledOnce()
-    expect(rowButton(`Delete ${SELL_NAME}`)).not.toHaveAttribute('aria-disabled')
   })
 
   it('closes_the_edit_form_when_the_transaction_being_edited_is_deleted', async () => {

@@ -127,6 +127,17 @@ describe('TaxRulesPage', () => {
     await waitFor(() => expect(deleteTaxRuleMock).toHaveBeenCalledWith('r1'))
   })
 
+  it('closes the delete confirmation on Cancel without deleting', async () => {
+    render(<TaxRulesPage />)
+    await waitFor(() => expect(screen.getByText('BR dividend withholding')).toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Delete BR dividend withholding' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByText(/will be permanently deleted/)).not.toBeInTheDocument())
+    expect(deleteTaxRuleMock).not.toHaveBeenCalled()
+  })
+
   it('shows the server rejection inline, naming the affected tax year(s), when a delete is blocked', async () => {
     deleteTaxRuleMock.mockRejectedValue(
       new Error(

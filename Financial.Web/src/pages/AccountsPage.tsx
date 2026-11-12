@@ -7,9 +7,11 @@ import LoadingState from '../components/LoadingState'
 import TotalsGrid from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
-import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2, formatN2OrDash } from '../utils/formatters'
+import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2 } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
+import MissingValue from '../components/MissingValue'
 import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
@@ -54,7 +56,7 @@ const nextStatementColumn = {
   header: 'Next statement',
   render: (row: AccountGroupMemberDto) => {
     const month = nextStatementMonth(row)
-    return month && row.nextStatement ? `${formatMonthYear(month)} · ${formatN2(row.nextStatement.outstandingTotal)}` : '—'
+    return month && row.nextStatement ? `${formatMonthYear(month)} · ${formatN2(row.nextStatement.outstandingTotal)}` : <MissingValue label="None" />
   },
   sortAccessor: nextStatementMonth,
 }
@@ -63,7 +65,7 @@ const totalOwedColumn = {
   key: 'totalOwed',
   header: 'Total owed',
   numeric: true,
-  render: (row: AccountGroupMemberDto) => (row.totalOwed == null ? formatN2OrDash(row.totalOwed) : formatOwedOrCredit(row.totalOwed)),
+  render: (row: AccountGroupMemberDto) => orMissing(row.totalOwed, formatOwedOrCredit),
   sortAccessor: (row: AccountGroupMemberDto) => row.totalOwed,
 }
 

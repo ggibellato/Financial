@@ -167,6 +167,8 @@ function dataRows(table: HTMLElement) {
   return within(table).getAllByRole('row').slice(1)
 }
 
+const priceInput = () => screen.getByRole('spinbutton', { name: /^Price/ })
+
 describe('PriceHistoryTab', () => {
   beforeEach(() => {
     pinDate('2026-08-20T12:00:00+01:00')
@@ -261,7 +263,7 @@ describe('PriceHistoryTab', () => {
   it('form_is_hidden_until_new_price_is_clicked', async () => {
     await renderEmpty()
     expect(screen.queryByLabelText(/^Date/)).not.toBeInTheDocument()
-    expect(screen.queryByLabelText(/^Price/)).not.toBeInTheDocument()
+    expect(screen.queryByRole('spinbutton', { name: /^Price/ })).not.toBeInTheDocument()
   })
 
   it('new_button_shows_blank_form_with_todays_date', async () => {
@@ -269,7 +271,7 @@ describe('PriceHistoryTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
 
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2026-08-20')
-    expect(screen.getByLabelText(/^Price/)).toHaveValue(null)
+    expect(priceInput()).toHaveValue(null)
   })
 
   it('form_title_is_new_price_when_adding', async () => {
@@ -286,7 +288,7 @@ describe('PriceHistoryTab', () => {
 
     expect(screen.getByRole('heading', { name: 'Edit price' })).toBeInTheDocument()
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-03-15')
-    expect(screen.getByLabelText(/^Price/)).toHaveValue(120.5)
+    expect(priceInput()).toHaveValue(120.5)
     expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument()
   })
 
@@ -305,8 +307,8 @@ describe('PriceHistoryTab', () => {
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2024-05-01' } })
     expect(screen.getByLabelText(/^Date/)).toHaveValue('2024-05-01')
 
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '4.5' } })
-    expect(screen.getByLabelText(/^Price/)).toHaveValue(4.5)
+    fireEvent.change(priceInput(), { target: { value: '4.5' } })
+    expect(priceInput()).toHaveValue(4.5)
   })
 
   it('saving_a_new_price_posts_the_payload_and_shows_the_new_row', async () => {
@@ -316,7 +318,7 @@ describe('PriceHistoryTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-08-18' } })
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '125.75' } })
+    fireEvent.change(priceInput(), { target: { value: '125.75' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
     expect(await within(table).findByText('18/08/2026')).toBeInTheDocument()
@@ -338,7 +340,7 @@ describe('PriceHistoryTab', () => {
     setAssetPriceMock.mockResolvedValue(detailsWith({ ...MANUAL_ENTRY, price: 130 }))
 
     fireEvent.click(screen.getByRole('button', { name: /^Edit price\b/ }))
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '130' } })
+    fireEvent.change(priceInput(), { target: { value: '130' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     expect(await within(table).findByText('130.00')).toBeInTheDocument()
@@ -351,7 +353,7 @@ describe('PriceHistoryTab', () => {
     setAssetPriceMock.mockReturnValue(new Promise(() => {}))
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '50' } })
+    fireEvent.change(priceInput(), { target: { value: '50' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
     expect(await screen.findByRole('button', { name: 'Saving…' })).toBeDisabled()
@@ -361,7 +363,7 @@ describe('PriceHistoryTab', () => {
     await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
     fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '' } })
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '50' } })
+    fireEvent.change(priceInput(), { target: { value: '50' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
     expect(await screen.findByText('Date is required.')).toBeInTheDocument()
@@ -371,7 +373,7 @@ describe('PriceHistoryTab', () => {
   it('save_requires_a_positive_price', async () => {
     await renderEmpty()
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '0' } })
+    fireEvent.change(priceInput(), { target: { value: '0' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
     expect(await screen.findByText('Price must be a positive number.')).toBeInTheDocument()
@@ -383,11 +385,11 @@ describe('PriceHistoryTab', () => {
     setAssetPriceMock.mockRejectedValue(new Error('Failed'))
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
-    fireEvent.change(screen.getByLabelText(/^Price/), { target: { value: '50' } })
+    fireEvent.change(priceInput(), { target: { value: '50' } })
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
     expect(await screen.findByText('Failed')).toBeInTheDocument()
-    expect(screen.getByLabelText(/^Price/)).toHaveValue(50)
+    expect(priceInput()).toHaveValue(50)
   })
 
   it('delete_button_calls_the_api_and_removes_the_row_after_confirmation', async () => {
@@ -429,12 +431,15 @@ describe('PriceHistoryTab', () => {
     expect(rowButton(`Deleting ${MANUAL_NAME}`)).toHaveAttribute('aria-disabled', 'true')
   })
 
-  it('ignores_a_second_delete_while_one_is_in_progress', async () => {
+  it('blocks_a_second_delete_while_one_is_in_progress', async () => {
     deleteAssetPriceMock.mockReturnValue(new Promise(() => {}))
     await renderLoaded(MANUAL_ENTRY, EARLIER_MANUAL_ENTRY)
     await confirmDelete(MANUAL_NAME)
 
-    await confirmDelete(EARLIER_MANUAL_NAME)
+    const blocked = await screen.findByRole('button', { name: `Delete ${EARLIER_MANUAL_NAME}`, hidden: true })
+    await waitFor(() => expect(blocked).toHaveAttribute('aria-disabled', 'true'))
+    fireEvent.click(blocked)
+    expect(screen.queryByRole('dialog', { name: /^Delete/, hidden: true })).not.toBeInTheDocument()
 
     expect(deleteAssetPriceMock).toHaveBeenCalledOnce()
   })

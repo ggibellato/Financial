@@ -2,6 +2,7 @@ import { Tab } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { useState } from 'react'
 import PageTabList from '../components/PageTabList'
+import { useTabPanel } from '../hooks/useTabPanel'
 import type { MonthTransactionDto } from '../api/types'
 import BanksGrid from '../components/BanksGrid'
 import CardsGrid from '../components/CardsGrid'
@@ -51,6 +52,7 @@ export default function MonthlyPage() {
   } = useMonthly()
 
   const [activeTab, setActiveTab] = useState<MonthlyTabId>('summary')
+  const tabPanel = useTabPanel(activeTab)
 
   const handleTabSelect = (_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as MonthlyTabId)
 
@@ -70,41 +72,43 @@ export default function MonthlyPage() {
 
       <PageTabList aria-label="Monthly views" selectedValue={activeTab} onTabSelect={handleTabSelect}>
         {MONTHLY_TABS.map((tab) => (
-          <Tab key={tab.id} value={tab.id}>
+          <Tab key={tab.id} value={tab.id} {...tabPanel.tabProps(tab.id)}>
             {tab.label}
           </Tab>
         ))}
       </PageTabList>
 
-      {activeTab === 'transactions' ? (
-        <div className="monthly-page__content">
-          <AllTransactionsTab key={`${year}-${month}`} year={year} month={month} />
-        </div>
-      ) : isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : (
-        <div className="monthly-page__content">
-          <div className="monthly-page__summary-groups">
-            <div className="monthly-page__grids-row">
-              <CategoryTotalsGrid categoryTotals={categoryTotals} categoryTotalsSum={categoryTotalsSum} />
-              <CardsGrid cards={cardMembers} currencyTotals={currencyTotals} viewedMonth={monthInputValue} />
-            </div>
-            <div className="monthly-page__grids-row">
-              <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} viewedMonth={monthInputValue} />
-              <IncomingGrid
-                incomeTotals={incomeTotals}
-                totalIncoming={totalIncoming}
-                titheSummary={titheSummary}
-                carryForwardUpdating={carryForwardUpdating}
-                onToggleCarryForward={updateCarryForwardInclusion}
-                carryForwardActionError={carryForwardError}
-              />
+      <div className="monthly-page__panel" {...tabPanel.panelProps}>
+        {activeTab === 'transactions' ? (
+          <div className="monthly-page__content">
+            <AllTransactionsTab key={`${year}-${month}`} year={year} month={month} />
+          </div>
+        ) : isLoading ? (
+          <LoadingState />
+        ) : error ? (
+          <ErrorState message={error} onRetry={retry} />
+        ) : (
+          <div className="monthly-page__content">
+            <div className="monthly-page__summary-groups">
+              <div className="monthly-page__grids-row">
+                <CategoryTotalsGrid categoryTotals={categoryTotals} categoryTotalsSum={categoryTotalsSum} />
+                <CardsGrid cards={cardMembers} currencyTotals={currencyTotals} viewedMonth={monthInputValue} />
+              </div>
+              <div className="monthly-page__grids-row">
+                <BanksGrid bankTotals={bankTotals} currencyTotals={currencyTotals} viewedMonth={monthInputValue} />
+                <IncomingGrid
+                  incomeTotals={incomeTotals}
+                  totalIncoming={totalIncoming}
+                  titheSummary={titheSummary}
+                  carryForwardUpdating={carryForwardUpdating}
+                  onToggleCarryForward={updateCarryForwardInclusion}
+                  carryForwardActionError={carryForwardError}
+                />
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

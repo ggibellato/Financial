@@ -31,4 +31,13 @@ public class TransactionDateRuleTests
 
         act.Should().NotThrow();
     }
+
+    [Theory]
+    [InlineData(2026, 11, 12, true)]
+    [InlineData(2026, 11, 11, false)]
+    [InlineData(2026, 11, 10, false)]
+    public void IsInFuture_ComparesAgainstToday(int year, int month, int day, bool expected)
+    {
+        TransactionDateRule.IsInFuture(new DateOnly(year, month, day), Today).Should().Be(expected);
+    }
 }

@@ -52,7 +52,7 @@ public class SettlementServiceTests
 
     private SettlementTransaction AddStoredEntry(Account account, Currency currency, decimal? convertedValue)
     {
-        var entry = SettlementTransaction.Create(account, EntryDate, "Farmácia", null, SettlementPayer.You, currency, 150m, convertedValue);
+        var entry = SettlementTransaction.Create(account, EntryDate, "Farmácia", null, SettlementPayer.You, currency, 150m, convertedValue, TestClock.Today);
         _repository.SettlementTransactions.Add(entry);
         return entry;
     }
@@ -423,7 +423,7 @@ public class SettlementServiceTests
     {
         AddStoredEntry(_mae, Currency.BRL, 21.94m);
         _repository.SettlementTransactions.Add(
-            SettlementTransaction.Create(_mae, EntryDate, "Back", null, SettlementPayer.Other, Currency.BRL, 149.996m, 21.94m));
+            SettlementTransaction.Create(_mae, EntryDate, "Back", null, SettlementPayer.Other, Currency.BRL, 149.996m, 21.94m, TestClock.Today));
 
         var act = () => CreateService().SettleAsync(_mae.Id, Settlement(1m, null));
 

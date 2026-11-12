@@ -33,7 +33,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 2).Value = 300.0;
         _sheet.Cell(1, 3).Value = 60.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
         var entry = entries[0];
@@ -52,7 +52,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 1).Value = "Feito acerto em Dez/2018, seguro pago ate Dez/2018";
         _sheet.Cell(1, 2).Value = 186.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
         entries[0].Date.Should().Be(new DateOnly(2018, 12, 1));
@@ -67,7 +67,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 2).Value = 186.0;
         _sheet.Cell(1, 3).Value = "62 por mes";
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
         entries[0].ConvertedValue.Should().BeNull();
@@ -80,7 +80,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(2, 1).Value = "01/03/2020 - real entry";
         _sheet.Cell(2, 2).Value = 100.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
     }
@@ -91,7 +91,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 1).Value = "IPTU 1/?? 2023/02";
         _sheet.Cell(1, 2).Value = 90.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
         entries[0].Date.Should().Be(new DateOnly(2023, 2, 1));
@@ -103,7 +103,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 1).Value = "Sem nenhuma data reconhecivel aqui";
         _sheet.Cell(1, 2).Value = 90.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().BeEmpty();
         _report.RowIssues.Should().ContainSingle(i => i.SheetName == "Controle mae" && i.Row == 1);
@@ -115,7 +115,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 1).Value = "Seguro Jan/2021-Maio/2022";
         _sheet.Cell(1, 2).Value = 900.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
         entries[0].Date.Should().Be(new DateOnly(2022, 5, 1));
@@ -127,7 +127,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 1).Value = "Jan/2020-Dez/2020 - Seguro";
         _sheet.Cell(1, 2).Value = 1200.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().ContainSingle();
         entries[0].Date.Should().Be(new DateOnly(2020, 12, 1));
@@ -143,7 +143,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(2, 1).Value = "Conta Gabriel";
         _sheet.Cell(2, 2).Value = 100.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().HaveCount(2);
         entries[0].Date.Should().Be(new DateOnly(2023, 12, 29));
@@ -163,7 +163,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(3, 1).Value = "Sem data 2";
         _sheet.Cell(3, 2).Value = 20.0;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().HaveCount(3);
         entries[0].Date.Should().Be(new DateOnly(2021, 1, 10));
@@ -176,7 +176,7 @@ public class ControleMaeSheetImporterTests : IDisposable
     {
         _sheet.Cell(1, 1).Value = "01/03/2020 apenas nota sem valor";
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().BeEmpty();
         _report.RowIssues.Should().BeEmpty();
@@ -189,7 +189,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 2).Value = -120.0;
         _sheet.Cell(1, 3).Value = -19.5;
 
-        var entry = ControleMaeSheetImporter.Import(_sheet, _mae, _report).Single();
+        var entry = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today).Single();
 
         entry.PaidBy.Should().Be(SettlementPayer.Other);
         entry.Amount.Should().Be(120.0m);
@@ -202,7 +202,7 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 1).Value = "Libras 11/10/2024";
         _sheet.Cell(1, 3).Value = 80.0;
 
-        var entry = ControleMaeSheetImporter.Import(_sheet, _mae, _report).Single();
+        var entry = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today).Single();
 
         entry.Currency.Should().Be(Currency.GBP);
         entry.Amount.Should().Be(80.0m);
@@ -220,9 +220,23 @@ public class ControleMaeSheetImporterTests : IDisposable
         _sheet.Cell(1, 2).Value = brl;
         _sheet.Cell(1, 3).Value = gbp;
 
-        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report);
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, TestClock.Today);
 
         entries.Should().BeEmpty();
         _report.RowIssues.Should().ContainSingle(i => i.SheetName == "Controle mae" && i.Row == 1);
+    }
+
+    [Fact]
+    public void Import_DateAfterToday_IsSkippedAndFlagged()
+    {
+        _sheet.Cell(1, 1).Value = "Acerto 05/10/2026";
+        _sheet.Cell(1, 2).Value = 100.0;
+        _sheet.Cell(2, 1).Value = "Acerto 06/10/2026";
+        _sheet.Cell(2, 2).Value = 50.0;
+
+        var entries = ControleMaeSheetImporter.Import(_sheet, _mae, _report, new DateOnly(2026, 10, 5));
+
+        entries.Should().ContainSingle().Which.Date.Should().Be(new DateOnly(2026, 10, 5));
+        _report.RowIssues.Should().ContainSingle(i => i.SheetName == "Controle mae" && i.Row == 2);
     }
 }

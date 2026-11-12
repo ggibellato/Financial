@@ -168,7 +168,7 @@ export default function InvestmentSnapshotsPage() {
       ) : (
         <div className="investment-snapshots-page__content">
           <section className="investment-snapshots-page__section">
-            <Table className="investment-snapshots-page__table data-table">
+            <Table className="investment-snapshots-page__table data-table" aria-label="Investment snapshots">
               <SnapshotColumns />
               <TableHeader>
                 <TableRow>

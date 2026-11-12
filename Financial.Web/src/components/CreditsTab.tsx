@@ -13,7 +13,7 @@ import {
 } from 'recharts'
 import { Button, Field, Input, Select, Table, TableBody, TableHeader, TableHeaderCell, TableRow, Text } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
-import { useRef } from 'react'
+import { useId, useRef } from 'react'
 import EmptyState from './EmptyState'
 import type { CreditDto } from '../api/types'
 import ActionErrorAlert from './ActionErrorAlert'
@@ -33,9 +33,11 @@ import type { ChartType, CreditFormField, MonthBucket, ViewMode } from '../hooks
 import { useCredits } from '../hooks/useCredits'
 import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { PERIOD_FILTER_OPTIONS } from '../utils/periodFilter'
-import { formatAmount, formatN2, formatPercent1OrDash, formatShortDate, SAVING_LABEL } from '../utils/formatters'
+import { formatAmount, formatN2, formatPercent1, formatShortDate, SAVING_LABEL } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './CreditsTab.css'
 
@@ -85,7 +87,7 @@ const SORT_ACCESSORS: Record<string, SortAccessor<CreditDto>> = {
 
 interface CreditRowProps {
   credit: CreditDto
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (c: CreditDto) => void
   onDelete: (c: CreditDto) => void
 }
@@ -112,7 +114,7 @@ function creditName(credit: CreditDto): string {
   return `credit ${typeLabel(credit.type)} ${formatAmount(credit.value, credit.currency)}, ${formatShortDate(credit.date)}`
 }
 
-function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
+function CreditRow({ credit, deleteState, onEdit, onDelete }: CreditRowProps) {
   const typeClass = TYPE_CLASSES[credit.type] ?? 'credits-tab__type--dividend'
 
   return (
@@ -128,10 +130,10 @@ function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
         {formatN2(credit.netAmount)}
       </DataTableCell>
       <DataTableCell label="Yield (Bought)" className="data-table__col--numeric">
-        {formatPercent1OrDash(credit.yieldOnInvested)}
+        {orMissing(credit.yieldOnInvested, formatPercent1)}
       </DataTableCell>
       <DataTableCell label="Yield (Current)" className="data-table__col--numeric">
-        {formatPercent1OrDash(credit.yieldOnMarket)}
+        {orMissing(credit.yieldOnMarket, formatPercent1)}
       </DataTableCell>
       <DataTableCell label="Yield details">
         <DividendYieldTooltip credit={credit} />
@@ -141,7 +143,7 @@ function CreditRow({ credit, isDeleting, onEdit, onDelete }: CreditRowProps) {
       </DataTableCell>
       <RowActionsCell
         itemName={creditName(credit)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={() => onEdit(credit)}
         onDelete={() => onDelete(credit)}
       />
@@ -287,16 +289,17 @@ interface ChartPanelProps {
 }
 
 function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, compact }: ChartPanelProps) {
+  const chartTitleId = useId()
   const isStacked = selectedMode === 'Stacked'
   const palette = buildPalette(creditTypes.length)
 
   return (
     <div className={`credits-tab__chart-panel${compact ? ' credits-tab__chart-panel--compact' : ''}`}>
-      <p className="credits-tab__chart-title">Credits by month</p>
-      <div className="credits-tab__chart-container">
+      <p id={chartTitleId} className="credits-tab__chart-title">Credits by month</p>
+      <div className="credits-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartType === 'Bar' ? (
-            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+            <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
@@ -321,7 +324,7 @@ function ChartPanel({ chartData, creditTypes, selectedMode, selectedChartType, c
               ))}
             </BarChart>
           ) : (
-            <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+            <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
@@ -412,7 +415,7 @@ export default function CreditsTab() {
 
   const toolbar = (
     <div className="credits-tab__controls">
-      <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+      <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
       <FilterTabList label="View:" options={CHART_TYPE_OPTIONS} selected={selectedChartType} onSelect={setChartType} />
       <FilterTabList label="Group:" options={VIEW_MODE_OPTIONS} selected={selectedMode} onSelect={setMode} />
     </div>
@@ -472,7 +475,7 @@ export default function CreditsTab() {
         <EmptyState className="credits-tab__empty">No credits yet — no dividend, JCP, coupon or lending income has been recorded for this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="credits-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="credits-tab__table data-table">
+          <Table className="credits-tab__table data-table" aria-label="Credits">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader
@@ -539,7 +542,7 @@ export default function CreditsTab() {
                 <CreditRow
                   key={c.id}
                   credit={c}
-                  isDeleting={deletingId === c.id}
+                  deleteState={rowDeleteState(deletingId, c.id)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />

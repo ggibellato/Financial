@@ -5,7 +5,9 @@ import CategoryFormDialog from '../components/CategoryFormDialog'
 import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useCategories } from '../hooks/useCategories'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { CategoryDto } from '../api/types'
 import TruncatedText from '../components/TruncatedText'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
@@ -24,7 +26,8 @@ export default function CategoriesPage() {
   } = useCategories()
   const [editingCategory, setEditingCategory] = useState<CategoryDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<CategoryDto | null>(null)
+  const deletion = usePendingDelete((row: CategoryDto) => deleteCategory(row.id))
+  const pendingDelete = deletion.pendingRow
   const [showInactive, setShowInactive] = useState(false)
 
   const visibleCategories = showInactive ? categories : categories.filter((category) => category.active)
@@ -43,12 +46,6 @@ export default function CategoriesPage() {
     const result = await handleSubmit(name, active, isInvestment, isTithe)
     closeFormDialog()
     return result
-  }
-
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteCategory(confirmingDelete.id)
-    setConfirmingDelete(null)
   }
 
   return (
@@ -74,19 +71,19 @@ export default function CategoriesPage() {
           {(isCreating || editingCategory) && (
             <CategoryFormDialog category={editingCategory} onCancel={closeFormDialog} onSubmit={handleFormSubmit} />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="category"
               message={
-                confirmingDelete.hasReferences ? (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; is still used by a transaction and cannot be deleted.</>
+                pendingDelete.hasReferences ? (
+                  <>&ldquo;{pendingDelete.name}&rdquo; is still used by a transaction and cannot be deleted.</>
                 ) : (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; will be permanently removed.</>
+                  <>&ldquo;{pendingDelete.name}&rdquo; will be permanently removed.</>
                 )
               }
-              confirmDisabled={confirmingDelete.hasReferences}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              confirmDisabled={pendingDelete.hasReferences}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -111,9 +108,9 @@ export default function CategoriesPage() {
               <DataTableCell label="Tithe">{category.isTithe ? 'Yes' : 'No'}</DataTableCell>
               <RowActionsCell
                 itemName={category.name}
-                isDeleting={deletingId === category.id}
+                {...rowDeleteState(deletingId, category.id)}
                 onEdit={() => setEditingCategory(category)}
-                onDelete={() => setConfirmingDelete(category)}
+                onDelete={() => deletion.request(category)}
               />
             </TableRow>
           ))}

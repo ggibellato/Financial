@@ -123,6 +123,14 @@ describe('AnnualSummaryPage', () => {
     expect(screen.getByText('Loading…')).toBeInTheDocument()
   })
 
+  it('keeps the tab panel the tabs control while loading', () => {
+    render(<AnnualSummaryPage />)
+
+    const panel = screen.getByRole('tabpanel', { name: 'Category totals' })
+    expect(panel).toContainElement(screen.getByText('Loading…'))
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-controls', panel.id)
+  })
+
   it('shows an error state with retry when the fetch fails', async () => {
     getCategoryTotalsAnnualForYearMock.mockRejectedValue(new Error('Network down'))
 
@@ -149,6 +157,13 @@ describe('AnnualSummaryPage', () => {
     expect(screen.getByText('Mercado')).toBeInTheDocument()
     expect(screen.getByText('Salary')).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Investments' })).not.toBeInTheDocument()
+  })
+
+  it('names the loaded panel after its tab and wires every tab to it', async () => {
+    render(<AnnualSummaryPage />)
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Category totals' })
+    expect(screen.getByRole('tab', { name: 'Investments' })).toHaveAttribute('aria-controls', panel.id)
   })
 
   it('marks Category totals as the active tab button by default', async () => {

@@ -3,6 +3,7 @@ import { Button, Tab } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import { ArrowMoveRegular, CopyRegular, DeleteRegular } from '@fluentui/react-icons'
 import PageTabList from './PageTabList'
+import { useTabPanel } from '../hooks/useTabPanel'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import { usePortfolioDeletion } from '../hooks/usePortfolioDeletion'
 import { POSITION_TYPE_STATUS_CLASS } from '../utils/positionType'
@@ -42,6 +43,7 @@ export default function DetailPanel() {
   const { selectedNode, setSelectedNode, scope, reload } = useSelectedNode()
   const { deleteError, deletePortfolio } = usePortfolioDeletion()
   const [activeTab, setActiveTab] = useState<TabId>('summary')
+  const tabPanel = useTabPanel(activeTab)
   const [prevKey, setPrevKey] = useState('')
   const [isMoving, setIsMoving] = useState(false)
 
@@ -167,13 +169,13 @@ export default function DetailPanel() {
             ? [BASE_TABS[0], HOLDINGS_TAB, ...BASE_TABS.slice(1)]
             : BASE_TABS
         ).map((tab) => (
-          <Tab key={tab.id} value={tab.id}>
+          <Tab key={tab.id} value={tab.id} {...tabPanel.tabProps(tab.id)}>
             {tab.label}
           </Tab>
         ))}
       </PageTabList>
 
-      <div className="detail-panel__content">
+      <div className="detail-panel__content" {...tabPanel.panelProps}>
         <Suspense fallback={<LoadingState />}>
           {activeTab === 'summary' && isAsset && <AssetSummaryTab />}
           {activeTab === 'summary' && isPortfolio && <PortfolioSummaryTab />}

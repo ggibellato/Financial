@@ -412,6 +412,13 @@ user clicked it — `useSortableRows`' `defaultSort` parameter (seeded with
 the exported `DATE_DESC_SORT` constant, or an equivalent literal for a
 non-`date` columnKey).
 
+While one row's delete is running, the grid blocks every other row's
+Delete: `RowActionsCell` takes `isDeleting` and `isOtherDeleting`, spread from
+`components/grid/rowDeleteState(deletingKey, rowKey)`. A blocked Delete stays
+focusable (`disabledFocusable`) and is described by a tooltip, "Another delete
+is in progress.", so keyboard and screen-reader users learn why it does
+nothing. Every row icon button shows its own label as a hover tooltip.
+
 A grid gets no default sort only when it genuinely has no per-row
 date/month/year field to sort by — an aggregate/summary grid pivoting
 months or years into separate columns (Annual Summary), a grid scoped to
@@ -428,7 +435,9 @@ semantic, not an independent multi-toggle one. Web uses the shared
 `FilterTabList` component (`components/FilterTabList.tsx`, wrapping Fluent's
 `TabList`/`Tab`, `appearance="subtle" size="small"`), which also gets ARIA
 tablist semantics and keyboard navigation for free — do not hand-roll a
-`<button>`-per-option toggle for this again.
+`<button>`-per-option toggle for this again. Every `FilterTabList` has an
+accessible name: its visible `label`, or an `aria-label` (for example
+"Period") when it shows none; the component's props require one of the two.
 
 ### Alignment and financial values
 
@@ -439,6 +448,15 @@ tablist semantics and keyboard navigation for free — do not hand-roll a
 - Use consistent currency, decimal precision, sign convention, date format, and
   locale behavior.
 - Clearly distinguish percentage, currency, quantity, price, and rate.
+- Show a value that is absent as `components/MissingValue` (an em dash spoken
+  by its `label`), never a bare dash or an empty cell: `orMissing(value,
+  format)` (`utils/orMissing.tsx`) formats a present value or renders it.
+  The default label is "Not available"; say what the dash means when it is
+  known instead: "None" for a zero or no link, "Ongoing" for an open end,
+  "Loading" while the value loads.
+- Every data table has an accessible name: `aria-labelledby` its visible
+  heading, or an `aria-label`. `components/grid/__tests__/tablesAreNamed.test.ts`
+  fails on an unnamed `<Table>`.
 
 ### Totals
 
@@ -507,6 +525,10 @@ Every chart must provide:
 - Non-colour distinction between series where needed
 
 Charts must answer a user question. Do not use them as decoration.
+
+The chart graphic is `role="img"` named by its visible title
+(`aria-labelledby`), and Recharts' own keyboard layer is off
+(`accessibilityLayer={false}`) so the image holds no focus stop.
 
 ### Status indicators
 

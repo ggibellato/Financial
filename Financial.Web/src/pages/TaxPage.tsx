@@ -16,13 +16,14 @@ import StatusBadge from '../components/StatusBadge'
 import DataTableCell from '../components/grid/DataTableCell'
 import { useTaxWorkbook } from '../hooks/useTaxWorkbook'
 import type { TaxCategoryTotalDto, TaxWorkbookEntryDto } from '../api/types'
-import { formatN2OrDash, formatShortDateUtc } from '../utils/formatters'
+import { formatN2, formatShortDateUtc } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import './TaxPage.css'
 
 function amountCell(label: string, value: number | null | undefined) {
   return (
     <DataTableCell label={label} className="data-table__col--numeric">
-      {formatN2OrDash(value)}
+      {orMissing(value, formatN2)}
     </DataTableCell>
   )
 }

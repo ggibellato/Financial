@@ -1,6 +1,7 @@
 import { Checkbox } from '@fluentui/react-components'
 import type { IncomeSourceTotalDto, TitheSummaryDto } from '../api/types'
-import { formatMonthYear, formatN2, formatN2OrDash } from '../utils/formatters'
+import { formatMonthYear, formatN2 } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import TotalsGrid from './TotalsGrid'
 
 interface IncomingGridProps {
@@ -43,7 +44,7 @@ export default function IncomingGrid({
             key: 'gross',
             header: 'Gross',
             numeric: true,
-            render: (i: IncomeSourceTotalDto) => formatN2OrDash(i.grossValue),
+            render: (i: IncomeSourceTotalDto) => orMissing(i.grossValue, formatN2),
             sortAccessor: (i: IncomeSourceTotalDto) => i.grossValue,
           },
           {

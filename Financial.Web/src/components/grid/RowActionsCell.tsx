@@ -1,12 +1,44 @@
-import type { ReactNode } from 'react'
-import { Button, Spinner, TableCell } from '@fluentui/react-components'
+import type { MouseEvent, ReactElement, ReactNode } from 'react'
+import { Button, Spinner, TableCell, Tooltip } from '@fluentui/react-components'
 import { DeleteRegular, EditRegular } from '@fluentui/react-icons'
+
+const OTHER_DELETE_RUNNING = 'Another delete is in progress.'
+
+interface IconActionProps {
+  label: string
+  icon: ReactElement
+  blockedReason?: string
+  disabled?: boolean
+  disabledFocusable?: boolean
+  onClick: (event: MouseEvent<HTMLButtonElement>) => void
+}
+
+function IconAction({ label, icon, blockedReason, disabled, disabledFocusable, onClick }: IconActionProps) {
+  return (
+    <Tooltip
+      content={blockedReason ?? label}
+      relationship={blockedReason ? 'description' : 'inaccessible'}
+      withArrow
+    >
+      <Button
+        appearance="subtle"
+        size="small"
+        icon={icon}
+        aria-label={label}
+        disabled={disabled}
+        disabledFocusable={disabledFocusable}
+        onClick={onClick}
+      />
+    </Tooltip>
+  )
+}
 
 interface RowActionsCellProps {
   itemName: string
   editDisabled?: boolean
+  editBlockedReason?: string
   isDeleting?: boolean
-  deleteDisabled?: boolean
+  isOtherDeleting?: boolean
   onEdit?: (button: HTMLButtonElement) => void
   onDelete?: () => void
   children?: ReactNode
@@ -16,8 +48,9 @@ interface RowActionsCellProps {
 export default function RowActionsCell({
   itemName,
   editDisabled,
+  editBlockedReason,
   isDeleting = false,
-  deleteDisabled = false,
+  isOtherDeleting = false,
   onEdit,
   onDelete,
   children,
@@ -28,22 +61,21 @@ export default function RowActionsCell({
       <div className="data-table__actions-cell">
         {children}
         {onEdit && (
-          <Button
-            appearance="subtle"
-            size="small"
+          <IconAction
+            label={`Edit ${itemName}`}
             icon={<EditRegular />}
-            aria-label={`Edit ${itemName}`}
+            blockedReason={editBlockedReason}
             disabled={editDisabled}
+            disabledFocusable={!!editBlockedReason}
             onClick={(event) => onEdit(event.currentTarget)}
           />
         )}
         {onDelete && (
-          <Button
-            appearance="subtle"
-            size="small"
+          <IconAction
+            label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
             icon={isDeleting ? <Spinner size="tiny" /> : <DeleteRegular />}
-            aria-label={isDeleting ? `Deleting ${itemName}` : `Delete ${itemName}`}
-            disabledFocusable={isDeleting || deleteDisabled}
+            blockedReason={isOtherDeleting ? OTHER_DELETE_RUNNING : undefined}
+            disabledFocusable={isDeleting || isOtherDeleting}
             onClick={onDelete}
           />
         )}

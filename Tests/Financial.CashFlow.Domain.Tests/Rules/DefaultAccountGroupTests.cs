@@ -149,7 +149,7 @@ public class DefaultAccountGroupTests
     public void ListedIn_InactiveSettlementOwingOnlyPounds_IsListed()
     {
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
-        var entry = SettlementTransaction.Create(mae, new DateOnly(2026, 3, 10), "Pounds", null, SettlementPayer.You, Currency.GBP, 10m, null);
+        var entry = SettlementTransaction.Create(mae, new DateOnly(2026, 3, 10), "Pounds", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today);
         mae.SetActive(false);
 
         DefaultAccountGroup.ListedIn([mae], 2026, 9, [entry]).Should().Equal(mae);
@@ -161,8 +161,8 @@ public class DefaultAccountGroupTests
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
         IAccountTransaction[] records =
         [
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 10), "Paid", null, SettlementPayer.You, Currency.GBP, 10m, null),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 11), "Paid back", null, SettlementPayer.Other, Currency.GBP, 10m, null)
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 10), "Paid", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 9, 11), "Paid back", null, SettlementPayer.Other, Currency.GBP, 10m, null, TestClock.Today)
         ];
         mae.SetActive(false);
 
@@ -175,8 +175,8 @@ public class DefaultAccountGroupTests
         var mae = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], "Mãe");
         IAccountTransaction[] records =
         [
-            SettlementTransaction.Create(mae, new DateOnly(2026, 3, 10), "Paid", null, SettlementPayer.You, Currency.GBP, 10m, null),
-            SettlementTransaction.Create(mae, new DateOnly(2026, 3, 11), "Paid back", null, SettlementPayer.Other, Currency.GBP, 10m, null)
+            SettlementTransaction.Create(mae, new DateOnly(2026, 3, 10), "Paid", null, SettlementPayer.You, Currency.GBP, 10m, null, TestClock.Today),
+            SettlementTransaction.Create(mae, new DateOnly(2026, 3, 11), "Paid back", null, SettlementPayer.Other, Currency.GBP, 10m, null, TestClock.Today)
         ];
         mae.SetActive(false);
 

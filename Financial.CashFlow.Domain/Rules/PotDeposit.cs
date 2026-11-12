@@ -20,8 +20,12 @@ public static class PotDeposit
         string description,
         Pot? pot,
         IReadOnlyList<PotFundingLine> fundingLines,
-        Guid operationId) =>
-        Build(potsAccount, amount, date, description, pot, fundingLines, operationId, income: null, $"Deposit to {potsAccount.Name}");
+        Guid operationId,
+        DateOnly today)
+    {
+        TransactionDateRule.EnsureNotInFuture(date, today);
+        return Build(potsAccount, amount, date, description, pot, fundingLines, operationId, income: null, $"Deposit to {potsAccount.Name}");
+    }
 
     public static PotOperation BuildFromIncome(
         Income income, Account potsAccount, IReadOnlyList<PotFundingLine> handSplitLines, Guid operationId)

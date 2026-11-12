@@ -6,6 +6,7 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import ConfirmDialog from '../components/ConfirmDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import TruncatedText from '../components/TruncatedText'
 import { useAdminAccounts } from '../hooks/useAdminAccounts'
 import { useSuccessToast } from '../hooks/useSuccessToast'
@@ -167,7 +168,7 @@ export default function AdminAccountsPage() {
               <DataTableCell label="Active">{account.isActive ? 'Active' : 'Inactive'}</DataTableCell>
               <RowActionsCell
                 itemName={account.name}
-                isDeleting={deletingId === account.id}
+                {...rowDeleteState(deletingId, account.id)}
                 onEdit={() => setFormTarget({ mode: 'edit', account })}
                 onDelete={() => requestDelete(account)}
               />

@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useId, useRef } from 'react'
 import {
   Bar,
   BarChart,
@@ -38,6 +38,7 @@ import { formatAmount, formatN2, formatN8, formatShortDate, parseValidatedNumber
 import { hasOverAllocatedLot, isAllocationExact, sumAllocations } from '../utils/lotAllocation'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './TransactionsTab.css'
 
@@ -94,12 +95,12 @@ function transactionName(transaction: TransactionDto): string {
 
 interface TransactionRowProps {
   transaction: TransactionDto
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (t: TransactionDto) => void
   onDelete: (t: TransactionDto) => void
 }
 
-function TransactionRow({ transaction, isDeleting, onEdit, onDelete }: TransactionRowProps) {
+function TransactionRow({ transaction, deleteState, onEdit, onDelete }: TransactionRowProps) {
   const date = formatShortDate(transaction.date)
   const typeLabel = typeDisplayLabel(transaction.type)
   const net = formatN2(transaction.netCash)
@@ -122,7 +123,7 @@ function TransactionRow({ transaction, isDeleting, onEdit, onDelete }: Transacti
       </DataTableCell>
       <RowActionsCell
         itemName={transactionName(transaction)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={() => onEdit(transaction)}
         onDelete={() => onDelete(transaction)}
       />
@@ -328,12 +329,13 @@ function TransactionsChart({
   setChartMode,
   compact,
 }: TransactionsChartProps) {
+  const chartTitleId = useId()
   return (
     <div
       className={`transactions-tab__chart-panel${compact ? ' transactions-tab__chart-panel--compact' : ''}`}
     >
       <div className="transactions-tab__controls">
-        <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+        <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
         <FilterTabList
           label="View:"
           options={CHART_MODE_OPTIONS}
@@ -341,11 +343,11 @@ function TransactionsChart({
           onSelect={setChartMode}
         />
       </div>
-      <p className="transactions-tab__chart-title">Net invested by month</p>
-      <div className="transactions-tab__chart-container">
+      <p id={chartTitleId} className="transactions-tab__chart-title">Net invested by month</p>
+      <div className="transactions-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
           {selectedChartMode === 'Bar' ? (
-            <BarChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+            <BarChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
@@ -361,7 +363,7 @@ function TransactionsChart({
               </Bar>
             </BarChart>
           ) : (
-            <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+            <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
               <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
@@ -496,7 +498,7 @@ export default function TransactionsTab() {
         <EmptyState className="transactions-tab__empty">No transactions yet — nothing has been bought or sold in this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="transactions-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="transactions-tab__table data-table">
+          <Table className="transactions-tab__table data-table" aria-label="Transactions">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader
@@ -555,7 +557,7 @@ export default function TransactionsTab() {
                 <TransactionRow
                   key={t.id}
                   transaction={t}
-                  isDeleting={deletingId === t.id}
+                  deleteState={rowDeleteState(deletingId, t.id)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />

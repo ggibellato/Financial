@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useId, useMemo, useRef } from 'react'
 import {
   CartesianGrid,
   DefaultLegendContent,
@@ -35,6 +35,7 @@ import { formatN2, formatShortDate, SAVING_LABEL } from '../utils/formatters'
 import { buildChartData, type ChartPoint } from '../utils/priceHistoryChartData'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
 import { generalErrorOf } from '../utils/fieldErrors'
 import './PriceHistoryTab.css'
 
@@ -72,12 +73,12 @@ function priceName(entry: AssetPriceSnapshotDto): string {
 
 interface PriceRowProps {
   entry: AssetPriceSnapshotDto
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (entry: AssetPriceSnapshotDto) => void
   onDelete: (entry: AssetPriceSnapshotDto) => void
 }
 
-function PriceRow({ entry, isDeleting, onEdit, onDelete }: PriceRowProps) {
+function PriceRow({ entry, deleteState, onEdit, onDelete }: PriceRowProps) {
   return (
     <TableRow>
       <DataTableCell label="Date">{formatShortDate(entry.date)}</DataTableCell>
@@ -92,7 +93,7 @@ function PriceRow({ entry, isDeleting, onEdit, onDelete }: PriceRowProps) {
       </DataTableCell>
       <RowActionsCell
         itemName={priceName(entry)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={entry.isManual ? () => onEdit(entry) : undefined}
         onDelete={entry.isManual ? () => onDelete(entry) : undefined}
       />
@@ -240,14 +241,15 @@ interface ChartPanelProps {
 }
 
 function ChartPanel({ entries, transactions }: ChartPanelProps) {
+  const chartTitleId = useId()
   const chartData = useMemo(() => buildChartData(entries, transactions), [entries, transactions])
 
   return (
     <div className="price-history-tab__chart-panel">
-      <p className="price-history-tab__chart-title">Price history</p>
-      <div className="price-history-tab__chart-container">
+      <p id={chartTitleId} className="price-history-tab__chart-title">Price history</p>
+      <div className="price-history-tab__chart-container" role="img" aria-labelledby={chartTitleId}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+          <LineChart accessibilityLayer={false} data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="date" tick={{ fontSize: 11 }} />
             <YAxis tickFormatter={formatN2} tick={{ fontSize: 11 }} width={70} />
@@ -312,7 +314,7 @@ export default function PriceHistoryTab() {
 
   const toolbar = (
     <div className="price-history-tab__controls">
-      <FilterTabList options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
+      <FilterTabList aria-label="Period" options={PERIOD_FILTER_OPTIONS} selected={selectedFilter} onSelect={setFilter} />
     </div>
   )
 
@@ -342,7 +344,7 @@ export default function PriceHistoryTab() {
         <EmptyState className="price-history-tab__empty">No prices yet — add the first price for this holding.</EmptyState>
       ) : (
         <div ref={regionRef} className="price-history-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="price-history-tab__table data-table">
+          <Table className="price-history-tab__table data-table" aria-label="Price history">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader
@@ -372,7 +374,7 @@ export default function PriceHistoryTab() {
                 <PriceRow
                   key={entry.date}
                   entry={entry}
-                  isDeleting={deletingDate === entry.date}
+                  deleteState={rowDeleteState(deletingDate, entry.date)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />

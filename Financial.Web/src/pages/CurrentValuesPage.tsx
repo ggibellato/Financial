@@ -8,7 +8,8 @@ import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
 import SortableColumnHeader from '../components/grid/SortableColumnHeader'
 import { useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatN2OrDash, getErrorMessage } from '../utils/formatters'
+import { formatN2, getErrorMessage } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import './CurrentValuesPage.css'
 import TruncatedText from '../components/TruncatedText'
 
@@ -173,7 +174,7 @@ export default function CurrentValuesPage() {
 
       {results.length > 0 && (
         <section className="current-values__results">
-          <Table className="data-table">
+          <Table className="data-table" aria-label="Current prices">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader
@@ -203,7 +204,7 @@ export default function CurrentValuesPage() {
                   <DataTableCell label="Ticker">{result.ticker}</DataTableCell>
                   <DataTableCell label="Name"><TruncatedText text={result.name} /></DataTableCell>
                   <DataTableCell label="Price" className="current-values__col--price data-table__col--numeric">
-                    {formatN2OrDash(result.price)}
+                    {orMissing(result.price, formatN2)}
                   </DataTableCell>
                 </TableRow>
               ))}

@@ -1,34 +1,35 @@
-import { useEffect, useRef } from 'react'
+import { useId, useLayoutEffect, useRef, useState } from 'react'
 import { Button } from '@fluentui/react-components'
+import { awaitRetryOutcome, claimFocusForRetryOutcome } from '../utils/retryOutcomeFocus'
 
 interface ErrorStateProps {
   message: string
   onRetry?: () => void
 }
 
-let isRetryAwaitingOutcome = false
-
-function isFocusLost() {
-  return document.activeElement === null || document.activeElement === document.body
-}
-
 export default function ErrorState({ message, onRetry }: ErrorStateProps) {
-  const alertRef = useRef<HTMLDivElement>(null)
+  const errorRef = useRef<HTMLDivElement>(null)
+  const messageId = useId()
+  const [takesFocus, setTakesFocus] = useState(false)
 
-  useEffect(() => {
-    if (isRetryAwaitingOutcome && isFocusLost()) alertRef.current?.focus()
-    isRetryAwaitingOutcome = false
+  useLayoutEffect(() => {
+    if (!errorRef.current || !claimFocusForRetryOutcome(errorRef.current)) return
+    setTakesFocus(true)
+    errorRef.current.focus()
   }, [])
 
   const retry = () => {
-    isRetryAwaitingOutcome = true
-    document.addEventListener('focusin', () => (isRetryAwaitingOutcome = false), { once: true })
+    awaitRetryOutcome(errorRef.current?.parentElement ?? null)
     onRetry?.()
   }
 
   return (
-    <div role="alert" ref={alertRef} tabIndex={-1}>
-      <p>{message}</p>
+    <div
+      ref={errorRef}
+      tabIndex={-1}
+      {...(takesFocus ? { role: 'group', 'aria-labelledby': messageId } : { role: 'alert' })}
+    >
+      <p id={messageId}>{message}</p>
       {onRetry ? (
         <Button appearance="primary" onClick={retry}>
           Try again

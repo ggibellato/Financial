@@ -56,6 +56,14 @@ Web must remain usable at:
 - A save or delete error that takes focus (`ActionErrorAlert`, named by its
   own text) is not also a `role="alert"` live region: focus already reads it,
   and both would announce it twice.
+- After a load error's "Try again", focus that would otherwise be lost goes to
+  the reloaded content's first control (or the content itself when it has
+  none), or back to the error when the retry fails, then a group named by
+  its message instead of a second alert. Pages get this from `ErrorState`
+  and `LoadingState`; a grid that shows a skeleton instead calls
+  `useFocusReloadedContent(regionRef, isLoading)`. Put `LoadingState`, the
+  error and the content in one region so "the reloaded content" is that
+  region, not the page.
 - A delete failure says how to recover ("The credit could not be deleted.
   Try again."), and the message clears once a later save succeeds.
 

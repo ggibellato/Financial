@@ -2,6 +2,7 @@ import { Fragment, useMemo, useRef, useState } from 'react'
 import { Tab, Table, TableBody, TableCell, TableHeader, TableRow } from '@fluentui/react-components'
 import type { SelectTabData, SelectTabEvent } from '@fluentui/react-components'
 import PageTabList from '../components/PageTabList'
+import { useTabPanel } from '../hooks/useTabPanel'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import DataTableCell from '../components/grid/DataTableCell'
@@ -126,6 +127,7 @@ export default function AnnualSummaryPage() {
   } = useAnnualSummary()
 
   const [activeTab, setActiveTab] = useState<AnnualSummaryTabId>('categoryTotals')
+  const tabPanel = useTabPanel(activeTab)
   const filterableTableRef = useRef<HTMLTableElement>(null)
 
   const {
@@ -200,283 +202,285 @@ export default function AnnualSummaryPage() {
         onTabSelect={(_event: SelectTabEvent, data: SelectTabData) => setActiveTab(data.value as AnnualSummaryTabId)}
       >
         {TABS.map((tab) => (
-          <Tab key={tab.id} value={tab.id}>
+          <Tab key={tab.id} value={tab.id} {...tabPanel.tabProps(tab.id)}>
             {tab.label}
           </Tab>
         ))}
       </PageTabList>
 
-      {isLoading ? (
-        <LoadingState />
-      ) : error ? (
-        <ErrorState message={error} onRetry={retry} />
-      ) : (
-        <div className="annual-summary-page__content">
-          {activeTab === 'categoryTotals' && (
-            <section className="annual-summary-page__section">
-              <FilteredRowsNotice {...categoryTotalsFilterSummary} tableRef={filterableTableRef} />
-              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Category totals">
-                <TableHeader>
-                  <TableRow>
-                    <SortableColumnHeader
-                      label="Category"
-                      columnKey="category"
-                      sortDirection={categoryTotalsSortState?.columnKey === 'category' ? categoryTotalsSortState.direction : undefined}
-                      onSort={requestCategoryTotalsSort}
-                    >
-                      <ColumnFilterMenu
-                        columnKey="category"
-                        label="Category"
-                        availableValues={categoryTotalsAvailableValues.category}
-                        selectedValues={categoryTotalsSelectedValues.category}
-                        onToggleValue={toggleCategoryTotalsValue}
-                        onToggleAll={toggleCategoryTotalsAll}
-                        isFiltered={isCategoryTotalsColumnFiltered('category')}
-                      />
-                    </SortableColumnHeader>
-                    {MONTH_LABELS.map((m, i) => (
+      <div className="annual-summary-page__panel" {...tabPanel.panelProps}>
+        {isLoading ? (
+          <LoadingState />
+        ) : error ? (
+          <ErrorState message={error} onRetry={retry} />
+        ) : (
+          <div className="annual-summary-page__content">
+            {activeTab === 'categoryTotals' && (
+              <section className="annual-summary-page__section">
+                <FilteredRowsNotice {...categoryTotalsFilterSummary} tableRef={filterableTableRef} />
+                <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Category totals">
+                  <TableHeader>
+                    <TableRow>
                       <SortableColumnHeader
-                        key={m}
-                        label={m}
-                        columnKey={`month-${i}`}
+                        label="Category"
+                        columnKey="category"
+                        sortDirection={categoryTotalsSortState?.columnKey === 'category' ? categoryTotalsSortState.direction : undefined}
+                        onSort={requestCategoryTotalsSort}
+                      >
+                        <ColumnFilterMenu
+                          columnKey="category"
+                          label="Category"
+                          availableValues={categoryTotalsAvailableValues.category}
+                          selectedValues={categoryTotalsSelectedValues.category}
+                          onToggleValue={toggleCategoryTotalsValue}
+                          onToggleAll={toggleCategoryTotalsAll}
+                          isFiltered={isCategoryTotalsColumnFiltered('category')}
+                        />
+                      </SortableColumnHeader>
+                      {MONTH_LABELS.map((m, i) => (
+                        <SortableColumnHeader
+                          key={m}
+                          label={m}
+                          columnKey={`month-${i}`}
+                          numeric
+                          sortDirection={
+                            categoryTotalsSortState?.columnKey === `month-${i}` ? categoryTotalsSortState.direction : undefined
+                          }
+                          onSort={requestCategoryTotalsSort}
+                        />
+                      ))}
+                      <SortableColumnHeader
+                        label="Average"
+                        columnKey="average"
+                        numeric
+                        sortDirection={categoryTotalsSortState?.columnKey === 'average' ? categoryTotalsSortState.direction : undefined}
+                        onSort={requestCategoryTotalsSort}
+                      />
+                      <SortableColumnHeader
+                        label="Annual total"
+                        columnKey="annualTotal"
                         numeric
                         sortDirection={
-                          categoryTotalsSortState?.columnKey === `month-${i}` ? categoryTotalsSortState.direction : undefined
+                          categoryTotalsSortState?.columnKey === 'annualTotal' ? categoryTotalsSortState.direction : undefined
                         }
                         onSort={requestCategoryTotalsSort}
                       />
-                    ))}
-                    <SortableColumnHeader
-                      label="Average"
-                      columnKey="average"
-                      numeric
-                      sortDirection={categoryTotalsSortState?.columnKey === 'average' ? categoryTotalsSortState.direction : undefined}
-                      onSort={requestCategoryTotalsSort}
-                    />
-                    <SortableColumnHeader
-                      label="Annual total"
-                      columnKey="annualTotal"
-                      numeric
-                      sortDirection={
-                        categoryTotalsSortState?.columnKey === 'annualTotal' ? categoryTotalsSortState.direction : undefined
-                      }
-                      onSort={requestCategoryTotalsSort}
-                    />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {incomeSummary && (
-                    <>
-                      <AnnualSummaryRow
-                        label="Salary"
-                        monthlyValues={incomeSummary.salaryMonthly}
-                        average={incomeSummary.salaryAverage}
-                        annualTotal={incomeSummary.salaryAnnualTotal}
-                      />
-                      <AnnualSummaryRow
-                        label="Salary after taxes"
-                        monthlyValues={incomeSummary.salaryAfterTaxesMonthly}
-                        average={incomeSummary.salaryAfterTaxesAverage}
-                        annualTotal={incomeSummary.salaryAfterTaxesAnnualTotal}
-                      />
-                      <AnnualSummaryRow
-                        label="Tax difference"
-                        monthlyValues={incomeSummary.taxDifferenceMonthly}
-                        average={incomeSummary.taxDifferenceAverage}
-                        annualTotal={incomeSummary.taxDifferenceAnnualTotal}
-                      />
-                      <TableRow>
-                        <TableCell colSpan={SPACER_COL_SPAN} />
-                      </TableRow>
-                      <AnnualSummaryRow
-                        label="Dividendo/Juros"
-                        monthlyValues={incomeSummary.dividendoJurosMonthly}
-                        average={incomeSummary.dividendoJurosAverage}
-                        annualTotal={incomeSummary.dividendoJurosAnnualTotal}
-                      />
-                    </>
-                  )}
-
-                  <TableRow>
-                    <TableCell colSpan={SPACER_COL_SPAN} />
-                  </TableRow>
-
-                  {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
-                    <TableRow>
-                      <TableCell className="data-table__cell--message" colSpan={SPACER_COL_SPAN}>
-                        {NO_FILTER_MATCH_MESSAGE}
-                      </TableCell>
                     </TableRow>
-                  ) : (
-                    sortedCategoryTotals.map((c) => (
-                      <AnnualSummaryRow
-                        key={c.category}
-                        label={c.category}
-                        monthlyValues={c.monthlyTotals}
-                        average={c.average}
-                        annualTotal={c.annualTotal}
-                      />
-                    ))
-                  )}
-                </TableBody>
-                <tfoot>
-                  {incomeSummary && (
-                    <AnnualSummaryRow
-                      label={allItemsTotalLabel(RESULTADO_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
-                      isTotal
-                      monthlyValues={resultadoMonthly}
-                      average={resultadoAverage}
-                      annualTotal={resultadoAnnualTotal}
-                    />
-                  )}
-                  <AnnualSummaryRow
-                    label={allItemsTotalLabel(TOTAL_DESPESAS_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
-                    isTotal
-                    monthlyValues={totalDespesasMonthly}
-                    average={totalDespesasAverage}
-                    annualTotal={totalDespesasAnnualTotal}
-                  />
-                </tfoot>
-              </Table>
-            </section>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {incomeSummary && (
+                      <>
+                        <AnnualSummaryRow
+                          label="Salary"
+                          monthlyValues={incomeSummary.salaryMonthly}
+                          average={incomeSummary.salaryAverage}
+                          annualTotal={incomeSummary.salaryAnnualTotal}
+                        />
+                        <AnnualSummaryRow
+                          label="Salary after taxes"
+                          monthlyValues={incomeSummary.salaryAfterTaxesMonthly}
+                          average={incomeSummary.salaryAfterTaxesAverage}
+                          annualTotal={incomeSummary.salaryAfterTaxesAnnualTotal}
+                        />
+                        <AnnualSummaryRow
+                          label="Tax difference"
+                          monthlyValues={incomeSummary.taxDifferenceMonthly}
+                          average={incomeSummary.taxDifferenceAverage}
+                          annualTotal={incomeSummary.taxDifferenceAnnualTotal}
+                        />
+                        <TableRow>
+                          <TableCell colSpan={SPACER_COL_SPAN} />
+                        </TableRow>
+                        <AnnualSummaryRow
+                          label="Dividendo/Juros"
+                          monthlyValues={incomeSummary.dividendoJurosMonthly}
+                          average={incomeSummary.dividendoJurosAverage}
+                          annualTotal={incomeSummary.dividendoJurosAnnualTotal}
+                        />
+                      </>
+                    )}
 
-          {activeTab === 'investments' && investmentAnnualResult && (
-            <section className="annual-summary-page__section">
-              <Table className="annual-summary-page__table data-table" aria-label="Investments">
-                <TableHeader>
-                  <TableRow>
-                    <SortableColumnHeader
-                      label="Account"
-                      columnKey="account"
-                      sortDirection={investmentsSortState?.columnKey === 'account' ? investmentsSortState.direction : undefined}
-                      onSort={requestInvestmentsSort}
+                    <TableRow>
+                      <TableCell colSpan={SPACER_COL_SPAN} />
+                    </TableRow>
+
+                    {sortedCategoryTotals.length === 0 && isCategoryTotalsColumnFiltered('category') ? (
+                      <TableRow>
+                        <TableCell className="data-table__cell--message" colSpan={SPACER_COL_SPAN}>
+                          {NO_FILTER_MATCH_MESSAGE}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sortedCategoryTotals.map((c) => (
+                        <AnnualSummaryRow
+                          key={c.category}
+                          label={c.category}
+                          monthlyValues={c.monthlyTotals}
+                          average={c.average}
+                          annualTotal={c.annualTotal}
+                        />
+                      ))
+                    )}
+                  </TableBody>
+                  <tfoot>
+                    {incomeSummary && (
+                      <AnnualSummaryRow
+                        label={allItemsTotalLabel(RESULTADO_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
+                        isTotal
+                        monthlyValues={resultadoMonthly}
+                        average={resultadoAverage}
+                        annualTotal={resultadoAnnualTotal}
+                      />
+                    )}
+                    <AnnualSummaryRow
+                      label={allItemsTotalLabel(TOTAL_DESPESAS_LABEL, 'categories', categoryTotalsFilterSummary.isFiltered)}
+                      isTotal
+                      monthlyValues={totalDespesasMonthly}
+                      average={totalDespesasAverage}
+                      annualTotal={totalDespesasAnnualTotal}
                     />
-                    {MONTH_LABELS.map((m, i) => (
+                  </tfoot>
+                </Table>
+              </section>
+            )}
+
+            {activeTab === 'investments' && investmentAnnualResult && (
+              <section className="annual-summary-page__section">
+                <Table className="annual-summary-page__table data-table" aria-label="Investments">
+                  <TableHeader>
+                    <TableRow>
                       <SortableColumnHeader
-                        key={m}
-                        label={m}
-                        columnKey={`month-${i}`}
-                        numeric
-                        sortDirection={
-                          investmentsSortState?.columnKey === `month-${i}` ? investmentsSortState.direction : undefined
-                        }
+                        label="Account"
+                        columnKey="account"
+                        sortDirection={investmentsSortState?.columnKey === 'account' ? investmentsSortState.direction : undefined}
                         onSort={requestInvestmentsSort}
                       />
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedInvestmentAccounts.map((a) => (
-                    <InvestmentRow
-                      key={a.account}
-                      label={`${a.account}${a.isLiability ? ' (-)' : ''}`}
-                      monthlyValues={a.monthlyValues}
-                    />
-                  ))}
-                </TableBody>
-                <tfoot>
-                  <InvestmentRow label="Total" isTotal monthlyValues={investmentAnnualResult.netPosition.monthlyValues} />
-                  <InvestmentRow
-                    label="Month result"
-                    isTotal
-                    monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
-                  />
-                </tfoot>
-              </Table>
-
-              <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for investments">
-                <div className="annual-summary-page__investment-total">
-                  <span>Year progress</span>
-                  <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>
-                </div>
-                <div className="annual-summary-page__investment-total">
-                  <span>Average month result</span>
-                  <strong>{formatN2(investmentAnnualResult.netPosition.averageMonthResult)}</strong>
-                </div>
-                <div className="annual-summary-page__investment-total">
-                  <span>Sum of month results</span>
-                  <strong>{formatN2(investmentAnnualResult.netPosition.sumOfMonthResults)}</strong>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {activeTab === 'historicSummaryAverage' && (
-            <section className="annual-summary-page__section">
-              <FilteredRowsNotice {...historicFilterSummary} tableRef={filterableTableRef} />
-              <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Historic summary average">
-                <TableHeader>
-                  <TableRow>
-                    <SortableColumnHeader
-                      label="Category"
-                      columnKey="category"
-                      sortDirection={historicSortState?.columnKey === 'category' ? historicSortState.direction : undefined}
-                      onSort={requestHistoricSort}
-                    >
-                      <ColumnFilterMenu
-                        columnKey="category"
-                        label="Category"
-                        availableValues={historicAvailableValues.category}
-                        selectedValues={historicSelectedValues.category}
-                        onToggleValue={toggleHistoricValue}
-                        onToggleAll={toggleHistoricAll}
-                        isFiltered={isHistoricColumnFiltered('category')}
-                      />
-                    </SortableColumnHeader>
-                    {historicSummaryAverage.map((y) => (
-                      <SortableColumnHeader
-                        key={y.year}
-                        label={y.year}
-                        columnKey={`year-${y.year}`}
-                        numeric
-                        sortDirection={
-                          historicSortState?.columnKey === `year-${y.year}` ? historicSortState.direction : undefined
-                        }
-                        onSort={requestHistoricSort}
-                      />
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
-                    <TableRow>
-                      <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
-                        {NO_FILTER_MATCH_MESSAGE}
-                      </TableCell>
+                      {MONTH_LABELS.map((m, i) => (
+                        <SortableColumnHeader
+                          key={m}
+                          label={m}
+                          columnKey={`month-${i}`}
+                          numeric
+                          sortDirection={
+                            investmentsSortState?.columnKey === `month-${i}` ? investmentsSortState.direction : undefined
+                          }
+                          onSort={requestInvestmentsSort}
+                        />
+                      ))}
                     </TableRow>
-                  ) : (
-                    sortedHistoricCategoryRows.map((a) => (
-                      <Fragment key={a.category}>
-                        <HistoricRow category={a.category} years={historicSummaryAverage} averageOf={historic.averageOf} />
-                        {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
-                          <TableRow>
-                            <TableCell colSpan={historicSummaryAverage.length + 1} />
-                          </TableRow>
-                        )}
-                      </Fragment>
-                    ))
-                  )}
-                </TableBody>
-                {historic.totalRows.length > 0 && (
-                  <tfoot>
-                    {historic.totalRows.map((total) => (
-                      <HistoricRow
-                        key={total.category}
-                        category={total.category}
-                        label={allItemsTotalLabel(total.category, 'categories', historicFilterSummary.isFiltered)}
-                        isTotal
-                        years={historicSummaryAverage}
-                        averageOf={historic.averageOf}
+                  </TableHeader>
+                  <TableBody>
+                    {sortedInvestmentAccounts.map((a) => (
+                      <InvestmentRow
+                        key={a.account}
+                        label={`${a.account}${a.isLiability ? ' (-)' : ''}`}
+                        monthlyValues={a.monthlyValues}
                       />
                     ))}
+                  </TableBody>
+                  <tfoot>
+                    <InvestmentRow label="Total" isTotal monthlyValues={investmentAnnualResult.netPosition.monthlyValues} />
+                    <InvestmentRow
+                      label="Month result"
+                      isTotal
+                      monthlyValues={investmentAnnualResult.netPosition.monthlyDiffs}
+                    />
                   </tfoot>
-                )}
-              </Table>
-            </section>
-          )}
-        </div>
-      )}
+                </Table>
+
+                <div className="annual-summary-page__investment-totals" role="group" aria-label="Totals for investments">
+                  <div className="annual-summary-page__investment-total">
+                    <span>Year progress</span>
+                    <strong>{formatN2(investmentAnnualResult.netPosition.fullYearNetChange)}</strong>
+                  </div>
+                  <div className="annual-summary-page__investment-total">
+                    <span>Average month result</span>
+                    <strong>{formatN2(investmentAnnualResult.netPosition.averageMonthResult)}</strong>
+                  </div>
+                  <div className="annual-summary-page__investment-total">
+                    <span>Sum of month results</span>
+                    <strong>{formatN2(investmentAnnualResult.netPosition.sumOfMonthResults)}</strong>
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {activeTab === 'historicSummaryAverage' && (
+              <section className="annual-summary-page__section">
+                <FilteredRowsNotice {...historicFilterSummary} tableRef={filterableTableRef} />
+                <Table ref={filterableTableRef} tabIndex={-1} className="annual-summary-page__table data-table" aria-label="Historic summary average">
+                  <TableHeader>
+                    <TableRow>
+                      <SortableColumnHeader
+                        label="Category"
+                        columnKey="category"
+                        sortDirection={historicSortState?.columnKey === 'category' ? historicSortState.direction : undefined}
+                        onSort={requestHistoricSort}
+                      >
+                        <ColumnFilterMenu
+                          columnKey="category"
+                          label="Category"
+                          availableValues={historicAvailableValues.category}
+                          selectedValues={historicSelectedValues.category}
+                          onToggleValue={toggleHistoricValue}
+                          onToggleAll={toggleHistoricAll}
+                          isFiltered={isHistoricColumnFiltered('category')}
+                        />
+                      </SortableColumnHeader>
+                      {historicSummaryAverage.map((y) => (
+                        <SortableColumnHeader
+                          key={y.year}
+                          label={y.year}
+                          columnKey={`year-${y.year}`}
+                          numeric
+                          sortDirection={
+                            historicSortState?.columnKey === `year-${y.year}` ? historicSortState.direction : undefined
+                          }
+                          onSort={requestHistoricSort}
+                        />
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sortedHistoricCategoryRows.length === 0 && isHistoricColumnFiltered('category') ? (
+                      <TableRow>
+                        <TableCell className="data-table__cell--message" colSpan={historicSummaryAverage.length + 1}>
+                          {NO_FILTER_MATCH_MESSAGE}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      sortedHistoricCategoryRows.map((a) => (
+                        <Fragment key={a.category}>
+                          <HistoricRow category={a.category} years={historicSummaryAverage} averageOf={historic.averageOf} />
+                          {HISTORIC_SUMMARY_AVERAGE_SPACER_AFTER.has(a.category) && (
+                            <TableRow>
+                              <TableCell colSpan={historicSummaryAverage.length + 1} />
+                            </TableRow>
+                          )}
+                        </Fragment>
+                      ))
+                    )}
+                  </TableBody>
+                  {historic.totalRows.length > 0 && (
+                    <tfoot>
+                      {historic.totalRows.map((total) => (
+                        <HistoricRow
+                          key={total.category}
+                          category={total.category}
+                          label={allItemsTotalLabel(total.category, 'categories', historicFilterSummary.isFiltered)}
+                          isTotal
+                          years={historicSummaryAverage}
+                          averageOf={historic.averageOf}
+                        />
+                      ))}
+                    </tfoot>
+                  )}
+                </Table>
+              </section>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

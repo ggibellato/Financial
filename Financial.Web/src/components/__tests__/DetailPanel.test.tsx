@@ -236,6 +236,17 @@ describe('DetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Credits' })).toBeInTheDocument()
   })
 
+  it('wires each tab to the panel it controls', () => {
+    renderPanel(brokerNode)
+    act(() => screen.getByTestId('setter').click())
+
+    const panel = screen.getByRole('tabpanel', { name: 'Summary' })
+    expect(screen.getByRole('tab', { name: 'Credits' })).toHaveAttribute('aria-controls', panel.id)
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Credits' }))
+    expect(screen.getByRole('tabpanel', { name: 'Credits' })).toBe(panel)
+  })
+
   it('does not show Price history tab for a broker node', () => {
     renderPanel(brokerNode)
     act(() => screen.getByTestId('setter').click())

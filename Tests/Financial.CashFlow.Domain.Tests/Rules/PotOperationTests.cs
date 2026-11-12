@@ -12,6 +12,7 @@ namespace Financial.CashFlow.Domain.Tests.Rules;
 public class PotOperationTests
 {
     private static readonly DateOnly Date = new(2026, 10, 12);
+    private static readonly DateOnly Today = new(2026, 11, 11);
     private static readonly Guid OperationId = Guid.NewGuid();
 
     private readonly Category _health = Category.Create("Saude");
@@ -27,7 +28,7 @@ public class PotOperationTests
     [Fact]
     public void Read_WithdrawalThroughABank_RebuildsTheFormValuesAndItsRecords()
     {
-        var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId);
+        var records = PotWithdrawal.Build(_reserva, _pot, 38.25m, Date, "Boots", _bank, _health, OperationId, Today);
 
         var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, _reserva]);
 
@@ -50,7 +51,7 @@ public class PotOperationTests
     [Fact]
     public void Read_WithdrawalWithoutABank_HasNoBankOrCategory()
     {
-        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId);
+        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", bank: null, category: null, OperationId, Today);
 
         var operation = PotOperation.Read(OperationId, records.Transactions, [], [_reserva]);
 
@@ -67,8 +68,8 @@ public class PotOperationTests
     [Fact]
     public void Read_RecordsOfOtherOperationsOrNone_AreLeftOut()
     {
-        var mine = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);
-        var other = PotWithdrawal.Build(_reserva, _pot, 5m, Date, "Cash", _bank, _health, Guid.NewGuid());
+        var mine = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId, Today);
+        var other = PotWithdrawal.Build(_reserva, _pot, 5m, Date, "Cash", _bank, _health, Guid.NewGuid(), Today);
         var legacy = PotTransaction.Create(_pot, -7m, Date, "Cash");
 
         var operation = PotOperation.Read(
@@ -129,7 +130,7 @@ public class PotOperationTests
         var second = Pot.Create("HouseTreats", 0m);
         _reserva.AddPot(second);
         var barclays = TestAccounts.Bank("Barclays");
-        var records = PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_bank, 85m), new(barclays, 5m)], OperationId);
+        var records = PotDeposit.Build(_reserva, 90m, Date, "Bonus", pot: null, [new(_bank, 85m), new(barclays, 5m)], OperationId, Today);
 
         var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, barclays, _reserva]);
 
@@ -149,7 +150,7 @@ public class PotOperationTests
     [Fact]
     public void Read_DepositIntoOnePotWithoutLines_ReadsBackAsThatPot()
     {
-        var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", _pot, [], OperationId);
+        var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", _pot, [], OperationId, Today);
 
         var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_reserva]);
 
@@ -165,7 +166,7 @@ public class PotOperationTests
     [Fact]
     public void Read_SplitIntoTheOnlyActivePot_ReadsBackAsThatPot()
     {
-        var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", pot: null, [], OperationId);
+        var records = PotDeposit.Build(_reserva, 40m, Date, "Gift", pot: null, [], OperationId, Today);
 
         var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_reserva]);
 
@@ -175,7 +176,7 @@ public class PotOperationTests
     [Fact]
     public void Read_Withdrawal_HasNoTargetOrFundingLines()
     {
-        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId);
+        var records = PotWithdrawal.Build(_reserva, _pot, 20m, Date, "Cash", _bank, _health, OperationId, Today);
 
         var operation = PotOperation.Read(OperationId, records.Transactions, records.Expenses, [_bank, _reserva]);
 

@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using ClosedXML.Excel;
 using Financial.CashFlow.Domain.Entities;
+using Financial.CashFlow.Domain.Rules;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Parsing;
 using Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport.Reporting;
@@ -18,7 +19,7 @@ public static partial class ControleMaeSheetImporter
     private static readonly Regex MonthYearPattern = BuildMonthYearPattern();
     private static readonly Regex YearMonthPattern = BuildYearMonthPattern();
 
-    public static IReadOnlyList<SettlementTransaction> Import(IXLWorksheet sheet, Account mae, ImportReport report)
+    public static IReadOnlyList<SettlementTransaction> Import(IXLWorksheet sheet, Account mae, ImportReport report, DateOnly today)
     {
         var lastRow = sheet.LastRowUsed()?.RowNumber() ?? 1;
         var entries = new List<SettlementTransaction>();
@@ -59,6 +60,12 @@ public static partial class ControleMaeSheetImporter
 
             previousDate = date;
 
+            if (TransactionDateRule.IsInFuture(date, today))
+            {
+                report.RowFlagged(sheet.Name, row, "Description", description, $"Date {date:yyyy-MM-dd} is in the future - entry not imported");
+                continue;
+            }
+
             var (currency, paidValue, otherValue) = brlValue is not null
                 ? (Currency.BRL, brlValue.Value, gbpValue)
                 : (Currency.GBP, gbpValue!.Value, brlValue);
@@ -71,7 +78,7 @@ public static partial class ControleMaeSheetImporter
             var note = sheet.Cell(row, NoteColumn).GetString();
             var convertedValue = otherValue is null ? (decimal?)null : Math.Abs(otherValue.Value);
 
-            entries.Add(SettlementTransaction.Create(mae, date, description, note, SettlementTransaction.PayerOf(paidValue), currency, Math.Abs(paidValue), convertedValue));
+            entries.Add(SettlementTransaction.Create(mae, date, description, note, SettlementTransaction.PayerOf(paidValue), currency, Math.Abs(paidValue), convertedValue, today));
         }
 
         return entries;

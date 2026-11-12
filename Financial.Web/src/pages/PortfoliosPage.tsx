@@ -5,8 +5,10 @@ import ConfirmDeleteDialog from '../components/ConfirmDeleteDialog'
 import PortfolioFormDialog from '../components/PortfolioFormDialog'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useBrokers } from '../hooks/useBrokers'
 import { portfolioKey, usePortfolios } from '../hooks/usePortfolios'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { PortfolioDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
 
@@ -27,7 +29,11 @@ export default function PortfoliosPage() {
 
   const [editingPortfolio, setEditingPortfolio] = useState<PortfolioDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<PortfolioDto | null>(null)
+  const deletion = usePendingDelete((row: PortfolioDto) => {
+    const scope = row.brokerStatus === 'Active' ? 'active' : 'historic'
+    deletePortfolio(row.brokerName, row.name, scope)
+  })
+  const pendingDelete = deletion.pendingRow
 
   const closeFormDialog = () => {
     setEditingPortfolio(null)
@@ -45,13 +51,6 @@ export default function PortfoliosPage() {
       : await createPortfolio({ brokerName, name })
     closeFormDialog()
     return result
-  }
-
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    const scope = confirmingDelete.brokerStatus === 'Active' ? 'active' : 'historic'
-    deletePortfolio(confirmingDelete.brokerName, confirmingDelete.name, scope)
-    setConfirmingDelete(null)
   }
 
   return (
@@ -75,22 +74,22 @@ export default function PortfoliosPage() {
               onSubmit={handleFormSubmit}
             />
           )}
-          {confirmingDelete && (
+          {pendingDelete && (
             <ConfirmDeleteDialog
               entityLabel="portfolio"
               message={
-                confirmingDelete.assetCount > 0 ? (
+                pendingDelete.assetCount > 0 ? (
                   <>
-                    &ldquo;{confirmingDelete.name}&rdquo; still holds {confirmingDelete.assetCount} asset(s) and
+                    &ldquo;{pendingDelete.name}&rdquo; still holds {pendingDelete.assetCount} asset(s) and
                     cannot be deleted.
                   </>
                 ) : (
-                  <>&ldquo;{confirmingDelete.name}&rdquo; holds no assets and will be permanently removed.</>
+                  <>&ldquo;{pendingDelete.name}&rdquo; holds no assets and will be permanently removed.</>
                 )
               }
-              confirmDisabled={confirmingDelete.assetCount > 0}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              confirmDisabled={pendingDelete.assetCount > 0}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -102,7 +101,7 @@ export default function PortfoliosPage() {
             <TableHeaderCell>Name</TableHeaderCell>
             <TableHeaderCell>Broker</TableHeaderCell>
             <TableHeaderCell>Broker status</TableHeaderCell>
-            <TableHeaderCell>Assets</TableHeaderCell>
+            <TableHeaderCell className="data-table__col--numeric">Assets</TableHeaderCell>
             <ActionsColumnHeader />
           </TableRow>
         </TableHeader>
@@ -114,12 +113,14 @@ export default function PortfoliosPage() {
                 <DataTableCell label="Name">{portfolio.name}</DataTableCell>
                 <DataTableCell label="Broker">{portfolio.brokerName}</DataTableCell>
                 <DataTableCell label="Broker status">{portfolio.brokerStatus}</DataTableCell>
-                <DataTableCell label="Assets">{portfolio.assetCount}</DataTableCell>
+                <DataTableCell label="Assets" className="data-table__col--numeric">
+                  {portfolio.assetCount}
+                </DataTableCell>
                 <RowActionsCell
                   itemName={portfolio.name}
-                  isDeleting={deletingKey === key}
+                  {...rowDeleteState(deletingKey, key)}
                   onEdit={() => setEditingPortfolio(portfolio)}
-                  onDelete={() => setConfirmingDelete(portfolio)}
+                  onDelete={() => deletion.request(portfolio)}
                 />
               </TableRow>
             )

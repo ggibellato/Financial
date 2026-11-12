@@ -1,4 +1,5 @@
 import { useEffect, useRef, type FocusEvent, type RefObject } from 'react'
+import { isFocusLost } from '../utils/focus'
 
 interface FocusedRowControl {
   element: HTMLElement
@@ -11,10 +12,6 @@ interface FocusedRowControl {
 
 const ROW_SELECTOR = 'tbody tr'
 const CONTROL_SELECTOR = 'button, a[href], input, select, textarea'
-
-function focusIsLost(): boolean {
-  return document.activeElement === null || document.activeElement === document.body
-}
 
 function locate(region: HTMLElement, element: HTMLElement): FocusedRowControl | null {
   const row = element.closest<HTMLTableRowElement>(ROW_SELECTOR)
@@ -59,7 +56,7 @@ export function useRowFocusRecovery(
 
   useEffect(() => {
     const focused = lastFocused.current
-    if (isLoading || !focused || focused.element.isConnected || !focusIsLost()) return
+    if (isLoading || !focused || focused.element.isConnected || !isFocusLost()) return
     lastFocused.current = null
     const region = regionRef.current
     const target = (region && controlNear(region, focused)) ?? fallbackRef.current

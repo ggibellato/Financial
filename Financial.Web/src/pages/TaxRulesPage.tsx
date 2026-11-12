@@ -6,9 +6,13 @@ import TaxRuleFormDialog from '../components/TaxRuleFormDialog'
 import TruncatedText from '../components/TruncatedText'
 import DataTableCell from '../components/grid/DataTableCell'
 import RowActionsCell from '../components/grid/RowActionsCell'
+import { rowDeleteState } from '../components/grid/rowDeleteState'
 import { useTaxRules } from '../hooks/useTaxRules'
+import { usePendingDelete } from '../hooks/usePendingDelete'
 import type { TaxRuleDto } from '../api/types'
 import ActionsColumnHeader from '../components/grid/ActionsColumnHeader'
+import MissingValue from '../components/MissingValue'
+import { formatShortDateUtc } from '../utils/formatters'
 
 export default function TaxRulesPage() {
   const {
@@ -24,7 +28,7 @@ export default function TaxRulesPage() {
   } = useTaxRules()
   const [editingTaxRule, setEditingTaxRule] = useState<TaxRuleDto | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [confirmingDelete, setConfirmingDelete] = useState<TaxRuleDto | null>(null)
+  const deletion = usePendingDelete(deleteTaxRule)
 
   const handleSubmit = (
     jurisdiction: string,
@@ -50,12 +54,6 @@ export default function TaxRulesPage() {
     setIsCreating(false)
   }
 
-  const handleConfirmDelete = () => {
-    if (!confirmingDelete) return
-    deleteTaxRule(confirmingDelete)
-    setConfirmingDelete(null)
-  }
-
   return (
     <AdminEntityPage
       title="Tax rules"
@@ -72,12 +70,12 @@ export default function TaxRulesPage() {
           {(isCreating || editingTaxRule) && (
             <TaxRuleFormDialog taxRule={editingTaxRule} onCancel={closeFormDialog} onSubmit={handleSubmit} />
           )}
-          {confirmingDelete && (
+          {deletion.pendingRow && (
             <ConfirmDeleteDialog
               entityLabel="tax rule"
-              message={<>&ldquo;{confirmingDelete.label}&rdquo; will be permanently deleted.</>}
-              onConfirm={handleConfirmDelete}
-              onCancel={() => setConfirmingDelete(null)}
+              message={<>&ldquo;{deletion.pendingRow.label}&rdquo; will be permanently deleted.</>}
+              onConfirm={deletion.confirm}
+              onCancel={deletion.cancel}
             />
           )}
         </>
@@ -102,13 +100,13 @@ export default function TaxRulesPage() {
               <DataTableCell label="Label">
                 <TruncatedText text={rule.label} />
               </DataTableCell>
-              <DataTableCell label="Effective from">{rule.effectiveFrom}</DataTableCell>
-              <DataTableCell label="Effective to">{rule.effectiveTo ?? '—'}</DataTableCell>
+              <DataTableCell label="Effective from">{formatShortDateUtc(rule.effectiveFrom)}</DataTableCell>
+              <DataTableCell label="Effective to">{rule.effectiveTo ? formatShortDateUtc(rule.effectiveTo) : <MissingValue label="Ongoing" />}</DataTableCell>
               <RowActionsCell
                 itemName={rule.label}
-                isDeleting={deletingId === rule.id}
+                {...rowDeleteState(deletingId, rule.id)}
                 onEdit={() => setEditingTaxRule(rule)}
-                onDelete={() => setConfirmingDelete(rule)}
+                onDelete={() => deletion.request(rule)}
               />
             </TableRow>
           ))}

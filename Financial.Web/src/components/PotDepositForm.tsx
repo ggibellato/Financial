@@ -18,7 +18,8 @@ import { useFieldError } from '../hooks/useFieldError'
 import { useFormErrorFocus } from '../hooks/useFormErrorFocus'
 import { POTS_LOAD_ERROR } from '../hooks/usePots'
 import type { DepositInto, PotDepositFormModel } from '../hooks/usePotDepositForm'
-import { formatN2OrDash, formatN2To4 } from '../utils/formatters'
+import { formatN2, formatN2To4 } from '../utils/formatters'
+import MissingValue from './MissingValue'
 import { activePotsTotal, canSplitAcrossActivePots, previewPotSplit } from '../utils/potSplitPreview'
 import ActionErrorAlert from './ActionErrorAlert'
 import DataTableCell from './grid/DataTableCell'
@@ -67,7 +68,7 @@ function PotSplitPreview({ pots, amount, currency }: PotSplitPreviewProps) {
               {formatN2To4(line.pot.splitPercentage)}
             </DataTableCell>
             <DataTableCell label={amountHeader} className="data-table__col--numeric">
-              {formatN2OrDash(amount === null ? null : line.amount)}
+              {amount === null ? <MissingValue /> : formatN2(line.amount)}
             </DataTableCell>
           </TableRow>
         ))}

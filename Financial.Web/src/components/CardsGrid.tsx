@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react'
 import type { AccountGroupMemberDto, CurrencyTotalDto } from '../api/types'
 import { useColumnFilters } from '../hooks/useColumnFilters'
 import { currencyFooterItems } from '../utils/currencyFooterItems'
-import { formatN2, formatN2OrDash } from '../utils/formatters'
+import { formatN2 } from '../utils/formatters'
+import { orMissing } from '../utils/orMissing'
 import { formatOwedOrCredit, nothingDueText } from '../utils/owedBalance'
 import ColumnFilterMenu from './grid/ColumnFilterMenu'
 import TotalsGrid from './TotalsGrid'
@@ -33,8 +35,8 @@ function statusOf(card: AccountGroupMemberDto): string {
   return outstandingOf(card) > 0 ? 'Unpaid' : nothingDueText(0)
 }
 
-function formatAccumulated(card: AccountGroupMemberDto): string {
-  return card.totalOwed == null ? formatN2OrDash(card.totalOwed) : formatOwedOrCredit(card.totalOwed)
+function formatAccumulated(card: AccountGroupMemberDto): ReactNode {
+  return orMissing(card.totalOwed, formatOwedOrCredit)
 }
 
 export default function CardsGrid({ cards, currencyTotals, viewedMonth }: CardsGridProps) {

@@ -88,4 +88,51 @@ describe('RowActionsCell', () => {
 
     expect(screen.getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Delete refund Chase'])
   })
+
+  it('keeps Delete focusable but inert while another delete runs, and says why', () => {
+    const onDelete = vi.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="bill INSS" isOtherDeleting onEdit={vi.fn()} onDelete={onDelete} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    const blocked = screen.getByRole('button', { name: 'Delete bill INSS' })
+    fireEvent.click(blocked)
+
+    expect(blocked).toHaveAttribute('aria-disabled', 'true')
+    expect(blocked).toBeEnabled()
+    expect(blocked).toHaveAccessibleDescription('Another delete is in progress.')
+    expect(onDelete).not.toHaveBeenCalled()
+  })
+
+  it('gives an available Delete no blocked description', () => {
+    renderCell()
+
+    expect(screen.getByRole('button', { name: 'Delete Chase' })).not.toHaveAccessibleDescription()
+  })
+
+  it('keeps Edit focusable but inert while it is blocked, and says why', () => {
+    const onEdit = vi.fn()
+    render(
+      <Table>
+        <TableBody>
+          <TableRow>
+            <RowActionsCell itemName="bill INSS" editBlockedReason="A bill is being saved." onEdit={onEdit} onDelete={vi.fn()} />
+          </TableRow>
+        </TableBody>
+      </Table>,
+    )
+
+    const edit = screen.getByRole('button', { name: 'Edit bill INSS' })
+    fireEvent.click(edit)
+
+    expect(edit).toHaveAttribute('aria-disabled', 'true')
+    expect(edit).toHaveAccessibleDescription('A bill is being saved.')
+    expect(onEdit).not.toHaveBeenCalled()
+  })
 })

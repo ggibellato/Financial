@@ -20,7 +20,7 @@ import {
 import type { AccountStatementDto } from '../api/types'
 import { isStoredStatement, type CardStatements, type PayForm } from '../hooks/useCardStatements'
 import { useSortableRows, type SortAccessor, type SortState } from '../hooks/useSortableRows'
-import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, MISSING_VALUE_PLACEHOLDER, todayIsoDate } from '../utils/formatters'
+import { formatCurrency, formatDayMonthYearUtc, formatLongMonthYear, formatN2, formatShortDateUtc, todayIsoDate } from '../utils/formatters'
 import ActionErrorAlert from './ActionErrorAlert'
 import ConfirmDialog from './ConfirmDialog'
 import ErrorState from './ErrorState'
@@ -34,6 +34,7 @@ import TruncatedText from './TruncatedText'
 import { statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { selectableBanks } from '../utils/selectableBanks'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
+import MissingValue from './MissingValue'
 
 const STALE_STATEMENTS_MESSAGE = 'Couldn’t refresh the statements, so the list below may be out of date.'
 
@@ -67,7 +68,7 @@ const COLUMNS: StatementColumn[] = [
     header: 'Credit in',
     numeric: true,
     accessor: (statement) => statement.creditIn,
-    render: (statement) => (statement.creditIn === 0 ? MISSING_VALUE_PLACEHOLDER : formatN2(statement.creditIn)),
+    render: (statement) => (statement.creditIn === 0 ? <MissingValue label="None" /> : formatN2(statement.creditIn)),
   },
   {
     key: 'toPay',
@@ -80,7 +81,7 @@ const COLUMNS: StatementColumn[] = [
     key: 'dueDate',
     header: 'Due date',
     accessor: (statement) => statement.dueDate,
-    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : MISSING_VALUE_PLACEHOLDER),
+    render: (statement) => (statement.dueDate ? formatShortDateUtc(statement.dueDate) : <MissingValue label="None" />),
   },
   {
     key: 'status',

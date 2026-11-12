@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Button, Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluentui/react-components'
 import { AddRegular } from '@fluentui/react-icons'
 import EmptyState from './EmptyState'
@@ -21,12 +21,14 @@ import './CorporateActionsTab.css'
 import TruncatedText from './TruncatedText'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import RowActionsCell from './grid/RowActionsCell'
+import { rowDeleteState, type RowDeleteState } from './grid/rowDeleteState'
+import MissingValue from './MissingValue'
 
 function formatRatioFactor(factor: number): string {
   return `×${factor.toFixed(4).replace(/\.?0+$/, '')}`
 }
 
-function resultingChange(record: CorporateActionDto): string {
+function resultingChange(record: CorporateActionDto): ReactNode {
   if (record.type === 'Split' && record.ratioFactor !== null) {
     return `Quantity/average cost rescaled ${formatRatioFactor(record.ratioFactor)}`
   }
@@ -39,7 +41,7 @@ function resultingChange(record: CorporateActionDto): string {
         ? `+${formatN2(record.convertedQuantity)} units received`
         : 'Units received from merger'
     }
-    return '—'
+    return <MissingValue label="None" />
   }
   if (record.type === 'SpinOff') {
     if (record.role === 'Parent') {
@@ -50,9 +52,9 @@ function resultingChange(record: CorporateActionDto): string {
         ? `+${formatN2(record.convertedQuantity)} units received`
         : 'Units received from spin-off'
     }
-    return '—'
+    return <MissingValue label="None" />
   }
-  return '—'
+  return <MissingValue label="None" />
 }
 
 function corporateActionName(record: CorporateActionDto, affectedAssetName: string): string {
@@ -68,12 +70,12 @@ interface CorporateActionRowProps {
   record: CorporateActionDto
   affectedAssetName: string
   isHighlighted: boolean
-  isDeleting: boolean
+  deleteState: RowDeleteState
   onEdit: (record: CorporateActionDto) => void
   onDelete: (record: CorporateActionDto) => void
 }
 
-function CorporateActionRow({ record, affectedAssetName, isHighlighted, isDeleting, onEdit, onDelete }: CorporateActionRowProps) {
+function CorporateActionRow({ record, affectedAssetName, isHighlighted, deleteState, onEdit, onDelete }: CorporateActionRowProps) {
   return (
     <TableRow
       data-corporate-action-id={record.id}
@@ -85,11 +87,11 @@ function CorporateActionRow({ record, affectedAssetName, isHighlighted, isDeleti
       <DataTableCell label="Affected/linked asset"><TruncatedText text={record.linkedAssetName ?? affectedAssetName} /></DataTableCell>
       <DataTableCell label="Resulting change">{resultingChange(record)}</DataTableCell>
       <DataTableCell label="Tax status">
-        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : '—'}
+        {record.calculationStatus ? <StatusBadge status={record.calculationStatus} /> : <MissingValue label="None" />}
       </DataTableCell>
       <RowActionsCell
         itemName={corporateActionName(record, affectedAssetName)}
-        isDeleting={isDeleting}
+        {...deleteState}
         onEdit={() => onEdit(record)}
         onDelete={() => onDelete(record)}
       />
@@ -218,7 +220,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
         </EmptyState>
       ) : (
         <div ref={regionRef} className="corporate-actions-tab__table-wrapper" onFocus={recordRowFocus}>
-          <Table className="corporate-actions-tab__table data-table">
+          <Table className="corporate-actions-tab__table data-table" aria-label="Corporate actions">
             <TableHeader>
               <TableRow>
                 <SortableColumnHeader
@@ -246,7 +248,7 @@ export default function CorporateActionsTab({ focusRecordId }: CorporateActionsT
                   record={record}
                   affectedAssetName={affectedAssetName}
                   isHighlighted={record.id === highlightedId}
-                  isDeleting={deletingId === record.id}
+                  deleteState={rowDeleteState(deletingId, record.id)}
                   onEdit={showEditForm}
                   onDelete={deletion.request}
                 />
