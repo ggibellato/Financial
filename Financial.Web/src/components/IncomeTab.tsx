@@ -83,7 +83,8 @@ const FILTER_ACCESSORS = { source: sourceName, bank: bankName }
 
 const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
 
-const itemName = (income: IncomeDto) => `income ${formatShortDateUtc(income.date)} ${income.incomeSourceName}`
+const itemName = ({ date, incomeSourceName, description }: IncomeDto) =>
+  `income ${formatShortDateUtc(date)} ${incomeSourceName}${description ? `, ${description}` : ''}`
 
 function deleteMessage(income: IncomeDto | null): string {
   return income?.hasLinkedDeposit

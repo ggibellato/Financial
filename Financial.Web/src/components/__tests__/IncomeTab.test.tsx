@@ -235,7 +235,7 @@ describe('IncomeTab', () => {
     deleteIncomeMock.mockResolvedValue()
     renderTab()
 
-    const dialog = await requestDelete('income 15/10/2026 DividendoJuros', 'income')
+    const dialog = await requestDelete('income 15/10/2026 DividendoJuros, XP dividends', 'income')
     expect(dialog).toHaveTextContent('Delete this income? This cannot be undone.')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
@@ -308,7 +308,7 @@ describe('IncomeTab', () => {
     deleteIncomeMock.mockRejectedValue(new ApiError('Not found.', 404))
     renderTab()
 
-    await confirmDelete('income 15/10/2026 DividendoJuros', 'income')
+    await confirmDelete('income 15/10/2026 DividendoJuros, XP dividends', 'income')
 
     expect(await screen.findByText('This income no longer exists; the list was refreshed.')).toBeInTheDocument()
     expect(screen.queryByText('Income deleted')).not.toBeInTheDocument()
@@ -319,7 +319,7 @@ describe('IncomeTab', () => {
     deleteIncomeMock.mockRejectedValue(new ApiError('Server unavailable.', 500))
     renderTab()
 
-    await confirmDelete('income 15/10/2026 DividendoJuros', 'income')
+    await confirmDelete('income 15/10/2026 DividendoJuros, XP dividends', 'income')
 
     const dialog = await screen.findByRole('dialog', { name: 'Delete income', hidden: true })
     expect(await within(dialog).findByText('Server unavailable.')).toBeInTheDocument()
@@ -359,9 +359,9 @@ describe('IncomeTab', () => {
     deleteIncomeMock.mockReturnValue(never())
     renderTab()
 
-    await confirmDelete('income 15/10/2026 DividendoJuros', 'income')
+    await confirmDelete('income 15/10/2026 DividendoJuros, XP dividends', 'income')
 
-    expect(await screen.findByRole('button', { name: 'Deleting income 15/10/2026 DividendoJuros' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Deleting income 15/10/2026 DividendoJuros, XP dividends' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete income 28/10/2026 Gleison' })).toHaveAccessibleDescription('Another delete is in progress.')
     expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeDisabled()
@@ -375,8 +375,8 @@ describe('IncomeTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' }))
     fireEvent.click(within(await screen.findByRole('form', { name: 'Edit income' })).getByRole('button', { name: 'Save' }))
 
-    expect(await screen.findByRole('button', { name: 'Edit income 15/10/2026 DividendoJuros' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: 'Delete income 15/10/2026 DividendoJuros' })).toHaveAccessibleDescription('Wait for the save to finish.')
+    expect(await screen.findByRole('button', { name: 'Edit income 15/10/2026 DividendoJuros, XP dividends' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Delete income 15/10/2026 DividendoJuros, XP dividends' })).toHaveAccessibleDescription('Wait for the save to finish.')
   })
 
   it(`${AC('09')} moves focus to the first field on open and back to New income on Cancel`, async () => {
