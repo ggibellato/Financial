@@ -6,12 +6,7 @@ import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
 import MonthTransactionsGrid from '../MonthTransactionsGrid'
 
-interface AccountFields {
-  accountId: string
-  accountName: string
-  accountCurrency: string
-  accountIsActive: boolean
-}
+type AccountFields = Omit<MonthTransactionDto, 'transaction'>
 
 const BARCLAYS: AccountFields = { accountId: 'bank-1', accountName: 'Barclays', accountCurrency: 'GBP', accountIsActive: true }
 const RESERVA: AccountFields = { accountId: 'pots-1', accountName: 'Reserva', accountCurrency: 'GBP', accountIsActive: true }
@@ -135,6 +130,51 @@ describe('MonthTransactionsGrid', () => {
       expect(descriptions()).toEqual(['Description:Tesco'])
       expect(footer()).toHaveTextContent('Spend 45.20 GBP')
       expect(footer()).not.toHaveTextContent('BRL')
+    })
+  })
+
+  describe('incomes with no bank', () => {
+    const NO_BANK: AccountFields = { accountId: null, accountName: null, accountCurrency: null, accountIsActive: true }
+    const BANKLESS_ROWS: MonthTransactionDto[] = [
+      ...ROWS,
+      monthRow(NO_BANK, accountTransactionRow({ id: 'i1', kind: 'Income', date: '2026-10-15', description: 'XP dividends', counterpart: 'DividendoJuros', amount: 85.2, currency: null })),
+      monthRow(NO_BANK, accountTransactionRow({ id: 'i2', kind: 'Income', date: '2026-10-30', description: 'Interest', counterpart: 'DividendoJuros', amount: 42.1, currency: null })),
+    ]
+
+    it('[AC P61-F02-income-tab-and-bankless-income-07] shows a bankless income as "No bank" plain text, its description unlinked and no currency', () => {
+      renderGrid({ rows: BANKLESS_ROWS })
+
+      const dividends = bodyRows().find((row) => within(row).queryByText('XP dividends'))!
+      expect(within(dividends).getAllByRole('cell').map((cell) => cell.textContent)).toEqual([
+        'Date:15/10/2026',
+        'Account:No bank',
+        'Type:Income',
+        'Description:XP dividends',
+        'Category:',
+        'Amount:+85.20',
+      ])
+      expect(within(dividends).queryByRole('link')).not.toBeInTheDocument()
+      expect(within(bodyRows()[0]).queryByRole('link')).not.toBeInTheDocument()
+    })
+
+    it('[AC P61-F02-income-tab-and-bankless-income-07] filters by the "No bank" account with its own footer total', () => {
+      renderGrid({ rows: BANKLESS_ROWS })
+
+      filterTo('Account', 'No bank')
+
+      expect(descriptions()).toEqual(['Description:Interest', 'Description:XP dividends'])
+      expect(footer()).toHaveTextContent('2 of 9 rows · No bank +127.30')
+    })
+
+    it('[AC P61-F02-income-tab-and-bankless-income-07] lists the "No bank" total after the currency totals, leaving Spend unchanged', () => {
+      renderGrid({ rows: BANKLESS_ROWS })
+
+      expect(footer()).toHaveTextContent('9 rows · Total -12.50 BRL · Total -85.19 GBP · No bank +127.30')
+
+      filterTo('Category', 'Groceries')
+
+      expect(footer()).toHaveTextContent('2 of 9 rows · Total -12.50 BRL · Total -45.20 GBP · Spend 12.50 BRL · Spend 45.20 GBP')
+      expect(footer()).not.toHaveTextContent('No bank')
     })
   })
 
