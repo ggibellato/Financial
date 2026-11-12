@@ -205,7 +205,7 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(1)
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 10)
     expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Banks', 'Credit cards', 'Pots'])
-    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance'])
+    expect(headers(banks)).toEqual(['Account', 'Currency', 'Balance', 'Round-up'])
     expect(accountNames(banks)).toEqual(['Barclays', 'Chase', 'Itau', 'Old SavingsInactive'])
     expect(within(bodyRows(banks)[0]).getByText('2,800.25')).toBeInTheDocument()
     expect(within(bodyRows(banks)[2]).getByText('BRL')).toBeInTheDocument()
@@ -437,6 +437,17 @@ describe('AccountsPage', () => {
     fireEvent.click(await screen.findByRole('link', { name: 'Chase' }))
 
     expect(screen.getByText('Account screen')).toBeInTheDocument()
+  })
+
+  it(`${AC('02')} shows each bank's round-up for the chosen month, and no Round-up column on other balance grids`, async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 9)
+    const [barclays, chase] = bodyRows(banks)
+    expect(within(barclays).getAllByRole('cell').map((cell) => cell.textContent?.replace(/^[^:]*:/, ''))).toEqual(['Barclays', 'GBP', '2,800.25', '1.20'])
+    expect(within(chase).getAllByRole('cell').at(-1)?.textContent).toContain('0.00')
+    expect(headers(screen.getByRole('table', { name: 'Pots' }))).toEqual(['Account', 'Currency', 'Balance'])
   })
 
   it('names the page with one level-1 heading above the grids’ level-2 headings', async () => {

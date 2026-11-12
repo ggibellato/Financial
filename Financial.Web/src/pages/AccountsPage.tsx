@@ -54,6 +54,16 @@ const balanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
+const roundUpOf = (row: AccountGroupMemberDto) => row.roundUpTotal ?? 0
+
+const roundUpColumn = {
+  key: 'roundUp',
+  header: 'Round-up',
+  numeric: true,
+  render: (row: AccountGroupMemberDto) => formatN2(roundUpOf(row)),
+  sortAccessor: roundUpOf,
+}
+
 function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | null {
   return nextStatement ? new Date(nextStatement.year, nextStatement.month - 1, 1) : null
 }
@@ -83,10 +93,11 @@ const settlementBalanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
-function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
+function gridColumns(templateName: string, columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
   if (columns === 'settlement') return [nameColumn(renderName), settlementBalanceColumn]
   const leading = [nameColumn(renderName), currencyColumn]
-  return columns === 'card' ? [...leading, nextStatementColumn, totalOwedColumn] : [...leading, balanceColumn]
+  if (columns === 'card') return [...leading, nextStatementColumn, totalOwedColumn]
+  return templateName === 'Bank' ? [...leading, balanceColumn, roundUpColumn] : [...leading, balanceColumn]
 }
 
 function AccountsTab({ year, month }: { year: number; month: number }) {
@@ -118,7 +129,7 @@ function AccountsTab({ year, month }: { year: number; month: number }) {
                 </Text>
                 <TotalsGrid
                   label={grid.heading}
-                  columns={gridColumns(grid.columns, renderName)}
+                  columns={gridColumns(group.templateName, grid.columns, renderName)}
                   rows={group.members}
                   rowKey={(row) => row.accountId}
                   emptyMessage="No accounts this month."
