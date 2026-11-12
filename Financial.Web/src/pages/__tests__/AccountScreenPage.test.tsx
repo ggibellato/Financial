@@ -2232,41 +2232,22 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     expect(deleteExpenseMock).not.toHaveBeenCalled()
   })
 
-  it("moves focus to the next row's Delete after a row is deleted and the month reloads", async () => {
+  it.each([
+    { removed: 'Tesco', button: /^Delete expense\b/, dialog: 'Delete expense', initial: ROWS, focused: 'the next row', target: () => within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ }) },
+    { removed: 'Bank fee', button: /^Delete balance adjustment\b/, dialog: 'Delete balance adjustment', initial: ROWS, focused: 'the previous row, as it was the last', target: () => within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ }) },
+    { removed: 'Tesco', button: /^Delete expense\b/, dialog: 'Delete expense', initial: [ROWS[0]], focused: 'the Transactions heading, as it was the only row', target: () => screen.getByRole('heading', { name: 'Transactions' }) },
+  ])('moves focus to $focused after deleting $removed and the month reloads', async ({ removed, button, dialog, initial, target }) => {
     const user = userEvent.setup()
+    getAccountTransactionsMock.mockResolvedValue(initial)
     await openScreen()
-    getAccountTransactionsMock.mockResolvedValue(ROWS.filter((row) => row.id !== 'e1'))
+    const row = rowOf(removed)
+    getAccountTransactionsMock.mockResolvedValue(initial.filter((candidate) => candidate.description !== removed))
 
-    await user.click(within(rowOf('Tesco')).getByRole('button', { name: /^Delete expense\b/ }))
-    await user.click(await dialogButton('Delete expense', 'Delete'))
+    await user.click(within(row).getByRole('button', { name: button }))
+    await user.click(await dialogButton(dialog, 'Delete'))
 
-    await waitFor(() => expect(screen.queryByText('Tesco')).not.toBeInTheDocument())
-    await waitFor(() => expect(within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ })).toHaveFocus())
-  })
-
-  it("moves focus to the previous row's Delete when the deleted row was the last one", async () => {
-    const user = userEvent.setup()
-    await openScreen()
-    getAccountTransactionsMock.mockResolvedValue(ROWS.filter((row) => row.id !== 'a1'))
-
-    await user.click(within(rowOf('Bank fee')).getByRole('button', { name: /^Delete balance adjustment\b/ }))
-    await user.click(await dialogButton('Delete balance adjustment', 'Delete'))
-
-    await waitFor(() => expect(screen.queryByText('Bank fee')).not.toBeInTheDocument())
-    await waitFor(() => expect(within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ })).toHaveFocus())
-  })
-
-  it('moves focus to the Transactions heading when the deleted row was the only one', async () => {
-    const user = userEvent.setup()
-    getAccountTransactionsMock.mockResolvedValue([ROWS[0]])
-    await openScreen()
-    getAccountTransactionsMock.mockResolvedValue([])
-
-    await user.click(within(rowOf('Tesco')).getByRole('button', { name: /^Delete expense\b/ }))
-    await user.click(await dialogButton('Delete expense', 'Delete'))
-
-    await waitFor(() => expect(screen.queryByText('Tesco')).not.toBeInTheDocument())
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Transactions' })).toHaveFocus())
+    await waitFor(() => expect(screen.queryByText(removed)).not.toBeInTheDocument())
+    await waitFor(() => expect(target()).toHaveFocus())
   })
 
   it('edits a transfer with this account locked on its side and its counterpart selected', async () => {

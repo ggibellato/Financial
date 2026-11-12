@@ -47,18 +47,22 @@ function controlNear(region: HTMLElement, focused: FocusedRowControl): HTMLEleme
   return control && !control.matches(':disabled') ? control : null
 }
 
-function watchForFocusLoss(onLost: () => void): () => void {
+function watchForFocusLoss(onLost: () => void, onMoved: () => void): () => void {
   const observer = new MutationObserver(() => {
     if (!isFocusLost()) return
     stop()
     onLost()
   })
+  const moved = () => {
+    stop()
+    onMoved()
+  }
   const stop = () => {
     observer.disconnect()
-    document.removeEventListener('focusin', stop, true)
+    document.removeEventListener('focusin', moved, true)
   }
   observer.observe(document.body, { childList: true, subtree: true })
-  document.addEventListener('focusin', stop, true)
+  document.addEventListener('focusin', moved, true)
   return stop
 }
 
@@ -72,14 +76,17 @@ export function useRowFocusRecovery(
   useEffect(() => {
     const focused = lastFocused.current
     if (isLoading || !focused || focused.element.isConnected) return
-    const recover = () => {
+    const forget = () => {
       lastFocused.current = null
+    }
+    const recover = () => {
+      forget()
       const region = regionRef.current
       const target = (region && controlNear(region, focused)) ?? fallbackRef.current
       target?.focus()
     }
     if (isFocusLost()) recover()
-    else if (!regionRef.current?.contains(document.activeElement)) return watchForFocusLoss(recover)
+    else if (!regionRef.current?.contains(document.activeElement)) return watchForFocusLoss(recover, forget)
   })
 
   return (event: FocusEvent<HTMLElement>) => {

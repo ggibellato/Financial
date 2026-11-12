@@ -127,6 +127,7 @@ export default function AccountScreenPage() {
   })
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const transactionsRegionRef = useRef<HTMLElement | null>(null)
+  // Must run before the post-save effect below, or a deleted row's focus goes to the heading instead of its neighbour.
   const recordRowFocus = useRowFocusRecovery(transactionsRegionRef, transactionsHeadingRef, screen.isLoading)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
