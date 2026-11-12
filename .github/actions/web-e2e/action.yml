@@ -20,7 +20,7 @@ runs:
   - name: Install Playwright browser
     shell: bash
     working-directory: Financial.Web
-    run: npx playwright install chromium
+    run: npx playwright install --with-deps chromium
 
   - name: Build web frontend
     shell: bash
