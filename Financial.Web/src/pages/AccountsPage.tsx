@@ -181,10 +181,14 @@ export default function AccountsPage() {
         ))}
       </PageTabList>
 
-      <div className="accounts-page__groups" {...tabPanel.panelProps}>
+      <div className={tab === 'transactions' ? 'monthly-page__panel' : 'accounts-page__groups'} {...tabPanel.panelProps}>
         {tab === 'accounts' && <AccountsTab key={monthKey} year={year} month={month} />}
         {tab === 'summary' && <AccountsSummaryTab key={monthKey} year={year} month={month} />}
-        {tab === 'transactions' && <AllTransactionsTab key={monthKey} year={year} month={month} />}
+        {tab === 'transactions' && (
+          <div className="monthly-page__content">
+            <AllTransactionsTab key={monthKey} year={year} month={month} />
+          </div>
+        )}
       </div>
     </div>
   )

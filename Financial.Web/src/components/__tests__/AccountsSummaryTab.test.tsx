@@ -93,6 +93,7 @@ describe('AccountsSummaryTab', () => {
 
     await screen.findByRole('table', { name: 'Category totals' })
     expect(screen.getAllByRole('table').map((table) => table.getAttribute('aria-label'))).toEqual(['Category totals', 'Income totals'])
+    expect(screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent)).toEqual(['Category totals', 'Income by source'])
     expect(screen.queryByText(/Bank balance:|Combined adjustment figure/)).not.toBeInTheDocument()
   })
 
