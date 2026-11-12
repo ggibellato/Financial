@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Financial.CashFlow.Application.DTOs;
 using FluentAssertions;
@@ -56,7 +57,7 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
     private Task<List<TitheMonthDTO>?> YearAsync() =>
         Client.GetFromJsonAsync<List<TitheMonthDTO>>($"{Api}/tithe/year/2026");
 
-    private async Task ShouldEqualTheMonthRouteAsync()
+    private async Task<List<TitheMonthDTO>> YearEqualToTheMonthRouteAsync()
     {
         var year = JsonNode.Parse(await Client.GetStringAsync($"{Api}/tithe/year/2026"))!.AsArray();
 
@@ -69,6 +70,8 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
             item["month"]!.GetValue<int>().Should().Be(month);
             JsonNode.DeepEquals(item["summary"], monthRoute).Should().BeTrue($"month {month} must equal the month route");
         }
+
+        return year.Deserialize<List<TitheMonthDTO>>(JsonSerializerOptions.Web)!;
     }
 
     [Fact]
@@ -94,7 +97,7 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
     [Trait("AC", "P61-F03-tithe-tab-and-history-04")]
     public async Task TitheYear_ReturnsTwelveItemsEqualToTheMonthRoute()
     {
-        var year = (await YearAsync())!;
+        var year = await YearEqualToTheMonthRouteAsync();
 
         using (new AssertionScope())
         {
@@ -110,8 +113,6 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
             year[10].Summary.CarryForward!.Amount.Should().Be(50m);
             year[11].Summary.TitheBalance.Should().Be(50m);
         }
-
-        await ShouldEqualTheMonthRouteAsync();
     }
 
     [Theory]
@@ -133,7 +134,7 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
             $"{Api}/tithe/month/2026/9/carry-forward", new TitheCarryForwardUpdateDTO { Included = false });
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        var year = (await YearAsync())!;
+        var year = await YearEqualToTheMonthRouteAsync();
 
         using (new AssertionScope())
         {
@@ -144,8 +145,6 @@ public class TitheViewAcceptanceTests : ApiEndpointTests
             year[10].Summary.CarryForward.Should().BeNull();
             year[10].Summary.TitheBalance.Should().Be(0m);
         }
-
-        await ShouldEqualTheMonthRouteAsync();
     }
 
     [Fact]
