@@ -159,6 +159,7 @@ export const STATEMENT_PAYMENT_DELETE_REASON = 'Unmark the statement to remove t
 const INACTIVE_ACCOUNT_REASON = 'This account is inactive, so its rows cannot be changed.'
 const INCOME_LINE_EDIT_REASON = 'Edit from the income.'
 const CREDIT_REFUND_EDIT_REASON = 'A credit refund cannot be edited. Delete it and refund the credit again.'
+const PAID_STATEMENT_REASON = 'Its card statement is paid. Unmark the statement to change it.'
 const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
 const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
 
@@ -218,13 +219,15 @@ export function monthRowEdit({ accountId, accountIsActive, transaction: row }: M
         : `/cashflow/accounts?month=${month}&tab=income&edit=${row.id}`,
     }
   }
+  if (!accountIsActive) return { blockedReason: INACTIVE_ACCOUNT_REASON }
   if (isOlderIncomeLine(row)) return { blockedReason: INCOME_LINE_EDIT_REASON }
-  return { blockedReason: isCreditRefund(row) && accountIsActive ? CREDIT_REFUND_EDIT_REASON : INACTIVE_ACCOUNT_REASON }
+  return { blockedReason: isCreditRefund(row) ? CREDIT_REFUND_EDIT_REASON : PAID_STATEMENT_REASON }
 }
 
 export function monthRowDeleteBlockedReason({ accountId, accountIsActive, transaction: row }: MonthTransactionDto): string | undefined {
   if (row.statement) return STATEMENT_PAYMENT_DELETE_REASON
   if (row.operation && accountId) return operationDeleteBlockedReason(row.operation, accountId)
-  if (row.canEdit || (isCreditRefund(row) && accountIsActive)) return undefined
-  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : INACTIVE_ACCOUNT_REASON
+  if (!accountIsActive) return INACTIVE_ACCOUNT_REASON
+  if (row.canEdit || isCreditRefund(row)) return undefined
+  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : PAID_STATEMENT_REASON
 }

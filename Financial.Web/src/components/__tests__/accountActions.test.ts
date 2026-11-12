@@ -204,6 +204,13 @@ describe('All transactions row actions', () => {
     expect(monthRowDeleteBlockedReason(monthRow(refund, 'bank-1', false))).toBe(INACTIVE)
   })
 
+  it('sends a charge on a paid statement to its statement', () => {
+    const paid = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-28', amount: -1.1, canEdit: false })
+    const reason = 'Its card statement is paid. Unmark the statement to change it.'
+    expect(monthRowEdit(monthRow(paid, 'card-1'), MONTH)).toEqual({ blockedReason: reason })
+    expect(monthRowDeleteBlockedReason(monthRow(paid, 'card-1'))).toBe(reason)
+  })
+
   it("says an inactive account's rows cannot be changed", () => {
     const readOnly = { ...expense, canEdit: false }
     expect(monthRowEdit(monthRow(readOnly, 'bank-9', false), MONTH)).toEqual({ blockedReason: INACTIVE })
