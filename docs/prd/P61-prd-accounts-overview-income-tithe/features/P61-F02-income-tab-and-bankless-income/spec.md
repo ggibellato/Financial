@@ -54,7 +54,7 @@ graph TD
 
 | Decision | Chosen approach | Alternative considered | Trade-off |
 |---|---|---|---|
-| **Bankless rows** (2a) | In `GetMonthTransactions`, after the per-account rows, the month's records that are `Income { Account: null }` map through a private `ToBanklessRow(Income)` into `MonthTransactionDTO` with null account fields; the combined list orders by date descending as today (bankless rows after account rows of the same date). The per-account `GetTransactions` is unchanged. | A pseudo "No bank" account | No fake account in data or DTOs. |
+| **Bankless rows** (2a) | In `GetMonthTransactions`, after the per-account rows, the month's records that are `Income { Account: null }` come from a private `BanklessRowsOf(MonthRecords)` through the shared `ToMonthRow(Account?, …)`, so they carry null account fields; the combined list orders by date descending as today (bankless rows after account rows of the same date). The per-account `GetTransactions` is unchanged. | A pseudo "No bank" account | No fake account in data or DTOs. |
 | **Optional account fields** (2a) | `MonthTransactionDTO.AccountId` `Guid?`, `AccountName` `string?`, `AccountCurrency` `string?`; `AccountTransactionDTO.Currency` `string?` (null only on bankless rows). All four stay `required`: the key is always written, null on a bankless row, so the generated types read `string | null`, not optional. Snapshot and `openapi.ts` regenerated. | `Currency = ""` | Honest wire shape: a bankless income has no currency. |
 | **Account screen currency** (2a) | `AccountTransactionsGrid`'s settlement Amount, the only place it reads `row.currency`, formats with the existing `formatAmount(value, row.currency)` (a plain number when null, which never happens on an account screen), so the type change compiles with no visible change and the grid needs no new prop. | `row.currency ?? accountCurrency`; non-null assertion | A Settlement account has several currencies, so its primary currency would be a wrong fallback; no new prop on a grid another PR is changing. |
 | **Grid "No bank"** (2a) | `MonthTransactionsGrid`: `NO_BANK = 'No bank'`; account accessor `row.accountName ?? NO_BANK` (so the filter offers it); Account cell plain text for a null account; Description of a bankless row is plain text, no link (controller decision 2026-11-12: grids use the app's row icons, not description links; an edit/delete icon column for All transactions follows in its own PR after 2a); row key uses `row.accountId ?? NO_BANK`. | Link the Account cell to the Income tab | The Account cell links to accounts only. |
@@ -87,7 +87,7 @@ graph TD
 
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
-| `Services/AccountQueryService.cs` | Modified | 2a | Bankless income rows in `GetMonthTransactions`; `ToBanklessRow` |
+| `Services/AccountQueryService.cs` | Modified | 2a | Bankless income rows in `GetMonthTransactions`; `BanklessRowsOf`; `ToMonthRow` and `ToRow(Income, …)` take a nullable account |
 | `DTOs/MonthTransactionDTO.cs` | Modified | 2a | Optional `AccountId`, `AccountName`, `AccountCurrency` |
 | `DTOs/AccountTransactionDTO.cs` | Modified | 2a | Optional `Currency` |
 
