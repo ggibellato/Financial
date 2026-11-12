@@ -13,12 +13,18 @@ const {
   getDefaultGroupSummaryMock,
   getTitheSummaryByMonthMock,
   getMonthTransactionsMock,
+  getIncomesByMonthMock,
+  getIncomeSourcesMock,
+  getAccountsMock,
 } = vi.hoisted(() => ({
   getAccountTemplateGroupsMock: vi.fn<FinancialApiClient['getAccountTemplateGroups']>(),
   getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
   getDefaultGroupSummaryMock: vi.fn<FinancialApiClient['getDefaultGroupSummary']>(),
   getTitheSummaryByMonthMock: vi.fn<FinancialApiClient['getTitheSummaryByMonth']>(),
   getMonthTransactionsMock: vi.fn<FinancialApiClient['getMonthTransactions']>(),
+  getIncomesByMonthMock: vi.fn<FinancialApiClient['getIncomesByMonth']>(),
+  getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
+  getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -28,6 +34,9 @@ vi.mock('../../api/financialApiClient', () => ({
     getDefaultGroupSummary: getDefaultGroupSummaryMock,
     getTitheSummaryByMonth: getTitheSummaryByMonthMock,
     getMonthTransactions: getMonthTransactionsMock,
+    getIncomesByMonth: getIncomesByMonthMock,
+    getIncomeSources: getIncomeSourcesMock,
+    getAccounts: getAccountsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -176,6 +185,9 @@ describe('AccountsPage', () => {
     getDefaultGroupSummaryMock.mockReset().mockResolvedValue(SUMMARY)
     getTitheSummaryByMonthMock.mockReset().mockResolvedValue({ calculatedTithe: 10, titheBalance: 10, carryForward: null })
     getMonthTransactionsMock.mockReset().mockResolvedValue(MONTH_TRANSACTIONS)
+    getIncomesByMonthMock.mockReset().mockResolvedValue([])
+    getIncomeSourcesMock.mockReset().mockResolvedValue([])
+    getAccountsMock.mockReset().mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -461,8 +473,8 @@ describe('AccountsPage', () => {
     renderPage()
 
     expect(screen.getByRole('tablist', { name: 'Accounts views' })).toBeInTheDocument()
-    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('value'))).toEqual(['accounts', 'summary', 'transactions'])
-    expect(screen.getAllByRole('tab').map((tab) => tab.querySelector('.fui-Tab__content')?.textContent)).toEqual(['Accounts', 'Summary', 'All transactions'])
+    expect(screen.getAllByRole('tab').map((tab) => tab.getAttribute('value'))).toEqual(['accounts', 'summary', 'income', 'transactions'])
+    expect(screen.getAllByRole('tab').map((tab) => tab.querySelector('.fui-Tab__content')?.textContent)).toEqual(['Accounts', 'Summary', 'Income', 'All transactions'])
     expect(screen.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true')
     expect(await screen.findByRole('tabpanel', { name: 'Accounts' })).toContainElement(await screen.findByRole('table', { name: 'Banks' }))
   })
@@ -475,8 +487,21 @@ describe('AccountsPage', () => {
     expect(getDefaultGroupSummaryMock).toHaveBeenCalledWith(2026, 9)
     unmount()
 
-    renderPage('/cashflow/accounts?tab=income')
+    renderPage('/cashflow/accounts?tab=tithe')
     expect(screen.getByRole('tab', { name: 'Accounts' })).toHaveAttribute('aria-selected', 'true')
+  })
+
+  it('[AC P61-F02-income-tab-and-bankless-income-01] shows the Income tab third and loads its incomes only while it is open', async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+    await screen.findByRole('table', { name: 'Banks' })
+
+    expect(screen.getAllByRole('tab')[2]).toHaveAccessibleName('Income')
+    expect(getIncomesByMonthMock).not.toHaveBeenCalled()
+
+    selectTab('Income')
+
+    expect(await screen.findByRole('tabpanel', { name: 'Income' })).toContainElement(await screen.findByRole('table', { name: 'Incomes' }))
+    expect(getIncomesByMonthMock).toHaveBeenCalledExactlyOnceWith(2026, 9)
   })
 
   it(`${AC('01')} writes the selected tab to the address, keeping the month`, async () => {

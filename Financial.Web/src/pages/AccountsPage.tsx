@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom'
 import type { AccountGroupMemberDto, MonthTransactionDto } from '../api/types'
 import AccountsSummaryTab from '../components/AccountsSummaryTab'
 import ErrorState from '../components/ErrorState'
+import IncomeTab from '../components/IncomeTab'
 import LoadingState from '../components/LoadingState'
 import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
 import PageTabList from '../components/PageTabList'
@@ -152,9 +153,10 @@ function AllTransactionsTab({ year, month }: { year: number; month: number }) {
 }
 
 const OVERVIEW_TABS = [
-  { id: 'accounts', label: 'Accounts' },
-  { id: 'summary', label: 'Summary' },
-  { id: 'transactions', label: 'All transactions' },
+  { id: 'accounts', label: 'Accounts', isGrid: false },
+  { id: 'summary', label: 'Summary', isGrid: false },
+  { id: 'income', label: 'Income', isGrid: true },
+  { id: 'transactions', label: 'All transactions', isGrid: true },
 ] as const
 
 type OverviewTabId = (typeof OVERVIEW_TABS)[number]['id']
@@ -167,6 +169,7 @@ export default function AccountsPage() {
   const { state } = useLocation()
   const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
   const monthKey = `${year}-${month}`
+  const isGridTab = OVERVIEW_TABS.some(({ id, isGrid }) => id === tab && isGrid)
 
   return (
     <div className="accounts-page">
@@ -192,9 +195,14 @@ export default function AccountsPage() {
         ))}
       </PageTabList>
 
-      <div className={tab === 'transactions' ? 'monthly-page__panel' : 'accounts-page__groups'} {...tabPanel.panelProps}>
+      <div className={isGridTab ? 'monthly-page__panel' : 'accounts-page__groups'} {...tabPanel.panelProps}>
         {tab === 'accounts' && <AccountsTab key={monthKey} year={year} month={month} />}
         {tab === 'summary' && <AccountsSummaryTab key={monthKey} year={year} month={month} />}
+        {tab === 'income' && (
+          <div className="monthly-page__content">
+            <IncomeTab key={monthKey} year={year} month={month} />
+          </div>
+        )}
         {tab === 'transactions' && (
           <div className="monthly-page__content">
             <AllTransactionsTab key={monthKey} year={year} month={month} />
