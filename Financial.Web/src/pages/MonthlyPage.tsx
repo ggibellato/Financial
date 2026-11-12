@@ -13,7 +13,7 @@ import LoadingState from '../components/LoadingState'
 import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
 import { useMonthly } from '../hooks/useMonthly'
 import { useMonthTransactions } from '../hooks/useMonthTransactions'
-import './MonthlyPage.css'
+import './AccountsOverview.css'
 
 type MonthlyTabId = 'summary' | 'transactions'
 

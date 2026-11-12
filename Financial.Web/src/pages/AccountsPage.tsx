@@ -1,17 +1,19 @@
 import type { ReactNode } from 'react'
-import { Badge, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
+import { Badge, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
 import { Link, useLocation } from 'react-router-dom'
 import type { AccountGroupMemberDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import TotalsGrid from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
+import { useOverviewAddress } from '../hooks/useOverviewAddress'
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
-import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2 } from '../utils/formatters'
+import { formatLongMonthYear, formatMonthYear, formatN2 } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 import MissingValue from '../components/MissingValue'
+import './AccountsOverview.css'
 import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
@@ -83,8 +85,7 @@ function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroup
 }
 
 export default function AccountsPage() {
-  const { year, month } = currentYearMonth()
-  const monthParam = formatMonthInputValue(year, month)
+  const { year, month, monthInputValue, setMonthInputValue } = useOverviewAddress()
   const { data: groups, isLoading, error, retry } = useAccountTemplateGroups(year, month)
   const { state } = useLocation()
   const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
@@ -96,39 +97,46 @@ export default function AccountsPage() {
           <MessageBarBody>That page moved to the account screen.</MessageBarBody>
         </MessageBar>
       )}
+      <div className="monthly-page__header">
+        <Field label="Month">
+          <Input type="month" value={monthInputValue} onChange={(_event, data) => setMonthInputValue(data.value)} />
+        </Field>
+      </div>
       <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
 
-      {isLoading ? (
-        <LoadingState />
-      ) : error || !groups ? (
-        <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
-      ) : groups.length === 0 ? (
-        <Text>No accounts this month.</Text>
-      ) : (
-        groups.map((group) => {
-          const grid = accountTemplateGrid(group.templateName)
-          const formatFooterTotal = grid.columns === 'card' ? formatOwedOrCredit : formatN2
-          const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
-          const renderName = grid.linksRows
-            ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthParam}${tabParam}`}>{row.name}</Link>
-            : (row: AccountGroupMemberDto) => row.name
-          return (
-            <div key={group.templateName} className="accounts-page__section">
-              <Text as="h2" weight="semibold" size={400}>
-                {grid.heading}
-              </Text>
-              <TotalsGrid
-                label={grid.heading}
-                columns={gridColumns(grid.columns, renderName)}
-                rows={group.members}
-                rowKey={(row) => row.accountId}
-                emptyMessage="No accounts this month."
-                footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
-              />
-            </div>
-          )
-        })
-      )}
+      <div className="accounts-page__groups">
+        {isLoading ? (
+          <LoadingState />
+        ) : error || !groups ? (
+          <ErrorState message={ACCOUNTS_LOAD_ERROR} onRetry={retry} />
+        ) : groups.length === 0 ? (
+          <Text>No accounts this month.</Text>
+        ) : (
+          groups.map((group) => {
+            const grid = accountTemplateGrid(group.templateName)
+            const formatFooterTotal = grid.columns === 'card' ? formatOwedOrCredit : formatN2
+            const tabParam = grid.rowLinkTab ? `&tab=${grid.rowLinkTab}` : ''
+            const renderName = grid.linksRows
+              ? (row: AccountGroupMemberDto) => <Link to={`/cashflow/accounts/${row.accountId}?month=${monthInputValue}${tabParam}`}>{row.name}</Link>
+              : (row: AccountGroupMemberDto) => row.name
+            return (
+              <div key={group.templateName} className="accounts-page__section">
+                <Text as="h2" weight="semibold" size={400}>
+                  {grid.heading}
+                </Text>
+                <TotalsGrid
+                  label={grid.heading}
+                  columns={gridColumns(grid.columns, renderName)}
+                  rows={group.members}
+                  rowKey={(row) => row.accountId}
+                  emptyMessage="No accounts this month."
+                  footerItems={grid.footerLabel ? group.totals.map((total) => ({ label: `${grid.footerLabel} ${total.currency}`, value: formatFooterTotal(total.total) })) : []}
+                />
+              </div>
+            )
+          })
+        )}
+      </div>
     </div>
   )
 }

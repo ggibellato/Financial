@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { BalanceAdjustmentDto, BankOption } from '../api/types'
-import type { BankTotal } from './useMonthly'
 import type { AccountFormSettings } from './formSettings'
 import { hasChangedFields, snapshotFields } from './inlineFormSlice'
 import { mapBalanceAdjustmentErrorToField, type BalanceAdjustmentFormField } from './mapBalanceAdjustmentErrorToField'
@@ -12,7 +11,11 @@ import { selectableBanks } from '../utils/selectableBanks'
 const DATE_KEY = 'balanceAdjustment.date'
 const BANK_KEY = 'balanceAdjustment.bank'
 
-type BankBalance = Pick<BankTotal, 'bankId' | 'bank' | 'balance'>
+interface BankBalance {
+  bankId: string
+  bank: string
+  balance: number
+}
 
 const EDITABLE_FIELDS = ['bankName', 'date', 'targetBalance', 'note'] as const
 

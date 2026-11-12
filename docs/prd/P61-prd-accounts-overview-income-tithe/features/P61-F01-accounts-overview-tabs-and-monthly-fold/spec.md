@@ -65,7 +65,7 @@ graph TD
 | **Bank balance type** (1a) | `useBalanceAdjustmentForm` declares its own `BankBalance` shape (`bankId`, `bank`, `balance`) instead of `Pick<BankTotal, …>` from `useMonthly`. | Keep the import | 1b can then delete the bank grids and their type. |
 | **Redirect** (1b) | `REDIRECT_ROUTES` gains `cashflow/monthly` → a `MonthlyRedirect` function component in `routes.tsx` that reads `month` from the address and renders `<Navigate replace to="/cashflow/accounts?tab=summary[&month=…]" />`. `PAGE_ROUTES` and `NAV_TREE` lose Monthly; `lazyPages.tsx` loses `MonthlyPage`. | `MovedPageRedirect` | No moved notice needed: the content is the same. |
 | **Parity screen checklist** (1b) | Rows whose Page is "Monthly" read "Monthly (before) / Accounts → Accounts or Summary tab (after)"; B1 reads "Accounts tab's Barclays balance"; the tithe row's after side reads "Accounts → Summary (Tithe tab once F03 ships)", so F03 needs no checklist change. | — | The before build still has Monthly. |
-| **PR size** | 1a: 5 non-test code files, about 8 in total. 1b: 8 non-test code files (deleted and renamed-only test files not counted), about 17 in total with 7 test files, `context.md`, `screen-checklist.md` and the PRD ticks. | Move `monthResult` into `AccountsSummaryTab` | 1b is at the code limit and just over 15 in total because the ticks and two docs ride in the last PR; the reviewer reads the docs and ticks in seconds. |
+| **PR size** | 1a: 6 non-test code files, about 8 in total. 1b: 8 non-test code files (deleted and renamed-only test files not counted), about 17 in total with 7 test files, `context.md`, `screen-checklist.md` and the PRD ticks. | Move `monthResult` into `AccountsSummaryTab` | 1b is at the code limit and just over 15 in total because the ticks and two docs ride in the last PR; the reviewer reads the docs and ticks in seconds. |
 | **Rollback** | Web only; rolling back restores Monthly. | — | — |
 
 **Choices made by the spec writer** (for review):
@@ -86,7 +86,8 @@ graph TD
 |---|---|---|---|
 | `hooks/useOverviewAddress.ts` | New (1a), Modified (1b) | 1a, 1b | Month from `?month=` (1a); tab from `?tab=` against valid ids (1b); replace-writes keeping the other parameter |
 | `pages/AccountsPage.tsx` | Modified | 1a, 1b | Month picker; Accounts tab for the chosen month (1a); `OVERVIEW_TABS`, `PageTabList`, per-tab components keyed by month, All transactions tab moved from Monthly (1b) |
-| `pages/AccountsOverview.css` | Renamed from `MonthlyPage.css` | 1a | Same classes; page header layout for the picker |
+| `pages/AccountsOverview.css` | Renamed from `MonthlyPage.css` | 1a | Same classes; the picker reuses `monthly-page__header` |
+| `pages/AccountsPage.css` | Modified | 1a | `accounts-page__groups`: the loading, error and groups share one region below the heading, so Try again focuses the reloaded grid, not the picker |
 | `pages/MonthlyPage.tsx` | Modified (1a), Deleted (1b) | 1a, 1b | CSS import path (1a) |
 | `hooks/useBalanceAdjustmentForm.ts` | Modified | 1a | Own `BankBalance` type |
 | `components/AccountsSummaryTab.tsx` | New | 1b | Category totals, Income by source (with tithe props until F03), Result; loading, error, empty |
@@ -115,7 +116,7 @@ Following the `testing-guide-Financial` skill: Vitest unit tests for hooks, help
 
 | Test file | Stage | Cases |
 |---|---|---|
-| `hooks/__tests__/useOverviewAddress.test.ts` | 1a, 1b | Current month when missing or malformed; reads `2026-09`; setting the month keeps `tab` and replaces history; tab falls back to the first valid id when missing or unknown; setting the tab keeps `month` |
+| `hooks/__tests__/useOverviewAddress.test.tsx` | 1a, 1b | Current month when missing or malformed; reads `2026-09`; setting the month keeps `tab` and replaces history; tab falls back to the first valid id when missing or unknown; setting the tab keeps `month` |
 | `pages/__tests__/AccountsPage.test.tsx` | 1a, 1b | Picker defaults to the current month; changing it reloads the groups for that month, updates the heading and row links (1a); tabs in order with Accounts selected; only the open tab requests data; a month change reloads the open tab and keeps it; error in one tab leaves the others selectable; keyboard arrows move between tabs (1b) |
 | `components/__tests__/AccountsSummaryTab.test.tsx` | 1b | Category totals, Income by source with Total incoming, Result with Surplus / Deficit / Balanced; no bank or card grid; tithe lines and carry-forward checkbox present; loading, empty and error with Try again |
 | `hooks/__tests__/useAccountsSummary.test.ts` | 1b | Renamed from `useMonthly.test.ts`; bank and card cases removed; `result` |
@@ -128,7 +129,7 @@ Following the `testing-guide-Financial` skill: Vitest unit tests for hooks, help
 
 | AC | Criterion (short) | Test |
 |---|---|---|
-| 01 | Month picker, tab order, address and fallbacks | `useOverviewAddress.test.ts` "[AC …-01] …"; `AccountsPage.test.tsx` "[AC …-01] shows the month picker and the tabs in order" |
+| 01 | Month picker, tab order, address and fallbacks | `useOverviewAddress.test.tsx` "[AC …-01] …"; `AccountsPage.test.tsx` "[AC …-01] shows the month picker and the tabs in order" |
 | 02 | Accounts tab for the chosen month, heading, links | `AccountsPage.test.tsx` "[AC …-02] shows the groups, heading and links for the chosen month" |
 | 03 | Summary contents, Result, no bank or card grid, tithe kept until F03 | `AccountsSummaryTab.test.tsx` "[AC …-03] …"; `monthResult.test.ts` tagged 03 |
 | 04 | All transactions as F16's tab | `AccountsPage.test.tsx` "[AC …-04] renders All transactions with F16's grid"; `MonthTransactionsGrid.test.tsx` unchanged |

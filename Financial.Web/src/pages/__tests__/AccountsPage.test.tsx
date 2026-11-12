@@ -1,8 +1,8 @@
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { type InitialEntry, MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountGroupMemberDto, AccountTemplateGroupDto } from '../../api/types'
-import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
 
@@ -89,17 +89,9 @@ const SETTLEMENT: AccountTemplateGroupDto = {
   totals: [],
 }
 
-function renderPage() {
+function renderPage(entry: InitialEntry = '/cashflow/accounts') {
   return render(
-    <MemoryRouter>
-      <AccountsPage />
-    </MemoryRouter>,
-  )
-}
-
-function renderPageAfterMovedRedirect() {
-  return render(
-    <MemoryRouter initialEntries={[{ pathname: '/cashflow/accounts', state: { movedNotice: true } }]}>
+    <MemoryRouter initialEntries={[entry]}>
       <AccountsPage />
     </MemoryRouter>,
   )
@@ -132,7 +124,7 @@ describe('AccountsPage', () => {
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-04] shows the moved notice above the grids when a redirect found no account', async () => {
-    renderPageAfterMovedRedirect()
+    renderPage({ pathname: '/cashflow/accounts', state: { movedNotice: true } })
 
     const banks = await screen.findByRole('table', { name: 'Banks' })
     const notice = screen.getByRole('status')
@@ -323,6 +315,17 @@ describe('AccountsPage', () => {
     expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(2)
   })
 
+  it('moves focus into the reloaded Banks grid, not the month picker, after Try again', async () => {
+    getAccountTemplateGroupsMock.mockRejectedValueOnce(new Error('boom'))
+
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    await waitFor(() => expect(within(banks).getByRole('button', { name: 'Account' })).toHaveFocus())
+    expect(screen.getByLabelText('Month')).not.toHaveFocus()
+  })
+
   it('shows "No accounts this month." when no template has a listed account', async () => {
     getAccountTemplateGroupsMock.mockResolvedValue([])
 
@@ -330,6 +333,36 @@ describe('AccountsPage', () => {
 
     expect(await screen.findByText('No accounts this month.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] shows the month picker on the current month', async () => {
+    renderPage()
+
+    expect(screen.getByLabelText('Month')).toHaveValue('2026-10')
+    expect(await screen.findByText('Balances at end of October 2026')).toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] opens on the month in the address', async () => {
+    renderPage('/cashflow/accounts?month=2026-09')
+
+    expect(await screen.findByText('Balances at end of September 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 9)
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-02] shows the groups, heading and links for the chosen month', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Banks' })
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Balances at end of August 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 8)
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(within(banks).getByRole('link', { name: 'Barclays' })).toHaveAttribute('href', '/cashflow/accounts/barclays?month=2026-08')
+    expect(within(screen.getByRole('table', { name: 'Pots' })).getByRole('link', { name: 'Reserva' })).toHaveAttribute(
+      'href',
+      '/cashflow/accounts/reserva?month=2026-08&tab=pots',
+    )
   })
 
   it('opens the account screen when a row link is followed', async () => {
