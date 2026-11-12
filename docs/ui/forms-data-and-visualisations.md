@@ -376,14 +376,7 @@ A status indicator that isn't clickable (e.g. a lock glyph on a row that can't
 be edited) is not a row action and does not count toward this — it stays wherever
 it currently sits and never occupies the Actions cell.
 
-`AccountTransactionsGrid.tsx`'s Pots rows of an older split income are a
-documented exception to the icon-button shape above: the row can only be changed through its income, so its Actions cell
-says "Edit from the income" instead of staying empty, and the column uses the
-same `.data-table__col--action-wide` (200px, sized for this content instead of
-the icon-button `72px` `.data-table__col--action`) while the month has such a
-row (user decision 2026-11-04).
-
-`CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are a second
+`CardStatementsTab.tsx`'s Pay, Unmark and Due date buttons are an
 exception: they are named text buttons in `.data-table__col--action-wide`, as
 the P60 F08 and F13 specs define them.
 
@@ -395,11 +388,13 @@ Statements tab, and pot-operation rows open the deposit or withdrawal, in
 place or on its Pots account). A Delete that cannot run here stays focusable
 but inert, with a tooltip that says where to do it (the `RowActionsCell`
 `deleteBlockedReason` prop): for example "Unmark the statement to remove this
-payment." or "Delete it from the pots account." In
-`MonthTransactionsGrid.tsx` an Edit that cannot run anywhere works the same way
-(the `editBlockedReason` prop), for example "Edit from the income."; the
-account screen keeps the older split-income text exception above until both
-grids share one row rule.
+payment." or "Delete it from the pots account." An Edit that cannot run
+anywhere works the same way (the `editBlockedReason` prop), for example "Edit
+from the income." on a line of an older split income, or "Its card statement is
+paid. Unmark the statement to change it." No row leaves its Actions cell empty.
+Both transaction grids take these decisions from one rule, `rowEdit` and
+`rowDeleteBlockedReason` in `accountActions.ts`, and only map the result to
+their own callbacks or navigation.
 
 A grid that lists rows owned by several screens edits each row where it
 lives and deletes it in place. `MonthTransactionsGrid.tsx` (the Accounts
