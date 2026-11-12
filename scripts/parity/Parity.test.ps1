@@ -214,6 +214,12 @@ try {
     $gridOnly = & $compareGridVariant '[{"transaction":{"categoryName":"Mercado","amount":-0.1}},{"transaction":{"categoryName":"Casa","amount":-0.2}},{"transaction":{"categoryName":"Lazer","amount":-9}}]'
     Check 'a category only one side''s grid has shows as missing on the other side' ($gridOnly.Count -eq 1 -and $gridOnly[0].Key -eq '2026-09/monthTransactions/categories/Lazer/spend' -and $gridOnly[0].Before -eq '(missing)') (($gridOnly | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
 
+    $bankless = $responses.Clone()
+    $bankless['accounts/transactions/2026/9'] = $responses['accounts/transactions/2026/9'].TrimEnd(']') + ',{"accountId":null,"accountName":null,"accountCurrency":null,"accountIsActive":true,"transaction":{"kind":"Income","categoryName":null,"amount":85.20,"currency":null,"roundUp":null,"expense":null}}]'
+    $banklessReport = Get-ParityReport -Fetch { param($path) ConvertFrom-ParityJson $bankless[$path] } -First '2026-08' -Last '2026-09' -CurrentMonth '2026-09'
+    $banklessDifferences = Compare-ParityReport $report $banklessReport $shippedMappings
+    Check 'an income with no bank in the month rows changes no figure' ($banklessDifferences.Count -eq 0 -and $banklessReport.Count -eq $report.Count) (($banklessDifferences | ForEach-Object { Format-ParityDifference $_ }) -join ', ')
+
     $settlementKeys = { param($r) @($r.Keys | Where-Object { $_.Split('/')[1] -eq 'settlement' } | Sort-Object) }
     $expectedSettlementKeys = @(foreach ($month in '2026-08', '2026-09') { "$month/settlement/$mae/BRL", "$month/settlement/$mae/GBP" }) | Sort-Object
     Check 'settlement figures are built for every month' ((Compare-Object (& $settlementKeys $report) $expectedSettlementKeys).Count -eq 0) ((& $settlementKeys $report) -join ', ')
