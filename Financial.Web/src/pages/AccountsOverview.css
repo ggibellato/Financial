@@ -70,15 +70,6 @@
   margin-top: 12px;
 }
 
-.monthly-page__action-error {
-  margin: 0 0 8px;
-  padding: 8px 12px;
-  color: var(--colorStatusDangerForeground1);
-  background: var(--colorStatusDangerBackground1);
-  border: 1px solid var(--colorStatusDangerBorder1);
-  border-radius: var(--borderRadiusMedium);
-}
-
 @media (max-height: 599px) {
   .monthly-page__panel {
     flex: none;

@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import IncomingGrid from '../IncomingGrid'
 import type { IncomeSourceTotalDto } from '../../api/types'
 
@@ -13,9 +13,6 @@ function renderGrid(overrides: Partial<Parameters<typeof IncomingGrid>[0]> = {})
     <IncomingGrid
       incomeTotals={INCOME_TOTALS}
       totalIncoming={2550}
-      titheSummary={null}
-      carryForwardUpdating={false}
-      onToggleCarryForward={vi.fn()}
       {...overrides}
     />,
   )
@@ -30,14 +27,6 @@ describe('IncomingGrid', () => {
     expect(screen.getByText('Lottery')).toBeInTheDocument()
     expect(screen.getByText('—')).toBeInTheDocument()
     expect(screen.getByText(/Total incoming:/)).toBeInTheDocument()
-    expect(screen.queryByText(/Calculated tithe:/)).not.toBeInTheDocument()
-  })
-
-  it('shows the calculated tithe and tithe balance when a tithe summary is provided', () => {
-    renderGrid({ titheSummary: { incomeBase: 0, calculatedTithe: 245, tithePaid: 0, titheBalance: 245, carryForward: null } })
-
-    expect(screen.getByText(/Calculated tithe:/)).toBeInTheDocument()
-    expect(screen.getByText(/Tithe balance:/)).toBeInTheDocument()
   })
 
   it('sorts rows by Net ascending when its header is clicked', () => {
@@ -50,80 +39,11 @@ describe('IncomingGrid', () => {
     expect(within(dataRows[1]).getByText('Gleison')).toBeInTheDocument()
   })
 
-  it('does not render a carry-forward control when nothing is available to carry', () => {
-    renderGrid({ titheSummary: { incomeBase: 0, calculatedTithe: 245, tithePaid: 0, titheBalance: 245, carryForward: null } })
+  it('[AC P61-F03-tithe-tab-and-history-05] shows no tithe lines or carry-forward checkbox', () => {
+    renderGrid()
 
-    expect(screen.queryByText(/Carry forward:/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/tithe|carry/i)).not.toBeInTheDocument()
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
-  })
-
-  it('renders the carry-forward checkbox, pre-checked, with the amount and source month, when available', () => {
-    renderGrid({
-      titheSummary: {
-        incomeBase: 0,
-        calculatedTithe: 200,
-        tithePaid: 0,
-        titheBalance: 150,
-        carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
-      },
-    })
-
-    expect(screen.getByText(/Carry forward:/)).toBeInTheDocument()
-    const checkbox = screen.getByRole('checkbox', { name: /50\.00 from Aug 2026/ })
-    expect(checkbox).toBeChecked()
-  })
-
-  it('reflects an excluded carry-forward as unchecked', () => {
-    renderGrid({
-      titheSummary: {
-        incomeBase: 0,
-        calculatedTithe: 200,
-        tithePaid: 0,
-        titheBalance: 100,
-        carryForward: { amount: 50, included: false, fromYear: 2026, fromMonth: 8 },
-      },
-    })
-
-    expect(screen.getByRole('checkbox')).not.toBeChecked()
-  })
-
-  it('calls onToggleCarryForward with the new checked state when clicked', () => {
-    const onToggle = vi.fn()
-    renderGrid({
-      titheSummary: {
-        incomeBase: 0,
-        calculatedTithe: 200,
-        tithePaid: 0,
-        titheBalance: 150,
-        carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
-      },
-      onToggleCarryForward: onToggle,
-    })
-
-    fireEvent.click(screen.getByRole('checkbox'))
-
-    expect(onToggle).toHaveBeenCalledWith(false)
-  })
-
-  it('disables the checkbox while the toggle is in flight', () => {
-    renderGrid({
-      titheSummary: {
-        incomeBase: 0,
-        calculatedTithe: 200,
-        tithePaid: 0,
-        titheBalance: 150,
-        carryForward: { amount: 50, included: true, fromYear: 2026, fromMonth: 8 },
-      },
-      carryForwardUpdating: true,
-    })
-
-    expect(screen.getByRole('checkbox')).toBeDisabled()
-  })
-
-  it('shows the action error message when a toggle failed', () => {
-    renderGrid({ carryForwardActionError: 'Failed to update carry-forward.' })
-
-    expect(screen.getByRole('alert')).toHaveTextContent('Failed to update carry-forward.')
   })
 
   it('shows its empty message when no income was recorded in the month', () => {
