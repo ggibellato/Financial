@@ -152,6 +152,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
                 .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
+                .Concat(BanklessRowsOf(records))
                 .OrderByDescending(row => row.Transaction.Date)
                 .ToList();
 
@@ -302,12 +303,17 @@ public sealed class AccountQueryService : IAccountQueryService
             .SelectMany(record => ToRows(record, account, month.Statements))
             .Concat(account.Has(Capability.HasStatements) ? CardChargeRows(account, month) : []);
 
-    private static MonthTransactionDTO ToMonthRow(Account account, AccountTransactionDTO row) => new()
+    private IEnumerable<MonthTransactionDTO> BanklessRowsOf(MonthRecords records) =>
+        records.Records.OfType<Income>()
+            .Where(income => income.Account is null)
+            .Select(income => ToMonthRow(account: null, ToRow(income, account: null)));
+
+    private static MonthTransactionDTO ToMonthRow(Account? account, AccountTransactionDTO row) => new()
     {
-        AccountId = account.Id,
-        AccountName = account.Name,
-        AccountCurrency = account.Currency.ToString(),
-        AccountIsActive = account.IsActive,
+        AccountId = account?.Id,
+        AccountName = account?.Name,
+        AccountCurrency = account?.Currency.ToString(),
+        AccountIsActive = account?.IsActive ?? true,
         Transaction = row
     };
 
@@ -397,7 +403,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Movement = ReserveService.ToDto(transaction, _repository.GetPotTransactions())
     };
 
-    private AccountTransactionDTO ToRow(Income income, Account account) => new()
+    private AccountTransactionDTO ToRow(Income income, Account? account) => new()
     {
         Id = income.Id,
         Kind = TransactionKind.Income.ToString(),
@@ -405,8 +411,8 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = income.Description,
         Counterpart = income.IncomeSource.Name,
         Amount = income.NetValue,
-        Currency = account.Currency.ToString(),
-        CanEdit = account.IsActive,
+        Currency = account?.Currency.ToString(),
+        CanEdit = account?.IsActive ?? true,
         Income = IncomeService.ToDto(income, IncomeService.DepositExpensesOf(income.Id, _repository))
     };
 

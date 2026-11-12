@@ -50,7 +50,9 @@ interface Column {
   accessor: SortAccessor<MonthTransactionDto>
 }
 
-const accountName = (row: MonthTransactionDto) => row.accountName
+const NO_BANK = 'No bank'
+
+const accountName = (row: MonthTransactionDto) => row.accountName ?? NO_BANK
 const typeLabel = (row: MonthTransactionDto) => kindLabel(row.transaction.kind)
 const categoryName = (row: MonthTransactionDto) => row.transaction.categoryName
 
@@ -74,7 +76,7 @@ const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
 const GRID_LABEL = 'All transactions'
 
 function rowKey(row: MonthTransactionDto): string {
-  return `${row.accountId}-${row.transaction.kind}-${row.transaction.id}`
+  return `${row.accountId ?? NO_BANK}-${row.transaction.kind}-${row.transaction.id}`
 }
 
 interface MonthTransactionsGridProps {
@@ -110,6 +112,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'date':
         return formatShortDateUtc(transaction.date)
       case 'account':
+        if (row.accountId == null) return NO_BANK
         return (
           <span className={styles.account}>
             <TruncatedText text={row.accountName} to={`/cashflow/accounts/${row.accountId}?month=${monthValue}&tab=transactions`} />
@@ -123,7 +126,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'kind':
         return typeLabel(row)
       case 'description':
-        return transaction.operation ? (
+        return transaction.operation && row.accountId != null ? (
           <TruncatedText text={transaction.description || BLANK_OPERATION_DESCRIPTION} to={operationPath(transaction.operation, row.accountId)} />
         ) : (
           <TruncatedText text={transaction.description} />
@@ -131,7 +134,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'category':
         return <TruncatedText text={transaction.categoryName} />
       default:
-        return `${formatSignedN2(transaction.amount)} ${transaction.currency}`
+        return `${formatSignedN2(transaction.amount)} ${transaction.currency ?? ''}`.trimEnd()
     }
   }
 
@@ -243,13 +246,13 @@ function MonthTransactionsFooter({ rows, allRowCount, isFiltered, showsSpend }: 
       )}
       {allRowCount === 1 ? ' row' : ' rows'}
       {totals.map(({ currency, total }) => (
-        <span key={`total-${currency}`}>
-          {' · Total '}
-          <strong>{formatSignedN2(total)}</strong> {currency}
+        <span key={`total-${currency ?? NO_BANK}`}>
+          {` · ${currency ? 'Total' : NO_BANK} `}
+          <strong>{formatSignedN2(total)}</strong>{currency && ` ${currency}`}
         </span>
       ))}
       {showsSpend &&
-        totals.map(({ currency, spend }) => (
+        totals.filter(({ currency }) => currency).map(({ currency, spend }) => (
           <span key={`spend-${currency}`}>
             {' · Spend '}
             <strong>{formatN2(spend)}</strong> {currency}

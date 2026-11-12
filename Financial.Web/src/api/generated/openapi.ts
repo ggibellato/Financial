@@ -7186,7 +7186,7 @@ export interface components {
             canEdit: boolean;
             categoryName?: null | string;
             counterpart?: null | string;
-            currency: string;
+            currency: null | string;
             /** Format: date */
             date: string;
             description?: null | string;
@@ -8335,11 +8335,11 @@ export interface components {
         /** @enum {unknown} */
         MarketStatus: "Current" | "Stale" | "Unavailable";
         MonthTransactionDTO: {
-            accountCurrency: string;
+            accountCurrency: null | string;
             /** Format: uuid */
-            accountId: string;
+            accountId: null | string;
             accountIsActive: boolean;
-            accountName: string;
+            accountName: null | string;
             transaction: components["schemas"]["AccountTransactionDTO"];
         };
         MoveAssetRequestDTO: {

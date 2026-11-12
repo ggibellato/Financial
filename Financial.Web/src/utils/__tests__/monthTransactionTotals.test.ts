@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest'
 import type { MonthTransactionDto } from '../../api/types'
 import { monthTransactionTotals } from '../monthTransactionTotals'
 
-function row(currency: string, amount: number, accountCurrency = currency): MonthTransactionDto {
+function row(currency: string | null, amount: number, accountCurrency = currency): MonthTransactionDto {
   return {
-    accountId: `account-${accountCurrency}`,
+    accountId: accountCurrency && `account-${accountCurrency}`,
     accountName: accountCurrency,
     accountCurrency,
     accountIsActive: true,
@@ -28,6 +28,16 @@ describe('monthTransactionTotals', () => {
     expect(totals).toEqual([
       { currency: 'BRL', total: 150, spend: -150 },
       { currency: 'GBP', total: -10, spend: 10 },
+    ])
+  })
+
+  it('[AC P61-F02-income-tab-and-bankless-income-07] totals rows with no currency in their own bucket, listed after the currencies', () => {
+    const totals = monthTransactionTotals([row(null, 85.2), row('GBP', -10), row(null, 42.1), row('BRL', 5)])
+
+    expect(totals).toEqual([
+      { currency: 'BRL', total: 5, spend: -5 },
+      { currency: 'GBP', total: -10, spend: 10 },
+      { currency: null, total: 127.3, spend: -127.3 },
     ])
   })
 

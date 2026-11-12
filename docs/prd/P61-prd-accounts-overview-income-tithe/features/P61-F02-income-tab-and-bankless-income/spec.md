@@ -8,7 +8,7 @@ Complexity: **medium**. The month-transactions query gains a row per income with
 
 **What.**
 - **Bankless rows in the month view:** `AccountQueryService.GetMonthTransactions` adds one row per income of the month whose `Account` is null: `kind` Income, `amount` = net value, `currency` null, `categoryName` null, `counterpart` = source name, `income` = the `IncomeDTO`, `canEdit` true; its `MonthTransactionDTO` has `accountId`, `accountName` and `accountCurrency` null and `accountIsActive` true.
-- **All transactions grid:** Account cell "No bank" (plain text, no link; the Description links to the Income tab at that month), Account filter value "No bank", footer "No bank +127.30" beside the per-currency totals.
+- **All transactions grid:** Account cell "No bank" and the Description both plain text, no link (controller decision 2026-11-12: grids use the app's row icons, not description links; an edit/delete icon column for All transactions follows in its own PR after 2a), Account filter value "No bank", footer "No bank +127.30" beside the per-currency totals.
 - **Income tab:** list of `GET incomes/month/{y}/{m}` with Date, Source, Bank, Description, Gross, Net and row icons; Source and Bank filters; footer count and Total net; New income, Edit and Delete with the account screen's form and confirmation dialog.
 - **Bank optional:** the income form, unlocked, lists active accounts with the `ReceivesIncome` capability plus "— No bank —", and starts on "— No bank —" on this tab.
 
@@ -18,7 +18,7 @@ Complexity: **medium**. The month-transactions query gains a row per income with
 
 | Stage | Backend | Web |
 |---|---|---|
-| **2a — Bankless incomes in the month view** | `GetMonthTransactions` bankless rows; `MonthTransactionDTO` account fields and `AccountTransactionDTO.Currency` optional; OpenAPI snapshot | Generated types; `MonthTransactionsGrid` "No bank"; `monthTransactionTotals` "No bank" bucket; `AccountTransactionsGrid` currency fallback |
+| **2a — Bankless incomes in the month view** | `GetMonthTransactions` bankless rows; `MonthTransactionDTO` account fields and `AccountTransactionDTO.Currency` optional; OpenAPI snapshot | Generated types; `MonthTransactionsGrid` "No bank"; `monthTransactionTotals` "No bank" bucket; `AccountTransactionsGrid` settlement Amount via `formatAmount` |
 | **2b — Income tab; F02 ticks** | None | `IncomeTab`, `useIncomeTab`, `useIncomeForm` no-bank default, `formSettings`, Accounts page tab; `context.md`; PRD F02 ticks in their own commit |
 
 **Scope.**
@@ -54,10 +54,10 @@ graph TD
 
 | Decision | Chosen approach | Alternative considered | Trade-off |
 |---|---|---|---|
-| **Bankless rows** (2a) | In `GetMonthTransactions`, after the per-account rows, the month's records that are `Income { Account: null }` map through a private `ToBanklessRow(Income)` into `MonthTransactionDTO` with null account fields; the combined list orders by date descending as today (bankless rows after account rows of the same date). The per-account `GetTransactions` is unchanged. | A pseudo "No bank" account | No fake account in data or DTOs. |
-| **Optional account fields** (2a) | `MonthTransactionDTO.AccountId` `Guid?`, `AccountName` `string?`, `AccountCurrency` `string?` (no longer `required`); `AccountTransactionDTO.Currency` `string?` (null only on bankless rows). Snapshot and `openapi.ts` regenerated. | `Currency = ""` | Honest wire shape: a bankless income has no currency. |
-| **Account screen currency** (2a) | `AccountTransactionsGrid` formats with `row.currency ?? accountCurrency` (the screen's account), so the type change compiles with no visible change. | Non-null assertion | No assertion operators. |
-| **Grid "No bank"** (2a) | `MonthTransactionsGrid`: `NO_BANK = 'No bank'`; account accessor `row.accountName ?? NO_BANK` (so the filter offers it); Account cell plain text for a null account; Description of a bankless row links to `/cashflow/accounts?month=yyyy-MM&tab=income`; row key uses `row.accountId ?? 'no-bank'`. | Link the Account cell to the Income tab | The Account cell links to accounts only. |
+| **Bankless rows** (2a) | In `GetMonthTransactions`, after the per-account rows, the month's records that are `Income { Account: null }` come from a private `BanklessRowsOf(MonthRecords)` through the shared `ToMonthRow(Account?, …)`, so they carry null account fields; the combined list orders by date descending as today (bankless rows after account rows of the same date). The per-account `GetTransactions` is unchanged. | A pseudo "No bank" account | No fake account in data or DTOs. |
+| **Optional account fields** (2a) | `MonthTransactionDTO.AccountId` `Guid?`, `AccountName` `string?`, `AccountCurrency` `string?`; `AccountTransactionDTO.Currency` `string?` (null only on bankless rows). All four stay `required`: the key is always written, null on a bankless row, so the generated types read `string | null`, not optional. Snapshot and `openapi.ts` regenerated. | `Currency = ""` | Honest wire shape: a bankless income has no currency. |
+| **Account screen currency** (2a) | `AccountTransactionsGrid`'s settlement Amount, the only place it reads `row.currency`, formats with the existing `formatAmount(value, row.currency)` (a plain number when null, which never happens on an account screen), so the type change compiles with no visible change and the grid needs no new prop. | `row.currency ?? accountCurrency`; non-null assertion | A Settlement account has several currencies, so its primary currency would be a wrong fallback; no new prop on a grid another PR is changing. |
+| **Grid "No bank"** (2a) | `MonthTransactionsGrid`: `NO_BANK = 'No bank'`; account accessor `row.accountName ?? NO_BANK` (so the filter offers it); Account cell plain text for a null account; Description of a bankless row is plain text, no link (controller decision 2026-11-12: grids use the app's row icons, not description links; an edit/delete icon column for All transactions follows in its own PR after 2a); row key uses `row.accountId ?? NO_BANK`. | Link the Account cell to the Income tab | The Account cell links to accounts only. |
 | **Footer** (2a) | `monthTransactionTotals` groups a null currency under `NO_BANK`; the grid renders it after the currency totals as "No bank +127.30" (no currency code). Spend is unaffected: bankless rows carry no category. | Fold into GBP | Would mix currencies. |
 | **Parity** (2a) | No new figure. The current side's per-account figures filter rows by `accountId`, the month spend family by `categoryName` and the unpaid-charge family by `expense`, so bankless rows add nothing; a `Parity.test.ps1` case pins it. | A bankless figure family | No before-side counterpart. |
 | **Income tab data** (2b) | New `hooks/useIncomeTab.ts(year, month)`: `useAsyncResource` over `Promise.all` of `getIncomesByMonth`, `getIncomeSources` and `getAccounts`; banks = `accountsWith(accounts, 'ReceivesIncome')`; wires `useIncomeForm(sources, banks, onSaved, { viewedMonth, noBankByDefault: true })` and `useConfirmedDelete(deleteIncome, …)`; `refresh` after save or delete. | Reuse `useAccountFormOptions` | Its banks are `CanPayBills` accounts; income needs `ReceivesIncome`. |
@@ -66,13 +66,13 @@ graph TD
 | **Form and delete** (2b) | "New income" (primary) above the grid opens `IncomeForm` with no `lockedBank`; Edit opens it pre-filled; Delete opens `ConfirmDeleteDialog` "Delete this income? This can't be undone." Success toasts via `useSuccessToast`: "Income added.", "Income updated.", "Income deleted.". Unsaved changes: the form's existing discard prompt. | — | Same components as the account screen. |
 | **404** (2b) | On a save or delete error where `isNotFound(err)`, close the form or dialog, refresh the list and show `MessageBar intent="warning"` "This income no longer exists; the list was refreshed." | Generic error | PRD Error Handling. |
 | **Tab** (2b) | `OVERVIEW_TABS` gains `income` "Income" between Summary and All transactions; `IncomeTab` mounts only while selected, keyed by month. | — | F01 contract. |
-| **Income-tab link before 2b** (2a) | 2a already links bankless rows to `?tab=income`; until 2b ships, `useOverviewAddress` falls back to the Accounts tab for that unknown id, so the link still lands on the Accounts page at the right month. | Ship the link in 2b | One grid change, not two. |
-| **PR size** | 2a: 6 non-test code files plus the regenerated snapshot and `openapi.ts`, 6 test files, 14 in total. 2b: 5 non-test code files, 4 test files, `context.md` and the PRD (wording fix and ticks), 11 in total. | — | Within the limit. |
+| **No Income-tab link** (2a) | A bankless row has no link in All transactions; editing it from that grid comes with the row-icon column PR, and from the Income tab in 2b. | Description link to `?tab=income` (the spec's first choice) | Row actions stay on icons across the app's grids. |
+| **PR size** | 2a: 6 non-test code files plus the regenerated snapshot and `openapi.ts`; 7 test files (the API test base and factory gain a saved-file read for the round-trip check; no `AccountTransactionsGrid` test change); the spec, plan and PRD for the 2026-11-12 decision; 16 in total, generated excluded. 2b: 5 non-test code files, 4 test files, `context.md` and the PRD (wording fix and ticks), 11 in total. | — | Within the limit. |
 | **Rollback** | 2a's DTO change is additive in meaning (fields become optional); rolling back hides bankless rows again. Bankless incomes saved through 2b stay valid in the file and in totals. | — | — |
 
 **Choices made by the spec writer** (for review):
 - A bankless month row has null account fields and a null currency, not a pseudo account; `AccountTransactionDTO.Currency` becomes optional.
-- In All transactions a bankless row's Description links to the Income tab; the Account cell is plain "No bank".
+- In All transactions a bankless row's Account ("No bank") and Description are plain text; no link (superseded by the controller decision of 2026-11-12, see "No Income-tab link").
 - The footer shows a separate "No bank" total without a currency code.
 - No parity figure for bankless incomes; a parity self-test case pins that they don't change existing figures.
 - The Income tab's bank list is active `ReceivesIncome` accounts (plus the income's own inactive bank when editing, as `selectableBanks` keeps it).
@@ -87,7 +87,7 @@ graph TD
 
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
-| `Services/AccountQueryService.cs` | Modified | 2a | Bankless income rows in `GetMonthTransactions`; `ToBanklessRow` |
+| `Services/AccountQueryService.cs` | Modified | 2a | Bankless income rows in `GetMonthTransactions`; `BanklessRowsOf`; `ToMonthRow` and `ToRow(Income, …)` take a nullable account |
 | `DTOs/MonthTransactionDTO.cs` | Modified | 2a | Optional `AccountId`, `AccountName`, `AccountCurrency` |
 | `DTOs/AccountTransactionDTO.cs` | Modified | 2a | Optional `Currency` |
 
@@ -98,9 +98,9 @@ graph TD
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
 | `api/generated/openapi.ts` | Regenerated | 2a | Optional fields |
-| `components/MonthTransactionsGrid.tsx` | Modified | 2a | "No bank" cell, filter value, Income-tab link, row key, footer line |
+| `components/MonthTransactionsGrid.tsx` | Modified | 2a | "No bank" cell, filter value, plain Description, row key, footer line |
 | `utils/monthTransactionTotals.ts` | Modified | 2a | Null currency → `NO_BANK` bucket, listed last |
-| `components/AccountTransactionsGrid.tsx` | Modified | 2a | Currency fallback to the screen's account |
+| `components/AccountTransactionsGrid.tsx` | Modified | 2a | Settlement Amount through `formatAmount` |
 | `components/IncomeTab.tsx` | New | 2b | Grid, filters, footer, New income, form, delete dialog, states |
 | `hooks/useIncomeTab.ts` | New | 2b | Load incomes, sources and receiving accounts; form and delete wiring; 404 refresh |
 | `hooks/useIncomeForm.ts` | Modified | 2b | `noBankByDefault` |
@@ -169,9 +169,8 @@ Following the `testing-guide-Financial` skill: xUnit + FluentAssertions with `[T
 | `Tests/Financial.Api.Tests/Acceptance/BanklessIncomeAcceptanceTests.cs` | Integration (AC) | 2a | `CreateIncome_NoBank_CountsInTotalsAndTitheAndMovesNoBalance`; `UpdateIncome_BankToNoBankAndBack_MovesTheBalanceOnlyWhileBanked`; `CreateIncome_NoBankWithPotsSplit_Returns400`; `MonthTransactions_BanklessIncome_OnceAsNoBankWithoutCategory_SpendUnchanged`; `GetIncomesByMonth_CountEqualsTotalIncomingSources` |
 | `Tests/Financial.Api.Tests/Contract/OpenApiContractTests.cs` (snapshot) | Contract | 2a | Optional fields |
 | `scripts/parity/Parity.test.ps1` | Script self-test | 2a | Bankless row changes no figure |
-| `components/__tests__/MonthTransactionsGrid.test.tsx` | Unit | 2a | "No bank" cell without account link; Description links to the Income tab; Account filter "No bank"; footer "No bank" line; Spend unchanged |
+| `components/__tests__/MonthTransactionsGrid.test.tsx` | Unit | 2a | "No bank" cell and Description without links; Account filter "No bank"; footer "No bank" line; Spend unchanged |
 | `utils/__tests__/monthTransactionTotals.test.ts` | Unit | 2a | Null currency bucket listed last; pence |
-| `components/__tests__/AccountTransactionsGrid.test.tsx` | Unit | 2a | Amount uses the account currency when the row's is null |
 | `components/__tests__/IncomeTab.test.tsx` | Unit | 2b | Columns, "No bank", sorting, filters, footer and "n of m"; New income defaults to No bank and saves with no `bankId`; bank income; edit bank ↔ No bank; delete with confirmation; validation messages; 404 warning and refresh; loading, empty with New income, error with Try again; row icon names |
 | `hooks/__tests__/useIncomeTab.test.ts` | Unit | 2b | One load per month; banks are `ReceivesIncome` accounts; refresh after save and delete; 404 path |
 | `hooks/__tests__/useIncomeForm.test.ts` | Unit | 2b | `noBankByDefault` ignores the stored bank; edit keeps the income's bank |
@@ -187,7 +186,7 @@ Following the `testing-guide-Financial` skill: xUnit + FluentAssertions with `[T
 | 04 | Edit bank ↔ No bank; delete with confirmation (and linked deposit) | `…UpdateIncome_BankToNoBankAndBack_MovesTheBalanceOnlyWhileBanked`; `IncomeTab.test.tsx` "[AC …-04] …"; existing linked-deposit delete tests | 2a, 2b |
 | 05 | No pots split without a bank | `…CreateIncome_NoBankWithPotsSplit_Returns400`; `IncomeTab.test.tsx` "[AC …-05] …" | 2a, 2b |
 | 06 | Validation, 404, failure messages; nothing persisted | `IncomeTab.test.tsx` and `useIncomeTab.test.ts` "[AC …-06] …" | 2b |
-| 07 | All transactions: bankless rows, filter, footer, link, Spend unchanged | `…MonthTransactions_BanklessIncome_OnceAsNoBankWithoutCategory_SpendUnchanged`; `AccountQueryServiceTests` bankless cases; `MonthTransactionsGrid.test.tsx` "[AC …-07] …" | 2a |
+| 07 | All transactions: bankless rows, filter, footer, no link, Spend unchanged | `…MonthTransactions_BanklessIncome_OnceAsNoBankWithoutCategory_SpendUnchanged`; `AccountQueryServiceTests` bankless cases; `MonthTransactionsGrid.test.tsx` "[AC …-07] …" | 2a |
 | 08 | Snapshot and generated types regenerated | `OpenApiContractTests`; `openapiFreshness.test.ts` | 2a |
 | 09 | States, row icon names, keyboard | `IncomeTab.test.tsx` "[AC …-09] …"; ui-reviewer | 2b |
 | 10 | No version change; bankless round-trip; parity 0 | `BanklessIncomeAcceptanceTests` (save, reload, same JSON key with null); `Parity.test.ps1`; parity run | 2a, 2b |

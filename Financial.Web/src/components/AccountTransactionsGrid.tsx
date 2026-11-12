@@ -14,7 +14,7 @@ import {
 import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import DataTableCell from './grid/DataTableCell'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -118,7 +118,7 @@ function settlementColumns(otherParticipant: string, showsConverted: boolean): T
     {
       ...AMOUNT_COLUMN,
       accessor: (row) => Math.abs(row.amount),
-      render: (row) => formatCurrency(Math.abs(row.amount), row.currency),
+      render: (row) => formatAmount(Math.abs(row.amount), row.currency),
     },
     ...(showsConverted ? [CONVERTED_COLUMN] : []),
     { key: 'note', header: 'Note', accessor: (row) => row.settlement?.note || null, render: (row) => <TruncatedText text={row.settlement?.note} /> },
