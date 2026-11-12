@@ -382,6 +382,7 @@ public sealed class AccountQueryService : IAccountQueryService
             ? new AccountTransactionOperationDTO
             {
                 OperationId = operation.OperationId,
+                Kind = operation.Kind.ToString(),
                 PotsAccountId = operation.PotsAccount.Id,
                 Year = operation.Date.Year,
                 Month = operation.Date.Month,

@@ -47,7 +47,6 @@ import {
   recordNoun,
   shownDescription,
   transactionRowName,
-  withdrawalOperationIds,
   type PotOperationNoun,
 } from './accountActions'
 
@@ -104,11 +103,8 @@ function rowKey(row: MonthTransactionDto): string {
   return `${row.accountId ?? NO_BANK}-${row.transaction.kind}-${row.transaction.id}`
 }
 
-const withdrawalIdsOf = ({ accountId, transaction }: MonthTransactionDto) =>
-  accountId ? withdrawalOperationIds([transaction], accountId) : new Set<string>()
-
 const rowName = (row: MonthTransactionDto) =>
-  [transactionRowName(row.transaction, withdrawalIdsOf(row)), accountName(row), categoryName(row)].filter(Boolean).join(', ')
+  [transactionRowName(row.transaction), accountName(row), categoryName(row)].filter(Boolean).join(', ')
 
 interface OperationDeleteTarget {
   operationId: string
@@ -190,7 +186,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   const requestDelete = (row: MonthTransactionDto) => {
     const { operation } = row.transaction
-    if (operation) operationDelete.request({ operationId: operation.operationId, noun: operationNoun(operation, withdrawalIdsOf(row)) })
+    if (operation) operationDelete.request({ operationId: operation.operationId, noun: operationNoun(operation) })
     else rowDelete.requestDelete(row.transaction)
   }
 

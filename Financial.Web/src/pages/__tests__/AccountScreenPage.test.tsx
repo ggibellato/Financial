@@ -398,7 +398,7 @@ afterEach(() => {
 const operationForm = (name: string) => screen.findByRole('form', { name })
 
 describe('AccountScreenPage deposit and withdrawal forms', () => {
-  const OPERATION_LINK = { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null }
+  const OPERATION_LINK = { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null }
   const DEPOSIT: PotOperationDto = {
     operationId: 'op1',
     kind: 'Deposit',
@@ -730,7 +730,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
   })
 
   describe('linked rows on a bank screen', () => {
-    const BANK_ROW_LINK = { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null as string | null }
+    const BANK_ROW_LINK = { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null as string | null }
     const INCOME: IncomeDto = {
       id: 'i1', date: '2026-10-05', incomeSourceId: 'source-bonus', incomeSourceName: 'Bonus', grossValue: null, netValue: 100,
       bankId: BARCLAYS_ID, bankName: 'Barclays', description: 'Ramsay bonus', potsAccountId: RESERVA_ID, hasLinkedDeposit: true,
@@ -1031,7 +1031,7 @@ describe('AccountScreenPage on a Pots account', () => {
   it("offers only its operation's Edit and Delete on a linked movement", async () => {
     const linked = movementRow(
       { id: 'm-linked', description: 'Ramsay bonus' },
-      { canEdit: false, operation: { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null } },
+      { canEdit: false, operation: { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null } },
     )
     withPotsAccount([linked])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)

@@ -438,6 +438,7 @@ public class AccountQueryServiceTests
             rows.Select(row => row.Operation).Should().AllSatisfy(link =>
             {
                 link!.OperationId.Should().Be(operationId);
+                link.Kind.Should().Be("Withdrawal");
                 link.PotsAccountId.Should().Be(pots.Id);
                 link.Year.Should().Be(2026);
                 link.Month.Should().Be(10);
@@ -1342,7 +1343,7 @@ public class AccountQueryServiceTests
                 ("chase", "Expense", null, -40m),
                 ("Holiday pots", "PotTransaction", "Trips", 60m),
                 ("Holiday pots", "PotTransaction", "Gifts", 30m)]);
-            rows.Should().OnlyContain(row => row.Transaction.Operation!.OperationId == operationId);
+            rows.Should().OnlyContain(row => row.Transaction.Operation!.OperationId == operationId && row.Transaction.Operation.Kind == "Deposit");
         }
     }
 

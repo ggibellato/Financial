@@ -720,6 +720,9 @@
               "string"
             ]
           },
+          "kind": {
+            "type": "string"
+          },
           "month": {
             "format": "int32",
             "type": "integer"
@@ -739,6 +742,7 @@
         },
         "required": [
           "operationId",
+          "kind",
           "potsAccountId",
           "year",
           "month"

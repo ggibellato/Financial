@@ -27,7 +27,7 @@ const RESERVA: AccountFields = { accountId: 'pots-1', accountName: 'Reserva', ac
 const AMEX: AccountFields = { accountId: 'card-1', accountName: 'BA Amex', accountCurrency: 'GBP', accountIsActive: true }
 const ITAU: AccountFields = { accountId: 'bank-9', accountName: 'Itau', accountCurrency: 'BRL', accountIsActive: false }
 
-const DEPOSIT = { operationId: 'o1', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
+const DEPOSIT = { operationId: 'o1', kind: 'Deposit', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
 const PAID_STATEMENT = { accountId: 'card-1', year: 2026, month: 9 }
 const TESCO = { id: 'e1' } as ExpenseDto
 

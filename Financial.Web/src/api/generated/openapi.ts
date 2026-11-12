@@ -7252,6 +7252,7 @@ export interface components {
         AccountTransactionOperationDTO: {
             /** Format: uuid */
             incomeId?: null | string;
+            kind: string;
             /** Format: int32 */
             month: number;
             /** Format: uuid */

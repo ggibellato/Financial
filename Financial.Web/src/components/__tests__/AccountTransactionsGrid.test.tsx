@@ -320,11 +320,11 @@ describe('AccountTransactionsGrid', () => {
   })
 
   describe('linked rows', () => {
-    const OPERATION = { operationId: 'op1', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
+    const OPERATION = { operationId: 'op1', kind: 'Deposit', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
     const linkedExpense = (incomeId: string | null) =>
       accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...OPERATION, incomeId } })
-    const potLine = (amount: number, incomeId: string | null = null, description = 'Deposit to Reserva') =>
-      accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description, counterpart: 'Home', amount, canEdit: false, operation: { ...OPERATION, incomeId } })
+    const potLine = (amount: number, incomeId: string | null = null, description = 'Deposit to Reserva', kind = 'Deposit') =>
+      accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description, counterpart: 'Home', amount, canEdit: false, operation: { ...OPERATION, incomeId, kind } })
 
     function renderLinked(accountId: string, row: AccountTransactionDto) {
       const handlers = { onOpenOperation: vi.fn(), onDeleteOperation: vi.fn() }
@@ -345,9 +345,10 @@ describe('AccountTransactionsGrid', () => {
       expect(onDeleteOperation).not.toHaveBeenCalled()
     })
 
-    it('names both bank rows of a withdrawal through the bank as the withdrawal, and a lone outflow as a deposit', () => {
-      const spend = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Boots', amount: -50, canEdit: false, operation: OPERATION })
-      const inflow = accountTransactionRow({ id: 'e2', kind: 'Expense', date: '2026-10-10', description: 'From Reserva', amount: 50, canEdit: false, operation: OPERATION })
+    it("names each linked row by its operation's kind, whatever the row's sign", () => {
+      const withdrawal = { ...OPERATION, kind: 'Withdrawal' }
+      const spend = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Boots', amount: -50, canEdit: false, operation: withdrawal })
+      const inflow = accountTransactionRow({ id: 'e2', kind: 'Expense', date: '2026-10-10', description: 'From Reserva', amount: 50, canEdit: false, operation: withdrawal })
       const deposit = accountTransactionRow({ id: 'e3', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...OPERATION, operationId: 'op2' } })
       render(<AccountTransactionsGrid accountId="bank-1" transactions={[spend, inflow, deposit]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onOpenOperation={vi.fn()} onDeleteOperation={vi.fn()} />)
 
@@ -359,10 +360,10 @@ describe('AccountTransactionsGrid', () => {
     })
 
     it.each([
-      [30, 'deposit'],
-      [-30, 'withdrawal'],
-    ])('deletes the whole operation of a Pots line of %d as a %s', (amount, noun) => {
-      const { onDeleteOperation } = renderLinked('pots-1', potLine(amount))
+      [30, 'Deposit', 'deposit'],
+      [-30, 'Withdrawal', 'withdrawal'],
+    ])('deletes the whole operation of a Pots line of %d of a %s as a %s', (amount, kind, noun) => {
+      const { onDeleteOperation } = renderLinked('pots-1', potLine(amount, null, 'Deposit to Reserva', kind))
 
       fireEvent.click(screen.getByRole('button', { name: `Delete ${noun} Deposit to Reserva, 10/10/2026` }))
 
