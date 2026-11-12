@@ -25,7 +25,7 @@ import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
 import { isFocusLost } from '../utils/focus'
-import { formatLongMonthYear, formatN2, formatShortDateUtc, toPence } from '../utils/formatters'
+import { formatLongMonthYear, formatN2, formatShortDateUtc, sumPence } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import DiscardChangesDialog from './DiscardChangesDialog'
@@ -329,7 +329,7 @@ interface IncomeFooterProps {
 }
 
 function IncomeFooter({ incomes, allCount, isFiltered }: IncomeFooterProps) {
-  const totalNet = incomes.reduce((sum, income) => sum + toPence(income.netValue), 0) / 100
+  const totalNet = sumPence(incomes, (income) => income.netValue) / 100
   return (
     <p className="monthly-page__section-total" role="group" aria-label={`Totals for ${GRID_LABEL}`}>
       <strong>{incomes.length}</strong>

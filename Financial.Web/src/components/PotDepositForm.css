@@ -1,7 +1,3 @@
 .pot-split-preview {
   max-width: 40rem;
 }
-
-.pot-split-preview .data-table__col--numeric .fui-TableHeaderCell__button {
-  justify-content: flex-end;
-}

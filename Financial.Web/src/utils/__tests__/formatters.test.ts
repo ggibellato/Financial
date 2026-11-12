@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
+  sumPence,
   currentYearMonth,
   deleteFailedMessage,
   formatAmount,
@@ -301,5 +302,15 @@ describe('lastDayOfMonthIsoDate', () => {
     [2025, 12, '2025-12-31'],
   ])('gives the last day of %i-%i', (year, month, expected) => {
     expect(lastDayOfMonthIsoDate(year, month)).toBe(expected)
+  })
+})
+
+describe('sumPence', () => {
+  it('adds each amount rounded to pence, so binary fractions do not drift', () => {
+    expect(sumPence([{ value: 0.1 }, { value: 0.2 }, { value: 1.23 }], (item) => item.value)).toBe(153)
+  })
+
+  it('is zero for no items', () => {
+    expect(sumPence([], () => 1)).toBe(0)
   })
 })

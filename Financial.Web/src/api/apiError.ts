@@ -30,6 +30,12 @@ export function isNotFound(err: unknown): boolean {
   return err instanceof ApiError && err.status === 404
 }
 
+const BAD_REQUEST_STATUS = 400
+
+export function isBadRequest(err: unknown): err is ApiError {
+  return err instanceof ApiError && err.status === BAD_REQUEST_STATUS
+}
+
 const CONFLICT_STATUS = 409
 
 export function isConflict(err: unknown): err is ApiError {
