@@ -34,6 +34,7 @@ import { useCardStatements } from '../hooks/useCardStatements'
 import { OPERATION_LOAD_ERROR, OPERATION_NOT_FOUND, useOperationRoute } from '../hooks/useOperationRoute'
 import { POTS_LOAD_ERROR, usePots } from '../hooks/usePots'
 import { useRowEditRoute } from '../hooks/useRowEditRoute'
+import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import { formatLongMonthYear } from '../utils/formatters'
 import { settlementCounterparty } from '../utils/settlementBalance'
@@ -125,6 +126,8 @@ export default function AccountScreenPage() {
     open: (row) => openRowEdit(row, null),
   })
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
+  const transactionsRegionRef = useRef<HTMLElement | null>(null)
+  const recordRowFocus = useRowFocusRecovery(transactionsRegionRef, transactionsHeadingRef, screen.isLoading)
   const rowDelete = useAccountRowDelete((row) => {
     closeFormsOf(row)
     if (isCreditRefund(row)) payStatementForm.retry()
@@ -406,7 +409,9 @@ export default function AccountScreenPage() {
 
       <section
         {...(hasTabs ? tabPanel.panelProps : { 'aria-labelledby': 'account-screen-transactions' })}
+        ref={transactionsRegionRef}
         className="account-screen__transactions"
+        onFocus={recordRowFocus}
       >
         {!isAccountCurrent && !screen.error ? (
           <Skeleton aria-label="Loading account details" className="account-screen__grid-skeleton">
