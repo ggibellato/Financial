@@ -138,14 +138,14 @@ P61 builds on P60 (`docs/prd/P60-prd-cashflow-accounts-generalization/prd-cashfl
 - New income → Bank "— No bank —", Source Dividendo/Juros, Net 42.10, Date 30 Oct → Save → the form closes, the row appears, the footer total becomes 4,227.30, a success toast "Income added"; Summary's Total incoming and Tithe's income base both show 4,227.30; Barclays' balance unchanged.
 - All transactions → "15 Oct · No bank · Income · XP dividends · — · +85.20"; Account filter "No bank" shows only bankless incomes; footer "… · Total (no bank) +127.30".
 - States: loading (grid loading state, "New income" enabled), empty ("No income in October 2026." with "New income" still offered), load error (error state with Retry), saving (Save shows progress and is disabled, form fields kept), validation (inline field messages, focus moves to the first invalid field), server error (message above the form's buttons, values kept), success (toast, list refreshed), unsaved changes (closing a form with edits asks "Discard unsaved changes?"), disabled (while a save or delete is in flight Edit is disabled and Delete is blocked with its reason, both still visible).
-- Accessibility: every row icon has an accessible name ("Edit income 15 Oct Dividendo/Juros", "Delete income …"); the form is keyboard operable with visible focus; "No bank" is text, not an icon.
+- Accessibility: every row icon has an accessible name ("Edit income 15/10/2026 DividendoJuros", "Delete income …", the date as the grids show it); the form is keyboard operable with visible focus; "No bank" is text, not an icon.
 
 **Error Handling:**
-- Net value negative or empty: inline "Net value is required." / "Net value cannot be negative."; nothing sent (server's existing 400 "Net value cannot be negative." if it gets through).
-- Source missing or inactive: inline "Choose a source."; server's existing 400 "Income source is required.".
-- Pots split with No bank: the split isn't offered; a request that reaches the server gets the existing 400 "Choose the bank this income landed in." shown above the buttons.
+- Net value negative or empty: the shared income form's inline "Net value must be a non-negative number."; nothing sent (server's existing 400 "Net value cannot be negative." if it gets through).
+- Source missing or inactive: inline "Income source is required." (the shared form's message); server's existing 400 "Income source is required.".
+- Pots split with No bank: the shared form keeps the split on and marks Bank with "Choose the bank this income landed in." before anything is sent; a request that reaches the server gets the existing 400 with the same message shown above the buttons.
 - Income deleted or changed elsewhere (404 on edit or delete): "This income no longer exists; the list was refreshed." and the list reloads; nothing else changes.
-- Save or delete failure (network or 5xx): "Couldn't save the income. Try again." / "Couldn't delete the income. Try again."; nothing persisted, form values kept, the row stays.
+- Save or delete failure (network or 5xx): the server's message, else the shared form's "Failed to create income." / "Failed to update income." and "The income could not be deleted. Try again." (on a lost connection "Could not save. Check the connection and try again." / "Could not delete. Check the connection and try again."); nothing persisted, form values kept, the row stays.
 
 ### F03. Tithe Tab and History
 
