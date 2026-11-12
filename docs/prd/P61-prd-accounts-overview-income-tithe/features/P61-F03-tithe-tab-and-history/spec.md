@@ -67,7 +67,7 @@ graph TD
 | **Tab** (3b) | `OVERVIEW_TABS` gains `tithe` "Tithe" between Income and All transactions; `TitheTab` mounts only while selected, keyed by month. | — | F01 contract. |
 | **E2E** (3b) | `Financial.Web/tests/e2e/bankless-income-tithe.spec.ts` `@smoke`: open `/cashflow/accounts?month=2026-10&tab=tithe` and read Income base and Tithe; Income tab → New income, Bank "— No bank —", Source "DividendoJuros", Net 100.00, Date 2026-10-20, Save; Tithe tab → base +100.00 and tithe +10.00 (relative, so reruns pass). The test seed (`Tests/Financial.Api.Tests/TestData/data-cashflow.test.json`) gains an `IncomeSources` array with one active source "DividendoJuros", group `DividendoJuros`. | Seed an income instead | The journey proves entry and tithe together. |
 | **Screen checklist** | F01 1b already names the Tithe tab in the tithe row's after side; 3b doesn't change the checklist. | — | — |
-| **PR size** | 3a: 7 non-test code files plus the snapshot and `openapi.ts`, 3 test files, 12 in total. 3b: 6 non-test code files, 6 unit test files, the E2E spec, the seed, `context.md` and the PRD ticks, 16 in total. | Split 3b | The extra file is the PRD ticks commit, which the last PR must carry. |
+| **PR size** | 3a: 7 non-test code files plus the snapshot and `openapi.ts`, 7 test files (the 3 below plus 4 existing web tests whose `TitheSummaryDto` fixtures need the two new required fields: `AccountsSummaryTab`, `IncomingGrid`, `useAccountsSummary`, `AccountsPage`), 14 in total with generated files excluded. 3b: 6 non-test code files, 6 unit test files, the E2E spec, the seed, `context.md` and the PRD ticks, 16 in total. | Split 3b | The extra file is the PRD ticks commit, which the last PR must carry. |
 | **Rollback** | Read-only additions plus a moved checkbox; rolling back restores the tithe lines on Summary. | — | — |
 
 **Choices made by the spec writer** (for review):
@@ -151,7 +151,7 @@ Following the `testing-guide-Financial` skill: xUnit + FluentAssertions with `[T
 
 | Test file | Type | Stage | Cases |
 |---|---|---|---|
-| `Tests/Financial.CashFlow.Application.Tests/Services/TitheServiceTests.cs` | Unit | 3a | `GetTitheSummary_ReturnsIncomeBaseAndTithePaid`; `GetTitheSummary_BanklessIncome_InIncomeBase`; `GetTitheYear_TwelveMonths_EachEqualsTheMonthSummary`; `GetTitheYear_CarryChainsAcrossMonths`; `GetTitheYear_InvalidYear_ThrowsAndFailsTheSpan` |
+| `Tests/Financial.CashFlow.Application.Tests/Services/TitheServiceTests.cs` | Unit | 3a | `GetTitheSummary_ReturnsIncomeBaseAndTithePaid`; `GetTitheSummary_BanklessIncome_InIncomeBase`; `GetTitheYear_TwelveMonths_EachEqualsTheMonthSummary`; `GetTitheYear_CarryChainsAcrossMonths`; `GetTitheYear_JanuaryCarriesInThePreviousDecember`; `GetTitheSummary_EmptyMonth_ReturnsZeroBaseAndPaid`; `GetTitheYear_InvalidYear_ThrowsAndFailsTheSpan` |
 | `Tests/Financial.Api.Tests/Acceptance/TitheViewAcceptanceTests.cs` | Integration (AC) | 3a | `TitheMonth_ReturnsBaseTithePaidCarryInAndBalance`; `TitheYear_ReturnsTwelveItemsEqualToTheMonthRoute`; `TitheYear_InvalidYear_Returns400`; `TitheYear_AfterCarryForwardUpdate_NextMonthChanges`; `TitheMonth_BanklessIncome_RaisesBaseAndTithe` |
 | `Tests/Financial.Api.Tests/Contract/OpenApiContractTests.cs` (snapshot) | Contract | 3a | New path and fields |
 | `api/__tests__/financialApiClient.test.ts` | Unit | 3a | `getTitheYear` requests `/tithe/year/2026` |
