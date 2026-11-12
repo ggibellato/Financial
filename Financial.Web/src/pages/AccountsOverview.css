@@ -1,24 +1,8 @@
-.monthly-page {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  padding: 24px 24px 0;
-  gap: 16px;
-}
-
 .monthly-page__header {
   display: flex;
   align-items: center;
   gap: 16px;
   flex-shrink: 0;
-}
-
-.monthly-page__month-picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .monthly-page__panel {
@@ -65,7 +49,7 @@
   min-height: 0;
 }
 
-.monthly-page__grids-row .monthly-page__section--grid {
+.monthly-page__grids-row > .monthly-page__section--grid {
   flex: 1 1 260px;
   min-width: 260px;
   max-height: 320px;
@@ -89,23 +73,28 @@
 .monthly-page__action-error {
   margin: 0 0 8px;
   padding: 8px 12px;
-  color: var(--error, #c0392b);
-  background: var(--error-bg, #fdecea);
-  border: 1px solid var(--error-border, #f5c2bd);
-  border-radius: 4px;
+  color: var(--colorStatusDangerForeground1);
+  background: var(--colorStatusDangerBackground1);
+  border: 1px solid var(--colorStatusDangerBorder1);
+  border-radius: var(--borderRadiusMedium);
 }
 
-@media (max-width: 599px) {
-  .monthly-page {
-    height: auto;
-    overflow: visible;
+@media (max-height: 599px) {
+  .monthly-page__panel {
+    flex: none;
   }
 
   .monthly-page__content {
     overflow: visible;
   }
+}
 
-  .monthly-page__grids-row .monthly-page__section--grid {
+@media (max-width: 599px) {
+  .monthly-page__content {
+    overflow: visible;
+  }
+
+  .monthly-page__grids-row > .monthly-page__section--grid {
     max-height: none;
   }
 

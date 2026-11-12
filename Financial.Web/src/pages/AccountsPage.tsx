@@ -1,14 +1,19 @@
 import type { ReactNode } from 'react'
-import { Badge, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
+import { Badge, Field, Input, MessageBar, MessageBarBody, Tab, Text } from '@fluentui/react-components'
 import { Link, useLocation } from 'react-router-dom'
-import type { AccountGroupMemberDto } from '../api/types'
+import type { AccountGroupMemberDto, MonthTransactionDto } from '../api/types'
+import AccountsSummaryTab from '../components/AccountsSummaryTab'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
+import MonthTransactionsGrid from '../components/MonthTransactionsGrid'
+import PageTabList from '../components/PageTabList'
 import TotalsGrid from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
+import { useMonthTransactions } from '../hooks/useMonthTransactions'
 import { useOverviewAddress } from '../hooks/useOverviewAddress'
+import { useTabPanel } from '../hooks/useTabPanel'
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
-import { formatLongMonthYear, formatMonthYear, formatN2 } from '../utils/formatters'
+import { formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2 } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
@@ -49,6 +54,16 @@ const balanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
+const roundUpOf = (row: AccountGroupMemberDto) => row.roundUpTotal ?? 0
+
+const roundUpColumn = {
+  key: 'roundUp',
+  header: 'Round-up',
+  numeric: true,
+  render: (row: AccountGroupMemberDto) => formatN2(roundUpOf(row)),
+  sortAccessor: roundUpOf,
+}
+
 function nextStatementMonth({ nextStatement }: AccountGroupMemberDto): Date | null {
   return nextStatement ? new Date(nextStatement.year, nextStatement.month - 1, 1) : null
 }
@@ -78,32 +93,20 @@ const settlementBalanceColumn = {
   sortAccessor: (row: AccountGroupMemberDto) => row.balance,
 }
 
-function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
+function gridColumns(templateName: string, columns: AccountGridColumns, renderName: (row: AccountGroupMemberDto) => ReactNode) {
   if (columns === 'settlement') return [nameColumn(renderName), settlementBalanceColumn]
   const leading = [nameColumn(renderName), currencyColumn]
-  return columns === 'card' ? [...leading, nextStatementColumn, totalOwedColumn] : [...leading, balanceColumn]
+  if (columns === 'card') return [...leading, nextStatementColumn, totalOwedColumn]
+  return templateName === 'Bank' ? [...leading, balanceColumn, roundUpColumn] : [...leading, balanceColumn]
 }
 
-export default function AccountsPage() {
-  const { year, month, monthInputValue, setMonthInputValue } = useOverviewAddress()
+function AccountsTab({ year, month }: { year: number; month: number }) {
   const { data: groups, isLoading, error, retry } = useAccountTemplateGroups(year, month)
-  const { state } = useLocation()
-  const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
+  const monthInputValue = formatMonthInputValue(year, month)
 
   return (
-    <div className="accounts-page">
-      {showMovedNotice && (
-        <MessageBar role="status" intent="info">
-          <MessageBarBody>That page moved to the account screen.</MessageBarBody>
-        </MessageBar>
-      )}
-      <div className="monthly-page__header">
-        <Field label="Month">
-          <Input type="month" value={monthInputValue} onChange={(_event, data) => setMonthInputValue(data.value)} />
-        </Field>
-      </div>
+    <>
       <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
-
       <div className="accounts-page__groups">
         {isLoading ? (
           <LoadingState />
@@ -126,7 +129,7 @@ export default function AccountsPage() {
                 </Text>
                 <TotalsGrid
                   label={grid.heading}
-                  columns={gridColumns(grid.columns, renderName)}
+                  columns={gridColumns(group.templateName, grid.columns, renderName)}
                   rows={group.members}
                   rowKey={(row) => row.accountId}
                   emptyMessage="No accounts this month."
@@ -135,6 +138,67 @@ export default function AccountsPage() {
               </div>
             )
           })
+        )}
+      </div>
+    </>
+  )
+}
+
+const NO_ROWS: MonthTransactionDto[] = []
+
+function AllTransactionsTab({ year, month }: { year: number; month: number }) {
+  const { data, isLoading, error, retry } = useMonthTransactions(year, month)
+  return <MonthTransactionsGrid year={year} month={month} rows={data ?? NO_ROWS} isLoading={isLoading} error={error} onRetry={retry} />
+}
+
+const OVERVIEW_TABS = [
+  { id: 'accounts', label: 'Accounts' },
+  { id: 'summary', label: 'Summary' },
+  { id: 'transactions', label: 'All transactions' },
+] as const
+
+type OverviewTabId = (typeof OVERVIEW_TABS)[number]['id']
+
+const OVERVIEW_TAB_IDS = OVERVIEW_TABS.map((tab) => tab.id) as [OverviewTabId, ...OverviewTabId[]]
+
+export default function AccountsPage() {
+  const { year, month, monthInputValue, setMonthInputValue, tab, setTab } = useOverviewAddress(OVERVIEW_TAB_IDS)
+  const tabPanel = useTabPanel(tab)
+  const { state } = useLocation()
+  const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
+  const monthKey = `${year}-${month}`
+
+  return (
+    <div className="accounts-page">
+      <Text as="h1" size={600} weight="semibold">
+        Accounts
+      </Text>
+      {showMovedNotice && (
+        <MessageBar role="status" intent="info">
+          <MessageBarBody>That page moved to the account screen.</MessageBarBody>
+        </MessageBar>
+      )}
+      <div className="monthly-page__header">
+        <Field label="Month">
+          <Input type="month" value={monthInputValue} onChange={(_event, data) => setMonthInputValue(data.value)} />
+        </Field>
+      </div>
+
+      <PageTabList aria-label="Accounts views" selectedValue={tab} onTabSelect={(_event, data) => setTab(data.value as OverviewTabId)}>
+        {OVERVIEW_TABS.map(({ id, label }) => (
+          <Tab key={id} value={id} {...tabPanel.tabProps(id)}>
+            {label}
+          </Tab>
+        ))}
+      </PageTabList>
+
+      <div className={tab === 'transactions' ? 'monthly-page__panel' : 'accounts-page__groups'} {...tabPanel.panelProps}>
+        {tab === 'accounts' && <AccountsTab key={monthKey} year={year} month={month} />}
+        {tab === 'summary' && <AccountsSummaryTab key={monthKey} year={year} month={month} />}
+        {tab === 'transactions' && (
+          <div className="monthly-page__content">
+            <AllTransactionsTab key={monthKey} year={year} month={month} />
+          </div>
         )}
       </div>
     </div>

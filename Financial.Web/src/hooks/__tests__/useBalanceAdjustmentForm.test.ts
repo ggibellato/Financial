@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { BalanceAdjustmentDto, BankOption } from '../../api/types'
-import type { BankTotal } from '../useMonthly'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
 import { pinDate } from '../../test-utils/pinDate'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
@@ -25,9 +24,9 @@ const BANKS: BankOption[] = [
   { id: 'bank-trading212', name: 'Trading212', roundUpEnabled: true, isActive: true },
 ]
 
-const BANK_TOTALS: BankTotal[] = [
-  { bankId: 'bank-barclays', bank: 'Barclays', currency: 'GBP', balance: 100, roundUpTotal: 0 },
-  { bankId: 'bank-trading212', bank: 'Trading212', currency: 'GBP', balance: 8.8, roundUpTotal: 0.6 },
+const BANK_TOTALS = [
+  { bankId: 'bank-barclays', bank: 'Barclays', balance: 100 },
+  { bankId: 'bank-trading212', bank: 'Trading212', balance: 8.8 },
 ]
 
 const ADJUSTMENT: BalanceAdjustmentDto = {
@@ -81,7 +80,7 @@ describe('useBalanceAdjustmentForm', () => {
     expect(result.current.currentBalance).toBe(8.8)
   })
 
-  it('resolves currentBalance to 0 when the chosen bank has no matching BankTotal', () => {
+  it('resolves currentBalance to 0 when the chosen bank has no matching bank balance', () => {
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, vi.fn()))
     act(() => result.current.openCreateForm())
 

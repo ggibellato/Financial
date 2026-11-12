@@ -57,7 +57,7 @@ describe('Breadcrumb', () => {
   })
 
   it('does not treat an undeclared path below a page as that page', () => {
-    renderBreadcrumb('/cashflow/monthly/archive')
+    renderBreadcrumb('/cashflow/mensais/archive')
 
     expect(screen.getByText('—')).toBeInTheDocument()
   })
@@ -70,7 +70,7 @@ describe('Breadcrumb', () => {
   })
 
   it('breadcrumb text is not a link and has no interactive role', () => {
-    renderBreadcrumb('/cashflow/monthly')
+    renderBreadcrumb('/cashflow/mensais')
 
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
     expect(screen.queryByRole('button')).not.toBeInTheDocument()
@@ -79,8 +79,8 @@ describe('Breadcrumb', () => {
   it('renders regardless of sidebar collapsed state', () => {
     localStorage.setItem('financial.sidebarCollapsed', 'true')
 
-    renderBreadcrumb('/cashflow/monthly')
+    renderBreadcrumb('/cashflow/mensais')
 
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('CashFlowMonthly')
+    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('CashFlowMensais')
   })
 })

@@ -3,24 +3,38 @@ import { useSearchParams } from 'react-router-dom'
 import { currentYearMonth, formatMonthInputValue, parseMonthInputValue } from '../utils/formatters'
 import type { MonthSelection } from './useMonthSelection'
 
-export function useOverviewAddress(): MonthSelection {
+export interface OverviewAddress<TabId extends string> extends MonthSelection {
+  tab: TabId
+  setTab: (tab: TabId) => void
+}
+
+export function useOverviewAddress<TabId extends string>(validTabs: readonly [TabId, ...TabId[]]): OverviewAddress<TabId> {
   const [searchParams, setSearchParams] = useSearchParams()
   const { year, month } = parseMonthInputValue(searchParams.get('month') ?? '') ?? currentYearMonth()
+  const requestedTab = searchParams.get('tab')
+  const tab = validTabs.find((id) => id === requestedTab) ?? validTabs[0]
 
-  const setMonthInputValue = useCallback(
-    (value: string) => {
-      if (!parseMonthInputValue(value)) return
+  const setParam = useCallback(
+    (name: string, value: string) =>
       setSearchParams(
         (params) => {
           const next = new URLSearchParams(params)
-          next.set('month', value)
+          next.set(name, value)
           return next
         },
         { replace: true },
-      )
-    },
+      ),
     [setSearchParams],
   )
 
-  return { year, month, monthInputValue: formatMonthInputValue(year, month), setMonthInputValue }
+  const setMonthInputValue = useCallback(
+    (value: string) => {
+      if (parseMonthInputValue(value)) setParam('month', value)
+    },
+    [setParam],
+  )
+
+  const setTab = useCallback((value: TabId) => setParam('tab', value), [setParam])
+
+  return { year, month, monthInputValue: formatMonthInputValue(year, month), setMonthInputValue, tab, setTab }
 }

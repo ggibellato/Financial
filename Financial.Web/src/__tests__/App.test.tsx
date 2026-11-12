@@ -9,7 +9,7 @@ const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { i
     <Routes>
       <Route path="/" element={<App />}>
         <Route path="investments/active-investments" element={<p>Investments domain content</p>} />
-        <Route path="cashflow/monthly" element={<p>CashFlow domain content</p>} />
+        <Route path="cashflow/mensais" element={<p>CashFlow domain content</p>} />
         <Route path="*" element={<Navigate to="/investments/active-investments" replace />} />
       </Route>
     </Routes>
@@ -41,14 +41,14 @@ describe('App', () => {
   it('switches to the cashflow domain content', () => {
     render(<AppWithRoutes />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
     expect(screen.getByText('CashFlow domain content')).toBeInTheDocument()
     expect(screen.queryByText('Investments domain content')).not.toBeInTheDocument()
   })
 
   it('switches back to the investments domain content', () => {
-    render(<AppWithRoutes initialEntry="/cashflow/monthly" />)
+    render(<AppWithRoutes initialEntry="/cashflow/mensais" />)
 
     fireEvent.click(screen.getByRole('link', { name: 'Active investments' }))
 
@@ -57,16 +57,16 @@ describe('App', () => {
   })
 
   it('active nav link receives active class', () => {
-    render(<AppWithRoutes initialEntry="/cashflow/monthly" />)
+    render(<AppWithRoutes initialEntry="/cashflow/mensais" />)
 
-    expect(screen.getByRole('link', { name: 'Monthly' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Mensais' })).toHaveClass('active')
     expect(screen.getByRole('link', { name: 'Active investments' })).not.toHaveClass('active')
   })
 
   it('persists the active domain to sessionStorage on navigation', () => {
     render(<AppWithRoutes />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
     expect(sessionStorage.getItem('financial.selectedDomain')).toBe('cashflow')
   })
@@ -74,10 +74,10 @@ describe('App', () => {
   it('announces the page the user navigated to and titles the document with it', async () => {
     render(<AppWithRoutes />)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Monthly')
-    await waitFor(() => expect(document.title).toBe('Monthly - CashFlow - Financial'))
+    expect(await screen.findByRole('status')).toHaveTextContent('Mensais')
+    await waitFor(() => expect(document.title).toBe('Mensais - CashFlow - Financial'))
   })
 
   it('renders_in_light_mode_by_default_regardless_of_os_preference', () => {
@@ -118,11 +118,11 @@ describe('App', () => {
     it('nav links are not in the DOM until the hamburger toggle opens the drawer', () => {
       render(<AppWithRoutes />)
 
-      expect(screen.queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Mensais' })).not.toBeInTheDocument()
 
       fireEvent.click(screen.getByRole('button', { name: 'Open navigation' }))
 
-      expect(screen.getByRole('link', { name: 'Monthly' })).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Mensais' })).toBeInTheDocument()
     })
 
     it('clicking a nav link navigates and closes the drawer, returning focus to the toggle', () => {
@@ -130,10 +130,10 @@ describe('App', () => {
 
       const toggle = screen.getByRole('button', { name: 'Open navigation' })
       fireEvent.click(toggle)
-      fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+      fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
       expect(screen.getByText('CashFlow domain content')).toBeInTheDocument()
-      expect(screen.queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('link', { name: 'Mensais' })).not.toBeInTheDocument()
       expect(document.activeElement).toBe(toggle)
     })
   })

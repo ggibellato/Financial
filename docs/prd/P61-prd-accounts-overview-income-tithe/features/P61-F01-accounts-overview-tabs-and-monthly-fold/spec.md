@@ -47,7 +47,7 @@ graph TD
     A --> T1["Accounts tab: useAccountTemplateGroups(year, month), TotalsGrid"]
     A --> T2["AccountsSummaryTab: useAccountsSummary, CategoryTotalsGrid, IncomingGrid, Result"]
     A --> T3["All transactions: useMonthTransactions, MonthTransactionsGrid"]
-    R["/cashflow/monthly"] --> MR["MonthlyRedirect in routes.tsx"] --> U
+    R["/cashflow/monthly"] --> MR["MonthlyRedirect in lazyPages.tsx"] --> U
 ```
 
 ## 3. Technical Decisions
@@ -56,16 +56,16 @@ graph TD
 |---|---|---|---|
 | **Address hook** (1a, tab in 1b) | New `hooks/useOverviewAddress.ts` over `useSearchParams`: returns `year`, `month`, `monthInputValue`, `setMonthInputValue`, and from 1b `tab` and `setTab`. 1b's signature takes the valid tab ids (`useOverviewAddress(validTabs)`) and falls back to the first. Parsing uses `parseMonthInputValue`; a malformed month is ignored (current month shown, address left as typed). Every write uses `{ replace: true }` and keeps the other parameter. | Local state as Monthly (`useMonthSelection`) | Reload, back and bookmarks keep the view; the account screen already reads `month` and `tab` from its address the same way (`useAccountScreen`). |
 | **Month picker** (1a) | A Fluent `Field label="Month"` with `Input type="month"`, as on the account header (`AccountHeader.tsx`), above the tabs. Heading "Balances at end of {formatLongMonthYear}" stays on the Accounts tab. | Monthly's plain `<input>` | Fluent component; same look as the account screen. |
-| **Accounts tab** (1a) | `useAccountTemplateGroups(year, month)` with the address month; row links keep `?month=` of the chosen month. | — | The query already takes a month. |
-| **Tabs** (1b) | `OVERVIEW_TABS` constant in `AccountsPage.tsx`: `accounts` "Accounts", `summary` "Summary", `transactions` "All transactions"; `PageTabList aria-label="Accounts views"`. Each tab's content is its own component rendered only when selected and keyed `${year}-${month}`, so it fetches on open and on a month change and never shows a previous month's figures. The moved-page notice stays above the tabs. | Fetch every tab up front | PRD: only the open tab loads. |
-| **Summary data** (1b) | `useMonthly.ts` renamed `useAccountsSummary.ts`: same `Promise.all` of category totals, default group summary and tithe, same carry-forward update; `bankTotals`, `cardMembers` and `currencyTotals` removed; `result` added. | A new hook beside `useMonthly` | One hook, history kept by the rename. |
+| **Accounts tab** (1a, 1b) | `useAccountTemplateGroups(year, month)` with the address month; row links keep `?month=` of the chosen month (1a). The Bank grid gains a numeric "Round-up" column after Balance, `formatN2(roundUpTotal ?? 0)`, sortable, with no footer sum, from the by-template response's `roundUpTotal` (no API change); Pots and other balance grids have none (1b, PRD F01 Capabilities: round-up is shown for the chosen month). | — | The query already takes a month. |
+| **Tabs** (1b) | `OVERVIEW_TABS` constant in `AccountsPage.tsx`: `accounts` "Accounts", `summary` "Summary", `transactions` "All transactions"; `PageTabList aria-label="Accounts views"`. Each tab's content is its own component rendered only when selected and keyed `${year}-${month}`, so it fetches on open and on a month change and never shows a previous month's figures. The moved-page notice stays above the tabs, and the page gains its `h1` "Accounts" above the picker (deferred from 1a). Accounts and Summary scroll with the page; All transactions keeps Monthly's panel (`monthly-page__panel` / `__content`), so its grid scrolls inside the tab with the footer in view, and a `max-height: 599px` media rule in `AccountsOverview.css` lets the page scroll instead on short viewports (200% zoom). | Fetch every tab up front | PRD: only the open tab loads. |
+| **Summary data** (1b) | `useMonthly.ts` renamed `useAccountsSummary.ts`: same `Promise.all` of category totals, default group summary and tithe; the carry-forward update writes the `TitheSummaryDto` the PUT returns into the loaded data instead of refetching all three reads, and its error is plain state (the month key remounts the tab, so it can't leak into another month); `bankTotals`, `cardMembers` and `currencyTotals` removed; `result` added. | A new hook beside `useMonthly` | One hook, history kept by the rename. |
 | **Result** (1b) | `monthResult(totalIncoming, categoryTotalsSum)` in `utils/monthResult.ts`, summed in pence (`toPence`) so the line can't drift by float error; returns `{ value, label }` with label "Surplus" (> 0), "Deficit" (< 0), "Balanced" (0). Rendered by `AccountsSummaryTab` under Income by source as `SectionTotals` item "Result" with the value (`formatSignedN2`) and the label word in text. | A backend field on the default group summary | No API change in F01; both inputs are server figures, only their difference is computed. |
-| **Summary layout** (1b) | Two-column row (`monthly-page__grids-row`): Category totals, Income by source; Result below both. Empty sections show the grids' existing empty messages. Load error: `ErrorState` "Unable to load the summary." with Try again, inside the tab. | — | Reuses the existing grids and CSS. |
+| **Summary layout** (1b) | Two-column row (`monthly-page__grids-row`): Category totals, Income by source, each under a visible `h2` with that name; Result below both. Empty sections show the grids' existing empty messages. Load error: `ErrorState` "Unable to load the summary." with Try again, inside the tab. | — | Reuses the existing grids and CSS. |
 | **CSS** (1a) | `pages/MonthlyPage.css` renamed `pages/AccountsOverview.css`, imported by `MonthlyPage` (until 1b) and `AccountsPage`; class names unchanged. | Rename the classes now | Renaming touches four shared components; a follow-up. |
 | **Bank balance type** (1a) | `useBalanceAdjustmentForm` declares its own `BankBalance` shape (`bankId`, `bank`, `balance`) instead of `Pick<BankTotal, …>` from `useMonthly`. | Keep the import | 1b can then delete the bank grids and their type. |
-| **Redirect** (1b) | `REDIRECT_ROUTES` gains `cashflow/monthly` → a `MonthlyRedirect` function component in `routes.tsx` that reads `month` from the address and renders `<Navigate replace to="/cashflow/accounts?tab=summary[&month=…]" />`. `PAGE_ROUTES` and `NAV_TREE` lose Monthly; `lazyPages.tsx` loses `MonthlyPage`. | `MovedPageRedirect` | No moved notice needed: the content is the same. |
-| **Parity screen checklist** (1b) | Rows whose Page is "Monthly" read "Monthly (before) / Accounts → Accounts or Summary tab (after)"; B1 reads "Accounts tab's Barclays balance"; the tithe row's after side reads "Accounts → Summary (Tithe tab once F03 ships)", so F03 needs no checklist change. | — | The before build still has Monthly. |
-| **PR size** | 1a: 6 non-test code files, about 8 in total. 1b: 8 non-test code files (deleted and renamed-only test files not counted), about 17 in total with 7 test files, `context.md`, `screen-checklist.md` and the PRD ticks. | Move `monthResult` into `AccountsSummaryTab` | 1b is at the code limit and just over 15 in total because the ticks and two docs ride in the last PR; the reviewer reads the docs and ticks in seconds. |
+| **Redirect** (1b) | `REDIRECT_ROUTES` gains `cashflow/monthly` → a `MonthlyRedirect` function component in `lazyPages.tsx` (`react-refresh/only-export-components` rejects any component in `routes.tsx`, which exports route data) that reads `month` from the address and renders `<Navigate replace to="/cashflow/accounts?tab=summary[&month=…]" />`. `PAGE_ROUTES` and `NAV_TREE` lose Monthly; `lazyPages.tsx` loses `MonthlyPage`. | `MovedPageRedirect` | No moved notice needed: the content is the same. |
+| **Parity screen checklist** (1b) | Rows whose Page is "Monthly" read "Monthly (before) / Accounts → Accounts or Summary tab (after)"; B1 reads "Accounts tab's Barclays balance"; the tithe row's after side reads "Accounts → Summary (Tithe tab once F03 ships)", so F03 needs no checklist change. Each bank's balance and round-up map to the Accounts tab's Bank grid (Balance and Round-up columns); the bank totals row compares the Bank total only, as the Accounts tab has no round-up sum; the card statement row's after side is each card's Statements tab (the Accounts tab shows Next statement and Total owed, not the month's statement). | — | The before build still has Monthly. |
+| **PR size** | 1a: 6 non-test code files, about 8 in total. 1b (as built): 9 non-test code files (the 8 below plus `AccountsOverview.css`) and about 28 in total, deleted files not counted: 11 test files (four of them only swap `/cashflow/monthly` for `/cashflow/mensais` as their sample route, one drops the deleted `BankTotal` import), `context.md`, `screen-checklist.md`, `docs/ui/react.md`, the testing-guide artifact, this spec and the PRD ticks. Both overages approved by the user through the controller (2026-11-12). | Move `monthResult` into `AccountsSummaryTab` | The CSS file fixes All transactions on short viewports and removes the CSS Monthly left dead; splitting the tests or docs out would leave `main` with tests on a deleted route. |
 | **Rollback** | Web only; rolling back restores Monthly. | — | — |
 
 **Choices made by the spec writer** (for review):
@@ -76,7 +76,7 @@ graph TD
 - Result is computed client-side in pence from two server figures; label words Surplus/Deficit/Balanced.
 - The tab list's accessible name is "Accounts views"; tab ids `accounts`, `summary`, `transactions` (F02 `income`, F03 `tithe`).
 - The `monthly-page__*` class names stay; renaming them is a follow-up.
-- The redirect is a component inside `routes.tsx` (no new file).
+- The redirect is a component in `lazyPages.tsx` beside the page components `routes.tsx` imports (no new file).
 
 ## 4. Component Overview
 
@@ -86,19 +86,19 @@ graph TD
 |---|---|---|---|
 | `hooks/useOverviewAddress.ts` | New (1a), Modified (1b) | 1a, 1b | Month from `?month=` (1a); tab from `?tab=` against valid ids (1b); replace-writes keeping the other parameter |
 | `pages/AccountsPage.tsx` | Modified | 1a, 1b | Month picker; Accounts tab for the chosen month (1a); `OVERVIEW_TABS`, `PageTabList`, per-tab components keyed by month, All transactions tab moved from Monthly (1b) |
-| `pages/AccountsOverview.css` | Renamed from `MonthlyPage.css` | 1a | Same classes; the picker reuses `monthly-page__header` |
+| `pages/AccountsOverview.css` | Renamed from `MonthlyPage.css` (1a), Modified (1b) | 1a, 1b | Same classes; the picker reuses `monthly-page__header` (1a); dead `.monthly-page` and `__month-picker` rules removed, `max-height: 599px` rule, `__action-error` on Fluent danger tokens (1b) |
 | `pages/AccountsPage.css` | Modified | 1a | `accounts-page__groups`: the loading, error and groups share one region below the heading, so Try again focuses the reloaded grid, not the picker |
 | `pages/MonthlyPage.tsx` | Modified (1a), Deleted (1b) | 1a, 1b | CSS import path (1a) |
 | `hooks/useBalanceAdjustmentForm.ts` | Modified | 1a | Own `BankBalance` type |
 | `components/AccountsSummaryTab.tsx` | New | 1b | Category totals, Income by source (with tithe props until F03), Result; loading, error, empty |
 | `hooks/useAccountsSummary.ts` | Renamed from `useMonthly.ts` | 1b | Summary fetch and carry-forward update; no bank or card data; `result` |
 | `utils/monthResult.ts` | New | 1b | Result value and label in pence |
-| `navigation/routes.tsx` | Modified | 1b | Monthly page route removed; `MonthlyRedirect` |
+| `navigation/routes.tsx` | Modified | 1b | Monthly page route removed; `cashflow/monthly` redirect route |
 | `navigation/navTree.ts` | Modified | 1b | Monthly item removed |
-| `navigation/lazyPages.tsx` | Modified | 1b | `MonthlyPage` removed |
+| `navigation/lazyPages.tsx` | Modified | 1b | `MonthlyPage` removed; `MonthlyRedirect` |
 | `components/BanksGrid.tsx`, `components/CardsGrid.tsx` | Deleted | 1b | Unused after Monthly goes |
 
-1b non-test code count: `AccountsPage.tsx`, `useOverviewAddress.ts`, `AccountsSummaryTab.tsx`, `useAccountsSummary.ts`, `monthResult.ts`, `routes.tsx`, `navTree.ts`, `lazyPages.tsx` = 8.
+1b non-test code count: `AccountsPage.tsx`, `useOverviewAddress.ts`, `AccountsSummaryTab.tsx`, `useAccountsSummary.ts`, `monthResult.ts`, `routes.tsx`, `navTree.ts`, `lazyPages.tsx` = 8, plus `AccountsOverview.css` as built = 9.
 
 **Docs:** `context.md` (Accounts page description, Monthly entry removed; 1b), `scripts/parity/screen-checklist.md` (1b), PRD Section 9 F01 ticks (1b, own commit).
 
@@ -117,11 +117,11 @@ Following the `testing-guide-Financial` skill: Vitest unit tests for hooks, help
 | Test file | Stage | Cases |
 |---|---|---|
 | `hooks/__tests__/useOverviewAddress.test.tsx` | 1a, 1b | Current month when missing or malformed; reads `2026-09`; setting the month keeps `tab` and replaces history; tab falls back to the first valid id when missing or unknown; setting the tab keeps `month` |
-| `pages/__tests__/AccountsPage.test.tsx` | 1a, 1b | Picker defaults to the current month; changing it reloads the groups for that month, updates the heading and row links (1a); tabs in order with Accounts selected; only the open tab requests data; a month change reloads the open tab and keeps it; error in one tab leaves the others selectable; keyboard arrows move between tabs (1b) |
+| `pages/__tests__/AccountsPage.test.tsx` | 1a, 1b | Picker defaults to the current month; changing it reloads the groups for that month, updates the heading and row links (1a); tabs in order with Accounts selected; only the open tab requests data; a month change reloads the open tab and keeps it; error in one tab leaves the others selectable; arrow-key movement between tabs is Fluent TabList's own behaviour and is not unit-tested (tabster doesn't run in jsdom); keyboard checked by ui-reviewer and the browser check (1b) |
 | `components/__tests__/AccountsSummaryTab.test.tsx` | 1b | Category totals, Income by source with Total incoming, Result with Surplus / Deficit / Balanced; no bank or card grid; tithe lines and carry-forward checkbox present; loading, empty and error with Try again |
 | `hooks/__tests__/useAccountsSummary.test.ts` | 1b | Renamed from `useMonthly.test.ts`; bank and card cases removed; `result` |
 | `utils/__tests__/monthResult.test.ts` | 1b | Pence exactness, sign, the three labels |
-| `navigation/__tests__/routes.test.ts` | 1b | `/cashflow/monthly` → `/cashflow/accounts?tab=summary`; with `?month=2026-09` carries it; no page route for Monthly |
+| `navigation/__tests__/routes.test.tsx` (renamed from `.ts` for the redirect render) | 1b | `/cashflow/monthly` → `/cashflow/accounts?tab=summary`; with `?month=2026-09` carries it; no page route for Monthly |
 | `components/__tests__/Sidebar.test.tsx` | 1b | CashFlow menu without Monthly |
 | `pages/__tests__/MonthlyPage.test.tsx`, `BanksGrid.test.tsx`, `CardsGrid.test.tsx`, `useMonthly.test.ts` | 1b | Deleted with their components (All transactions cases move to `AccountsPage.test.tsx`) |
 
@@ -134,7 +134,7 @@ Following the `testing-guide-Financial` skill: Vitest unit tests for hooks, help
 | 03 | Summary contents, Result, no bank or card grid, tithe kept until F03 | `AccountsSummaryTab.test.tsx` "[AC …-03] …"; `monthResult.test.ts` tagged 03 |
 | 04 | All transactions as F16's tab | `AccountsPage.test.tsx` "[AC …-04] renders All transactions with F16's grid"; `MonthTransactionsGrid.test.tsx` unchanged |
 | 05 | Only the open tab loads; month change reloads it | `AccountsPage.test.tsx` "[AC …-05] …" |
-| 06 | Monthly gone, redirect, no in-app links | `routes.test.ts` "[AC …-06] …"; `Sidebar.test.tsx` "[AC …-06] …"; DoD grep for `cashflow/monthly` in `Financial.Web/src` (only the redirect) |
+| 06 | Monthly gone, redirect, no in-app links | `routes.test.tsx` "[AC …-06] …"; `Sidebar.test.tsx` "[AC …-06] …"; DoD grep for `cashflow/monthly` in `Financial.Web/src` (only the redirect) |
 | 07 | States, keyboard, Result not colour-only, narrow width | `AccountsSummaryTab.test.tsx` and `AccountsPage.test.tsx` "[AC …-07] …"; ui-reviewer; browser check at 320 px |
 | 08 | Parity 0 differences; no API or data-file change | Definition of Done: parity run; `OpenApiContractTests` unchanged |
 

@@ -229,14 +229,14 @@ graph TD
 Every criterion is traced by tests named with the project's AC-tracing convention (`[AC P61-F0n-<slug>-NN]`). Every PR runs `/simplify` and passes architecture-reviewer and, for UI changes, ui-reviewer against `docs/ui/review-checklist.md`.
 
 ### F01. Accounts Overview Tabs and Monthly Fold
-- [ ] Accounts has a month picker defaulting to the current month and the tabs Accounts, Summary and All transactions in that order; the month and tab are in the address, a malformed month falls back to the current month and an unknown tab to Accounts
-- [ ] The Accounts tab shows the by-template groups for the chosen month, with "Balances at end of <month>", and each account link opens its account screen at that month
-- [ ] Summary shows Category totals, Income by source with Total incoming, and Result = Total incoming − Category totals sum with "Surplus", "Deficit" or "Balanced"; it shows no bank or card grid; the tithe lines and the carry-forward checkbox stay until F03
-- [ ] All transactions on Accounts behaves as P60 F16's tab did on Monthly (columns, filters, footer, links, states)
-- [ ] Only the open tab loads its data; changing the month reloads the open tab and keeps it selected
-- [ ] The Monthly page and menu item are gone; `/cashflow/monthly` redirects to Accounts → Summary, keeping `?month=`; no in-app link points to `/cashflow/monthly`
-- [ ] Loading, empty, load-error (with Retry, scoped to the tab) states pass the review checklist; tabs and month picker are keyboard operable with visible focus; the Result's meaning is not colour-only; no horizontal scroll at narrow width
-- [ ] Parity on the latest live copy: 0 differences; no API route or data file change
+- [x] Accounts has a month picker defaulting to the current month and the tabs Accounts, Summary and All transactions in that order; the month and tab are in the address, a malformed month falls back to the current month and an unknown tab to Accounts
+- [x] The Accounts tab shows the by-template groups for the chosen month, with "Balances at end of <month>", and each account link opens its account screen at that month
+- [x] Summary shows Category totals, Income by source with Total incoming, and Result = Total incoming − Category totals sum with "Surplus", "Deficit" or "Balanced"; it shows no bank or card grid; the tithe lines and the carry-forward checkbox stay until F03
+- [x] All transactions on Accounts behaves as P60 F16's tab did on Monthly (columns, filters, footer, links, states)
+- [x] Only the open tab loads its data; changing the month reloads the open tab and keeps it selected
+- [x] The Monthly page and menu item are gone; `/cashflow/monthly` redirects to Accounts → Summary, keeping `?month=`; no in-app link points to `/cashflow/monthly`
+- [x] Loading, empty, load-error (with Retry, scoped to the tab) states pass the review checklist; tabs and month picker are keyboard operable with visible focus; the Result's meaning is not colour-only; no horizontal scroll at narrow width
+- [x] Parity on the latest live copy: 0 differences; no API route or data file change
 
 ### F02. Income Tab and Bankless Income
 - [ ] The Income tab lists every income of the chosen month (bank and no bank) with Date, Source, Bank ("No bank"), Description, Gross, Net and row icons; its count equals `GET /incomes/month/{y}/{m}`'s and its Total net equals Summary's Total incoming
