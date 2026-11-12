@@ -67,7 +67,7 @@ graph TD
 | **404** (2b) | On a save error of an edit (`AccountFormSettings.onNotFound`, read only by `useIncomeForm`) or a delete error where `isNotFound(err)`, close the form or dialog, refresh the list and show `MessageBar intent="warning"` "This income no longer exists; the list was refreshed." | Generic error | PRD Error Handling. |
 | **Tab** (2b) | `OVERVIEW_TABS` gains `income` "Income" between Summary and All transactions; `IncomeTab` mounts only while selected, keyed by month. | — | F01 contract. |
 | **No Income-tab link** (2a) | A bankless row has no link in All transactions; editing it from that grid comes with the row-icon column PR, and from the Income tab in 2b. | Description link to `?tab=income` (the spec's first choice) | Row actions stay on icons across the app's grids. |
-| **PR size** | 2a: 6 non-test code files plus the regenerated snapshot and `openapi.ts`; 7 test files (the API test base and factory gain a saved-file read for the round-trip check; no `AccountTransactionsGrid` test change); the spec, plan and PRD for the 2026-11-12 decision; 16 in total, generated excluded. 2b: 5 non-test code files, 4 test files, `context.md` and the PRD (wording fix and ticks), 11 in total. | — | Within the limit. |
+| **PR size** | 2a: 6 non-test code files plus the regenerated snapshot and `openapi.ts`; 7 test files (the API test base and factory gain a saved-file read for the round-trip check; no `AccountTransactionsGrid` test change); the spec, plan and PRD for the 2026-11-12 decision; 16 in total, generated excluded. 2b: 7 non-test code files (the five planned, plus `useAccountActionForms.ts` for the `incomeSavedMessage` move and `MonthTransactionsGrid.tsx` for the "Total (no bank)" label), 5 test files, `context.md`, the spec and the PRD, 15 in total. | — | Within the limit. |
 | **Rollback** | 2a's DTO change is additive in meaning (fields become optional); rolling back hides bankless rows again. Bankless incomes saved through 2b stay valid in the file and in totals. | — | — |
 
 **Choices made by the spec writer** (for review):
@@ -98,13 +98,14 @@ graph TD
 | File | New/Modified | Stage | Key responsibilities |
 |---|---|---|---|
 | `api/generated/openapi.ts` | Regenerated | 2a | Optional fields |
-| `components/MonthTransactionsGrid.tsx` | Modified | 2a | "No bank" cell, filter value, plain Description, row key, footer line |
+| `components/MonthTransactionsGrid.tsx` | Modified | 2a, 2b | "No bank" cell, filter value, plain Description, row key, footer line; footer label "Total (no bank)" (2b) |
 | `utils/monthTransactionTotals.ts` | Modified | 2a | Null currency → `NO_BANK` bucket, listed last |
 | `components/AccountTransactionsGrid.tsx` | Modified | 2a | Settlement Amount through `formatAmount` |
 | `components/IncomeTab.tsx` | New | 2b | Grid, filters, footer, New income, form, delete dialog, states |
 | `hooks/useIncomeTab.ts` | New | 2b | Load incomes, sources and receiving accounts; form and delete wiring; 404 refresh |
 | `hooks/useIncomeForm.ts` | Modified | 2b | `noBankByDefault`; `onNotFound` on an edit's 404; `incomeSavedMessage` moved here from `useAccountActionForms` |
 | `hooks/formSettings.ts` | Modified | 2b | `noBankByDefault?: boolean`, `onNotFound?: () => void` |
+| `hooks/useAccountActionForms.ts` | Modified | 2b | Imports `incomeSavedMessage` from `useIncomeForm` |
 | `pages/AccountsPage.tsx` | Modified | 2b | Income tab entry |
 
 **Scripts:** `scripts/parity/Parity.test.ps1` (2a): a fixture month row with null `accountId` and an Income transaction leaves every family's figures unchanged.
@@ -169,7 +170,7 @@ Following the `testing-guide-Financial` skill: xUnit + FluentAssertions with `[T
 | `Tests/Financial.Api.Tests/Acceptance/BanklessIncomeAcceptanceTests.cs` | Integration (AC) | 2a | `CreateIncome_NoBank_CountsInTotalsAndTitheAndMovesNoBalance`; `UpdateIncome_BankToNoBankAndBack_MovesTheBalanceOnlyWhileBanked`; `CreateIncome_NoBankWithPotsSplit_Returns400`; `MonthTransactions_BanklessIncome_OnceAsNoBankWithoutCategory_SpendUnchanged`; `GetIncomesByMonth_CountEqualsTotalIncomingSources` |
 | `Tests/Financial.Api.Tests/Contract/OpenApiContractTests.cs` (snapshot) | Contract | 2a | Optional fields |
 | `scripts/parity/Parity.test.ps1` | Script self-test | 2a | Bankless row changes no figure |
-| `components/__tests__/MonthTransactionsGrid.test.tsx` | Unit | 2a | "No bank" cell and Description without links; Account filter "No bank"; footer "Total (no bank)" line; Spend unchanged |
+| `components/__tests__/MonthTransactionsGrid.test.tsx` | Unit | 2a, 2b | "No bank" cell and Description without links; Account filter "No bank"; footer "Total (no bank)" line; Spend unchanged |
 | `utils/__tests__/monthTransactionTotals.test.ts` | Unit | 2a | Null currency bucket listed last; pence |
 | `components/__tests__/IncomeTab.test.tsx` | Unit | 2b | Columns, "No bank", sorting, filters, footer and "n of m"; New income defaults to No bank and saves with no `bankId`; bank income; edit bank ↔ No bank; delete with confirmation; validation messages; 404 warning and refresh; loading, empty with New income, error with Try again; row icon names |
 | `hooks/__tests__/useIncomeTab.test.ts` | Unit | 2b | One load per month; banks are `ReceivesIncome` accounts; refresh after save and delete; 404 path |
