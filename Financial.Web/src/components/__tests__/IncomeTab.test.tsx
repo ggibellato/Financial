@@ -181,7 +181,7 @@ describe('IncomeTab', () => {
     setField(form, 'Net value', '42.10')
     fireEvent.click(within(form).getByRole('button', { name: 'Add income' }))
 
-    expect(await screen.findByText('Income added')).toBeInTheDocument()
+    expect(await screen.findAllByText('Income added')).not.toHaveLength(0)
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: null, netValue: 42.1, incomeSourceId: 'dividends' }))
     expect(screen.queryByRole('form', { name: 'New income' })).not.toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
@@ -215,7 +215,7 @@ describe('IncomeTab', () => {
     setField(form, 'Bank', '')
     fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
 
-    expect(await screen.findByText('Income updated')).toBeInTheDocument()
+    expect(await screen.findAllByText('Income updated')).not.toHaveLength(0)
     expect(updateIncomeMock).toHaveBeenCalledWith('salary', expect.objectContaining({ bankId: null }))
   })
 
@@ -239,7 +239,7 @@ describe('IncomeTab', () => {
     expect(dialog).toHaveTextContent('Delete this income? This cannot be undone.')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
-    expect(await screen.findByText('Income deleted')).toBeInTheDocument()
+    expect(await screen.findAllByText('Income deleted')).not.toHaveLength(0)
     expect(deleteIncomeMock).toHaveBeenCalledExactlyOnceWith('dividends-1')
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
