@@ -152,6 +152,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
                 .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
+                .Concat(records.Records.OfType<Income>().Where(income => income.Account is null).Select(ToBanklessRow))
                 .OrderByDescending(row => row.Transaction.Date)
                 .ToList();
 
@@ -311,6 +312,15 @@ public sealed class AccountQueryService : IAccountQueryService
         Transaction = row
     };
 
+    private MonthTransactionDTO ToBanklessRow(Income income) => new()
+    {
+        AccountId = null,
+        AccountName = null,
+        AccountCurrency = null,
+        AccountIsActive = true,
+        Transaction = ToRow(income, account: null)
+    };
+
     private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, MonthRecords month) =>
         CardChargeFilter.ChargesFor(month.AllExpenses, card, month.Year, month.Month)
             .Select(charge => ToRow(
@@ -397,7 +407,7 @@ public sealed class AccountQueryService : IAccountQueryService
         Movement = ReserveService.ToDto(transaction, _repository.GetPotTransactions())
     };
 
-    private AccountTransactionDTO ToRow(Income income, Account account) => new()
+    private AccountTransactionDTO ToRow(Income income, Account? account) => new()
     {
         Id = income.Id,
         Kind = TransactionKind.Income.ToString(),
@@ -405,8 +415,8 @@ public sealed class AccountQueryService : IAccountQueryService
         Description = income.Description,
         Counterpart = income.IncomeSource.Name,
         Amount = income.NetValue,
-        Currency = account.Currency.ToString(),
-        CanEdit = account.IsActive,
+        Currency = account?.Currency.ToString(),
+        CanEdit = account?.IsActive ?? true,
         Income = IncomeService.ToDto(income, IncomeService.DepositExpensesOf(income.Id, _repository))
     };
 

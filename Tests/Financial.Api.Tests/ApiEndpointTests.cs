@@ -44,6 +44,8 @@ public abstract class ApiEndpointTests : IAsyncLifetime
 
     protected void ReplaceCashFlowDataBeforeStart(string json) => _factory.ReplaceCashFlowData(json);
 
+    protected string SavedCashFlowData() => _factory.ReadCashFlowData();
+
     protected static async Task<string?> ProblemDetailAsync(HttpResponseMessage response) =>
         (await response.Content.ReadFromJsonAsync<ProblemDetails>())!.Detail;
 

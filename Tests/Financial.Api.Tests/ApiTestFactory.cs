@@ -51,6 +51,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
 
     public void ReplaceCashFlowData(string json) => File.WriteAllText(_cashFlowDataFilePath, json);
 
+    public string ReadCashFlowData() => File.ReadAllText(_cashFlowDataFilePath);
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         if (_webRootPath is not null)

@@ -521,6 +521,8 @@ public class AccountQueryServiceTests
         _repository.BalanceAdjustments.Add(BalanceAdjustment.Create(new DateOnly(2026, 10, 25), _barclays, 0m, 15m, "Statement"));
     }
 
+    private Income BanklessIncome() => Income.Create(new DateOnly(2026, 10, 15), _salary, null, 85.20m, null, "XP dividends");
+
     private static AccountTransactionDTO Row(IEnumerable<AccountTransactionDTO> rows, string kind, int day) =>
         rows.Single(row => row.Kind == kind && row.Date.Day == day);
 
@@ -1236,7 +1238,7 @@ public class AccountQueryServiceTests
         _repository.Transfers.AddRange([transfer, payment, creditRefund]);
 
         var rows = _sut.GetMonthTransactions(2026, 10);
-        IEnumerable<(Guid, string, decimal)> SidesOf(Guid id) =>
+        IEnumerable<(Guid?, string, decimal)> SidesOf(Guid id) =>
             rows.Where(row => row.Transaction.Id == id).Select(row => (row.AccountId, row.Transaction.Kind, row.Transaction.Amount));
 
         using (new AssertionScope())
@@ -1245,6 +1247,75 @@ public class AccountQueryServiceTests
             SidesOf(payment.Id).Should().BeEquivalentTo([(_barclays.Id, "CardPayment", -40m), (_amex.Id, "CardPayment", 40m)]);
             SidesOf(creditRefund.Id).Should().BeEquivalentTo([(_amex.Id, "CardCreditRefund", -5m), (_chase.Id, "CardCreditRefund", 5m)]);
         }
+    }
+
+    [Fact]
+    [Trait("AC", "P61-F02-income-tab-and-bankless-income-07")]
+    public void GetMonthTransactions_BanklessIncome_ListedOnceWithNoAccountAndNoCurrency()
+    {
+        SeedEveryRecordKind();
+        var bankless = BanklessIncome();
+        _repository.Incomes.Add(bankless);
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        using (new AssertionScope())
+        {
+            var row = rows.Should().ContainSingle(row => row.Transaction.Id == bankless.Id).Which;
+            row.AccountId.Should().BeNull();
+            row.AccountName.Should().BeNull();
+            row.AccountCurrency.Should().BeNull();
+            row.AccountIsActive.Should().BeTrue();
+            row.Transaction.Kind.Should().Be("Income");
+            row.Transaction.Amount.Should().Be(85.20m);
+            row.Transaction.Currency.Should().BeNull();
+            row.Transaction.CategoryName.Should().BeNull();
+            row.Transaction.Counterpart.Should().Be("Salary");
+            row.Transaction.CanEdit.Should().BeTrue();
+            row.Transaction.Income!.BankId.Should().BeNull();
+            rows.Select(month => month.Transaction.Date).Should().BeInDescendingOrder();
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P61-F02-income-tab-and-bankless-income-07")]
+    public void GetMonthTransactions_BankIncome_ListedOnlyOnItsBank()
+    {
+        SeedEveryRecordKind();
+        var pay = _repository.Incomes.Single();
+
+        var rows = _sut.GetMonthTransactions(2026, 10).Where(row => row.Transaction.Id == pay.Id).ToList();
+
+        using (new AssertionScope())
+        {
+            rows.Should().ContainSingle();
+            rows[0].AccountId.Should().Be(_barclays.Id);
+            rows[0].Transaction.Currency.Should().Be("GBP");
+        }
+    }
+
+    [Fact]
+    [Trait("AC", "P61-F02-income-tab-and-bankless-income-07")]
+    public void GetMonthTransactions_BanklessIncomeOtherMonth_NotListed()
+    {
+        var september = Income.Create(new DateOnly(2026, 9, 30), _salary, null, 10m, null, "September");
+        _repository.Incomes.Add(september);
+
+        var rows = _sut.GetMonthTransactions(2026, 10);
+
+        rows.Should().NotContain(row => row.Transaction.Id == september.Id);
+    }
+
+    [Fact]
+    [Trait("AC", "P61-F02-income-tab-and-bankless-income-07")]
+    public void GetTransactions_Account_NeverListsBanklessIncome()
+    {
+        var bankless = BanklessIncome();
+        _repository.Incomes.Add(bankless);
+
+        var rows = _repository.Accounts.SelectMany(account => _sut.GetTransactions(account.Id, 2026, 10));
+
+        rows.Should().NotContain(row => row.Id == bankless.Id);
     }
 
     [Fact]
