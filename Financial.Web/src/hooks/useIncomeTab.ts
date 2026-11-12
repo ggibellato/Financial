@@ -6,7 +6,7 @@ import { deleteFailedMessage } from '../utils/formatters'
 import { useAsyncResource } from './useAsyncResource'
 import { useConfirmedDelete } from './useConfirmedDelete'
 import { useDiscardPrompt } from './useDiscardPrompt'
-import { useIncomeForm } from './useIncomeForm'
+import { incomeSavedMessage, useIncomeForm } from './useIncomeForm'
 import { useSuccessToast } from './useSuccessToast'
 
 export const INCOMES_LOAD_ERROR = 'Unable to load the incomes.'
@@ -27,7 +27,7 @@ function loadIncomeTab(year: number, month: number): Promise<IncomeTabData> {
     ([incomes, incomeSources, accounts]) => ({
       incomes,
       incomeSources,
-      banks: accounts.filter((account) => account.capabilities.includes('ReceivesIncome')),
+      banks: accounts.filter((account) => account.capabilities.includes('ReceivesIncome')).sort((a, b) => a.name.localeCompare(b.name)),
     }),
   )
 }
@@ -54,7 +54,7 @@ export function useIncomeTab(year: number, month: number) {
   const incomeForm = useIncomeForm(
     incomeSources,
     banks,
-    (_saved, isEdit) => refreshAfter(isEdit ? 'Income updated.' : 'Income added.'),
+    (_saved, isEdit, potsAccountName) => refreshAfter(isEdit ? 'Income updated' : incomeSavedMessage(potsAccountName)),
     { viewedMonth: { year, month }, noBankByDefault: true, onNotFound: () => refreshAfter(null) },
   )
   const discardPrompt = useDiscardPrompt(incomeForm.isIncomeDirty)
@@ -69,7 +69,7 @@ export function useIncomeTab(year: number, month: number) {
 
   const incomeDelete = useConfirmedDelete(removeIncome, () => deleteFailedMessage('income'), (income) => {
     if (incomeForm.editingIncomeId === income.id) incomeForm.cancelIncomeForm()
-    refreshAfter(deletedIncomeWasGone.current ? null : 'Income deleted.')
+    refreshAfter(deletedIncomeWasGone.current ? null : 'Income deleted')
   })
 
   return {
@@ -86,5 +86,6 @@ export function useIncomeTab(year: number, month: number) {
     discardPrompt,
     openCreate: () => discardPrompt.confirmDiscard(incomeForm.showCreateIncomeForm),
     openEdit: (income: IncomeDto) => discardPrompt.confirmDiscard(() => incomeForm.showEditIncomeForm(income)),
+    closeForm: () => discardPrompt.confirmDiscard(incomeForm.cancelIncomeForm),
   }
 }

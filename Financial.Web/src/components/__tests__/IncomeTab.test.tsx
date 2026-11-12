@@ -181,7 +181,7 @@ describe('IncomeTab', () => {
     setField(form, 'Net value', '42.10')
     fireEvent.click(within(form).getByRole('button', { name: 'Add income' }))
 
-    expect(await screen.findByText('Income added.')).toBeInTheDocument()
+    expect(await screen.findByText('Income added')).toBeInTheDocument()
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: null, netValue: 42.1, incomeSourceId: 'dividends' }))
     expect(screen.queryByRole('form', { name: 'New income' })).not.toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
@@ -215,8 +215,20 @@ describe('IncomeTab', () => {
     setField(form, 'Bank', '')
     fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
 
-    expect(await screen.findByText('Income updated.')).toBeInTheDocument()
+    expect(await screen.findByText('Income updated')).toBeInTheDocument()
     expect(updateIncomeMock).toHaveBeenCalledWith('salary', expect.objectContaining({ bankId: null }))
+  })
+
+  it(`${AC('04')} keeps an inactive bank on an income being edited, and does not offer it for a new one`, async () => {
+    getAccountsMock.mockResolvedValue([...ACCOUNTS, account({ id: 'old', name: 'Old bank', isActive: false })])
+    getIncomesByMonthMock.mockResolvedValue([{ ...SALARY, bankId: 'old', bankName: 'Old bank' }])
+    renderTab()
+    await grid()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' }))
+    const form = await screen.findByRole('form', { name: 'Edit income' })
+    expect(field(form, 'Bank')).toHaveValue('old')
+    expect(within(field(form, 'Bank')).getAllByRole('option').map((option) => option.textContent)).toEqual(['— No bank —', 'Barclays', 'Old bank'])
   })
 
   it(`${AC('04')} deletes an income after confirmation, toasting and refreshing the list`, async () => {
@@ -224,10 +236,10 @@ describe('IncomeTab', () => {
     renderTab()
 
     const dialog = await requestDelete('income 15/10/2026 DividendoJuros', 'income')
-    expect(dialog).toHaveTextContent("Delete this income? This can't be undone.")
+    expect(dialog).toHaveTextContent('Delete this income? This cannot be undone.')
     fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
-    expect(await screen.findByText('Income deleted.')).toBeInTheDocument()
+    expect(await screen.findByText('Income deleted')).toBeInTheDocument()
     expect(deleteIncomeMock).toHaveBeenCalledExactlyOnceWith('dividends-1')
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
@@ -238,7 +250,7 @@ describe('IncomeTab', () => {
 
     const dialog = await requestDelete('income 28/10/2026 Gleison', 'income')
 
-    expect(dialog).toHaveTextContent("Delete this income? Its pots deposit is deleted with it. This can't be undone.")
+    expect(dialog).toHaveTextContent('Delete this income? Its Pots deposit is deleted with it. This cannot be undone.')
   })
 
   it(`${AC('05')} asks for a bank before splitting to pots and sends nothing`, async () => {
@@ -286,6 +298,10 @@ describe('IncomeTab', () => {
     expect(await screen.findByText('This income no longer exists; the list was refreshed.')).toBeInTheDocument()
     expect(screen.queryByRole('form', { name: 'Edit income' })).not.toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss warning' }))
+    expect(screen.queryByText('This income no longer exists; the list was refreshed.')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New income' })).toHaveFocus()
   })
 
   it(`${AC('06')} closes the dialog, refreshes and warns when the deleted income no longer exists`, async () => {
@@ -295,7 +311,7 @@ describe('IncomeTab', () => {
     await confirmDelete('income 15/10/2026 DividendoJuros', 'income')
 
     expect(await screen.findByText('This income no longer exists; the list was refreshed.')).toBeInTheDocument()
-    expect(screen.queryByText('Income deleted.')).not.toBeInTheDocument()
+    expect(screen.queryByText('Income deleted')).not.toBeInTheDocument()
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
 
@@ -339,7 +355,7 @@ describe('IncomeTab', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'New income' })).toHaveFocus())
   })
 
-  it(`${AC('09')} names every row icon after its income and marks the others while one deletes`, async () => {
+  it(`${AC('09')} names every row icon after its income and blocks the others while one deletes`, async () => {
     deleteIncomeMock.mockReturnValue(never())
     renderTab()
 
@@ -348,6 +364,19 @@ describe('IncomeTab', () => {
     expect(await screen.findByRole('button', { name: 'Deleting income 15/10/2026 DividendoJuros' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete income 28/10/2026 Gleison' })).toHaveAccessibleDescription('Another delete is in progress.')
+    expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeDisabled()
+  })
+
+  it(`${AC('09')} blocks Delete with a reason and disables Edit while a save is in flight`, async () => {
+    updateIncomeMock.mockReturnValue(never())
+    renderTab()
+    await grid()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' }))
+    fireEvent.click(within(await screen.findByRole('form', { name: 'Edit income' })).getByRole('button', { name: 'Save' }))
+
+    expect(await screen.findByRole('button', { name: 'Edit income 15/10/2026 DividendoJuros' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Delete income 15/10/2026 DividendoJuros' })).toHaveAccessibleDescription('Wait for the save to finish.')
   })
 
   it(`${AC('09')} moves focus to the first field on open and back to New income on Cancel`, async () => {
@@ -358,6 +387,21 @@ describe('IncomeTab', () => {
     fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New income' })).toHaveFocus())
+  })
+
+  it('asks before discarding unsaved changes on Cancel, and closes at once with none', async () => {
+    renderTab()
+
+    const form = await openNewIncome()
+    setField(form, 'Net value', '12')
+    fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+    const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
+    fireEvent.click(within(prompt).getByRole('button', { name: 'Keep editing' }))
+    expect(field(form, 'Net value')).toHaveValue(12)
+
+    setField(form, 'Net value', '')
+    fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+    expect(screen.queryByRole('form', { name: 'New income' })).not.toBeInTheDocument()
   })
 
   it('asks before discarding unsaved changes when another income is opened', async () => {

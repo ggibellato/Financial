@@ -61,13 +61,16 @@ interface Column {
 const NO_BANK = 'No bank'
 const GRID_LABEL = 'Incomes'
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
+const SAVE_IN_PROGRESS = 'Wait for the save to finish.'
+
+const SOURCE_HEADER = 'Source'
 
 const sourceName = (income: IncomeDto) => income.incomeSourceName
 const bankName = (income: IncomeDto) => income.bankName ?? NO_BANK
 
 const COLUMNS: Column[] = [
   { key: 'date', header: 'Date', accessor: (income) => income.date },
-  { key: 'source', header: 'Source', accessor: sourceName },
+  { key: 'source', header: SOURCE_HEADER, accessor: sourceName },
   { key: 'bank', header: 'Bank', accessor: bankName },
   { key: 'description', header: 'Description', accessor: (income) => income.description },
   { key: 'gross', header: 'Gross', numeric: true, accessor: (income) => income.grossValue },
@@ -84,8 +87,8 @@ const itemName = (income: IncomeDto) => `income ${formatShortDateUtc(income.date
 
 function deleteMessage(income: IncomeDto | null): string {
   return income?.hasLinkedDeposit
-    ? "Delete this income? Its pots deposit is deleted with it. This can't be undone."
-    : "Delete this income? This can't be undone."
+    ? 'Delete this income? Its Pots deposit is deleted with it. This cannot be undone.'
+    : 'Delete this income? This cannot be undone.'
 }
 
 function renderCell(column: Column, income: IncomeDto): ReactNode {
@@ -126,6 +129,7 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
     discardPrompt,
     openCreate: openCreateForm,
     openEdit: openEditForm,
+    closeForm,
   } = useIncomeTab(year, month)
   const sectionRef = useRef<HTMLElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
@@ -162,9 +166,14 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
     openEditForm(income)
   }
 
+  const dismissWarning = () => {
+    dismissGoneNotice()
+    newIncomeRef.current?.focus()
+  }
+
   const clearAllFilters = () => {
     clearFilters()
-    sectionRef.current?.querySelector<HTMLButtonElement>('button[aria-label="Filter by Source"]')?.focus()
+    sectionRef.current?.querySelector<HTMLButtonElement>(`button[aria-label="Filter by ${SOURCE_HEADER}"]`)?.focus()
   }
 
   const renderMessage = (message: string) => (
@@ -200,7 +209,8 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
         ))}
         <RowActionsCell
           itemName={itemName(income)}
-          editDisabled={incomeForm.isSavingIncome}
+          editDisabled={incomeForm.isSavingIncome || incomeDelete.isDeleting}
+          deleteBlockedReason={incomeForm.isSavingIncome ? SAVE_IN_PROGRESS : undefined}
           isDeleting={incomeDelete.isDeleting && incomeDelete.target?.id === income.id}
           isOtherDeleting={incomeDelete.isDeleting && incomeDelete.target?.id !== income.id}
           onEdit={(button) => openEdit(income, button)}
@@ -216,13 +226,17 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
         <Button ref={newIncomeRef} appearance="primary" icon={<AddRegular />} onClick={(event) => openCreate(event.currentTarget)}>
           New income
         </Button>
-        {isFiltered && !isStackedLayout && <Button onClick={clearAllFilters}>Clear filters</Button>}
+        {isFiltered && !isStackedLayout && (
+          <Button appearance="primary" onClick={clearAllFilters}>
+            Clear filters
+          </Button>
+        )}
       </div>
       {isGoneNoticeShown && (
         <MessageBar intent="warning">
           <MessageBarBody>{INCOME_GONE_WARNING}</MessageBarBody>
           <MessageBarActions
-            containerAction={<Button appearance="transparent" aria-label="Dismiss" icon={<DismissRegular />} onClick={dismissGoneNotice} />}
+            containerAction={<Button appearance="transparent" aria-label="Dismiss warning" icon={<DismissRegular />} onClick={dismissWarning} />}
           />
         </MessageBar>
       )}
@@ -250,7 +264,7 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
             saveErrorFields={incomeForm.saveIncomeErrorFields}
             onFieldChange={incomeForm.setIncomeField}
             onSave={incomeForm.submitIncome}
-            onCancel={incomeForm.cancelIncomeForm}
+            onCancel={closeForm}
           />
         </div>
       )}

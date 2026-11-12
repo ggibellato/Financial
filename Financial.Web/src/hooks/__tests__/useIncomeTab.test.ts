@@ -85,7 +85,7 @@ describe('useIncomeTab', () => {
     act(() => result.current.incomeDelete.request(INCOME))
     act(() => result.current.incomeDelete.confirm())
 
-    await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted.'))
+    await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted'))
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
     expect(result.current.isGoneNoticeShown).toBe(false)
   })

@@ -32,6 +32,10 @@ const SOURCE_KEY = 'income.incomeSource'
 
 export const SPLIT_CONFIRMATION_DELAY_MS = 4000
 
+export function incomeSavedMessage(potsAccountName: string | null): string {
+  return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
+}
+
 /** Matches the previous hardcoded INCOME_SOURCES array's declaration order. Names outside this
  * list (unexpected but not invalid) sort last rather than being dropped or erroring. */
 const INCOME_SOURCE_DISPLAY_ORDER = ['Gleison', 'Ariana', 'Lottery', 'DividendoJuros']
