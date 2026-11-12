@@ -251,18 +251,18 @@ Every criterion is traced by tests named with the project's AC-tracing conventio
 - [x] The data file version is unchanged and a file with bankless incomes loads and saves unchanged; parity on the latest live copy: 0 differences
 
 ### F03. Tithe Tab and History
-- [ ] The Tithe tab shows, for the chosen month, Income base, Tithe (10%), Tithe paid, Carry-in with its source month, and Balance, matching the existing month tithe calculation
-- [ ] The carry-forward checkbox works on the Tithe tab as it did on Monthly (persists only the decision, refreshes Balance and the history); it is hidden when there is no carry-in; a failed update reverts it with the specified message
-- [ ] The history shows 12 rows (January to December of the chosen month's year), each equal to that month's detail; the current month is marked; the footer totals Income base, Tithe and Tithe paid; clicking a month selects it
-- [ ] The year route returns 12 items in one request, each equal to the month route for that month; the month route gains `incomeBase` and `tithePaid`; the OpenAPI snapshot and generated types are regenerated
-- [ ] Summary no longer shows tithe lines or the checkbox
-- [ ] Loading, empty-month, separate detail and history error states pass the review checklist; the history is a captioned table; Balance's meaning is not colour-only
-- [ ] The E2E smoke journey (add a bankless income on Income, check the Tithe tab's base and tithe) passes in the `web-e2e` job
-- [ ] `context.md`, README and `docs/ui/` references to the Monthly page describe the Accounts tabs; parity on the latest live copy: 0 differences
+- [x] The Tithe tab shows, for the chosen month, Income base, Tithe (10%), Tithe paid, Carry-in with its source month, and Balance, matching the existing month tithe calculation
+- [x] The carry-forward checkbox works on the Tithe tab as it did on Monthly (persists only the decision, refreshes Balance and the history); it is hidden when there is no carry-in; a failed update reverts it with the specified message
+- [x] The history shows 12 rows (January to December of the chosen month's year), each equal to that month's detail; the current month is marked; the footer totals Income base, Tithe and Tithe paid; clicking a month selects it
+- [x] The year route returns 12 items in one request, each equal to the month route for that month; the month route gains `incomeBase` and `tithePaid`; the OpenAPI snapshot and generated types are regenerated
+- [x] Summary no longer shows tithe lines or the checkbox
+- [x] Loading, empty-month, separate detail and history error states pass the review checklist; the history is a captioned table; Balance's meaning is not colour-only
+- [x] The E2E smoke journey (add a bankless income on Income, check the Tithe tab's base and tithe) passes in the `web-e2e` job
+- [x] `context.md`, README and `docs/ui/` references to the Monthly page describe the Accounts tabs; parity on the latest live copy: 0 differences
 
 ### Cross-Feature Integration
-- [ ] The Income tab (F02) and Tithe tab (F03) appear in the F01 tab list in the fixed order Accounts · Summary · Income · Tithe · All transactions, use F01's month picker and address, and load only when open
+- [x] The Income tab (F02) and Tithe tab (F03) appear in the F01 tab list in the fixed order Accounts · Summary · Income · Tithe · All transactions, use F01's month picker and address, and load only when open
 - [x] A bankless income saved on the Income tab (F02) appears in All transactions on the same Accounts page (F01) for its month
-- [ ] A bankless income saved on the Income tab (F02) raises the Tithe tab's (F03) Income base by its net value and Tithe by 10% of it for its month, and the same month's history row
-- [ ] The carry-forward checkbox is reachable at every point: on Summary (F01) until F03 ships, then only on the Tithe tab (F03)
-- [ ] After every feature, every figure the parity toolkit reads (incomes, tithe, category totals, default group summary, by-template groups, month transactions, account figures) shows 0 differences on the latest live copy, with no data file version change
+- [x] A bankless income saved on the Income tab (F02) raises the Tithe tab's (F03) Income base by its net value and Tithe by 10% of it for its month, and the same month's history row
+- [x] The carry-forward checkbox is reachable at every point: on Summary (F01) until F03 ships, then only on the Tithe tab (F03)
+- [x] After every feature, every figure the parity toolkit reads (incomes, tithe, category totals, default group summary, by-template groups, month transactions, account figures) shows 0 differences on the latest live copy, with no data file version change
