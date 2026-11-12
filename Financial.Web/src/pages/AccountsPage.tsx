@@ -1,17 +1,19 @@
 import type { ReactNode } from 'react'
-import { Badge, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
+import { Badge, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components'
 import { Link, useLocation } from 'react-router-dom'
 import type { AccountGroupMemberDto } from '../api/types'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import TotalsGrid from '../components/TotalsGrid'
 import { ACCOUNTS_LOAD_ERROR, useAccountTemplateGroups } from '../hooks/useAccountTemplateGroups'
+import { useOverviewAddress } from '../hooks/useOverviewAddress'
 import { type AccountGridColumns, accountTemplateGrid } from '../utils/accountTemplateLabel'
-import { currentYearMonth, formatLongMonthYear, formatMonthInputValue, formatMonthYear, formatN2 } from '../utils/formatters'
+import { formatLongMonthYear, formatMonthYear, formatN2 } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import { formatLabelledBalance, formatOwedOrCredit } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
 import MissingValue from '../components/MissingValue'
+import './AccountsOverview.css'
 import './AccountsPage.css'
 
 function nameColumn(renderName: (row: AccountGroupMemberDto) => ReactNode) {
@@ -83,8 +85,7 @@ function gridColumns(columns: AccountGridColumns, renderName: (row: AccountGroup
 }
 
 export default function AccountsPage() {
-  const { year, month } = currentYearMonth()
-  const monthParam = formatMonthInputValue(year, month)
+  const { year, month, monthInputValue: monthParam, setMonthInputValue } = useOverviewAddress()
   const { data: groups, isLoading, error, retry } = useAccountTemplateGroups(year, month)
   const { state } = useLocation()
   const showMovedNotice = (state as { movedNotice?: boolean } | null)?.movedNotice === true
@@ -96,6 +97,11 @@ export default function AccountsPage() {
           <MessageBarBody>That page moved to the account screen.</MessageBarBody>
         </MessageBar>
       )}
+      <div className="monthly-page__header">
+        <Field label="Month">
+          <Input type="month" value={monthParam} onChange={(_event, data) => setMonthInputValue(data.value)} />
+        </Field>
+      </div>
       <Text>Balances at end of {formatLongMonthYear(year, month)}</Text>
 
       {isLoading ? (

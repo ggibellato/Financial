@@ -97,6 +97,14 @@ function renderPage() {
   )
 }
 
+function renderPageAt(entry: string) {
+  return render(
+    <MemoryRouter initialEntries={[entry]}>
+      <AccountsPage />
+    </MemoryRouter>,
+  )
+}
+
 function renderPageAfterMovedRedirect() {
   return render(
     <MemoryRouter initialEntries={[{ pathname: '/cashflow/accounts', state: { movedNotice: true } }]}>
@@ -330,6 +338,53 @@ describe('AccountsPage', () => {
 
     expect(await screen.findByText('No accounts this month.')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] shows the month picker on the current month', async () => {
+    renderPage()
+
+    expect(screen.getByLabelText('Month')).toHaveValue('2026-10')
+    expect(await screen.findByText('Balances at end of October 2026')).toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01] opens on the month in the address', async () => {
+    renderPageAt('/cashflow/accounts?month=2026-09')
+    expect(await screen.findByText('Balances at end of September 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 9)
+  })
+
+  it('opens on the current month when the address month is malformed', async () => {
+    renderPageAt('/cashflow/accounts?month=september')
+
+    expect(await screen.findByText('Balances at end of October 2026')).toBeInTheDocument()
+    expect(screen.getByLabelText('Month')).toHaveValue('2026-10')
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledWith(2026, 10)
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-02] shows the groups, heading and links for the chosen month', async () => {
+    renderPage()
+    await screen.findByRole('table', { name: 'Banks' })
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '2026-08' } })
+
+    expect(await screen.findByText('Balances at end of August 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 8)
+    const banks = await screen.findByRole('table', { name: 'Banks' })
+    expect(within(banks).getByRole('link', { name: 'Barclays' })).toHaveAttribute('href', '/cashflow/accounts/barclays?month=2026-08')
+    expect(within(screen.getByRole('table', { name: 'Pots' })).getByRole('link', { name: 'Reserva' })).toHaveAttribute(
+      'href',
+      '/cashflow/accounts/reserva?month=2026-08&tab=pots',
+    )
+  })
+
+  it('keeps the chosen month when the picker is cleared', async () => {
+    renderPageAt('/cashflow/accounts?month=2026-09')
+    await screen.findByRole('table', { name: 'Banks' })
+
+    fireEvent.change(screen.getByLabelText('Month'), { target: { value: '' } })
+
+    expect(screen.getByText('Balances at end of September 2026')).toBeInTheDocument()
+    expect(getAccountTemplateGroupsMock).toHaveBeenCalledTimes(1)
   })
 
   it('opens the account screen when a row link is followed', async () => {
