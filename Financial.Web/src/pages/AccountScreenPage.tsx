@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Button, MessageBar, MessageBarActions, MessageBarBody, Skeleton, SkeletonItem, Spinner, Tab, Text } from '@fluentui/react-components'
 import { Link, useNavigate } from 'react-router-dom'
+import type { AccountTransactionDto } from '../api/types'
 import PageTabList from '../components/PageTabList'
 import { useTabPanel } from '../hooks/useTabPanel'
 import AccountActionBar from '../components/AccountActionBar'
@@ -29,7 +30,6 @@ import { useAccountActionForms } from '../hooks/useAccountActionForms'
 import { FORM_OPTIONS_LOAD_ERROR, useAccountFormOptions } from '../hooks/useAccountFormOptions'
 import { useAccountRowDelete } from '../hooks/useAccountRowDelete'
 import { ACCOUNT_LOAD_ERROR, useAccountScreen, type AccountScreenTab } from '../hooks/useAccountScreen'
-import type { AccountTransactionDto } from '../api/types'
 import { useCardStatements } from '../hooks/useCardStatements'
 import { OPERATION_LOAD_ERROR, OPERATION_NOT_FOUND, useOperationRoute } from '../hooks/useOperationRoute'
 import { POTS_LOAD_ERROR, usePots } from '../hooks/usePots'
@@ -40,7 +40,7 @@ import { settlementCounterparty } from '../utils/settlementBalance'
 import './AccountScreenPage.css'
 
 const FORM_AREA_ID = 'account-screen-form'
-const EDITED_ROW_NOT_FOUND = 'This transaction is no longer in this month.'
+const EDITED_ROW_UNAVAILABLE = 'This transaction is no longer in this month or can no longer be edited.'
 
 export default function AccountScreenPage() {
   const screen = useAccountScreen()
@@ -120,8 +120,9 @@ export default function AccountScreenPage() {
     rows: screen.transactions,
     keyOf: rowKey,
     isLoaded: isAccountCurrent && !screen.isLoading,
-    isEditDisabled: (row) => row.canEdit && isRowEditDisabled(row),
-    open: (row) => row.canEdit && openRowEdit(row, null),
+    isEditable: (row) => row.canEdit,
+    isEditDisabled: isRowEditDisabled,
+    open: (row) => openRowEdit(row, null),
   })
   const transactionsHeadingRef = useRef<HTMLHeadingElement | null>(null)
   const rowDelete = useAccountRowDelete((row) => {
@@ -209,9 +210,9 @@ export default function AccountScreenPage() {
           </div>
         )}
         {operationRoute.error && <ErrorState message={OPERATION_LOAD_ERROR} onRetry={operationRoute.retry} />}
-        {(operationRoute.isNotFound || rowEditRoute.isNotFound) && (
+        {(operationRoute.isNotFound || rowEditRoute.isUnavailable) && (
           <MessageBar role="alert" intent="error">
-            <MessageBarBody>{operationRoute.isNotFound ? OPERATION_NOT_FOUND : EDITED_ROW_NOT_FOUND}</MessageBarBody>
+            <MessageBarBody>{operationRoute.isNotFound ? OPERATION_NOT_FOUND : EDITED_ROW_UNAVAILABLE}</MessageBarBody>
             <MessageBarActions>
               <Button
                 appearance="primary"

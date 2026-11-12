@@ -253,11 +253,11 @@ describe('IncomeTab', () => {
   it('says when the edit address names an income the month no longer has, and dismissing drops it', async () => {
     renderTab('/cashflow/accounts?month=2026-10&tab=income&edit=gone')
 
-    expect(await screen.findByText('This income no longer exists.')).toBeInTheDocument()
+    expect(await screen.findByText('This income is no longer in this month.')).toBeInTheDocument()
     expect(screen.queryByRole('form', { name: 'Edit income' })).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss warning' }))
 
-    expect(screen.queryByText('This income no longer exists.')).not.toBeInTheDocument()
+    expect(screen.queryByText('This income is no longer in this month.')).not.toBeInTheDocument()
     expect(screen.getByText('search:?month=2026-10&tab=income')).toBeInTheDocument()
   })
 

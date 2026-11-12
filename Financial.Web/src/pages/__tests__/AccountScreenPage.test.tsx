@@ -2088,10 +2088,18 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     expect(screen.queryByRole('heading', { name: 'Edit expense' })).not.toBeInTheDocument()
   })
 
+  it('says when the edit address names a row that can no longer be edited, opening nothing', async () => {
+    getAccountTransactionsMock.mockResolvedValue(ROWS.map((row) => (row.id === 't1' ? { ...row, canEdit: false } : row)))
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&edit=TransferOut-t1`)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('This transaction is no longer in this month or can no longer be edited.')
+    expect(screen.queryByRole('heading', { name: 'Edit transfer' })).not.toBeInTheDocument()
+  })
+
   it('says when the edit address names a row the month no longer has, and Dismiss drops it', async () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&edit=Expense-gone`)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('This transaction is no longer in this month.')
+    expect(await screen.findByRole('alert')).toHaveTextContent('This transaction is no longer in this month or can no longer be edited.')
     fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
 
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())

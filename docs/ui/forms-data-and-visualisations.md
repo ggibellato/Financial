@@ -395,9 +395,11 @@ Statements tab, and pot-operation rows open the deposit or withdrawal, in
 place or on its Pots account). A Delete that cannot run here stays focusable
 but inert, with a tooltip that says where to do it (the `RowActionsCell`
 `deleteBlockedReason` prop): for example "Unmark the statement to remove this
-payment." or "Delete it from the pots account." An Edit that cannot run
-anywhere works the same way (the `editBlockedReason` prop), for example "Edit
-it from the income.".
+payment." or "Delete it from the pots account." In
+`MonthTransactionsGrid.tsx` an Edit that cannot run anywhere works the same way
+(the `editBlockedReason` prop), for example "Edit from the income."; the
+account screen keeps the older split-income text exception above until both
+grids share one row rule.
 
 A grid that lists rows owned by several screens edits each row where it
 lives and deletes it in place. `MonthTransactionsGrid.tsx` (the Accounts

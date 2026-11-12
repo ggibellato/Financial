@@ -7,15 +7,17 @@ interface RowEditRoute<T> {
   rows: readonly T[]
   keyOf: (row: T) => string
   isLoaded: boolean
+  isEditable?: (row: T) => boolean
   isEditDisabled?: (row: T) => boolean
   open: (row: T) => void
 }
 
-export function useRowEditRoute<T>({ rows, keyOf, isLoaded, isEditDisabled, open }: RowEditRoute<T>) {
+export function useRowEditRoute<T>({ rows, keyOf, isLoaded, isEditable = () => true, isEditDisabled, open }: RowEditRoute<T>) {
   const [searchParams, setSearchParams] = useSearchParams()
   const editedKey = searchParams.get(EDIT_PARAM)
   const handledKey = useRef<string | null>(null)
-  const row = editedKey === null ? undefined : rows.find((candidate) => keyOf(candidate) === editedKey)
+  const found = editedKey === null ? undefined : rows.find((candidate) => keyOf(candidate) === editedKey)
+  const row = found && isEditable(found) ? found : undefined
 
   const clear = useCallback(
     () =>
@@ -41,5 +43,5 @@ export function useRowEditRoute<T>({ rows, keyOf, isLoaded, isEditDisabled, open
     open(row)
   })
 
-  return { isNotFound: editedKey !== null && isLoaded && !row, dismiss: clear }
+  return { isUnavailable: editedKey !== null && isLoaded && !row, dismiss: clear }
 }

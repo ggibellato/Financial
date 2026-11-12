@@ -63,7 +63,7 @@ const NO_BANK = 'No bank'
 const GRID_LABEL = 'Incomes'
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const SAVE_IN_PROGRESS = 'Wait for the save to finish.'
-const EDITED_INCOME_NOT_FOUND = 'This income no longer exists.'
+const EDITED_INCOME_NOT_FOUND = 'This income is no longer in this month.'
 
 const SOURCE_HEADER = 'Source'
 
@@ -237,7 +237,7 @@ export default function IncomeTab({ year, month }: IncomeTabProps) {
           </Button>
         )}
       </div>
-      {(isGoneNoticeShown || editRoute.isNotFound) && (
+      {(isGoneNoticeShown || editRoute.isUnavailable) && (
         <MessageBar intent="warning">
           <MessageBarBody>{isGoneNoticeShown ? INCOME_GONE_WARNING : EDITED_INCOME_NOT_FOUND}</MessageBarBody>
           <MessageBarActions
