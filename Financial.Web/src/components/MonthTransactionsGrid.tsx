@@ -126,7 +126,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'kind':
         return typeLabel(row)
       case 'description':
-        return transaction.operation && row.accountId ? (
+        return transaction.operation && row.accountId != null ? (
           <TruncatedText text={transaction.description || BLANK_OPERATION_DESCRIPTION} to={operationPath(transaction.operation, row.accountId)} />
         ) : (
           <TruncatedText text={transaction.description} />
@@ -134,7 +134,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
       case 'category':
         return <TruncatedText text={transaction.categoryName} />
       default:
-        return transaction.currency ? `${formatSignedN2(transaction.amount)} ${transaction.currency}` : formatSignedN2(transaction.amount)
+        return `${formatSignedN2(transaction.amount)} ${transaction.currency ?? ''}`.trimEnd()
     }
   }
 
@@ -245,19 +245,12 @@ function MonthTransactionsFooter({ rows, allRowCount, isFiltered, showsSpend }: 
         </>
       )}
       {allRowCount === 1 ? ' row' : ' rows'}
-      {totals.map(({ currency, total }) =>
-        currency ? (
-          <span key={`total-${currency}`}>
-            {' · Total '}
-            <strong>{formatSignedN2(total)}</strong> {currency}
-          </span>
-        ) : (
-          <span key="total-no-bank">
-            {` · ${NO_BANK} `}
-            <strong>{formatSignedN2(total)}</strong>
-          </span>
-        ),
-      )}
+      {totals.map(({ currency, total }) => (
+        <span key={`total-${currency ?? NO_BANK}`}>
+          {` · ${currency ? 'Total' : NO_BANK} `}
+          <strong>{formatSignedN2(total)}</strong> {currency}
+        </span>
+      ))}
       {showsSpend &&
         totals.filter(({ currency }) => currency).map(({ currency, spend }) => (
           <span key={`spend-${currency}`}>

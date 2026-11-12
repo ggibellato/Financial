@@ -152,7 +152,7 @@ public sealed class AccountQueryService : IAccountQueryService
             var result = _repository.GetAccounts()
                 .OrderBy(account => account.Name, StringComparer.OrdinalIgnoreCase)
                 .SelectMany(account => RowsOf(account, records).Select(row => ToMonthRow(account, row)))
-                .Concat(records.Records.OfType<Income>().Where(income => income.Account is null).Select(ToBanklessRow))
+                .Concat(records.Records.OfType<Income>().Where(income => income.Account is null).Select(income => ToMonthRow(account: null, ToRow(income, account: null))))
                 .OrderByDescending(row => row.Transaction.Date)
                 .ToList();
 
@@ -303,22 +303,13 @@ public sealed class AccountQueryService : IAccountQueryService
             .SelectMany(record => ToRows(record, account, month.Statements))
             .Concat(account.Has(Capability.HasStatements) ? CardChargeRows(account, month) : []);
 
-    private static MonthTransactionDTO ToMonthRow(Account account, AccountTransactionDTO row) => new()
+    private static MonthTransactionDTO ToMonthRow(Account? account, AccountTransactionDTO row) => new()
     {
-        AccountId = account.Id,
-        AccountName = account.Name,
-        AccountCurrency = account.Currency.ToString(),
-        AccountIsActive = account.IsActive,
+        AccountId = account?.Id,
+        AccountName = account?.Name,
+        AccountCurrency = account?.Currency.ToString(),
+        AccountIsActive = account?.IsActive ?? true,
         Transaction = row
-    };
-
-    private MonthTransactionDTO ToBanklessRow(Income income) => new()
-    {
-        AccountId = null,
-        AccountName = null,
-        AccountCurrency = null,
-        AccountIsActive = true,
-        Transaction = ToRow(income, account: null)
     };
 
     private IEnumerable<AccountTransactionDTO> CardChargeRows(Account card, MonthRecords month) =>
