@@ -450,7 +450,7 @@ export default function AccountScreenPage() {
               isEditDisabled={isRowEditDisabled}
               onEdit={openRowEdit}
               onDelete={rowDelete.requestDelete}
-              canDeleteCreditRefunds={isAccountActive}
+              accountIsActive={isAccountActive}
               onMove={isCard ? openRowMove : undefined}
               isMoveDisabled={!isAccountCurrent}
               onOpenStatement={(path) => guardChange(() => navigate(path))}

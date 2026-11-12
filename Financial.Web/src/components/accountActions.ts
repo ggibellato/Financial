@@ -160,6 +160,7 @@ const INACTIVE_ACCOUNT_REASON = 'This account is inactive, so its rows cannot be
 const INCOME_LINE_EDIT_REASON = 'Edit from the income.'
 const CREDIT_REFUND_EDIT_REASON = 'A credit refund cannot be edited. Delete it and refund the credit again.'
 const PAID_STATEMENT_REASON = 'Its card statement is paid. Unmark the statement to change it.'
+const READ_ONLY_REASON = 'This row cannot be changed here.'
 const INCOME_DEPOSIT_DELETE_REASON = 'Delete the income to remove this deposit.'
 const OTHER_SCREEN_OPERATION_DELETE_REASON = 'Delete it from the pots account.'
 
@@ -201,33 +202,58 @@ export function shownDescription(row: AccountTransactionDto): string | null {
 export function transactionRowName(row: AccountTransactionDto, withdrawalIds: Set<string>): string {
   const kind = row.operation ? operationNoun(row.operation, withdrawalIds) : recordNoun(row.kind)
   const description = shownDescription(row)
-  return `${description ? `${kind} ${description}` : kind}, ${formatShortDateUtc(row.date)}`
+  const pot = row.kind === 'PotTransaction' ? row.counterpart : null
+  return [description ? `${kind} ${description}` : kind, pot, formatShortDateUtc(row.date)].filter(Boolean).join(', ')
 }
 
-interface MonthRowEdit {
-  path?: string
-  blockedReason?: string
+export type RowEdit =
+  | { kind: 'record' }
+  | { kind: 'statement'; statement: AccountTransactionStatementDto }
+  | { kind: 'operation'; operation: AccountTransactionOperationDto }
+  | { kind: 'blocked'; reason: string }
+
+export function rowEdit(row: AccountTransactionDto, accountId: string | null, accountIsActive: boolean): RowEdit {
+  if (row.statement) return { kind: 'statement', statement: row.statement }
+  if (row.operation && accountId) return { kind: 'operation', operation: row.operation }
+  if (row.canEdit) return { kind: 'record' }
+  if (!accountIsActive) return { kind: 'blocked', reason: INACTIVE_ACCOUNT_REASON }
+  if (isOlderIncomeLine(row)) return { kind: 'blocked', reason: INCOME_LINE_EDIT_REASON }
+  if (isCreditRefund(row)) return { kind: 'blocked', reason: CREDIT_REFUND_EDIT_REASON }
+  return { kind: 'blocked', reason: readOnlyReason(row) }
 }
 
-export function monthRowEdit({ accountId, accountIsActive, transaction: row }: MonthTransactionDto, month: string): MonthRowEdit {
-  if (row.statement) return { path: statementPath(row.statement) }
-  if (row.operation && accountId) return { path: operationPath(row.operation, accountId) }
-  if (row.canEdit) {
-    return {
-      path: accountId
-        ? `/cashflow/accounts/${accountId}?month=${month}&tab=transactions&edit=${rowKey(row)}`
-        : `/cashflow/accounts?month=${month}&tab=income&edit=${row.id}`,
-    }
-  }
-  if (!accountIsActive) return { blockedReason: INACTIVE_ACCOUNT_REASON }
-  if (isOlderIncomeLine(row)) return { blockedReason: INCOME_LINE_EDIT_REASON }
-  return { blockedReason: isCreditRefund(row) ? CREDIT_REFUND_EDIT_REASON : PAID_STATEMENT_REASON }
+function readOnlyReason(row: AccountTransactionDto): string {
+  return canMoveToStatement(row) ? PAID_STATEMENT_REASON : READ_ONLY_REASON
 }
 
-export function monthRowDeleteBlockedReason({ accountId, accountIsActive, transaction: row }: MonthTransactionDto): string | undefined {
+export function rowDeleteBlockedReason(row: AccountTransactionDto, accountId: string | null, accountIsActive: boolean): string | undefined {
   if (row.statement) return STATEMENT_PAYMENT_DELETE_REASON
   if (row.operation && accountId) return operationDeleteBlockedReason(row.operation, accountId)
   if (!accountIsActive) return INACTIVE_ACCOUNT_REASON
   if (row.canEdit || isCreditRefund(row)) return undefined
-  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : PAID_STATEMENT_REASON
+  return isOlderIncomeLine(row) ? INCOME_DEPOSIT_DELETE_REASON : readOnlyReason(row)
+}
+
+function monthRowEditPath(row: AccountTransactionDto, accountId: string | null, month: string): string {
+  return accountId
+    ? `/cashflow/accounts/${accountId}?month=${month}&tab=transactions&edit=${rowKey(row)}`
+    : `/cashflow/accounts?month=${month}&tab=income&edit=${row.id}`
+}
+
+export function monthRowEdit({ accountId, accountIsActive, transaction: row }: MonthTransactionDto, month: string): { path?: string; blockedReason?: string } {
+  const edit = rowEdit(row, accountId, accountIsActive)
+  switch (edit.kind) {
+    case 'statement':
+      return { path: statementPath(edit.statement) }
+    case 'operation':
+      return { path: operationPath(edit.operation, accountId ?? '') }
+    case 'record':
+      return { path: monthRowEditPath(row, accountId, month) }
+    default:
+      return { blockedReason: edit.reason }
+  }
+}
+
+export function monthRowDeleteBlockedReason({ accountId, accountIsActive, transaction }: MonthTransactionDto): string | undefined {
+  return rowDeleteBlockedReason(transaction, accountId, accountIsActive)
 }

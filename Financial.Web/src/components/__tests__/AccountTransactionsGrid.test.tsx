@@ -36,25 +36,35 @@ describe('AccountTransactionsGrid', () => {
 
     it('[AC P60-F15-card-refunds-and-credit-05] offers only Delete on an active screen account', () => {
       const onDelete = vi.fn()
-      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} onEdit={vi.fn()} onDelete={onDelete} onMove={vi.fn()} canDeleteCreditRefunds />)
+      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} onEdit={vi.fn()} onDelete={onDelete} onMove={vi.fn()} />)
 
       const [row] = bodyRows()
-      expect(within(row).getAllByRole('button')).toHaveLength(1)
+      const edit = within(row).getByRole('button', { name: /^Edit credit refund\b/ })
+      expect(edit).toHaveAttribute('aria-disabled', 'true')
+      expect(edit).toHaveAccessibleDescription('A credit refund cannot be edited. Delete it and refund the credit again.')
+      expect(within(row).queryByRole('button', { name: /^Move\b/ })).not.toBeInTheDocument()
       fireEvent.click(within(row).getByRole('button', { name: /^Delete credit refund\b/ }))
       expect(onDelete).toHaveBeenCalledWith(CREDIT_REFUND)
     })
 
-    it('offers nothing when the screen account is inactive', () => {
-      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} canDeleteCreditRefunds={false} />)
+    it('blocks both actions, saying why, when the screen account is inactive', () => {
+      render(<AccountTransactionsGrid accountId="card-1" transactions={[CREDIT_REFUND]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} accountIsActive={false} />)
 
-      expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+      for (const button of within(bodyRows()[0]).getAllByRole('button')) {
+        expect(button).toHaveAttribute('aria-disabled', 'true')
+        expect(button).toHaveAccessibleDescription('This account is inactive, so its rows cannot be changed.')
+      }
     })
 
-    it('gives other read-only rows no Delete', () => {
+    it('sends a charge on a paid statement to its statement, with both actions blocked', () => {
       const charge = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Amazon', amount: -60, canEdit: false })
-      render(<AccountTransactionsGrid accountId="bank-1" transactions={[charge]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} canDeleteCreditRefunds />)
+      render(<AccountTransactionsGrid accountId="card-1" transactions={[charge]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} onMove={vi.fn()} />)
 
-      expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+      const [edit, remove] = within(bodyRows()[0]).getAllByRole('button')
+      expect(edit).toHaveAccessibleName('Edit card charge Amazon, 10/10/2026')
+      expect(edit).toHaveAccessibleDescription('Its card statement is paid. Unmark the statement to change it.')
+      expect(remove).toHaveAttribute('aria-disabled', 'true')
+      expect(within(bodyRows()[0]).queryByRole('button', { name: /^Move\b/ })).not.toBeInTheDocument()
     })
   })
 
@@ -157,7 +167,7 @@ describe('AccountTransactionsGrid', () => {
     expect(within(legacyRow).getByRole('button', { name: /^Delete pot transaction\b/ })).toBeInTheDocument()
     expect(within(legacyRow).getByText('Trips')).toBeInTheDocument()
     expect(within(legacyRow).getByText('-20.00')).toBeInTheDocument()
-    expect(within(linkedRow).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(linkedRow).getByRole('button', { name: 'Edit pot transaction Bonus, Home, 04/10/2026' })).toHaveAccessibleDescription('This row cannot be changed here.')
   })
 
   it('spans the message across the pot columns when there are no movements', () => {
@@ -218,7 +228,7 @@ describe('AccountTransactionsGrid', () => {
     expect(screen.queryByText('Tesco')).not.toBeInTheDocument()
   })
 
-  it('puts Edit and Delete in a trailing cell of editable rows only', () => {
+  it('puts Edit and Delete in a trailing cell of every row, blocking them on a read-only row', () => {
     const onEdit = vi.fn()
     const onDelete = vi.fn()
     render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} onEdit={onEdit} onDelete={onDelete} />)
@@ -232,7 +242,11 @@ describe('AccountTransactionsGrid', () => {
     expect(onDelete).toHaveBeenCalledWith(ROWS[3])
     expect(within(bodyRows()[1]).getByRole('button', { name: /^Edit income\b/ })).toBeInTheDocument()
     expect(within(bodyRows()[4]).getByRole('button', { name: /^Delete balance adjustment\b/ })).toBeInTheDocument()
-    expect(within(bodyRows()[2]).queryByRole('button')).not.toBeInTheDocument()
+    const [paidEdit, paidDelete] = within(bodyRows()[2]).getAllByRole('button')
+    expect(paidEdit).toHaveAttribute('aria-disabled', 'true')
+    expect(paidDelete).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(paidEdit)
+    expect(onEdit).toHaveBeenCalledTimes(1)
   })
 
   it('disables Edit, but not Delete, while editing is unavailable', () => {
@@ -254,7 +268,7 @@ describe('AccountTransactionsGrid', () => {
 
     expect(screen.getByRole('columnheader', { name: /^Purchased/ })).toBeInTheDocument()
     expect(screen.getByText('Card payment')).toBeInTheDocument()
-    expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(bodyRows()[0]).getByRole('button', { name: /^Edit card payment\b/ })).toHaveAccessibleDescription('This row cannot be changed here.')
   })
 
   it('[AC P60-F08-statement-payment-and-card-screen-02] opens the statement a card payment row paid from its Edit icon and says where to delete it', () => {
@@ -282,7 +296,7 @@ describe('AccountTransactionsGrid', () => {
 
     const [paid, unlinked] = bodyRows()
     expect(screen.queryByRole('link')).not.toBeInTheDocument()
-    expect(within(unlinked).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(unlinked).getByRole('button', { name: /^Delete card payment\b/ })).toHaveAttribute('aria-disabled', 'true')
     const name = 'card payment Platinum Visa 6007 payment – Oct 2026 statement, 12/11/2026'
     fireEvent.click(within(paid).getByRole('button', { name: `Edit ${name}` }))
     expect(onOpenStatement).toHaveBeenCalledWith('/cashflow/accounts/visa-id?month=2026-10&tab=statements')
@@ -291,7 +305,7 @@ describe('AccountTransactionsGrid', () => {
     expect(remove).toHaveAccessibleDescription('Unmark the statement to remove this payment.')
   })
 
-  it('offers Move beside Edit and Delete on an editable card charge only', () => {
+  it('offers Move beside Edit and Delete on an editable card charge only, blocking the read-only rows', () => {
     const onMove = vi.fn()
     render(
       <AccountTransactionsGrid accountId="bank-1"
@@ -312,8 +326,11 @@ describe('AccountTransactionsGrid', () => {
       'Edit card charge Taxi, 10/10/2026',
       'Delete card charge Taxi, 10/10/2026',
     ])
-    expect(within(paidLunch).queryByRole('button')).not.toBeInTheDocument()
-    expect(within(payment).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(paidLunch).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
+      'Edit card charge Paid lunch, 09/10/2026',
+      'Delete card charge Paid lunch, 09/10/2026',
+    ])
+    expect(within(payment).queryByRole('button', { name: /^Move\b/ })).not.toBeInTheDocument()
 
     fireEvent.click(within(taxi).getByRole('button', { name: /^Move card charge\b.* to a later statement$/ }))
     expect(onMove).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }), expect.any(HTMLButtonElement))
@@ -364,7 +381,7 @@ describe('AccountTransactionsGrid', () => {
     ])('deletes the whole operation of a Pots line of %d as a %s', (amount, noun) => {
       const { onDeleteOperation } = renderLinked('pots-1', potLine(amount))
 
-      fireEvent.click(screen.getByRole('button', { name: `Delete ${noun} Deposit to Reserva, 10/10/2026` }))
+      fireEvent.click(screen.getByRole('button', { name: `Delete ${noun} Deposit to Reserva, Home, 10/10/2026` }))
 
       expect(onDeleteOperation).toHaveBeenCalledWith(expect.objectContaining({ operationId: 'op1' }), noun)
     })
@@ -373,8 +390,8 @@ describe('AccountTransactionsGrid', () => {
       const { onDeleteOperation } = renderLinked('pots-1', potLine(30, 'i1', ''))
 
       expect(screen.getByText('Deposit from an income')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Edit deposit Deposit from an income, 10/10/2026' })).toBeEnabled()
-      const remove = screen.getByRole('button', { name: 'Delete deposit Deposit from an income, 10/10/2026' })
+      expect(screen.getByRole('button', { name: 'Edit deposit Deposit from an income, Home, 10/10/2026' })).toBeEnabled()
+      const remove = screen.getByRole('button', { name: 'Delete deposit Deposit from an income, Home, 10/10/2026' })
       fireEvent.click(remove)
       expect(remove).toHaveAccessibleDescription('Delete the income to remove this deposit.')
       expect(onDeleteOperation).not.toHaveBeenCalled()
@@ -385,18 +402,14 @@ describe('AccountTransactionsGrid', () => {
     const movement = { id: 'm1', bucketId: 'p1', bucketName: 'Home', amount: 30, date: '2026-10-04', description: 'Salary', incomeId: 'i1', splitLineCount: 1 }
     const olderLine = accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-04', description: 'Salary', counterpart: 'Home', amount: 30, canEdit: false, movement })
 
-    it('tells where to edit an older split income line, in a column wide enough for the hint', () => {
+    it('blocks both icons on an older split income line, saying to change it from the income', () => {
       render(<AccountTransactionsGrid accountId="pots-1" columns="pots" transactions={[olderLine]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
-      const hint = within(bodyRows()[0]).getByText('Edit from the income')
-      expect(hint.closest('td')).toHaveClass('data-table__col--action-wide')
-      expect(within(bodyRows()[0]).queryByRole('button')).not.toBeInTheDocument()
-    })
-
-    it('adds no hint to another read-only row', () => {
-      const readOnly = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-10', description: 'Paid lunch', amount: -7, canEdit: false })
-      render(<AccountTransactionsGrid accountId="bank-1" transactions={[readOnly]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
-
+      const edit = within(bodyRows()[0]).getByRole('button', { name: 'Edit pot transaction Salary, Home, 04/10/2026' })
+      expect(edit).toHaveAttribute('aria-disabled', 'true')
+      expect(edit).toHaveAccessibleDescription('Edit from the income.')
+      const remove = within(bodyRows()[0]).getByRole('button', { name: 'Delete pot transaction Salary, Home, 04/10/2026' })
+      expect(remove).toHaveAccessibleDescription('Delete the income to remove this deposit.')
       expect(screen.queryByText('Edit from the income')).not.toBeInTheDocument()
       expect(screen.getByRole('columnheader', { name: 'Actions' })).not.toHaveClass('data-table__col--action-wide')
     })
