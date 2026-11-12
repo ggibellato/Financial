@@ -37,7 +37,7 @@ Stage 1 is not disconnected scaffolding: parity reads the new route in every aft
 - *Output contract (Provides, kept by F13):* the All transactions grid on Monthly and `GET accounts/transactions/{year}/{month}`, which Settlement rows (F11, F12) join through the shared row builder with no change here.
 
 *Excluded:*
-- Any row action (edit, delete, move) in the grid; entry stays on the account screen and Monthly's existing tabs until F13.
+- Any row action (edit, delete, move) in the grid; entry stays on the account screen and Monthly's existing tabs until F13. (Superseded: fix/all-transactions-row-icons added Edit and Delete; Move stays on the card screen.)
 - A round-up column: Amount excludes round-up, as Category totals do.
 - Currency conversion: totals are per currency.
 - Pagination: the live data has at most about 300 rows in a month.

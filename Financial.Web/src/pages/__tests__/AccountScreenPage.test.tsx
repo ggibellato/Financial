@@ -1170,7 +1170,9 @@ describe('AccountScreenPage on a Pots account', () => {
     withPotsAccount([movementRow({ id: 'm-1', incomeId: 'i1' }, { canEdit: false })])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
 
-    expect(await screen.findByText('Edit from the income')).toBeInTheDocument()
+    const edit = await screen.findByRole('button', { name: /^Edit pot transaction\b/ })
+    expect(edit).toHaveAttribute('aria-disabled', 'true')
+    expect(edit).toHaveAccessibleDescription('Edit from the income.')
   })
 
   it('shows a failed account reload on the Pots tab instead of figures the header disagrees with', async () => {
@@ -1624,7 +1626,7 @@ describe('AccountScreenPage actions', () => {
     expect(actions.map((button) => button.textContent)).toEqual(['Adjust balance', 'New income'])
   })
 
-  it('renders no actions and no row buttons for an inactive account', async () => {
+  it('renders no actions and blocks every row button for an inactive account, saying why', async () => {
     getAccountMock.mockImplementation((id, year, month) =>
       Promise.resolve({ ...detailFor(id, year, month), isActive: false, allowedActions: [] }),
     )
@@ -1634,7 +1636,12 @@ describe('AccountScreenPage actions', () => {
 
     await screen.findByText('Tesco')
     expect(screen.queryByRole('group', { name: 'Account actions' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /^(Edit|Delete) / })).not.toBeInTheDocument()
+    const rowButtons = screen.getAllByRole('button', { name: /^(Edit|Delete) / })
+    expect(rowButtons).toHaveLength(TRANSACTIONS.length * 2)
+    for (const button of rowButtons) {
+      expect(button).toHaveAttribute('aria-disabled', 'true')
+      expect(button).toHaveAccessibleDescription('This account is inactive, so its rows cannot be changed.')
+    }
   })
 
   it('[AC P60-F05-bank-account-screen-08] Pay recurring bill lists the unpaid UK bills and pays the chosen one with this bank', async () => {
@@ -2345,7 +2352,9 @@ describe('AccountScreenPage card screen', () => {
     expect(within(taxiRow).getByRole('button', { name: /^Edit card charge\b/ })).toBeInTheDocument()
     expect(within(taxiRow).getByRole('button', { name: /^Delete card charge\b/ })).toBeInTheDocument()
     expect(within(taxiRow).getByRole('button', { name: /^Move card charge\b.* to a later statement$/ })).toBeInTheDocument()
-    expect(within(screen.getByText('Card payment').closest('tr') as HTMLElement).queryByRole('button')).not.toBeInTheDocument()
+    const paymentRow = screen.getByText('Card payment').closest('tr') as HTMLElement
+    expect(within(paymentRow).queryByRole('button', { name: /^Move\b/ })).not.toBeInTheDocument()
+    expect(within(paymentRow).getByRole('button', { name: /^Delete card payment\b/ })).toHaveAttribute('aria-disabled', 'true')
     expect(getAccountStatementsMock).not.toHaveBeenCalled()
   })
 
@@ -2555,12 +2564,17 @@ describe('AccountScreenPage card screen', () => {
       return (await screen.findByText('BA Amex credit refund')).closest('tr') as HTMLElement
     }
 
-    it('[AC P60-F15-card-refunds-and-credit-05] labels a credit refund row with Delete as its only action', async () => {
+    it('[AC P60-F15-card-refunds-and-credit-05] labels a credit refund row with Delete as its only working action', async () => {
       const row = await findCreditRefundRow(AMEX_ID)
 
       expect(within(row).getByText('Card credit refund')).toBeInTheDocument()
       expect(within(row).getByText('-35.00')).toBeInTheDocument()
-      expect(within(row).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Delete credit refund BA Amex credit refund, 15/10/2026'])
+      expect(within(row).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
+        'Edit credit refund BA Amex credit refund, 15/10/2026',
+        'Delete credit refund BA Amex credit refund, 15/10/2026',
+      ])
+      expect(within(row).getByRole('button', { name: /^Edit credit refund\b/ })).toHaveAttribute('aria-disabled', 'true')
+      expect(within(row).getByRole('button', { name: /^Delete credit refund\b/ })).not.toHaveAttribute('aria-disabled')
     })
 
     it.each([
@@ -2601,12 +2615,14 @@ describe('AccountScreenPage card screen', () => {
       expect(screen.queryByText('Credit refund deleted')).not.toBeInTheDocument()
     })
 
-    it('offers no Delete on the row when the screen account is inactive', async () => {
+    it('blocks Delete on the row when the screen account is inactive', async () => {
       getAccountMock.mockImplementation((id, year, month) => Promise.resolve({ ...detailFor(id, year, month), isActive: false, allowedActions: [] }))
 
       const row = await findCreditRefundRow(AMEX_ID)
 
-      expect(within(row).queryByRole('button')).not.toBeInTheDocument()
+      const remove = within(row).getByRole('button', { name: /^Delete credit refund\b/ })
+      expect(remove).toHaveAttribute('aria-disabled', 'true')
+      expect(remove).toHaveAccessibleDescription('This account is inactive, so its rows cannot be changed.')
     })
 
     it('shows the fresh statements on opening the Statements tab after a delete', async () => {

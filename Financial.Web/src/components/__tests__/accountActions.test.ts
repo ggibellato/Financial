@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import type { AccountTransactionDto, MonthTransactionDto, ReserveMovementDto } from '../../api/types'
+import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto, ReserveMovementDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
-import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, monthRowDeleteBlockedReason, monthRowEdit, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
+import { ACTION_LABELS, canMoveToStatement, deleteConfirmation, deletedMessage, formActionsOf, isOlderIncomeLine, kindLabel, monthRowEdit, rowDeleteBlockedReason, needsFormOptions, operationPath, recordNoun, recordTitle, transactionRowName } from '../accountActions'
 
 const SINGLE_LINE = 'Delete this pot transaction? This cannot be undone.'
 
@@ -156,6 +156,8 @@ describe('All transactions row actions', () => {
   const MONTH = '2026-10'
   const INACTIVE = 'This account is inactive, so its rows cannot be changed.'
 
+  const monthRowDelete = ({ transaction, accountId, accountIsActive }: MonthTransactionDto) => rowDeleteBlockedReason(transaction, accountId, accountIsActive)
+
   function monthRow(transaction: AccountTransactionDto, accountId: string | null = 'bank-1', accountIsActive = true): MonthTransactionDto {
     return { accountId, accountName: accountId ? 'Barclays' : null, accountCurrency: accountId ? 'GBP' : null, accountIsActive, transaction }
   }
@@ -166,27 +168,27 @@ describe('All transactions row actions', () => {
 
   it('edits an account row on its account screen in the viewed month, and deletes it here', () => {
     expect(monthRowEdit(monthRow(expense), MONTH)).toEqual({ path: '/cashflow/accounts/bank-1?month=2026-10&tab=transactions&edit=Expense-e1' })
-    expect(monthRowDeleteBlockedReason(monthRow(expense))).toBeUndefined()
+    expect(monthRowDelete(monthRow(expense))).toBeUndefined()
   })
 
   it('edits a bankless income on the Income tab', () => {
     const income = accountTransactionRow({ id: 'i1', kind: 'Income', date: '2026-10-15', amount: 85.2, currency: null })
     expect(monthRowEdit(monthRow(income, null), MONTH)).toEqual({ path: '/cashflow/accounts?month=2026-10&tab=income&edit=i1' })
-    expect(monthRowDeleteBlockedReason(monthRow(income, null))).toBeUndefined()
+    expect(monthRowDelete(monthRow(income, null))).toBeUndefined()
   })
 
   it("opens a statement payment's statement and says where to remove it", () => {
     expect(monthRowEdit(monthRow(payment), MONTH)).toEqual({ path: '/cashflow/accounts/card-1?month=2026-09&tab=statements' })
-    expect(monthRowDeleteBlockedReason(monthRow(payment))).toBe('Unmark the statement to remove this payment.')
+    expect(monthRowDelete(monthRow(payment))).toBe('Unmark the statement to remove this payment.')
   })
 
   it('opens a pot operation, deleting it only from its Pots account', () => {
     const bankSide = accountTransactionRow({ id: 'e9', kind: 'Expense', date: '2026-10-10', amount: -90, canEdit: false, operation: deposit })
     const potsSide = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: 90, canEdit: false, operation: deposit })
     expect(monthRowEdit(monthRow(bankSide), MONTH)).toEqual({ path: '/cashflow/accounts/pots-1?month=2026-10&tab=transactions&operation=op1' })
-    expect(monthRowDeleteBlockedReason(monthRow(bankSide))).toBe('Delete it from the pots account.')
-    expect(monthRowDeleteBlockedReason(monthRow(potsSide, 'pots-1'))).toBeUndefined()
-    expect(monthRowDeleteBlockedReason(monthRow({ ...potsSide, operation: { ...deposit, incomeId: 'i1' } }, 'pots-1'))).toBe(
+    expect(monthRowDelete(monthRow(bankSide))).toBe('Delete it from the pots account.')
+    expect(monthRowDelete(monthRow(potsSide, 'pots-1'))).toBeUndefined()
+    expect(monthRowDelete(monthRow({ ...potsSide, operation: { ...deposit, incomeId: 'i1' } }, 'pots-1'))).toBe(
       'Delete the income to remove this deposit.',
     )
   })
@@ -194,27 +196,39 @@ describe('All transactions row actions', () => {
   it('sends a split income line to its income', () => {
     const line = movementRow('m1', { incomeId: 'i1' }, { canEdit: false })
     expect(monthRowEdit(monthRow(line, 'pots-1'), MONTH)).toEqual({ blockedReason: 'Edit from the income.' })
-    expect(monthRowDeleteBlockedReason(monthRow(line, 'pots-1'))).toBe('Delete the income to remove this deposit.')
+    expect(monthRowDelete(monthRow(line, 'pots-1'))).toBe('Delete the income to remove this deposit.')
   })
 
   it('lets a credit refund on an active account be deleted but not edited', () => {
     const refund = accountTransactionRow({ id: 'r1', kind: 'CardCreditRefund', date: '2026-10-20', amount: 30, canEdit: false })
     expect(monthRowEdit(monthRow(refund), MONTH)).toEqual({ blockedReason: 'A credit refund cannot be edited. Delete it and refund the credit again.' })
-    expect(monthRowDeleteBlockedReason(monthRow(refund))).toBeUndefined()
-    expect(monthRowDeleteBlockedReason(monthRow(refund, 'bank-1', false))).toBe(INACTIVE)
+    expect(monthRowDelete(monthRow(refund))).toBeUndefined()
+    expect(monthRowDelete(monthRow(refund, 'bank-1', false))).toBe(INACTIVE)
   })
 
   it('sends a charge on a paid statement to its statement', () => {
-    const paid = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-28', amount: -1.1, canEdit: false })
+    const paid = accountTransactionRow({ id: 'c1', kind: 'CardCharge', date: '2026-10-28', amount: -1.1, canEdit: false, expense: { id: 'c1', creditCardId: 'card-1', paymentStatus: 'CreditCardCharge' } as ExpenseDto })
     const reason = 'Its card statement is paid. Unmark the statement to change it.'
     expect(monthRowEdit(monthRow(paid, 'card-1'), MONTH)).toEqual({ blockedReason: reason })
-    expect(monthRowDeleteBlockedReason(monthRow(paid, 'card-1'))).toBe(reason)
+    expect(monthRowDelete(monthRow(paid, 'card-1'))).toBe(reason)
+  })
+
+  it('sends a settled charge to its statement, its bank copy to the card, and blocks an inactive pots operation', () => {
+    const charge = (fields: Partial<ExpenseDto>) =>
+      accountTransactionRow({ id: 'c9', kind: 'CardCharge', date: '2026-10-02', amount: -9, canEdit: false, expense: { id: 'c9', creditCardId: 'card-1', creditCardName: 'BA Amex', paymentStatus: 'CreditCardCharge', ...fields } as ExpenseDto })
+    const settled = charge({ paymentStatus: 'CreditCardSettled' })
+    expect(monthRowEdit(monthRow(settled, 'card-1'), MONTH)).toEqual({ blockedReason: 'Its card statement is paid. Unmark the statement to change it.' })
+    expect(monthRowDelete(monthRow(charge({}), 'card-1'))).toBe('Its card statement is paid. Unmark the statement to change it.')
+    expect(monthRowDelete(monthRow(settled, 'bank-1'))).toBe('Its BA Amex statement is paid. Unmark it on the BA Amex account to change it.')
+    const potsSide = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: 90, canEdit: false, operation: deposit })
+    expect(monthRowEdit(monthRow(potsSide, 'pots-1', false), MONTH)).toEqual({ blockedReason: INACTIVE })
+    expect(monthRowDelete(monthRow(potsSide, 'pots-1', false))).toBe(INACTIVE)
   })
 
   it("says an inactive account's rows cannot be changed", () => {
     const readOnly = { ...expense, canEdit: false }
     expect(monthRowEdit(monthRow(readOnly, 'bank-9', false), MONTH)).toEqual({ blockedReason: INACTIVE })
-    expect(monthRowDeleteBlockedReason(monthRow(readOnly, 'bank-9', false))).toBe(INACTIVE)
+    expect(monthRowDelete(monthRow(readOnly, 'bank-9', false))).toBe(INACTIVE)
   })
 
   it('names a row by its kind, description and date, and a blank pot operation by its deposit', () => {

@@ -8,7 +8,6 @@ import {
   TableCell,
   TableHeader,
   TableRow,
-  Text,
   Tooltip,
 } from '@fluentui/react-components'
 import { CalendarArrowRightRegular } from '@fluentui/react-icons'
@@ -22,18 +21,17 @@ import TruncatedText from './TruncatedText'
 import { paidByLabel } from '../utils/paidBy'
 import {
   canMoveToStatement,
-  isCreditRefund,
-  isOlderIncomeLine,
   kindLabel,
-  operationDeleteBlockedReason,
   operationNoun,
-  withdrawalOperationIds,
+  rowDeleteBlockedReason,
+  rowEdit,
   rowKey,
   shownDescription,
-  STATEMENT_PAYMENT_DELETE_REASON,
   statementPath,
   transactionRowName,
+  withdrawalOperationIds,
   type PotOperationNoun,
+  type RowEdit,
 } from './accountActions'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
 import MissingValue from './MissingValue'
@@ -122,8 +120,7 @@ function columnsOf(selection: ColumnSelection): TransactionColumn[] {
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 
-function actionColumnClass(hasHint: boolean, hasMove: boolean): string {
-  if (hasHint) return 'data-table__col--action data-table__col--action-wide'
+function actionColumnClass(hasMove: boolean): string {
   return hasMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
 }
 
@@ -136,12 +133,12 @@ type AccountTransactionsGridProps = ColumnSelection & {
   isEditDisabled?: (row: AccountTransactionDto) => boolean
   onEdit: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   onDelete: (row: AccountTransactionDto) => void
-  canDeleteCreditRefunds?: boolean
+  accountIsActive: boolean
   onMove?: (row: AccountTransactionDto, button: HTMLButtonElement) => void
   isMoveDisabled?: boolean
-  onOpenStatement?: (path: string) => void
-  onOpenOperation?: (operation: AccountTransactionOperationDto, button: HTMLButtonElement) => void
-  onDeleteOperation?: (operation: AccountTransactionOperationDto, noun: PotOperationNoun) => void
+  onOpenStatement: (path: string) => void
+  onOpenOperation: (operation: AccountTransactionOperationDto, button: HTMLButtonElement) => void
+  onDeleteOperation: (operation: AccountTransactionOperationDto, noun: PotOperationNoun) => void
 }
 
 export default function AccountTransactionsGrid({
@@ -153,7 +150,7 @@ export default function AccountTransactionsGrid({
   isEditDisabled,
   onEdit,
   onDelete,
-  canDeleteCreditRefunds = false,
+  accountIsActive,
   onMove,
   isMoveDisabled = false,
   onOpenStatement,
@@ -166,61 +163,52 @@ export default function AccountTransactionsGrid({
   const accessors = Object.fromEntries(columns.map((column) => [column.key, column.accessor]))
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
-  const actionClassName = actionColumnClass(sortedRows.some(isOlderIncomeLine), onMove !== undefined)
+  const actionClassName = actionColumnClass(onMove !== undefined)
   const withdrawalIds = withdrawalOperationIds(transactions, accountId)
+  const editHandler = (edit: RowEdit, row: AccountTransactionDto): ((button: HTMLButtonElement) => void) | undefined => {
+    switch (edit.kind) {
+      case 'record':
+        return (button) => onEdit(row, button)
+      case 'statement':
+        return () => onOpenStatement(statementPath(edit.statement))
+      case 'operation':
+        return (button) => onOpenOperation(edit.operation, button)
+      default:
+        return undefined
+    }
+  }
+  const deleteHandler = (row: AccountTransactionDto) => {
+    const { operation } = row
+    return operation ? () => onDeleteOperation(operation, operationNoun(operation, withdrawalIds)) : () => onDelete(row)
+  }
   const renderActions = (row: AccountTransactionDto) => {
     const name = transactionRowName(row, withdrawalIds)
-    if (row.canEdit) {
-      return (
-        <RowActionsCell
-          className={actionClassName}
-          itemName={name}
-          editDisabled={isEditDisabled?.(row) ?? false}
-          onEdit={(button) => onEdit(row, button)}
-          onDelete={() => onDelete(row)}
-        >
-          {onMove && canMoveToStatement(row) && (
-            <Tooltip content="Move to a later statement" relationship="inaccessible">
-              <Button
-                appearance="subtle"
-                size="small"
-                icon={<CalendarArrowRightRegular />}
-                aria-label={`Move ${name} to a later statement`}
-                disabled={isMoveDisabled}
-                onClick={(event) => onMove(row, event.currentTarget)}
-              />
-            </Tooltip>
-          )}
-        </RowActionsCell>
-      )
-    }
-    const { statement, operation } = row
-    if (statement && onOpenStatement) {
-      return (
-        <RowActionsCell
-          className={actionClassName}
-          itemName={name}
-          deleteBlockedReason={STATEMENT_PAYMENT_DELETE_REASON}
-          onEdit={() => onOpenStatement(statementPath(statement))}
-        />
-      )
-    }
-    if (operation && onOpenOperation) {
-      return (
-        <RowActionsCell
-          className={actionClassName}
-          itemName={name}
-          editDisabled={isEditDisabled?.(row) ?? false}
-          deleteBlockedReason={operationDeleteBlockedReason(operation, accountId)}
-          onEdit={(button) => onOpenOperation(operation, button)}
-          onDelete={onDeleteOperation && (() => onDeleteOperation(operation, operationNoun(operation, withdrawalIds)))}
-        />
-      )
-    }
-    if (isCreditRefund(row) && canDeleteCreditRefunds) {
-      return <RowActionsCell className={actionClassName} itemName={name} onDelete={() => onDelete(row)} />
-    }
-    return <TableCell className={actionClassName}>{isOlderIncomeLine(row) && <Text size={200}>Edit from the income</Text>}</TableCell>
+    const edit = rowEdit(row, accountId, accountIsActive)
+    const deleteBlockedReason = rowDeleteBlockedReason(row, accountId, accountIsActive)
+    return (
+      <RowActionsCell
+        className={actionClassName}
+        itemName={name}
+        editDisabled={(edit.kind === 'record' || edit.kind === 'operation') && isEditDisabled?.(row)}
+        editBlockedReason={edit.kind === 'blocked' ? edit.reason : undefined}
+        deleteBlockedReason={deleteBlockedReason}
+        onEdit={editHandler(edit, row)}
+        onDelete={deleteHandler(row)}
+      >
+        {onMove && edit.kind === 'record' && canMoveToStatement(row) && (
+          <Tooltip content="Move to a later statement" relationship="inaccessible">
+            <Button
+              appearance="subtle"
+              size="small"
+              icon={<CalendarArrowRightRegular />}
+              aria-label={`Move ${name} to a later statement`}
+              disabled={isMoveDisabled}
+              onClick={(event) => onMove(row, event.currentTarget)}
+            />
+          </Tooltip>
+        )}
+      </RowActionsCell>
+    )
   }
 
   return (
