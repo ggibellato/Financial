@@ -1,5 +1,6 @@
 import { useEffect, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
+import { isNotFound } from '../api/apiError'
 import type { IncomeFormField } from '../components/IncomeForm'
 import type { AccountDto, BankOption, IncomeDto, IncomeSourceDto } from '../api/types'
 import { getSaveErrorMessage, parseValidatedNumber } from '../utils/formatters'
@@ -30,6 +31,10 @@ const BANK_KEY = 'income.bank'
 const SOURCE_KEY = 'income.incomeSource'
 
 export const SPLIT_CONFIRMATION_DELAY_MS = 4000
+
+export function incomeSavedMessage(potsAccountName: string | null): string {
+  return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
+}
 
 /** Matches the previous hardcoded INCOME_SOURCES array's declaration order. Names outside this
  * list (unexpected but not invalid) sort last rather than being dropped or erroring. */
@@ -332,7 +337,7 @@ export function useIncomeForm(
   incomeSources: IncomeSourceDto[],
   banks: BankOption[],
   onSaved: (saved: IncomeDto, isEdit: boolean, potsAccountName: string | null) => void,
-  { lockedBank, keepOpenAfterSave = false, viewedMonth }: AccountFormSettings = {},
+  { lockedBank, keepOpenAfterSave = false, viewedMonth, noBankByDefault = false, onNotFound }: AccountFormSettings = {},
 ): UseIncomeFormResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
   const { accounts, status: potsAccountsStatus, retry: retryPotsAccounts } = useAccounts()
@@ -373,6 +378,7 @@ export function useIncomeForm(
   }, [state.splitConfirmationMessage])
 
   function defaultBank(): string {
+    if (noBankByDefault) return ''
     const storedBank = getStoredDefault(BANK_KEY)
     return lockedBank?.id ?? (storedBank && selectableBanks(banks).some((b) => b.id === storedBank) ? storedBank : '')
   }
@@ -514,6 +520,11 @@ export function useIncomeForm(
         onSaved(savedIncome, state.isEditing, savedPotsAccountName)
       })
       .catch((err: unknown) => {
+        if (onNotFound && state.isEditing && isNotFound(err)) {
+          dispatch({ type: 'CANCEL_FORM' })
+          onNotFound()
+          return
+        }
         dispatch({
           type: 'SAVE_ERROR',
           payload: {

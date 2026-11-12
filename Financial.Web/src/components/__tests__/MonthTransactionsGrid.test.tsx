@@ -163,18 +163,18 @@ describe('MonthTransactionsGrid', () => {
       filterTo('Account', 'No bank')
 
       expect(descriptions()).toEqual(['Description:Interest', 'Description:XP dividends'])
-      expect(footer()).toHaveTextContent('2 of 9 rows · No bank +127.30')
+      expect(footer()).toHaveTextContent('2 of 9 rows · Total (no bank) +127.30')
     })
 
     it('[AC P61-F02-income-tab-and-bankless-income-07] lists the "No bank" total after the currency totals, leaving Spend unchanged', () => {
       renderGrid({ rows: BANKLESS_ROWS })
 
-      expect(footer()).toHaveTextContent('9 rows · Total -12.50 BRL · Total -85.19 GBP · No bank +127.30')
+      expect(footer()).toHaveTextContent('9 rows · Total -12.50 BRL · Total -85.19 GBP · Total (no bank) +127.30')
 
       filterTo('Category', 'Groceries')
 
       expect(footer()).toHaveTextContent('2 of 9 rows · Total -12.50 BRL · Total -45.20 GBP · Spend 12.50 BRL · Spend 45.20 GBP')
-      expect(footer()).not.toHaveTextContent('No bank')
+      expect(footer()).not.toHaveTextContent('(no bank)')
     })
   })
 

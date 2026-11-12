@@ -990,6 +990,59 @@ describe('useIncomeForm account settings', () => {
     expect(monthly.result.current.incomeBank).toBe('')
   })
 
+  it('[AC P61-F02-income-tab-and-bankless-income-02] starts on No bank when set, ignoring the remembered bank, and saves with no bank', async () => {
+    setStoredDefault('income.bank', 'bank-barclays')
+    createIncomeMock.mockResolvedValue({ ...SAVED, bankId: null, bankName: null })
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { noBankByDefault: true }))
+
+    act(() => result.current.showCreateIncomeForm())
+    expect(result.current.incomeBank).toBe('')
+    await addIncome(result)
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ bankId: null }))
+  })
+
+  it("[AC P61-F02-income-tab-and-bankless-income-04] keeps the edited income's bank with the No bank default", () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { noBankByDefault: true }))
+
+    act(() => result.current.showEditIncomeForm(SAVED))
+
+    expect(result.current.incomeBank).toBe('bank-chase')
+  })
+
+  it('[AC P61-F02-income-tab-and-bankless-income-06] closes the form and reports an edited income that no longer exists', async () => {
+    updateIncomeMock.mockRejectedValue(new ApiError('Not found.', 404))
+    const onNotFound = vi.fn<() => void>()
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { onNotFound }))
+
+    act(() => result.current.showEditIncomeForm(SAVED))
+    await act(async () => result.current.submitIncome())
+
+    expect(onNotFound).toHaveBeenCalledOnce()
+    expect(result.current.isIncomeFormOpen).toBe(false)
+  })
+
+  it('keeps a new income open with the message when its create answers not found', async () => {
+    createIncomeMock.mockRejectedValue(new ApiError('Bank not found.', 404))
+    const onNotFound = vi.fn<() => void>()
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { onNotFound }))
+
+    await addIncome(result)
+
+    expect(onNotFound).not.toHaveBeenCalled()
+    expect(result.current.saveIncomeError).toBe('Bank not found.')
+    expect(result.current.isIncomeFormOpen).toBe(true)
+  })
+
+  it('starts on the remembered bank without the No bank default', () => {
+    setStoredDefault('income.bank', 'bank-barclays')
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeBank).toBe('bank-barclays')
+  })
+
   it('keeps the form open after a create with the same date and source, clearing values and description', async () => {
     createIncomeMock.mockResolvedValue(SAVED)
     const { result } = renderHook(() =>

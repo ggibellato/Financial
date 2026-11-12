@@ -9,7 +9,7 @@ import { useCardCreditRefundForm } from './useCardCreditRefundForm'
 import { useConfirmedDelete } from './useConfirmedDelete'
 import { useDiscardPrompt } from './useDiscardPrompt'
 import { useExpenseForm } from './useExpenseForm'
-import { useIncomeForm } from './useIncomeForm'
+import { incomeSavedMessage, useIncomeForm } from './useIncomeForm'
 import { useMoveChargeForm } from './useMoveChargeForm'
 import { usePayCardStatementForm } from './usePayCardStatementForm'
 import { usePayRecurringBill } from './usePayRecurringBill'
@@ -24,10 +24,6 @@ import { deleteFailedMessage } from '../utils/formatters'
 const FIRST_FIELD_SELECTOR = 'input, select, textarea'
 const NEXT_ENTRY_FIELD_SELECTOR = 'input[name="description"]'
 const RESTING_FOCUS_SELECTOR = '[role="tab"][aria-selected="true"], #account-screen-transactions'
-
-function incomeSavedMessage(potsAccountName: string | null): string {
-  return potsAccountName ? `Income added and split to ${potsAccountName}` : 'Income added'
-}
 
 export interface ScreenForm {
   isDirty: boolean

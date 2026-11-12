@@ -15,4 +15,6 @@ export interface AccountFormSettings {
   lockedCard?: LockedCard
   keepOpenAfterSave?: boolean
   viewedMonth?: YearMonth
+  noBankByDefault?: boolean
+  onNotFound?: () => void
 }
