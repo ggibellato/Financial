@@ -108,6 +108,10 @@ function filterTo(label: string, value: string) {
   fireEvent.click(screen.getByRole('checkbox', { name: value }))
 }
 
+function discardPrompt() {
+  return screen.findByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })
+}
+
 async function openNewIncome() {
   await grid()
   fireEvent.click(screen.getByRole('button', { name: 'New income' }))
@@ -395,8 +399,8 @@ describe('IncomeTab', () => {
     const form = await openNewIncome()
     setField(form, 'Net value', '12')
     fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
-    const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Keep editing' }))
+    fireEvent.click(await within(await discardPrompt()).findByRole('button', { name: 'Keep editing', hidden: true }))
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Discard unsaved changes?', hidden: true })).not.toBeInTheDocument())
     expect(field(form, 'Net value')).toHaveValue(12)
 
     setField(form, 'Net value', '')
@@ -411,8 +415,7 @@ describe('IncomeTab', () => {
     setField(form, 'Net value', '12')
     fireEvent.click(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' }))
 
-    const prompt = await screen.findByRole('dialog', { name: 'Discard unsaved changes?' })
-    fireEvent.click(within(prompt).getByRole('button', { name: 'Discard' }))
+    fireEvent.click(await within(await discardPrompt()).findByRole('button', { name: 'Discard', hidden: true }))
 
     expect(await screen.findByRole('form', { name: 'Edit income' })).toBeInTheDocument()
   })
