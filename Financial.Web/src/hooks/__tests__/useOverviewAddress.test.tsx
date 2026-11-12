@@ -6,10 +6,11 @@ import { pinDate } from '../../test-utils/pinDate'
 import { useOverviewAddress } from '../useOverviewAddress'
 
 const AC_01 = '[AC P61-F01-accounts-overview-tabs-and-monthly-fold-01]'
+const TABS = ['accounts', 'summary', 'transactions'] as const
 
 function renderAt(entry: string) {
   const wrapper = ({ children }: { children: ReactNode }) => <MemoryRouter initialEntries={[entry]}>{children}</MemoryRouter>
-  return renderHook(() => ({ address: useOverviewAddress(), location: useLocation(), navigationType: useNavigationType() }), { wrapper })
+  return renderHook(() => ({ address: useOverviewAddress(TABS), location: useLocation(), navigationType: useNavigationType() }), { wrapper })
 }
 
 describe('useOverviewAddress', () => {
@@ -62,5 +63,36 @@ describe('useOverviewAddress', () => {
     expect(result.current.address.monthInputValue).toBe('2026-09')
     expect(result.current.location.search).toBe('?month=2026-09')
     expect(result.current.navigationType).toBe('POP')
+  })
+
+  it(`${AC_01} opens the first tab when the address has none`, () => {
+    const { result } = renderAt('/cashflow/accounts?month=2026-09')
+
+    expect(result.current.address.tab).toBe('accounts')
+  })
+
+  it(`${AC_01} falls back to the first tab for an unknown tab`, () => {
+    const { result } = renderAt('/cashflow/accounts?tab=monthly')
+
+    expect(result.current.address.tab).toBe('accounts')
+    expect(result.current.location.search).toBe('?tab=monthly')
+  })
+
+  it(`${AC_01} reads the tab from the address`, () => {
+    const { result } = renderAt('/cashflow/accounts?tab=transactions')
+
+    expect(result.current.address.tab).toBe('transactions')
+  })
+
+  it(`${AC_01} writes a new tab to the address, keeping the month and replacing the history entry`, () => {
+    const { result } = renderAt('/cashflow/accounts?month=2026-09')
+
+    act(() => result.current.address.setTab('summary'))
+
+    expect(result.current.address).toMatchObject({ tab: 'summary', year: 2026, month: 9 })
+    const params = new URLSearchParams(result.current.location.search)
+    expect(params.get('tab')).toBe('summary')
+    expect(params.get('month')).toBe('2026-09')
+    expect(result.current.navigationType).toBe('REPLACE')
   })
 })

@@ -1,5 +1,6 @@
+import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { Navigate } from 'react-router-dom'
+import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { MovedPageRedirect } from '../lazyPages'
 import { NAV_TREE } from '../navTree'
 import { ALL_ROUTES, DETAIL_ROUTES, PAGE_ROUTES, REDIRECT_ROUTES } from '../routes'
@@ -31,7 +32,7 @@ describe('route and sidebar agreement', () => {
   it('orders the CashFlow menu as the PRD', () => {
     const cashFlowLabels = NAV_TREE.find((category) => category.id === 'cashflow')!.children.map((child) => child.label)
 
-    expect(cashFlowLabels).toEqual(['Accounts', 'Monthly', 'Annual summary', 'Mensais', 'Investment snapshots'])
+    expect(cashFlowLabels).toEqual(['Accounts', 'Annual summary', 'Mensais', 'Investment snapshots'])
   })
 
   it('declares no duplicate route paths', () => {
@@ -51,6 +52,7 @@ describe('route and sidebar agreement', () => {
       'admin/cashflow/banks',
       'admin/cashflow/credit-cards',
       'admin/cashflow/reserve-buckets',
+      'cashflow/monthly',
       'cashflow/controle-mae',
       'cashflow/reserva',
     ])
@@ -71,6 +73,33 @@ describe('route and sidebar agreement', () => {
 
     expect(redirect?.element.type).toBe(element)
     expect(redirect?.element.props).toEqual(props)
+  })
+
+  it.each([
+    ['/cashflow/monthly', '?tab=summary'],
+    ['/cashflow/monthly?month=2026-09', '?tab=summary&month=2026-09'],
+  ])('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-06] redirects %s to the Summary tab of Accounts, keeping the month', (entry, search) => {
+    const monthly = REDIRECT_ROUTES.find((route) => route.path === 'cashflow/monthly')!
+    function Location() {
+      const location = useLocation()
+      return <p>{`${location.pathname}${location.search}`}</p>
+    }
+
+    render(
+      <MemoryRouter initialEntries={[entry]}>
+        <Routes>
+          <Route path="/cashflow/monthly" element={monthly.element} />
+          <Route path="/cashflow/accounts" element={<Location />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByText(`/cashflow/accounts${search}`)).toBeInTheDocument()
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-06] declares no page route for Monthly', () => {
+    expect(PAGE_ROUTES.map((route) => route.path)).not.toContain('cashflow/monthly')
+    expect(navRoutes).not.toContain('/cashflow/monthly')
   })
 
   it('declares every route relative to the root route, with no leading slash', () => {

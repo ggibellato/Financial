@@ -103,7 +103,7 @@ describe('Sidebar', () => {
     const cashFlowLinks = within(screen.getByRole('navigation', { name: 'Main' }))
       .getAllByRole('link')
       .filter((link) => link.getAttribute('href')?.startsWith('/cashflow/'))
-    expect(cashFlowLinks.map((link) => link.textContent)).toEqual(['Accounts', 'Monthly', 'Annual summary', 'Mensais', 'Investment snapshots'])
+    expect(cashFlowLinks.map((link) => link.textContent)).toEqual(['Accounts', 'Annual summary', 'Mensais', 'Investment snapshots'])
 
     fireEvent.click(screen.getAllByText('CashFlow').find((el) => el.closest('.sidebar__group-header'))!)
 
@@ -149,11 +149,11 @@ describe('Sidebar', () => {
   })
 
   it('highlights only the nav item matching the current route', () => {
-    renderSidebar('/cashflow/monthly')
+    renderSidebar('/cashflow/mensais')
 
-    expect(screen.getByRole('link', { name: 'Monthly' })).toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Mensais' })).toHaveClass('active')
     expect(screen.getByRole('link', { name: 'Active investments' })).not.toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Mensais' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Annual summary' })).not.toHaveClass('active')
   })
 
   it('highlights the parent page and its category on a detail route nested under it', () => {
@@ -161,6 +161,14 @@ describe('Sidebar', () => {
 
     expect(screen.getByRole('link', { name: 'Accounts' })).toHaveClass('active')
     expect(screen.getAllByText('CashFlow')[0].closest('.sidebar__category-header')).toHaveClass('sidebar__category-header--active')
+  })
+
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-06] lists the CashFlow pages without Monthly', () => {
+    renderSidebar()
+
+    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/cashflow/accounts')
+    expect(screen.queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
+    expect(document.querySelector('a[href^="/cashflow/monthly"]')).toBeNull()
   })
 
   it('category headers do not navigate', () => {
@@ -215,9 +223,9 @@ describe('Sidebar', () => {
 
       fireEvent.mouseEnter(screen.getByRole('button', { name: 'CashFlow' }))
       const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
-      fireEvent.click(within(flyoutList).getByRole('link', { name: 'Monthly' }))
+      fireEvent.click(within(flyoutList).getByRole('link', { name: 'Mensais' }))
 
-      expect(screen.getByTestId('location')).toHaveTextContent('/cashflow/monthly')
+      expect(screen.getByTestId('location')).toHaveTextContent('/cashflow/mensais')
       expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
     })
 
