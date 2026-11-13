@@ -9,4 +9,16 @@ public static class InvestmentScopeParser
 
     public static InvestmentScope ParseOrDefault(string? value) =>
         TryParse(value, out var scope) ? scope : InvestmentScope.Active;
+
+    public static InvestmentScope ParseOptional(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return InvestmentScope.Active;
+        }
+
+        return TryParse(value, out var scope)
+            ? scope
+            : throw new ArgumentException($"\"{value}\" is not a recognised investment scope.", nameof(value));
+    }
 }

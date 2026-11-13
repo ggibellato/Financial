@@ -67,6 +67,27 @@ public class CreditServiceTests
     }
 
     [Fact]
+    public async Task AddCreditAsync_UnrecognisedScope_ThrowsAndWritesNothing()
+    {
+        _repository.Asset = MakeAsset();
+
+        var act = () => CreateService().AddCreditAsync(new CreditCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Scope = "archive",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Dividend",
+            Value = 10m
+        });
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.CreditService.AddCredit");
+    }
+
+    [Fact]
     public async Task AddCreditAsync_InvalidCreditType_ReturnsNull()
     {
         _repository.Asset = MakeAsset();

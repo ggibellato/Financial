@@ -38,11 +38,6 @@ export interface SelectedNode {
   currency?: string
   positionType?: PositionType
   assetClass?: string
-  /**
-   * Carried so the move dialog can tell a closed position from an open one. Not derived from
-   * positionType, which defaults to 'Flat' when metadata is missing and would read as closed.
-   */
-  quantity?: number
   /** For a portfolio: how many assets it holds, so an empty one can be offered for deletion. */
   assetCount?: number
   /** Set only when this selection came from a dashboard deep-link to a specific corporate action; read once by DetailPanel, then not needed again. */

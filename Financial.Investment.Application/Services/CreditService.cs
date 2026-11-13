@@ -44,8 +44,9 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         using var span = StartSpan("AddCredit");
         try
         {
+            var scope = InvestmentScopeParser.ParseOptional(request.Scope);
             var captured = await FxEntryCaptureHelper.CaptureAsync(
-                _repository, _exchangeRateProvider, _reportingCurrencyProvider, _timeProvider, request.BrokerName, request.Date).ConfigureAwait(false);
+                _repository, _exchangeRateProvider, _reportingCurrencyProvider, _timeProvider, scope, request.BrokerName, request.Date).ConfigureAwait(false);
             if (captured is null)
             {
                 span.MarkSuccess();
@@ -58,6 +59,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
                 _repository,
                 _navigationService,
+                scope,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -87,6 +89,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
         try
         {
+            var scope = InvestmentScopeParser.ParseOptional(request.Scope);
             if (request.Id == Guid.Empty)
             {
                 span.MarkSuccess();
@@ -97,6 +100,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Credit.CreditType>(
                 _repository,
                 _navigationService,
+                scope,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -128,6 +132,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
         span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
         try
         {
+            var scope = InvestmentScopeParser.ParseOptional(request.Scope);
             if (request.Id == Guid.Empty)
             {
                 span.MarkSuccess();
@@ -138,6 +143,7 @@ public sealed class CreditService : ICreditService, ICreditQueryService
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                scope,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,

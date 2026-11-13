@@ -43,6 +43,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                InvestmentScope.Active,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -81,6 +82,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                InvestmentScope.Active,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -485,6 +487,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                InvestmentScope.Active,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -638,7 +641,7 @@ public sealed class CorporateActionService : ICorporateActionService, ICorporate
     private Currency ResolveBrokerCurrency(string brokerName) => ParseBrokerCurrency(AssetMutationHelper.ResolveActiveBroker(_repository, brokerName));
 
     private CostBasisMethod ResolveCostBasisMethod(string brokerName) =>
-        AssetMutationHelper.ResolveCostBasisMethod(_repository, brokerName);
+        AssetMutationHelper.ResolveCostBasisMethod(_repository, InvestmentScope.Active, brokerName);
 
     private ITelemetrySpan StartSpan(string operationName)
     {

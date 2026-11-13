@@ -1,4 +1,5 @@
 using Financial.Investment.Application.DTOs;
+using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Observability;
@@ -39,6 +40,7 @@ public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                InvestmentScope.Active,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -73,6 +75,7 @@ public sealed class AssetPriceHistoryService : IAssetPriceHistoryService
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                InvestmentScope.Active,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,

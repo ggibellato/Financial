@@ -303,6 +303,7 @@ describe('useTransactions', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       date: '2024-06-01',
       type: 'Buy',
       quantity: 50,
@@ -512,10 +513,24 @@ describe('useTransactions', () => {
         brokerName: 'XPI',
         portfolioName: 'Acoes',
         assetName: 'KLBN4',
+        scope: 'active',
         id: 'aaa',
       })
       expect(result.current.asset).toEqual(updatedAsset)
     })
+  })
+
+  it('delete_transaction_on_a_historic_asset_sends_the_historic_scope', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    deleteTransactionMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+    act(() => result.current.deleteTransaction('aaa'))
+    await waitFor(() =>
+      expect(deleteTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ scope: 'historic', id: 'aaa' })),
+    )
   })
 
   it('delete_failure_sets_delete_error', async () => {

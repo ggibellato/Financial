@@ -389,6 +389,7 @@ describe('useCredits', () => {
         brokerName: 'XPI',
         portfolioName: 'Acoes',
         assetName: 'KLBN4',
+        scope: 'active',
         date: '2024-06-01',
         type: 'Dividend',
         value: 120.5,
@@ -519,6 +520,25 @@ describe('useCredits', () => {
     expect(addCreditMock).not.toHaveBeenCalled()
   })
 
+  it('save_new_credit_on_a_historic_asset_sends_the_historic_scope', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    addCreditMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper('historic')
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(2))
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-10-29')
+      result.current.setFormField('formType', 'Dividend')
+      result.current.setFormField('formValue', '2.13')
+    })
+    act(() => result.current.saveForm())
+    await waitFor(() =>
+      expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ scope: 'historic', value: 2.13 })),
+    )
+  })
+
   it('delete_credit_calls_api_and_updates_asset', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const updatedAsset = { ...ASSET_DETAILS, credits: [CREDIT_B] }
@@ -533,6 +553,7 @@ describe('useCredits', () => {
         brokerName: 'XPI',
         portfolioName: 'Acoes',
         assetName: 'KLBN4',
+        scope: 'active',
         id: 'aaa',
       }),
     )

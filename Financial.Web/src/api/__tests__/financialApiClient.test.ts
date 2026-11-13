@@ -266,6 +266,7 @@ describe('financialApiClient', () => {
       brokerName: 'XPI',
       portfolioName: 'Default',
       assetName: 'BCIA11',
+      scope: 'active',
       date: '2024-01-01T00:00:00',
       type: 'Buy',
       quantity: 1,
@@ -285,6 +286,7 @@ describe('financialApiClient', () => {
         brokerName: 'XPI',
         portfolioName: 'Default',
         assetName: 'BCIA11',
+        scope: 'active',
         date: '2024-01-01T00:00:00',
         type: 'Buy',
         quantity: 1,
@@ -1310,6 +1312,7 @@ describe('financialApiClient', () => {
       brokerName: 'XPI',
       portfolioName: 'Default',
       assetName: 'BCIA11',
+      scope: 'active',
       type: 'Buy',
       date: '2026-07-01T00:00:00Z',
       fees: 0,
@@ -1331,7 +1334,7 @@ describe('financialApiClient', () => {
   })
 
   it('deletes a transaction', async () => {
-    const requestBody: TransactionDeleteDto = { id: 'tx1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11' }
+    const requestBody: TransactionDeleteDto = { id: 'tx1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', scope: 'active' }
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -1406,7 +1409,7 @@ describe('financialApiClient', () => {
   })
 
   it('posts a credit create request', async () => {
-    const requestBody: CreditCreateDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', type: 'Dividend', value: 10, withheld: 0, intermediationFee: 0, date: '2026-07-01T00:00:00Z', sharesForDividend: null }
+    const requestBody: CreditCreateDto = { brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', scope: 'active', type: 'Dividend', value: 10, withheld: 0, intermediationFee: 0, date: '2026-07-01T00:00:00Z', sharesForDividend: null }
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -1421,7 +1424,7 @@ describe('financialApiClient', () => {
   })
 
   it('puts a credit update', async () => {
-    const requestBody: CreditUpdateDto = { id: 'c1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', type: 'Dividend', value: 12, withheld: 0, intermediationFee: 0, date: '2026-07-01T00:00:00Z', sharesForDividend: null }
+    const requestBody: CreditUpdateDto = { id: 'c1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', scope: 'active', type: 'Dividend', value: 12, withheld: 0, intermediationFee: 0, date: '2026-07-01T00:00:00Z', sharesForDividend: null }
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })
@@ -1436,7 +1439,7 @@ describe('financialApiClient', () => {
   })
 
   it('deletes a credit', async () => {
-    const requestBody: CreditDeleteDto = { id: 'c1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11' }
+    const requestBody: CreditDeleteDto = { id: 'c1', brokerName: 'XPI', portfolioName: 'Default', assetName: 'BCIA11', scope: 'active' }
     const responseBody = { name: 'BCIA11' } as AssetDetailsDto
     const fetchMock = vi.fn().mockResolvedValue(okResponse(responseBody))
     const client = createFinancialApiClient({ baseUrl: API_BASE_URL, fetch: fetchMock })

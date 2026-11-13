@@ -18,10 +18,11 @@ internal static class FxEntryCaptureHelper
         IExchangeRateProvider exchangeRateProvider,
         IReportingCurrencyProvider reportingCurrencyProvider,
         TimeProvider timeProvider,
+        InvestmentScope scope,
         string brokerName,
         DateTime date)
     {
-        var broker = repository.GetBrokerList(InvestmentScope.Active)
+        var broker = repository.GetBrokerList(scope)
             .FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal));
         if (broker is null)
         {

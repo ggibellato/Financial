@@ -514,6 +514,7 @@ describe('TransactionsTab', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       date: '2024-05-01',
       type: 'Sell',
       quantity: 10,
@@ -539,6 +540,7 @@ describe('TransactionsTab', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       id: 'aaa',
       date: '2024-03-15',
       type: 'Buy',
@@ -610,6 +612,7 @@ describe('TransactionsTab', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       id: 'aaa',
     })
   })

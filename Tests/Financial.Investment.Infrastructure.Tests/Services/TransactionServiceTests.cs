@@ -37,7 +37,39 @@ public class TransactionServiceTests : IDisposable
         Fees = fees
     };
 
+    private Asset PersistedClosedAsset() => _file.ReloadHistoricAsset("XPI", "Uncategorized", "CLOSEDASSET");
+
     private Asset PersistedAsset() => _file.ReloadAsset("XPI", "Default", "BCIA11");
+
+    [Fact]
+    public async Task AddAndDeleteTransaction_HistoricScope_PersistOnTheHistoricAsset()
+    {
+        var result = await _service.AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Uncategorized",
+            AssetName = "CLOSEDASSET",
+            Scope = "historic",
+            Date = new DateTime(2026, 10, 15),
+            Type = "Buy",
+            Quantity = 1m,
+            UnitPrice = 133.62m
+        });
+
+        var transactionId = result!.Transactions.Single(t => t.Date == new DateTime(2026, 10, 15)).Id;
+        PersistedClosedAsset().Transactions.Should().Contain(t => t.Id == transactionId && t.UnitPrice == 133.62m);
+
+        await _service.DeleteTransactionAsync(new TransactionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Uncategorized",
+            AssetName = "CLOSEDASSET",
+            Scope = "historic",
+            Id = transactionId
+        });
+
+        PersistedClosedAsset().Transactions.Should().NotContain(t => t.Id == transactionId);
+    }
 
     [Fact]
     public async Task AddTransaction_PersistsTheTransactionToDisk()
