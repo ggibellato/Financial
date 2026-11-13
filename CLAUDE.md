@@ -164,7 +164,8 @@ Detailed description if there are many files or changes"
 **Always:**
 - Branch per change; never commit to `main`.
 - "Commit" means a local commit. Push only when the user asks.
-- Several sessions work on this repo at once. Do your work in a worktree outside the repo (`git worktree add ../financial-wt-<topic> -b <branch> origin/main`); never switch branches in a checkout you didn't create.
+- Work on a branch in the repo folder (`git fetch`, then `git switch -c <branch> origin/main`). Switching branches there for quick side work is fine as long as the two branches are not being worked on at the same time: check `git status` first and commit what belongs to the current branch before switching.
+- Use a worktree outside the repo (`git worktree add ../financial-wt-<topic> -b <branch> origin/main`) only for parallel work, when another session or background agent is using the repo folder at the same time. Never switch branches in a checkout someone else is working in. Remove the worktree after its PR merges.
 - Run `git branch --show-current` before any merge, fast-forward or reset.
 - The user merges every PR (branch protection requires review). Wait for the user to confirm a merge before starting work that depends on it.
 
