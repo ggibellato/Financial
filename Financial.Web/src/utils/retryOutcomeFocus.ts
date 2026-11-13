@@ -30,10 +30,17 @@ function focusTargetIn(region: HTMLElement): HTMLElement {
   return region
 }
 
-export function focusReloadedContent(region: HTMLElement) {
+function focusReloadedContent(region: HTMLElement) {
   if (!retryRegion) return
   queueMicrotask(() => {
     if (!region.isConnected || !claimFocusForRetryOutcome(region)) return
     focusTargetIn(region).focus()
   })
+}
+
+export function beginReload(): (region: HTMLElement) => void {
+  const reloadsRetryOutcome = !!retryRegion?.isConnected
+  return (region) => {
+    if (reloadsRetryOutcome) focusReloadedContent(region)
+  }
 }

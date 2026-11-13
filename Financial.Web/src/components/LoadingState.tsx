@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { focusReloadedContent } from '../utils/retryOutcomeFocus'
+import { beginReload } from '../utils/retryOutcomeFocus'
 
 interface LoadingStateProps {
   message?: string
@@ -10,8 +10,9 @@ export default function LoadingState({ message = 'Loading…' }: LoadingStatePro
 
   useEffect(() => {
     const region = statusRef.current?.parentElement
+    const endReload = beginReload()
     return () => {
-      if (region) focusReloadedContent(region)
+      if (region) endReload(region)
     }
   }, [])
 
