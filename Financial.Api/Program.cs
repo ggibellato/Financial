@@ -116,14 +116,15 @@ builder.Services.AddHostedService<ShutdownFlushHostedService<IFxRateStore>>();
 
 var app = builder.Build();
 
+app.MapOpenApi().WithDocumentPerVersion();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint($"/openapi/{apiVersionGroupName}.json", $"Financial API {apiVersionGroupName}");
+    options.RoutePrefix = "swagger";
+});
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi().WithDocumentPerVersion();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint($"/openapi/{apiVersionGroupName}.json", $"Financial API {apiVersionGroupName}");
-        options.RoutePrefix = "swagger";
-    });
     app.UseDeveloperExceptionPage();
 }
 else
