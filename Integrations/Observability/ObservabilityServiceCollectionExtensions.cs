@@ -1,8 +1,8 @@
+using System.Text;
 using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -34,11 +34,6 @@ public static class ObservabilityServiceCollectionExtensions
                 .AddSource(OpenTelemetryTracer.ActivitySourceName)
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddOtlpExporter(exporter => ConfigureOtlpExporter(options, exporter)))
-            .WithMetrics(metrics => metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation()
                 .AddOtlpExporter(exporter => ConfigureOtlpExporter(options, exporter)));
 
         return services;
@@ -76,13 +71,14 @@ public static class ObservabilityServiceCollectionExtensions
     /// go only into the exporter header, never into logs or telemetry attributes (FR-014).</summary>
     internal static void ConfigureOtlpExporter(ObservabilityOptions options, OtlpExporterOptions exporter)
     {
-        var settings = OtlpExporterSettingsResolver.Resolve(options);
-        exporter.Endpoint = new Uri(settings.Endpoint);
+        exporter.Endpoint = new Uri(options.Endpoint);
 
-        if (settings.UseHttpProtobuf)
+        if (options.Backend == ObservabilityBackend.Langfuse)
         {
+            var credentials = Convert.ToBase64String(
+                Encoding.UTF8.GetBytes($"{options.Langfuse.PublicKey}:{options.Langfuse.SecretKey}"));
             exporter.Protocol = OtlpExportProtocol.HttpProtobuf;
-            exporter.Headers = $"Authorization={settings.AuthorizationHeaderValue}";
+            exporter.Headers = $"Authorization=Basic {credentials}";
         }
     }
 }

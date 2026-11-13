@@ -9,9 +9,10 @@
   values (`Langfuse` keys).
 - `ITelemetryTracer` resolves to the no-op when disabled and to `OpenTelemetryTracer` when
   enabled; spans never throw either way (`ObservabilityDisabledTests.TelemetryTracer_ResolvesToUsableNoOp_WithObservabilityDisabled`).
-- `OtlpExporterSettingsResolver`: endpoint/headers per backend; invalid backend name rejected
+- `ConfigureOtlpExporter`: endpoint/protocol/headers per backend; invalid backend name rejected
   (`BackendConfigurationTests`).
-- `SerilogObservabilityExtensions.WriteToObservability`: sink added only when enabled.
+- Only traces are exported: when enabled a `TracerProvider` is registered and no `MeterProvider`
+  (neither backend ingests OTLP metrics or logs).
 - **Unreachable collector** (negative path, Integration through the host): with
   `Observability:Enabled=true` and an endpoint nobody listens on (`http://localhost:4319`),
   every endpoint still returns 200 and span creation never throws
@@ -29,7 +30,7 @@
   test (`ApiTestFactory().WithWebHostBuilder(b => b.UseSetting("Observability:Enabled", "true") …)`),
   and for trace correlation. The OTLP collector is an external provider and is never started in
   tests; the exporter's background retries are what the unreachable test proves harmless.
-- **Unit** for `OtlpExporterSettingsResolver`, extension helpers, `NoOpTelemetryTracer`.
+- **Unit** for `ConfigureOtlpExporter`, extension helpers, `NoOpTelemetryTracer`.
 - Architecture rule: `ObservabilityIsolationRuleTests` pins that only composition roots and
   `Financial.Shared.Abstractions` consumers touch OpenTelemetry (`architecture-rule-tests.md`).
 - No E2E; the web-e2e job runs with observability disabled.
@@ -70,6 +71,6 @@ so a real local Jaeger cannot make the test pass by accident.
 
 ## Examples from project
 
-- `Tests/Financial.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs`, `BackendConfigurationTests.cs`, `OtlpExporterSettingsResolverTests.cs`, `SerilogObservabilityExtensionsTests.cs` — Integration/Unit.
+- `Tests/Financial.Observability.Tests/ObservabilityServiceCollectionExtensionsTests.cs`, `BackendConfigurationTests.cs` — Integration/Unit.
 - `Tests/Financial.Api.Tests/ObservabilityDisabledTests.cs`, `ObservabilityBackendUnreachableTests.cs` — Integration through the host.
 - `Tests/Financial.Api.Tests/EndToEndTraceTests.cs` — Integration (single process; the class name predates this vocabulary).

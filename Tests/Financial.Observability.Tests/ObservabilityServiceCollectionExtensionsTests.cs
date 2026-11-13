@@ -4,6 +4,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 
 namespace Financial.Observability.Tests;
 
@@ -110,6 +112,20 @@ public class ObservabilityServiceCollectionExtensionsTests
         var tracer = provider.GetRequiredService<ITelemetryTracer>();
 
         tracer.Should().BeOfType<OpenTelemetryTracer>();
+    }
+
+    [Fact]
+    public void AddObservability_WhenEnabled_ExportsTracesButNoMetrics()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Observability:Enabled"] = "true",
+            ["Observability:Backend"] = "Jaeger",
+            ["Observability:Endpoint"] = "http://localhost:4317"
+        });
+
+        provider.GetService<TracerProvider>().Should().NotBeNull();
+        provider.GetService<MeterProvider>().Should().BeNull();
     }
 
     [Fact]
