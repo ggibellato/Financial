@@ -12,6 +12,7 @@ interface FocusedRowControl {
 
 const ROW_SELECTOR = 'tbody tr'
 const CONTROL_SELECTOR = 'button, a[href], input, select, textarea'
+const MODAL_SELECTOR = '[aria-modal="true"]'
 
 function locate(region: HTMLElement, element: HTMLElement): FocusedRowControl | null {
   const row = element.closest<HTMLTableRowElement>(ROW_SELECTOR)
@@ -72,6 +73,14 @@ export function useRowFocusRecovery(
   isLoading: boolean,
 ) {
   const lastFocused = useRef<FocusedRowControl | null>(null)
+
+  useEffect(() => {
+    const forgetOnLeavingForPage = ({ target }: Event) => {
+      if (target instanceof Element && !regionRef.current?.contains(target) && !target.closest(MODAL_SELECTOR)) lastFocused.current = null
+    }
+    document.addEventListener('focusin', forgetOnLeavingForPage)
+    return () => document.removeEventListener('focusin', forgetOnLeavingForPage)
+  }, [regionRef])
 
   useEffect(() => {
     const focused = lastFocused.current

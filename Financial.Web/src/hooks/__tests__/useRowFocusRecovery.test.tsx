@@ -8,7 +8,7 @@ function ClosingOverlay({ onConfirm }: { onConfirm: () => void }) {
   return (
     <>
       {isShown && (
-        <div role="dialog" aria-label="Confirm">
+        <div role="dialog" aria-modal="true" aria-label="Confirm">
           <button onClick={onConfirm}>Confirm</button>
           <button>Elsewhere</button>
         </div>
@@ -20,8 +20,24 @@ function ClosingOverlay({ onConfirm }: { onConfirm: () => void }) {
   )
 }
 
+function InlineForm({ onSave }: { onSave: () => void }) {
+  const [isOpen, setIsOpen] = useState(true)
+  if (!isOpen) return null
+  return (
+    <button
+      onClick={() => {
+        onSave()
+        setIsOpen(false)
+      }}
+    >
+      Save and close
+    </button>
+  )
+}
+
 function Grid() {
   const [rows, setRows] = useState(['Rent', 'Food', 'Fuel'])
+  const removeFood = () => setRows((current) => current.filter((row) => row !== 'Food'))
   const regionRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const recordRowFocus = useRowFocusRecovery(regionRef, headingRef, false)
@@ -44,7 +60,8 @@ function Grid() {
           </tbody>
         </table>
       </div>
-      <ClosingOverlay onConfirm={() => setRows((current) => current.filter((row) => row !== 'Food'))} />
+      <ClosingOverlay onConfirm={removeFood} />
+      <InlineForm onSave={removeFood} />
     </>
   )
 }
@@ -75,6 +92,19 @@ describe('useRowFocusRecovery', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Finish closing' }))
 
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(document.body).toHaveFocus()
+  })
+
+  it('leaves the row to the page once focus went to a part of the page that is not a modal dialog', async () => {
+    render(<Grid />)
+    screen.getByRole('button', { name: 'Delete Food' }).focus()
+    const save = screen.getByRole('button', { name: 'Save and close' })
+    save.focus()
+
+    fireEvent.click(save)
+
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Save and close' })).not.toBeInTheDocument())
+    expect(screen.queryByRole('button', { name: 'Delete Food' })).not.toBeInTheDocument()
     expect(document.body).toHaveFocus()
   })
 })
