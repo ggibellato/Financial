@@ -25,7 +25,6 @@ import {
   RecurringBillsPage,
   ReportingCurrencyPage,
   TaxPage,
-  TaxRulesPage,
 } from './lazyPages'
 
 export interface PageRoute {
@@ -57,7 +56,6 @@ export const PAGE_ROUTES: PageRoute[] = [
   { path: 'admin/investment/assets', element: <AssetsPage /> },
   { path: 'admin/investment/brokers', element: <BrokersPage /> },
   { path: 'admin/investment/portfolios', element: <PortfoliosPage /> },
-  { path: 'admin/investment/tax-rules', element: <TaxRulesPage /> },
   { path: 'admin/cashflow/accounts', element: <AdminAccountsPage /> },
   { path: 'admin/cashflow/categories', element: <CategoriesPage /> },
   { path: 'admin/cashflow/income-sources', element: <IncomeSourcesPage /> },

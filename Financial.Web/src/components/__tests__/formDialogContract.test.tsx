@@ -9,7 +9,6 @@ import IncomeSourceFormDialog from '../IncomeSourceFormDialog'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import PortfolioFormDialog from '../PortfolioFormDialog'
 import RecurringBillFormDialog from '../RecurringBillFormDialog'
-import TaxRuleFormDialog from '../TaxRuleFormDialog'
 import { getErrorAlert } from '../../test-utils/errorAlert'
 
 const ACTIVE_BROKERS: BrokerDto[] = [
@@ -125,18 +124,6 @@ const CASES: FormDialogCase[] = [
       change(/^Value/, '1500')
     },
     serverError: 'Due day must be between 1 and 31.',
-  },
-  {
-    name: 'TaxRuleFormDialog',
-    saveLabel: 'Add tax rule',
-    renderDialog: (h) => render(<TaxRuleFormDialog taxRule={null} {...h} />),
-    makeInvalid: () => change(/^Effective from/, '2026-01-01'),
-    validationMessage: 'Label is required.',
-    fillValid: () => {
-      change(/^Label/, 'Another rule')
-      change(/^Effective from/, '2026-06-01')
-    },
-    serverError: 'This range overlaps existing rule "BR dividend withholding" (2026-01-01–present).',
   },
 ]
 

@@ -12,7 +12,6 @@ const CSV_COLUMNS = [
   'WithheldAmount',
   'NetAmount',
   'Currency',
-  'CalculationStatus',
   'EvidenceReference',
 ] as const
 
@@ -41,7 +40,6 @@ export function buildTaxWorkbookCsv(workbook: TaxWorkbookDto): string {
       entry.withheldAmount,
       entry.netAmount,
       currency,
-      entry.calculationStatus,
       entry.evidenceReference,
     ]
       .map(csvField)
