@@ -12,16 +12,18 @@ public static class CashFlowDataFileVersion
     {
         ArgumentNullException.ThrowIfNull(root);
 
-        var version = root[Property];
-        if (version is null)
-        {
-            return 1;
-        }
-
-        return version.GetValueKind() == JsonValueKind.Number && version.AsValue().TryGetValue<int>(out var stored)
-            ? stored
-            : throw new InvalidDataException($"{Property} must be a whole number, but is {version.ToJsonString()}.");
+        return root[Property] is { } version ? Read(JsonSerializer.SerializeToElement(version)) : 1;
     }
+
+    public static int StoredIn(JsonElement root) =>
+        root.TryGetProperty(Property, out var version) ? Read(version) : 1;
+
+    private static int Read(JsonElement version) => version.ValueKind switch
+    {
+        JsonValueKind.Null => 1,
+        JsonValueKind.Number when version.TryGetInt32(out var stored) => stored,
+        _ => throw new InvalidDataException($"{Property} must be a whole number, but is {JsonSerializer.Serialize(version)}.")
+    };
 
     public static void Stamp(JsonObject root, int version)
     {

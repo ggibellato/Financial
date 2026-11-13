@@ -12,8 +12,11 @@ public sealed class CashFlowDataConverter : JsonConverter<CashFlowData>
     public override CashFlowData Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         using var document = JsonDocument.ParseValue(ref reader);
-        var root = document.RootElement;
+        return Read(document.RootElement);
+    }
 
+    public static CashFlowData Read(JsonElement root)
+    {
         var unresolvedOptions = UnresolvedOptions;
         var context = new ReferenceResolutionContext();
         var resolvedOptions = CashFlowElementOptions.Create(context);

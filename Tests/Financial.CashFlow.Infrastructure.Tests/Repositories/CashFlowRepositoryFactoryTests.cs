@@ -58,6 +58,26 @@ public class CashFlowRepositoryFactoryTests
     }
 
     [Fact]
+    public async Task Create_FromAFileTheRepositoryWrote_ThenSaved_WritesTheSameBytes()
+    {
+        var written = TestCashFlowSeed.AsWrittenBy(new CashFlowSerializerAdapter());
+        var path = Path.Combine(Path.GetTempPath(), $"cashflow-factory-{Guid.NewGuid()}.json");
+        File.WriteAllText(path, written);
+        try
+        {
+            var repository = Factory.Create(new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, path, null, null));
+
+            await repository.ApplyAndSaveAsync(() => true);
+
+            File.ReadAllText(path).Should().Be(written);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public void Create_WithGoogleDriveProvider_WithoutCredentials_ThrowsFileNotFoundException()
     {
         var options = new JsonRepositorySelection(

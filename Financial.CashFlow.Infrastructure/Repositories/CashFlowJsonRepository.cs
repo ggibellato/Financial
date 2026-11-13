@@ -19,11 +19,24 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     private readonly SemaphoreSlim _writeGate = new(1, 1);
 
     public CashFlowJsonRepository(CashFlowData data, IJsonStorage storage, ICashFlowSerializer serializer)
+        : this(data, storage, serializer, lastPersistedJson: null)
+    {
+    }
+
+    private CashFlowJsonRepository(CashFlowData data, IJsonStorage storage, ICashFlowSerializer serializer, string? lastPersistedJson)
     {
         _data = data ?? throw new ArgumentNullException(nameof(data));
         _storage = storage ?? throw new ArgumentNullException(nameof(storage));
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
-        _lastPersistedJson = _serializer.Serialize(_data);
+        _lastPersistedJson = lastPersistedJson ?? _serializer.Serialize(_data);
+    }
+
+    public static CashFlowJsonRepository Load(IJsonStorage storage, ICashFlowSerializer serializer)
+    {
+        ArgumentNullException.ThrowIfNull(storage);
+        ArgumentNullException.ThrowIfNull(serializer);
+        var (data, persistedJson) = CashFlowLoader.LoadWithPersistedJsonSync(storage, serializer);
+        return new CashFlowJsonRepository(data, storage, serializer, persistedJson);
     }
 
     public IEnumerable<Expense> GetExpenses() => _data.Expenses;

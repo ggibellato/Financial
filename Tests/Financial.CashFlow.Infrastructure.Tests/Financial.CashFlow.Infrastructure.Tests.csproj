@@ -34,6 +34,9 @@
     <Content Include="..\..\data\data-cashflow.example.json" Link="ExampleData\data-cashflow.example.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="..\Financial.Api.Tests\TestData\data-cashflow.test.json" Link="SeedData\data-cashflow.test.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

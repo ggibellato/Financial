@@ -1,6 +1,5 @@
 using Financial.CashFlow.Domain.Entities;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Financial.CashFlow.Infrastructure.Persistence;
@@ -25,13 +24,14 @@ public sealed class CashFlowSerializerAdapter : ICashFlowSerializer
 
     public CashFlowData Deserialize(string json)
     {
-        var root = JsonNode.Parse(json)!.AsObject();
+        using var document = JsonDocument.Parse(json);
+        var root = document.RootElement;
 
         if (CashFlowDataFileVersion.Refusal(DataFileName, CashFlowDataFileVersion.StoredIn(root)) is { } refusal)
         {
             throw new InvalidDataException(refusal);
         }
 
-        return root.Deserialize<CashFlowData>(Options)!;
+        return CashFlowDataConverter.Read(root);
     }
 }

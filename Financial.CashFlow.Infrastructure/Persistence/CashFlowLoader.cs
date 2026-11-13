@@ -6,21 +6,27 @@ namespace Financial.CashFlow.Infrastructure.Persistence;
 public static class CashFlowLoader
 {
     // Intentionally synchronous: called from DI factory at startup before the app's async loop begins.
-    public static CashFlowData LoadSync(IJsonStorage storage, ICashFlowSerializer serializer)
+    public static CashFlowData LoadSync(IJsonStorage storage, ICashFlowSerializer serializer) =>
+        LoadWithPersistedJsonSync(storage, serializer).Data;
+
+    public static (CashFlowData Data, string? PersistedJson) LoadWithPersistedJsonSync(IJsonStorage storage, ICashFlowSerializer serializer)
     {
-        string json;
+        var persistedJson = ReadSync(storage);
+        return (persistedJson is null ? CashFlowData.Create() : serializer.Deserialize(persistedJson), persistedJson);
+    }
+
+    private static string? ReadSync(IJsonStorage storage)
+    {
         try
         {
-            json = storage.ReadAsync()
+            return storage.ReadAsync()
                 .ConfigureAwait(false)
                 .GetAwaiter()
                 .GetResult();
         }
         catch (FileNotFoundException)
         {
-            return CashFlowData.Create();
+            return null;
         }
-
-        return serializer.Deserialize(json);
     }
 }
