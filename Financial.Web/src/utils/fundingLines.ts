@@ -1,4 +1,4 @@
-import { formatCurrency, parseValidatedNumber, positiveAmount, toPence } from './formatters'
+import { formatCurrency, parseValidatedNumber, positiveAmount, sumPence, toPence } from './formatters'
 
 export const MAX_FUNDING_LINES = 5
 
@@ -42,7 +42,7 @@ export function toFundingLineRequests(lines: readonly FundingLineValues[]): { ba
 }
 
 function linesTotalInPence(lines: readonly FundingLineValues[]): number {
-  return lines.reduce((total, line) => total + toPence(parseValidatedNumber(line.amount) ?? 0), 0)
+  return sumPence(lines, (line) => parseValidatedNumber(line.amount) ?? 0)
 }
 
 export function fundingLinesMismatch(lines: readonly FundingLineValues[], depositAmount: number | null, currency: string): string | null {

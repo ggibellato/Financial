@@ -21,6 +21,7 @@ import {
 } from '@fluentui/react-components'
 import type { MonthTransactionDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
+import { useColumnFilterAddress } from '../hooks/useColumnFilterAddress'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
@@ -47,7 +48,6 @@ import {
   rowDeleteBlockedReason,
   shownDescription,
   transactionRowName,
-  withdrawalOperationIds,
   type PotOperationNoun,
 } from './accountActions'
 
@@ -104,11 +104,8 @@ function rowKey(row: MonthTransactionDto): string {
   return `${row.accountId ?? NO_BANK}-${row.transaction.kind}-${row.transaction.id}`
 }
 
-const withdrawalIdsOf = ({ accountId, transaction }: MonthTransactionDto) =>
-  accountId ? withdrawalOperationIds([transaction], accountId) : new Set<string>()
-
 const rowName = (row: MonthTransactionDto) =>
-  [transactionRowName(row.transaction, withdrawalIdsOf(row)), accountName(row), categoryName(row)].filter(Boolean).join(', ')
+  [transactionRowName(row.transaction), accountName(row), categoryName(row)].filter(Boolean).join(', ')
 
 interface OperationDeleteTarget {
   operationId: string
@@ -149,7 +146,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
     (operationDelete.isDeleting && operationDelete.target?.operationId === transaction.operation?.operationId)
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =
-    useColumnFilters(rows, FILTER_ACCESSORS)
+    useColumnFilters(rows, FILTER_ACCESSORS, useColumnFilterAddress(FILTER_KEYS))
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
   const monthValue = formatMonthInputValue(year, month)
 
@@ -190,7 +187,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   const requestDelete = (row: MonthTransactionDto) => {
     const { operation } = row.transaction
-    if (operation) operationDelete.request({ operationId: operation.operationId, noun: operationNoun(operation, withdrawalIdsOf(row)) })
+    if (operation) operationDelete.request({ operationId: operation.operationId, noun: operationNoun(operation) })
     else rowDelete.requestDelete(row.transaction)
   }
 

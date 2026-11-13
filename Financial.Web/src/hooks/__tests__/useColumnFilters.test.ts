@@ -135,4 +135,12 @@ describe('useColumnFilters', () => {
 
     expect(result.current.filterSummary).toMatchObject({ isFiltered: false, shownCount: 3, totalCount: 3 })
   })
+
+  it('filters by a selection it is handed, even one naming a value the rows no longer have', () => {
+    const selections = { category: new Set(['Mercado', 'Gone']) }
+    const { result } = renderHook(() => useColumnFilters(ROWS, ACCESSORS, [selections, () => {}]))
+
+    expect(result.current.filteredRows.map((r) => r.id)).toEqual(['e1', 'e3'])
+    expect(result.current.isColumnFiltered('category')).toBe(true)
+  })
 })

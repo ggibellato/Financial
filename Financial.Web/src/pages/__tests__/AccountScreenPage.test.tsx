@@ -398,7 +398,7 @@ afterEach(() => {
 const operationForm = (name: string) => screen.findByRole('form', { name })
 
 describe('AccountScreenPage deposit and withdrawal forms', () => {
-  const OPERATION_LINK = { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null }
+  const OPERATION_LINK = { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null }
   const DEPOSIT: PotOperationDto = {
     operationId: 'op1',
     kind: 'Deposit',
@@ -614,6 +614,22 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     expect(getPotOperationMock).not.toHaveBeenCalled()
   })
 
+  it("moves focus to the next row's Delete after a row deletes its operation and the month reloads", async () => {
+    const user = userEvent.setup()
+    deletePotOperationMock.mockResolvedValue(undefined)
+    const remaining = linkedRow({ ...OPERATION_LINK, operationId: 'op2' }, 'Boots refund')
+    withPotsAccount([linkedRow(), remaining])
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
+    const remove = await screen.findByRole('button', { name: LINKED_ROW_DELETE })
+    getAccountTransactionsMock.mockResolvedValue([remaining])
+
+    await user.click(remove)
+    await user.click(await dialogButton('Delete deposit', 'Delete'))
+
+    await waitFor(() => expect(screen.queryByText('Ramsay bonus')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByRole('button', { name: /^Delete deposit Boots refund, / })).toHaveFocus())
+  })
+
   it('keeps an unrelated open form and its input when a row deletes an operation', async () => {
     const user = userEvent.setup()
     deletePotOperationMock.mockResolvedValue(undefined)
@@ -714,7 +730,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
   })
 
   describe('linked rows on a bank screen', () => {
-    const BANK_ROW_LINK = { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null as string | null }
+    const BANK_ROW_LINK = { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null as string | null }
     const INCOME: IncomeDto = {
       id: 'i1', date: '2026-10-05', incomeSourceId: 'source-bonus', incomeSourceName: 'Bonus', grossValue: null, netValue: 100,
       bankId: BARCLAYS_ID, bankName: 'Barclays', description: 'Ramsay bonus', potsAccountId: RESERVA_ID, hasLinkedDeposit: true,
@@ -1015,7 +1031,7 @@ describe('AccountScreenPage on a Pots account', () => {
   it("offers only its operation's Edit and Delete on a linked movement", async () => {
     const linked = movementRow(
       { id: 'm-linked', description: 'Ramsay bonus' },
-      { canEdit: false, operation: { operationId: 'op1', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null } },
+      { canEdit: false, operation: { operationId: 'op1', kind: 'Deposit', potsAccountId: RESERVA_ID, year: 2026, month: 10, incomeId: null } },
     )
     withPotsAccount([linked])
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&tab=transactions`)
@@ -2221,6 +2237,24 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
 
     await waitFor(() => expect(deleteExpense).toHaveFocus())
     expect(deleteExpenseMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { removed: 'Tesco', button: /^Delete expense\b/, dialog: 'Delete expense', initial: ROWS, focused: 'the next row', target: () => within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ }) },
+    { removed: 'Bank fee', button: /^Delete balance adjustment\b/, dialog: 'Delete balance adjustment', initial: ROWS, focused: 'the previous row, as it was the last', target: () => within(rowOf('Chase')).getByRole('button', { name: /^Delete transfer\b/ }) },
+    { removed: 'Tesco', button: /^Delete expense\b/, dialog: 'Delete expense', initial: [ROWS[0]], focused: 'the Transactions heading, as it was the only row', target: () => screen.getByRole('heading', { name: 'Transactions' }) },
+  ])('moves focus to $focused after deleting $removed and the month reloads', async ({ removed, button, dialog, initial, target }) => {
+    const user = userEvent.setup()
+    getAccountTransactionsMock.mockResolvedValue(initial)
+    await openScreen()
+    const row = rowOf(removed)
+    getAccountTransactionsMock.mockResolvedValue(initial.filter((candidate) => candidate.description !== removed))
+
+    await user.click(within(row).getByRole('button', { name: button }))
+    await user.click(await dialogButton(dialog, 'Delete'))
+
+    await waitFor(() => expect(screen.queryByText(removed)).not.toBeInTheDocument())
+    await waitFor(() => expect(target()).toHaveFocus())
   })
 
   it('edits a transfer with this account locked on its side and its counterpart selected', async () => {

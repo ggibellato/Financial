@@ -160,6 +160,10 @@ export function toPence(value: number): number {
   return Math.round(value * 100)
 }
 
+export function sumPence<T>(items: readonly T[], amountOf: (item: T) => number): number {
+  return items.reduce((total, item) => total + toPence(amountOf(item)), 0)
+}
+
 export function positiveAmount(value: string): number | null {
   const amount = parseValidatedNumber(value)
   return amount !== null && amount > 0 ? amount : null

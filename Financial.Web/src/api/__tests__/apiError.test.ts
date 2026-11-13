@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ApiError, isDuplicateName } from '../apiError'
+import { ApiError, isBadRequest, isDuplicateName } from '../apiError'
 
 describe('isDuplicateName', () => {
   it('matches a 409 carrying the duplicate-name code, whatever its message says', () => {
@@ -20,5 +20,16 @@ describe('isDuplicateName', () => {
 
   it('does not match an error that is not an API error', () => {
     expect(isDuplicateName(new Error('An account named "Barclays" already exists.'))).toBe(false)
+  })
+})
+
+describe('isBadRequest', () => {
+  it('matches an API error with status 400', () => {
+    expect(isBadRequest(new ApiError('There is no balance to carry.', 400))).toBe(true)
+  })
+
+  it('does not match another status or an error that is not an API error', () => {
+    expect(isBadRequest(new ApiError('Conflict.', 409))).toBe(false)
+    expect(isBadRequest(new Error('Bad request'))).toBe(false)
   })
 })

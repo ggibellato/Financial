@@ -95,4 +95,14 @@ describe('useOverviewAddress', () => {
     expect(params.get('month')).toBe('2026-09')
     expect(result.current.navigationType).toBe('REPLACE')
   })
+
+  it("drops a tab's own parameters, such as All transactions' filters, on a month or tab change", () => {
+    const { result } = renderAt('/cashflow/accounts?month=2026-09&tab=transactions&category=Groceries&kind=')
+
+    act(() => result.current.address.setMonthInputValue('2026-08'))
+    expect(result.current.location.search).toBe('?month=2026-08&tab=transactions')
+
+    act(() => result.current.address.setTab('summary'))
+    expect(result.current.location.search).toBe('?month=2026-08&tab=summary')
+  })
 })

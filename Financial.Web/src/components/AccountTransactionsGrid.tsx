@@ -29,7 +29,6 @@ import {
   shownDescription,
   statementPath,
   transactionRowName,
-  withdrawalOperationIds,
   type PotOperationNoun,
   type RowEdit,
 } from './accountActions'
@@ -164,7 +163,6 @@ export default function AccountTransactionsGrid({
   const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(onMove !== undefined)
-  const withdrawalIds = withdrawalOperationIds(transactions, accountId)
   const editHandler = (edit: RowEdit, row: AccountTransactionDto): ((button: HTMLButtonElement) => void) | undefined => {
     switch (edit.kind) {
       case 'record':
@@ -179,10 +177,10 @@ export default function AccountTransactionsGrid({
   }
   const deleteHandler = (row: AccountTransactionDto) => {
     const { operation } = row
-    return operation ? () => onDeleteOperation(operation, operationNoun(operation, withdrawalIds)) : () => onDelete(row)
+    return operation ? () => onDeleteOperation(operation, operationNoun(operation)) : () => onDelete(row)
   }
   const renderActions = (row: AccountTransactionDto) => {
-    const name = transactionRowName(row, withdrawalIds)
+    const name = transactionRowName(row)
     const edit = rowEdit(row, accountId, accountIsActive)
     const deleteBlockedReason = rowDeleteBlockedReason(row, accountId, accountIsActive)
     return (

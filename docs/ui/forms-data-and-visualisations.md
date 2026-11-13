@@ -320,7 +320,9 @@ Grids must provide applicable:
 
 - Clear column headers
 - Sort state
-- Filter state
+- Filter state (All transactions keeps its column filters in the page
+  address through `useColumnFilterAddress`, so a refresh or Back restores them;
+  other grids keep filters in component state for now)
 - Selection state
 - Keyboard navigation
 - Loading state
@@ -439,6 +441,15 @@ Delete: `RowActionsCell` takes `isDeleting` and `isOtherDeleting`, spread from
 focusable (`disabledFocusable`) and is described by a tooltip, "Another delete
 is in progress.", so keyboard and screen-reader users learn why it does
 nothing. Every row icon button shows its own label as a hover tooltip.
+
+After a row leaves the grid (a confirmed delete, or a reload that drops it),
+focus goes to the same control on the row that took its place, else on the
+previous row, else to the grid's fallback (its heading or table). A grid gets
+this by passing its region to `useRowFocusRecovery` and `onFocus={recordRowFocus}`
+on that region; the region covers only the grid, not sibling tabs with their own
+focus rules. Recovery waits for a modal confirm dialog to close, and it leaves
+the row alone once focus has moved to a non-modal part of the page (an inline
+form): that part's own close decides where focus goes.
 
 A grid gets no default sort only when it genuinely has no per-row
 date/month/year field to sort by — an aggregate/summary grid pivoting

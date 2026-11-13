@@ -2,7 +2,7 @@ import { Button, Checkbox, makeStyles, Spinner, Table, TableBody, TableHeader, T
 import { type ReactNode, useId } from 'react'
 import type { TitheMonthDto, TitheSummaryDto } from '../api/types'
 import { TITHE_DETAIL_LOAD_ERROR, TITHE_HISTORY_LOAD_ERROR, useTithe } from '../hooks/useTithe'
-import { formatLongMonthYear, formatMonthInputValue, formatN2, SAVING_LABEL, toPence } from '../utils/formatters'
+import { formatLongMonthYear, formatMonthInputValue, formatN2, SAVING_LABEL, sumPence } from '../utils/formatters'
 import ActionErrorAlert from './ActionErrorAlert'
 import DataTableCell from './grid/DataTableCell'
 import ErrorState from './ErrorState'
@@ -109,8 +109,8 @@ function columnClass({ numeric }: HistoryColumn): string | undefined {
   return numeric ? 'data-table__col--numeric' : undefined
 }
 
-function sumInPence(rows: TitheMonthDto[], value: (summary: TitheSummaryDto) => number): number {
-  return rows.reduce((total, row) => total + toPence(value(row.summary)), 0) / 100
+function sumInPounds(rows: TitheMonthDto[], value: (summary: TitheSummaryDto) => number): number {
+  return sumPence(rows, (row) => value(row.summary)) / 100
 }
 
 function TitheHistory({ year, month, rows, onSelectMonth }: { year: number; month: number; rows: TitheMonthDto[]; onSelectMonth: (monthInputValue: string) => void }) {
@@ -156,7 +156,7 @@ function TitheHistory({ year, month, rows, onSelectMonth }: { year: number; mont
             {HISTORY_COLUMNS.map((column) =>
               column.total ? (
                 <DataTableCell key={column.label} label={column.label} className={columnClass(column)}>
-                  {formatN2(sumInPence(rows, column.total))}
+                  {formatN2(sumInPounds(rows, column.total))}
                 </DataTableCell>
               ) : (
                 <DataTableCell key={column.label} label={column.label}>

@@ -8,6 +8,10 @@ export interface OverviewAddress<TabId extends string> extends MonthSelection {
   setTab: (tab: TabId) => void
 }
 
+const PARAMS_KEPT_ON_MONTH_OR_TAB_CHANGE = ['month', 'tab'] as const
+
+type KeptParam = (typeof PARAMS_KEPT_ON_MONTH_OR_TAB_CHANGE)[number]
+
 export function useOverviewAddress<TabId extends string>(validTabs: readonly [TabId, ...TabId[]]): OverviewAddress<TabId> {
   const [searchParams, setSearchParams] = useSearchParams()
   const { year, month } = parseMonthInputValue(searchParams.get('month') ?? '') ?? currentYearMonth()
@@ -15,10 +19,14 @@ export function useOverviewAddress<TabId extends string>(validTabs: readonly [Ta
   const tab = validTabs.find((id) => id === requestedTab) ?? validTabs[0]
 
   const setParam = useCallback(
-    (name: string, value: string) =>
+    (name: KeptParam, value: string) =>
       setSearchParams(
         (params) => {
-          const next = new URLSearchParams(params)
+          const next = new URLSearchParams()
+          for (const kept of PARAMS_KEPT_ON_MONTH_OR_TAB_CHANGE) {
+            const keptValue = params.get(kept)
+            if (keptValue !== null) next.set(kept, keptValue)
+          }
           next.set(name, value)
           return next
         },

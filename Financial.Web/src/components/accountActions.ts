@@ -169,16 +169,10 @@ function operationDeleteBlockedReason(operation: AccountTransactionOperationDto,
   return isOnPotsScreen(operation, screenAccountId) ? undefined : OTHER_SCREEN_OPERATION_DELETE_REASON
 }
 
-export function withdrawalOperationIds(rows: AccountTransactionDto[], screenAccountId: string): Set<string> {
-  const ids = new Set<string>()
-  for (const { operation, amount } of rows) {
-    if (operation && (isOnPotsScreen(operation, screenAccountId) ? amount < 0 : amount > 0)) ids.add(operation.operationId)
-  }
-  return ids
-}
+const WITHDRAWAL_OPERATION_KIND = 'Withdrawal'
 
-export function operationNoun({ operationId }: AccountTransactionOperationDto, withdrawalIds: Set<string>): PotOperationNoun {
-  return withdrawalIds.has(operationId) ? 'withdrawal' : 'deposit'
+export function operationNoun({ kind }: AccountTransactionOperationDto): PotOperationNoun {
+  return kind === WITHDRAWAL_OPERATION_KIND ? 'withdrawal' : 'deposit'
 }
 
 export function rowKey(row: AccountTransactionDto): string {
@@ -199,8 +193,8 @@ export function shownDescription(row: AccountTransactionDto): string | null {
   return row.description || (row.operation ? BLANK_OPERATION_DESCRIPTION : null)
 }
 
-export function transactionRowName(row: AccountTransactionDto, withdrawalIds: Set<string>): string {
-  const kind = row.operation ? operationNoun(row.operation, withdrawalIds) : recordNoun(row.kind)
+export function transactionRowName(row: AccountTransactionDto): string {
+  const kind = row.operation ? operationNoun(row.operation) : recordNoun(row.kind)
   const description = shownDescription(row)
   const pot = row.kind === 'PotTransaction' ? row.counterpart : null
   return [description ? `${kind} ${description}` : kind, pot, formatShortDateUtc(row.date)].filter(Boolean).join(', ')

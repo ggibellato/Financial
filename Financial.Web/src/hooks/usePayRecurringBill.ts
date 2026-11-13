@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ApiError } from '../api/apiError'
+import { isBadRequest } from '../api/apiError'
 import { apiClient } from '../api/financialApiClient'
 import type { RecurringBillDto } from '../api/types'
 import {
@@ -25,7 +25,6 @@ export const BILL_CURRENCY = 'GBP'
 const DATE_KEY = 'payRecurringBill.date'
 const UK_AREA = 'UK'
 const PAID_STATUS = 'Paid'
-const BAD_REQUEST_STATUS = 400
 
 interface BillSelection {
   billId: string
@@ -131,9 +130,8 @@ export function usePayRecurringBill(
       })
       .catch((err: unknown) => {
         const message = getSaveErrorMessage(err, 'Failed to pay the bill.')
-        return err instanceof ApiError && err.status === BAD_REQUEST_STATUS
-          ? refreshAfterRejection(billId, message)
-          : setSaveError(message)
+        if (isBadRequest(err)) return refreshAfterRejection(billId, message)
+        setSaveError(message)
       })
       .finally(() => setIsSaving(false))
   }

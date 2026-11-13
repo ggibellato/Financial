@@ -19,7 +19,7 @@ function movementRow(id: string, fields: Partial<ReserveMovementDto> = {}, row: 
 }
 
 describe('operationPath', () => {
-  const OPERATION = { operationId: 'op1', potsAccountId: 'p1', year: 2026, month: 3, incomeId: null }
+  const OPERATION = { operationId: 'op1', kind: 'Deposit', potsAccountId: 'p1', year: 2026, month: 3, incomeId: null }
 
   it("opens the Transactions tab of the operation's Pots account in its month", () => {
     expect(operationPath(OPERATION, 'bank-1')).toBe('/cashflow/accounts/p1?month=2026-03&tab=transactions&operation=op1')
@@ -87,7 +87,7 @@ describe('refund wording', () => {
 })
 
 describe('isOlderIncomeLine', () => {
-  const LINK = { operationId: 'op1', potsAccountId: 'reserva', year: 2026, month: 10, incomeId: 'i1' }
+  const LINK = { operationId: 'op1', kind: 'Deposit', potsAccountId: 'reserva', year: 2026, month: 10, incomeId: 'i1' }
 
   it('is true for a movement of an income with no operation', () => {
     expect(isOlderIncomeLine(movementRow('m1', { incomeId: 'i1' }))).toBe(true)
@@ -164,7 +164,7 @@ describe('All transactions row actions', () => {
 
   const expense = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-14', amount: -42.1 })
   const payment = accountTransactionRow({ id: 't1', kind: 'CardPayment', date: '2026-10-05', amount: -100, canEdit: false, statement: { accountId: 'card-1', year: 2026, month: 9 } })
-  const deposit = { operationId: 'op1', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
+  const deposit = { operationId: 'op1', kind: 'Deposit', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
 
   it('edits an account row on its account screen in the viewed month, and deletes it here', () => {
     expect(monthRowEdit(monthRow(expense), MONTH)).toEqual({ path: '/cashflow/accounts/bank-1?month=2026-10&tab=transactions&edit=Expense-e1' })
@@ -231,9 +231,10 @@ describe('All transactions row actions', () => {
     expect(monthRowDelete(monthRow(readOnly, 'bank-9', false))).toBe(INACTIVE)
   })
 
-  it('names a row by its kind, description and date, and a blank pot operation by its deposit', () => {
-    expect(transactionRowName({ ...expense, description: 'Tesco' }, new Set())).toBe('expense Tesco, 14/10/2026')
-    const blank = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: -90, operation: deposit })
-    expect(transactionRowName(blank, new Set(['op1']))).toBe('withdrawal Deposit from an income, 10/10/2026')
+  it("names a row by its kind, description and date, and a pot operation's row by the operation's own kind", () => {
+    expect(transactionRowName({ ...expense, description: 'Tesco' })).toBe('expense Tesco, 14/10/2026')
+    const blank = accountTransactionRow({ id: 'p3', kind: 'PotTransaction', date: '2026-10-10', amount: 90, operation: { ...deposit, kind: 'Withdrawal' } })
+    expect(transactionRowName(blank)).toBe('withdrawal Deposit from an income, 10/10/2026')
+    expect(transactionRowName({ ...blank, amount: -90, operation: deposit })).toBe('deposit Deposit from an income, 10/10/2026')
   })
 })

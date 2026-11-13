@@ -1,5 +1,5 @@
 import { Toaster } from '@fluentui/react-components'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
@@ -27,7 +27,7 @@ const RESERVA: AccountFields = { accountId: 'pots-1', accountName: 'Reserva', ac
 const AMEX: AccountFields = { accountId: 'card-1', accountName: 'BA Amex', accountCurrency: 'GBP', accountIsActive: true }
 const ITAU: AccountFields = { accountId: 'bank-9', accountName: 'Itau', accountCurrency: 'BRL', accountIsActive: false }
 
-const DEPOSIT = { operationId: 'o1', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
+const DEPOSIT = { operationId: 'o1', kind: 'Deposit', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null }
 const PAID_STATEMENT = { accountId: 'card-1', year: 2026, month: 9 }
 const TESCO = { id: 'e1' } as ExpenseDto
 
@@ -51,16 +51,25 @@ interface GridOptions {
   error?: string | null
   onRetry?: () => void
   onDeleted?: () => void
+  address?: string
 }
 
 function LocationText() {
   const { pathname, search } = useLocation()
-  return <p>{`at:${pathname}${search}`}</p>
+  const navigationType = useNavigationType()
+  return (
+    <>
+      <p>{`at:${pathname}${search}`}</p>
+      <p>{`navigation:${navigationType}`}</p>
+    </>
+  )
 }
 
-function renderGrid({ rows = ROWS, isLoading = false, error = null, onRetry = vi.fn(), onDeleted = vi.fn() }: GridOptions = {}) {
+const GRID_ADDRESS = '/cashflow/accounts?month=2026-10&tab=transactions'
+
+function renderGrid({ rows = ROWS, isLoading = false, error = null, onRetry = vi.fn(), onDeleted = vi.fn(), address = GRID_ADDRESS }: GridOptions = {}) {
   return render(
-    <MemoryRouter initialEntries={['/cashflow/accounts?month=2026-10&tab=transactions']}>
+    <MemoryRouter initialEntries={[address]}>
       <MonthTransactionsGrid year={2026} month={10} rows={rows} isLoading={isLoading} error={error} onRetry={onRetry} onDeleted={onDeleted} />
       <Toaster toasterId={APP_TOASTER_ID} />
       <LocationText />
@@ -295,6 +304,39 @@ describe('MonthTransactionsGrid', () => {
     expect(bodyRows()).toHaveLength(7)
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveFocus()
+  })
+
+  it('keeps the column filters in the address, replacing the entry and leaving the month and tab alone', () => {
+    renderGrid()
+
+    filterTo('Account', 'Itau')
+    filterTo('Type', 'Expense')
+
+    expect(screen.getByText(`at:${GRID_ADDRESS}&account=Itau&kind=Expense`)).toBeInTheDocument()
+    expect(screen.getByText('navigation:REPLACE')).toBeInTheDocument()
+  })
+
+  it('restores the column filters from the address', () => {
+    renderGrid({ address: `${GRID_ADDRESS}&kind=Card+payment` })
+
+    expect(bodyRows()).toHaveLength(2)
+    expect(footer()).toHaveTextContent('2 of 7 rows')
+    expect(screen.getByRole('button', { name: 'Clear filters' })).toBeInTheDocument()
+  })
+
+  it('restores a column with every value unchecked as no rows', () => {
+    renderGrid({ address: `${GRID_ADDRESS}&category=` })
+
+    expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
+  })
+
+  it('takes the filters out of the address on Clear filters', () => {
+    renderGrid({ address: `${GRID_ADDRESS}&account=Itau&kind=Expense` })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+    expect(screen.getByText(`at:${GRID_ADDRESS}`)).toBeInTheDocument()
+    expect(bodyRows()).toHaveLength(7)
   })
 
   it('[AC P60-F16-month-transactions-view-03] links the account and keeps every description plain text', () => {
