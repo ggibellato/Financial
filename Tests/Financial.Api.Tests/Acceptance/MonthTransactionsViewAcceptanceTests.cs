@@ -149,8 +149,8 @@ public class MonthTransactionsViewAcceptanceTests : ApiEndpointTests
             deposit.AccountId.Should().Be(Guid.Parse(BarclaysId));
             movement.AccountId.Should().Be(Guid.Parse(ReservaId));
             new[] { deposit, movement }.Select(row => row.Transaction.Operation).Should().AllSatisfy(operation =>
-                operation.Should().BeEquivalentTo(new { OperationId = Guid.Parse(OperationId), PotsAccountId = Guid.Parse(ReservaId), Year = 2026, Month = 10 }));
-            rows.Should().OnlyContain(row => row.AccountId != Guid.Empty && row.AccountName.Length > 0);
+                operation.Should().BeEquivalentTo(new { OperationId = Guid.Parse(OperationId), Kind = "Deposit", PotsAccountId = Guid.Parse(ReservaId), Year = 2026, Month = 10 }));
+            rows.Should().OnlyContain(row => row.AccountId != Guid.Empty && !string.IsNullOrEmpty(row.AccountName));
         }
     }
 
