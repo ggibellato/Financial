@@ -4,6 +4,10 @@ export const NO_FILTER_MATCH_MESSAGE = 'No rows match the current filters.'
 
 export type ColumnFilterAccessor<T> = (row: T) => string | string[] | null | undefined
 
+export type ColumnSelections = Record<string, Set<string>>
+
+export type ColumnSelectionsState = [ColumnSelections, (change: (current: ColumnSelections) => ColumnSelections) => void]
+
 export interface FilterSummary {
   isFiltered: boolean
   shownCount: number
@@ -38,8 +42,10 @@ function normalizeValues(value: string | string[] | null | undefined): string[] 
 export function useColumnFilters<T>(
   rows: T[],
   accessors: Record<string, ColumnFilterAccessor<T>>,
+  selectionsState?: ColumnSelectionsState,
 ): UseColumnFiltersResult<T> {
-  const [selections, setSelections] = useState<Record<string, Set<string>>>({})
+  const localSelections = useState<ColumnSelections>({})
+  const [selections, setSelections] = selectionsState ?? localSelections
 
   const availableValues = useMemo(() => {
     const result: Record<string, string[]> = {}
@@ -59,7 +65,7 @@ export function useColumnFilters<T>(
   const isColumnFiltered = (columnKey: string): boolean => {
     const selected = selections[columnKey]
     if (selected === undefined) return false
-    return selected.size < (availableValues[columnKey]?.length ?? 0)
+    return (availableValues[columnKey] ?? []).some((value) => !selected.has(value))
   }
 
   const toggleValue = (columnKey: string, value: string) => {
@@ -78,7 +84,7 @@ export function useColumnFilters<T>(
   const toggleAll = (columnKey: string) => {
     setSelections((current) => {
       const selected = current[columnKey]
-      const currentlyFiltered = selected !== undefined && selected.size < (availableValues[columnKey]?.length ?? 0)
+      const currentlyFiltered = selected !== undefined && (availableValues[columnKey] ?? []).some((value) => !selected.has(value))
       const next = { ...current }
       if (currentlyFiltered) {
         // Partially checked -> (All) checks everything, i.e. reverts to unfiltered.
@@ -91,7 +97,7 @@ export function useColumnFilters<T>(
     })
   }
 
-  const clearFilters = () => setSelections({})
+  const clearFilters = () => setSelections(() => ({}))
 
   const filteredRows = useMemo(() => {
     const activeColumns = Object.keys(accessors).filter((columnKey) => isColumnFiltered(columnKey))

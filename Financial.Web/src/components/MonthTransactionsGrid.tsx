@@ -21,6 +21,7 @@ import {
 } from '@fluentui/react-components'
 import type { MonthTransactionDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
+import { useColumnFilterAddress } from '../hooks/useColumnFilterAddress'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
@@ -145,7 +146,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
     (operationDelete.isDeleting && operationDelete.target?.operationId === transaction.operation?.operationId)
   const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
   const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =
-    useColumnFilters(rows, FILTER_ACCESSORS)
+    useColumnFilters(rows, FILTER_ACCESSORS, useColumnFilterAddress(FILTER_KEYS))
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
   const monthValue = formatMonthInputValue(year, month)
 
