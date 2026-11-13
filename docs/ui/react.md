@@ -159,6 +159,13 @@ fits without scrolling. That is expected, not a bug to design away:
   (this app's nav tree has none — categories only group leaf pages) stays
   plain text, not a link; do not invent a fake link target just to make a
   segment "clickable." `Breadcrumb.tsx` is the reference.
+- **Main navigation:** a one-level rail of category buttons (`Sidebar.tsx`),
+  expanded with labels or minimised to icons. A category's pages open in a
+  flyout beside its button on hover, focus or click, with Admin's groups as
+  plain headings that never fold. The flyout is rendered right after its
+  button so Tab reaches its links; Escape closes it and returns focus to the
+  button. The current category is marked with a side bar as well as colour.
+  On a phone the drawer lists every page under its category heading.
 - Prefer native semantics over custom ARIA roles.
 - Manage focus after dialogs, drawers, asynchronous updates, and validation
   failure.

@@ -2,7 +2,7 @@ import { act, fireEvent, screen, within } from '@testing-library/react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Sidebar from '../Sidebar'
-import { NAV_TREE } from '../../navigation/navTree'
+import { NAV_TREE, type NavCategory } from '../../navigation/navTree'
 import { render } from '../../test/renderWithFluent'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
 
@@ -27,6 +27,7 @@ const renderSidebar = (
                 onMobileOpenChange={sidebarProps.onMobileOpenChange ?? (() => {})}
               />
               <LocationDisplay />
+              <button type="button">Outside</button>
             </>
           }
         />
@@ -34,81 +35,73 @@ const renderSidebar = (
     </MemoryRouter>,
   )
 
-const linkTo = (route: string) => screen.queryAllByRole('link').find((link) => link.getAttribute('href') === route)
+const mainNav = () => screen.getByRole('navigation', { name: 'Main' })
+const railButton = (label: string) => within(mainNav()).getByRole('button', { name: label })
+const flyout = () => document.querySelector('.sidebar-flyout') as HTMLElement | null
+const pagesOf = (category: NavCategory) => [...category.children, ...(category.groups ?? []).flatMap((group) => group.children)]
+const adminCategory = NAV_TREE.find((category) => category.id === 'admin')!
 
-describe('Sidebar', () => {
+describe('Sidebar rail', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+
   afterEach(() => {
+    vi.useRealTimers()
     localStorage.clear()
   })
 
-  it('renders Expanded by default with no stored preference', () => {
+  it('shows one rail button per category and no page links until a category is opened', () => {
     renderSidebar()
 
-    expect(screen.getByText('Investments')).toBeInTheDocument()
-    expect(screen.getAllByText('CashFlow').length).toBeGreaterThan(0)
-    expect(screen.getByText('Admin')).toBeInTheDocument()
-    for (const category of NAV_TREE) {
-      for (const child of category.children) {
-        expect(screen.getByRole('link', { name: child.label })).toBeInTheDocument()
-      }
-    }
-    expect(screen.getByRole('navigation', { name: 'Main' })).not.toHaveClass('sidebar--collapsed')
+    expect(
+      within(mainNav())
+        .getAllByRole('button')
+        .filter((button) => button.getAttribute('aria-expanded') !== null)
+        .map((button) => button.textContent),
+    ).toEqual(NAV_TREE.map((category) => category.label))
+    expect(within(mainNav()).queryAllByRole('link')).toHaveLength(0)
+    expect(mainNav()).not.toHaveClass('sidebar--collapsed')
   })
 
-  it('renders the Admin category with a divider, its two groups, and no group children until expanded', () => {
+  it('hovering a category opens its flyout with that category\'s pages', () => {
     renderSidebar()
 
-    expect(document.querySelector('.sidebar__divider')).toBeInTheDocument()
-    expect(screen.getByText('Investment')).toBeInTheDocument()
-    const adminGroups = NAV_TREE.find((c) => c.id === 'admin')!.groups!
-    for (const group of adminGroups) {
-      for (const child of group.children) {
-        expect(linkTo(child.route)).toBeUndefined()
-      }
-    }
+    fireEvent.mouseEnter(railButton('CashFlow'))
+
+    const links = within(flyout()!).getAllByRole('link').map((link) => link.textContent)
+    expect(links).toEqual(NAV_TREE[1].children.map((child) => child.label))
+    expect(railButton('CashFlow')).toHaveAttribute('aria-expanded', 'true')
+    expect(railButton('CashFlow')).toHaveAttribute('aria-controls', flyout()!.id)
   })
 
-  it('expanding an Admin group reveals its entity leaves, and only one group at a time', () => {
+  it('shows the Admin pages under plain group headings, with nothing to expand', () => {
     renderSidebar()
 
-    fireEvent.click(screen.getByText('Investment'))
-    expect(screen.getByRole('link', { name: 'Brokers' })).toBeInTheDocument()
+    fireEvent.click(railButton('Admin'))
 
-    const cashflowGroupHeader = screen
-      .getAllByText('CashFlow')
-      .find((el) => el.closest('.sidebar__group-header'))!
-    fireEvent.click(cashflowGroupHeader)
-
-    expect(screen.getByRole('link', { name: 'Categories' })).toBeInTheDocument()
-    expect(screen.queryByRole('link', { name: 'Brokers' })).not.toBeInTheDocument()
-  })
-
-  it('all Admin entity leaves navigate to their routes once their group is expanded', () => {
-    renderSidebar()
-
-    const adminGroups = NAV_TREE.find((c) => c.id === 'admin')!.groups!
-    for (const group of adminGroups) {
-      const groupHeader = screen.getAllByText(group.label).find((el) => el.closest('.sidebar__group-header'))!
-      fireEvent.click(groupHeader)
-      for (const child of group.children) {
-        fireEvent.click(linkTo(child.route)!)
-        expect(screen.getByTestId('location')).toHaveTextContent(child.route)
-      }
+    const panel = flyout()!
+    for (const group of adminCategory.groups!) {
+      const list = within(panel).getByRole('list', { name: group.label })
+      expect(within(list).getAllByRole('link').map((link) => link.textContent)).toEqual(group.children.map((child) => child.label))
     }
+    expect(within(panel).queryAllByRole('button')).toHaveLength(0)
   })
 
   it('[AC P60-F13-consolidated-navigation-and-retirement-01] shows the F13 CashFlow and Admin CashFlow menus', () => {
     renderSidebar()
 
-    const cashFlowLinks = within(screen.getByRole('navigation', { name: 'Main' }))
-      .getAllByRole('link')
-      .filter((link) => link.getAttribute('href')?.startsWith('/cashflow/'))
-    expect(cashFlowLinks.map((link) => link.textContent)).toEqual(['Accounts', 'Annual summary', 'Mensais', 'Investment snapshots'])
+    fireEvent.click(railButton('CashFlow'))
+    expect(within(flyout()!).getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'Accounts',
+      'Annual summary',
+      'Mensais',
+      'Investment snapshots',
+    ])
 
-    fireEvent.click(screen.getAllByText('CashFlow').find((el) => el.closest('.sidebar__group-header'))!)
-
-    const adminCashFlowLinks = screen.getAllByRole('link').filter((link) => link.getAttribute('href')?.startsWith('/admin/cashflow/'))
-    expect(adminCashFlowLinks.map((link) => link.textContent)).toEqual([
+    fireEvent.click(railButton('Admin'))
+    const adminCashFlow = within(flyout()!).getByRole('list', { name: 'CashFlow' })
+    expect(within(adminCashFlow).getAllByRole('link').map((link) => link.textContent)).toEqual([
       'Accounts',
       'Categories',
       'Income sources',
@@ -117,21 +110,162 @@ describe('Sidebar', () => {
     ])
   })
 
-  it('toggling collapses and expands the sidebar', () => {
+  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-06] lists the CashFlow pages without Monthly', () => {
+    renderSidebar()
+
+    fireEvent.click(railButton('CashFlow'))
+
+    expect(within(flyout()!).getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/cashflow/accounts')
+    expect(within(flyout()!).queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
+    expect(document.querySelector('a[href^="/cashflow/monthly"]')).toBeNull()
+  })
+
+  it('every page in every category navigates to its route and closes the flyout', () => {
+    renderSidebar()
+
+    for (const category of NAV_TREE) {
+      for (const page of pagesOf(category)) {
+        fireEvent.click(railButton(category.label))
+        const link = within(flyout()!)
+          .getAllByRole('link')
+          .find((candidate) => candidate.getAttribute('href') === page.route)!
+        fireEvent.click(link)
+        expect(screen.getByTestId('location')).toHaveTextContent(page.route)
+        expect(flyout()).toBeNull()
+      }
+    }
+  })
+
+  it('rail buttons open their flyout but do not navigate', () => {
+    renderSidebar()
+
+    for (const category of NAV_TREE) {
+      fireEvent.click(railButton(category.label))
+    }
+
+    expect(screen.getByTestId('location')).toHaveTextContent('/investments/active-investments')
+  })
+
+  it('marks the category of the current page, and the page link inside its flyout', () => {
+    renderSidebar('/cashflow/mensais')
+
+    expect(railButton('CashFlow')).toHaveClass('sidebar__category-header--active')
+    expect(railButton('Investments')).not.toHaveClass('sidebar__category-header--active')
+
+    fireEvent.click(railButton('CashFlow'))
+    expect(within(flyout()!).getByRole('link', { name: 'Mensais' })).toHaveAttribute('aria-current', 'page')
+    expect(within(flyout()!).getByRole('link', { name: 'Accounts' })).not.toHaveAttribute('aria-current')
+  })
+
+  it('marks the parent category on a detail route nested under one of its pages', () => {
+    renderSidebar('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
+
+    expect(railButton('CashFlow')).toHaveClass('sidebar__category-header--active')
+  })
+
+  it('moving the pointer off both the rail button and flyout closes it after ~250ms unless re-entered', () => {
+    renderSidebar()
+
+    const category = railButton('CashFlow').parentElement!
+    fireEvent.mouseEnter(category)
+    fireEvent.mouseLeave(category)
+    act(() => {
+      vi.advanceTimersByTime(100)
+    })
+    fireEvent.mouseEnter(category)
+    act(() => {
+      vi.advanceTimersByTime(250)
+    })
+    expect(flyout()).not.toBeNull()
+
+    fireEvent.mouseLeave(category)
+    act(() => {
+      vi.advanceTimersByTime(250)
+    })
+    expect(flyout()).toBeNull()
+  })
+
+  it('focusing a rail button opens its flyout, and its links follow the button in tab order', () => {
+    renderSidebar()
+
+    fireEvent.focus(railButton('CashFlow'))
+
+    const panel = flyout()!
+    expect(railButton('CashFlow').compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(panel.compareDocumentPosition(railButton('Admin')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('keeps the flyout open while focus moves from the rail button into it', () => {
+    renderSidebar()
+
+    fireEvent.focus(railButton('CashFlow'))
+    const firstLink = within(flyout()!).getAllByRole('link')[0]
+    fireEvent.blur(railButton('CashFlow'), { relatedTarget: firstLink })
+
+    expect(flyout()).not.toBeNull()
+  })
+
+  it('closes the flyout when focus leaves both the rail button and the flyout', () => {
+    renderSidebar()
+
+    fireEvent.focus(railButton('CashFlow'))
+    fireEvent.blur(railButton('CashFlow'), { relatedTarget: screen.getByRole('button', { name: 'Outside' }) })
+
+    expect(flyout()).toBeNull()
+  })
+
+  it('pressing Escape inside the flyout closes it and returns focus to its rail button without reopening', () => {
+    renderSidebar()
+
+    const trigger = railButton('CashFlow')
+    fireEvent.focus(trigger)
+    const firstLink = within(flyout()!).getAllByRole('link')[0]
+    firstLink.focus()
+    fireEvent.keyDown(firstLink, { key: 'Escape' })
+
+    expect(flyout()).toBeNull()
+    expect(document.activeElement).toBe(trigger)
+  })
+
+  it('pressing Escape on the rail button closes its flyout and the next hover still opens it', () => {
+    renderSidebar()
+
+    const trigger = railButton('CashFlow')
+    trigger.focus()
+    fireEvent.keyDown(trigger, { key: 'Escape' })
+    expect(flyout()).toBeNull()
+
+    fireEvent.mouseEnter(trigger)
+    expect(flyout()).not.toBeNull()
+  })
+
+  it('toggling minimises the rail to icons with accessible names, and expands it again', () => {
     renderSidebar()
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
 
-    expect(screen.getByRole('navigation', { name: 'Main' })).toHaveClass('sidebar--collapsed')
-    expect(screen.queryByRole('link', { name: 'Active investments' })).not.toBeInTheDocument()
+    expect(mainNav()).toHaveClass('sidebar--collapsed')
+    expect(railButton('CashFlow')).toHaveAttribute('aria-label', 'CashFlow')
+    expect(within(mainNav()).queryByText('CashFlow')).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Expand sidebar' }))
 
-    expect(screen.getByRole('navigation', { name: 'Main' })).not.toHaveClass('sidebar--collapsed')
-    expect(screen.getByRole('link', { name: 'Active investments' })).toBeInTheDocument()
+    expect(mainNav()).not.toHaveClass('sidebar--collapsed')
+    expect(within(mainNav()).getByText('CashFlow')).toBeInTheDocument()
   })
 
-  it('persists collapsed state to localStorage on toggle', () => {
+  it('a minimised rail opens the same flyout on hover', () => {
+    renderSidebar()
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+
+    fireEvent.mouseEnter(railButton('CashFlow'))
+
+    expect(within(flyout()!).getAllByRole('link').map((link) => link.textContent)).toEqual(
+      NAV_TREE[1].children.map((child) => child.label),
+    )
+  })
+
+  it('persists the minimised state to localStorage on toggle', () => {
     renderSidebar()
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
@@ -139,215 +273,60 @@ describe('Sidebar', () => {
     expect(localStorage.getItem('financial.sidebarCollapsed')).toBe('true')
   })
 
-  it('renders already Collapsed on mount when localStorage has a stored true value', () => {
+  it('renders already minimised on mount when localStorage has a stored true value', () => {
     localStorage.setItem('financial.sidebarCollapsed', 'true')
 
     renderSidebar()
 
-    expect(screen.getByRole('navigation', { name: 'Main' })).toHaveClass('sidebar--collapsed')
+    expect(mainNav()).toHaveClass('sidebar--collapsed')
+  })
+
+  it('the toggle button shows only its native tooltip, no flyout', () => {
+    renderSidebar()
+
+    const toggle = screen.getByRole('button', { name: 'Collapse sidebar' })
+    fireEvent.mouseEnter(toggle)
+
+    expect(toggle).toHaveAttribute('title', 'Collapse sidebar')
+    expect(flyout()).toBeNull()
+  })
+})
+
+describe('Sidebar on a phone', () => {
+  const originalMatchMedia = window.matchMedia
+
+  beforeEach(() => {
+    mockMatchMedia(true)
+  })
+
+  afterEach(() => {
+    window.matchMedia = originalMatchMedia
+  })
+
+  it('renders nothing when closed (OverlayDrawer unmounts its content)', () => {
+    renderSidebar(undefined, { mobileOpen: false })
+
     expect(screen.queryByRole('link', { name: 'Active investments' })).not.toBeInTheDocument()
   })
 
-  it('highlights only the nav item matching the current route', () => {
-    renderSidebar('/cashflow/mensais')
+  it('lists every page under its category heading, Admin groups included, with nothing to expand', () => {
+    renderSidebar(undefined, { mobileOpen: true })
 
-    expect(screen.getByRole('link', { name: 'Mensais' })).toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Active investments' })).not.toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Annual summary' })).not.toHaveClass('active')
-  })
-
-  it('highlights the parent page and its category on a detail route nested under it', () => {
-    renderSidebar('/cashflow/accounts/8f3b1c1a-2e3a-4b1a-9a7f-100000000001')
-
-    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveClass('active')
-    expect(screen.getAllByText('CashFlow')[0].closest('.sidebar__category-header')).toHaveClass('sidebar__category-header--active')
-  })
-
-  it('[AC P61-F01-accounts-overview-tabs-and-monthly-fold-06] lists the CashFlow pages without Monthly', () => {
-    renderSidebar()
-
-    expect(screen.getByRole('link', { name: 'Accounts' })).toHaveAttribute('href', '/cashflow/accounts')
-    expect(screen.queryByRole('link', { name: 'Monthly' })).not.toBeInTheDocument()
-    expect(document.querySelector('a[href^="/cashflow/monthly"]')).toBeNull()
-  })
-
-  it('category headers do not navigate', () => {
-    renderSidebar()
-
-    fireEvent.click(screen.getByText('Investments'))
-    const cashflowCategoryHeader = screen
-      .getAllByText('CashFlow')
-      .find((el) => el.closest('.sidebar__category-header'))!
-    fireEvent.click(cashflowCategoryHeader)
-    fireEvent.click(screen.getByText('Admin'))
-
-    expect(screen.getByTestId('location')).toHaveTextContent('/investments/active-investments')
-  })
-
-  it('all ten children navigate to their routes', () => {
-    renderSidebar()
-
+    const dialog = screen.getByRole('dialog')
+    const links = within(dialog).getAllByRole('link').map((link) => link.getAttribute('href'))
+    expect(links).toEqual(NAV_TREE.flatMap((category) => pagesOf(category).map((page) => page.route)))
     for (const category of NAV_TREE) {
-      for (const child of category.children) {
-        fireEvent.click(screen.getByRole('link', { name: child.label }))
-        expect(screen.getByTestId('location')).toHaveTextContent(child.route)
-      }
+      expect(within(dialog).getAllByText(category.label).length).toBeGreaterThan(0)
     }
+    expect(within(dialog).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Close navigation'])
   })
 
-  describe('collapsed-mode flyouts', () => {
-    const collapse = () => fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
+  it('clicking the close button calls onMobileOpenChange(false)', () => {
+    const onMobileOpenChange = vi.fn()
+    renderSidebar(undefined, { mobileOpen: true, onMobileOpenChange })
 
-    beforeEach(() => {
-      vi.useFakeTimers()
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'Close navigation' }))
 
-    afterEach(() => {
-      vi.useRealTimers()
-    })
-
-    it('collapsed sidebar opens a flyout listing exactly that category\'s children on hover', () => {
-      renderSidebar()
-      collapse()
-
-      fireEvent.mouseEnter(screen.getByRole('button', { name: 'CashFlow' }))
-
-      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
-      const links = Array.from(flyoutList.querySelectorAll('a')).map((a) => a.textContent)
-      expect(links).toEqual(NAV_TREE[1].children.map((c) => c.label))
-    })
-
-    it('clicking a flyout child navigates and closes the flyout', () => {
-      renderSidebar()
-      collapse()
-
-      fireEvent.mouseEnter(screen.getByRole('button', { name: 'CashFlow' }))
-      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
-      fireEvent.click(within(flyoutList).getByRole('link', { name: 'Mensais' }))
-
-      expect(screen.getByTestId('location')).toHaveTextContent('/cashflow/mensais')
-      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
-    })
-
-    it('moving the pointer off both the icon and flyout closes it after ~250ms unless re-entered', () => {
-      renderSidebar()
-      collapse()
-
-      const trigger = screen.getByRole('button', { name: 'CashFlow' })
-      fireEvent.mouseEnter(trigger)
-      fireEvent.mouseLeave(trigger)
-
-      act(() => {
-        vi.advanceTimersByTime(100)
-      })
-      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
-      fireEvent.mouseEnter(flyoutList.closest('.sidebar-flyout')!)
-
-      act(() => {
-        vi.advanceTimersByTime(250)
-      })
-      expect(screen.getByRole('list', { name: 'CashFlow' })).toBeInTheDocument()
-
-      fireEvent.mouseLeave(flyoutList.closest('.sidebar-flyout')!)
-      act(() => {
-        vi.advanceTimersByTime(250)
-      })
-      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
-    })
-
-    it('tab-focusing a category icon opens the identical flyout as hovering does', () => {
-      renderSidebar()
-      collapse()
-
-      fireEvent.focus(screen.getByRole('button', { name: 'CashFlow' }))
-
-      const flyoutList = screen.getByRole('list', { name: 'CashFlow' })
-      const links = Array.from(flyoutList.querySelectorAll('a')).map((a) => a.textContent)
-      expect(links).toEqual(NAV_TREE[1].children.map((c) => c.label))
-    })
-
-    it('pressing Escape while a flyout is open closes it and returns focus to the triggering icon', () => {
-      renderSidebar()
-      collapse()
-
-      const trigger = screen.getByRole('button', { name: 'CashFlow' })
-      fireEvent.focus(trigger)
-      const flyoutRoot = screen.getByRole('list', { name: 'CashFlow' }).closest('.sidebar-flyout')!
-      fireEvent.keyDown(flyoutRoot, { key: 'Escape' })
-
-      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
-      expect(document.activeElement).toBe(trigger)
-    })
-
-    it('blurring to an element outside the trigger and flyout closes immediately', () => {
-      renderSidebar()
-      collapse()
-
-      const trigger = screen.getByRole('button', { name: 'CashFlow' })
-      fireEvent.focus(trigger)
-      expect(screen.getByRole('list', { name: 'CashFlow' })).toBeInTheDocument()
-
-      fireEvent.blur(trigger, { relatedTarget: document.body })
-
-      expect(screen.queryByRole('list', { name: 'CashFlow' })).not.toBeInTheDocument()
-    })
-
-    it('expanded sidebar shows no flyout on hover or focus', () => {
-      renderSidebar()
-
-      const cashflowCategoryHeader = screen
-        .getAllByText('CashFlow')
-        .find((el) => el.closest('.sidebar__category-header'))!
-      fireEvent.mouseEnter(cashflowCategoryHeader)
-
-      expect(document.querySelector('.sidebar-flyout')).not.toBeInTheDocument()
-    })
-
-    it('toggle button still shows only its native tooltip, no flyout', () => {
-      renderSidebar()
-      collapse()
-
-      const toggle = screen.getByRole('button', { name: 'Expand sidebar' })
-      fireEvent.mouseEnter(toggle)
-
-      expect(toggle).toHaveAttribute('title', 'Expand sidebar')
-      expect(document.querySelector('.sidebar-flyout')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('mobile mode (below the phone breakpoint)', () => {
-    const originalMatchMedia = window.matchMedia
-
-    beforeEach(() => {
-      mockMatchMedia(true)
-    })
-
-    afterEach(() => {
-      window.matchMedia = originalMatchMedia
-    })
-
-    it('renders nothing when closed (OverlayDrawer unmounts its content)', () => {
-      renderSidebar(undefined, { mobileOpen: false })
-
-      expect(screen.queryByRole('link', { name: 'Active investments' })).not.toBeInTheDocument()
-    })
-
-    it('renders the full, uncollapsed nav tree inside an accessible dialog when open', () => {
-      renderSidebar(undefined, { mobileOpen: true })
-
-      const dialog = screen.getByRole('dialog')
-      expect(within(dialog).getByRole('link', { name: 'Active investments' })).toBeInTheDocument()
-      expect(within(dialog).getByText('Investments')).toBeInTheDocument()
-      expect(within(dialog).getByText('Admin')).toBeInTheDocument()
-    })
-
-    it('clicking the close button calls onMobileOpenChange(false)', () => {
-      const onMobileOpenChange = vi.fn()
-      renderSidebar(undefined, { mobileOpen: true, onMobileOpenChange })
-
-      fireEvent.click(screen.getByRole('button', { name: 'Close navigation' }))
-
-      expect(onMobileOpenChange).toHaveBeenCalledWith(false)
-    })
+    expect(onMobileOpenChange).toHaveBeenCalledWith(false)
   })
 })

@@ -1,7 +1,7 @@
 import React from 'react'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { PINNED_NOW, inDays, pinDate } from '../../test-utils/pinDate'
 import type {
@@ -208,6 +208,7 @@ describe('DashboardPage', () => {
       label: 'Dashboard',
       route: '/investments/dashboard',
     })
+    fireEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Investments' }))
     expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute('href', '/investments/dashboard')
     expect(screen.getByRole('heading', { name: 'Dashboard', level: 2 })).toBeInTheDocument()
   })

@@ -16,6 +16,9 @@ const AppWithRoutes = ({ initialEntry = '/investments/active-investments' }: { i
   </MemoryRouter>
 )
 
+const openRailCategory = (label: string) =>
+  fireEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', { name: label }))
+
 describe('App', () => {
   afterEach(() => {
     sessionStorage.clear()
@@ -41,6 +44,7 @@ describe('App', () => {
   it('switches to the cashflow domain content', () => {
     render(<AppWithRoutes />)
 
+    openRailCategory('CashFlow')
     fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
     expect(screen.getByText('CashFlow domain content')).toBeInTheDocument()
@@ -50,6 +54,7 @@ describe('App', () => {
   it('switches back to the investments domain content', () => {
     render(<AppWithRoutes initialEntry="/cashflow/mensais" />)
 
+    openRailCategory('Investments')
     fireEvent.click(screen.getByRole('link', { name: 'Active investments' }))
 
     expect(screen.getByText('Investments domain content')).toBeInTheDocument()
@@ -59,13 +64,15 @@ describe('App', () => {
   it('active nav link receives active class', () => {
     render(<AppWithRoutes initialEntry="/cashflow/mensais" />)
 
+    openRailCategory('CashFlow')
     expect(screen.getByRole('link', { name: 'Mensais' })).toHaveClass('active')
-    expect(screen.getByRole('link', { name: 'Active investments' })).not.toHaveClass('active')
+    expect(screen.getByRole('link', { name: 'Accounts' })).not.toHaveClass('active')
   })
 
   it('persists the active domain to sessionStorage on navigation', () => {
     render(<AppWithRoutes />)
 
+    openRailCategory('CashFlow')
     fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
     expect(sessionStorage.getItem('financial.selectedDomain')).toBe('cashflow')
@@ -74,6 +81,7 @@ describe('App', () => {
   it('announces the page the user navigated to and titles the document with it', async () => {
     render(<AppWithRoutes />)
 
+    openRailCategory('CashFlow')
     fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
     expect(await screen.findByRole('status')).toHaveTextContent('Mensais')
