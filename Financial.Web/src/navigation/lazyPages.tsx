@@ -28,7 +28,6 @@ export const RecurringBillsPage = lazy(() => import('../pages/RecurringBillsPage
 export const ReportingCurrencyPage = lazy(() => import('../pages/ReportingCurrencyPage'))
 export const MovedPageRedirect = lazy(() => import('../pages/MovedPageRedirect'))
 export const TaxPage = lazy(() => import('../pages/TaxPage'))
-export const TaxRulesPage = lazy(() => import('../pages/TaxRulesPage'))
 
 export function MonthlyRedirect() {
   const [searchParams] = useSearchParams()

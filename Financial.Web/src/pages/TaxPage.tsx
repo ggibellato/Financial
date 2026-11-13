@@ -12,7 +12,6 @@ import { DocumentArrowDownRegular } from '@fluentui/react-icons'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
-import StatusBadge from '../components/StatusBadge'
 import DataTableCell from '../components/grid/DataTableCell'
 import { useTaxWorkbook } from '../hooks/useTaxWorkbook'
 import type { TaxCategoryTotalDto, TaxWorkbookEntryDto } from '../api/types'
@@ -39,9 +38,6 @@ function EntryRow({ entry }: { entry: TaxWorkbookEntryDto }) {
       {amountCell('Gross', entry.grossAmount)}
       {amountCell('Withheld', entry.withheldAmount)}
       {amountCell('Net', entry.netAmount)}
-      <DataTableCell label="Status">
-        <StatusBadge status={entry.calculationStatus} />
-      </DataTableCell>
       <DataTableCell label="Evidence" className="tax-page__evidence-cell">
         {entry.evidenceReference}
       </DataTableCell>
@@ -129,11 +125,6 @@ export default function TaxPage() {
             >
               Export CSV
             </Button>
-            {workbook?.calculationStatus && (
-              <span className="tax-page__aggregate-status">
-                Overall status: <StatusBadge status={workbook.calculationStatus} />
-              </span>
-            )}
           </div>
 
           {isLoadingWorkbook ? (
@@ -158,7 +149,6 @@ export default function TaxPage() {
                       <TableHeaderCell className="data-table__col--numeric">Gross</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Withheld</TableHeaderCell>
                       <TableHeaderCell className="data-table__col--numeric">Net</TableHeaderCell>
-                      <TableHeaderCell>Status</TableHeaderCell>
                       <TableHeaderCell>Evidence</TableHeaderCell>
                     </TableRow>
                   </TableHeader>

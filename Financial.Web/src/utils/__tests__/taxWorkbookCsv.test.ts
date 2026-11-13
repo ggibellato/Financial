@@ -14,7 +14,7 @@ function buildWorkbook(overrides: Partial<TaxWorkbookDto> = {}): TaxWorkbookDto 
 }
 
 describe('buildTaxWorkbookCsv', () => {
-  it('produces exactly the 13 specified columns in order', () => {
+  it('produces exactly the 12 specified columns in order', () => {
     const csv = buildTaxWorkbookCsv(buildWorkbook())
     const header = csv.split('\r\n')[0]
 
@@ -30,7 +30,6 @@ describe('buildTaxWorkbookCsv', () => {
       'WithheldAmount',
       'NetAmount',
       'Currency',
-      'CalculationStatus',
       'EvidenceReference',
     ])
   })
@@ -75,8 +74,8 @@ describe('buildTaxWorkbookCsv', () => {
 
     const rows = csv.split('\r\n').slice(1)
     expect(rows).toHaveLength(2)
-    expect(rows[0]).toBe('2026-06-01,BR,2026,Dividend,,,,100,10,90,BRL,Final,ev-1')
-    expect(rows[1]).toBe('2026-07-01,BR,2026,CapitalGain,500,400,100,,,,BRL,Incomplete,ev-2')
+    expect(rows[0]).toBe('2026-06-01,BR,2026,Dividend,,,,100,10,90,BRL,ev-1')
+    expect(rows[1]).toBe('2026-07-01,BR,2026,CapitalGain,500,400,100,,,,BRL,ev-2')
   })
 
   it('derives GBP for UK and BRL for BR', () => {
@@ -113,8 +112,8 @@ describe('buildTaxWorkbookCsv', () => {
           {
             id: '1',
             date: '2026-01-01',
-            // No real field carries a comma today (EventCategory/CalculationStatus are closed
-            // enums), but the columns are free strings on the wire - guard against one anyway.
+            // No real field carries a comma today (EventCategory is a closed
+            // enum), but the columns are free strings on the wire - guard against one anyway.
             eventCategory: 'Dividend, extra' as TaxWorkbookEntryDto['eventCategory'],
             proceeds: null,
             costBasis: null,

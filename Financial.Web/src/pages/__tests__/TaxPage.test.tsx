@@ -163,16 +163,12 @@ describe('TaxPage', () => {
     expect(screen.getByText('ev-2')).toBeInTheDocument()
   })
 
-  it('renders_each_of_the_3_calculation_statuses_with_a_distinct_indicator', () => {
+  it('shows_no_calculation_status_on_entries_or_the_workbook', () => {
     render(<TaxPage />)
-    expect(screen.getByText('Final')).toBeInTheDocument()
-    expect(screen.getByText('Incomplete')).toBeInTheDocument()
-    expect(screen.getAllByText('Requires review').length).toBeGreaterThan(0)
-  })
-
-  it('renders_the_aggregate_status_indicator', () => {
-    render(<TaxPage />)
-    expect(screen.getByText('Overall status:')).toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Status' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Incomplete')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Requires review/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/Overall status/)).not.toBeInTheDocument()
   })
 
   it('export_csv_is_disabled_when_the_selected_workbook_has_zero_entries', () => {

@@ -74,7 +74,6 @@ export const NAV_TREE: NavCategory[] = [
           { id: 'assets', label: 'Assets', route: '/admin/investment/assets' },
           { id: 'brokers', label: 'Brokers', route: '/admin/investment/brokers' },
           { id: 'portfolios', label: 'Portfolios', route: '/admin/investment/portfolios' },
-          { id: 'tax-rules', label: 'Tax rules', route: '/admin/investment/tax-rules' },
         ],
       },
       {
