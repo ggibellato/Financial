@@ -2,7 +2,6 @@ using Financial.Shared.Abstractions.Observability;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OpenTelemetry.Exporter;
-using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
@@ -34,11 +33,6 @@ public static class ObservabilityServiceCollectionExtensions
                 .AddSource(OpenTelemetryTracer.ActivitySourceName)
                 .AddAspNetCoreInstrumentation()
                 .AddHttpClientInstrumentation()
-                .AddOtlpExporter(exporter => ConfigureOtlpExporter(options, exporter)))
-            .WithMetrics(metrics => metrics
-                .AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation()
                 .AddOtlpExporter(exporter => ConfigureOtlpExporter(options, exporter)));
 
         return services;

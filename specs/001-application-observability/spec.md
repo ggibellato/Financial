@@ -80,6 +80,8 @@ The developer wants a clear, evidence-based assessment of the application's curr
 
 ## Requirements *(mandatory)*
 
+> **Amendment 2026-11-13:** FR-003 and FR-015 are narrowed to traces. Neither supported backend ingests OTLP metrics or logs (Jaeger stores traces only; Langfuse's OTLP endpoint is traces-only), so the metrics pipeline and the Serilog OTLP log sink exported into rejection. Both were removed; structured logs stay in the local file sink.
+
 ### Functional Requirements
 
 - **FR-001**: The system MUST allow observability to be fully enabled or fully disabled via configuration/environment settings, without requiring a code change or rebuild to switch between the two states.

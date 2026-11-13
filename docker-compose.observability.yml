@@ -21,8 +21,7 @@
 # local-only defaults. LANGFUSE_INIT_* seeds an org/project/user headlessly so the committed
 # pk-lf-local/sk-lf-local keys work immediately — log into http://localhost:3000 with
 # local@financial.dev / financial-local. Langfuse ingests OTLP traces over HTTP at
-# /api/public/otel/v1/traces (it does not ingest metrics — the metrics exporter's POSTs to the
-# same URL are rejected harmlessly in the background).
+# /api/public/otel/v1/traces; like Jaeger it takes traces only, which is all the app exports.
 services:
   app:
     profiles: ["jaeger", "langfuse"]

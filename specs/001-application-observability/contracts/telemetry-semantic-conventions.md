@@ -36,4 +36,6 @@ Because span attributes are now set explicitly at each call site (rather than by
 
 ## Metric instrumentation surface (enforces FR-015)
 
+> **Superseded 2026-11-13:** metrics and the OTLP log sink were removed; only traces are exported. See the amendment in `spec.md`.
+
 Only OpenTelemetry's standard `AspNetCoreInstrumentation`, `HttpClientInstrumentation`, and `RuntimeInstrumentation` are registered, entirely inside `Integrations/Observability`. No custom `Meter`/`Counter`/`Histogram` — nothing outside that project could add one even if it tried, since nothing outside it references the OpenTelemetry SDK.
