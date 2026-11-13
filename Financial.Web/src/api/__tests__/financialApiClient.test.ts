@@ -286,6 +286,7 @@ describe('financialApiClient', () => {
         brokerName: 'XPI',
         portfolioName: 'Default',
         assetName: 'BCIA11',
+        scope: 'active',
         date: '2024-01-01T00:00:00',
         type: 'Buy',
         quantity: 1,
