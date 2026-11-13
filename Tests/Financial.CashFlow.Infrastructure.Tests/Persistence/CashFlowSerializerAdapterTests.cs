@@ -535,4 +535,33 @@ public class CashFlowSerializerAdapterTests
 
         act.Should().Throw<InvalidDataException>().WithMessage("Version must be a whole number, but is 2.5.");
     }
+
+    [Theory]
+    [InlineData("""{ "Version": "5", "Accounts": [] }""", "Version must be a whole number, but is \"5\".")]
+    [InlineData("""{ "Version": 5.0, "Accounts": [] }""", "Version must be a whole number, but is 5.0.")]
+    [InlineData("""{ "Version": true, "Accounts": [] }""", "Version must be a whole number, but is true.")]
+    [InlineData("""{ "Version": null, "Accounts": [] }""", "data-cashflow.json is version 1; this build needs version 5. Run the migrate command first.")]
+    [InlineData("""{ "Version": 6, "Accounts": [{ "Id": "not-checked" }] }""", "data-cashflow.json is version 6; this build needs version 5.")]
+    public void Deserialize_UnsupportedVersion_RefusedBeforeAnyCollectionIsRead(string json, string expectedMessage)
+    {
+        var act = () => _sut.Deserialize(json);
+
+        act.Should().Throw<InvalidDataException>().WithMessage(expectedMessage);
+    }
+
+    [Fact]
+    public void Deserialize_MalformedJsonAfterAValidVersion_FailsAsMalformedJson()
+    {
+        var act = () => _sut.Deserialize("""{ "Version": 5, "Accounts": [ }""");
+
+        act.Should().Throw<JsonException>().WithMessage("*LineNumber: 0 | BytePositionInLine: 30.");
+    }
+
+    [Fact]
+    public void Deserialize_RootThatIsNotAnObject_Refused()
+    {
+        var act = () => _sut.Deserialize("[]");
+
+        act.Should().Throw<InvalidOperationException>();
+    }
 }
