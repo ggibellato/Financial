@@ -223,6 +223,43 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
+    public async Task ApplyAndSaveAsync_WhenTheFirstWriteAfterLoadingFails_RestoresExactlyTheLoadedState()
+    {
+        var serializer = new CashFlowSerializerAdapter();
+        var loaded = TestCashFlowSeed.AsWrittenBy(serializer);
+        var path = Path.Combine(Path.GetTempPath(), $"cashflow-repo-{Guid.NewGuid()}.json");
+        File.WriteAllText(path, loaded);
+        var storage = new FailOnceJsonStorage(new LocalJsonStorage(path)) { FailNextWrite = true };
+        try
+        {
+            var repository = CashFlowJsonRepository.Load(storage, serializer);
+            var failing = async () => await repository.ApplyAndSaveAsync(() =>
+            {
+                foreach (var expense in repository.GetExpenses().ToList())
+                {
+                    repository.DeleteExpense(expense.Id);
+                }
+
+                repository.AddInvestmentAccount(InvestmentAccount.Create("Lost", isActive: true, isLiability: false));
+                return true;
+            });
+            await failing.Should().ThrowAsync<IOException>();
+
+            await repository.ApplyAndSaveAsync(() => true);
+
+            using (new AssertionScope())
+            {
+                repository.GetExpenses().Should().NotBeEmpty();
+                File.ReadAllText(path).Should().Be(loaded);
+            }
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
     public async Task ApplyAndSaveAsync_AfterAFailedWrite_TheNextSavePersistsItsOwnChangeWithoutTheFailedOne()
     {
         var path = Path.Combine(Path.GetTempPath(), $"cashflow-repo-{Guid.NewGuid()}.json");

@@ -24,7 +24,6 @@ public sealed class CashFlowRepositoryFactory
         ArgumentNullException.ThrowIfNull(options);
 
         var storage = _storageFactory.Create(options, DefaultDataFileName, CashFlowRepositorySettingsOptions.ConfigurationKeys);
-        var data = CashFlowLoader.LoadSync(storage, _serializer);
-        return new CashFlowJsonRepository(data, storage, _serializer);
+        return CashFlowJsonRepository.Load(storage, _serializer);
     }
 }
