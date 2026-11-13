@@ -1,9 +1,9 @@
 .sidebar {
-  width: 240px;
+  width: 168px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
   padding: 12px 8px;
   border-right: 1px solid var(--border);
   background: var(--bg);
@@ -20,6 +20,7 @@
   width: 100%;
   border-right: none;
   padding: 8px 4px;
+  gap: 16px;
 }
 
 .sidebar__toggle {
@@ -29,6 +30,7 @@
   align-self: flex-start;
   width: 40px;
   height: 40px;
+  margin-bottom: 8px;
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -44,24 +46,36 @@
 .sidebar__category {
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 
 .sidebar__category-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 8px;
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-left: 3px solid transparent;
+  border-radius: 0 6px 6px 0;
+  background: transparent;
   color: var(--text-h);
+  font: inherit;
   font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.sidebar__category-header:hover,
+button.sidebar__category-header[aria-expanded='true'] {
+  background: var(--accent-bg);
 }
 
 .sidebar--collapsed .sidebar__category-header {
   justify-content: center;
-  padding: 6px;
 }
 
 .sidebar__category-header--active {
+  border-left-color: var(--accent);
   color: var(--accent);
 }
 
@@ -69,13 +83,15 @@
   white-space: nowrap;
 }
 
-.sidebar__children {
-  list-style: none;
-  margin: 0;
-  padding-left: 16px;
+.sidebar__mobile-category {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+
+.sidebar__mobile-category > .nav-links__list,
+.sidebar__mobile-category > .nav-links__group {
+  padding-left: 16px;
 }
 
 .sidebar__link {
@@ -102,38 +118,4 @@
   border: none;
   border-top: 1px solid var(--border);
   margin: 8px 0;
-}
-
-.sidebar__groups {
-  list-style: none;
-  margin: 0;
-  padding-left: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.sidebar__group-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  color: var(--text);
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.sidebar__group-header:hover {
-  background: var(--accent-bg);
-  color: var(--text-h);
-}
-
-.sidebar__group-header--active {
-  color: var(--accent);
-}
-
-.sidebar__group-disclosure {
-  font-size: 10px;
-  width: 10px;
 }

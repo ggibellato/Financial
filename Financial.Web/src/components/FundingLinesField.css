@@ -13,12 +13,9 @@
   align-items: start;
 }
 
-.funding-lines__amount input {
-  min-width: 0;
-}
-
 .funding-lines__amount > span {
   width: 100%;
+  min-width: 0;
 }
 
 .funding-lines__remove {

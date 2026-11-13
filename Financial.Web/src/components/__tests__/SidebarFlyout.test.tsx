@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import SidebarFlyout from '../SidebarFlyout'
@@ -8,113 +8,76 @@ const category: NavCategory = {
   id: 'cashflow',
   label: 'CashFlow',
   children: [
-    { id: 'monthly', label: 'Monthly', route: '/cashflow/monthly' },
-    { id: 'reserva', label: 'Reserva', route: '/cashflow/reserva' },
+    { id: 'accounts', label: 'Accounts', route: '/cashflow/accounts' },
     { id: 'mensais', label: 'Mensais', route: '/cashflow/mensais' },
+  ],
+}
+
+const groupedCategory: NavCategory = {
+  id: 'admin',
+  label: 'Admin',
+  children: [],
+  groups: [
+    {
+      id: 'investment',
+      label: 'Investment',
+      children: [{ id: 'brokers', label: 'Brokers', route: '/admin/investment/brokers' }],
+    },
+    {
+      id: 'cashflow',
+      label: 'CashFlow',
+      children: [{ id: 'categories', label: 'Categories', route: '/admin/cashflow/categories' }],
+    },
   ],
 }
 
 const anchorRect = { top: 10, right: 56, bottom: 40, left: 0, width: 56, height: 30 } as DOMRect
 
-const renderFlyout = (onClose = vi.fn()) => {
+const renderFlyout = (shown: NavCategory, onNavigate = vi.fn()) => {
   render(
     <MemoryRouter>
-      <SidebarFlyout
-        category={category}
-        anchorRect={anchorRect}
-        onClose={onClose}
-        onMouseEnter={vi.fn()}
-        onMouseLeave={vi.fn()}
-        onBlur={vi.fn()}
-      />
+      <SidebarFlyout id="flyout" category={shown} anchorRect={anchorRect} onNavigate={onNavigate} />
     </MemoryRouter>,
   )
-  return onClose
+  return onNavigate
 }
 
 describe('SidebarFlyout', () => {
+  it('sits beside its rail button', () => {
+    renderFlyout(category)
+
+    const panel = document.getElementById('flyout')!
+    expect(panel).toHaveStyle({ top: '10px', left: '56px' })
+  })
+
   it('renders the category label as a non-clickable title', () => {
-    renderFlyout()
+    renderFlyout(category)
 
     const title = screen.getByText('CashFlow')
-    expect(title).toBeInTheDocument()
-    expect(title.tagName).not.toBe('A')
-    expect(title.tagName).not.toBe('BUTTON')
+    expect(title.tagName).toBe('SPAN')
   })
 
-  it('renders all children as links in category order', () => {
-    renderFlyout()
+  it('renders all pages as links in category order', () => {
+    renderFlyout(category)
 
-    const links = screen.getAllByRole('link')
-    expect(links.map((l) => l.textContent)).toEqual(['Monthly', 'Reserva', 'Mensais'])
+    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['Accounts', 'Mensais'])
   })
 
-  it('clicking a child link calls onClose', () => {
-    const onClose = renderFlyout()
+  it('clicking a page calls onNavigate', () => {
+    const onNavigate = renderFlyout(category)
 
-    fireEvent.click(screen.getByRole('link', { name: 'Monthly' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Mensais' }))
 
-    expect(onClose).toHaveBeenCalledWith()
+    expect(onNavigate).toHaveBeenCalledTimes(1)
   })
 
-  it('pressing Escape calls onClose with refocus requested', () => {
-    const onClose = renderFlyout()
+  it('renders each group as a heading over its own list of pages', () => {
+    const onNavigate = renderFlyout(groupedCategory)
 
-    fireEvent.keyDown(screen.getByText('CashFlow').closest('.sidebar-flyout')!, { key: 'Escape' })
+    expect(within(screen.getByRole('list', { name: 'Investment' })).getByRole('link', { name: 'Brokers' })).toBeInTheDocument()
+    expect(within(screen.getByRole('list', { name: 'CashFlow' })).getByRole('link', { name: 'Categories' })).toBeInTheDocument()
 
-    expect(onClose).toHaveBeenCalledWith(true)
-  })
-
-  describe('grouped category (e.g. Admin)', () => {
-    const groupedCategory: NavCategory = {
-      id: 'admin',
-      label: 'Admin',
-      children: [],
-      groups: [
-        {
-          id: 'investment',
-          label: 'Investment',
-          children: [{ id: 'brokers', label: 'Brokers', route: '/admin/investment/brokers' }],
-        },
-        {
-          id: 'cashflow',
-          label: 'CashFlow',
-          children: [{ id: 'categories', label: 'Categories', route: '/admin/cashflow/categories' }],
-        },
-      ],
-    }
-
-    const renderGroupedFlyout = (onClose = vi.fn()) => {
-      render(
-        <MemoryRouter>
-          <SidebarFlyout
-            category={groupedCategory}
-            anchorRect={anchorRect}
-            onClose={onClose}
-            onMouseEnter={vi.fn()}
-            onMouseLeave={vi.fn()}
-            onBlur={vi.fn()}
-          />
-        </MemoryRouter>,
-      )
-      return onClose
-    }
-
-    it('renders each group label and its own children nested under it', () => {
-      renderGroupedFlyout()
-
-      expect(screen.getByText('Investment')).toBeInTheDocument()
-      expect(screen.getByText('CashFlow')).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'Brokers' })).toBeInTheDocument()
-      expect(screen.getByRole('link', { name: 'Categories' })).toBeInTheDocument()
-    })
-
-    it('clicking a grouped child link calls onClose', () => {
-      const onClose = renderGroupedFlyout()
-
-      fireEvent.click(screen.getByRole('link', { name: 'Brokers' }))
-
-      expect(onClose).toHaveBeenCalledWith()
-    })
+    fireEvent.click(screen.getByRole('link', { name: 'Brokers' }))
+    expect(onNavigate).toHaveBeenCalledTimes(1)
   })
 })
