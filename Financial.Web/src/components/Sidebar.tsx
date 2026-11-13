@@ -2,7 +2,7 @@ import { Fragment, useRef, useState, type FocusEvent, type KeyboardEvent, type R
 import { useLocation } from 'react-router-dom'
 import { Button, OverlayDrawer, DrawerBody, DrawerHeader, DrawerHeaderTitle } from '@fluentui/react-components'
 import { DismissRegular } from '@fluentui/react-icons'
-import { NAV_TREE, matchNavChild, type NavCategory } from '../navigation/navTree'
+import { NAV_TREE, findNavLocation } from '../navigation/navTree'
 import { getStoredSidebarCollapsed, setStoredSidebarCollapsed } from '../utils/sidebarStorage'
 import { useMediaQuery } from '../hooks/useMediaQuery'
 import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
@@ -129,17 +129,16 @@ interface SidebarProps {
   onMobileOpenChange: (open: boolean) => void
 }
 
-function hasActivePage(category: NavCategory, pathname: string) {
-  const pages = [...category.children, ...(category.groups ?? []).flatMap((group) => group.children)]
-  return pages.some((page) => matchNavChild(pathname, page) !== null)
+function categoryHeaderClassName(isActive: boolean) {
+  return `sidebar__category-header${isActive ? ' sidebar__category-header--active' : ''}`
 }
 
-function categoryHeaderClassName(category: NavCategory, pathname: string) {
-  return `sidebar__category-header${hasActivePage(category, pathname) ? ' sidebar__category-header--active' : ''}`
+function useActiveCategoryLabel() {
+  return findNavLocation(useLocation().pathname)?.trail[0]
 }
 
 function MobileNav({ mobileOpen, onMobileOpenChange }: SidebarProps) {
-  const location = useLocation()
+  const activeCategoryLabel = useActiveCategoryLabel()
 
   return (
     <OverlayDrawer
@@ -168,7 +167,7 @@ function MobileNav({ mobileOpen, onMobileOpenChange }: SidebarProps) {
             const CategoryIcon = CATEGORY_ICONS[category.id]
             return (
               <div className="sidebar__mobile-category" key={category.id}>
-                <span className={categoryHeaderClassName(category, location.pathname)}>
+                <span className={categoryHeaderClassName(category.label === activeCategoryLabel)}>
                   <CategoryIcon />
                   {category.label}
                 </span>
@@ -186,7 +185,7 @@ function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
   const isMobile = useMediaQuery(MOBILE_MEDIA_QUERY)
   const [collapsed, setCollapsed] = useState(() => getStoredSidebarCollapsed())
   const [openFlyout, setOpenFlyout] = useState<OpenFlyout | null>(null)
-  const location = useLocation()
+  const activeCategoryLabel = useActiveCategoryLabel()
 
   const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const closeTimerRef = useRef<number | null>(null)
@@ -280,7 +279,7 @@ function Sidebar({ mobileOpen, onMobileOpenChange }: SidebarProps) {
                   triggerRefs.current[category.id] = el
                 }}
                 type="button"
-                className={categoryHeaderClassName(category, location.pathname)}
+                className={categoryHeaderClassName(category.label === activeCategoryLabel)}
                 aria-label={collapsed ? category.label : undefined}
                 aria-expanded={isOpen}
                 aria-controls={isOpen ? flyoutId : undefined}
