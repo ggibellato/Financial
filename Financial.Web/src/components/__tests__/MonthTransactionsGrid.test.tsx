@@ -317,7 +317,7 @@ describe('MonthTransactionsGrid', () => {
       const names = screen.getAllByRole('button', { name: /^Edit / }).map((button) => button.getAttribute('aria-label'))
       expect(names).toContain('Edit card payment BA Amex payment, 05/10/2026, Barclays')
       expect(names).toContain('Edit card payment BA Amex payment, 05/10/2026, BA Amex')
-      expect(names).toContain('Edit deposit Deposit from an income, 10/10/2026, Reserva')
+      expect(names).toContain('Edit deposit Deposit from an income, Casa, 10/10/2026, Reserva')
       expect(new Set(names).size).toBe(ROWS.length)
     })
 
@@ -396,7 +396,7 @@ describe('MonthTransactionsGrid', () => {
       const onDeleted = vi.fn()
       renderGrid({ onDeleted })
 
-      const dialog = await requestDelete('deposit Deposit from an income, 10/10/2026, Reserva', 'deposit')
+      const dialog = await requestDelete('deposit Deposit from an income, Casa, 10/10/2026, Reserva', 'deposit')
       expect(dialog).toHaveTextContent('Delete this deposit? Its pot lines and any bank expenses are deleted with it. This cannot be undone.')
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
@@ -413,7 +413,7 @@ describe('MonthTransactionsGrid', () => {
       fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
 
       expect(await screen.findByRole('button', { name: 'Deleting expense Tesco, 28/10/2026, Barclays, Groceries', hidden: true })).toHaveAttribute('aria-disabled', 'true')
-      expect(screen.getByRole('button', { name: 'Delete deposit Deposit from an income, 10/10/2026, Reserva', hidden: true })).toHaveAccessibleDescription(
+      expect(screen.getByRole('button', { name: 'Delete deposit Deposit from an income, Casa, 10/10/2026, Reserva', hidden: true })).toHaveAccessibleDescription(
         'Another delete is in progress.',
       )
     })

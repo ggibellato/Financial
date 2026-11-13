@@ -1,9 +1,10 @@
 import { type InitialEntry, MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountGroupMemberDto, AccountGroupSummaryDto, AccountTemplateGroupDto, MonthTransactionDto } from '../../api/types'
+import type { AccountGroupMemberDto, AccountGroupSummaryDto, AccountTemplateGroupDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
+import { requestDelete } from '../../test-utils/confirmDelete'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountsPage from '../AccountsPage'
 
@@ -17,6 +18,7 @@ const {
   getIncomesByMonthMock,
   getIncomeSourcesMock,
   getAccountsMock,
+  deleteExpenseMock,
 } = vi.hoisted(() => ({
   getAccountTemplateGroupsMock: vi.fn<FinancialApiClient['getAccountTemplateGroups']>(),
   getCategoryTotalsByMonthMock: vi.fn<FinancialApiClient['getCategoryTotalsByMonth']>(),
@@ -27,6 +29,7 @@ const {
   getIncomesByMonthMock: vi.fn<FinancialApiClient['getIncomesByMonth']>(),
   getIncomeSourcesMock: vi.fn<FinancialApiClient['getIncomeSources']>(),
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
+  deleteExpenseMock: vi.fn<FinancialApiClient['deleteExpense']>(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
@@ -40,6 +43,7 @@ vi.mock('../../api/financialApiClient', () => ({
     getIncomesByMonth: getIncomesByMonthMock,
     getIncomeSources: getIncomeSourcesMock,
     getAccounts: getAccountsMock,
+    deleteExpense: deleteExpenseMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -566,6 +570,23 @@ describe('AccountsPage', () => {
 
     expect(getMonthTransactionsMock).toHaveBeenCalledWith(2026, 9)
     expect(screen.getByRole('tabpanel', { name: 'All transactions' })).toContainElement(screen.getByRole('table', { name: 'All transactions' }))
+  })
+
+  it('reloads the same month after a row is deleted on All transactions', async () => {
+    const [lidl, ...rest] = MONTH_TRANSACTIONS
+    const deletable = { ...lidl, transaction: { ...lidl.transaction, expense: { id: 'e1' } as ExpenseDto } }
+    getMonthTransactionsMock.mockResolvedValueOnce([deletable, ...rest]).mockResolvedValue(rest)
+    deleteExpenseMock.mockReset().mockResolvedValue()
+    renderPage('/cashflow/accounts?month=2026-09')
+    await openAllTransactions()
+
+    const dialog = await requestDelete('expense Lidl UK, 05/10/2026, Barclays, Mercado', 'expense')
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+    await waitFor(() => expect(getMonthTransactionsMock).toHaveBeenCalledTimes(2))
+    expect(getMonthTransactionsMock).toHaveBeenNthCalledWith(2, 2026, 9)
+    expect(deleteExpenseMock).toHaveBeenCalledExactlyOnceWith('e1')
+    await waitFor(() => expect(screen.queryByText('Lidl UK')).not.toBeInTheDocument())
   })
 
   it(`${AC('05')} requests only the open tab's data`, async () => {

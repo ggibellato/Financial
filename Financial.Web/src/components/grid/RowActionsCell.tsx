@@ -63,14 +63,14 @@ export default function RowActionsCell({
     <TableCell className={className}>
       <div className="data-table__actions-cell">
         {children}
-        {onEdit && (
+        {(onEdit || editBlockedReason) && (
           <IconAction
             label={`Edit ${itemName}`}
             icon={<EditRegular />}
             blockedReason={editBlockedReason}
             disabled={editDisabled}
             disabledFocusable={!!editBlockedReason}
-            onClick={(event) => onEdit(event.currentTarget)}
+            onClick={(event) => onEdit?.(event.currentTarget)}
           />
         )}
         {(onDelete || deleteBlockedReason) && (
