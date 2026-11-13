@@ -13,10 +13,6 @@ export function awaitRetryOutcome(region: HTMLElement | null) {
   document.addEventListener('focusin', stopAwaiting, { once: true })
 }
 
-export function isAwaitingRetryOutcome(): boolean {
-  return !!retryRegion?.isConnected
-}
-
 function isOutcomeOf(element: HTMLElement): boolean {
   return !!retryRegion?.isConnected && retryRegion.contains(element)
 }
@@ -34,10 +30,17 @@ function focusTargetIn(region: HTMLElement): HTMLElement {
   return region
 }
 
-export function focusReloadedContent(region: HTMLElement) {
+function focusReloadedContent(region: HTMLElement) {
   if (!retryRegion) return
   queueMicrotask(() => {
     if (!region.isConnected || !claimFocusForRetryOutcome(region)) return
     focusTargetIn(region).focus()
   })
+}
+
+export function beginReload(): (region: HTMLElement) => void {
+  const reloadsRetryOutcome = !!retryRegion?.isConnected
+  return (region) => {
+    if (reloadsRetryOutcome) focusReloadedContent(region)
+  }
 }
