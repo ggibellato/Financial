@@ -1,7 +1,8 @@
 import { useRef, useState } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import ErrorState from '../../components/ErrorState'
+import { awaitRetryOutcome } from '../../utils/retryOutcomeFocus'
 import { useFocusReloadedContent } from '../useFocusReloadedContent'
 
 function SkeletonReload() {
@@ -47,6 +48,29 @@ describe('useFocusReloadedContent', () => {
 
     await screen.findByRole('button', { name: 'First row' })
     expect(screen.getByRole('button', { name: 'First row' })).not.toHaveFocus()
+  })
+
+  it('leaves focus to the load that Try again started when an earlier load finishes late', async () => {
+    function Rows({ isLoading, content }: { isLoading: boolean; content: 'loading' | 'rows' }) {
+      const regionRef = useRef<HTMLDivElement>(null)
+      useFocusReloadedContent(regionRef, isLoading)
+      return (
+        <div ref={regionRef} aria-label="Rows" role="region">
+          {content === 'rows' ? <button>First row</button> : 'Loading'}
+        </div>
+      )
+    }
+    const { rerender } = render(<Rows isLoading content="loading" />)
+    const rows = screen.getByRole('region', { name: 'Rows' })
+
+    awaitRetryOutcome(rows)
+    rerender(<Rows isLoading={false} content="loading" />)
+    await act(async () => {})
+
+    expect(rows).not.toHaveFocus()
+    rerender(<Rows isLoading content="loading" />)
+    rerender(<Rows isLoading={false} content="rows" />)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'First row' })).toHaveFocus())
   })
 
   it('focuses the reloaded region itself when it holds no control', async () => {

@@ -13,6 +13,10 @@ export function awaitRetryOutcome(region: HTMLElement | null) {
   document.addEventListener('focusin', stopAwaiting, { once: true })
 }
 
+export function isAwaitingRetryOutcome(): boolean {
+  return !!retryRegion?.isConnected
+}
+
 function isOutcomeOf(element: HTMLElement): boolean {
   return !!retryRegion?.isConnected && retryRegion.contains(element)
 }

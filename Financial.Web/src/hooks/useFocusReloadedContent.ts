@@ -1,11 +1,13 @@
 import { useEffect, useRef, type RefObject } from 'react'
-import { focusReloadedContent } from '../utils/retryOutcomeFocus'
+import { focusReloadedContent, isAwaitingRetryOutcome } from '../utils/retryOutcomeFocus'
 
 export function useFocusReloadedContent(regionRef: RefObject<HTMLElement | null>, isLoading: boolean) {
-  const wasLoading = useRef(isLoading)
+  const wasLoading = useRef(false)
+  const loadsRetryOutcome = useRef(false)
 
   useEffect(() => {
-    if (wasLoading.current && !isLoading && regionRef.current) focusReloadedContent(regionRef.current)
+    if (isLoading && !wasLoading.current) loadsRetryOutcome.current = isAwaitingRetryOutcome()
+    if (wasLoading.current && !isLoading && loadsRetryOutcome.current && regionRef.current) focusReloadedContent(regionRef.current)
     wasLoading.current = isLoading
   }, [isLoading, regionRef])
 }
