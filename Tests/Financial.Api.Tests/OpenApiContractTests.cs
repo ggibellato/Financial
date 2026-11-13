@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Linq;
 using System.Net;
@@ -177,8 +176,7 @@ public class OpenApiContractTests
 
     private static async Task<string> FetchDocumentAsync()
     {
-        // The document is only mapped in Development, which is also what SwaggerEndpointsTests relies on.
-        await using var factory = new ApiTestFactory().WithWebHostBuilder(b => b.UseEnvironment("Development"));
+        await using var factory = new ApiTestFactory();
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/openapi/v1.json");

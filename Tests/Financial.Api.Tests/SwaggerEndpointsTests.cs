@@ -35,14 +35,14 @@ public class SwaggerEndpointsTests
     }
 
     [Fact]
-    public async Task GetSwaggerUI_NotInDevelopment_ReturnsNotFound()
+    public async Task GetSwaggerUI_InProduction_ReturnsOk()
     {
         await using var factory = CreateFactory("Production");
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/swagger/index.html");
 
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     private static WebApplicationFactory<Program> CreateFactory(string environment)

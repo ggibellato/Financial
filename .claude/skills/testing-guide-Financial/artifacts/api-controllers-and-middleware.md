@@ -88,7 +88,7 @@ entities per test. A test that needs a different FX rate or "today" builds its o
   every endpoint — one negative case per endpoint proving the middleware mapping is enough,
   unless it is an AC.
 - `ApiControllerBase`, `[ProducesResponseType]` attributes, routing — framework.
-- `SwaggerEndpointsTests` beyond "the document is served in Development".
+- `SwaggerEndpointsTests` beyond "the document and UI are served in Development and Production".
 
 ## Examples from project
 
