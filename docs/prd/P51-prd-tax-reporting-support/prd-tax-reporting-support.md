@@ -1,5 +1,12 @@
 # Tax Reporting Support
 
+> **Simplified 2026-11-13.** Tax rules and the per-entry calculation status are being removed: for a
+> single user who files both declarations elsewhere, a rule was only a label, and without one every
+> entry read "Incomplete". The Tax page is now a plain per-jurisdiction, per-tax-year summary of
+> gains, income and withholding. The Tax rules admin screen and the status column/indicator went
+> first (Web); the backend `TaxRule` entity, endpoints and `CalculationStatus` on
+> `TaxClassification` follow in later PRs. Sections below describing rules and statuses are historical.
+
 ## 1. Executive Summary
 
 Tax Reporting Support closes G5 (no tax domain at all) for the Investment bounded context, building
