@@ -68,7 +68,7 @@ public class EndToEndTraceTests
                         TestDebounceWindow,
                         tracer: tracer);
                     var serializer = sp.GetRequiredService<ICashFlowSerializer>();
-                    return new CashFlowJsonRepository(CashFlowLoader.LoadSync(storage, serializer), storage, serializer);
+                    return CashFlowJsonRepository.Load(storage, serializer);
                 });
             }));
         using var client = factory.CreateClient();

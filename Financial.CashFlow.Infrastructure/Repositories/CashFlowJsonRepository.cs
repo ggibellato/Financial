@@ -35,8 +35,7 @@ public sealed class CashFlowJsonRepository : ICashFlowRepository, ISyncStatusPro
     {
         ArgumentNullException.ThrowIfNull(storage);
         ArgumentNullException.ThrowIfNull(serializer);
-        var persistedJson = CashFlowLoader.ReadSync(storage);
-        var data = persistedJson is null ? CashFlowData.Create() : serializer.Deserialize(persistedJson);
+        var (data, persistedJson) = CashFlowLoader.LoadWithPersistedJsonSync(storage, serializer);
         return new CashFlowJsonRepository(data, storage, serializer, persistedJson);
     }
 
