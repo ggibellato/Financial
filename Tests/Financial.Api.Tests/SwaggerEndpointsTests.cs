@@ -10,10 +10,12 @@ namespace Financial.Api.Tests;
 [Trait("Category", "Integration")]
 public class SwaggerEndpointsTests
 {
-    [Fact]
-    public async Task GetSwaggerUI_InDevelopment_ReturnsOk()
+    [Theory]
+    [InlineData("Development")]
+    [InlineData("Production")]
+    public async Task GetSwaggerUI_ReturnsOk(string environment)
     {
-        await using var factory = CreateFactory("Development");
+        await using var factory = CreateFactory(environment);
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/swagger/index.html");
@@ -32,17 +34,6 @@ public class SwaggerEndpointsTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
         body.TryGetProperty("openapi", out _).Should().BeTrue();
-    }
-
-    [Fact]
-    public async Task GetSwaggerUI_InProduction_ReturnsOk()
-    {
-        await using var factory = CreateFactory("Production");
-        using var client = factory.CreateClient();
-
-        var response = await client.GetAsync("/swagger/index.html");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
     private static WebApplicationFactory<Program> CreateFactory(string environment)

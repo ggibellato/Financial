@@ -155,7 +155,7 @@ docker compose down
 
 ## Observability
 
-Distributed tracing (OpenTelemetry) is built in and **off by default** — a normal `docker compose up` or `dotnet run` needs no observability backend and exports nothing. The deployed install (`scripts/deploy.ps1`) turns it on: its `appsettings.Production.json` sends traces to Jaeger at `http://localhost:4317`, and `deploy/start-web.ps1` starts that Jaeger (see [Local deploy tooling](#local-deploy-tooling)). When enabled, every API request produces a correlated trace spanning controller → Application service → JSON storage save, with Serilog log entries carrying the same trace id. Span attributes are restricted to an allow-list (bounded context, entity type, entity GUID, operation name/result, error type) — never financial values, account names, or exception messages.
+Distributed tracing (OpenTelemetry) is built in and **off by default** — a normal `docker compose up` or `dotnet run` needs no observability backend and exports nothing. The deployed install turns it on: `deploy/start-web.ps1` starts a local Jaeger and launches the app with `Observability__Enabled=true`, so traces go to the default `http://localhost:4317` (see [Local deploy tooling](#local-deploy-tooling)). When enabled, every API request produces a correlated trace spanning controller → Application service → JSON storage save, with Serilog log entries carrying the same trace id. Span attributes are restricted to an allow-list (bounded context, entity type, entity GUID, operation name/result, error type) — never financial values, account names, or exception messages.
 
 Configuration (`appsettings.json` or `Observability__*` environment variables):
 
@@ -269,7 +269,7 @@ Re-run any time to refresh the deployed copies with whatever is currently on dis
 
 First run creates `scripts/deploy.local.json` from `scripts/deploy.local.example.json` (both git-ignored except the example) — edit it to set `GoogleDriveCredentialsPath` to your service-account credentials file before starting the deployed app. It runs against `GoogleDriveJson` storage, fixed via the checked-in `appsettings.Production.json`.
 
-After deploying, start it with `deploy/start-web.ps1`. It also starts (or creates) a `financial-jaeger` Docker container — trace UI at `http://localhost:16686`, OTLP ingest bound to `127.0.0.1:4317` only — and keeps it across reboots (`--restart unless-stopped`). Traces live in memory, so they are lost when the container restarts. If Docker isn't running it warns and starts the app anyway; the app keeps working with tracing unreachable. The Swagger UI is served in every environment at `http://localhost:8080/swagger` (document at `/openapi/v1.json`).
+After deploying, start it with `deploy/start-web.ps1`. It also starts (or creates) a `financial-jaeger` Docker container and enables tracing for the app — trace UI at `http://localhost:16686`, OTLP ingest bound to `127.0.0.1:4317` only — and keeps it across reboots (`--restart unless-stopped`). Traces live in memory, so they are lost when the container restarts. If Docker isn't running it warns and starts the app anyway; the app keeps working with tracing unreachable. The Swagger UI is served in every environment at `http://localhost:8080/swagger` (document at `/openapi/v1.json`).
 
 When a release changes the data file version, migrate the Drive copy before starting it:
 

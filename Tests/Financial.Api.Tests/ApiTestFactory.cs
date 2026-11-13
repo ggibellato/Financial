@@ -64,7 +64,6 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         {
             var settings = new Dictionary<string, string?>
             {
-                ["Observability:Enabled"] = "false",
                 ["Investment:Repository:Provider"] = "LocalJson",
                 ["Investment:DataJsonFile"] = _dataFilePath,
                 ["CashFlow:Repository:Provider"] = "LocalJson",

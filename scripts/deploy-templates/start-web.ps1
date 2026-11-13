@@ -12,18 +12,14 @@ if (-not (Test-Path $exePath)) {
 }
 
 function Start-Jaeger {
+    $ErrorActionPreference = 'Continue'
     try {
-        $existing = docker ps -a --filter "name=^$jaegerContainer$" --format '{{.Names}}' 2>$null
-        if ($LASTEXITCODE -ne 0) { throw 'Docker is not running.' }
-
-        if ($existing) {
-            docker start $jaegerContainer 2>$null | Out-Null
-        }
-        else {
+        docker start $jaegerContainer 2>$null | Out-Null
+        if ($LASTEXITCODE -ne 0) {
             docker run -d --name $jaegerContainer --restart unless-stopped `
                 -p 16686:16686 -p 127.0.0.1:4317:4317 $jaegerImage 2>$null | Out-Null
         }
-        if ($LASTEXITCODE -ne 0) { throw "Could not start the '$jaegerContainer' container." }
+        if ($LASTEXITCODE -ne 0) { throw "Could not start the '$jaegerContainer' container; is Docker running?" }
 
         Write-Host "Jaeger tracing UI at http://localhost:16686"
     }
@@ -34,6 +30,7 @@ function Start-Jaeger {
 
 Start-Jaeger
 
+$env:Observability__Enabled = 'true'
 $env:ASPNETCORE_URLS = 'http://0.0.0.0:8080'
 Start-Process -FilePath $exePath -WorkingDirectory $webDir
 Write-Host "Financial web app starting at http://localhost:8080 (also reachable on your LAN IP)"
