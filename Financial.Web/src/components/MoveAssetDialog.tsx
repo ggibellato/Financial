@@ -12,6 +12,7 @@ import type { AssetDetailsDto, InvestmentScope, TreeNodeDto } from '../api/types
 import { useFormPanelStyles } from './formPanelStyles'
 import { getErrorMessage } from '../utils/formatters'
 import { getMetaNumber, getMetaString } from '../utils/treeNodeMetadata'
+import { findAssetInTree } from '../utils/holdingNavigation'
 import './MoveAssetDialog.css'
 
 interface MoveAssetDialogProps {
@@ -19,8 +20,11 @@ interface MoveAssetDialogProps {
   portfolioName: string
   assetName: string
   scope: InvestmentScope
-  /** Only a closed position in Active Investments can be archived. */
-  canArchive: boolean
+  /**
+   * Archiving is offered only from Active Investments, and only once the tree fetched on open shows
+   * the position closed: the selection that opened the dialog can predate the sale that closed it.
+   */
+  offerArchive: boolean
   /**
    * Set by a drop on a portfolio: the destination is already known, so the move runs straight away
    * and the only thing left to show is the offer to tidy up an emptied source.
@@ -53,7 +57,7 @@ export default function MoveAssetDialog({
   portfolioName,
   assetName,
   scope,
-  canArchive,
+  offerArchive,
   presetDestination,
   newPortfolioOnly = false,
   onCancel,
@@ -62,6 +66,7 @@ export default function MoveAssetDialog({
   const styles = useFormPanelStyles()
   const [samePortfolios, setSamePortfolios] = useState<string[]>([])
   const [historicPortfolios, setHistoricPortfolios] = useState<string[]>([])
+  const [isClosed, setIsClosed] = useState(false)
   const [archiveToHistoric, setArchiveToHistoric] = useState(false)
   const [createNew, setCreateNew] = useState(false)
   const [selectedPortfolio, setSelectedPortfolio] = useState('')
@@ -75,21 +80,24 @@ export default function MoveAssetDialog({
   useEffect(() => {
     // Every Historic portfolio is a candidate, including one named like the source: across scopes
     // that is a different portfolio, not the one the asset is already in.
-    const trees = canArchive
-      ? Promise.all([apiClient.getNavigationTree(scope), apiClient.getNavigationTree('historic')])
-      : apiClient.getNavigationTree(scope).then((tree) => [tree, null] as const)
-
-    Promise.resolve(trees)
-      .then(([sameScopeTree, historicTree]) => {
+    apiClient
+      .getNavigationTree(scope)
+      .then(async (sameScopeTree) => {
+        const asset = findAssetInTree(sameScopeTree, { brokerName, portfolioName, assetName })
+        const closed = offerArchive && asset !== null && getMetaNumber(asset.metadata, 'Quantity') === 0
+        const historicTree = closed ? await apiClient.getNavigationTree('historic') : null
         setSamePortfolios(
           newPortfolioOnly
             ? []
             : portfolioNamesOf(sameScopeTree, brokerName).filter((name) => name !== portfolioName),
         )
         setHistoricPortfolios(historicTree ? portfolioNamesOf(historicTree, brokerName) : [])
+        setIsClosed(closed)
       })
       .catch((err: unknown) => setError(getErrorMessage(err, 'Unable to load portfolios.')))
-  }, [scope, brokerName, portfolioName, canArchive, newPortfolioOnly])
+  }, [scope, brokerName, portfolioName, assetName, offerArchive, newPortfolioOnly])
+
+  const canArchive = offerArchive && isClosed
 
   const destinations = archiveToHistoric ? historicPortfolios : samePortfolios
 

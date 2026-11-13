@@ -332,6 +332,7 @@ describe('CreditsTab', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       date: '2024-05-01',
       type: 'JCP',
       value: 99.5,
@@ -360,6 +361,7 @@ describe('CreditsTab', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       date: '2024-03-15',
       type: 'Dividend',
       value: 130,
@@ -418,6 +420,7 @@ describe('CreditsTab', () => {
       brokerName: 'XPI',
       portfolioName: 'Acoes',
       assetName: 'KLBN4',
+      scope: 'active',
       id: 'aaa',
     })
     expect(screen.getByText('20/02/2024')).toBeInTheDocument()

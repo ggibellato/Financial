@@ -500,6 +500,7 @@ export function useTransactions(): TransactionsData {
       brokerName: selectedNode.brokerName,
       portfolioName: selectedNode.portfolioName,
       assetName: selectedNode.assetName,
+      scope,
       date: formDate,
       type: formType,
       quantity,
@@ -524,7 +525,7 @@ export function useTransactions(): TransactionsData {
           payload: { message: getErrorMessage(err, 'Failed to save transaction.'), fields: {} },
         })
       })
-  }, [selectedNode, state, typeEffects, requiresLotAllocation, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state, typeEffects, requiresLotAllocation, dispatchForCurrentSelection])
 
   const deleteTransaction = useCallback(
     (id: string) => {
@@ -537,6 +538,7 @@ export function useTransactions(): TransactionsData {
           brokerName: selectedNode.brokerName,
           portfolioName: selectedNode.portfolioName,
           assetName: selectedNode.assetName,
+          scope,
           id,
         })
         .then((result) => settle({ type: 'DELETE_SUCCESS', payload: result }))
@@ -547,7 +549,7 @@ export function useTransactions(): TransactionsData {
           })
         })
     },
-    [selectedNode, state.deletingId, dispatchForCurrentSelection],
+    [selectedNode, scope, state.deletingId, dispatchForCurrentSelection],
   )
 
   return {

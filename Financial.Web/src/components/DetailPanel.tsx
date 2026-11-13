@@ -145,7 +145,7 @@ export default function DetailPanel() {
           portfolioName={selectedNode.portfolioName}
           assetName={selectedNode.assetName}
           scope={scope}
-          canArchive={scope === 'active' && selectedNode.quantity === 0}
+          offerArchive={scope === 'active'}
           onCancel={() => setIsMoving(false)}
           onMoved={(moved, archived) => {
             setIsMoving(false)

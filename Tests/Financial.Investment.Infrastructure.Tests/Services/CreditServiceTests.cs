@@ -36,7 +36,41 @@ public class CreditServiceTests : IDisposable
         Withheld = withheld
     };
 
+    private static CreditCreateDTO NewClosedAssetCredit(string? scope) => new()
+    {
+        BrokerName = "XPI",
+        PortfolioName = "Uncategorized",
+        AssetName = "CLOSEDASSET",
+        Scope = scope,
+        Date = new DateTime(2026, 10, 29),
+        Type = "Dividend",
+        Value = 2.13m
+    };
+
+    private IReadOnlyCollection<Credit> PersistedClosedAssetCredits() =>
+        _file.ReloadHistoricAsset("XPI", "Uncategorized", "CLOSEDASSET").Credits;
+
     private IReadOnlyCollection<Credit> PersistedCredits() => _file.ReloadAsset("XPI", "Default", "BCIA11").Credits;
+
+    [Fact]
+    public async Task AddCredit_HistoricScope_PersistsTheCreditOnTheHistoricAsset()
+    {
+        var result = await _service.AddCreditAsync(NewClosedAssetCredit("historic"));
+
+        var persisted = PersistedClosedAssetCredits().Should().ContainSingle().Subject;
+        persisted.Date.Should().Be(new DateTime(2026, 10, 29));
+        persisted.Value.Should().Be(2.13m);
+        result!.Credits.Should().ContainSingle(credit => credit.Id == persisted.Id);
+    }
+
+    [Fact]
+    public async Task AddCredit_NoScope_DoesNotReachTheHistoricAsset()
+    {
+        var result = await _service.AddCreditAsync(NewClosedAssetCredit(null));
+
+        result.Should().BeNull();
+        PersistedClosedAssetCredits().Should().BeEmpty();
+    }
 
     [Fact]
     public async Task AddCredit_PersistsTheCreditToDisk()

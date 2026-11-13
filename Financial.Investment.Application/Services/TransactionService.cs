@@ -45,8 +45,9 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         using var span = StartSpan("AddTransaction");
         try
         {
+            var scope = InvestmentScopeParser.ParseOptional(request.Scope);
             var captured = await FxEntryCaptureHelper.CaptureAsync(
-                _repository, _exchangeRateProvider, _reportingCurrencyProvider, _timeProvider, request.BrokerName, request.Date).ConfigureAwait(false);
+                _repository, _exchangeRateProvider, _reportingCurrencyProvider, _timeProvider, scope, request.BrokerName, request.Date).ConfigureAwait(false);
             if (captured is null)
             {
                 span.MarkSuccess();
@@ -59,6 +60,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
                 _repository,
                 _navigationService,
+                scope,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -67,7 +69,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                 (asset, transactionType) =>
                 {
                     var transaction = Transaction.Create(request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld, currency, fxRateSnapshot);
-                    var method = ResolveCostBasisMethod(request.BrokerName);
+                    var method = ResolveCostBasisMethod(scope, request.BrokerName);
                     var allocation = request.SpecificLotAllocations?
                         .Select(entry => new SpecificLotAllocation(entry.SourceTransactionId, entry.Quantity))
                         .ToList();
@@ -92,6 +94,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
         try
         {
+            var scope = InvestmentScopeParser.ParseOptional(request.Scope);
             if (request.Id == Guid.Empty)
             {
                 span.MarkSuccess();
@@ -102,6 +105,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             var result = await AssetMutationHelper.ExecuteParsedMutationAsync<Transaction.TransactionType>(
                 _repository,
                 _navigationService,
+                scope,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
@@ -113,7 +117,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
                     var updatedTransaction = Transaction.CreateWithId(
                         request.Id, request.Date, transactionType, request.Quantity, request.UnitPrice, request.Fees, request.Withheld,
                         existing?.Currency ?? default, existing?.FxRateSnapshot);
-                    var method = ResolveCostBasisMethod(request.BrokerName);
+                    var method = ResolveCostBasisMethod(scope, request.BrokerName);
                     return asset.ReviseTransaction(updatedTransaction, _timeProvider.GetUtcNow(), method, _repository.GetInvestments());
                 }).ConfigureAwait(false);
 
@@ -134,6 +138,7 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
         span.SetAttribute(TelemetryAttributeKeys.EntityId, request.Id.ToString());
         try
         {
+            var scope = InvestmentScopeParser.ParseOptional(request.Scope);
             if (request.Id == Guid.Empty)
             {
                 span.MarkSuccess();
@@ -144,10 +149,11 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             var result = await AssetMutationHelper.ExecuteAssetMutationAsync(
                 _repository,
                 _navigationService,
+                scope,
                 request.BrokerName,
                 request.PortfolioName,
                 request.AssetName,
-                asset => asset.RetractTransaction(request.Id, _timeProvider.GetUtcNow(), ResolveCostBasisMethod(request.BrokerName), _repository.GetInvestments())).ConfigureAwait(false);
+                asset => asset.RetractTransaction(request.Id, _timeProvider.GetUtcNow(), ResolveCostBasisMethod(scope, request.BrokerName), _repository.GetInvestments())).ConfigureAwait(false);
 
             span.MarkSuccess();
             _logger.LogInformation("{Operation} completed", "DeleteTransaction");
@@ -222,8 +228,8 @@ public sealed class TransactionService : ITransactionService, ITransactionQueryS
             })
             .ToList();
 
-    private CostBasisMethod ResolveCostBasisMethod(string brokerName) =>
-        AssetMutationHelper.ResolveCostBasisMethod(_repository, brokerName);
+    private CostBasisMethod ResolveCostBasisMethod(InvestmentScope scope, string brokerName) =>
+        AssetMutationHelper.ResolveCostBasisMethod(_repository, scope, brokerName);
 
     private ITelemetrySpan StartSpan(string operationName)
     {

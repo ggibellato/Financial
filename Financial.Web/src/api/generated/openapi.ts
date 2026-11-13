@@ -7871,6 +7871,7 @@ export interface components {
             /** Format: double */
             intermediationFee?: number;
             portfolioName: string;
+            scope?: null | string;
             /** Format: double */
             sharesForDividend?: null | number;
             type: string;
@@ -7918,6 +7919,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             portfolioName: string;
+            scope?: null | string;
         };
         CreditUpdateDTO: {
             assetName: string;
@@ -7929,6 +7931,7 @@ export interface components {
             /** Format: double */
             intermediationFee?: number;
             portfolioName: string;
+            scope?: null | string;
             /** Format: double */
             sharesForDividend?: null | number;
             type: string;
@@ -8975,6 +8978,7 @@ export interface components {
             portfolioName: string;
             /** Format: double */
             quantity?: number;
+            scope?: null | string;
             specificLotAllocations?: null | components["schemas"]["SpecificLotAllocationDTO"][];
             type: string;
             /** Format: double */
@@ -9007,6 +9011,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             portfolioName: string;
+            scope?: null | string;
         };
         TransactionSummaryItemDTO: {
             assetName: string;
@@ -9033,6 +9038,7 @@ export interface components {
             portfolioName: string;
             /** Format: double */
             quantity?: number;
+            scope?: null | string;
             type: string;
             /** Format: double */
             unitPrice?: number;

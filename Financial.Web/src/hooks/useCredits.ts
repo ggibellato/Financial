@@ -412,6 +412,7 @@ export function useCredits(): CreditsData {
       brokerName: selectedNode.brokerName,
       portfolioName: selectedNode.portfolioName,
       assetName: selectedNode.assetName,
+      scope,
       date: formDate,
       type: formType,
       value: value as number,
@@ -436,7 +437,7 @@ export function useCredits(): CreditsData {
           payload: { message: getErrorMessage(err, 'Failed to save credit.'), fields: {} },
         })
       })
-  }, [selectedNode, state, dispatchForCurrentSelection])
+  }, [selectedNode, scope, state, dispatchForCurrentSelection])
 
   const deleteCredit = useCallback(
     (id: string) => {
@@ -449,6 +450,7 @@ export function useCredits(): CreditsData {
           brokerName: selectedNode.brokerName,
           portfolioName: selectedNode.portfolioName,
           assetName: selectedNode.assetName,
+          scope,
           id,
         })
         .then((result) => settle({ type: 'DELETE_SUCCESS', payload: result.credits }))
@@ -459,7 +461,7 @@ export function useCredits(): CreditsData {
           })
         })
     },
-    [selectedNode, state.deletingId, dispatchForCurrentSelection],
+    [selectedNode, scope, state.deletingId, dispatchForCurrentSelection],
   )
 
   return {

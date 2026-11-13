@@ -10,8 +10,8 @@ internal static class AssetMutationHelper
 {
     public delegate bool TryParseDelegate<TEnum>(string? value, out TEnum parsed);
 
-    public static CostBasisMethod ResolveCostBasisMethod(IInvestmentRepository repository, string brokerName) =>
-        FindBroker(repository, InvestmentScope.Active, brokerName)?.CostBasisMethod ?? CostBasisMethod.AverageCost;
+    public static CostBasisMethod ResolveCostBasisMethod(IInvestmentRepository repository, InvestmentScope scope, string brokerName) =>
+        FindBroker(repository, scope, brokerName)?.CostBasisMethod ?? CostBasisMethod.AverageCost;
 
     public static Broker? FindBroker(IInvestmentRepository repository, InvestmentScope scope, string brokerName) =>
         repository.GetBrokerList(scope).FirstOrDefault(b => string.Equals(b.Name, brokerName, StringComparison.Ordinal));
@@ -26,6 +26,7 @@ internal static class AssetMutationHelper
     public static async Task<AssetDetailsDTO?> ExecuteParsedMutationAsync<TEnum>(
         IInvestmentRepository repository,
         INavigationService navigationService,
+        InvestmentScope scope,
         string? brokerName,
         string? portfolioName,
         string? assetName,
@@ -41,6 +42,7 @@ internal static class AssetMutationHelper
         return await ExecuteAssetMutationAsync(
             repository,
             navigationService,
+            scope,
             brokerName,
             portfolioName,
             assetName,
@@ -50,6 +52,7 @@ internal static class AssetMutationHelper
     public static async Task<AssetDetailsDTO?> ExecuteAssetMutationAsync(
         IInvestmentRepository repository,
         INavigationService navigationService,
+        InvestmentScope scope,
         string? brokerName,
         string? portfolioName,
         string? assetName,
@@ -60,7 +63,7 @@ internal static class AssetMutationHelper
             return null;
         }
 
-        var asset = repository.GetAsset(brokerName!, portfolioName!, assetName!);
+        var asset = repository.GetAsset(brokerName!, portfolioName!, assetName!, scope);
         if (asset == null)
         {
             return null;
@@ -73,6 +76,6 @@ internal static class AssetMutationHelper
             return null;
         }
 
-        return navigationService.GetAssetDetails(brokerName!, portfolioName!, assetName!);
+        return navigationService.GetAssetDetails(brokerName!, portfolioName!, assetName!, scope);
     }
 }

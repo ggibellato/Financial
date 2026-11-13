@@ -25,7 +25,13 @@ internal sealed class PersistedInvestmentFile : IDisposable
     }
 
     public Asset ReloadAsset(string broker, string portfolio, string asset) =>
-        OpenRepository().GetInvestments().ActiveBrokers
+        FindAsset(OpenRepository().GetInvestments().ActiveBrokers, broker, portfolio, asset);
+
+    public Asset ReloadHistoricAsset(string broker, string portfolio, string asset) =>
+        FindAsset(OpenRepository().GetInvestments().HistoricBrokers, broker, portfolio, asset);
+
+    private static Asset FindAsset(IEnumerable<Broker> brokers, string broker, string portfolio, string asset) =>
+        brokers
             .Single(b => b.Name == broker).Portfolios
             .Single(p => p.Name == portfolio).Assets
             .Single(a => a.Name == asset);

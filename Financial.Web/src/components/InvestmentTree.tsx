@@ -56,8 +56,6 @@ function buildAssetSelection(node: TreeNodeDto, brokerName: string, portfolioNam
     ticker: getMetaString(node.metadata, 'Ticker'),
     exchange: getMetaString(node.metadata, 'Exchange'),
     positionType: getMetaPositionType(node.metadata),
-    // getMetaNumber yields -1 when absent, so a missing quantity never reads as a closed position.
-    quantity: getMetaNumber(node.metadata, 'Quantity'),
     assetClass: ASSET_CLASS_OPTIONS.find((o) => o.value === assetClass)?.name,
   }
 }
@@ -414,7 +412,7 @@ export default function InvestmentTree() {
           portfolioName={drop.portfolioName}
           assetName={drop.assetName}
           scope={scope}
-          canArchive={false}
+          offerArchive={false}
           presetDestination={drop.destinationPortfolioName}
           newPortfolioOnly={drop.destinationPortfolioName === undefined}
           onCancel={() => setDrop(null)}

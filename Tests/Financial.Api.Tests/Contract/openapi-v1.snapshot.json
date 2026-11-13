@@ -2889,6 +2889,12 @@
           "portfolioName": {
             "type": "string"
           },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "sharesForDividend": {
             "format": "double",
             "type": [
@@ -3034,6 +3040,12 @@
           },
           "portfolioName": {
             "type": "string"
+          },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -3065,6 +3077,12 @@
           },
           "portfolioName": {
             "type": "string"
+          },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "sharesForDividend": {
             "format": "double",
@@ -6457,6 +6475,12 @@
             "format": "double",
             "type": "number"
           },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
           "specificLotAllocations": {
             "items": {
               "$ref": "#/components/schemas/SpecificLotAllocationDTO"
@@ -6552,6 +6576,12 @@
           },
           "portfolioName": {
             "type": "string"
+          },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         },
         "required": [
@@ -6629,6 +6659,12 @@
           "quantity": {
             "format": "double",
             "type": "number"
+          },
+          "scope": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "type": {
             "type": "string"

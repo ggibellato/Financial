@@ -47,7 +47,21 @@ function treeWithEmptiedSource(): TreeNodeDto {
   }
 }
 
-function tree(portfolioNames: string[]): TreeNodeDto {
+function withAsset(node: TreeNodeDto, quantity: number): TreeNodeDto {
+  const asset: TreeNodeDto = {
+    nodeType: 'Asset',
+    displayName: 'BCIA11',
+    metadata: { AssetName: 'BCIA11', Quantity: quantity },
+    children: [],
+  }
+  return { ...node, children: [asset] }
+}
+
+/** sourceQuantity places BCIA11 in "Default" holding that quantity, as the server's tree reports it. */
+function tree(portfolioNames: string[], sourceQuantity?: number): TreeNodeDto {
+  const portfolios = portfolioNames.map((name) =>
+    name === 'Default' && sourceQuantity !== undefined ? withAsset(portfolio(name), sourceQuantity) : portfolio(name),
+  )
   return {
     nodeType: 'Investments',
     displayName: 'Root',
@@ -57,8 +71,7 @@ function tree(portfolioNames: string[]): TreeNodeDto {
         nodeType: 'Broker',
         displayName: 'XPI',
         metadata: { BrokerName: 'XPI' },
-        // Not map(portfolio): map passes the index, which would land in assetCount.
-        children: portfolioNames.map((name) => portfolio(name)),
+        children: portfolios,
       },
     ],
   }
@@ -72,7 +85,7 @@ function renderDialog(
   overrides: {
     onCancel?: () => void
     onMoved?: (a: AssetDetailsDto, archived: boolean) => void
-    canArchive?: boolean
+    offerArchive?: boolean
   } = {},
 ) {
   return render(
@@ -81,7 +94,7 @@ function renderDialog(
       portfolioName="Default"
       assetName="BCIA11"
       scope="active"
-      canArchive={overrides.canArchive ?? false}
+      offerArchive={overrides.offerArchive ?? false}
       onCancel={overrides.onCancel ?? vi.fn()}
       onMoved={overrides.onMoved ?? vi.fn()}
     />,
@@ -208,12 +221,21 @@ describe('MoveAssetDialog', () => {
     expect(screen.queryByRole('radio', { name: 'Archive to historic investments' })).not.toBeInTheDocument()
   })
 
+  it('does not offer archiving while the freshly fetched tree still shows a position', async () => {
+    getNavigationTreeMock.mockResolvedValue(tree(['Default', 'ISA'], 8))
+    renderDialog({ offerArchive: true })
+
+    await waitForDestinations()
+    expect(screen.queryByRole('radio', { name: 'Archive to historic investments' })).not.toBeInTheDocument()
+    expect(getNavigationTreeMock).not.toHaveBeenCalledWith('historic')
+  })
+
   it('offers Historic destinations for a closed asset, keeping one named like the source', async () => {
     // Across scopes a Historic "Default" is a different portfolio from the Active one being left.
     getNavigationTreeMock.mockImplementation((scope?: string) =>
-      Promise.resolve(scope === 'historic' ? tree(['Closed', 'Default']) : tree(['Default', 'ISA', 'SIPP'])),
+      Promise.resolve(scope === 'historic' ? tree(['Closed', 'Default']) : tree(['Default', 'ISA', 'SIPP'], 0)),
     )
-    renderDialog({ canArchive: true })
+    renderDialog({ offerArchive: true })
 
     await waitFor(() =>
       expect(screen.getByRole('radio', { name: 'Archive to historic investments' })).toBeInTheDocument(),
@@ -228,9 +250,9 @@ describe('MoveAssetDialog', () => {
   it('archives instead of moving when Historic is chosen', async () => {
     const onMoved = vi.fn()
     getNavigationTreeMock.mockImplementation((scope?: string) =>
-      Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA'])),
+      Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA'], 0)),
     )
-    renderDialog({ canArchive: true, onMoved })
+    renderDialog({ offerArchive: true, onMoved })
 
     await waitFor(() =>
       expect(screen.getByRole('radio', { name: 'Archive to historic investments' })).toBeInTheDocument(),
@@ -252,12 +274,12 @@ describe('MoveAssetDialog', () => {
 
   it("shows the server's reason when an archive is refused", async () => {
     getNavigationTreeMock.mockImplementation((scope?: string) =>
-      Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA'])),
+      Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA'], 0)),
     )
     archiveAssetMock.mockRejectedValue(
       new ApiError('BCIA11 still holds a position of 8. Only a fully closed asset can be archived.', 409),
     )
-    renderDialog({ canArchive: true })
+    renderDialog({ offerArchive: true })
 
     await waitFor(() =>
       expect(screen.getByRole('radio', { name: 'Archive to historic investments' })).toBeInTheDocument(),
