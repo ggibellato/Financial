@@ -10,6 +10,10 @@ export const useFormPanelStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground2,
+    containerType: 'inline-size',
+  },
+  dialogContent: {
+    containerType: 'inline-size',
   },
   grid: {
     display: 'grid',
@@ -20,16 +24,16 @@ export const useFormPanelStyles = makeStyles({
     // redistributes that extra space unevenly — shifting a field's input up or down relative to
     // its row siblings depending on whether it currently shows a validation message.
     alignItems: 'start',
-    '@media (max-width: 1023px)': {
+    '@container (25rem <= width < 45rem)': {
       gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
     },
-    '@media (max-width: 639px)': {
+    '@container (width < 25rem)': {
       gridTemplateColumns: '1fr',
     },
   },
   spanTwo: {
     gridColumnEnd: 'span 2',
-    '@media (max-width: 639px)': {
+    '@container (width < 25rem)': {
       gridColumnEnd: 'auto',
     },
   },

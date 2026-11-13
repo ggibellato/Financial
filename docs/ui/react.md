@@ -98,6 +98,10 @@ grid; do not opt one column into wrapping to "fit more."
 - Preserve logical DOM reading order when layouts reflow.
 - Keep responsive behavior near the component or within the established styling
   layer.
+- The shared form grid (`formPanelStyles` `grid`) picks 4, 2 or 1 columns from
+  the width of its form panel or admin dialog (CSS container queries), not the
+  window, so a form in a narrow dialog or side panel never squeezes its fields
+  into each other. Put a new form grid inside `panel` or `EntityFormDialog`.
 - A component's own hardcoded className must not bake in a sizing assumption
   (a stretch/`flex`, a `max-height`, an equal-height rule) that only holds for
   one of its usage contexts. If a component is reused standalone (its natural

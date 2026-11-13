@@ -82,7 +82,7 @@ export default function EntityFormDialog({
           <form noValidate onSubmit={submit}>
             <DialogBody>
               <DialogTitle>{title}</DialogTitle>
-              <DialogContent ref={content}>
+              <DialogContent ref={content} className={styles.dialogContent}>
                 {summarizedErrors.length > 0 && <FieldErrorSummary ref={errorSummary} errors={summarizedErrors} />}
                 <ActionErrorAlert message={error} className={styles.dialogError} />
                 <fieldset disabled={isSaving} className={styles.savingFieldset} role="presentation">
