@@ -412,7 +412,7 @@ export default function AccountScreenPage() {
         {...(hasTabs ? tabPanel.panelProps : { 'aria-labelledby': 'account-screen-transactions' })}
         ref={transactionsRegionRef}
         className="account-screen__transactions"
-        onFocus={recordRowFocus}
+        onFocus={activeTab === 'statements' || activeTab === 'pots' ? undefined : recordRowFocus}
       >
         {!isAccountCurrent && !screen.error ? (
           <Skeleton aria-label="Loading account details" className="account-screen__grid-skeleton">
