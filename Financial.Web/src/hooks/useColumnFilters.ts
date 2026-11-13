@@ -27,6 +27,10 @@ export interface UseColumnFiltersResult<T> {
   filterSummary: FilterSummary
 }
 
+function hasUncheckedValue(selected: Set<string> | undefined, available: string[] = []): boolean {
+  return selected !== undefined && available.some((value) => !selected.has(value))
+}
+
 function normalizeValues(value: string | string[] | null | undefined): string[] {
   if (value == null) return []
   return Array.isArray(value) ? value.filter((v): v is string => v != null) : [value]
@@ -62,11 +66,7 @@ export function useColumnFilters<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows])
 
-  const isColumnFiltered = (columnKey: string): boolean => {
-    const selected = selections[columnKey]
-    if (selected === undefined) return false
-    return (availableValues[columnKey] ?? []).some((value) => !selected.has(value))
-  }
+  const isColumnFiltered = (columnKey: string): boolean => hasUncheckedValue(selections[columnKey], availableValues[columnKey])
 
   const toggleValue = (columnKey: string, value: string) => {
     setSelections((current) => {
@@ -84,7 +84,7 @@ export function useColumnFilters<T>(
   const toggleAll = (columnKey: string) => {
     setSelections((current) => {
       const selected = current[columnKey]
-      const currentlyFiltered = selected !== undefined && (availableValues[columnKey] ?? []).some((value) => !selected.has(value))
+      const currentlyFiltered = hasUncheckedValue(selected, availableValues[columnKey])
       const next = { ...current }
       if (currentlyFiltered) {
         // Partially checked -> (All) checks everything, i.e. reverts to unfiltered.

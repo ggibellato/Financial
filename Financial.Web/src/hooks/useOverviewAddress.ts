@@ -8,9 +8,9 @@ export interface OverviewAddress<TabId extends string> extends MonthSelection {
   setTab: (tab: TabId) => void
 }
 
-const OVERVIEW_PARAMS = ['month', 'tab'] as const
+const PARAMS_KEPT_ON_MONTH_OR_TAB_CHANGE = ['month', 'tab'] as const
 
-type OverviewParam = (typeof OVERVIEW_PARAMS)[number]
+type KeptParam = (typeof PARAMS_KEPT_ON_MONTH_OR_TAB_CHANGE)[number]
 
 export function useOverviewAddress<TabId extends string>(validTabs: readonly [TabId, ...TabId[]]): OverviewAddress<TabId> {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -19,11 +19,11 @@ export function useOverviewAddress<TabId extends string>(validTabs: readonly [Ta
   const tab = validTabs.find((id) => id === requestedTab) ?? validTabs[0]
 
   const setParam = useCallback(
-    (name: OverviewParam, value: string) =>
+    (name: KeptParam, value: string) =>
       setSearchParams(
         (params) => {
           const next = new URLSearchParams()
-          for (const kept of OVERVIEW_PARAMS) {
+          for (const kept of PARAMS_KEPT_ON_MONTH_OR_TAB_CHANGE) {
             const keptValue = params.get(kept)
             if (keptValue !== null) next.set(kept, keptValue)
           }
