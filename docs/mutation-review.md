@@ -65,6 +65,7 @@ longer is split before it is worked.
 | 0.2 | `scripts/mutation-test-value.ps1` reads a Stryker JSON report (.NET or JS) and prints survivors by file, zero-kill tests and redundant tests | ⬜ | | |
 | 0.3 | StrykerJS: check `disableBail` and a per-slice `--mutate` run work for `.tsx` files | ⬜ | | |
 | 0.4 | Measure run time per project and correct the slice sizes below | ⬜ | | |
+| 0.5 | Ignore `StrykerOutput/` under `Tests/` (`Financial.Web/reports/` is already ignored; the .NET output is not) | ⬜ | | |
 
 ### Slices
 
