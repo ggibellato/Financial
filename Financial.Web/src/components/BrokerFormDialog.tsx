@@ -69,7 +69,7 @@ export default function BrokerFormDialog({ broker, onCancel, onSubmit }: BrokerF
           children: (_: unknown, props: LabelProps) => (
             <InfoLabel
               {...props}
-              info="Changing this for an existing broker recalculates every disposal record under it."
+              info="Changing this for an existing broker recalculates the realised gains of every sale under it."
             >
               Cost basis method
             </InfoLabel>

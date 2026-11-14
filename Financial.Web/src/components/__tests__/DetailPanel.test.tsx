@@ -297,10 +297,11 @@ describe('DetailPanel', () => {
     expect(screen.getByRole('tab', { name: 'Price history' })).toBeInTheDocument()
   })
 
-  it('shows Corporate actions tab for an asset node, after Disposals', () => {
+  it('shows Realised gains then Corporate actions as the last tabs for an asset node', () => {
     renderPanel(activeAssetNode)
     act(() => screen.getByTestId('setter').click())
     const tabs = screen.getAllByRole('tab')
+    expect(tabs[tabs.length - 2]).toHaveAccessibleName('Realised gains')
     expect(tabs[tabs.length - 1]).toHaveAccessibleName('Corporate actions')
   })
 

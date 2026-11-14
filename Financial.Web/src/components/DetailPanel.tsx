@@ -31,7 +31,7 @@ const BASE_TABS: { id: TabId; label: string }[] = [
 
 const HOLDINGS_TAB: { id: TabId; label: string } = { id: 'holdings', label: 'Holdings' }
 const PRICE_HISTORY_TAB: { id: TabId; label: string } = { id: 'priceHistory', label: 'Price history' }
-const DISPOSALS_TAB: { id: TabId; label: string } = { id: 'disposals', label: 'Disposals' }
+const DISPOSALS_TAB: { id: TabId; label: string } = { id: 'disposals', label: 'Realised gains' }
 const CORPORATE_ACTIONS_TAB: { id: TabId; label: string } = { id: 'corporateActions', label: 'Corporate actions' }
 
 function nodeKey(n: ReturnType<typeof useSelectedNode>['selectedNode']): string {
