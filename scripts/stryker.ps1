@@ -36,22 +36,16 @@ try {
 
 foreach ($name in $selected) {
     $outputDir = Join-Path $root "TestResults/stryker/$name/$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-    if ($AlsoTestedBy) {
-        $testsDir = Join-Path $root "Financial.$name"
-        $arguments = @('stryker', '--config-file', '../.config/stryker-config.json')
-        foreach ($testTarget in @($name) + $AlsoTestedBy) {
-            $arguments += @('--test-project', "../Tests/Financial.$testTarget.Tests/Financial.$testTarget.Tests.csproj")
-        }
-    } else {
-        $testsDir = Join-Path $root "Tests/Financial.$name.Tests"
-        $arguments = @('stryker', '--config-file', '../../.config/stryker-config.json', '--project', "Financial.$name.csproj")
+    $projectDir = Join-Path $root "Financial.$name"
+    $arguments = @('stryker', '--config-file', '../.config/stryker-config.json', '--output', $outputDir, '--break-at', '0')
+    foreach ($testTarget in @($name) + $AlsoTestedBy) {
+        $arguments += @('--test-project', "../Tests/Financial.$testTarget.Tests/Financial.$testTarget.Tests.csproj")
     }
-    $arguments += @('--output', $outputDir, '--break-at', '0')
     foreach ($pattern in $Mutate) { $arguments += @('--mutate', $pattern) }
     if ($DisableBail) { $arguments += '--disable-bail' }
 
     Write-Host "== Stryker.NET: $name"
-    Push-Location $testsDir
+    Push-Location $projectDir
     try {
         & dotnet @arguments
         if ($LASTEXITCODE -ne 0) { throw "Stryker failed for $name (exit $LASTEXITCODE)" }
