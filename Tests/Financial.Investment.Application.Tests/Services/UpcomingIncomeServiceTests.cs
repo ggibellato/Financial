@@ -18,60 +18,35 @@ public class UpcomingIncomeServiceTests
     private readonly RecordingTelemetryTracer _tracer = new();
     private readonly RecordingLogger<UpcomingIncomeService> _logger = new();
 
-    [Fact]
-    public void GetUpcomingIncome_MonthlyPayer_ProjectsOneIntervalAfterLastCredit()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void GetUpcomingIncome_RegularPayer_ProjectsOneIntervalAfterTheLastCredit(int intervalMonths)
     {
-        SeedActive(MakeBroker("Alpha", MonthlyPayer("A1")));
+        var firstCredit = new DateTime(2025, 1, 15);
+        var lastCredit = firstCredit.AddMonths(2 * intervalMonths);
+        SeedActive(MakeBroker("Alpha", PayerOn("A1", firstCredit, firstCredit.AddMonths(intervalMonths), lastCredit)));
 
         var result = CreateService().GetUpcomingIncome();
 
         using var _ = new AssertionScope();
         var entry = result.Should().ContainSingle().Subject;
-        entry.LastCreditDate.Should().Be(new DateTime(2025, 3, 15));
-        entry.ProjectedNextDate.Should().Be(new DateTime(2025, 4, 15));
+        entry.AssetName.Should().Be("A1");
         entry.BrokerName.Should().Be("Alpha");
+        entry.LastCreditDate.Should().Be(lastCredit);
+        entry.ProjectedNextDate.Should().Be(lastCredit.AddMonths(intervalMonths));
+        _tracer.ShouldHaveSucceededSpan("Investment.UpcomingIncomeService.GetUpcomingIncome");
     }
 
-    [Fact]
-    public void GetUpcomingIncome_QuarterlyPayer_ProjectsThreeMonthsAfterLastCredit()
+    [Theory]
+    [InlineData(new int[0])]
+    [InlineData(new[] { 0 })]
+    [InlineData(new[] { 0, 7 })]
+    public void GetUpcomingIncome_NoDetectableFrequency_OmittedFromResult(int[] creditMonthOffsets)
     {
-        SeedActive(MakeBroker("Alpha", PayerOn("A1", new DateTime(2025, 1, 15), new DateTime(2025, 4, 15), new DateTime(2025, 7, 15))));
-
-        var result = CreateService().GetUpcomingIncome();
-
-        using var _ = new AssertionScope();
-        var entry = result.Should().ContainSingle().Subject;
-        entry.LastCreditDate.Should().Be(new DateTime(2025, 7, 15));
-        entry.ProjectedNextDate.Should().Be(new DateTime(2025, 10, 15));
-    }
-
-    [Fact]
-    public void GetUpcomingIncome_FourMonthlyPayer_ProjectsFourMonthsAfterLastCredit()
-    {
-        SeedActive(MakeBroker("Alpha", PayerOn("A1", new DateTime(2025, 1, 15), new DateTime(2025, 5, 15), new DateTime(2025, 9, 15))));
-
-        var result = CreateService().GetUpcomingIncome();
-
-        using var _ = new AssertionScope();
-        var entry = result.Should().ContainSingle().Subject;
-        entry.LastCreditDate.Should().Be(new DateTime(2025, 9, 15));
-        entry.ProjectedNextDate.Should().Be(new DateTime(2026, 1, 15));
-    }
-
-    [Fact]
-    public void GetUpcomingIncome_IrregularPayer_OmittedFromResult()
-    {
-        SeedActive(MakeBroker("Alpha", PayerOn("A1", new DateTime(2025, 1, 15), new DateTime(2025, 8, 15))));
-
-        var result = CreateService().GetUpcomingIncome();
-
-        result.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetUpcomingIncome_FewerThanTwoCredits_OmittedFromResult()
-    {
-        SeedActive(MakeBroker("Alpha", PayerOn("A1", new DateTime(2025, 1, 15))));
+        var creditDates = creditMonthOffsets.Select(offset => new DateTime(2025, 1, 15).AddMonths(offset)).ToArray();
+        SeedActive(MakeBroker("Alpha", PayerOn("A1", creditDates)));
 
         var result = CreateService().GetUpcomingIncome();
 
@@ -82,8 +57,8 @@ public class UpcomingIncomeServiceTests
     public void GetUpcomingIncome_ProjectedAmount_MatchesMostRecentCreditNetAmount()
     {
         var asset = BoughtAsset("A1");
-        asset.AddCredit(Credit.Create(new DateTime(2025, 1, 15), Credit.CreditType.Dividend, 100m));
         asset.AddCredit(Credit.Create(new DateTime(2025, 2, 15), Credit.CreditType.Dividend, 200m, withheld: 30m));
+        asset.AddCredit(Credit.Create(new DateTime(2025, 1, 15), Credit.CreditType.Dividend, 100m));
         SeedActive(MakeBroker("Alpha", asset));
 
         var result = CreateService().GetUpcomingIncome();
@@ -132,16 +107,6 @@ public class UpcomingIncomeServiceTests
         var result = CreateService().GetUpcomingIncome();
 
         result.Select(entry => entry.AssetName).Should().ContainInOrder("EARLY", "alpha", "ZED", "MID");
-    }
-
-    [Fact]
-    public void GetUpcomingIncome_NoActiveHoldingHasCredits_ReturnsEmptyList()
-    {
-        SeedActive(MakeBroker("Alpha", BoughtAsset("A1"), BoughtAsset("A2")));
-
-        var result = CreateService().GetUpcomingIncome();
-
-        result.Should().BeEmpty();
     }
 
     [Fact]

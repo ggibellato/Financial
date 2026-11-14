@@ -16,30 +16,6 @@ public class TaxRuleServiceTests
     private readonly RecordingLogger<TaxRuleService> _logger = new();
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
-    {
-        var act = () => new TaxRuleService(null!, _tracer, _logger);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
-    }
-
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        var act = () => new TaxRuleService(_repository, null!, _logger);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        var act = () => new TaxRuleService(_repository, _tracer, null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
-    }
-
-    [Fact]
     public async Task CreateTaxRuleAsync_ValidRequest_AddsRuleAndPersistsOnce()
     {
         var request = new TaxRuleCreateDTO
@@ -62,6 +38,7 @@ public class TaxRuleServiceTests
             result.EffectiveFrom.Should().Be(new DateOnly(2026, 1, 1));
             _repository.Investments!.TaxRules.Should().ContainSingle();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.TaxRuleService.CreateTaxRule");
         }
     }
 
@@ -110,6 +87,7 @@ public class TaxRuleServiceTests
 
         await act.Should().ThrowAsync<InvestmentRuleViolationException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.TaxRuleService.CreateTaxRule");
     }
 
     [Fact]
@@ -132,7 +110,17 @@ public class TaxRuleServiceTests
             result.Label.Should().Be("Updated");
             result.EffectiveFrom.Should().Be(new DateOnly(2026, 6, 1));
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.TaxRuleService.UpdateTaxRule");
         }
+    }
+
+    [Fact]
+    public async Task UpdateTaxRuleAsync_NullRequest_ThrowsAndWritesNothing()
+    {
+        var act = async () => await CreateService().UpdateTaxRuleAsync(Guid.NewGuid(), null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]
@@ -144,6 +132,7 @@ public class TaxRuleServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("Investment.TaxRuleService.UpdateTaxRule");
     }
 
     [Fact]
@@ -158,6 +147,7 @@ public class TaxRuleServiceTests
         {
             _repository.Investments!.TaxRules.Should().BeEmpty();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.TaxRuleService.DeleteTaxRule");
         }
     }
 
@@ -168,6 +158,7 @@ public class TaxRuleServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("Investment.TaxRuleService.DeleteTaxRule");
     }
 
     [Fact]
@@ -188,7 +179,19 @@ public class TaxRuleServiceTests
             dto.Description.Should().Be("desc");
             dto.EffectiveFrom.Should().Be(new DateOnly(2026, 1, 1));
             dto.EffectiveTo.Should().Be(new DateOnly(2027, 1, 1));
+            _tracer.ShouldHaveSucceededSpan("Investment.TaxRuleService.GetTaxRules");
         }
+    }
+
+    [Fact]
+    public void GetTaxRules_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnGetInvestments = new InvalidOperationException("simulated failure");
+
+        var act = () => CreateService().GetTaxRules();
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TaxRuleService.GetTaxRules");
     }
 
     private TaxRuleService CreateService() => new(_repository, _tracer, _logger);

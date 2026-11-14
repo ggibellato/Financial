@@ -14,4 +14,13 @@ public static class TelemetryAssertions
         span.RecordedException.Should().BeOfType<TException>();
         span.Disposed.Should().BeTrue();
     }
+
+    public static void ShouldHaveSucceededSpan(this RecordingTelemetryTracer tracer, string spanName)
+    {
+        var span = tracer.Spans.Should().ContainSingle(s => s.Name == spanName).Which;
+
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        span.RecordedException.Should().BeNull();
+        span.Disposed.Should().BeTrue();
+    }
 }

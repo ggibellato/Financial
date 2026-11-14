@@ -54,8 +54,10 @@ What it already shows:
   64.4%, against 79–91% for the Domains.
 - **Some tests live in another project.** `AssetPriceLookupService` (71 of 72 mutants undetected)
   and `AssetPriceHistoryService` (31 of 32) are Investment.Application classes tested only from
-  `Financial.Investment.Infrastructure.Tests`, which a per-project run does not use. Decide in
-  slice 4.5: move the tests, or mutate with both test projects.
+  `Financial.Investment.Infrastructure.Tests`, which a per-project run does not use. They run
+  the service over the real JSON repository, so they cannot move without the Application tests
+  referencing Infrastructure; slice 4.5 mutates with both test projects instead
+  (`-AlsoTestedBy Investment.Infrastructure`).
 - **DI registration files score 0%** in each Application project (27 and 30 mutants): they are
   proven by the host tests in `Financial.Api.Tests`, not by the project's own tests. Exclude them
   from the per-project score (`!**/DependencyInjection/**`) rather than write tests for them.
@@ -70,7 +72,9 @@ What it already shows:
 1. **Run** Stryker on the slice only, against the project's own test project, with bail off so
    the report lists every test that kills each mutant:
    - .NET: `pwsh scripts/stryker.ps1 -Target CashFlow.Domain -Mutate "**/Expense.cs" -Tests '\.ExpenseTests\.' -DisableBail -NoOpen`
-     (reports under `TestResults/stryker/<target>/<timestamp>/`).
+     (reports under `TestResults/stryker/<target>/<timestamp>/`). `-Mutate` takes several
+     patterns separated by commas; `-AlsoTestedBy <project>` adds another test project for code
+     tested from outside its own project.
    - Web, in `Financial.Web`: `$env:STRYKER_TEST_INCLUDE = 'src/components/__tests__/CategoryTotalsGrid.test.tsx'; npx --no-install stryker run --mutate src/components/CategoryTotalsGrid.tsx --disableBail --concurrency 2 --force`,
      then `pwsh ../scripts/mutation-test-value.ps1 -Report reports/mutation/mutation-report.json -Tests 'CategoryTotalsGrid'`.
      `STRYKER_TEST_INCLUDE` (comma-separated globs) widens `vitest.mutation.config.ts` beyond the
@@ -83,6 +87,9 @@ What it already shows:
    - *missing/weak test* — add or strengthen the test;
    - *equivalent mutant* — record the count in this file, change nothing (no `// Stryker disable`
      comments);
+   - *log or exception wording* — record the count; the "started"/"completed" information logs
+     and message text are not asserted (the testing guide asserts spans, and logged failures by
+     exception type only);
    - *dead code* — remove it in its own PR, never mixed with test changes.
 4. **Prune** low-value and duplicated tests (merge into a `[Theory]` / `it.each`, or delete).
    The redundancy list holds candidates, not verdicts: every test that builds the entity kills
@@ -135,7 +142,7 @@ uses the repo folder.
 | 1.1 | CashFlow.Domain | `Entities/**` | ⬜ | 90.3% | | | | | | Trial on `Expense.cs`: 14 undetected (round-up suggestion, L43–45) |
 | 1.2 | CashFlow.Domain | `Rules/**`, `ValueObjects/**` | ⬜ | 91.1% | | | | | | |
 | 2.1 | Investment.Domain | `Entities/**` | ⬜ | 82.0% | | | | | | |
-| 2.2 | Investment.Domain | `Rules/**` | 🔄 | 74.5% | 87.7% | 15 | 3 | ~35 | | See "Slice notes"; 734 → 754 tests |
+| 2.2 | Investment.Domain | `Rules/**` | ✅ | 74.5% | 87.7% | 15 | 3 | ~35 | [#1284](https://github.com/ggibellato/Financial/pull/1284) | See "Slice notes"; 734 → 754 tests |
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
 | 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ⬜ | 70.3% | | | | | | 85 compile errors |
 | 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ⬜ | 67.3% | | | | | | |
@@ -148,7 +155,7 @@ uses the repo folder.
 | 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ⬜ | 49.6% | | | | | | `CorporateActionService` 133 of 260 undetected |
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ⬜ | 56.8% | | | | | | |
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
-| 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ⬜ | 26.7% | | | | | | The two price services are tested from `Investment.Infrastructure.Tests` |
+| 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | 🔄 | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ⬜ | 52.7% | | | | | | |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
@@ -206,6 +213,54 @@ The 57 still undetected, all reviewed:
   alike; `DisposalRecordRegenerator`'s final `RefreshRealizedCapitalGain` repeats what
   `AppendBackfilledDisposalRecord` already did.
 
+### 4.5 Investment.Application prices, income and tax (47.7% → 77.5%)
+
+The 26.7% baseline left out the two price services' tests, which live in
+`Financial.Investment.Infrastructure.Tests`; with them (`-AlsoTestedBy`) the slice started at 47.7%.
+
+Gaps closed:
+
+- **Spans.** No test in the slice checked a span's result, so deleting `MarkSuccess`, a whole
+  `catch`, or the span name went unnoticed. Each operation now has one success and one failure
+  assertion (`ShouldHaveSucceededSpan`, new beside `ShouldHaveFailedSpan`). For
+  `AssetPriceLookupService` this matters most: a write that succeeded could have been reported as
+  failed.
+- **`AssetPriceLookupService`.** When the live fetch fails and an earlier price is reused, nothing
+  is recorded for today. When there is no price at all, the result is Unknown and not manual, and
+  only a warning is logged. The fetch request carries the holding's name only when the caller sent
+  none. A recorded automatic price has no currency. A failed fetch with no asset context is
+  rethrown.
+- **`AssetPriceHistoryService`.** Two tests only checked that a result came back. They now check
+  the stored entry (price, manual flag, currency, replacement).
+- **Ordering.** `DataQualityReportService` sorts its seven finding lists by broker, portfolio and
+  asset, and the web shows them in that order; one theory now covers all seven.
+  `TaxWorkbookService` options are now checked in jurisdiction-then-year order.
+- **Historic holdings.** A workbook entry and an option from a historic broker.
+- `UpdateTaxRuleAsync(null)` throws `ArgumentNullException`.
+
+Removed or merged:
+
+- `UpcomingIncomeBuilderTests` (5) repeated `UpcomingIncomeServiceTests` case for case. The
+  builder's one caller is the service.
+- The three `TaxRuleServiceTests` constructor tests repeat `ConstructorGuardTests`, which sweeps
+  every constructor in the assembly (testing guide, application services).
+- Merged into theories: the monthly, quarterly and four-monthly payers; the three no-frequency
+  cases; zero price and future date; ProviderValue and Manual holdings.
+- Merged into one test: the no-history warning and result tests; the three live-write tests.
+
+The 59 still undetected, all reviewed:
+
+- **Log and exception wording** (48): "started"/"completed" information logs (44), warning text
+  (3), and one exception message.
+- **Equivalent** (11): `ConfigureAwait(false)` → `true` (6). Unreachable `?? string.Empty` after
+  `DescribeWith` has already filled the name (2). `FirstOrDefault` → `First` for a classification's
+  source, which always exists while the classification is active (2). `ResolveAsset`'s early
+  return before a repository lookup that returns null anyway (1).
+
+For later slices: per-class constructor-null tests that `ConstructorGuardTests` already covers
+remain in `AssetMoveServiceTests`, `PortfolioServiceTests`, `CashFlowJsonRepositoryTests` and three
+Shared.Infrastructure test classes.
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -215,3 +270,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-14 | — | Plan written; baseline recorded from nightly run 43584910403 |
 | 2026-11-14 | 0 | Tooling built and tried on `Expense.cs` and `CategoryTotalsGrid.tsx`; every .NET project measured with bail off (local baseline); merged in #1283 |
 | 2026-11-14 | 2.2 | Rules 74.5% → 87.7%; 15 tests added, 3 removed or merged, 2 strengthened; unreachable XIRR clamp found |
+| 2026-11-14 | 4.5 | Prices, income, tax 47.7% → 77.5% (26.7% without the Infrastructure tests); span assertions added, 16 duplicated tests removed or merged; `-AlsoTestedBy` added to `stryker.ps1` |
