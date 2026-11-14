@@ -840,6 +840,77 @@ describe('useCorporateActions', () => {
     expect(result.current.asset).toEqual(savedResult.new)
   })
 
+  it('rejects a split with a blank effective date and a zero ratio part without calling the API', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formEffectiveDate', ' '))
+    act(() => result.current.setFormField('formRatioNumerator', '2'))
+    act(() => result.current.setFormField('formRatioDenominator', '0'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields).toEqual({
+      formEffectiveDate: 'Effective date is required.',
+      formRatio: 'Enter a valid split ratio other than 1-for-1.',
+    })
+    expect(addSplitMock).not.toHaveBeenCalled()
+  })
+
+  it.each(['-1', 'abc'])('blocks a merger whose cash-in-lieu is %s, leaving formStep on fields', async (cashInLieu) => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formCashInLieu', cashInLieu))
+    act(() => result.current.advanceToConfirm())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(result.current.saveErrorFields).toEqual({ formCashInLieu: 'Cash-in-lieu amount cannot be negative.' })
+  })
+
+  it('blocks a merger with a blank effective date, leaving formStep on fields', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formEffectiveDate', ''))
+    act(() => result.current.advanceToConfirm())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(result.current.saveErrorFields).toEqual({ formEffectiveDate: 'Effective date is required.' })
+  })
+
+  it('blocks a spin-off with a blank effective date without calling the API', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'NewCo', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '5'))
+    act(() => result.current.setFormField('formAllocationPercentage', '15'))
+    act(() => result.current.setFormField('formEffectiveDate', ''))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields).toEqual({ formEffectiveDate: 'Effective date is required.' })
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
   describe('responses for a node the user has already left', () => {
     const OTHER_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, name: 'TASA4', corporateActions: [MERGER_RECORD] }
     const LEFT_NODE_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, corporateActions: [] }

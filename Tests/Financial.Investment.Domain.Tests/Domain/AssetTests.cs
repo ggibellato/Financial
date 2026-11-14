@@ -771,6 +771,56 @@ public class AssetTests
     }
 
     [Fact]
+    public void RecordTransaction_BackdatedSaleTheRegenerationRejects_RemovesTheSaleAndRethrows()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var buy1 = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        var buy2 = Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy1);
+        asset.AddTransaction(buy2);
+        asset.RecordTransaction(
+            Transaction.Create(new DateTime(2024, 6, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m),
+            CostBasisMethod.SpecificId,
+            new[] { new SpecificLotAllocation(buy2.Id, 5m) });
+        var backdatedSale = Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 3m, 150m, 0m);
+
+        Action act = () => asset.RecordTransaction(
+            backdatedSale, CostBasisMethod.SpecificId, new[] { new SpecificLotAllocation(buy1.Id, 2m) });
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        using (new AssertionScope())
+        {
+            asset.Transactions.Should().NotContain(t => t.Id == backdatedSale.Id);
+            asset.Quantity.Should().Be(15m);
+            asset.DisposalRecords.Should().ContainSingle().Which.Status.Should().Be(DisposalRecordStatus.Active);
+        }
+    }
+
+    [Fact]
+    public void RetractTransaction_RegenerationRejectsTheRemainingSales_RestoresTheTransactionAndRethrows()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        var buy1 = Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        var buy2 = Transaction.Create(new DateTime(2024, 1, 2), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy1);
+        asset.AddTransaction(buy2);
+        asset.RecordTransaction(
+            Transaction.Create(new DateTime(2024, 6, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m),
+            CostBasisMethod.SpecificId,
+            new[] { new SpecificLotAllocation(buy1.Id, 5m) });
+
+        Action act = () => asset.RetractTransaction(buy1.Id, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>().WithMessage($"*{buy1.Id}*");
+        using (new AssertionScope())
+        {
+            asset.Transactions.Should().Contain(t => t.Id == buy1.Id);
+            asset.Quantity.Should().Be(15m);
+            asset.DisposalRecords.Should().ContainSingle().Which.Status.Should().Be(DisposalRecordStatus.Active);
+        }
+    }
+
+    [Fact]
     public void TaxClassifications_StartsEmpty()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");

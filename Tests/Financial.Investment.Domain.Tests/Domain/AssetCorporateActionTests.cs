@@ -194,6 +194,28 @@ public class AssetCorporateActionTests
     }
 
     [Fact]
+    public void ReviseCorporateAction_SmallerRatioLeavesALaterSpecificIdSaleShort_RestoresTheSplitAndRethrows()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy);
+        var split = CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m);
+        asset.RecordCorporateAction(split, CostBasisMethod.SpecificId);
+        asset.RecordTransaction(
+            Transaction.Create(new DateTime(2021, 9, 1), Transaction.TransactionType.Sell, 15m, 80m, 0m),
+            CostBasisMethod.SpecificId,
+            new[] { new SpecificLotAllocation(buy.Id, 15m) });
+
+        var smaller = CorporateAction.CreateSplitWithId(split.Id, split.EffectiveDate, 1.2m);
+        Action act = () => asset.ReviseCorporateAction(smaller, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.CorporateActions.Should().ContainSingle().Which.RatioFactor.Should().Be(2.0m);
+        asset.Quantity.Should().Be(5m);
+        asset.DisposalRecords.Should().ContainSingle().Which.Status.Should().Be(DisposalRecordStatus.Active);
+    }
+
+    [Fact]
     public void RecordCorporateAction_NoLaterDisposal_CreatesNoDisposalRecord()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");

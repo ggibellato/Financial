@@ -600,6 +600,141 @@ public class CorporateActionServiceTests
     }
 
     [Fact]
+    public async Task DeleteCorporateActionAsync_MergerWhoseTargetLotsFundALaterSale_RestoresTheSourceRecordAndWritesNothing()
+    {
+        var (broker, portfolio, source) = MakeMergerFixture();
+        broker.SetCostBasisMethod(CostBasisMethod.SpecificId);
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+        await CreateService().AddMergerAsync(ValidMergerRequest());
+        var target = portfolio.FindAsset("TGT")!;
+        var targetLotId = target.CorporateActions.Single().Id;
+        target.RecordTransaction(
+            Transaction.Create(new DateTime(2024, 9, 1), Transaction.TransactionType.Sell, 5m, 4m, 0m),
+            CostBasisMethod.SpecificId,
+            [new SpecificLotAllocation(targetLotId, 5m)]);
+        var sourceActionId = source.CorporateActions.Single().Id;
+        var writesBefore = _repository.WriteCallCount;
+
+        var act = async () => await CreateService().DeleteCorporateActionAsync(new CorporateActionDeleteDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "SRC",
+            Id = sourceActionId
+        });
+
+        (await act.Should().ThrowAsync<InvestmentRuleViolationException>())
+            .WithMessage("Cannot delete: a later disposal depends on lots created by this merger.");
+        source.CorporateActions.Should().ContainSingle().Which.Id.Should().Be(sourceActionId);
+        source.Quantity.Should().Be(0m, "the restored merger still closes the source position");
+        target.CorporateActions.Should().ContainSingle();
+        _repository.WriteCallCount.Should().Be(writesBefore);
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_BrokerCurrencyIsNotRecognised_ThrowsNamingItAndWritesNothing()
+    {
+        var broker = Broker.Create("XPI", "XYZ");
+        var portfolio = broker.AddPortfolio("Default");
+        var source = Asset.Create("SRC", "ISIN1", "BVMF", "SRC");
+        source.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        portfolio.RegisterAsset(source);
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var act = async () => await CreateService().AddMergerAsync(ValidMergerRequest());
+
+        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("*XYZ*");
+        source.CorporateActions.Should().BeEmpty();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddMergerAsync_BlankTargetName_ReturnsNullAndWritesNothing()
+    {
+        var (broker, _, source) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddMergerAsync(ValidMergerRequest(targetAssetName: " "));
+
+        result.Should().BeNull();
+        source.CorporateActions.Should().BeEmpty();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task AddSpinOffAsync_BlankNewAssetName_ReturnsNullAndWritesNothing()
+    {
+        var (broker, _, parent) = MakeSpinOffFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+
+        var result = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
+        {
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            ParentAssetName = "PARENT",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            QuantityReceived = 5m,
+            AllocationPercentage = 15m,
+            NewAssetName = "",
+            CreateNewAssetInline = true
+        });
+
+        result.Should().BeNull();
+        parent.CorporateActions.Should().BeEmpty();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateSplitAsync_WhenTheSaveFails_RecordsFailedSpanAndRethrows()
+    {
+        var asset = MakeAssetWithPosition();
+        var split = CorporateAction.CreateSplit(new DateTime(2024, 6, 1), 2.0m);
+        asset.RecordCorporateAction(split);
+        _repository.Asset = asset;
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().UpdateSplitAsync(new CorporateActionSplitUpdateDTO
+        {
+            Id = split.Id,
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            EffectiveDate = split.EffectiveDate,
+            RatioFactor = 3.0m
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.CorporateActionService.UpdateSplit");
+    }
+
+    [Fact]
+    public async Task UpdateMergerAsync_WhenTheSaveFails_RecordsFailedSpanAndRethrows()
+    {
+        var (broker, _, source) = MakeMergerFixture();
+        _repository.Broker = broker;
+        _repository.Brokers = [broker];
+        await CreateService().AddMergerAsync(ValidMergerRequest());
+        _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
+
+        var act = async () => await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
+        {
+            Id = source.CorporateActions.Single().Id,
+            BrokerName = "XPI",
+            PortfolioName = "Default",
+            SourceAssetName = "SRC",
+            EffectiveDate = new DateTime(2024, 6, 1),
+            ExchangeRatio = 3.0m
+        });
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.CorporateActionService.UpdateMerger");
+    }
+
+    [Fact]
     public async Task AddSpinOffAsync_CreateNewAssetInline_ReducesParentCostBasisAndCreatesNewHoldingAtCarriedUnitCost()
     {
         var (broker, portfolio, parent) = MakeSpinOffFixture();
@@ -887,6 +1022,17 @@ public class CorporateActionServiceTests
 
     private NavigationService CreateNavigationService() =>
         new(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
+
+    private static CorporateActionMergerCreateDTO ValidMergerRequest(string targetAssetName = "TGT") => new()
+    {
+        BrokerName = "XPI",
+        PortfolioName = "Default",
+        SourceAssetName = "SRC",
+        EffectiveDate = new DateTime(2024, 6, 1),
+        ExchangeRatio = 2.0m,
+        TargetAssetName = targetAssetName,
+        CreateTargetAssetInline = true
+    };
 
     private static Asset MakeAssetWithPosition(string name = "AAAA")
     {
