@@ -1,18 +1,25 @@
 param(
-    [ValidateSet('CashFlow', 'Investment', 'Both')][string]$Target = 'Both',
+    [ValidateSet('CashFlow', 'Investment', 'Both',
+        'CashFlow.Domain', 'Investment.Domain',
+        'CashFlow.Application', 'Investment.Application',
+        'CashFlow.Infrastructure', 'Investment.Infrastructure',
+        'Shared.Abstractions', 'Shared.Infrastructure', 'Api')]
+    [string]$Target = 'Both',
     [string]$Mutate = '',
+    [string]$Tests = '',
+    [switch]$DisableBail,
     [switch]$NoOpen
 )
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 
-$targets = @{
-    CashFlow   = @{ Tests = 'Tests/Financial.CashFlow.Domain.Tests';   Project = 'Financial.CashFlow.Domain.csproj' }
-    Investment = @{ Tests = 'Tests/Financial.Investment.Domain.Tests'; Project = 'Financial.Investment.Domain.csproj' }
+$aliases = @{
+    CashFlow   = @('CashFlow.Domain')
+    Investment = @('Investment.Domain')
+    Both       = @('CashFlow.Domain', 'Investment.Domain')
 }
-
-$selected = if ($Target -eq 'Both') { @('CashFlow', 'Investment') } else { @($Target) }
+$selected = if ($aliases.ContainsKey($Target)) { $aliases[$Target] } else { @($Target) }
 
 Push-Location $root
 try {
@@ -23,27 +30,25 @@ try {
 }
 
 foreach ($name in $selected) {
-    $testsDir = Join-Path $root $targets[$name].Tests
-    $arguments = @('stryker', '--config-file', '../../.config/stryker-config.json', '--project', $targets[$name].Project)
+    $testsDir = Join-Path $root "Tests/Financial.$name.Tests"
+    $outputDir = Join-Path $root "TestResults/stryker/$name/$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    $arguments = @('stryker', '--config-file', '../../.config/stryker-config.json', '--project', "Financial.$name.csproj", '--output', $outputDir, '--break-at', '0')
     if ($Mutate) { $arguments += @('--mutate', $Mutate) }
+    if ($DisableBail) { $arguments += '--disable-bail' }
 
-    Write-Host "== Stryker.NET: $name.Domain"
+    Write-Host "== Stryker.NET: $name"
     Push-Location $testsDir
     try {
-        $started = Get-Date
         & dotnet @arguments
-        if ($LASTEXITCODE -ne 0) { throw "Stryker failed for $name.Domain (exit $LASTEXITCODE)" }
-
-        $reports = Get-ChildItem -Path (Join-Path $testsDir 'StrykerOutput') -Directory |
-            Where-Object { $_.LastWriteTime -ge $started } |
-            Sort-Object LastWriteTime -Descending
-        $json = Join-Path $reports[0].FullName 'reports/mutation-report.json'
-        $html = Join-Path $reports[0].FullName 'reports/mutation-report.html'
+        if ($LASTEXITCODE -ne 0) { throw "Stryker failed for $name (exit $LASTEXITCODE)" }
     } finally {
         Pop-Location
     }
 
-    & pwsh -NoProfile -File (Join-Path $root '.github/scripts/mutation-score.ps1') -Report $json -Name "$name.Domain" -SummaryPath '' -OutputPath ''
+    $json = Join-Path $outputDir 'reports/mutation-report.json'
+    $html = Join-Path $outputDir 'reports/mutation-report.html'
+    & pwsh -NoProfile -File (Join-Path $root '.github/scripts/mutation-score.ps1') -Report $json -Name $name -SummaryPath '' -OutputPath ''
+    & pwsh -NoProfile -File (Join-Path $PSScriptRoot 'mutation-test-value.ps1') -Report $json -Tests $Tests
     Write-Host "Report: $html"
     if (-not $NoOpen) { Start-Process $html }
 }
