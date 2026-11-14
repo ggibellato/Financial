@@ -19,9 +19,9 @@ public class AssetPriceHistoryServiceTests
     private const string AssetName = "BCIA11";
 
     [Fact]
-    public async Task SetPriceAsync_NewDate_AddsManualEntry()
+    public async Task SetPriceAsync_NewDate_AddsManualEntryInTheGivenCurrency()
     {
-        var (service, tempFile) = CreateService();
+        var (service, tracer, tempFile) = CreateService();
         try
         {
             var date = new DateOnly(2026, 8, 15);
@@ -32,10 +32,15 @@ public class AssetPriceHistoryServiceTests
                 PortfolioName = PortfolioName,
                 AssetName = AssetName,
                 Date = date,
-                Price = 1234.56m
+                Price = 1234.56m,
+                Currency = "GBP"
             });
 
-            result.Should().NotBeNull();
+            var entry = result!.PriceSnapshots.Should().ContainSingle(p => p.Date == date).Subject;
+            entry.Price.Should().Be(1234.56m);
+            entry.IsManual.Should().BeTrue();
+            entry.Currency.Should().Be("GBP");
+            tracer.ShouldHaveSucceededSpan("Investment.AssetPriceHistoryService.SetPrice");
         }
         finally
         {
@@ -46,7 +51,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task SetPriceAsync_ExistingDate_ReplacesEntry()
     {
-        var (service, tempFile) = CreateService();
+        var (service, _, tempFile) = CreateService();
         try
         {
             var date = new DateOnly(2026, 8, 15);
@@ -68,7 +73,7 @@ public class AssetPriceHistoryServiceTests
                 Price = 150m
             });
 
-            result.Should().NotBeNull();
+            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == date).Which.Price.Should().Be(150m);
         }
         finally
         {
@@ -79,7 +84,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task SetPriceAsync_UnknownAsset_ReturnsNull()
     {
-        var (service, tempFile) = CreateService();
+        var (service, _, tempFile) = CreateService();
         try
         {
             var result = await service.SetPriceAsync(new SetAssetPriceDTO
@@ -99,10 +104,12 @@ public class AssetPriceHistoryServiceTests
         }
     }
 
-    [Fact]
-    public async Task SetPriceAsync_ZeroPrice_Throws()
+    [Theory]
+    [InlineData(0, 0, "Price must be greater than zero.")]
+    [InlineData(100, 1, "Price date cannot be in the future.")]
+    public async Task SetPriceAsync_InvalidPriceOrDate_ThrowsAndRecordsAFailedSpan(int price, int daysAfterToday, string message)
     {
-        var (service, tempFile) = CreateService();
+        var (service, tracer, tempFile) = CreateService();
         try
         {
             Func<Task> act = () => service.SetPriceAsync(new SetAssetPriceDTO
@@ -110,34 +117,12 @@ public class AssetPriceHistoryServiceTests
                 BrokerName = BrokerName,
                 PortfolioName = PortfolioName,
                 AssetName = AssetName,
-                Date = new DateOnly(2026, 8, 15),
-                Price = 0m
+                Date = TestClock.Today.AddDays(daysAfterToday),
+                Price = price
             });
 
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Price must be greater than zero.");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task SetPriceAsync_FutureDate_Throws()
-    {
-        var (service, tempFile) = CreateService();
-        try
-        {
-            Func<Task> act = () => service.SetPriceAsync(new SetAssetPriceDTO
-            {
-                BrokerName = BrokerName,
-                PortfolioName = PortfolioName,
-                AssetName = AssetName,
-                Date = TestClock.Today.AddDays(1),
-                Price = 100m
-            });
-
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Price date cannot be in the future.");
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage(message);
+            tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AssetPriceHistoryService.SetPrice");
         }
         finally
         {
@@ -148,7 +133,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task DeletePriceAsync_ManualEntry_RemovesIt()
     {
-        var (service, tempFile) = CreateService();
+        var (service, tracer, tempFile) = CreateService();
         try
         {
             var date = new DateOnly(2026, 8, 15);
@@ -169,7 +154,8 @@ public class AssetPriceHistoryServiceTests
                 Date = date
             });
 
-            result.Should().NotBeNull();
+            result!.PriceSnapshots.Should().NotContain(p => p.Date == date);
+            tracer.ShouldHaveSucceededSpan("Investment.AssetPriceHistoryService.DeletePrice");
         }
         finally
         {
@@ -180,7 +166,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task DeletePriceAsync_NoEntryForDate_IsNoOpAndReturnsDetails()
     {
-        var (service, tempFile) = CreateService();
+        var (service, _, tempFile) = CreateService();
         try
         {
             var result = await service.DeletePriceAsync(new DeleteAssetPriceDTO
@@ -202,7 +188,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task DeletePriceAsync_AutomaticEntry_Throws()
     {
-        var (service, repository, tempFile) = CreateServiceWithRepository();
+        var (service, repository, tracer, tempFile) = CreateServiceWithRepository();
         try
         {
             var date = new DateOnly(2026, 8, 15);
@@ -219,6 +205,7 @@ public class AssetPriceHistoryServiceTests
 
             await act.Should().ThrowAsync<ArgumentException>()
                 .WithMessage("Automatic price entries can't be edited directly*");
+            tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AssetPriceHistoryService.DeletePrice");
         }
         finally
         {
@@ -229,7 +216,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task DeletePriceAsync_UnknownAsset_ReturnsNull()
     {
-        var (service, tempFile) = CreateService();
+        var (service, _, tempFile) = CreateService();
         try
         {
             var result = await service.DeletePriceAsync(new DeleteAssetPriceDTO
@@ -251,7 +238,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task SetPriceAsync_AssetClassifiedProviderValue_RecordsProviderValuationSource()
     {
-        var (service, repository, tempFile) = CreateServiceWithRepository();
+        var (service, repository, _, tempFile) = CreateServiceWithRepository();
         try
         {
             repository.GetAsset(BrokerName, PortfolioName, AssetName)!.SetValuationMethod(ValuationMethod.ProviderValue);
@@ -276,7 +263,7 @@ public class AssetPriceHistoryServiceTests
     [Fact]
     public async Task SetPriceAsync_AssetLeftAtDefaultValuationMethod_RecordsManualSource()
     {
-        var (service, tempFile) = CreateService();
+        var (service, _, tempFile) = CreateService();
         try
         {
             var result = await service.SetPriceAsync(new SetAssetPriceDTO
@@ -288,7 +275,7 @@ public class AssetPriceHistoryServiceTests
                 Price = 100m
             });
 
-            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.Manual);
+            result!.PriceSnapshots.Should().ContainSingle(p => p.Date == new DateOnly(2026, 8, 15) && p.Source == PriceSource.Manual && p.Currency == string.Empty);
         }
         finally
         {
@@ -296,10 +283,10 @@ public class AssetPriceHistoryServiceTests
         }
     }
 
-    private static (AssetPriceHistoryService Service, string TempFile) CreateService()
+    private static (AssetPriceHistoryService Service, RecordingTelemetryTracer Tracer, string TempFile) CreateService()
     {
-        var (service, _, tempFile) = CreateServiceWithRepository();
-        return (service, tempFile);
+        var (service, _, tracer, tempFile) = CreateServiceWithRepository();
+        return (service, tracer, tempFile);
     }
 
     /// <summary>Loads a repository over a private copy of the test data file, so a test that mutates
@@ -315,12 +302,12 @@ public class AssetPriceHistoryServiceTests
             new RecordingTelemetryTracer(), tempFile);
     }
 
-    private static (AssetPriceHistoryService Service, InvestmentJsonRepository Repository, string TempFile) CreateServiceWithRepository()
+    private static (AssetPriceHistoryService Service, InvestmentJsonRepository Repository, RecordingTelemetryTracer Tracer, string TempFile) CreateServiceWithRepository()
     {
         var (repository, tracer, tempFile) = CreateRepositoryOverTempCopy();
         var navigationService = new NavigationService(repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
         var service = new AssetPriceHistoryService(repository, navigationService, TestClock.At(), tracer, NullLogger<AssetPriceHistoryService>.Instance);
 
-        return (service, repository, tempFile);
+        return (service, repository, tracer, tempFile);
     }
 }

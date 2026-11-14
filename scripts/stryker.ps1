@@ -5,8 +5,13 @@ param(
         'CashFlow.Infrastructure', 'Investment.Infrastructure',
         'Shared.Abstractions', 'Shared.Infrastructure', 'Api')]
     [string]$Target = 'Both',
-    [string]$Mutate = '',
+    [string[]]$Mutate = @(),
     [string]$Tests = '',
+    [ValidateSet('CashFlow.Domain', 'Investment.Domain',
+        'CashFlow.Application', 'Investment.Application',
+        'CashFlow.Infrastructure', 'Investment.Infrastructure',
+        'Shared.Abstractions', 'Shared.Infrastructure', 'Api')]
+    [string[]]$AlsoTestedBy = @(),
     [switch]$DisableBail,
     [switch]$NoOpen
 )
@@ -30,14 +35,17 @@ try {
 }
 
 foreach ($name in $selected) {
-    $testsDir = Join-Path $root "Tests/Financial.$name.Tests"
     $outputDir = Join-Path $root "TestResults/stryker/$name/$(Get-Date -Format 'yyyyMMdd-HHmmss')"
-    $arguments = @('stryker', '--config-file', '../../.config/stryker-config.json', '--project', "Financial.$name.csproj", '--output', $outputDir, '--break-at', '0')
-    if ($Mutate) { $arguments += @('--mutate', $Mutate) }
+    $projectDir = Join-Path $root "Financial.$name"
+    $arguments = @('stryker', '--config-file', '../.config/stryker-config.json', '--output', $outputDir, '--break-at', '0')
+    foreach ($testTarget in @($name) + $AlsoTestedBy) {
+        $arguments += @('--test-project', "../Tests/Financial.$testTarget.Tests/Financial.$testTarget.Tests.csproj")
+    }
+    foreach ($pattern in $Mutate) { $arguments += @('--mutate', $pattern) }
     if ($DisableBail) { $arguments += '--disable-bail' }
 
     Write-Host "== Stryker.NET: $name"
-    Push-Location $testsDir
+    Push-Location $projectDir
     try {
         & dotnet @arguments
         if ($LASTEXITCODE -ne 0) { throw "Stryker failed for $name (exit $LASTEXITCODE)" }

@@ -91,25 +91,6 @@ public class AssetPriceLookupServiceTests
     }
 
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheFetchedSourceOnTheSnapshot()
-    {
-        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Google));
-        try
-        {
-            await service.GetCurrentPriceAsync(BuildRequest());
-
-            var today = TestClock.Today;
-            var entry = repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(today);
-            entry.Should().NotBeNull();
-            entry!.Source.Should().Be(PriceSource.Google);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
     public async Task GetCurrentPriceAsync_LiveFetchSucceeds_SamePriceButDifferentRecordedSource_RewritesTheSource()
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(123.45m, PriceSource.Google));
@@ -327,6 +308,8 @@ public class AssetPriceLookupServiceTests
 
             result.Price.Should().Be(75m);
             result.AsOfDate.Should().Be(yesterday);
+            result.Name.Should().Be(AssetName);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(TestClock.Today).Should().BeNull();
         }
         finally
         {
@@ -410,36 +393,22 @@ public class AssetPriceLookupServiceTests
         }
     }
 
-    /// <summary>
-    /// The rethrow branch hands the failure to the caller, so logging here as well would report
-    /// every such failure twice.
-    /// </summary>
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_LogsAWarningButDoesNotThrow()
+    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_ReturnsUnavailableAndOnlyWarns()
     {
-        var (service, _, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
+        var (service, repository, logger, tempFile) = CreateRecordingServiceOverRepository(StubAssetPriceService.Failure());
         try
         {
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
             result.MarketStatus.Should().Be(MarketStatus.Unavailable);
-            logger.Entries.Should().Contain(recorded => recorded.Level == LogLevel.Warning);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchFails_NoHistoryAtAll_ReturnsUnavailableInsteadOfThrowing()
-    {
-        var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Failure());
-        try
-        {
-            var result = await service.GetCurrentPriceAsync(BuildRequest());
-
-            result.MarketStatus.Should().Be(MarketStatus.Unavailable);
+            result.Price.Should().Be(0m);
+            result.IsManual.Should().BeFalse();
+            result.Source.Should().Be(PriceSource.Unknown);
+            result.Name.Should().Be(AssetName);
+            repository.GetAsset(BrokerName, PortfolioName, AssetName)!.GetPriceForDate(TestClock.Today).Should().BeNull();
+            logger.Entries.Should().Contain(recorded => recorded.Level == LogLevel.Warning)
+                .And.NotContain(recorded => recorded.Level == LogLevel.Error);
         }
         finally
         {
@@ -493,42 +462,22 @@ public class AssetPriceLookupServiceTests
         }
     }
 
-    [Fact]
-    public async Task GetCurrentPriceAsync_ProviderValueMethod_ReturnsOldRecordedValueWithoutFetching()
+    [Theory]
+    [InlineData(ValuationMethod.ProviderValue)]
+    [InlineData(ValuationMethod.Manual)]
+    public async Task GetCurrentPriceAsync_InvestorValuedHolding_ReturnsOldRecordedValueWithoutFetching(ValuationMethod valuationMethod)
     {
         var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
         try
         {
             var oldDate = TestClock.Today.AddDays(-30);
             var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
-            asset.SetValuationMethod(ValuationMethod.ProviderValue);
+            asset.SetValuationMethod(valuationMethod);
             asset.SetPrice(oldDate, 5000m, isManual: false);
 
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
             result.Price.Should().Be(5000m);
-            repository.SaveCount.Should().Be(0);
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
-    [Fact]
-    public async Task GetCurrentPriceAsync_ManualMethod_ReturnsOldRecordedValueWithoutFetching()
-    {
-        var (service, repository, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.NotUsed());
-        try
-        {
-            var oldDate = TestClock.Today.AddDays(-30);
-            var asset = repository.GetAsset(BrokerName, PortfolioName, AssetName)!;
-            asset.SetValuationMethod(ValuationMethod.Manual);
-            asset.SetPrice(oldDate, 1234.56m, isManual: false);
-
-            var result = await service.GetCurrentPriceAsync(BuildRequest());
-
-            result.Price.Should().Be(1234.56m);
             repository.SaveCount.Should().Be(0);
         }
         finally
@@ -548,6 +497,49 @@ public class AssetPriceLookupServiceTests
             var result = await service.GetCurrentPriceAsync(BuildRequest());
 
             result.MarketStatus.Should().Be(MarketStatus.Unavailable);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Theory]
+    [InlineData(null, AssetName)]
+    [InlineData("  ", AssetName)]
+    [InlineData("Caller label", "Caller label")]
+    public async Task GetCurrentPriceAsync_FetchRequest_NamesTheHoldingOnlyWhenTheCallerSentNoName(string? requestedName, string expectedName)
+    {
+        var capturingService = new CapturingAssetPriceService(10m);
+        var (service, _, tempFile) = CreateServiceWithAssetPriceService(capturingService);
+        try
+        {
+            var request = BuildRequest();
+            request.Name = requestedName;
+
+            await service.GetCurrentPriceAsync(request);
+
+            capturingService.LastRequest!.Name.Should().Be(expectedName);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public async Task GetCurrentPriceAsync_WithoutAssetContext_FetchFails_RecordsAFailedSpanAndRethrows()
+    {
+        var (service, tracer, _, tempFile) = CreateRecordingService(StubAssetPriceService.Failure());
+        try
+        {
+            var request = BuildRequest();
+            request.PortfolioName = null;
+
+            var act = () => service.GetCurrentPriceAsync(request);
+
+            await act.Should().ThrowAsync<InvalidOperationException>();
+            tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.AssetPriceLookupService.GetCurrentPrice");
         }
         finally
         {
@@ -625,9 +617,9 @@ public class AssetPriceLookupServiceTests
     /// the save throws. This one goes to the file, which is what the user actually inspects.
     /// </summary>
     [Fact]
-    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheEntryToTheDataFile()
+    public async Task GetCurrentPriceAsync_LiveFetchSucceeds_PersistsTheEntryWithItsSourceAndReportsSuccess()
     {
-        var (service, _, tempFile) = CreateServiceWithAssetPriceService(StubAssetPriceService.Success(321.5m));
+        var (service, tracer, _, tempFile) = CreateRecordingService(StubAssetPriceService.Success(321.5m, PriceSource.Google));
         try
         {
             await service.GetCurrentPriceAsync(BuildRequest());
@@ -636,6 +628,9 @@ public class AssetPriceLookupServiceTests
             entry.Should().NotBeNull();
             entry!.Price.Should().Be(321.5m);
             entry.IsManual.Should().BeFalse();
+            entry.Source.Should().Be(PriceSource.Google);
+            entry.Currency.Should().BeEmpty();
+            tracer.ShouldHaveSucceededSpan("Investment.AssetPriceLookupService.GetCurrentPrice");
         }
         finally
         {

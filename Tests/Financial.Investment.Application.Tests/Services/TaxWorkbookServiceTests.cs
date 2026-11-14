@@ -195,27 +195,57 @@ public class TaxWorkbookServiceTests
         var act = () => CreateService().GetWorkbook("NotAJurisdiction", "2026");
 
         act.Should().Throw<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.TaxWorkbookService.GetWorkbook");
     }
 
     [Fact]
-    public void GetWorkbookOptions_ReturnsDistinctPairsWithAtLeastOneActiveClassification()
+    public void GetWorkbookOptions_ListsEachActiveJurisdictionAndYearOnce_OrderedByJurisdictionThenYear()
     {
         var asset = SeedAsset();
         asset.AddCredit(Credit.Create(new DateTime(2026, 1, 1), Credit.CreditType.Dividend, 10m, 0m, Currency.BRL), _repository.Investments);
         asset.AddCredit(Credit.Create(new DateTime(2026, 2, 1), Credit.CreditType.Coupon, 10m, 0m, Currency.BRL), _repository.Investments);
-        asset.AddCredit(Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 10m, 0m, Currency.GBP), _repository.Investments);
+        asset.AddCredit(Credit.Create(new DateTime(2025, 3, 1), Credit.CreditType.Dividend, 10m, 0m, Currency.BRL), _repository.Investments);
         var sell = Transaction.Create(new DateTime(2024, 6, 1), Transaction.TransactionType.Sell, 1m, 10m, 0m);
         asset.AddTransaction(Transaction.Create(new DateTime(2020, 1, 1), Transaction.TransactionType.Buy, 1m, 5m, 0m));
         asset.RecordTransaction(sell, investments: _repository.Investments);
         asset.RetractTransaction(sell.Id, investments: _repository.Investments);
+        var historicAsset = SeedHistoricAsset();
+        historicAsset.AddCredit(Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 10m, 0m, Currency.GBP), _repository.Investments);
+        var ukTaxYear = historicAsset.TaxClassifications.Single().TaxYear;
 
         var result = CreateService().GetWorkbookOptions();
 
         using (new AssertionScope())
         {
-            result.Should().HaveCount(2);
-            result.Should().ContainSingle(o => o.Jurisdiction == Jurisdiction.BR && o.TaxYear == "2026");
-            result.Should().ContainSingle(o => o.Jurisdiction == Jurisdiction.UK);
+            result.Select(o => (o.Jurisdiction, o.TaxYear)).Should().Equal(
+                (Jurisdiction.BR, "2025"), (Jurisdiction.BR, "2026"), (Jurisdiction.UK, ukTaxYear));
+            _tracer.ShouldHaveSucceededSpan("Investment.TaxWorkbookService.GetWorkbookOptions");
+        }
+    }
+
+    [Fact]
+    public void GetWorkbookOptions_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnGetInvestments = new InvalidOperationException("simulated failure");
+
+        var act = () => CreateService().GetWorkbookOptions();
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TaxWorkbookService.GetWorkbookOptions");
+    }
+
+    [Fact]
+    public void GetWorkbook_HoldingAtAHistoricBroker_IsIncluded()
+    {
+        var asset = SeedHistoricAsset();
+        asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL), _repository.Investments);
+
+        var result = CreateService().GetWorkbook("BR", "2026");
+
+        using (new AssertionScope())
+        {
+            result.Entries.Should().ContainSingle().Which.GrossAmount.Should().Be(100m);
+            _tracer.ShouldHaveSucceededSpan("Investment.TaxWorkbookService.GetWorkbook");
         }
     }
 
@@ -225,6 +255,15 @@ public class TaxWorkbookServiceTests
         var broker = Broker.Create("XPI", "BRL");
         broker.AddPortfolio("Default").AddAsset(asset);
         _repository.Investments!.AddActiveBroker(broker);
+        return asset;
+    }
+
+    private Asset SeedHistoricAsset()
+    {
+        var asset = Asset.Create("Asset H", "ISIN456", "BVMF", "HHH");
+        var broker = Broker.Create("Closed broker", "BRL");
+        broker.AddPortfolio("Closed").AddAsset(asset);
+        _repository.Investments!.AddHistoricBroker(broker);
         return asset;
     }
 

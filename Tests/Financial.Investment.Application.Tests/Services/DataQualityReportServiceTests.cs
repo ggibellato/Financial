@@ -1,3 +1,4 @@
+using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
@@ -509,7 +510,102 @@ public class DataQualityReportServiceTests
         report.OpenHoldingsMissingCostBasis.Should().BeEmpty();
         report.StaleValuationCount.Should().Be(0);
         report.UnresolvedTaxClassifications.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.DataQualityReportService.GenerateReport");
     }
+
+    [Fact]
+    public void GenerateReport_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnGetInvestments = new InvalidOperationException("simulated failure");
+
+        var act = () => CreateService().GenerateReport();
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.DataQualityReportService.GenerateReport");
+    }
+
+    [Theory]
+    [InlineData(nameof(DataQualityReportDTO.SalesExceedPurchases))]
+    [InlineData(nameof(DataQualityReportDTO.UnpricedOpenHoldings))]
+    [InlineData(nameof(DataQualityReportDTO.OpenHoldingsMissingCostBasis))]
+    [InlineData(nameof(DataQualityReportDTO.UnresolvedTaxClassifications))]
+    [InlineData(nameof(DataQualityReportDTO.UnclassifiedHoldings))]
+    [InlineData(nameof(DataQualityReportDTO.CorporateActionsAwaitingTaxReview))]
+    [InlineData(nameof(DataQualityReportDTO.HistoricHoldingsStillOpen))]
+    public void GenerateReport_FindingsOfEachKind_AreOrderedByBrokerThenPortfolioThenAsset(string findingKind)
+    {
+        _repository.Investments = Investments.Create();
+        PlaceProblemHolding(findingKind, "Beta", "P1", "Apple");
+        PlaceProblemHolding(findingKind, "Alpha", "P2", "Apple");
+        PlaceProblemHolding(findingKind, "Alpha", "P1", "Banana");
+        PlaceProblemHolding(findingKind, "Alpha", "P1", "Apple");
+
+        var report = CreateService(new FakeTimeProvider(Today)).GenerateReport();
+
+        FindingKeys(report, findingKind).Should().Equal(
+            ("Alpha", "P1", "Apple"), ("Alpha", "P1", "Banana"), ("Alpha", "P2", "Apple"), ("Beta", "P1", "Apple"));
+    }
+
+    private void PlaceProblemHolding(string findingKind, string brokerName, string portfolioName, string assetName)
+    {
+        var investments = _repository.Investments!;
+        var historic = findingKind == nameof(DataQualityReportDTO.HistoricHoldingsStillOpen);
+        var brokers = historic ? investments.HistoricBrokers : investments.ActiveBrokers;
+        var broker = brokers.FirstOrDefault(b => b.Name == brokerName);
+        if (broker is null)
+        {
+            broker = Broker.Create(brokerName, "BRL");
+            if (historic)
+            {
+                investments.AddHistoricBroker(broker);
+            }
+            else
+            {
+                investments.AddActiveBroker(broker);
+            }
+        }
+
+        var portfolio = broker.Portfolios.FirstOrDefault(p => p.Name == portfolioName) ?? broker.CreatePortfolio(portfolioName);
+        var code = $"{brokerName}-{portfolioName}-{assetName}";
+        var asset = Asset.Create(assetName, $"ISIN-{code}", "BVMF", code);
+        portfolio.RegisterAsset(asset);
+
+        switch (findingKind)
+        {
+            case nameof(DataQualityReportDTO.SalesExceedPurchases):
+                asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 10m, 0m));
+                asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Sell, 8m, 12m, 0m));
+                break;
+            case nameof(DataQualityReportDTO.UnpricedOpenHoldings):
+            case nameof(DataQualityReportDTO.HistoricHoldingsStillOpen):
+                asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 2m, 10m, 0m));
+                break;
+            case nameof(DataQualityReportDTO.OpenHoldingsMissingCostBasis):
+                asset.SetValuationMethod(ValuationMethod.ProviderValue);
+                asset.SetPrice(TodayDate, 1200m, isManual: false);
+                break;
+            case nameof(DataQualityReportDTO.UnresolvedTaxClassifications):
+                asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL), investments);
+                break;
+            case nameof(DataQualityReportDTO.CorporateActionsAwaitingTaxReview):
+                var target = CorporateAction.CreateMergerTarget(new DateTime(2026, 4, 1), null, Guid.NewGuid(), "BCIA11", 150m, 2000m);
+                asset.RecordCorporateAction(target, CostBasisMethod.AverageCost, investments, Currency.BRL);
+                break;
+        }
+    }
+
+    private static IEnumerable<(string Broker, string Portfolio, string Asset)> FindingKeys(DataQualityReportDTO report, string findingKind) =>
+        findingKind switch
+        {
+            nameof(DataQualityReportDTO.SalesExceedPurchases) => report.SalesExceedPurchases.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            nameof(DataQualityReportDTO.UnpricedOpenHoldings) => report.UnpricedOpenHoldings.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            nameof(DataQualityReportDTO.OpenHoldingsMissingCostBasis) => report.OpenHoldingsMissingCostBasis.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            nameof(DataQualityReportDTO.UnresolvedTaxClassifications) => report.UnresolvedTaxClassifications.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            nameof(DataQualityReportDTO.UnclassifiedHoldings) => report.UnclassifiedHoldings.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            nameof(DataQualityReportDTO.CorporateActionsAwaitingTaxReview) => report.CorporateActionsAwaitingTaxReview.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            nameof(DataQualityReportDTO.HistoricHoldingsStillOpen) => report.HistoricHoldingsStillOpen.Select(f => (f.BrokerName, f.PortfolioName, f.AssetName)),
+            _ => throw new ArgumentOutOfRangeException(nameof(findingKind), findingKind, null)
+        };
 
     private void SeedActive(params Asset[] assets)
     {
