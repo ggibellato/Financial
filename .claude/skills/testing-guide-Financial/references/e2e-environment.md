@@ -2,6 +2,23 @@
 
 # E2E Environment
 
+## Before adding an E2E test
+
+E2E is slow, brittle and costly to keep, so the suite stays a small, deliberate set. A new spec (or a
+new `test` in an existing spec) must answer all four in the PR description:
+
+1. **Critical?** Does it cover a critical user journey or business-critical flow (money moving
+   between accounts, a statement paid, a total the user acts on)?
+2. **Unreachable lower?** Does it verify something Unit, Integration or page tests cannot — the SPA
+   and the published API agreeing at runtime, routing through the real server, a real browser's
+   focus and keyboard behaviour?
+3. **Not cheaper lower?** Could the same risk be caught faster and more reliably at a lower layer?
+   If yes, write that test instead.
+4. **Stable signal?** Will it stay deterministic on seeded data (no live prices, no clock
+   dependence, cleans up or uses a unique run id) and fail with a message that points at the cause?
+
+When an E2E run finds a defect, also add the focused lower-level test that would have caught it.
+
 Decided in Phase 3 (2026-09-06): **the CI `web-e2e` job is the E2E environment.** It is the only
 place more than one deployed process runs — the published `Financial.Api.dll` (serving the
 built SPA from `wwwroot`) and Playwright's Chromium — over real HTTP against real JSON files.
@@ -65,7 +82,8 @@ The sentinel replaces a "which data file are you on" endpoint on purpose:
 
 ## What the suite proves
 
-Nine `@smoke` tests in seven spec files in `Financial.Web/tests/e2e/`, each also failing on any console error:
+Ten `@smoke` tests in eight spec files (the PR job runs `npm run smoke-test`; the nightly `e2e-web`
+job runs `npm run test:e2e`, every spec) in `Financial.Web/tests/e2e/`, each also failing on any console error:
 
 | Spec | Journey |
 |---|---|
@@ -76,12 +94,13 @@ Nine `@smoke` tests in seven spec files in `Financial.Web/tests/e2e/`, each also
 | `pay-card-statement` | Amex → Statements → pay October 2026 from Barclays → "from Barclays"; then Unmark |
 | `pots-deposit` | Reserva → manual deposit with no bank → the Pots total grows by the deposit and its rows list; then delete the deposit |
 | `settle` | Mãe → Settle → "Both totals become zero." → "Settled"; then delete the entry |
+| `bankless-income-tithe` | a bankless income raises the Tithe tab's income base and tithe (`[AC P61-F03-tithe-tab-and-history-07]`) |
 
 Rules: locate by role, label or visible text; `data-testid` only with a comment saying why; no
 CSS classes, XPath, DOM position or fixed waits (`eslint-plugin-playwright` and the F11 hygiene
 scan enforce the last). Debug locally with `npx playwright test --headed`, `--ui` or `--debug`.
-Still missing: one keyboard-only completion of a critical workflow
-(`cross-cutting-concerns.md`, Accessibility).
+Still missing: one keyboard-only completion of a critical workflow — the one accessibility check
+jsdom cannot make (Fluent's tabster focus is unreliable there), so it passes question 2 above.
 
 ## Not the E2E environment
 

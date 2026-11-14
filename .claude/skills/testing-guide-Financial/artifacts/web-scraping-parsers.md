@@ -2,7 +2,7 @@
 
 # Web Scraping Parsers (`Integrations/WebPageParser/*.cs`)
 
-`GoogleFinance`, `StatusInvest` and `DadosMercadoDividend` fetch third-party HTML with
+`GoogleFinance`, `StatusInvest`, `Redentia`, `TesouroTransparente` and `DadosMercadoDividend` fetch third-party pages with
 HtmlAgilityPack and pick values out with CSS selectors (`GoogleFinanceSelectors`). The pure
 string/number parsing is split out (`GoogleFinanceParsing`, `TesouroDiretoSlug.Derive`,
 `GoogleFinanceVerifier`) precisely so it can be tested without the page.
@@ -25,12 +25,14 @@ string/number parsing is split out (`GoogleFinanceParsing`, `TesouroDiretoSlug.D
 - **Unit** for all parsing functions and slug/URL builders — pure, deterministic.
 - **Integration with the site faked** for the HtmlAgilityPack extraction: feed a saved HTML
   string into the parsing path (the page is an external provider —
-  `../references/external-providers.md`). Today only `DadosMercadoDividendTests` does this
-  with inline fragments; new selectors should ship with a fixture.
+  `../references/external-systems.md`). `DadosMercadoDividendTests` uses inline fragments;
+  `RedentiaTests` builds a small bond page (`LoadBondPage(compra:, venda:)`) and
+  `TesouroTransparenteTests` a CSV with the real header. New selectors
+  ship with a fixture.
 - **Live, not run on PRs**: the `*VerificationTests` classes (Google Finance, StatusInvest,
-  Redentia, Dicionário do Investidor) carry `[Trait("Category", "Live")]` and hit the live
-  pages. Run them with `dotnet test --filter Category=Live` when a selector changes; never add
-  `Skip`.
+  Redentia, Tesouro Transparente) carry `[Trait("Category", "Live")]` and hit the live pages. The
+  nightly `live` job runs them; run them yourself with `dotnet test --filter Category=Live` when a
+  selector changes. Never add `Skip`.
 - No E2E.
 
 ## Setup pattern
@@ -78,4 +80,4 @@ parsed `WebAssetQuote` / `WebDividendRecord`.
 - `Tests/Financial.WebPageParser.Tests/TesouroDiretoSlugTests.cs` — Unit; slug families.
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceCryptocurrencyUrlTests.cs` — Unit.
 - `Tests/Financial.WebPageParser.Tests/DadosMercadoDividendTests.cs` — Integration (site faked by inline HTML).
-- `Tests/Financial.WebPageParser.Tests/GoogleFinanceVerificationTests.cs`, `StatusInvestVerificationTests.cs` — manual, `Skip`ped.
+- `Tests/Financial.WebPageParser.Tests/GoogleFinanceVerificationTests.cs`, `StatusInvestVerificationTests.cs`, `RedentiaVerificationTests.cs`, `TesouroTransparenteVerificationTests.cs` — `Category=Live`, nightly.

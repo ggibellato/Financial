@@ -21,19 +21,23 @@ Through the real host (`ApiEndpointTests`), per endpoint:
 - **Persistence through the host**: after a POST, a GET on the same host returns the item, and
   the temp JSON file contains it — the repository and storage are real.
 - **Health / sync-status / diagnostics** endpoints with observability disabled.
-- **Guard clauses** that HTTP cannot reach (constructor nulls, non-nullable `[FromBody]` null):
-  `ControllerGuardClauseTests` calls the controller directly — the only Unit tests in this area.
+- **An empty or `null` JSON body** on a `[FromBody]` endpoint → 400, not a 500
+  (`EmptyBodyEndpointsTests`).
+- Constructor null guards are not tested per controller: `Tests/Financial.Api.Tests/ConstructorGuardTests.cs`
+  sweeps the assembly (`docs/rules/implementation.md` §Tests #7).
 
 ## Layer assignment
 
-- **Integration** (default): `WebApplicationFactory<Program>` on temp copies of
-  `TestData/data.test.json` and the seeded CashFlow JSON, real DI, real middleware, real
-  `System.Text.Json`. Fakes allowed: `IExchangeRateProvider` (external) and `TimeProvider`
-  (`ApiEndpointTests(IExchangeRateProvider? exchangeRateProvider = null, TimeProvider? timeProvider = null)`).
-  This is also where every backend feature's AC-tracing tests go
+- **Integration** (default, `[Trait("Category", "Integration")]`): `WebApplicationFactory<Program>`
+  on temp copies of `TestData/data.test.json`, the seeded CashFlow JSON, and temp paths for the FX-rate
+  store and the calendar credentials; real DI, real middleware, real `System.Text.Json`. The base
+  constructor is
+  `ApiEndpointTests(IExchangeRateProvider? exchangeRateProvider = null, TimeProvider? timeProvider = null, ICalendarProvider? calendarProvider = null, bool useRealExchangeRates = false)`.
+  FX is a `StubExchangeRateProvider` and time is `TestClock.At()` unless you pass your own — never
+  the network, never the wall clock. This is also where every backend feature's AC-tracing tests go
   (`../references/feature-traceability.md`).
-- **Unit** only for `ControllerGuardClauseTests` and for `SyncStatusResolver`
-  (`Financial.Api/Helpers`) if it grows branches.
+- **Unit** (`Category=Unit`) only for host-less `Api.Tests` classes: `ConstructorGuardTests` and
+  `SyncStatusResolver` (`Financial.Api/Helpers`) if it grows branches.
 - **E2E**: an endpoint is E2E-covered only when the smoke journey drives it from the SPA
   (`../references/e2e-environment.md`); do not label host tests E2E.
 - `DomainExceptionMappingMiddleware` is additionally tested in isolation with a
@@ -77,10 +81,14 @@ public class ExpenseEndpointsTests : ApiEndpointTests
 ```
 
 (Verbatim from `Tests/Financial.Api.Tests/ExpenseEndpointsTests.cs`.) The seeded ids
-(`8f3b1c1a-…`) come from `ApiTestFactory.SeededBanksJson`; reuse them rather than inventing
-entities per test. A test that needs a different FX rate or "today" builds its own factory:
+(`8f3b1c1a-…`) come from `ApiTestFactory.SeededCashFlowJson`; reuse them rather than inventing
+entities per test. A class whose tests all need the same FX rate, "today" or calendar fake passes
+it through the base constructor (`: base(timeProvider: TestClock.At(...))`). A single test that
+needs something different may build its own factory inside the method —
 `await using var factory = new ApiTestFactory(new StubExchangeRateProvider(0.146m)); using var client = factory.CreateClient();`
-— inside a test method is fine; never as a class-level field.
+— never as a class-level field. To start the host on different CashFlow data, call
+`ReplaceCashFlowDataBeforeStart(json)` before the first `Client` use; `SavedCashFlowData()` reads
+what the host wrote. The data file loads once at startup, so editing it afterwards proves nothing.
 
 ## When to skip
 
@@ -92,9 +100,10 @@ entities per test. A test that needs a different FX rate or "today" builds its o
 
 ## Examples from project
 
-- `Tests/Financial.Api.Tests/ExpenseEndpointsTests.cs`, `ReserveEndpointsTests.cs`, `TransfersEndpointsTests.cs` — Integration; 200/400/404/409 through the host.
+- `Tests/Financial.Api.Tests/ExpenseEndpointsTests.cs`, `ReserveEndpointsTests.cs`, `BalanceAdjustmentsEndpointsTests.cs` — Integration; 200/400/404/409 through the host.
+- `Tests/Financial.Api.Tests/EmptyBodyEndpointsTests.cs` — Integration; empty body → 400 on every `[FromBody]` endpoint.
 - `Tests/Financial.Api.Tests/Acceptance/SettlementScreenAcceptanceTests.cs` — Integration with `StubExchangeRateProvider` (external) for the FX branches, including `rate == null`.
 - `Tests/Financial.Api.Tests/PaymentsDueEndpointsTests.cs` — Integration with a `FakeTimeProvider` passed to the base.
 - `Tests/Financial.Api.Tests/DomainExceptionLoggingTests.cs` — Integration; log redaction.
-- `Tests/Financial.Api.Tests/Controllers/ControllerGuardClauseTests.cs` — Unit; unreachable guards.
+- `Tests/Financial.Api.Tests/ConstructorGuardTests.cs` — Unit; assembly-wide constructor null guards.
 - `Tests/Financial.Api.Tests/SyncStatusEndpointsTests.cs`, `DiagnosticsEndpointsTests.cs` — Integration; helper + hosted-service state surfaced over HTTP.

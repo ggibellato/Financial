@@ -2,9 +2,10 @@
 
 # React Components (`Financial.Web/src/components/**/*.tsx`)
 
-Forms (`ExpenseForm`, `TransferForm`, `*FormDialog`), grids (`BanksGrid`, `CardsGrid`,
-`CategoryTotalsGrid`, `TotalsGrid`, `grid/ColumnFilterMenu`, `grid/SortableColumnHeader`),
-sections/tabs (`ExpensesSection`, `IncomeSection`, `CreditsTab`, `PriceHistoryTab`), shell
+Forms (`ExpenseForm`, `TransferForm`, `PotDepositForm`, `PayCardStatementForm`, `*FormDialog`),
+grids (`AccountTransactionsGrid`, `MonthTransactionsGrid`, `IncomingGrid`, `CategoryTotalsGrid`,
+`TotalsGrid`, `grid/ColumnFilterMenu`, `grid/SortableColumnHeader`), tabs (`PotsTab`,
+`CardStatementsTab`, `IncomeTab`, `TitheTab`, `CreditsTab`, `PriceHistoryTab`), shell
 pieces (`Sidebar`, `Breadcrumb`, `SplitPanel`, `SyncStatusBanner`, `PaymentDueBanner`,
 `ColourModeToggleButton`), state components (`LoadingState`, `ErrorState`) and charts
 (`BrokerBreakdownCharts`, recharts).
@@ -103,6 +104,10 @@ role/label; never `container.querySelector`.
 
 ## When to skip
 
+- **"It renders" on its own.** A test that only mounts a component and finds its heading or a
+  static label is low value and fails the review in `../SKILL.md` §2. A component test earns its
+  place by asserting a rule the user depends on: a validation message, an accessible interaction,
+  a state change, a computed or formatted financial value.
 - Pure presentational wrappers with no props branching (`SplitPanel` beyond its resize
   callback), CSS files, `assets/`.
 - Recharts internals — assert the chart title/labels and the accessible summary text, not
@@ -116,4 +121,4 @@ role/label; never `container.querySelector`.
 - `Financial.Web/src/components/__tests__/ErrorState.test.tsx`, `LoadingState.test.tsx` — Unit; `role="alert"`, retry button presence.
 - `Financial.Web/src/components/__tests__/Sidebar.test.tsx` — Unit; `navigation` landmark name, collapse/expand buttons, links by name.
 - `Financial.Web/src/components/grid/__tests__/ColumnFilterMenu.test.tsx`, `SortableColumnHeader.test.tsx` — Unit; P37 grid controls.
-- `Financial.Web/src/components/__tests__/CardsGrid.test.tsx` — Unit; trailing fixed-width action column (#750).
+- `Financial.Web/src/components/__tests__/AccountTransactionsGrid.test.tsx`, `MonthTransactionsGrid.test.tsx` — Unit; per-currency amounts, category filters and their totals, ordering, statement-month dating.

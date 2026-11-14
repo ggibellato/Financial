@@ -4,9 +4,9 @@
 
 ## The boundary, in this project's terms
 
-Above Unit, the only things that may be faked are the six external providers in
-`external-providers.md` (Frankfurter, Yahoo Finance, scraped pages, Google Drive, Google
-Sheets, the OTLP collector) plus the non-deterministic clock. Everything else —
+Above Unit, the only things that may be faked are the third-party systems in
+`external-systems.md` (Frankfurter, Yahoo Finance, scraped pages, Google Drive, Google
+Sheets, Google Calendar, the OTLP collector) plus the non-deterministic clock. Everything else —
 `CashFlowJsonRepository`, `LocalJsonStorage`, `CashFlowSerializerAdapter`, every `*Service`,
 `DomainExceptionMappingMiddleware`, the DI container — is real.
 
@@ -20,8 +20,8 @@ louder failure than a silent default.
 
 | Layer / place | What is faked | Mechanism |
 |---|---|---|
-| Infrastructure Integration (HTTP providers) | The provider's transport | `private sealed class FakeHttpMessageHandler : HttpMessageHandler` overriding `SendAsync` with a `Func<HttpRequestMessage, HttpResponseMessage>` (`FrankfurterExchangeRateProviderTests.cs:91`, `YahooFinanceServiceTests.cs:135`) |
-| API host Integration | `IExchangeRateProvider`, `TimeProvider` | `ApiTestFactory.ConfigureWebHost` → `builder.ConfigureTestServices(services => { services.RemoveAll<IExchangeRateProvider>(); services.AddSingleton(_exchangeRateProviderOverride); })` — the only two overrides it accepts |
+| HTTP provider contract tests | The provider's transport | `FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage>)` from `Tests/Financial.TestUtilities` behind a real `HttpClient`; `FakeDriveHandler` for the Drive SDK |
+| API host Integration | `IExchangeRateProvider`, `TimeProvider`, `ICalendarProvider` | `ApiTestFactory.ConfigureWebHost` → `ConfigureTestServices` + `RemoveAll<T>()` + `AddSingleton(override)`. FX defaults to `StubExchangeRateProvider`, time to `TestClock.At()`; nothing else can be swapped |
 | Shared.Infrastructure Integration (remote storage) | `IRemoteFileClient` (Google Drive) | `RemoteJsonStorage`'s delegate constructor `(Func<string,string> download, Action<string,string> upload, string remotePath)` |
 | Spreadsheet import | `IGoogleSheetsDataSource` | Local `StubDataSource` in `GoogleSheetsAssetReaderTests` |
 | Observability | The collector | Not started; `Observability:Enabled=false`, or an unreachable port for the negative path |
@@ -65,6 +65,14 @@ proves the two agree at runtime. Rules that follow from this:
 - A new `Stub*` class appearing in a test project instead of `Tests/Financial.TestUtilities`
   is a rule violation
   (`docs/rules/implementation.md` §Tests item 1) unless it is genuinely single-file.
+
+## The litmus test
+
+Describe what the test proves **without mentioning a double**. "Adding an expense over the card's
+limit is rejected and nothing is saved" is behaviour. "`AddExpense` was called once on the stub" is
+wiring, and a wiring-only test is low value (`../SKILL.md` §2) — assert the observable outcome
+(returned value, stored state, span, response) instead of the call. Recording doubles are for
+side effects that *are* the outcome: the span, the log entry, the request sent to a provider.
 
 ## Recording doubles are for proving absence too
 

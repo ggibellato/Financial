@@ -1,16 +1,20 @@
 > Part of the `testing-guide-Financial` skill (see `../SKILL.md`).
 
-# External HTTP Services and Price Fetchers (`Financial.*.Infrastructure/Services/*.cs`)
+# External HTTP Services and Price Fetchers (`Integrations/Frankfurter/*.cs`, `Financial.Investment.Infrastructure/Services/*.cs`, `Financial.Shared.Abstractions/Currencies/**`)
 
-Two sub-types live in these folders:
+Three sub-types:
 
 1. **HTTP-backed providers** that call a genuine external API through an injected `HttpClient`:
-   `FrankfurterExchangeRateProvider` (`https://api.frankfurter.dev/v2/`) and `YahooFinanceService`
-   (`https://query1.finance.yahoo.com/`).
-2. **Fetchers, adapters and fallbacks** that orchestrate providers behind `IFinanceService` /
+   `FrankfurterExchangeRateProvider` (`Integrations/Frankfurter`, `https://api.frankfurter.dev/v2/`)
+   and `YahooFinanceService` (`https://query1.finance.yahoo.com/`).
+2. **FX composition** in `Financial.Shared.Abstractions/Currencies`: `UsdBasedExchangeRateProvider`
+   (cross rates through USD, backed by `IFxRateStore` + `IUsdRateFetcher`) and
+   `InMemoryCachedExchangeRateProvider` — pure logic over fakes, Unit.
+3. **Fetchers, adapters and fallbacks** that orchestrate providers behind `IFinanceService` /
    `IAssetPriceFetcher`: `AssetPriceService`, `StandardAssetPriceFetcher`,
    `BondAssetPriceFetcher`, `CryptocurrencyAssetPriceFetcher`, `FallbackFinanceService`,
-   `GoogleFinanceService`, `StatusInvestFinanceService`, `AssetSnapshotSourceAdapter`,
+   `CachingFinanceService`, `GoogleFinanceService`, `StatusInvestFinanceService`,
+   `TesouroTransparenteFinanceService`, `RedentiaFinanceService`, `AssetSnapshotSourceAdapter`,
    `DividendDataSourceAdapter`, `AssetPriceLookupService`, `AssetPriceHistoryService`,
    `WebPageParserMappers`.
 
@@ -39,19 +43,24 @@ Two sub-types live in these folders:
 
 ## Layer assignment
 
-- **Integration (provider faked at the transport layer)** for providers: real `HttpClient` +
-  hand-written `FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage>)` +
-  `BaseAddress`. The provider is external (`../references/external-providers.md`); everything
-  on our side (URL building, JSON parsing, logging) is real. This is the fundamentals' "service
-  calling a genuine external HTTP API" row.
-- **Unit** for fetchers/adapters/fallbacks: inject `StubFinanceService(AssetValueSnapshot?)` or a
-  `FakeFinanceService(Func<...>)` delegate; nothing touches the network.
+- **Provider contract tests, faked at the transport** — real `HttpClient` +
+  `FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage>)` from
+  `Tests/Financial.TestUtilities` + `BaseAddress`. The provider is external
+  (`../references/external-systems.md`); everything on our side (URL building, JSON parsing,
+  logging) is real. They run in process with no I/O, so the class is tagged `Category=Unit`
+  (`Financial.Frankfurter.Tests`); `YahooFinanceServiceTests` sits in the Investment Infrastructure
+  project and carries that project's tag. Either way this is the system-boundary contract test the
+  fundamentals require for a service calling an external HTTP API — it is not optional because the
+  trait says Unit.
+- **Unit** for fetchers/adapters/fallbacks and FX composition: inject
+  `StubFinanceService(AssetValueSnapshot?)`, a `FakeFinanceService(Func<...>)` delegate,
+  `StubExchangeRateProvider` / `FakeExchangeRateProvider`; nothing touches the network.
 - No E2E: the smoke run does not reach Yahoo/Frankfurter (the seeded data avoids live prices).
   Live-selector checks are manual (`web-scraping-parsers.md`).
 
 ## Setup pattern
 
-From `Tests/Financial.CashFlow.Infrastructure.Tests/Services/FrankfurterExchangeRateProviderTests.cs`:
+From `Tests/Financial.Frankfurter.Tests/FrankfurterExchangeRateProviderTests.cs`:
 
 ```csharp
 private static FrankfurterExchangeRateProvider CreateProvider(Func<HttpRequestMessage, HttpResponseMessage> respond) =>
@@ -74,10 +83,11 @@ public async Task GetHistoricalRateAsync_WhenHttpRequestThrows_LogsTheExceptionT
 }
 ```
 
-`FakeHttpMessageHandler` is currently a `private sealed class` duplicated in that file (line 91)
-and in `YahooFinanceServiceTests.cs` (line 135). `docs/rules/implementation.md` §Tests puts
-shared doubles in `Tests/Financial.TestUtilities`; the next HTTP-backed provider should move it
-there rather than add a third copy.
+`FakeHttpMessageHandler` lives in `Tests/Financial.TestUtilities` and answers both `Send` and
+`SendAsync`. Use it; do not add a local copy (`GoogleCalendarOAuthClientTests` still has a private
+async-responder variant — move it to TestUtilities rather than copy it again). It ignores the URL,
+so when the URL or query has branching, capture the `HttpRequestMessage` in the responder and assert
+on it.
 
 ## Google SDK clients over a fake handler
 
@@ -107,8 +117,9 @@ the service factory and the retry delay; never fake `DriveService` members.
 
 ## Examples from project
 
-- `Tests/Financial.CashFlow.Infrastructure.Tests/Services/FrankfurterExchangeRateProviderTests.cs` — Integration (faked transport); all five failure modes covered.
-- `Tests/Financial.Investment.Infrastructure.Tests/Services/YahooFinanceServiceTests.cs` — Integration (faked transport) + Unit guard clauses that must not call HTTP.
+- `Tests/Financial.Frankfurter.Tests/FrankfurterExchangeRateProviderTests.cs` — transport faked; all five failure modes covered.
+- `Tests/Financial.Investment.Infrastructure.Tests/Services/YahooFinanceServiceTests.cs` — transport faked + guard clauses that must not call HTTP.
+- `Tests/Financial.Shared.Abstractions.Tests/Currencies/FxRates/UsdBasedExchangeRateProviderTests.cs`, `Currencies/InMemoryCachedExchangeRateProviderTests.cs` — Unit; FX composition and caching.
 - `Tests/Financial.Investment.Infrastructure.Tests/Services/FallbackFinanceServiceTests.cs` — Unit; `RecordingLogger<FallbackFinanceService>` proves the swallowed exception type is logged.
 - `Tests/Financial.Investment.Infrastructure.Tests/Services/AssetPriceServiceTests.cs` — Unit; dispatch and guard clauses over `IAssetPriceFetcher` list.
 - `Tests/Financial.Investment.Infrastructure.Tests/Services/AssetSnapshotSourceAdapterTests.cs` — Unit; no network on construction.

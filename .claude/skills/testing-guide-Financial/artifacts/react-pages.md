@@ -34,9 +34,10 @@ AC-tracing tests draw their setup from.
   single fake — the backend is a separate deployable (`../references/mock-health-rules.md`).
   `sessionStorage`/`localStorage` are real jsdom storage, cleared in `afterEach`.
 - **Unit**: not for pages — their logic lives in hooks/components.
-- **E2E**: one critical journey per workflow in `Financial.Web/tests/e2e/`
-  against the published API (`../references/e2e-environment.md`); today: app load, asset summary, add expense (success, validation and
-  server-error journeys) and Historic Summary Average.
+- **E2E**: only for the few journeys that pass the four questions in
+  `../references/e2e-environment.md`; today: app load, asset summary, add expense (success,
+  validation and server-error), Historic Summary Average, pay card statement, pots deposit,
+  settle, bankless income and tithe.
 
 ## Setup pattern
 
@@ -80,17 +81,22 @@ vi.mock('../../api/financialApiClient', () => ({
 interact with `fireEvent`/`userEvent`, assert with `within(row)`. For routed pages wrap in
 `<MemoryRouter initialEntries={['/cashflow/mensais']}>` as `App.test.tsx` does.
 
+A page test asserts the *composition* — the right component for the right state, data flowing
+from hook to grid, a mutation on one tab reflected on another. It does not re-assert a
+component's or hook's own rule that their Unit tests already prove (`../SKILL.md` §2,
+"Test value is a review requirement").
+
 ## When to skip
 
 - `AdminEntityPlaceholderPage` beyond one render test.
 - Duplicating every component-level state assertion at page level — the page test asserts the
   composition (the right component shows for the right state), the component test asserts its
   internals.
-- `lazyPages.tsx` — `React.lazy` wiring; `routes.test.ts` covers agreement.
+- `lazyPages.tsx` — `React.lazy` wiring; `routes.test.tsx` covers agreement.
 
 ## Examples from project
 
-- `Financial.Web/src/pages/__tests__/MonthlyPage.test.tsx` — Integration; the richest state/tab matrix in the suite.
+- `Financial.Web/src/pages/__tests__/AccountScreenPage.test.tsx` — page test; the richest state/tab matrix in the suite (account tabs, statements, pots).
 - `Financial.Web/src/pages/__tests__/MensaisPage.test.tsx` — Integration; CRUD + status actions + UK expense prompt (P41).
 - `Financial.Web/src/pages/__tests__/CategoriesPage.test.tsx` — Integration; error state with retry on load failure.
 - `Financial.Web/src/__tests__/App.test.tsx` — Integration; shell, sidebar landmark, breadcrumb, storage cleanup.
