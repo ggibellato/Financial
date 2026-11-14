@@ -44,43 +44,47 @@ Wire the real feature graph; fake only external providers.
 **Backend feature (any feature with an endpoint — all of them today):** derive from
 `ApiEndpointTests` (`Tests/Financial.Api.Tests/ApiEndpointTests.cs`). It boots the real
 `Program` host on a temp copy of `TestData/data.test.json` and the seeded CashFlow JSON, with
-the real `CashFlowJsonRepository`, `LocalJsonStorage`, serializers and services. Pass a
-`FakeTimeProvider` or a stub `IExchangeRateProvider` through the base constructor when the
-criterion depends on "today" or on FX rates — those are the only two overrides
-`ApiTestFactory.ConfigureWebHost` accepts.
+the real `CashFlowJsonRepository`, `LocalJsonStorage`, serializers and services. Pass "today",
+an FX stub or a calendar fake through the base constructor
+(`ApiEndpointTests(exchangeRateProvider:, timeProvider:, calendarProvider:, useRealExchangeRates:)`)
+— the only overrides `ApiTestFactory` accepts — and seed the feature's own data with
+`ReplaceCashFlowDataBeforeStart(json)`.
+
+Condensed from `Tests/Financial.Api.Tests/Acceptance/BanklessIncomeAcceptanceTests.cs`:
 
 ```csharp
-using Financial.CashFlow.Application.DTOs;
-using Financial.TestUtilities;
-using FluentAssertions;
-using System.Net.Http.Json;
-
-namespace Financial.Api.Tests.Acceptance;
-
-public class PaymentsDueAggregationAcceptanceTests : ApiEndpointTests
+[Trait("Category", "Integration")]
+public class BanklessIncomeAcceptanceTests : ApiEndpointTests
 {
-    private static readonly DateTimeOffset Today = new(2026, 9, 10, 9, 0, 0, TimeSpan.Zero);
-
-    public PaymentsDueAggregationAcceptanceTests()
-        : base(timeProvider: new FakeTimeProvider(Today))
+    public BanklessIncomeAcceptanceTests()
+        : base(timeProvider: TestClock.At(new DateTimeOffset(2026, 11, 15, 12, 0, 0, TimeSpan.Zero)))
     {
+        ReplaceCashFlowDataBeforeStart(SeededData);
     }
 
     [Fact]
-    [Trait("AC", "P42-F01-payments-due-aggregation-backend-08")]
-    public async Task OverduePayments_AreExcluded()
+    [Trait("AC", "P61-F02-income-tab-and-bankless-income-02")]
+    [Trait("AC", "P61-F02-income-tab-and-bankless-income-10")]
+    public async Task CreateIncome_NoBank_CountsInTotalsAndTitheAndMovesNoBalance()
     {
-        // arrange through the real API: create a Mensais bill whose DueDay is already past
-        // act
-        var payments = await Client.GetFromJsonAsync<List<PaymentDueDTO>>("/api/v1/financial/payments-due");
-        // assert the criterion directly
-        payments.Should().NotContain(p => p.DueDate < DateOnly.FromDateTime(Today.Date));
+        var before = await MonthFiguresAsync();
+
+        var income = await CreateAsync(NewIncome(bankId: null));
+        var after = await MonthFiguresAsync();
+
+        using (new AssertionScope())
+        {
+            income.BankId.Should().BeNull();
+            after.BarclaysBalance.Should().Be(before.BarclaysBalance);
+            after.TotalIncoming.Should().Be(before.TotalIncoming + 42.10m);
+            after.CalculatedTithe.Should().Be(before.CalculatedTithe + 4.21m);
+        }
     }
 }
 ```
 
-`PaymentDueDTO` and `TimeProvider? timeProvider` are real names from
-`Financial.CashFlow.Application/DTOs` and `ApiEndpointTests`; the arrange step is illustrative.
+Everything goes through HTTP on the real host; the expected figures are literals worked out by
+hand; one test may carry two AC traits when one observable outcome proves both criteria.
 
 **Web feature:** the SPA's real graph is page + hooks + components + `financialApiClient`; the
 API is a separate deployable, so `vi.mock('../../api/financialApiClient')` is the fake and
@@ -124,9 +128,11 @@ dotnet test Tests/Financial.Api.Tests --filter "AC=P42-F01-payments-due-aggregat
 cd Financial.Web; npx vitest list -t "\[AC P42-F02"
 ```
 
-`dotnet test Tests/Financial.Api.Tests --filter "AC~P45-F01" --list-tests` lists the 6 real
-tests in `GoogleCalendarAccountConnectionAcceptanceTests.cs`. `npx vitest list -t "\[AC P42-F02"`
-still exits 0 with an empty list - no Web AC-tracing test exists yet.
+`dotnet test Tests/Financial.Api.Tests --filter "AC~P45-F01" --list-tests` lists the real tests in
+`GoogleCalendarAccountConnectionAcceptanceTests.cs`. As of 2026-11-14 there are 356 `AC` traits in
+`Tests/` (38 files under `Acceptance/`) and 220 `[AC …]` web titles, most of them inline in the
+component/page test that owns the behaviour rather than in `src/acceptance/`. The nightly
+`ac-traceability` job reports §9 criteria with no tagged test.
 
 **Given a test, which AC does it prove?** — read its trait / title prefix. **Whole-repo
 listing of every AC-tracing test:**
@@ -142,13 +148,18 @@ Real example, from the P45-F01 Google Calendar connection feature:
 Tests/Financial.Api.Tests/Acceptance/GoogleCalendarAccountConnectionAcceptanceTests.cs:29:    [Trait("AC", "P45-F01-google-calendar-account-connection-01")]
 ```
 
-Illustrative Web line, in the same no-prefix filename convention, once a Web AC test exists:
+A Web line, from the account screen's page test:
 
 ```
-Financial.Web/src/acceptance/payment-due-banner-web.test.tsx:31:  it('[AC P42-F02-payment-due-banner-web-03] renders nothing when the list is empty', async () => {
+Financial.Web/src/pages/__tests__/AccountScreenPage.test.tsx:  it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-03] saves a deposit from t…
 ```
 
-Note `rg` is not on this machine's PATH (the `rtk` hook fails over to it); use `grep -rnE`.
+## An AC test proves the wired criterion, not the branches again
+
+The AC test asserts the criterion's observable outcome through the real graph — the stored value,
+the status code, what the screen shows. The rule's branch combinations stay in the Unit tests; an
+AC test that re-runs them through the host duplicates coverage without proving anything new
+(`../SKILL.md` §2). One AC test per criterion, plus its negative bullet.
 
 ## No PRD? Cite the PR or issue the same way
 

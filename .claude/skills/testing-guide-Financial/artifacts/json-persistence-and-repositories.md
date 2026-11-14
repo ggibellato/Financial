@@ -28,19 +28,26 @@
 - **Factories**: `JsonStorageFactory`, `CashFlowRepositoryFactory`, `InvestmentRepositoryFactory`,
   `FxRateStoreFactory` choose local vs remote from the shared `JsonRepositorySelection` through
   `JsonStorageFactoryExtensions.Create`.
+- **FX rate store** (`Financial.Shared.Infrastructure/Persistence/FxRates`): `FxRateJsonStore`
+  persists fetched USD rates through `FxRateLoader` + `FxRateSerializerAdapter` into the third data
+  file (`FxRates:DataJsonFile`); round-trip, a missing file, and the example file
+  (`data/data-fx-rates.example.json`) loading.
 
 ## Layer assignment
 
-- **Integration** for everything touching `LocalJsonStorage`, `DebouncedJsonStorage`, loaders
-  and repositories: the file system is owned infrastructure and stays real (a `Guid`-named temp
+- **Integration** (`Category=Integration`) for everything touching `LocalJsonStorage`, loaders and
+  repositories: the file system is owned infrastructure and stays real (a `Guid`-named temp
   file under `Path.GetTempPath()`, deleted in `finally`). Time is the one non-determinism,
   controlled with `ObservableFakeClock` (Shared.Infrastructure.Tests) or
   `Microsoft.Extensions.Time.Testing.FakeTimeProvider`.
 - **Unit** for `*ReferenceConverter`, `CashFlowTypeInfoResolver`, `ReferenceResolutionContext`
-  and `PathResolution` — pure `System.Text.Json` plumbing with an in-memory lookup.
+  and `PathResolution`, the serializer adapters (`CashFlowSerializerAdapter`,
+  `InvestmentSerializerAdapter`, `FxRateSerializerAdapter`) — pure `System.Text.Json` plumbing over
+  strings — and for `ShutdownFlushHostedService` and `TransientRetryPolicy`. Check the class's own
+  trait before adding to it.
 - `RemoteJsonStorage` is tested at **Integration with the Google client faked** via its
   delegate constructor (`new RemoteJsonStorage(download, upload, remotePath)`) — Google Drive is
-  an external provider (`../references/external-providers.md`).
+  an external provider (`../references/external-systems.md`).
 - No E2E of its own; the web-e2e job's seeded JSON files exercise the real path end to end.
 
 ## Setup pattern
@@ -104,5 +111,6 @@ counter (`clock.TimersArmed`, `_inner.WrittenJson.Count`) before `clock.Advance(
 - `Tests/Financial.Shared.Infrastructure.Tests/Persistence/DebouncedJsonStorageTests.cs` + `ObservableFakeClock.cs` + `ControllableJsonStorage.cs` — Integration; fake-clock debounce and retry.
 - `Tests/Financial.Shared.Infrastructure.Tests/Persistence/LocalJsonStorageTests.cs` — Integration; read/write/missing-file.
 - `Tests/Financial.Shared.Infrastructure.Tests/Persistence/RemoteJsonStorageTests.cs` — Integration with the Drive client faked by delegates.
-- `Tests/Financial.CashFlow.Infrastructure.Tests/Persistence/BankReferenceConverterTests.cs`, `CashFlowTypeInfoResolverTests.cs`, `CashFlowSerializerAdapterTests.cs` — Unit / Integration serializer contracts.
+- `Tests/Financial.CashFlow.Infrastructure.Tests/Persistence/ReferenceConverterTests.cs`, `CashFlowTypeInfoResolverTests.cs`, `CashFlowSerializerAdapterTests.cs` — Unit / Integration serializer contracts.
+- `Tests/Financial.Shared.Infrastructure.Tests/Persistence/FxRates/FxRateJsonStoreTests.cs`, `FxRateLoaderTests.cs`, `FxRateSerializerAdapterTests.cs`, `ExampleDataFileTests.cs` — the FX rate store.
 - `Tests/Financial.Shared.Infrastructure.Tests/Hosting/ShutdownFlushHostedServiceTests.cs` — Unit; flush called only for `ISyncStatusProvider` repositories.

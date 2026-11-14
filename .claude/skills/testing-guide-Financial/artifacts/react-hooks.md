@@ -4,9 +4,9 @@
 
 Two shapes exist: data hooks built on `useAsyncResource(fetcher, deps, errorFallback)`
 (returns `{ data, isLoading, error, retry }`) — `useCategories`, `useMensais`, `useAnnualSummary`,
-`useAggregatedSummary`, … — and form/state hooks (`useExpenseForm`, `useTransferForm`,
+`useAggregatedSummary`, … — and form/state hooks (`useExpenseForm`, `useAccountTransferForm`,
 `useBalanceAdjustmentForm`, `useFieldError`, `useColumnFilters`, `useSortableRows`) plus the
-error-to-field mappers (`mapTransferErrorToField.ts`, `mapBalanceAdjustmentErrorToField.ts`).
+error-to-field mappers (`mapAccountTransferErrorToField.ts`, `mapBalanceAdjustmentErrorToField.ts`).
 
 ## What to test
 
@@ -99,5 +99,5 @@ once at render time.
 - `Financial.Web/src/hooks/__tests__/useCategories.test.ts` — Unit; CRUD + list refresh.
 - `Financial.Web/src/hooks/__tests__/usePaymentsDue.test.ts` — Unit; fake timers, no polling, auto-dismiss.
 - `Financial.Web/src/hooks/__tests__/useAggregatedSummary.test.ts` — Unit; `createSelectedNodeWrapper` for node-type branching.
-- `Financial.Web/src/hooks/__tests__/useTransferForm.test.ts` + `mapTransferErrorToField.test.ts` — Unit; validation and backend-error mapping.
+- `Financial.Web/src/hooks/__tests__/useAccountTransferForm.test.ts` + `mapAccountTransferErrorToField.test.ts` — Unit; validation and backend-error mapping.
 - `Financial.Web/src/hooks/__tests__/useColumnFilters.test.ts`, `useSortableRows.test.ts` — Unit; grid state (P37).

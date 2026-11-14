@@ -14,8 +14,10 @@
   call records the same span with `RecordedException` set and rethrows. Assert with
   `RecordingTelemetryTracer.Spans`. Assert that a swallowed exception logs its **type name** via
   `RecordingLogger<T>.Entries`, and that no financial value or entity name is in any message.
-- **Constructor guards**: `Constructor_WithNullRepository_Throws` and one per dependency, with
-  `.WithParameterName(...)`.
+- **Constructor guards are not tested here** — each project's `ConstructorGuardTests` sweeps every
+  constructor (`docs/rules/implementation.md` §Tests #7).
+- **Literal expectations**: assert the number you worked out by hand (`54.32m`, `"2026-07"`), never
+  a value recomputed with the class under test (§Tests #10).
 - **Time-dependent services** (`PaymentsDueService`, `CategorySummaryService`,
   `HistoricAverageService`, `IncomeSummaryService`, `InvestmentAnnualResultService`) take a
   required `TimeProvider` — pass `TestClock.At(...)` (a `FakeTimeProvider`) and test the exact
@@ -29,7 +31,10 @@
   `StubInvestmentRepository` (in-memory lists, no I/O) + `RecordingTelemetryTracer` +
   `NullLogger<T>` or `RecordingLogger<T>`. The stub repository is a hand-written owned double
   used only because the real one is file-bound — that is the Unit layer's job.
-- **Integration**: the same service wired for real inside the API host (`ApiEndpointTests`).
+- **Integration**: the same service wired for real inside the API host (`ApiEndpointTests`), or
+  over a real JSON repository on a temp copy. A service with no branching that only reads/writes the
+  repository gets this layer and no Unit test. Prove a write from disk, not from the returned DTO:
+  reload a fresh repository from the same file (`PersistedInvestmentFile.ReloadAsset`, §Tests #12).
   Every feature's AC-tracing tests live here
   (`../references/feature-traceability.md`); a service change that alters a §9 criterion needs
   that test updated, not just the Unit suite.
@@ -94,8 +99,7 @@ Recorders are instance fields — never `static readonly`, which leaks spans acr
 
 ## When to skip
 
-- `CompensatingSaveHelper`, `IncomeGroupLookupBuilder`, `NavigationMapper`,
-  `*Builder`/`*Selector` helpers: test them through the service that owns them unless they have
+- `IncomeGroupLookupBuilder`, `NavigationMapper`, `*Builder`/`*Selector` helpers: test them through the service that owns them unless they have
   their own branching worth an isolated class (`PortfolioAssetSummaryBuilder` does).
 - Pure DTO mapping with no branch (`ToDto`) — proven by the branch tests that return it.
 - A service-level re-test of a Domain rule already covered in

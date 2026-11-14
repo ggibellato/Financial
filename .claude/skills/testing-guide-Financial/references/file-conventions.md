@@ -9,9 +9,9 @@
 ```
 Financial.Investment.{Domain,Application,Infrastructure}.Tests
 Financial.CashFlow.{Domain,Application,Infrastructure}.Tests
-Financial.Shared.Abstractions.Tests              ← FX providers, CompensatingSaveHelper, RetryPolicy (Unit)
-Financial.Shared.Infrastructure.Tests            ← LocalJsonStorage, DebouncedJsonStorage, RemoteJsonStorage, retry, hosting
-Financial.Api.Tests                              ← endpoint Integration tests, Contract/, Controllers/ guard clauses, TestData/
+Financial.Shared.Abstractions.Tests              ← FX composition/caching, RetryPolicy, repository settings, TimeProvider extensions (Unit)
+Financial.Shared.Infrastructure.Tests            ← LocalJsonStorage, DebouncedJsonStorage, RemoteJsonStorage, FX rate store, retry, hosting
+Financial.Api.Tests                              ← host tests, Acceptance/ (AC-tracing), Contract/, ConstructorGuardTests, TestData/
 Financial.Architecture.Tests                     ← fitness functions (references every project)
 Financial.GoogleIntegrations.Tests, Financial.Observability.Tests, Financial.WebPageParser.Tests, Financial.Frankfurter.Tests
 Financial.CashFlowSpreadsheetImport.Tests, Financial.InvestmentSpreadsheetImport.Tests, Financial.InvestmentDataQualityReport.Tests
@@ -21,7 +21,8 @@ Financial.TestUtilities                          ← shared doubles + TestData/d
 Every test csproj declares `xunit` 2.9.3, `xunit.runner.visualstudio` 3.1.4,
 `Microsoft.NET.Test.Sdk` 17.14.1, `FluentAssertions` 6.12.0, `coverlet.collector` 6.0.4 and
 `<Using Include="Xunit" />` (so no `using Xunit;` in files; `FluentAssertions` is imported
-explicitly). No central package management. Folders inside a test project mirror the source
+explicitly). No central package management. `Tests/Directory.Build.targets` adds
+`TestCultureInitializer` (honours `TEST_CULTURE`) and `[UseCulture]` to every project. Folders inside a test project mirror the source
 project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `Validation/`, …).
 
 ### Naming
@@ -33,7 +34,7 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 | AC-tracing class / file | `{FeatureName}AcceptanceTests` under `Acceptance/` - no `P{NN}F{NN}` prefix, the AC id already carries that in its `[Trait]`/title | `Tests/Financial.Api.Tests/Acceptance/GoogleCalendarAccountConnectionAcceptanceTests.cs` |
 | AC-tracing method | `[Trait("AC", "<id>")]` + `{Scenario}_{Outcome}` | see `feature-traceability.md` |
 | Shared doubles | `Stub{Interface}`, `Recording{Thing}`, `Fake{Thing}` in `Tests/Financial.TestUtilities` | `StubCashFlowRepository`, `RecordingLogger<T>`, `FakeTimeProvider` |
-| Local doubles (single consumer) | same prefixes, `private sealed class` at the bottom of the test file, or `TestStubs.cs` / `TestDoubles/` per test project | `FakeHttpMessageHandler`, `Financial.Investment.Infrastructure.Tests/TestDoubles/StubFinanceService.cs` |
+| Local doubles (single consumer) | same prefixes, `private sealed class` at the bottom of the test file, or a `TestDoubles/` folder per test project; move it to TestUtilities the moment a second project needs it | `Financial.Investment.Infrastructure.Tests/TestDoubles/StubFinanceService.cs`, `Financial.GoogleIntegrations.Tests/FakeDriveHandler.cs` |
 | Host factory | `ApiTestFactory : WebApplicationFactory<Program>`; tests derive from `ApiEndpointTests` | — |
 | Temp data | `Path.Combine(Path.GetTempPath(), $"{area}-{Guid.NewGuid()}.json")`, deleted in `finally` | `cashflow-repo-{guid}.json`, `financial-api-{guid:N}.json` |
 
@@ -41,9 +42,19 @@ project (`Services/`, `Persistence/`, `Repositories/`, `DependencyInjection/`, `
 
 The `Category` trait on each class is what CI and `--filter` use (`docs/rules/implementation.md` §Tests #9); the list below says which level is normal where.
 
-- Unit: `*.Domain.Tests`, `*.Application.Tests`, `WebPageParser.Tests`, parsing/resolver folders of the import tools.
-- Integration: `Api.Tests` (except `Controllers/`), `*.Infrastructure.Tests/{Repositories,Persistence,DependencyInjection}`, `Shared.Infrastructure.Tests`, `Architecture.Tests`, `Observability.Tests`, import-tool `SheetImporters/` and `Migrations/`.
-- AC-tracing: `Acceptance/` folders + the `AC` trait.
+The rule (P58-F07 D2): **Unit** = in process, no host, no real file or network; **Integration** =
+real temp file, real host (`ApiEndpointTests` / `ApiTestFactory`), or loading full real assemblies;
+**Live** = real third-party sites.
+
+- Unit: `*.Domain.Tests`, `*.Application.Tests`, `Architecture.Tests` (except
+  `AccountTemplateReadRuleTests`), `Observability.Tests`, `Frankfurter.Tests`,
+  `GoogleIntegrations.Tests`, `Shared.Abstractions.Tests`, host-less `Api.Tests` classes
+  (`ConstructorGuardTests`), serializer/converter/resolver classes in the Infrastructure projects,
+  the import tools' parsing, argument and report classes.
+- Integration: host-based `Api.Tests` classes, Infrastructure repository/persistence/DI/real-JSON
+  service classes, `Shared.Infrastructure.Tests` storage classes, import-tool command/backup classes.
+- Live: `WebPageParser.Tests/*VerificationTests` (nightly `live` job only).
+- AC-tracing: `Acceptance/` folders + the `AC` trait (any level, normally Integration).
 - E2E: nothing in `Tests/` — `Financial.Web/tests/e2e/*.spec.ts` (`@playwright/test`).
 
 ### Commands
@@ -67,16 +78,21 @@ src/api/generated/__tests__/openapiFreshness.test.ts
 src/components/__tests__/*.test.tsx,  src/components/grid/__tests__/*.test.tsx
 src/context/__tests__/*.test.tsx
 src/hooks/__tests__/*.test.ts
-src/navigation/__tests__/routes.test.ts
+src/navigation/__tests__/routes.test.tsx
 src/pages/__tests__/*.test.tsx
 src/utils/__tests__/*.test.ts
-src/acceptance/{feature-slug}.test.tsx                                 ← AC-tracing (to be created)
-src/test/renderWithFluent.tsx, src/test-utils/selectedNodeTestWrapper.tsx, src/setupTests.ts
+src/acceptance/{feature-slug}.test.tsx                                 ← AC-tracing (most web AC tests carry the [AC …] title in place, in the component/page test)
+src/test/renderWithFluent.tsx, src/test/{account,recurringBill,…}.ts   ← builders
+src/test-utils/{selectedNodeTestWrapper,renderWithSelectedNode}.tsx, confirmDelete.ts, pinDate.ts, …
+src/setupTests.ts
+tests/e2e/*.spec.ts, tests/e2e/{fixtures,global-setup}.ts                ← Playwright (E2E)
 ```
 
-Every folder uses a `__tests__/` subfolder (the old colocated pattern is gone). Config lives
-in `vite.config.ts` (`test: { environment: 'jsdom', setupFiles: './src/setupTests.ts', coverage: { provider: 'v8', all: true, reporter: ['text','json-summary'], exclude: [... 'src/api/generated/**', 'src/main.tsx', 'src/setupTests.ts'] } }`);
-there is no `vitest.config.ts` and no `playwright.config.ts`.
+Every folder uses a `__tests__/` subfolder. Vitest config lives in `vite.config.ts`
+(`test: { environment: 'jsdom', exclude: [..., 'tests/e2e/**'], setupFiles: './src/setupTests.ts', coverage: { provider: 'v8', all: true, reporter: ['text','json-summary','lcov'], exclude: [... 'src/api/generated/**', 'src/main.tsx', 'src/setupTests.ts', 'src/test/**', 'src/test-utils/**'] } }`).
+Playwright: `playwright.config.ts` (`testDir: './tests/e2e'`, `globalSetup`, `baseURL` from
+`SMOKE_APP_URL`, `en-GB` / `Europe/London`, CI retries 2). Mutation: `stryker.config.json` +
+`vitest.mutation.config.ts` (nightly).
 
 ### Naming
 
@@ -100,11 +116,20 @@ npx vitest list -t "\[AC P42-F02"    # AC audit
 npm run smoke-test        # Playwright @smoke specs, needs the published API on test data (see e2e-environment.md)
 ```
 
-## Coverage philosophy — thorough, CI bands as targets
+## Coverage philosophy — thorough, and coverage is a tripwire, not a target
 
-Decided 2026-09-06. The CI coverage step (`Check coverage threshold` in each of the `backend`
-and `web` jobs) shows line and branch coverage behind the same traffic-light icon; the PR
-comment repeats them. A line result below 90% fails the step; branch coverage never does.
+Confirmed 2026-11-14. "Thorough" means every behaviour that can break is tested, at the lowest
+layer that gives confidence, with its failure side. It does **not** mean adding tests to raise a
+number: a test written only to cover lines fails the test-value review in `../SKILL.md` §2 and is
+rejected even when it turns a red figure green. A low figure tells you where to look for an untested
+rule; the fix is a test of that rule, or deleting dead code.
+
+Each CI job runs the shared `.github/actions/coverage-gate` over a `reportgenerator`
+`Summary.json`. It shows line and branch coverage behind the icon below and fails when line coverage
+is below 90%, or when line **or** branch coverage drops more than 0.5 points below the job's entry in
+`coverage-baseline.json` (refreshed only from a green `main` run by
+`.github/scripts/coverage-baseline.ps1`). The PR comment adds the coverage of changed lines
+(advisory) and warns when a PR adds coverage exclusions.
 
 | Icon | Coverage (line or branch) | Meaning |
 |---|---|---|
@@ -113,16 +138,20 @@ comment repeats them. A line result below 90% fails the step; branch coverage ne
 | 🟠 amber | 80–84.99% | fix before the next feature on that area |
 | 🔴 red | < 80% | treat as a defect to fix in the same PR |
 
-Measured whole-repo per job: `backend` = every .NET assembly (`-assemblyfilters:+*`),
-`web` = `coverage/coverage-summary.json` `total.lines.pct`. `coverlet.runsettings` excludes
-generated `obj/**` code and the assemblies `Financial.TestUtilities`,
+Measured whole-repo per job: `backend` = every .NET assembly (`-assemblyfilters:+*`), `web` =
+`reportgenerator` over vitest's `lcov`. `coverlet.runsettings` excludes generated `obj/**` code and
+the assemblies `Financial.TestUtilities`,
 `Financial.CashFlow.Infrastructure.Tools.CashFlowSpreadsheetImport`,
-`Financial.Investment.SpreadsheetImport`, `Financial.Integrations.GoogleSheets`.
+`Financial.Investment.SpreadsheetImport`, `Financial.Investment.DataQualityReport`,
+`Financial.Integrations.GoogleSheets`, plus `GoogleFinanceVerifier`. Mutation testing (Stryker.NET on
+both Domain projects, StrykerJS on the web) runs nightly and is the better signal of whether the
+assertions would notice a change.
 
 Concrete rules that follow:
 
-- A new class ships with tests that cover 100% of its own lines except documented
-  exclusions (Google SDK clients, `Tools/ImportGoogleSpreadSheets`).
+- A new class ships with tests for every behaviour that can break, which normally covers its
+  lines; a line left uncovered is either a missed rule (test it) or dead code (delete it), never
+  "covered" with an assertion-free call.
 - Every branch has both directions tested (`negative-path-testing.md`); coverage alone does
   not satisfy this — a 100%-covered branch with only its success assertion is still incomplete.
 - Every §9 acceptance criterion has a tagged Integration test (`feature-traceability.md`).

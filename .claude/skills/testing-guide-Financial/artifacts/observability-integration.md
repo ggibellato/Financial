@@ -30,7 +30,10 @@
   test (`ApiTestFactory().WithWebHostBuilder(b => b.UseSetting("Observability:Enabled", "true") …)`),
   and for trace correlation. The OTLP collector is an external provider and is never started in
   tests; the exporter's background retries are what the unreachable test proves harmless.
-- **Unit** for `ConfigureOtlpExporter`, extension helpers, `NoOpTelemetryTracer`.
+- **Unit** for `ConfigureOtlpExporter`, extension helpers, `NoOpTelemetryTracer`, and the whole of
+  `Financial.Observability.Tests` (`Category=Unit`): its DI/option-binding tests build an in-memory
+  `ServiceCollection` with no I/O. A missing Langfuse key or an unknown backend must fail fast at
+  startup — test both.
 - Architecture rule: `ObservabilityIsolationRuleTests` pins that only composition roots and
   `Financial.Shared.Abstractions` consumers touch OpenTelemetry (`architecture-rule-tests.md`).
 - No E2E; the web-e2e job runs with observability disabled.

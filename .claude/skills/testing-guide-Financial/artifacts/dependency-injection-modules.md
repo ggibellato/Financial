@@ -22,12 +22,15 @@
 
 ## Layer assignment
 
-- **Integration** — a real `ServiceCollection` + `ConfigurationBuilder().AddInMemoryCollection`
-  + `BuildServiceProvider()`; nothing faked except the data path (a temp file). This is the
-  fundamentals' "module/DI wiring" row: compile-time cannot catch a missing registration.
+- A real `ServiceCollection` + `ConfigurationBuilder().AddInMemoryCollection` +
+  `BuildServiceProvider()`; nothing faked except the data path (a temp file). This is the
+  fundamentals' "module compilation" test: compile time cannot catch a missing registration, so it
+  is mandatory for every `Add*` method whatever its trait. Trait: `Integration` when resolving
+  touches a data file (the CashFlow, Investment and FX-rate infrastructure modules), `Unit` when it
+  is pure registration (`GoogleIntegrations.Tests`, `Observability.Tests`).
 - The API-level version (the whole `Program`) is exercised by every `ApiEndpointTests`
-  subclass.
-- No Unit layer (nothing to isolate), no E2E of its own.
+  subclass, and `ShutdownFlushHostedServiceRegistrationTests` checks a hosted service through it.
+- No E2E of its own.
 
 ## Setup pattern
 

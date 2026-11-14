@@ -16,7 +16,7 @@
 - **Contexts** (`SelectedNodeContext`, `ColourModeContext`): default value, setter, toggle,
   persistence to `localStorage`, `prefers-color-scheme` fallback (P43).
 - **Navigation** (`navTree.ts`, `routes.tsx`): every sidebar destination has a declared route,
-  every route is reachable from the sidebar, no duplicate paths (`routes.test.ts`).
+  every route is reachable from the sidebar, no duplicate paths (`routes.test.tsx`).
 - Negative: invalid dates, `NaN`, unknown colour mode string.
 
 ## Layer assignment
@@ -47,7 +47,7 @@ describe('route and sidebar agreement', () => {
 })
 ```
 
-(Verbatim from `Financial.Web/src/navigation/__tests__/routes.test.ts`.) For a context:
+(Verbatim from `Financial.Web/src/navigation/__tests__/routes.test.tsx`.) For a context:
 
 ```tsx
 function ModeDisplay({ testId = 'mode' }: { testId?: string }) {
@@ -71,4 +71,4 @@ then `render(<ColourModeProvider><ModeDisplay /></ColourModeProvider>)` and
 - `Financial.Web/src/utils/__tests__/formatters.test.ts` — Unit; `Method_Scenario_Outcome`-style names.
 - `Financial.Web/src/utils/__tests__/periodFilter.test.ts`, `priceHistoryChartData.test.ts` — Unit.
 - `Financial.Web/src/context/__tests__/ColourModeContext.test.tsx`, `SelectedNodeContext.test.tsx` — Unit with probe components.
-- `Financial.Web/src/navigation/__tests__/routes.test.ts` — Unit; sidebar ↔ router agreement.
+- `Financial.Web/src/navigation/__tests__/routes.test.tsx` — Unit; sidebar ↔ router agreement.

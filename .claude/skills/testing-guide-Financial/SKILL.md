@@ -2,10 +2,9 @@
 name: testing-guide-Financial
 description: >
   Testing guide for Financial. Reference this skill when planning features,
-  implementing code, creating tests, or reviewing changes in Financial. Covers
-  what to test, at which of three layers (Unit, Integration — including
-  mandatory AC-tracing tests, E2E), and how to set up each test — organized by
-  artifact type.
+  implementing code, creating tests, or reviewing changes in Financial.
+  Covers what to test, at which layer, and how to set up each test —
+  organized by artifact type.
   Triggers on: planning Financial features, implementing Financial features,
   writing tests for Financial, reviewing Financial code, reviewing Financial tests,
   what should I test in Financial, how to test Financial, Financial test guide.
@@ -13,270 +12,235 @@ description: >
 
 ## 0. Purpose
 
-This guide helps you decide **what to test**, at **which of three layers** — Unit,
-Integration (intra-domain), or E2E (System) — and **how to set up tests** for each
-type of artifact and each feature in `Financial`. Integration carries a mandatory,
-explicitly-tagged subset of tests that trace to acceptance criteria — see
-`references/feature-traceability.md`. Every layer also requires negative-path
-coverage, not just the happy path — see `references/negative-path-testing.md`.
-When working on a specific artifact type, read the corresponding guide in
-`artifacts/`. Supporting references are in `references/`.
+This guide helps you decide **what to test**, at **which layer**, and **how to set up tests** for
+each type of artifact in `Financial` — domain entities and rules, application services,
+validators, JSON persistence, external HTTP providers, Google and scraping integrations, DI
+modules, controllers and middleware, the OpenAPI contract, console tools, and the React hooks,
+components and pages. When working on a specific artifact type, read the corresponding guide in
+`artifacts/` for the complete recipe. Supporting references (external systems, mock rules, file
+conventions, gotchas, AC tracing, negative paths, the E2E environment) are in `references/`.
 
-This revision replaces the previous guide, which called the in-process `WebApplicationFactory` suite "E2E"; here that suite is Integration and E2E is the Playwright smoke run (§1, §6).
+How the test classes are *wired* (shared doubles, `ApiEndpointTests`, `Create*` helpers, pinned
+clock, `Category` traits) is binding in `docs/rules/implementation.md` §Tests; this guide never
+contradicts it and does not repeat it beyond what a recipe needs.
 
 ## 1. Testability Foundations
 
-- **External providers vs owned infrastructure, concretely.** External (faked above Unit):
-  the Frankfurter exchange-rate API (`FrankfurterExchangeRateProvider`), Yahoo Finance
-  (`YahooFinanceService`), the scraped Google Finance / StatusInvest / DadosMercado pages
-  (`Integrations/WebPageParser`), the Google Drive and Sheets APIs, and the OTLP collector.
-  Owned (real at Integration and E2E): the JSON data files through `LocalJsonStorage` (always a
-  `Guid`-named temp copy, never `data/*.json`), both contexts' Application and Infrastructure
-  graphs, the real DI container, and the published `Financial.Api` process
-  (`references/external-providers.md`).
-- **The mock boundary in framework terms.** A backend Integration test derives from
-  `ApiEndpointTests` (`Tests/Financial.Api.Tests/ApiEndpointTests.cs`), which owns an
-  `ApiTestFactory : WebApplicationFactory<Program>` pointed at temp JSON files. The only things
-  `ConfigureTestServices` replaces are `IExchangeRateProvider` (external) and `TimeProvider`
-  (non-determinism); every service, repository and serializer is real. A standalone
-  Infrastructure Integration test wires
-  `new CashFlowJsonRepository(data, new LocalJsonStorage(tempPath), new CashFlowSerializerAdapter())`
-  with no stub in sight. `Financial.Web` is a separate deployable reached over HTTP, so its own
-  Integration tests fake the API with `vi.mock('../../api/financialApiClient')` — the sanctioned
-  exception in `references/mock-health-rules.md`.
-- **Integration's dual role.** Contract-proving: `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WritesSerializedDataThroughStorage`
-  proves repository ↔ `LocalJsonStorage` ↔ `CashFlowSerializerAdapter` round-trip. AC-tracing
-  (none yet — the first follows this shape): a test under `Tests/Financial.Api.Tests/Acceptance/`
-  tagged `[Trait("AC", "P42-F01-payments-due-aggregation-backend-08")]` posts through the real
-  host and asserts overdue payments are excluded. Same base class, temp files and fakes; only
-  the tag and the assertion differ.
-- **The E2E environment.** The CI `web-e2e` job in `.github/workflows/build.yml` publishes the API,
-  embeds the built SPA in `wwwroot`, seeds `Tests/Financial.Api.Tests/TestData/*.test.json`,
-  starts `dotnet Financial.Api.dll` on port 8080 and runs the `Financial.Web/tests/e2e` Playwright suite (`npm run smoke-test`)
-  in Chromium. Two real processes, real HTTP, real JSON files — that is E2E here. Reproduce the
-  same steps locally on a free port. See `references/e2e-environment.md`.
-- **Why DI tests exist, and where.** `AddFinancialCashFlowInfrastructure`, `AddFinancialInfrastructure`,
-  `AddObservability` and `AddGoogleDriveFileClient` register into a real `ServiceCollection`; a
-  missing registration or an unsupported `CashFlow:Repository:Provider` only fails at
-  `GetRequiredService<T>()` time — Integration (`artifacts/dependency-injection-modules.md`).
-- **Version-specific behaviour.** xUnit 2.9.3 on VSTest: `dotnet test --filter` supports `AC=` /
-  `AC~` on traits and `--list-tests` dry-runs a filter. Vitest 4.1's `--tagsFilter` refuses any
-  tag not declared in `test.tags`, which is why Web AC tags live in the test name. Fluent UI v9
-  under Vitest needs the two `vi.mock` shims already in `src/setupTests.ts`; tabster focus is
-  unreliable in jsdom.
-- **Negative paths, concretely.** Unit: `ExpenseServiceTests.AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException`.
-  Integration, provider failure: `FrankfurterExchangeRateProviderTests.GetHistoricalRateAsync_WhenHttpRequestThrows_ReturnsNull`.
-  Integration, rejected write: `CashFlowJsonRepositoryTests.ApplyAndSaveAsync_WhenWriteFails_PropagatesException`.
-  E2E: `Financial.Web/tests/e2e/add-expense.spec.ts` (blank value rejected inline, forced 500 shown)
-  — see `references/negative-path-testing.md`.
-- **Binding rules from `docs/rules/implementation.md` §Tests.** Shared doubles live only in
-  `Tests/Financial.TestUtilities` (`StubCashFlowRepository`, `StubInvestmentRepository`,
-  `RecordingTelemetryTracer`, `RecordingLogger<T>`, `FakeTimeProvider`, `TestDataPaths`) — never a
-  local copy. API tests derive from `ApiEndpointTests`; never `new ApiTestFactory()` in a test
-  class. Elsewhere: constructor + `Create*` helper with optional parameters; recorders are
-  instance fields, never `static`. Prove failure paths with the recorders (`_tracer.ShouldHaveFailedSpan<T>(spanName)` from
-  `TelemetryAssertions` for a failed span) and assert the
-  exception **type** is logged, never a message or a value. No mocking framework exists (no
-  Moq/NSubstitute in any csproj, no MSW in `package.json`); stubs are hand-written.
+- **Layers are the `Category` trait, not the folder.** `Unit` = in process, no host, no real file
+  or network (Domain, Application, Frankfurter/Google/Observability policy code, architecture
+  rules, host-less `Api.Tests` classes). `Integration` = a real temp JSON file, a real
+  `ServiceCollection`, or the real host through `ApiEndpointTests` (Infrastructure projects, import
+  tools, host-based `Api.Tests`). `Live` = real third-party sites, nightly only. Playwright is the
+  only E2E. `CategoryTraitCoverageTests` fails a class without a trait.
+- **The JSON file is the database, and it is owned.** Both contexts persist one document each
+  through `LocalJsonStorage`. It costs nothing to run for real, so repository, serializer, loader
+  and host tests use a `Guid`-named temp copy and never fake it — a stubbed repository cannot catch
+  a broken reference converter or a lost field on round-trip. `StubCashFlowRepository` /
+  `StubInvestmentRepository` exist only so Application **Unit** tests can test branches without I/O.
+- **One mock boundary: the third party.** Frankfurter, Yahoo, scraped pages, Google Drive / Sheets /
+  Calendar and the OTLP collector are faked; everything we own stays real above Unit. In ASP.NET
+  Core 10 that boundary is a `ConfigureTestServices` + `RemoveAll<T>()` swap, and `ApiTestFactory`
+  accepts exactly four: `IExchangeRateProvider` (a stub by default), `TimeProvider` (always
+  `TestClock.At()` unless overridden), `ICalendarProvider`, and opting back into real FX. For HTTP
+  providers the seam is the transport: a real `HttpClient` over `FakeHttpMessageHandler`, so URL
+  building and JSON parsing run for real — never a mocked `HttpClient`.
+- **No mocking framework, on purpose.** There is no Moq/NSubstitute/MSW. Doubles are hand-written
+  classes in `Tests/Financial.TestUtilities` (`Stub*`, `Fake*`, `Recording*`); an unexpected call
+  fails loudly instead of returning a default.
+- **Configured libraries are tested with their real configuration.** `AddHttpClient` base
+  addresses, `AddObservability` option binding, the OTLP exporter setup, the `Repository:Provider`
+  switch and `System.Text.Json` resolver settings are contracts *we* wrote; a DI test resolves them
+  from a real container. The container resolves at runtime, so a missing registration only fails on
+  `GetRequiredService<T>()` — compile time cannot catch it.
+- **Observability is part of the service contract.** Every service operation opens a span named
+  `<Context>.<Service>.<Operation>` and marks it failed before rethrowing. A bare `Throw<T>()`
+  passes with the `catch` deleted, so failure tests also call
+  `_tracer.ShouldHaveFailedSpan<T>(spanName)`, and logged failures are asserted by exception
+  **type**, never by message (messages embed financial values).
+- **The SPA's only fake is its own backend.** The API is a separate deployable reached over HTTP,
+  so Vitest tests replace `financialApiClient` at module level with `vi.mock` + `vi.hoisted` typed
+  mocks; hooks, components, router and contexts stay real. Fluent UI v9 focus (tabster) is not
+  reliable in jsdom — assert handlers and accessible names there, real focus in Playwright.
+- **The contract is pinned at both ends.** Controllers return Application DTOs, so a DTO reshape is a
+  wire change: `OpenApiContractTests` pins the snapshot, `openapiFreshness.test.ts` pins the
+  generated `openapi.ts`, and `tsc -b` breaks every call site that read a renamed field.
+- **Time is controlled, never waited on.** Production reads time only through an injected
+  `TimeProvider` (`ProductionClockReadsTests`); tests use `TestClock` or `FakeTimeProvider` and
+  `Advance`. A queued continuation may not have armed its timer yet — wait on a counter
+  (`ObservableFakeClock.TimersArmed`) before advancing.
 
 ## 2. Testing Criteria
 
-Worth testing in this codebase:
-- **Every acceptance criterion in `docs/prd/P{NN}-prd-{slug}/prd-{slug}.md` §9**, one tagged
-  Integration test each, including the negative bullets ("… are excluded", "fails silently") —
-  `references/feature-traceability.md`.
-- **The failure side of every branch, provider call and storage write** — a
-  `FrankfurterExchangeRateProvider` test for non-2xx, malformed body and transport exception; a
-  repository test for an unwritable path — `references/negative-path-testing.md`.
-- Domain entity invariants and `Rules/` calculators (`Expense.SetRoundUpAmount` bounds,
-  `XirrCalculator.Calculate`, `TitheRule`) → Unit.
-- Application service branching and the span/log contract (`StartSpan` / `MarkFailed`) → Unit
-  with `StubCashFlowRepository` + `RecordingTelemetryTracer`.
-- Parsers/validators in `Validation/` (`CurrencyParser`, `EntityIdResolver`) → Unit, every
-  malformed input.
-- Repository ↔ `LocalJsonStorage` ↔ serializer round-trips, `DebouncedJsonStorage` timing with
-  a fake clock, reference converters → Integration.
-- DI extension methods resolving the real container, including the unsupported-provider branch.
-- Controller status codes and `DomainExceptionMappingMiddleware` mappings through the real host.
-- The OpenAPI snapshot and generated `openapi.ts` staying in sync (`OpenApiContractTests`,
-  `openapiFreshness.test.ts`) → Integration.
-- Dependency-direction rules (`Tests/Financial.Architecture.Tests`) and example data files
-  (`ExampleDataFileTests`) → Integration.
-- React hooks' loading/error/retry states, components' roles and keyboard handlers, pages' full
-  state matrix with the API client faked.
+Worth testing here:
+- **Every PRD §9 acceptance criterion**, positive and negative, as one tagged Integration (or page)
+  test — `references/feature-traceability.md`.
+- **Domain factory guards, state transitions and `Rules/` calculators** (`Expense.SetRoundUpAmount`,
+  `XirrCalculator`, `PotSplitAllocator`, `CardStatementLedger`) — both sides of every boundary.
+- **Application services with branching** — each branch plus its failed span and logged exception type.
+- **Parsers and validators in `Validation/`** — every accepted form and every malformed input.
+- **Repository ↔ storage ↔ serializer round-trips** and reference converters — real temp file.
+- **Debounce, retry and flush timing** in `DebouncedJsonStorage`, `RetryPolicy`, `GoogleRetryPolicy`.
+- **External HTTP providers' contract** — success, non-2xx, malformed body, thrown transport error, timeout.
+- **DI extension methods** — resolution from a real container, including the unsupported-provider branch.
+- **Controller status codes and `DomainExceptionMappingMiddleware` mappings** through the host,
+  including the log redaction rule.
+- **The OpenAPI snapshot and generated web types staying in sync.**
+- **Dependency-direction and isolation rules** (`Tests/Financial.Architecture.Tests`).
+- **Example and seed JSON files** still loading through the real loader.
+- **React hooks' loading / error / retry**, components' roles, labels and keyboard handlers, pages'
+  full UI state matrix (`docs/rules/ui.md`).
 
 NOT worth testing here:
-- Controllers' business behaviour in isolation — only constructor/`[FromBody]` null guards
-  (`ControllerGuardClauseTests`); everything else goes through the host.
-- Raw Google SDK clients (accepted gap, `artifacts/google-sdk-wrappers.md`); live CSS selectors
-  in `GoogleFinance.cs` / `StatusInvest.cs` (`Category=Live` verification runs).
-- DTO shape by hand (the OpenAPI snapshot pins it); `Tools/ImportGoogleSpreadSheets` (one-off
-  importer, out of scope by decision); framework behaviour (react-router,
-  ASP.NET model binding, `System.Text.Json`).
+- **Controller business behaviour in isolation** — controllers delegate; prove them through the host.
+- **Per-class constructor null guards** — each project's `ConstructorGuardTests` covers them.
+- **DTO or entity shape by hand** — the OpenAPI snapshot pins DTOs; a getter with no logic is covered
+  by its factory test.
+- **Framework behaviour** — ASP.NET model binding and routing, `System.Text.Json`, react-router,
+  HtmlAgilityPack, recharts SVG.
+- **Raw Google SDK request plumbing beyond the fake-handler contract**, and live CSS selectors in a
+  PR run (those are `Category=Live`).
+- **The same parser or rule re-asserted through every caller**, and variant repetition of one path.
+- **`Tools/ImportGoogleSpreadSheets`** (legacy one-off importer, out of scope by decision).
+
+### Test value is a review requirement
+
+Judge a test by what it verifies, never by how many tests, files or covered lines it adds. Every
+new or changed test must answer **yes** to at least one question, and the review rejects it otherwise:
+- Does it verify behaviour that could realistically break (a branch, a boundary, a mapping, a write)?
+- Does it protect a business rule or a PRD acceptance criterion?
+- Would the regression it catches otherwise reach the user (wrong total, lost data, blocked flow)?
+
+Low value, and rejected even when it raises coverage:
+- **Re-stating the implementation or the framework** — a basic React component "renders", a
+  `Set`/`List`/`Dictionary` behaving like one, a DTO echoing its input, a constant equal to itself.
+  A component test earns its place by asserting a validation rule, an accessible interaction, or a
+  state the user depends on.
+- **The same assertion at two layers.** Test each behaviour at the lowest layer that gives enough
+  confidence. A higher layer may touch the same rule only to prove something the lower one cannot
+  (module integration, persistence, the API contract, the user journey), and it asserts *that*.
+- **When a higher-level test finds a defect**, add the focused lower-level test that would have
+  caught it, then keep the higher one only if it still proves something else.
+- **Coverage-driven tests.** The CI coverage gate is a tripwire for untested code, not a target to
+  hit with filler (`references/file-conventions.md`).
+
+Shape of the suite: many Unit tests; Integration where a real boundary is crossed (the JSON file,
+the container, the host, a provider's contract); a small, deliberate set of E2E journeys, each
+justified by the questions in `references/e2e-environment.md`.
 
 ## 3. Feature Implementation Checklist
 
-When implementing or changing a feature, walk this checklist. Every feature gets an
-AC-tracing Integration row; every artifact you create or modify gets its own row.
+When implementing a new feature, use this checklist so every artifact has the right coverage. For
+each artifact created or modified, check the required layers — and the failure case of each:
 
-| Created/modified | Required tests | Guide |
+| Artifact created / modified | Required tests | Guide |
 |---|---|---|
-| A feature (new or changed AC) | Integration (AC-tracing): one tagged test per §9 bullet incl. negative ones, real host/graph, providers faked | `references/feature-traceability.md` |
-| Domain entity / value object / `Rules/` calculator | Unit: each invariant, each rejected input, boundary values | `artifacts/domain-entities-and-rules.md` |
-| Application service (`*Service.cs`) | Unit: each branch + failed-span/log assertion (stub repo); Integration: through the API host | `artifacts/application-services.md` |
-| Parser / validator (`Validation/`) | Unit: every accepted form and every malformed input | `artifacts/application-parsers-validators.md` |
-| `Add*` DI extension or composition-root registration | Integration: real container resolves, unsupported config throws | `artifacts/dependency-injection-modules.md` |
-| Repository, serializer, converter, storage | Integration: temp-file round-trip + rejected write + fake-clock timing | `artifacts/json-persistence-and-repositories.md` |
-| HTTP-backed provider / price fetcher | Integration: fake `HttpMessageHandler` success, non-2xx, malformed, thrown; Unit for fetchers over `IFinanceService` | `artifacts/external-http-services.md` |
-| Scraper parsing function | Unit: parsing branches; live selectors stay `Skip` | `artifacts/web-scraping-parsers.md` |
-| Google SDK wrapper / retry / translator | Unit for pure policy code; DI Integration for registration | `artifacts/google-sdk-wrappers.md` |
-| Observability wiring | Integration: options binding, tracer registration, unreachable collector | `artifacts/observability-integration.md` |
-| Controller / middleware / API helper | Integration via `ApiEndpointTests`: status codes, problem details, logging redaction | `artifacts/api-controllers-and-middleware.md` |
-| Any DTO or endpoint shape change | Integration: regenerate snapshot + `npm run generate-api-types` + `tsc -b` | `artifacts/api-contract-snapshot.md` |
-| New project or cross-context reference | Integration: architecture rule test | `artifacts/architecture-rule-tests.md` |
-| `data/*.example.json` or `TestData/*.test.json` | Integration: real loader still parses | `artifacts/example-and-seed-data.md` |
-| Spreadsheet import / migration tool | Unit for resolvers; Integration on temp JSON + in-memory workbook | `artifacts/spreadsheet-import-tools.md` |
-| React hook | Unit: loading, success, error, retry with `apiClient` faked | `artifacts/react-hooks.md` |
-| React component | Unit: roles, labels, keyboard, each visual state | `artifacts/react-components.md` |
-| React page | Integration (frontend): full state matrix with the API faked | `artifacts/react-pages.md` |
-| `financialApiClient.ts` method | Unit: URL/method/body + `ApiError` on non-2xx | `artifacts/web-api-client.md` |
-| Web util / context / navigation | Unit; route ↔ sidebar agreement test | `artifacts/web-utils-context-navigation.md` |
-| Cross-process journey (Web ↔ API) | E2E: add a spec under `Financial.Web/tests/e2e` incl. one rejected journey | `references/e2e-environment.md` |
+| A feature with PRD §9 criteria | Integration (AC-tracing): one tagged test per bullet, negative ones included | `references/feature-traceability.md` |
+| Domain entity, value object, `Rules/` type | Unit: each invariant, each rejected input, both boundary sides | `artifacts/domain-entities-and-rules.md` |
+| Application service with branching | Unit: each branch + failed span + logged type (stub repo); Integration: through the host | `artifacts/application-services.md` |
+| Application service that only reads/writes the repository | Integration: through the host, persisted state reloaded from disk | `artifacts/application-services.md` |
+| Parser / validator | Unit: every accepted and malformed input | `artifacts/application-parsers-validators.md` |
+| Repository, serializer, converter, storage, FX rate store | Integration: temp-file round-trip, rejected write; Unit: converters | `artifacts/json-persistence-and-repositories.md` |
+| HTTP provider, price fetcher, FX provider | Unit: fake handler success + four failure modes; fetchers over stubs | `artifacts/external-http-services.md` |
+| Scraper parsing function | Unit on fixtures; `Live` check when a selector changes | `artifacts/web-scraping-parsers.md` |
+| Google SDK wrapper, OAuth client, retry/translator | Unit: fake handler or pure policy; DI registration | `artifacts/google-sdk-wrappers.md` |
+| Observability wiring | Unit: option binding, exporter setup; Integration: unreachable collector via host | `artifacts/observability-integration.md` |
+| `Add*` DI extension / `Program.cs` registration | Integration: real container resolves; unsupported config throws | `artifacts/dependency-injection-modules.md` |
+| Controller / middleware / API helper | Integration via `ApiEndpointTests`: status codes, problem details, log redaction | `artifacts/api-controllers-and-middleware.md` |
+| DTO, route or verb change | Regenerate snapshot + `npm run generate-api-types` + `npm run build` | `artifacts/api-contract-snapshot.md` |
+| New project or cross-project reference | Architecture rule test that fails on the forbidden reference | `artifacts/architecture-rule-tests.md` |
+| `data/*.example.json`, `TestData/*.test.json` | Integration: real loader still parses | `artifacts/example-and-seed-data.md` |
+| Import / migration / report tool | Unit: resolvers, formatters; Integration: temp JSON + in-memory workbook | `artifacts/console-tools.md` |
+| React hook | Unit: loading, success, error, retry, mutation failure | `artifacts/react-hooks.md` |
+| React component | Unit: roles, names, keyboard, each visual state it owns | `artifacts/react-components.md` |
+| React page | Page test: full state matrix with `apiClient` faked | `artifacts/react-pages.md` |
+| `financialApiClient` method | Unit: verb, URL, body, `ApiError` on non-2xx | `artifacts/web-api-client.md` |
+| Web util / context / navigation entry | Unit; sidebar ↔ route agreement | `artifacts/web-utils-context-navigation.md` |
+| New or changed critical journey | E2E: Playwright spec incl. one failure journey | `references/e2e-environment.md` |
 
-**How to use:** after implementing a feature, first add its AC-tracing Integration row, then
-walk every artifact row for anything you created or modified — for each row, confirm both the
-success case and its failure/negative case are covered. Skip rows that don't apply.
+**How to use:** after implementing a feature, add its AC-tracing row first, then walk each row for
+anything you created or modified, read the guide, and confirm both the success and the failure case
+exist. Skip rows that don't apply.
 
 ## 4. Artifact Type Quick Reference
 
-When creating or modifying an artifact — or implementing a feature — read the
-corresponding guide for the complete recipe.
+When creating or modifying an artifact, read the corresponding guide for the complete recipe.
 
-| Artifact Type | Pattern | Layer(s) | Guide |
+| Artifact Type | Pattern | Test Layer(s) | Guide |
 |---|---|---|---|
-| Feature AC coverage | `docs/prd/P{NN}-prd-{slug}/prd-{slug}.md` §9 | Integration (AC-tracing) | `references/feature-traceability.md` |
 | Domain entities, value objects, rules | `Financial.*.Domain/{Entities,ValueObjects,Rules}/*.cs` | Unit | `artifacts/domain-entities-and-rules.md` |
 | Application services | `Financial.*.Application/Services/*Service.cs` | Unit + Integration | `artifacts/application-services.md` |
 | Parsers / validators | `Financial.*.Application/Validation/*.cs` | Unit | `artifacts/application-parsers-validators.md` |
+| JSON persistence & repositories | `*/Persistence/**`, `*/Repositories/**`, `Financial.Shared.Infrastructure/**` | Integration (+ Unit converters) | `artifacts/json-persistence-and-repositories.md` |
+| External HTTP services & fetchers | `Integrations/Frankfurter`, `Financial.Investment.Infrastructure/Services`, `Shared.Abstractions/Currencies` | Unit (fake transport) | `artifacts/external-http-services.md` |
+| Web scraping parsers | `Integrations/WebPageParser/*.cs` | Unit + Live | `artifacts/web-scraping-parsers.md` |
+| Google SDK wrappers | `Integrations/Google{Core,Drive,Sheets,Calendar}/*.cs` | Unit + Integration (DI) | `artifacts/google-sdk-wrappers.md` |
+| Observability | `Integrations/Observability`, `Shared.Abstractions/Observability` | Unit + Integration (host) | `artifacts/observability-integration.md` |
 | DI modules | `*/DependencyInjection/*ServiceCollectionExtensions.cs`, `Program.cs` | Integration | `artifacts/dependency-injection-modules.md` |
-| JSON persistence & repositories | `*/Persistence/*.cs`, `*/Repositories/*.cs`, `Financial.Shared.Infrastructure/Persistence/*.cs` | Integration (+ Unit for converters) | `artifacts/json-persistence-and-repositories.md` |
-| External HTTP services & fetchers | `Financial.*.Infrastructure/Services/*.cs` | Integration (fake handler) + Unit | `artifacts/external-http-services.md` |
-| Web scraping parsers | `Integrations/WebPageParser/*.cs` | Unit (+ manual live) | `artifacts/web-scraping-parsers.md` |
-| Google SDK wrappers | `Integrations/Google{Core,Drive,Sheets}/*.cs` | Unit + Integration (DI) | `artifacts/google-sdk-wrappers.md` |
-| Observability | `Integrations/Observability/*.cs` | Integration | `artifacts/observability-integration.md` |
-| Controllers, middleware, API helpers | `Financial.Api/{Controllers,Middleware,Helpers}/*.cs` | Integration (+ Unit guards) | `artifacts/api-controllers-and-middleware.md` |
-| API contract snapshot & generated types | `Tests/Financial.Api.Tests/Contract/openapi-v1.snapshot.json`, `Financial.Web/src/api/generated/openapi.ts` | Integration | `artifacts/api-contract-snapshot.md` |
-| Architecture rules | `Tests/Financial.Architecture.Tests/*RuleTests.cs` | Integration | `artifacts/architecture-rule-tests.md` |
+| Controllers, middleware, helpers | `Financial.Api/{Controllers,Middleware,Helpers}/*.cs` | Integration (host) | `artifacts/api-controllers-and-middleware.md` |
+| API contract & generated types | `Contract/openapi-v1.snapshot.json`, `src/api/generated/openapi.ts` | Integration | `artifacts/api-contract-snapshot.md` |
+| Architecture rules | `Tests/Financial.Architecture.Tests/*Tests.cs` | Unit | `artifacts/architecture-rule-tests.md` |
 | Example & seed data | `data/*.example.json`, `Tests/**/TestData/*.test.json` | Integration | `artifacts/example-and-seed-data.md` |
-| Spreadsheet import tools | `Tools/{CashFlowSpreadsheetImport,InvestmentSpreadsheetImport}/**/*.cs` | Unit + Integration | `artifacts/spreadsheet-import-tools.md` |
-| React hooks | `Financial.Web/src/hooks/use*.ts` | Unit | `artifacts/react-hooks.md` |
+| Console tools | `Tools/{CashFlowSpreadsheetImport,InvestmentSpreadsheetImport,InvestmentDataQualityReport}` | Unit + Integration | `artifacts/console-tools.md` |
+| React hooks | `Financial.Web/src/hooks/use*.ts`, `map*ErrorToField.ts` | Unit | `artifacts/react-hooks.md` |
 | React components | `Financial.Web/src/components/**/*.tsx` | Unit | `artifacts/react-components.md` |
-| React pages | `Financial.Web/src/pages/*Page.tsx` | Integration (frontend) | `artifacts/react-pages.md` |
-| Web API client | `Financial.Web/src/api/financialApiClient.ts` | Unit | `artifacts/web-api-client.md` |
-| Web utils, context, navigation | `Financial.Web/src/{utils,context,navigation}/*.ts*` | Unit | `artifacts/web-utils-context-navigation.md` |
-| Critical cross-process journeys | `Financial.Web/tests/e2e/*.spec.ts` | E2E | `references/e2e-environment.md` |
+| React pages | `Financial.Web/src/pages/*.tsx`, `src/App.tsx` | Page (frontend Integration) | `artifacts/react-pages.md` |
+| Web API client | `Financial.Web/src/api/{financialApiClient,apiError,config}.ts` | Unit | `artifacts/web-api-client.md` |
+| Web utils, context, navigation | `Financial.Web/src/{utils,context,navigation}/*` | Unit | `artifacts/web-utils-context-navigation.md` |
 | Future types | — | — | `artifacts/future-types.md` |
 
 ## 5. Anti-patterns — Do NOT Do This
 
-- ❌ **Call an in-process test "E2E"** — anything on `ApiEndpointTests` / `WebApplicationFactory`
-  is Integration; only the Playwright smoke run is E2E (§1, `references/e2e-environment.md`)
-- ❌ **Mock anything other than a declared external provider** in Integration or E2E tests —
-  repositories, `LocalJsonStorage`, serializers and services stay real (`references/mock-health-rules.md`)
-- ❌ **Skip an explicit AC-tracing test because an endpoint test happens to exercise the same
-  path** — incidental coverage isn't AC coverage (`references/feature-traceability.md`)
-- ❌ **Write an AC test without its `[Trait("AC", …)]` / `[AC …]` tag** — it can't be audited
-- ❌ **Unit test a controller's business behaviour** — only guard clauses are unit tested; the
-  rest goes through the host (`artifacts/api-controllers-and-middleware.md`)
-- ❌ **Mock `HttpClient`, `TimeProvider` or `IJsonStorage` with a framework** — inject a fake
-  `HttpMessageHandler`, a `FakeTimeProvider`, or a `LocalJsonStorage` on a temp file (§1)
-- ❌ **Skip DI resolution tests for a new `Add*` method or provider branch** (`artifacts/dependency-injection-modules.md`)
-- ❌ **Test only the happy path** of a branch, provider call or storage write
-  (`references/negative-path-testing.md`)
-- ❌ **Write mirror tests** — asserting a DTO field equals the value you just passed in (§2)
-- ❌ **Assert on a logged message text or a financial value in a log** — assert the exception
-  type name via `RecordingLogger<T>` (`docs/rules/implementation.md`)
-- ❌ **Construct `ApiTestFactory` inside a test class, or copy a stub locally** — derive from
-  `ApiEndpointTests`; add doubles to `Tests/Financial.TestUtilities`
-- ❌ **Mock individual `fetch` calls or add a second `ResizeObserver` / Fluent shim** — mock
-  `financialApiClient` at module level; `setupTests.ts` already shims (`references/gotchas.md`)
-- ❌ **Change a DTO or endpoint without regenerating the snapshot and `openapi.ts`**
-  (`artifacts/api-contract-snapshot.md`)
-- ❌ **Run tests or migrations against `data/*.json`, or smoke-test on the live app's port 8080**
-  (`references/e2e-environment.md`)
+- ❌ **Unit test a controller's behaviour** — controllers delegate; prove them through `ApiEndpointTests` (`artifacts/api-controllers-and-middleware.md`)
+- ❌ **Fake something we own above Unit** — repositories, `LocalJsonStorage`, serializers, services and the container stay real; only third parties are faked (`references/mock-health-rules.md`)
+- ❌ **Mock a configured library** (`HttpClient`, the OTLP exporter, `IOptions<T>`) — use the real one with test config; a mock hides a wrong base address or binding (§1)
+- ❌ **Skip the temp-file Integration test for a repository or storage change** — a stub repository proves nothing about serialization (`artifacts/json-persistence-and-repositories.md`)
+- ❌ **Skip the DI resolution test for a new `Add*` method or provider branch** (`artifacts/dependency-injection-modules.md`)
+- ❌ **Assert only `Throw<T>()`** — add `ShouldHaveFailedSpan<T>`; assert logged failures by exception type, never by message or amount (`references/negative-path-testing.md`)
+- ❌ **Test only the happy path** of a branch, provider call or write (`references/negative-path-testing.md`)
+- ❌ **Skip an AC test because an endpoint test touches the same path**, or write one without its `AC` tag (`references/feature-traceability.md`)
+- ❌ **Write mirror tests** — recomputing the expected value with the code under test, or asserting a DTO echoes its input (§2)
+- ❌ **Add a test to move a count or a coverage number** — it must pass the test-value questions in §2
+- ❌ **Repeat a Unit assertion through the host or Playwright** without a new thing to prove (§2)
+- ❌ **Add an E2E spec for a risk a lower layer can catch** — answer the four E2E questions first (`references/e2e-environment.md`)
+- ❌ **Write per-class constructor null-guard tests** — `ConstructorGuardTests` owns them
+- ❌ **Construct `ApiTestFactory` as a field, or copy a stub locally** — derive from `ApiEndpointTests`; shared doubles go in `Tests/Financial.TestUtilities`
+- ❌ **Read the wall clock or wait on it** (`DateTime.Now`, `Task.Delay`, `waitForTimeout`) — CI's hygiene scan rejects it (`references/gotchas.md`)
+- ❌ **Mock `fetch` per call in a hook test, or add a second Fluent/ResizeObserver shim** — mock `financialApiClient`; `setupTests.ts` already shims (`references/gotchas.md`)
+- ❌ **Change a DTO without regenerating the snapshot and `openapi.ts`** (`artifacts/api-contract-snapshot.md`)
+- ❌ **Point a test, tool or smoke run at `data/*.json` or port 8080** (`references/e2e-environment.md`)
 
-## 6. Layer Boundary Note
+## 6. Layer Terminology Note
 
-This guide uses a three-layer model — Unit, Integration (intra-domain), E2E
-(System) — but "Integration" and "E2E" mean something narrower than in many
-guides. What most guides call "integration" or "e2e" for an in-process test
-through the real HTTP stack (`ApiEndpointTests` over `WebApplicationFactory<Program>`) is
-**Integration** here — real wiring, one process, no cross-service deployment.
-**E2E** is reserved for tests that run more than one deployed process: the CI `web-e2e`
-job's published `Financial.Api.dll` plus Playwright's Chromium driving the built SPA.
-Acceptance-criteria coverage does not get its own layer either: it's a mandatory,
-explicitly-tagged subset of Integration tests (see `references/feature-traceability.md`)
-— same setup and mock boundary as any other Integration test, distinguished only by
-what it asserts and how it's tagged.
-
-The level is the `Category` trait, not the folder (`docs/rules/implementation.md` §Tests #9).
-Live checks run with `dotnet test --filter Category=Live`.
+Many guides call an in-process test through the real HTTP stack (`WebApplicationFactory`) "E2E".
+**Here it is Integration** — `Category=Integration`, one process, run by the `backend` CI job.
+**E2E** means the Playwright suite in `Financial.Web/tests/e2e`: the published `Financial.Api.dll`
+serving the built SPA on seeded JSON, driven by Chromium in the `web-e2e` CI job. The HTTP-contract
+questions other guides put in "E2E" (status codes, validation wiring, response format) are answered
+here by host-based Integration tests. AC-tracing tests are an explicitly tagged subset of
+Integration, not a layer of their own.
 
 ## 7. References
 
 | Topic | File |
 |---|---|
-| External provider strategies (what's faked, what's owned) | `references/external-providers.md` |
-| Mock/stub health rules & the external-provider-only boundary | `references/mock-health-rules.md` |
-| Where features/ACs live and how AC-tracing Integration tests cite them | `references/feature-traceability.md` |
-| Negative-path/failure-case patterns per layer | `references/negative-path-testing.md` |
-| The production-like multi-service E2E environment | `references/e2e-environment.md` |
-| File naming, directory structure, coverage philosophy | `references/file-conventions.md` |
+| External systems — real vs fake, setup, teardown | `references/external-systems.md` |
+| Mock health rules & the third-party-only boundary | `references/mock-health-rules.md` |
+| File naming, directory structure, commands, coverage targets | `references/file-conventions.md` |
 | Stack-specific gotchas & pitfalls | `references/gotchas.md` |
-| Time/concurrency, UI state matrix, accessibility, contract drift, fitness functions, test data, and the frontend-mocks-own-backend exception | `references/cross-cutting-concerns.md` |
-| Phase 2 web research log — what was searched, found, and where it landed | `references/research-notes.md` |
-| Full folder-by-folder classification from Phase 1.3 | `references/inventory.md` |
+| AC-tracing tests: ids, tags, audit commands | `references/feature-traceability.md` |
+| Failure-case patterns per layer | `references/negative-path-testing.md` |
+| The Playwright E2E environment and local recipe | `references/e2e-environment.md` |
+| Test-count baseline per project, to compare against later | `references/test-baseline.md` |
 
 ## 8. How to Use This Guide
 
 This guide is organized as a multi-file skill:
 - **This file (SKILL.md)** — always loaded. Core rules, quick reference, anti-patterns.
-- **`artifacts/`** — one file per artifact type. Read the relevant file for the type
-  you're touching.
-- **`references/`** — supporting content, including `references/feature-traceability.md` (how to
-  write and organize the mandatory AC-tracing Integration tests for a feature) and
-  `references/negative-path-testing.md` (failure-case patterns required at every layer).
+- **`artifacts/`** — one file per artifact type. Read the relevant file when creating or modifying that type.
+- **`references/`** — supporting content. Read when you need mock strategies, conventions, gotchas,
+  AC tracing, negative paths or the E2E environment.
 
 When working on a feature:
-1. Check §3 (Feature Implementation Checklist) — add the feature's own AC-tracing row, then a
-   row per artifact touched.
-2. Read `references/feature-traceability.md` for how to structure the AC-tracing tests,
-   `references/negative-path-testing.md` for each layer's failure cases, and the relevant
-   `artifacts/*.md` file(s) for each artifact.
-3. Consult other `references/` files as needed. Guided test-writing and test-audit workflows
-   are out of scope for this guide; no sibling skill provides them.
-
-## 9. Test Baseline (as of generation)
-
-Snapshot from Phase 1.5, captured on 2026-09-06 (HEAD `b8a842a9`). Counts are `[Fact]` / `[Theory]`
-attributes (not expanded `InlineData` rows) and `it(` / `test(` calls. Re-run later and compare
-to spot drift — layers losing coverage, or AC-tracing tests not keeping pace with features.
-
-| Artifact type / area | Existing test count | Layer breakdown | AC-tracing tests identifiable? |
-|---|---|---|---|
-| Api.Tests (controllers, middleware, contract, observability) | 446 in 42 files | Integration: ~430, Unit (guard clauses): ~16, E2E: 0 | No — none tagged |
-| Architecture.Tests | 14 in 7 files | Integration: 14 | No |
-| CashFlow.Domain.Tests | 259 in 23 files | Unit: 259 | No |
-| CashFlow.Application.Tests | 515 in 25 files | Unit: 515 | No (one comment cites PRD P18 F04) |
-| CashFlow.Infrastructure.Tests | 87 in 13 files | Integration: ~70, Unit (converters/resolver): ~17 | No |
-| Investment.Domain.Tests | 193 in 15 files | Unit: 193 | No |
-| Investment.Application.Tests | 259 in 17 files | Unit: 259 | No |
-| Investment.Infrastructure.Tests | 184 in 22 files | Unit (fetchers/adapters): ~120, Integration (repo, DI, Yahoo, example): ~64 | No |
-| Shared.Infrastructure.Tests | 48 in 7 files | Integration: 48 | No |
-| Shared.Abstractions.Tests | 31 in 5 files | Unit: 31 | No |
-| GoogleIntegrations + Observability + WebPageParser Tests | 17 + 23 + 25 in 14 files | Unit: ~50, Integration (DI/config): ~15, Live (real sites): 4 files | No |
-| CashFlowSpreadsheetImport + InvestmentSpreadsheetImport Tests | 184 + 48 in 32 files | Unit: ~160, Integration (temp JSON/backup): ~72 | No |
-| Financial.Web (vitest) | 1468 in 119 files | Unit (hooks/components/utils/client): ~1100, Integration (pages, App, freshness): ~370 | No |
-| `web-e2e` (`Financial.Web/tests/e2e`) | 6 specs | E2E: 6 `@smoke` journeys, 2 failure journeys | No |
-
-Total: 2302 .NET tests across 217 files, 1468 web tests across 119 files, as of 2026-09-06 (E2E row updated 2026-10-05: 6 web specs; the .NET total excludes the test projects removed by ADR-002).
+1. Check §3 (Feature Implementation Checklist) to identify which artifacts need tests
+2. Read the corresponding `artifacts/*.md` file for the complete testing recipe
+3. Consult `references/` files as needed for mock strategies, conventions, or pitfalls

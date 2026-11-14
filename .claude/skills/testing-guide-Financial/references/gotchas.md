@@ -25,6 +25,11 @@
   when `WriteAsync` returns. Advancing `FakeTimeProvider` before that moves the clock past a
   timer that does not exist yet and the test hangs. Wait on `ObservableFakeClock.TimersArmed`
   (a monotonic counter) before `Advance` — the reason that class exists.
+- **`FakeTimeProvider.Advance` fires a due timer once per call** (dotnet/extensions#5722): one
+  `Advance(TimeSpan.FromSeconds(3))` over a 1 s periodic timer runs its callback once, not three
+  times. Advance in timer-sized steps when the count matters, and do not assert `GetUtcNow()` inside
+  a callback — it depends on the step size. Leave `TimeProvider.System` out of test DI entirely
+  (`ApiTestFactory` always replaces it).
 - **2-core CI runners starve fire-and-forget `Task.Run` tests** — do not add
   `Thread.Sleep`/`Task.Delay` to "fix" a timeout; wait on a condition.
 - **`InternalsVisibleTo`**: `Financial.Api` exposes internals to `Financial.Api.Tests`,
@@ -70,7 +75,12 @@
   undeclared → "The Vitest config does't define any tags"). Tag names cannot contain spaces or
   `! ( ) * | &`. That is why AC ids live in the `it` title and are filtered with `-t`.
 - **`mockReset()` vs `mockClear()`**: `mockReset` clears the implementation too; the suite uses
-  `mockReset()` in `beforeEach` then re-arms `mockResolvedValue`.
+  `mockReset()` in `beforeEach` then re-arms `mockResolvedValue`. `mockClear()` /
+  `vi.clearAllMocks()` keep an unconsumed `mockResolvedValueOnce` queue, so a value queued for one
+  test leaks into the next — another reason to `mockReset()`.
+- **`user.type` into a Fluent `Dialog` can drop characters under jsdom** (RTL issue #1392). Prefer
+  `fireEvent.change` / `user.paste` for the value and keep keyboard-behaviour checks to the keys that
+  matter; do not "fix" it with a typing `delay`.
 - **`findBy*`/`waitFor` for anything after a resolved promise**; re-read `result.current` after
   each `waitFor` in `renderHook` tests — a destructured value is a stale snapshot.
 - **Fake timers with RTL**: `vi.useFakeTimers({ shouldAdvanceTime: true })` keeps `waitFor`
@@ -91,6 +101,13 @@
 ## E2E / CI
 
 - **Port 8080 is the live Docker app** — smoke-test locally on another port after `netstat`.
+- **Playwright: web-first assertions only.** `await expect(locator).toHaveText(...)` retries;
+  `await locator.textContent()` then `expect(...)` reads once and flakes. Wait for a response or a
+  visible state, never `waitForTimeout` (the hygiene scan and `eslint-plugin-playwright` reject it).
+- **The CI hygiene scan** (`.github/scripts/test-hygiene.sh`) fails a PR that adds
+  `DateTime.Now/Today/UtcNow`, `Task.Delay(`, `Thread.Sleep(`, `Skip =` in `Tests/`, or `.only(`,
+  `.skip(`, `waitForTimeout(` in the web sources. Fix the test; `// hygiene-allow: <reason>` is the
+  last resort.
 - **`--no-launch-profile` drops `ASPNETCORE_ENVIRONMENT=Development`** and CORS vanishes,
   presenting as a 503-looking failure in the SPA — use the published-build recipe in
   `e2e-environment.md`.
