@@ -15,7 +15,8 @@ public class SharesForDividendBackfillTests
         var investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
-        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 1000m, 9m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 600m, 9m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Buy, 400m, 10m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2024, 6, 1), Credit.CreditType.Dividend, 400m));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);

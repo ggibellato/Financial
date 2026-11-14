@@ -107,7 +107,7 @@ The review runs alongside other work (a bug fix on `main` in the repo folder), s
 uses the repo folder.
 
 - Tooling and this tracker: branch `test/mutation-review` in the worktree
-  `../financial-wt-mutation-review`, kept until batch 0 merges.
+  `../financial-wt-mutation-review`, removed after batch 0 merged (#1283).
 - Each slice that changes tests or code: its own branch off `main` in its own worktree
   (`git worktree add ../financial-wt-mut-<slice> -b test/mutation-<slice> origin/main`), removed
   after its PR merges. Stryker runs happen in that slice's worktree.
@@ -122,10 +122,10 @@ uses the repo folder.
 
 | # | Task | Status | PR | Notes |
 |---|---|---|---|---|
-| 0.1 | `scripts/stryker.ps1` accepts any production project (Application, Infrastructure, Shared, Api), `-DisableBail` and `-Tests` | 🔄 | | Trial: `Expense.cs` with bail off, 152 mutants in 36 s. Local runs pass `--break-at 0` so a low score still prints the report |
-| 0.2 | `scripts/mutation-test-value.ps1` reads a Stryker JSON report (.NET or JS) and prints survivors by file, idle tests and redundancy candidates | 🔄 | | `[Theory]` rows merged by name; timeout warning added |
-| 0.3 | StrykerJS: check `disableBail` and a per-slice `--mutate` run work for `.tsx` files | 🔄 | | `STRYKER_TEST_INCLUDE`; needs `--concurrency 2` here |
-| 0.4 | Measure run time per project and correct the slice sizes below | 🔄 | | See "Local baseline"; no slice needed splitting; 2.3 skipped; `Program.cs` added to 9.1 |
+| 0.1 | `scripts/stryker.ps1` accepts any production project (Application, Infrastructure, Shared, Api), `-DisableBail` and `-Tests` | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | Trial: `Expense.cs` with bail off, 152 mutants in 36 s. Local runs pass `--break-at 0` so a low score still prints the report |
+| 0.2 | `scripts/mutation-test-value.ps1` reads a Stryker JSON report (.NET or JS) and prints survivors by file, idle tests and redundancy candidates | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | `[Theory]` rows merged by name; timeout warning added |
+| 0.3 | StrykerJS: check `disableBail` and a per-slice `--mutate` run work for `.tsx` files | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | `STRYKER_TEST_INCLUDE`; needs `--concurrency 2` here |
+| 0.4 | Measure run time per project and correct the slice sizes below | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | See "Local baseline"; no slice needed splitting; 2.3 skipped; `Program.cs` added to 9.1 |
 | 0.5 | Ignore `StrykerOutput/` under `Tests/` | ⏭️ | | Already ignored (`StrykerOutput/` in `.gitignore`) |
 
 ### Slices
@@ -135,7 +135,7 @@ uses the repo folder.
 | 1.1 | CashFlow.Domain | `Entities/**` | ⬜ | 90.3% | | | | | | Trial on `Expense.cs`: 14 undetected (round-up suggestion, L43–45) |
 | 1.2 | CashFlow.Domain | `Rules/**`, `ValueObjects/**` | ⬜ | 91.1% | | | | | | |
 | 2.1 | Investment.Domain | `Entities/**` | ⬜ | 82.0% | | | | | | |
-| 2.2 | Investment.Domain | `Rules/**` | ⬜ | 74.5% | | | | | | Weakest Domain slice |
+| 2.2 | Investment.Domain | `Rules/**` | 🔄 | 74.5% | 87.7% | 15 | 3 | ~35 | | See "Slice notes"; 734 → 754 tests |
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
 | 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ⬜ | 70.3% | | | | | | 85 compile errors |
 | 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ⬜ | 67.3% | | | | | | |
@@ -169,6 +169,43 @@ uses the repo folder.
 | 10.3 | Raise the existing break thresholds once scores hold for a week (`docs/ci-affected-pipeline.md`) | ⬜ | | |
 | 10.4 | Decide on an advisory PR job mutating changed files only (`--since origin/main`) | ⬜ | | |
 
+## Slice notes
+
+### 2.2 Investment.Domain rules (74.5% → 87.7%)
+
+Gaps closed:
+
+- `CreditsAnalysisCalculator` had no Domain test at all (31 uncovered mutants; only reached through
+  the Application's `PortfolioAssetSummaryBuilder`): new `CreditsAnalysisCalculatorTests`.
+- `CreditFrequencyAnalyzer`: every band limit (1.5, 3.5, 5.0 months), two months, a year end.
+- `XirrCalculator`: an empty series, same-day flows summing to zero, amounts too large for the
+  absolute NPV tolerance (the 200-iteration fallback had no test).
+- `DividendAttributionCalculator`: a buy on the credit date, two lots at different costs, a
+  holding written down to zero.
+- `DisposalRecordCalculator`: a FIFO sale covered by the oldest lot, a SpecificId sale split
+  across two lots.
+- `DisposalRecordRegenerator`: a sale with no record yet (created with its classification), a
+  seeded SpecificId sale.
+- Backfills: an already-classified disposal is skipped on a second run; shares summed over two
+  lots.
+
+Removed or merged: two `DividendAttributionCalculatorTests` that repeated another test's guard
+or case; the all-positive and all-negative XIRR tests merged into one theory.
+
+The 57 still undetected, all reviewed:
+
+- **Exception-message text** (about 12): not asserted by design (messages embed figures).
+- **Unreachable code** (6) in `XirrCalculator`: the `ToDecimalOrNull` overflow clamp (L169–170) —
+  the probe ladder keeps every rate between -1 and 1e10, far inside `decimal` — and the
+  `growthFactor <= 0` guard (L147–148). Candidate for a separate clean-up PR.
+- **Failure-isolation catches** (4) in the three backfills: no entity accepts the data that would
+  make one record's calculation throw, so they are untested.
+- **Equivalent** (the rest): the XIRR sign-change and date guards shortcut what the bracket search
+  concludes anyway; negating the NPV keeps its roots; `<`/`<=` where equality cannot occur;
+  hash-code and comparer changes that only affect collisions; `Month + 1` shifts every month
+  alike; `DisposalRecordRegenerator`'s final `RefreshRealizedCapitalGain` repeats what
+  `AppendBackfilledDisposalRecord` already did.
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -176,4 +213,5 @@ One line per working session: date, slice, outcome.
 | Date | Slice | Outcome |
 |---|---|---|
 | 2026-11-14 | — | Plan written; baseline recorded from nightly run 43584910403 |
-| 2026-11-14 | 0 | Tooling built and tried on `Expense.cs` and `CategoryTotalsGrid.tsx`; every .NET project measured with bail off (local baseline); 🔄 until the batch 0 PR merges |
+| 2026-11-14 | 0 | Tooling built and tried on `Expense.cs` and `CategoryTotalsGrid.tsx`; every .NET project measured with bail off (local baseline); merged in #1283 |
+| 2026-11-14 | 2.2 | Rules 74.5% → 87.7%; 15 tests added, 3 removed or merged, 2 strengthened; unreachable XIRR clamp found |

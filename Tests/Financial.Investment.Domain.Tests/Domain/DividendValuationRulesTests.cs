@@ -6,10 +6,12 @@ namespace Financial.Investment.Domain.Tests;
 [Trait("Category", "Unit")]
 public class DividendValuationRulesTests
 {
-    [Fact]
-    public void CalculatePriceMaxBuy_WhenAverageDividendZero_ReturnsZero()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1.2)]
+    public void CalculatePriceMaxBuy_WhenAverageDividendNotPositive_ReturnsZero(decimal averageDividend)
     {
-        DividendValuationRules.CalculatePriceMaxBuy(0m).Should().Be(0m);
+        DividendValuationRules.CalculatePriceMaxBuy(averageDividend).Should().Be(0m);
     }
 
     [Fact]

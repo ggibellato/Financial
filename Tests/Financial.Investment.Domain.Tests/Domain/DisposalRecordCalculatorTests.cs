@@ -55,6 +55,33 @@ public class DisposalRecordCalculatorTests
     }
 
     [Fact]
+    public void Calculate_UnderFifo_SaleCoveredByTheOldestLot_LeavesLaterLotsUntouched()
+    {
+        var firstBuy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 5m, 5m, 0m);
+        var secondBuy = Transaction.Create(new DateTime(2026, 1, 15), Transaction.TransactionType.Buy, 5m, 6m, 0m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 5m, 7m, 0m);
+
+        var record = DisposalRecordCalculator.Calculate(sell, new[] { firstBuy, secondBuy }, CostBasisMethod.FIFO, "GBP", TestClock.Default);
+
+        record.LotsConsumed.Should().ContainSingle().Which.SourceTransactionId.Should().Be(firstBuy.Id);
+    }
+
+    [Fact]
+    public void Calculate_UnderSpecificId_SaleSplitAcrossTwoLots_ConsumesBothAtTheirOwnCost()
+    {
+        var firstBuy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 5m, 5m, 0m);
+        var secondBuy = Transaction.Create(new DateTime(2026, 1, 15), Transaction.TransactionType.Buy, 5m, 6m, 0m);
+        var sell = Transaction.Create(new DateTime(2026, 2, 1), Transaction.TransactionType.Sell, 7m, 7m, 0m);
+        var allocation = new[] { new SpecificLotAllocation(firstBuy.Id, 3m), new SpecificLotAllocation(secondBuy.Id, 4m) };
+
+        var record = DisposalRecordCalculator.Calculate(
+            sell, new[] { firstBuy, secondBuy }, CostBasisMethod.SpecificId, "GBP", TestClock.Default, allocation);
+
+        record.LotsConsumed.Should().HaveCount(2);
+        record.CostBasis.Should().Be(39m);
+    }
+
+    [Fact]
     public void Calculate_UnderSpecificId_ConsumesExactlyTheChosenLots()
     {
         var firstBuy = Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 5m, 5m, 0m);
