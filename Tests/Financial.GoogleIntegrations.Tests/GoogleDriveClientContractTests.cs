@@ -16,9 +16,9 @@ public class GoogleDriveClientContractTests
 
     private readonly List<TimeSpan> _requestedDelays = [];
 
-    private (GoogleDriveClient Client, FakeDriveHandler Handler) CreateClient(Func<RecordedRequest, HttpResponseMessage> respond)
+    private (GoogleDriveClient Client, FakeGoogleApiHandler Handler) CreateClient(Func<RecordedRequest, HttpResponseMessage> respond)
     {
-        var handler = new FakeDriveHandler(respond);
+        var handler = new FakeGoogleApiHandler(respond);
         var client = new GoogleDriveClient(_ => handler.CreateService(), delay: (delay, _) =>
         {
             _requestedDelays.Add(delay);
@@ -37,16 +37,16 @@ public class GoogleDriveClientContractTests
     {
         if (request.Query("alt") != "media")
         {
-            return FakeDriveHandler.Json(HttpStatusCode.OK, listJson);
+            return FakeGoogleApiHandler.Json(HttpStatusCode.OK, listJson);
         }
 
-        return mediaFailure is { } status ? FakeDriveHandler.Error(status) : Ok(mediaContent);
+        return mediaFailure is { } status ? FakeGoogleApiHandler.Error(status) : Ok(mediaContent);
     }
 
     [Fact]
     public async Task GetFiles_ReturnsNamesAndIds()
     {
-        var (client, handler) = CreateClient(_ => FakeDriveHandler.Json(
+        var (client, handler) = CreateClient(_ => FakeGoogleApiHandler.Json(
             HttpStatusCode.OK, """{"files":[{"id":"a","name":"one.json"},{"id":"b","name":"two.json"}]}"""));
 
         var files = await client.GetFilesAsync();
@@ -117,7 +117,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void Download_NoMatch_ThrowsFileNotFound()
     {
-        var (client, _) = CreateClient(_ => FakeDriveHandler.Json(HttpStatusCode.OK, """{"files":[]}"""));
+        var (client, _) = CreateClient(_ => FakeGoogleApiHandler.Json(HttpStatusCode.OK, """{"files":[]}"""));
 
         var act = () => client.DownloadFileContent("missing.json");
 
@@ -127,7 +127,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void Download_MultipleMatches_ThrowsInvalidOperation()
     {
-        var (client, _) = CreateClient(_ => FakeDriveHandler.Json(
+        var (client, _) = CreateClient(_ => FakeGoogleApiHandler.Json(
             HttpStatusCode.OK, """{"files":[{"id":"1","name":"data.json"},{"id":"2","name":"data.json"}]}"""));
 
         var act = () => client.DownloadFileContent("data.json");
@@ -140,7 +140,7 @@ public class GoogleDriveClientContractTests
     [InlineData("   ")]
     public void DownloadAndUpload_BlankPath_ThrowArgumentException(string path)
     {
-        var (client, handler) = CreateClient(_ => FakeDriveHandler.Error(HttpStatusCode.InternalServerError));
+        var (client, handler) = CreateClient(_ => FakeGoogleApiHandler.Error(HttpStatusCode.InternalServerError));
 
         var download = () => client.DownloadFileContent(path);
         var upload = () => client.UploadFileContent(path, "x");
@@ -177,8 +177,8 @@ public class GoogleDriveClientContractTests
     {
         var lists = 0;
         var (client, handler) = CreateClient(_ => ++lists == 1
-            ? FakeDriveHandler.Error(HttpStatusCode.TooManyRequests)
-            : FakeDriveHandler.Json(HttpStatusCode.OK, FileListJson));
+            ? FakeGoogleApiHandler.Error(HttpStatusCode.TooManyRequests)
+            : FakeGoogleApiHandler.Json(HttpStatusCode.OK, FileListJson));
 
         var files = await client.GetFilesAsync();
 
@@ -190,7 +190,7 @@ public class GoogleDriveClientContractTests
     [Fact]
     public void Resolve_RateLimitedEveryTime_ThrowsTheRateLimitMessageWithoutWaiting()
     {
-        var (client, handler) = CreateClient(_ => FakeDriveHandler.Error(HttpStatusCode.TooManyRequests));
+        var (client, handler) = CreateClient(_ => FakeGoogleApiHandler.Error(HttpStatusCode.TooManyRequests));
 
         var act = () => client.DownloadFileContent("data.json");
 
@@ -240,8 +240,8 @@ public class GoogleDriveClientContractTests
         if (request.Method == HttpMethod.Put)
         {
             return uploadStatus == HttpStatusCode.OK
-                ? FakeDriveHandler.Json(HttpStatusCode.OK, """{"id":"file-1"}""")
-                : FakeDriveHandler.Error(uploadStatus);
+                ? FakeGoogleApiHandler.Json(HttpStatusCode.OK, """{"id":"file-1"}""")
+                : FakeGoogleApiHandler.Error(uploadStatus);
         }
 
         if (request.Uri.AbsolutePath.StartsWith("/upload/"))
@@ -251,6 +251,6 @@ public class GoogleDriveClientContractTests
             return session;
         }
 
-        return FakeDriveHandler.Json(HttpStatusCode.OK, FileListJson);
+        return FakeGoogleApiHandler.Json(HttpStatusCode.OK, FileListJson);
     };
 }

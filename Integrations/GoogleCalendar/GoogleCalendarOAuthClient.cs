@@ -19,10 +19,17 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
     private const string UserInfoEndpoint = "https://www.googleapis.com/oauth2/v2/userinfo";
 
     private readonly HttpClient _httpClient;
+    private readonly Google.Apis.Http.IHttpClientFactory? _sdkHttpClientFactory;
 
     public GoogleCalendarOAuthClient(HttpClient httpClient)
+        : this(httpClient, sdkHttpClientFactory: null)
+    {
+    }
+
+    internal GoogleCalendarOAuthClient(HttpClient httpClient, Google.Apis.Http.IHttpClientFactory? sdkHttpClientFactory)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+        _sdkHttpClientFactory = sdkHttpClientFactory;
     }
 
     public string BuildAuthorizationUrl(string clientId, string redirectUri, string scope, string state)
@@ -213,7 +220,7 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
 
     /// <summary>Opens the calendar service for the call, translating a not-found API response into
     /// <see cref="GoogleCalendarNotFoundException"/> - the shape every event operation below needs.</summary>
-    private static async Task<T> ExecuteInCalendarAsync<T>(string accessToken, string calendarId, Func<CalendarService, Task<T>> action)
+    private async Task<T> ExecuteInCalendarAsync<T>(string accessToken, string calendarId, Func<CalendarService, Task<T>> action)
     {
         using var service = CreateCalendarService(accessToken);
         try
@@ -226,7 +233,7 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
         }
     }
 
-    private static async Task ExecuteInCalendarAsync(string accessToken, string calendarId, Func<CalendarService, Task> action) =>
+    private async Task ExecuteInCalendarAsync(string accessToken, string calendarId, Func<CalendarService, Task> action) =>
         await ExecuteInCalendarAsync(accessToken, calendarId, async service =>
         {
             await action(service).ConfigureAwait(false);
@@ -235,15 +242,31 @@ internal sealed class GoogleCalendarOAuthClient : IGoogleCalendarOAuthClient
 
     private static bool IsNotFound(GoogleApiException ex) => ex.HttpStatusCode == HttpStatusCode.NotFound;
 
-    private static GoogleAuthorizationCodeFlow CreateFlow(string clientId, string clientSecret) =>
-        new(new GoogleAuthorizationCodeFlow.Initializer
+    private GoogleAuthorizationCodeFlow CreateFlow(string clientId, string clientSecret)
+    {
+        var initializer = new GoogleAuthorizationCodeFlow.Initializer
         {
             ClientSecrets = new ClientSecrets { ClientId = clientId, ClientSecret = clientSecret },
             Scopes = new[] { CalendarService.Scope.Calendar }
-        });
+        };
+        if (_sdkHttpClientFactory is not null)
+        {
+            initializer.HttpClientFactory = _sdkHttpClientFactory;
+        }
 
-    private static CalendarService CreateCalendarService(string accessToken) =>
-        new(GoogleCredentialFactory.CreateInitializer(GoogleCredential.FromAccessToken(accessToken)));
+        return new GoogleAuthorizationCodeFlow(initializer);
+    }
+
+    private CalendarService CreateCalendarService(string accessToken)
+    {
+        var initializer = GoogleCredentialFactory.CreateInitializer(GoogleCredential.FromAccessToken(accessToken));
+        if (_sdkHttpClientFactory is not null)
+        {
+            initializer.HttpClientFactory = _sdkHttpClientFactory;
+        }
+
+        return new CalendarService(initializer);
+    }
 
     private static GoogleOAuthTokenResult ToResult(TokenResponse tokenResponse) => new(
         tokenResponse.AccessToken,

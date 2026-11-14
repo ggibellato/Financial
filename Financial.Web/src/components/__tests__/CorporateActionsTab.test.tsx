@@ -295,6 +295,34 @@ describe('CorporateActionsTab', () => {
     expect(screen.getByText(`+${formatN2(40)} units received`)).toBeInTheDocument()
   })
 
+  it.each([
+    ['Source', null, 'Position closed and converted'],
+    ['Target', 20, `+${formatN2(20)} units received`],
+    ['Target', null, 'Units received from merger'],
+  ] as const)('describes the resulting change of a Merger %s record (converted quantity %s)', (role, convertedQuantity, expected) => {
+    setMock({
+      corporateActions: [split({ id: 'ca5', type: 'Merger', role, ratioFactor: null, convertedQuantity, linkedAssetName: 'TASA4' })],
+    })
+
+    render(<CorporateActionsTab />)
+
+    expect(screen.getByText(expected)).toBeInTheDocument()
+  })
+
+  it('sorts the history by type when the Type header is clicked', () => {
+    const splitRow = split({ id: 'ca1', effectiveDate: '2026-07-01T00:00:00' })
+    const mergerRow = split({ id: 'ca2', type: 'Merger', role: 'Source', ratioFactor: null, effectiveDate: '2026-06-01T00:00:00' })
+    setMock({ corporateActions: [splitRow, mergerRow] })
+
+    render(<CorporateActionsTab />)
+    const table = screen.getByRole('table')
+    fireEvent.click(within(table).getByRole('button', { name: 'Type' }))
+
+    const dataRows = within(table).getAllByRole('row').slice(1)
+    expect(within(dataRows[0]).getByText('Merger')).toBeInTheDocument()
+    expect(within(dataRows[1]).getByText('Split')).toBeInTheDocument()
+  })
+
   it('focuses and highlights the row matching focusRecordId once the history has loaded', () => {
     const rowA = split({ id: 'ca1' })
     const rowB = split({ id: 'ca2' })
