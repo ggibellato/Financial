@@ -49,10 +49,14 @@ longer is split before it is worked.
 
 ## Branches and folders
 
-- Tooling and this tracker: branch `test/mutation-review` in the repo folder.
-- Each slice that changes tests or code: its own branch off `main` in a worktree outside the repo
+The review runs alongside other work (a bug fix on `main` in the repo folder), so it never
+uses the repo folder.
+
+- Tooling and this tracker: branch `test/mutation-review` in the worktree
+  `../financial-wt-mutation-review`, kept until batch 0 merges.
+- Each slice that changes tests or code: its own branch off `main` in its own worktree
   (`git worktree add ../financial-wt-mut-<slice> -b test/mutation-<slice> origin/main`), removed
-  after its PR merges.
+  after its PR merges. Stryker runs happen in that slice's worktree.
 - Stryker output (`StrykerOutput/`, `Financial.Web/reports/`) is never committed.
 
 ## Progress
