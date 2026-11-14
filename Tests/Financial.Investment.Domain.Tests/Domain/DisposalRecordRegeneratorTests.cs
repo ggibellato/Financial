@@ -140,6 +140,43 @@ public class DisposalRecordRegeneratorTests
     }
 
     [Fact]
+    public void RegenerateAsset_SaleWithoutARecord_CreatesItsRecordAndClassification()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 10m, 120m, 0m));
+
+        DisposalRecordRegenerator.RegenerateAsset(
+            asset, CostBasisMethod.FIFO, DateTime.MinValue, TestClock.Default, investments: Investments.Create());
+
+        var record = asset.DisposalRecords.Should().ContainSingle(r => r.Status == DisposalRecordStatus.Active).Subject;
+        record.CostBasis.Should().Be(500m);
+        asset.Transactions.RealizedCapitalGain.Should().Be(700m);
+        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Disposal && c.SourceId == record.Id);
+    }
+
+    [Fact]
+    public void RegenerateAsset_SeededSpecificIdSale_UsesTheSeedAllocation()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var buy1 = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 5m, 50m, 0m);
+        var buy2 = Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m);
+        var sell = Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 200m, 0m);
+        asset.AddTransaction(buy1);
+        asset.AddTransaction(buy2);
+        asset.AddTransaction(sell);
+
+        DisposalRecordRegenerator.RegenerateAsset(
+            asset, CostBasisMethod.SpecificId, sell.Date, TestClock.Default,
+            seedTransactionId: sell.Id, seedAllocation: new[] { new SpecificLotAllocation(buy2.Id, 5m) });
+
+        var record = asset.DisposalRecords.Single(r => r.Status == DisposalRecordStatus.Active);
+        record.LotsConsumed.Should().ContainSingle(l => l.SourceTransactionId == buy2.Id);
+        record.CostBasis.Should().Be(500m);
+    }
+
+    [Fact]
     public void RegenerateAsset_TransactionDeleted_RetiresItsRecordWithNoReplacement()
     {
         var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");

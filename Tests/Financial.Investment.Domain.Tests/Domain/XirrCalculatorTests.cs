@@ -38,12 +38,33 @@ public class XirrCalculatorTests
         result!.Value.Should().BeGreaterThan(-1m, "a rate at or below -1 has no real discount factor");
     }
 
-    [Fact]
-    public void Calculate_FewerThanTwoCashFlows_ReturnsNull()
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Calculate_FewerThanTwoCashFlows_ReturnsNull(int count)
     {
-        var result = XirrCalculator.Calculate([(new DateTime(2024, 1, 1), -1000m)]);
+        var cashFlows = Enumerable.Range(0, count)
+            .Select(day => (new DateTime(2024, 1, 1).AddDays(day), -1000m))
+            .ToList();
+
+        var result = XirrCalculator.Calculate(cashFlows);
 
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public void Calculate_AmountsTooLargeForTheNpvTolerance_StillReturnsTheRate()
+    {
+        var cashFlows = new List<(DateTime Date, decimal Amount)>
+        {
+            (new DateTime(2023, 1, 1), -1_000_000_000_000m),
+            (new DateTime(2024, 1, 1), 1_100_000_000_000m)
+        };
+
+        var result = XirrCalculator.Calculate(cashFlows);
+
+        result.Should().NotBeNull();
+        result!.Value.Should().BeApproximately(0.10m, 0.001m);
     }
 
     [Fact]
@@ -133,13 +154,15 @@ public class XirrCalculatorTests
         result.Should().BeNull();
     }
 
-    [Fact]
-    public void Calculate_AllPositiveCashFlows_ReturnsNull()
+    [Theory]
+    [InlineData(500)]
+    [InlineData(-500)]
+    public void Calculate_WithoutBothAnInflowAndAnOutflow_ReturnsNull(decimal amount)
     {
         var cashFlows = new List<(DateTime Date, decimal Amount)>
         {
-            (new DateTime(2023, 1, 1), 500m),
-            (new DateTime(2024, 1, 1), 500m)
+            (new DateTime(2023, 1, 1), amount),
+            (new DateTime(2024, 1, 1), amount)
         };
 
         var result = XirrCalculator.Calculate(cashFlows);
@@ -147,27 +170,15 @@ public class XirrCalculatorTests
         result.Should().BeNull();
     }
 
-    [Fact]
-    public void Calculate_AllNegativeCashFlows_ReturnsNull()
-    {
-        var cashFlows = new List<(DateTime Date, decimal Amount)>
-        {
-            (new DateTime(2023, 1, 1), -500m),
-            (new DateTime(2024, 1, 1), -500m)
-        };
-
-        var result = XirrCalculator.Calculate(cashFlows);
-
-        result.Should().BeNull();
-    }
-
-    [Fact]
-    public void Calculate_AllCashFlowsOnTheSameDate_ReturnsNull()
+    [Theory]
+    [InlineData(600)]
+    [InlineData(500)]
+    public void Calculate_AllCashFlowsOnTheSameDate_ReturnsNull(decimal sameDayInflow)
     {
         var cashFlows = new List<(DateTime Date, decimal Amount)>
         {
             (new DateTime(2024, 1, 1), -500m),
-            (new DateTime(2024, 1, 1), 600m)
+            (new DateTime(2024, 1, 1), sameDayInflow)
         };
 
         var result = XirrCalculator.Calculate(cashFlows);
