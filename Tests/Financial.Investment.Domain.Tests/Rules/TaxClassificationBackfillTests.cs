@@ -54,14 +54,19 @@ public class TaxClassificationBackfillTests
         var investments = Investments.Create();
         var broker = Broker.Create("XPI", "BRL");
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2022, 1, 1), Transaction.TransactionType.Sell, 5m, 110m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2026, 6, 1), Credit.CreditType.Dividend, 100m, 0m));
         broker.AddPortfolio("Default").AddAsset(asset);
         investments.AddActiveBroker(broker);
+        DisposalRecordBackfill.Apply(investments, TestClock.Default);
 
         TaxClassificationBackfill.Apply(investments, TestClock.Default);
         TaxClassificationBackfill.Apply(investments, TestClock.Default);
 
-        asset.TaxClassifications.Should().ContainSingle();
+        asset.TaxClassifications.Should().HaveCount(2);
+        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Disposal);
+        asset.TaxClassifications.Should().ContainSingle(c => c.SourceType == SourceType.Credit);
     }
 
     [Fact]
