@@ -104,7 +104,7 @@ describe('DisposalsTab', () => {
     expect(mockSetTaxYear).toHaveBeenCalledWith('2024/25')
   })
 
-  it('shows an explicit empty message when the selected tax year has no disposals', () => {
+  it('shows an explicit empty message when the selected tax year has no realised gains', () => {
     setMock({
       chains: [{ active: disposal({}), history: [] }],
       filteredChains: [],
@@ -112,7 +112,7 @@ describe('DisposalsTab', () => {
       selectedTaxYear: '2024/25',
     })
     render(<DisposalsTab />)
-    expect(screen.getByText('No disposals in 2024/25.')).toBeInTheDocument()
+    expect(screen.getByText('No realised gains in 2024/25.')).toBeInTheDocument()
   })
 
   it('does not show an expand toggle for a disposal with no superseded history', () => {

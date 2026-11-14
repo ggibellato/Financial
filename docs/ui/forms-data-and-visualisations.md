@@ -427,7 +427,7 @@ unsorted), null-last in both directions.
 
 A grid with a genuine per-row date/month/year column — whether that's the
 row's primary identity (Transactions, the account screen's Transactions
-tab, Credits, Price History, Disposals, Corporate Actions, Dividend History
+tab, Credits, Price History, Realised gains, Corporate Actions, Dividend History
 and its by-year totals) or a secondary column (Portfolio Holdings' "first
 investment") — defaults to **descending by that column**,
 with the header showing the same active-sort indicator it would after the

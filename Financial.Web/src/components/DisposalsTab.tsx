@@ -66,7 +66,7 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
               appearance="subtle"
               size="small"
               icon={isExpanded ? <ChevronDownRegular /> : <ChevronRightRegular />}
-              aria-label={`${isExpanded ? 'Hide' : 'Show'} audit trail for the ${dateLabel} disposal`}
+              aria-label={`${isExpanded ? 'Hide' : 'Show'} audit trail for the ${dateLabel} sale`}
               aria-expanded={isExpanded}
               aria-controls={historyPanelId}
               onClick={() => onToggleExpand(active.id)}
@@ -91,7 +91,7 @@ function DisposalRow({ chain, isExpanded, onToggleExpand }: DisposalRowProps) {
           <TableCell className="data-table__cell--message" colSpan={8}>
             <div id={historyPanelId}>
               <p id={historyTitleId} className="disposals-tab__history-title">
-                Audit trail for the {dateLabel} disposal
+                Audit trail for the {dateLabel} sale
               </p>
               <Table className="disposals-tab__history-table data-table" aria-labelledby={historyTitleId}>
                 <TableHeader>
@@ -144,7 +144,7 @@ export default function DisposalsTab() {
   if (chains.length === 0) {
     return (
       <div className="disposals-tab">
-        <EmptyState>No disposals yet — nothing has been sold from this holding.</EmptyState>
+        <EmptyState>No realised gains yet — nothing has been sold from this holding.</EmptyState>
       </div>
     )
   }
@@ -161,10 +161,10 @@ export default function DisposalsTab() {
       </div>
 
       {filteredChains.length === 0 ? (
-        <EmptyState>No disposals in {selectedTaxYear}.</EmptyState>
+        <EmptyState>No realised gains in {selectedTaxYear}.</EmptyState>
       ) : (
         <div className="disposals-tab__table-wrapper">
-          <Table className="disposals-tab__table data-table" aria-label="Disposals">
+          <Table className="disposals-tab__table data-table" aria-label="Realised gains">
             <TableHeader>
               <TableRow>
                 <TableHeaderCell className="disposals-tab__col--expand" />
