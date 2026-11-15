@@ -146,7 +146,7 @@ uses the repo folder.
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
 | 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ⬜ | 70.3% | | | | | | 85 compile errors |
 | 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ⬜ | 67.3% | | | | | | |
-| 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | ⬜ | 54.9% | | | | | | 87 compile errors; `RecreateCalendarAndResyncAllLockedAsync` unmeasured |
+| 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | 🔄 | 54.9% | 66.7% | 6 | 4 | 31 | | See "Slice notes"; `BestEffortDisconnectRemoteAsync` returns a value nobody reads |
 | 3.4 | CashFlow.Application | Movements: `ExpenseService`, `IncomeService`, `IncomeSourceService`, `IncomeSummaryService`, `IncomeGroupLookupBuilder`, `CategoryService`, `CategorySummaryService`, `HistoricAverageService`, `MensaisService` | ⬜ | 63.5% | | | | | | `MensaisService` 46%; `EnsureStatementsOpenForMove` unmeasured |
 | 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | ⬜ | 63.2% | | | | | | `ReserveService` 38 compile errors |
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ⬜ | 63.2% | | | | | | |
@@ -154,7 +154,7 @@ uses the repo folder.
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ✅ | 49.6% | 70.3% | 7 | 1 | 11 | [#1287](https://github.com/ggibellato/Financial/pull/1287) | See "Slice notes"; `BrokerCurrencyParser` is only used by 4.3/4.4 services |
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ✅ | 56.8% | 73.7% | 15 | 31 | 30 | [#1289](https://github.com/ggibellato/Financial/pull/1289) | See "Slice notes"; 28 asset-summary tests that re-checked Domain results removed |
-| 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | 🔄 | 70.2% | 78.5% | 3 | 10 | 5 | | See "Slice notes"; 10 tests that re-checked Domain XIRR and valuation results removed |
+| 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ✅ | 70.2% | 78.5% | 3 | 10 | 5 | [#1290](https://github.com/ggibellato/Financial/pull/1290) | See "Slice notes"; 10 tests that re-checked Domain XIRR and valuation results removed |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ✅ | 52.7% | 74.5% | 9 | 1 | 6 | [#1288](https://github.com/ggibellato/Financial/pull/1288) | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
@@ -451,6 +451,46 @@ The 26 still undetected, all reviewed:
 
 Investment.Application is now done slice by slice (4.1 to 4.6).
 
+### 3.3 CashFlow.Application calendar (54.9% → 66.7%)
+
+Gaps closed:
+
+- **Spans** on every early return of `CalendarIntegrationService` (status, disconnect, access
+  token, authorisation URL) and of the card sync (not connected, no access token, revoked while
+  refreshing), with the card id on the sync span and a failed span when the sync throws.
+- **Pending OAuth state**: still accepted at exactly 10 minutes, rejected one second later, and
+  rejected the second time it is used.
+- **Token refresh**: refreshes when the token expires exactly at the 1-minute skew, keeps the
+  stored refresh token when the provider issues none, and persists a rotated one.
+- **Card sync**: an unknown card in `TriggerSyncIfInvoiceSynced` does nothing; an invoice later in
+  the due-date month still syncs (the month, not the day, is compared); a sync with no connection
+  never asks for an access token; the event description is pinned in full, with an amount over
+  1,000 so the `N2` format is checked.
+
+Removed or merged, after the simplify review's altitude check:
+
+- `ResyncAsync_CreditFromAnEarlierMonth_LowersTheAmountInTheEventTitle` only re-checked
+  `CardStatementService` credit netting (`CardStatementServiceTests` owns it), and its
+  "no charges posted" check looked for text the code no longer writes.
+- `GetSyncStatuses_ReflectsWhatHasBeenTracked` is contained in the locked-file test.
+- The "second sync does not reconcile" test merged into the "second sync updates the same event"
+  test; the two invoice-month tests became one theory; the expired-token and skew tests became one
+  theory. The title check on the recreated event (CardStatementService arithmetic) was dropped.
+
+`RecreateCalendarAndResyncAllLockedAsync` (Safe Mode, unmeasured) was read: the three self-heal
+tests cover recreating the calendar, re-syncing every qualifying card and keeping the old mapping
+when recreation fails.
+
+The 82 still undetected, all reviewed:
+
+- **Log and exception wording** (50).
+- **Equivalent** (31): `ConfigureAwait` (25); `BestEffortDisconnectRemoteAsync`'s result (4: its
+  only caller discards the return value, so the method could return nothing); the catch on a
+  locked connection file (Stryker's removal returns `default`, the same null); the null-card guard
+  in `TriggerSyncIfInvoiceSynced` (the stub repository returns no due date for a null card).
+- **Unreachable** (1): the early return in `RemoveEventMapping` (it is only called when the
+  mapping exists).
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -466,3 +506,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 4.6 | Navigation, brokers, validation 55.3% → 74.5%; cost-basis broker lookup, display names, lot mapping and spans tested |
 | 2026-11-15 | 4.3 | Summaries and dashboard 56.8% → 73.7%; converted figures and edges tested; 28 asset-summary tests that re-checked Domain results removed |
 | 2026-11-15 | 4.4 | Breakdowns and returns 70.2% → 78.5%; spans, allocation flags and gross/net XIRR wiring tested; 10 tests that re-checked Domain results removed |
+| 2026-11-15 | 3.3 | Calendar 54.9% → 66.7%; spans, OAuth state expiry and reuse, refresh skew and rotation, invoice-month boundary tested; 4 tests removed or merged |

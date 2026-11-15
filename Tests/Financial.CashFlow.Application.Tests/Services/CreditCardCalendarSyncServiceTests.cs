@@ -2,6 +2,7 @@ using Financial.CashFlow.Application.Models;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Entities.Transactions;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
@@ -20,6 +21,7 @@ public class CreditCardCalendarSyncServiceTests
     private readonly StubCashFlowRepository _repository;
     private readonly CardStatementService _cardStatementService;
     private readonly SignallingCalendarSyncStatusStore _statusStore;
+    private readonly RecordingTelemetryTracer _tracer = new();
     private readonly FakeTimeProvider _timeProvider;
     private readonly CreditCardCalendarSyncService _sut;
 
@@ -39,7 +41,7 @@ public class CreditCardCalendarSyncServiceTests
             _cardStatementService,
             _repository,
             _statusStore,
-            new RecordingTelemetryTracer(),
+            _tracer,
             NullLogger<CreditCardCalendarSyncService>.Instance,
             _timeProvider);
     }
@@ -85,6 +87,8 @@ public class CreditCardCalendarSyncServiceTests
         await _sut.ResyncAsync(card.Id);
 
         _provider.CreatedEvents.Should().BeEmpty();
+        _calendarIntegrationService.GetValidAccessTokenCallCount.Should().Be(0);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CreditCardCalendarSyncService.Sync");
     }
 
     [Fact]
@@ -94,14 +98,16 @@ public class CreditCardCalendarSyncServiceTests
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
         _repository.SetCardDueDate(card, new DateOnly(2026, 9, 10));
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 10), 123.45m, card);
+        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 10), 1234.5m, card);
 
         var result = await _sut.ResyncAsync(card.Id);
 
         result.State.Should().Be("Synced");
         _provider.CreatedEvents.Should().ContainSingle(e => e.CalendarId == "cal-1" && e.Date == new DateOnly(2026, 9, 10));
-        _provider.CreatedEvents[0].Title.Should().Be($"{card.Name} — Due 123.45");
+        _provider.CreatedEvents[0].Title.Should().Be($"{card.Name} — Due 1,234.50");
+        _provider.CreatedEvents[0].Description.Should().Be($"{card.Name}\nDue 10 September 2026\n1,234.50\n\nGenerated automatically by the Financial app.");
         _connectionStore.Load()!.CardEventIds.Should().ContainKey(card.Id).WhoseValue.Should().Be(_provider.CreatedEventId);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CreditCardCalendarSyncService.Sync").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(card.Id.ToString());
     }
 
     [Fact]
@@ -125,22 +131,7 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
-    public async Task ResyncAsync_SecondSync_DoesNotReconcile_BecauseTheLocalMappingIsAlreadyKnown()
-    {
-        Connect();
-        var card = Card("BarclaysPlatinumVisa8003");
-        SetDueDateWithCharge(card, new DateOnly(2026, 9, 10));
-        await _sut.ResyncAsync(card.Id); // first sync: no local mapping yet, so this itself reconciles once.
-        _provider.ExistingEventIdForTitlePrefix = "some-other-event";
-
-        await _sut.ResyncAsync(card.Id);
-
-        _provider.FindEventIdByTitlePrefixCalls.Should().ContainSingle("the second sync already knows the mapping, so it must not reconcile again");
-        _provider.UpdatedEvents.Should().Contain(e => e.EventId == _provider.CreatedEventId);
-    }
-
-    [Fact]
-    public async Task ResyncAsync_SecondSync_UpdatesTheSameEventInstead_OfCreatingASecondOne()
+    public async Task ResyncAsync_SecondSync_UpdatesTheSameEventWithoutReconcilingAgain()
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
@@ -148,10 +139,12 @@ public class CreditCardCalendarSyncServiceTests
 
         await _sut.ResyncAsync(card.Id);
         _repository.SetCardDueDate(card, new DateOnly(2026, 9, 15));
+        _provider.ExistingEventIdForTitlePrefix = "some-other-event";
         await _sut.ResyncAsync(card.Id);
 
         _provider.CreatedEvents.Should().HaveCount(1);
         _provider.UpdatedEvents.Should().ContainSingle(e => e.EventId == _provider.CreatedEventId && e.Date == new DateOnly(2026, 9, 15));
+        _provider.FindEventIdByTitlePrefixCalls.Should().ContainSingle("the second sync already knows the mapping");
     }
 
     [Fact]
@@ -187,21 +180,6 @@ public class CreditCardCalendarSyncServiceTests
         _provider.DeletedEvents.Should().ContainSingle();
         mappingAfterRefund.Should().BeFalse();
         _provider.CreatedEvents.Should().HaveCount(2);
-        _provider.CreatedEvents[1].Title.Should().Be($"{card.Name} — Due 30.00");
-    }
-
-    [Fact]
-    public async Task ResyncAsync_CreditFromAnEarlierMonth_LowersTheAmountInTheEventTitle()
-    {
-        Connect();
-        var card = Card("BarclaysPlatinumVisa8003");
-        SetDueDateWithCharge(card, new DateOnly(2026, 9, 10));
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 10), -35m, card);
-
-        await _sut.ResyncAsync(card.Id);
-
-        _provider.CreatedEvents[0].Title.Should().Be($"{card.Name} — Due 65.00");
-        _provider.CreatedEvents[0].Description.Should().NotContain("no charges posted");
     }
 
     [Fact]
@@ -285,27 +263,16 @@ public class CreditCardCalendarSyncServiceTests
         resolvedState.Should().Be(CreditCardCalendarSyncState.Synced);
     }
 
-    [Fact]
-    public async Task TriggerSyncIfInvoiceSynced_WhenInvoiceIsInDueDateMonth_Syncs()
+    [Theory]
+    [InlineData(9, 20)]
+    [InlineData(8, 31)]
+    public async Task TriggerSyncIfInvoiceSynced_WhenTheInvoiceMonthIsOnOrBeforeTheDueDateMonth_Syncs(int month, int day)
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
-        _repository.SetCardDueDate(card, new DateOnly(2026, 9, 10));
+        _repository.SetCardDueDate(card, new DateOnly(2026, 9, 1));
 
-        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 9, 1));
-        var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
-
-        resolvedState.Should().Be(CreditCardCalendarSyncState.Synced);
-    }
-
-    [Fact]
-    public async Task TriggerSyncIfInvoiceSynced_WhenInvoiceIsInAnEarlierMonth_Syncs()
-    {
-        Connect();
-        var card = Card("BarclaysPlatinumVisa8003");
-        _repository.SetCardDueDate(card, new DateOnly(2026, 9, 10));
-
-        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 8, 31));
+        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, month, day));
         var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
 
         resolvedState.Should().Be(CreditCardCalendarSyncState.Synced);
@@ -332,6 +299,17 @@ public class CreditCardCalendarSyncServiceTests
         _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, 9, 1));
 
         _statusStore.GetStatus(card.Id).Should().BeNull();
+    }
+
+    [Fact]
+    public void TriggerSyncIfInvoiceSynced_WithUnknownCreditCardId_DoesNothing()
+    {
+        Connect();
+        var unknownCardId = Guid.NewGuid();
+
+        _sut.TriggerSyncIfInvoiceSynced(unknownCardId, new DateOnly(2026, 9, 1));
+
+        _statusStore.GetStatus(unknownCardId).Should().BeNull();
     }
 
     [Fact]
@@ -400,16 +378,6 @@ public class CreditCardCalendarSyncServiceTests
         results.Should().ContainSingle(r => r.CreditCardId == due.Id && r.State == "Synced");
         results.Should().NotContain(r => r.CreditCardId == noDueDate.Id);
         _provider.CreatedEvents.Should().ContainSingle();
-    }
-
-    [Fact]
-    public void GetSyncStatuses_ReflectsWhatHasBeenTracked()
-    {
-        _statusStore.SetSynced(Guid.NewGuid(), Now);
-
-        var statuses = _sut.GetSyncStatuses();
-
-        statuses.Should().ContainSingle(s => s.State == "Synced");
     }
 
     [Fact]
@@ -506,6 +474,20 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Fact]
+    public async Task ResyncAsync_WhenGettingTheAccessTokenThrows_RecordsFailedSpanAndRethrows()
+    {
+        Connect();
+        var card = Card("BarclaysPlatinumVisa8003");
+        SetDueDateWithCharge(card, new DateOnly(2026, 9, 10));
+        _calendarIntegrationService.Throws = true;
+
+        var act = async () => await _sut.ResyncAsync(card.Id);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CreditCardCalendarSyncService.Sync");
+    }
+
+    [Fact]
     public async Task ResyncAsync_WhenAccessTokenIsUnavailable_DoesNothing()
     {
         Connect();
@@ -516,6 +498,7 @@ public class CreditCardCalendarSyncServiceTests
         await _sut.ResyncAsync(card.Id);
 
         _provider.CreatedEvents.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CreditCardCalendarSyncService.Sync");
     }
 
     [Fact]
@@ -530,6 +513,7 @@ public class CreditCardCalendarSyncServiceTests
         await _sut.ResyncAsync(card.Id);
 
         _provider.CreatedEvents.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CreditCardCalendarSyncService.Sync");
     }
 
     [Fact]

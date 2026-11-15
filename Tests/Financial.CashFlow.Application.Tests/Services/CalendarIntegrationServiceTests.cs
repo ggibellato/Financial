@@ -1,5 +1,6 @@
 using Financial.CashFlow.Application.Models;
 using Financial.CashFlow.Application.Services;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
 using FluentAssertions;
@@ -13,6 +14,7 @@ public class CalendarIntegrationServiceTests
     private static readonly Microsoft.Extensions.Logging.ILogger<CalendarIntegrationService> Logger =
         NullLogger<CalendarIntegrationService>.Instance;
     private static readonly DateTimeOffset Now = new(2026, 9, 7, 10, 0, 0, TimeSpan.Zero);
+    private static readonly TimeSpan PendingStateLifetime = TimeSpan.FromMinutes(10);
 
     private readonly FakeCalendarProvider _provider;
     private readonly FakeCalendarConnectionStore _store;
@@ -36,6 +38,7 @@ public class CalendarIntegrationServiceTests
 
         url.Should().Be(_provider.AuthorizationUrl);
         _provider.LastState.Should().NotBeNullOrEmpty();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.BuildAuthorizationUrl");
     }
 
     [Fact]
@@ -98,6 +101,43 @@ public class CalendarIntegrationServiceTests
     }
 
     [Fact]
+    public async Task CompleteConnectionAsync_AtTheExactMomentThePendingStateExpires_StillAcceptsIt()
+    {
+        _sut.BuildAuthorizationUrl();
+        _timeProvider.Advance(PendingStateLifetime);
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_AfterThePendingStateExpires_DoesNotExchangeCode()
+    {
+        _sut.BuildAuthorizationUrl();
+        _timeProvider.Advance(PendingStateLifetime + TimeSpan.FromSeconds(1));
+
+        var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
+
+        result.Success.Should().BeFalse();
+        _provider.ExchangeCallCount.Should().Be(0);
+        _store.Load().Should().BeNull();
+    }
+
+    [Fact]
+    public async Task CompleteConnectionAsync_ReusingAStateThatAlreadyCompleted_IsRejected()
+    {
+        _sut.BuildAuthorizationUrl();
+        var state = _provider.LastState;
+        await _sut.CompleteConnectionAsync(code: "auth-code", state: state, error: null);
+
+        var replay = await _sut.CompleteConnectionAsync(code: "auth-code", state: state, error: null);
+
+        replay.Success.Should().BeFalse();
+        _provider.ExchangeCallCount.Should().Be(1);
+    }
+
+    [Fact]
     public async Task CompleteConnectionAsync_WhenCalendarCreationFails_RevokesTheJustIssuedTokenAndPersistsNothing()
     {
         _sut.BuildAuthorizationUrl();
@@ -140,6 +180,7 @@ public class CalendarIntegrationServiceTests
 
         status.Connected.Should().BeFalse();
         status.AccountEmail.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.GetStatus");
     }
 
     [Fact]
@@ -156,6 +197,8 @@ public class CalendarIntegrationServiceTests
         status.CalendarId.Should().Be("cal-1");
         _provider.RefreshCallCount.Should().Be(1);
         _store.Load()!.AccessToken.Should().Be("refreshed-access");
+        _store.Load()!.RefreshToken.Should().Be("refresh-token", "the provider issued no new refresh token");
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.GetStatus");
     }
 
     [Fact]
@@ -173,6 +216,13 @@ public class CalendarIntegrationServiceTests
         secondStatus.Connected.Should().BeFalse();
         secondStatus.DisconnectReason.Should().Be("token_revoked");
         _provider.RefreshCallCount.Should().Be(1);
+        _tracer.Spans.Should().HaveCount(2).And.AllSatisfy(span =>
+        {
+            span.Name.Should().Be("CashFlow.CalendarIntegrationService.GetStatus");
+            span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            span.RecordedException.Should().BeNull();
+            span.Disposed.Should().BeTrue();
+        });
     }
 
     [Fact]
@@ -187,6 +237,7 @@ public class CalendarIntegrationServiceTests
         _provider.DeletedCalendars.Should().BeEmpty();
         _provider.RevokeCallCount.Should().Be(1);
         _store.Load().Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.Disconnect");
     }
 
     [Fact]
@@ -211,6 +262,7 @@ public class CalendarIntegrationServiceTests
 
         result.RemoteCleanupSucceeded.Should().BeTrue();
         _provider.RevokeCallCount.Should().Be(0);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.Disconnect");
     }
 
     [Fact]
@@ -219,6 +271,7 @@ public class CalendarIntegrationServiceTests
         var token = await _sut.GetValidAccessTokenAsync();
 
         token.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.GetValidAccessToken");
     }
 
     [Fact]
@@ -231,12 +284,15 @@ public class CalendarIntegrationServiceTests
 
         token.Should().Be("access-token");
         _provider.RefreshCallCount.Should().Be(0);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CalendarIntegrationService.GetValidAccessToken");
     }
 
-    [Fact]
-    public async Task GetValidAccessTokenAsync_WhenTokenExpired_RefreshesAndReturnsTheNewToken()
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(1)]
+    public async Task GetValidAccessTokenAsync_WhenTokenIsExpiredOrAtTheRefreshSkew_RefreshesAndReturnsTheNewToken(int expiresInMinutes)
     {
-        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(-1), Now.AddDays(-1), new Dictionary<Guid, string>());
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "refresh-token", Now.AddMinutes(expiresInMinutes), Now.AddDays(-1), new Dictionary<Guid, string>());
         _store.Save(connection);
         _provider.RefreshResult = new CalendarTokenResult("refreshed-access", null, Now.AddHours(1));
 
@@ -244,6 +300,18 @@ public class CalendarIntegrationServiceTests
 
         token.Should().Be("refreshed-access");
         _provider.RefreshCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetValidAccessTokenAsync_WhenTheProviderRotatesTheRefreshToken_PersistsTheNewOne()
+    {
+        var connection = new CalendarConnection("user@gmail.com", "cal-1", "old-access", "old-refresh", Now.AddMinutes(-1), Now.AddDays(-1), new Dictionary<Guid, string>());
+        _store.Save(connection);
+        _provider.RefreshResult = new CalendarTokenResult("refreshed-access", "rotated-refresh", Now.AddHours(1));
+
+        await _sut.GetValidAccessTokenAsync();
+
+        _store.Load()!.RefreshToken.Should().Be("rotated-refresh");
     }
 
     [Fact]
