@@ -135,6 +135,14 @@ public class TaxYearWorkbookAcceptanceTests : ApiEndpointTests
     }
 
     [Fact]
+    public async Task Workbook_WithoutATaxYear_ReturnsBadRequest()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/tax-workbook?jurisdiction=BR");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task Workbook_InvalidJurisdiction_ReturnsBadRequest()
     {
         var response = await Client.GetAsync("/api/v1/financial/tax-workbook?jurisdiction=NotReal&taxYear=2026");

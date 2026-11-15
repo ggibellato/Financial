@@ -37,6 +37,7 @@ public class GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
 
         var callback = await Client.GetAsync($"{BaseRoute}/callback?code=auth-code&state={Uri.EscapeDataString(state)}");
         callback.EnsureSuccessStatusCode();
+        (await callback.Content.ReadAsStringAsync()).Should().Contain("<h1>Connected!</h1>");
 
         var status = await Client.GetFromJsonAsync<CalendarConnectionStatusDTO>($"{BaseRoute}/status");
 
@@ -53,6 +54,7 @@ public class GoogleCalendarAccountConnectionAcceptanceTests : ApiEndpointTests
 
         var callback = await Client.GetAsync($"{BaseRoute}/callback?error=access_denied");
         callback.EnsureSuccessStatusCode();
+        (await callback.Content.ReadAsStringAsync()).Should().Contain("<h1>Connection not completed</h1>");
 
         var status = await Client.GetFromJsonAsync<CalendarConnectionStatusDTO>($"{BaseRoute}/status");
 

@@ -53,14 +53,14 @@ public class DividendEndpointsTests
     {
         await using var factory = CreateFactory();
         using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/summary?exchange=BVMF");
+        var response = await client.GetAsync("/api/v1/financial/dividends/BCIA11/summary?exchange=NYSE");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var summary = await response.Content.ReadFromJsonAsync<DividendSummaryDTO>();
         summary.Should().NotBeNull();
         summary!.Ticker.Should().Be("BCIA11");
-        summary.Exchange.Should().Be("BVMF");
+        summary.Exchange.Should().Be("NYSE");
         summary.YearTotals.Should().ContainSingle(total => total.Year == 2023 && total.Total == 4m);
     }
 
