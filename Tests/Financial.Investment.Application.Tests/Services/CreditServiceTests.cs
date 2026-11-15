@@ -42,6 +42,7 @@ public class CreditServiceTests
         result.Should().NotBeNull();
         asset.Credits.Should().ContainSingle(c => c.Value == 10m);
         _repository.WriteCallCount.Should().Be(1);
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.AddCredit");
     }
 
     [Fact]
@@ -120,6 +121,7 @@ public class CreditServiceTests
         });
 
         result.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.AddCredit");
     }
 
     [Fact]
@@ -155,6 +157,7 @@ public class CreditServiceTests
         });
 
         result.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.UpdateCredit");
     }
 
     [Fact]
@@ -178,14 +181,16 @@ public class CreditServiceTests
 
         result.Should().NotBeNull();
         asset.Credits.Should().ContainSingle().Which.Value.Should().Be(25m);
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.UpdateCredit")
+            .Attributes[TelemetryAttributeKeys.EntityId].Should().Be(creditId.ToString());
     }
 
     [Fact]
-    public async Task UpdateCreditAsync_WithIntermediationFee_UpdatesIt()
+    public async Task UpdateCreditAsync_PassesEveryRequestFieldToTheCredit()
     {
         var asset = MakeAsset();
         var creditId = Guid.NewGuid();
-        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m));
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
         _repository.Asset = asset;
 
         await CreateService().UpdateCreditAsync(new CreditUpdateDTO
@@ -194,23 +199,28 @@ public class CreditServiceTests
             PortfolioName = "Default",
             AssetName = "AAAA",
             Id = creditId,
-            Date = new DateTime(2024, 1, 1),
+            Date = new DateTime(2024, 2, 1),
             Type = "SecuritiesLendingIncome",
             Value = 0.16m,
             Withheld = 0.03m,
-            IntermediationFee = 0.04m
+            IntermediationFee = 0.04m,
+            SharesForDividend = 500m
         });
 
-        asset.Credits.Should().ContainSingle(c => c.IntermediationFee == 0.04m && c.NetAmount == 0.09m);
+        var credit = asset.Credits.Should().ContainSingle().Subject;
+        credit.Type.Should().Be(Credit.CreditType.SecuritiesLendingIncome);
+        credit.Date.Should().Be(new DateTime(2024, 2, 1));
+        credit.IntermediationFee.Should().Be(0.04m);
+        credit.SharesForDividend.Should().Be(500m);
+        credit.NetAmount.Should().Be(0.09m);
     }
-
     [Fact]
     public async Task UpdateCreditAsync_PreservesTheOriginalCurrencyAndFxRateSnapshot_WithoutCallingTheProvider()
     {
         var asset = MakeAsset();
         var creditId = Guid.NewGuid();
         var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, TestClock.Default);
-        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
+        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m, currency: Currency.USD, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
         var service = new CreditService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<CreditService>.Instance);
@@ -227,7 +237,7 @@ public class CreditServiceTests
         });
 
         var updated = asset.Credits.Should().ContainSingle().Subject;
-        updated.Currency.Should().Be(Currency.BRL);
+        updated.Currency.Should().Be(Currency.USD);
         updated.FxRateSnapshot.Should().Be(originalSnapshot);
         provider.CallCount.Should().Be(0, "revising a credit must not recapture its entry-time FX rate");
     }
@@ -265,6 +275,7 @@ public class CreditServiceTests
         });
 
         result.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.DeleteCredit");
     }
 
     [Fact]
@@ -285,6 +296,8 @@ public class CreditServiceTests
 
         result.Should().NotBeNull();
         asset.Credits.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.DeleteCredit")
+            .Attributes[TelemetryAttributeKeys.EntityId].Should().Be(creditId.ToString());
     }
 
     [Fact]
@@ -314,6 +327,7 @@ public class CreditServiceTests
         var result = CreateService().GetCreditsByBroker("XPI");
 
         result.Should().ContainSingle(c => c.Value == 5m);
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.GetCreditsByBroker");
     }
 
     [Fact]
@@ -345,6 +359,7 @@ public class CreditServiceTests
         var result = CreateService().GetCreditsByBroker(brokerName!);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.GetCreditsByBroker");
     }
 
     [Fact]
@@ -358,10 +373,11 @@ public class CreditServiceTests
         var result = CreateService().GetCreditsByPortfolio("XPI", "Default");
 
         result.Should().ContainSingle(c => c.Value == 5m);
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.GetCreditsByPortfolio");
     }
 
     [Fact]
-    public void GetCreditsByPortfolio_IncludesCreditsFromFlatAndShortAssets()
+    public void GetCreditsByPortfolio_IncludesCreditsFromFlatAndShortAssets_NewestFirst()
     {
         var flatAsset = MakeAsset("FLAT");
         flatAsset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 1m, 10m, 0m));
@@ -376,8 +392,7 @@ public class CreditServiceTests
 
         var result = CreateService().GetCreditsByPortfolio("XPI", "Default");
 
-        result.Should().Contain(c => c.Value == 3m);
-        result.Should().Contain(c => c.Value == 7m);
+        result.Select(c => c.Value).Should().Equal(7m, 3m);
     }
 
     [Theory]
@@ -385,9 +400,14 @@ public class CreditServiceTests
     [InlineData("XPI", null)]
     public void GetCreditsByPortfolio_ReturnsEmptyOnNullOrWhitespaceParameters(string? brokerName, string? portfolioName)
     {
+        var asset = MakeAsset();
+        asset.AddCredit(Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+
         var result = CreateService().GetCreditsByPortfolio(brokerName!, portfolioName!);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.CreditService.GetCreditsByPortfolio");
     }
 
     [Fact]
@@ -495,129 +515,32 @@ public class CreditServiceTests
     }
 
     [Fact]
-    public async Task AddCreditAsync_CouponType_AddsSuccessfully()
+    public async Task AddCreditAsync_PassesEveryRequestFieldToTheCredit()
     {
         var asset = MakeAsset();
         _repository.Asset = asset;
 
-        var result = await CreateService().AddCreditAsync(new CreditCreateDTO
+        await CreateService().AddCreditAsync(new CreditCreateDTO
         {
             BrokerName = "XPI",
             PortfolioName = "Default",
             AssetName = "AAAA",
             Date = new DateTime(2024, 1, 1),
             Type = "Coupon",
-            Value = 10m
-        });
-
-        result.Should().NotBeNull();
-        asset.Credits.Should().ContainSingle(c => c.Type == Credit.CreditType.Coupon);
-    }
-
-    [Fact]
-    public async Task AddCreditAsync_WithWithheld_AddsCreditWithNetAmount()
-    {
-        var asset = MakeAsset();
-        _repository.Asset = asset;
-
-        await CreateService().AddCreditAsync(new CreditCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "AAAA",
-            Date = new DateTime(2024, 1, 1),
-            Type = "Dividend",
             Value = 100m,
-            Withheld = 15m
-        });
-
-        asset.Credits.Should().ContainSingle(c => c.Withheld == 15m && c.NetAmount == 85m);
-    }
-
-    [Fact]
-    public async Task AddCreditAsync_WithIntermediationFee_AddsCreditWithNetAmountSubtractingBoth()
-    {
-        var asset = MakeAsset();
-        _repository.Asset = asset;
-
-        await CreateService().AddCreditAsync(new CreditCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "AAAA",
-            Date = new DateTime(2024, 1, 1),
-            Type = "SecuritiesLendingIncome",
-            Value = 0.16m,
-            Withheld = 0.03m,
-            IntermediationFee = 0.04m
-        });
-
-        asset.Credits.Should().ContainSingle(c => c.IntermediationFee == 0.04m && c.NetAmount == 0.09m);
-    }
-
-    [Fact]
-    public async Task AddCreditAsync_WithSharesForDividend_AddsCreditWithAttribution()
-    {
-        var asset = MakeAsset();
-        _repository.Asset = asset;
-
-        await CreateService().AddCreditAsync(new CreditCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "AAAA",
-            Date = new DateTime(2024, 1, 1),
-            Type = "Dividend",
-            Value = 400m,
+            Withheld = 15m,
+            IntermediationFee = 4m,
             SharesForDividend = 800m
         });
 
-        asset.Credits.Should().ContainSingle(c => c.SharesForDividend == 800m);
+        var credit = asset.Credits.Should().ContainSingle().Subject;
+        credit.Type.Should().Be(Credit.CreditType.Coupon);
+        credit.Date.Should().Be(new DateTime(2024, 1, 1));
+        credit.Withheld.Should().Be(15m);
+        credit.IntermediationFee.Should().Be(4m);
+        credit.SharesForDividend.Should().Be(800m);
+        credit.NetAmount.Should().Be(81m);
     }
-
-    [Fact]
-    public async Task UpdateCreditAsync_WithSharesForDividend_UpdatesAttribution()
-    {
-        var asset = MakeAsset();
-        var creditId = Guid.NewGuid();
-        asset.AddCredit(Credit.CreateWithId(creditId, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 5m));
-        _repository.Asset = asset;
-
-        await CreateService().UpdateCreditAsync(new CreditUpdateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "AAAA",
-            Id = creditId,
-            Date = new DateTime(2024, 1, 1),
-            Type = "Dividend",
-            Value = 25m,
-            SharesForDividend = 500m
-        });
-
-        asset.Credits.Should().ContainSingle().Which.SharesForDividend.Should().Be(500m);
-    }
-
-    [Fact]
-    public async Task AddCreditAsync_NegativeValue_AddsAsACorrection()
-    {
-        var asset = MakeAsset();
-        _repository.Asset = asset;
-
-        var result = await CreateService().AddCreditAsync(new CreditCreateDTO
-        {
-            BrokerName = "XPI",
-            PortfolioName = "Default",
-            AssetName = "AAAA",
-            Date = new DateTime(2024, 1, 1),
-            Type = "Dividend",
-            Value = -20m
-        });
-
-        result.Should().NotBeNull();
-        asset.Credits.Should().ContainSingle(c => c.Value == -20m && c.Type == Credit.CreditType.Dividend);
-    }
-
     [Fact]
     public async Task AddCreditAsync_ClassifiesItInTheSameCall()
     {

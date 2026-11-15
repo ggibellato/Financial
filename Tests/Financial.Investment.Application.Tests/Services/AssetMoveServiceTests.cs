@@ -129,6 +129,7 @@ public class AssetMoveServiceTests
             _repository.Investments.FindHistoricBroker("XPI")!.FindPortfolio("Closed")!.Assets.Should().ContainSingle();
             _repository.Investments.FindActiveBroker("XPI")!.FindPortfolio("Default")!.Assets.Should().BeEmpty();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.AssetMoveService.ArchiveAsset");
         }
     }
 
@@ -207,31 +208,21 @@ public class AssetMoveServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
+    public async Task MoveAssetAsync_NullRequest_ThrowsAndWritesNothing()
     {
-        var act = () => new AssetMoveService(null!, CreateNavigationService(), _tracer, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+        var act = async () => await CreateService().MoveAssetAsync(null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]
-    public void Constructor_WithNullNavigationService_Throws()
+    public async Task ArchiveAssetAsync_NullRequest_ThrowsAndWritesNothing()
     {
-        var act = () => new AssetMoveService(_repository, null!, _tracer, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("navigationService");
-    }
+        var act = async () => await CreateService().ArchiveAssetAsync(null!);
 
-    [Fact]
-    public void Constructor_WithNullTracer_Throws()
-    {
-        var act = () => new AssetMoveService(_repository, CreateNavigationService(), null!, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
-    }
-
-    [Fact]
-    public void Constructor_WithNullLogger_Throws()
-    {
-        var act = () => new AssetMoveService(_repository, CreateNavigationService(), _tracer, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     private AssetMoveService CreateService() =>

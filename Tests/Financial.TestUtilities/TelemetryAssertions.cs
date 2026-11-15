@@ -15,12 +15,13 @@ public static class TelemetryAssertions
         span.Disposed.Should().BeTrue();
     }
 
-    public static void ShouldHaveSucceededSpan(this RecordingTelemetryTracer tracer, string spanName)
+    public static RecordingTelemetryTracer.RecordedSpan ShouldHaveSucceededSpan(this RecordingTelemetryTracer tracer, string spanName)
     {
         var span = tracer.Spans.Should().ContainSingle(s => s.Name == spanName).Which;
 
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
         span.RecordedException.Should().BeNull();
         span.Disposed.Should().BeTrue();
+        return span;
     }
 }
