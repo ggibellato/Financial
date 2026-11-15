@@ -204,6 +204,59 @@ public class DebouncedJsonStorageTests
     }
 
     [Fact]
+    public async Task FlushAsync_CancelsThePendingDebounce_SoTheDocumentIsSavedOnce()
+    {
+        var clock = new ObservableFakeClock(TestClock.Default);
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await storage.FlushAsync();
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+
+        _inner.WrittenJson.Should().Equal("{\"a\":1}");
+        storage.GetStatus().State.Should().Be(SyncState.Idle);
+    }
+
+    [Fact]
+    public async Task FlushAsync_DuringAnInFlightSave_WaitsForItInsteadOfStartingASecondSave()
+    {
+        var clock = new ObservableFakeClock(TestClock.Default);
+        _inner.HoldWritesUntilReleased();
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
+        await storage.WriteAsync("{\"a\":2}");
+
+        var flush = storage.FlushAsync();
+        flush.IsCompleted.Should().BeFalse();
+        _inner.Release();
+        await flush;
+
+        _inner.WrittenJson.Should().Equal("{\"a\":1}");
+        storage.GetStatus().State.Should().Be(SyncState.Pending);
+    }
+
+    [Fact]
+    public async Task WriteAfterAFailedSave_StartsANewSave()
+    {
+        var clock = new ObservableFakeClock(TestClock.Default);
+        _inner.FailNextWrites(1);
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock, maxRetries: 0, flushTimeout: TimeSpan.FromSeconds(8));
+
+        await storage.WriteAsync("{\"a\":1}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Failed);
+
+        await storage.WriteAsync("{\"a\":2}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
+
+        _inner.WrittenJson.Should().Equal("{\"a\":2}");
+    }
+
+    [Fact]
     public async Task FlushAsync_WhenSaveExceedsTimeout_ReturnsWithoutWaitingFurther()
     {
         _inner.HoldWritesUntilReleased();
@@ -218,17 +271,6 @@ public class DebouncedJsonStorageTests
 
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
         _inner.WrittenJson.Should().BeEmpty();
-    }
-
-    [Fact]
-    public async Task ReadAsync_PassesThroughToWrappedStorage()
-    {
-        _inner.ReadResult = "{\"x\":true}";
-        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(50));
-
-        var result = await storage.ReadAsync();
-
-        result.Should().Be("{\"x\":true}");
     }
 
     [Fact]
@@ -254,12 +296,27 @@ public class DebouncedJsonStorageTests
         _inner.ReadResult = "{\"x\":true}";
         var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(50), tracer: _tracer);
 
-        await storage.ReadAsync();
+        var result = await storage.ReadAsync();
 
+        result.Should().Be("{\"x\":true}");
         var span = _tracer.Spans.Should().ContainSingle().Which;
         span.Name.Should().Be("JsonStorage.Load");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
         span.Disposed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ReadAsync_WhenWrappedStorageThrows_RethrowsAndRecordsAFailedLoadSpan()
+    {
+        _inner.ReadException = new InvalidOperationException("boom");
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(50), tracer: _tracer);
+
+        var act = () => storage.ReadAsync();
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        var span = _tracer.Spans.Should().ContainSingle(s => s.Name == "JsonStorage.Load").Which;
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
+        span.RecordedException.Should().BeSameAs(_inner.ReadException);
     }
 
     [Fact]

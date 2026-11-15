@@ -36,25 +36,6 @@ public class LocalJsonStorageTests
         await act.Should().ThrowAsync<FileNotFoundException>();
     }
 
-    [Fact]
-    public async Task WriteAsync_WritesContentToFile()
-    {
-        var tempFile = CreateTempFile("initial");
-        try
-        {
-            var storage = new LocalJsonStorage(tempFile);
-
-            await storage.WriteAsync("{\"written\": true}");
-
-            var content = await File.ReadAllTextAsync(tempFile);
-            content.Should().Be("{\"written\": true}");
-        }
-        finally
-        {
-            File.Delete(tempFile);
-        }
-    }
-
     /// <summary>
     /// The classic staged-write regression: renaming a shorter document over a longer one must
     /// replace the file, not overwrite its first bytes and leave the old tail behind.

@@ -30,6 +30,15 @@ public class FxRateSerializerAdapterTests
         json.Should().Contain("\"BRL\":5.452317");
         json.Should().Contain("\"GBP\":0.771845");
         json.Should().Contain("\"source\":\"frankfurter\"");
+        json.Should().Contain("\"storedAt\":\"2026-09-18T23:59:59.0000000");
+    }
+
+    [Fact]
+    public void Serialize_NullRates_Throws()
+    {
+        var act = () => Serializer.Serialize(null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("ratesByDate");
     }
 
     [Fact]
