@@ -14,6 +14,8 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class AllocationBreakdownServiceTests
 {
+    private const string SpanName = "Investment.AllocationBreakdownService.GetAllocationBreakdown";
+
     private static readonly DateTimeOffset Today = new(2026, 8, 14, 12, 0, 0, TimeSpan.Zero);
     private static readonly DateOnly TodayDate = DateOnly.FromDateTime(Today.UtcDateTime);
     private static readonly DateTime PurchaseDate = new(2025, 1, 1);
@@ -170,6 +172,18 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
+    public async Task GetAllocationBreakdown_WithDisplayCurrency_NothingPriced_IsNeitherPartialNorUnavailable()
+    {
+        SeedActive(MakeBroker("Alpha", "GBP", BoughtAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m)));
+
+        var result = await CreateService().GetAllocationBreakdownAsync(displayCurrency: Currency.BRL);
+
+        using var _ = new AssertionScope();
+        result.IsUnavailable.Should().BeFalse("nothing was priced, so no conversion was attempted");
+        result.IsPartial.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task GetAllocationBreakdown_WhenEveryActiveHoldingIsFlat_ReportsZeroPercentagesInsteadOfDividingByZero()
     {
         SeedActive(MakeBroker("Alpha", "GBP", ClosedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK)));
@@ -189,7 +203,7 @@ public class AllocationBreakdownServiceTests
         Func<Task> act = () => CreateService().GetAllocationBreakdownAsync();
 
         await act.Should().ThrowAsync<ArgumentException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AllocationBreakdownService.GetAllocationBreakdown");
+        _tracer.ShouldHaveFailedSpan<ArgumentException>(SpanName);
     }
 
     [Fact]
@@ -201,7 +215,7 @@ public class AllocationBreakdownServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         using var _ = new AssertionScope();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.AllocationBreakdownService.GetAllocationBreakdown");
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>(SpanName);
         _logger.Entries.Should().NotContain(entry => entry.Message.Contains("simulated failure"));
     }
 
@@ -243,6 +257,9 @@ public class AllocationBreakdownServiceTests
         result.ByBroker.Single(entry => entry.BrokerName == "Alpha").MarketValue.Should().Be(700m, "GBP holdings convert at identity (from == to)");
         result.ByBroker.Single(entry => entry.BrokerName == "Beta").MarketValue.Should().Be(300m * 0.2m, "BRL holdings convert at the stubbed rate");
         PercentageTotals(result).Should().AllSatisfy(total => total.Should().BeApproximately(100m, 0.0001m));
+        result.IsPartial.Should().BeFalse();
+        result.IsUnavailable.Should().BeFalse();
+        _tracer.ShouldHaveSucceededSpan(SpanName);
     }
 
     [Fact]

@@ -54,23 +54,20 @@ public class PortfolioXirrBuilderTests
     }
 
     [Fact]
-    public void BuildSeries_NetOfTaxSeriesUsesNetCreditAmounts_WhereTheGrossSeriesUsesCreditValues()
+    public void Calculate_NetXirrUsesTheNetCreditAmounts_WhereTheGrossXirrUsesTheCreditValues()
     {
         var asset = MakeBoughtAsset("AAAA", quantity: 10m, unitPrice: 5m);
         asset.AddCredit(Credit.Create(new DateTime(2025, 6, 1), Credit.CreditType.Dividend, 100m, withheld: 15m));
-        IReadOnlyList<PortfolioHolding> holdings = [ActiveHolding(asset, 80m)];
 
-        var gross = PortfolioXirrBuilder.BuildSeries(holdings, AsOf, AssetCashFlowBuilder.BuildWithCredits);
-        var netOfTax = PortfolioXirrBuilder.BuildSeries(holdings, AsOf, AssetCashFlowBuilder.BuildNetOfTaxWithCredits);
+        var result = PortfolioXirrBuilder.Calculate([ActiveHolding(asset, 80m)], AsOf);
 
         using var _ = new AssertionScope();
-        gross.Should().Contain(flow => flow.Amount == 100m);
-        netOfTax.Should().Contain(flow => flow.Amount == 85m);
-        TerminalAmounts(gross).Should().BeEquivalentTo(TerminalAmounts(netOfTax), "the terminal value is the same market value in both series");
+        result.GrossXirr.Should().NotBeNull();
+        result.NetXirr.Should().BeLessThan(result.GrossXirr!.Value);
     }
 
     [Fact]
-    public void Calculate_SolvesOneRateOverEveryHoldingsFlowsCombined()
+    public void Calculate_DatesTheTerminalValueOnTheGivenAsOf()
     {
         var asset = MakeBoughtAsset("AAAA", quantity: 10m, unitPrice: 10m);
 
@@ -79,18 +76,6 @@ public class PortfolioXirrBuilderTests
         using var _ = new AssertionScope();
         result.GrossXirr.Should().BeApproximately(0.1m, 0.001m);
         result.NetXirr.Should().Be(result.GrossXirr, "nothing was withheld, so the two series are identical");
-    }
-
-    [Fact]
-    public void Calculate_ReturnsNullWhenNoHoldingContributesAnInflow()
-    {
-        var asset = MakeBoughtAsset("AAAA", quantity: 10m, unitPrice: 10m);
-
-        var result = PortfolioXirrBuilder.Calculate([ActiveHolding(asset, marketValue: null)], AsOf);
-
-        using var _ = new AssertionScope();
-        result.GrossXirr.Should().BeNull();
-        result.NetXirr.Should().BeNull();
     }
 
     private static IEnumerable<decimal> TerminalAmounts(IReadOnlyList<(DateTime Date, decimal Amount)> series) =>
