@@ -146,9 +146,9 @@ uses the repo folder.
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
 | 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ⬜ | 70.3% | | | | | | 85 compile errors |
 | 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ⬜ | 67.3% | | | | | | |
-| 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | 🔄 | 54.9% | 66.7% | 6 | 4 | 31 | | See "Slice notes"; `BestEffortDisconnectRemoteAsync` returns a value nobody reads |
+| 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | ✅ | 54.9% | 66.7% | 6 | 4 | 31 | [#1291](https://github.com/ggibellato/Financial/pull/1291) | See "Slice notes"; `BestEffortDisconnectRemoteAsync` returns a value nobody reads |
 | 3.4 | CashFlow.Application | Movements: `ExpenseService`, `IncomeService`, `IncomeSourceService`, `IncomeSummaryService`, `IncomeGroupLookupBuilder`, `CategoryService`, `CategorySummaryService`, `HistoricAverageService`, `MensaisService` | ⬜ | 63.5% | | | | | | `MensaisService` 46%; `EnsureStatementsOpenForMove` unmeasured |
-| 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | ⬜ | 63.2% | | | | | | `ReserveService` 38 compile errors |
+| 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | 🔄 | 63.2% | 76.2% | 7 | 15 | 24 | | See "Slice notes"; 15 tests that re-checked Domain pot, tithe and settlement rules or duplicated others removed |
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ⬜ | 63.2% | | | | | | |
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
@@ -491,6 +491,41 @@ The 82 still undetected, all reviewed:
 - **Unreachable** (1): the early return in `RemoveEventMapping` (it is only called when the
   mapping exists).
 
+### 3.5 CashFlow.Application reserve and settlement (63.2% → 76.2%)
+
+Gaps closed:
+
+- **Spans** with the entity id on every `PotsService` operation (deposit, withdrawal, their
+  updates, get, delete, replace pots, get pots), `ReserveService.DeleteMovement`, and every
+  `SettlementService` write; `TitheService` success spans.
+- **Null requests** on every pots and settlement write method throw `ArgumentNullException`
+  rather than a null reference later.
+- **Tithe**: an out-of-range month throws for the month (not the date) before the start month is
+  saved, and months 1 and 12 are accepted; years 1 and 9999 are accepted; the first call saves this
+  month as the carry-forward start once; two tithe payments in a month are added together;
+  updating one month's decision leaves another month of the same year alone.
+
+Removed or merged, after the simplify review's altitude check (`Financial.CashFlow.Domain.Tests`
+owns these rules):
+
+- Nine `PotsServiceTests` that only re-checked `PotDeposit`, `PotWithdrawal` and the split
+  allocator (thirds split, inactive pot left out, no active pots, pots not totalling 100, amount
+  not above zero for deposits and withdrawals, a bank withdrawal from a pots account without a
+  category), plus a deposit get and a deposit delete that repeated the withdrawal ones.
+- Four `TitheServiceTests`: the counts-as-tithe-true case (same input as the subtraction test), the
+  non-tithe category with counts-as-tithe false (cannot catch what the non-tithe test catches), the
+  bank-less income test (a subset of another), and the empty-month test merged with its twin.
+- The reserve update span test merged into the update test; the settlement currency theory's
+  "account doesn't use BRL" row (a `SettlementTransaction` rule).
+
+The 84 still undetected, all reviewed:
+
+- **Log and exception wording** (60).
+- **Equivalent** (24): `ConfigureAwait` (19); `PotsService`'s `EnsureCanReplacePots` and the
+  withdrawal's description check (the Domain repeats both, so removing the service's call throws
+  the same error); three `TitheService` comparisons (`first > anchorMonth`, `previousBalance > 0`,
+  `carryAmount > 0`) that give the same result at the boundary.
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -507,3 +542,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 4.3 | Summaries and dashboard 56.8% → 73.7%; converted figures and edges tested; 28 asset-summary tests that re-checked Domain results removed |
 | 2026-11-15 | 4.4 | Breakdowns and returns 70.2% → 78.5%; spans, allocation flags and gross/net XIRR wiring tested; 10 tests that re-checked Domain results removed |
 | 2026-11-15 | 3.3 | Calendar 54.9% → 66.7%; spans, OAuth state expiry and reuse, refresh skew and rotation, invoice-month boundary tested; 4 tests removed or merged |
+| 2026-11-15 | 3.5 | Reserve and settlement 63.2% → 76.2%; spans, null requests and tithe boundaries tested; 15 tests that re-checked Domain rules or duplicated others removed |
