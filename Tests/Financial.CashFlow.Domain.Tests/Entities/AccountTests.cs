@@ -1127,4 +1127,14 @@ public class AccountTests
         FluentActions.Invoking(() => pots.EnsureCanReplacePots(null!)).Should().Throw<ArgumentNullException>().WithParameterName("changes");
         FluentActions.Invoking(() => pots.SetCategory(null!)).Should().Throw<ArgumentNullException>().WithParameterName("category");
     }
+
+    [Fact]
+    public void ChangeSetup_SettlementCurrencies_KeepsTheOtherParticipant()
+    {
+        var account = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], otherParticipant: "Mãe");
+
+        account.ChangeSetup(AccountTemplate.Settlement, [Currency.GBP], hasRecords: false);
+
+        account.OtherParticipant.Should().Be("Mãe");
+    }
 }
