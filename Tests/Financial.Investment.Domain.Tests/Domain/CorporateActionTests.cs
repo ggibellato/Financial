@@ -160,6 +160,15 @@ public class CorporateActionTests
     }
 
     [Fact]
+    public void CreateMergerSource_ZeroCashInLieu_IsAllowed()
+    {
+        var action = CorporateAction.CreateMergerSource(
+            new DateTime(2026, 4, 1), 0.5m, 0m, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
+
+        action.CashInLieu.Should().Be(0m);
+    }
+
+    [Fact]
     public void CreateMergerSource_NegativeCashInLieu_ThrowsArgumentException()
     {
         Action act = () => CorporateAction.CreateMergerSource(

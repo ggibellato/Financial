@@ -75,6 +75,19 @@ public class TaxRuleTests
     }
 
     [Fact]
+    public void CreateAndUpdate_NullDescription_StoreAnEmptyOne()
+    {
+        var rule = CreateRule(description: null!);
+        var createdDescription = rule.Description;
+
+        rule.Update("New label", null!, new DateOnly(2027, 1, 1), null);
+
+        using var _ = new AssertionScope();
+        createdDescription.Should().BeEmpty();
+        rule.Description.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Update_ChangesLabelDescriptionAndRange()
     {
         var rule = CreateRule();
