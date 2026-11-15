@@ -292,4 +292,34 @@ public class PotDepositTests
 
     private Income IncomeOf(decimal net, string? description = "Bonus", Account? potsAccount = null) =>
         Income.Create(Date, IncomeSource.Create("Ramsay", IncomeGroup.Salary, potsAccount: _reserva), null, net, _chase, description, potsAccount);
+
+    [Fact]
+    public void Build_ExactlyFiveFundingLines_IsAccepted()
+    {
+        var lines = Enumerable.Range(0, 5).Select(_ => new PotFundingLine(_chase, 1m)).ToList();
+
+        var operation = PotDeposit.Build(_reserva, 5m, Date, "Bonus", pot: null, lines, OperationId, Today);
+
+        operation.Expenses.Should().HaveCount(5);
+    }
+
+    [Fact]
+    public void Build_WithoutFundingLines_DoesNotNeedAPotsCategory()
+    {
+        var uncategorised = TestAccounts.Pots("Spare");
+        uncategorised.AddPot(Pot.Create("Rainy day", 100m));
+
+        var operation = PotDeposit.Build(uncategorised, 40m, Date, "Bonus", pot: null, [], OperationId, Today);
+
+        operation.Expenses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void OlderIncomeTransactions_CarryTheIncomesDescription()
+    {
+        var source = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _reserva);
+        var income = Income.Create(Date, source, null, 100m, _chase, "October salary", potsAccount: _reserva);
+
+        PotDeposit.OlderIncomeTransactions(income).Should().OnlyContain(transaction => transaction.Description == "October salary");
+    }
 }

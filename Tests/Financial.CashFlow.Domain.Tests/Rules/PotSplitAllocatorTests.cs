@@ -95,4 +95,12 @@ public class PotSplitAllocatorTests
 
     private static List<Pot> CreatePots(decimal[] percentages) =>
         percentages.Select((p, i) => Pot.Create($"Pot {i + 1}", p)).ToList();
+
+    [Fact]
+    public void Allocate_NullPots_Throws()
+    {
+        var act = () => PotSplitAllocator.Allocate(null!, 10m);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("pots");
+    }
 }
