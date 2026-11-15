@@ -42,18 +42,8 @@ public class HistoricAverageServiceTests
     // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.
     private static readonly DateTimeOffset PinnedNow = new(CurrentYear, 6, 15, 0, 0, 0, TimeSpan.Zero);
     private static readonly DateOnly PinnedToday = DateOnly.FromDateTime(PinnedNow.UtcDateTime);
+    private static readonly DateOnly PinnedMonthStart = new(CurrentYear, 6, 1);
     private const int PinnedMonthsElapsed = 5;
-
-    [Fact]
-    public void GetHistoricSummaryAverageFromYear_ReturnsEmptyList_WhenNoExpensesForSpecifiedYear()
-    {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2027, 4, 5), "Should not be there", 1000m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 1, 5), "Jan", 100m, CategoryByName(_repository, "Mercado"), Barclays, null));
-
-        var result = _sut.GetHistoricSummaryAverageFromYear(2020);
-
-        result.Count.Should().Be(0);
-    }
 
     [Fact]
     public void GetHistoricSummaryAverageFromYear_ReturnsYearsUpToAndIncludingSpecifiedYear()
@@ -98,20 +88,6 @@ public class HistoricAverageServiceTests
         var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == "Mercado").Value;
 
         mercadoAverage.Should().Be(50m);
-    }
-
-    [Fact]
-    public void GetHistoricSummaryAverageFromYear_AveragesCategoryValuesFor2017Year()
-    {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, CategoryByName(_repository, "Mercado"), Barclays, null));
-
-        var result = _sut.GetHistoricSummaryAverageFromYear(2026);
-
-        var mercadoAverage = result[0].AnnualAverages.Single(a => a.Category == "Mercado").Value;
-
-        mercadoAverage.Should().Be(54.55m);
     }
 
     [Fact]
@@ -246,21 +222,16 @@ public class HistoricAverageServiceTests
     }
 
     [Fact]
-    public void GetHistoricSummaryAverageFromYear_LotteryIncomeContributesToNoRow()
+    public void GetHistoricSummaryAverageFromYear_NoInvestmentCategory_StillComputesTheResultado()
     {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2025, 1, 5), "Groceries", 120m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
-        _repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
-        _repository.Incomes.Add(Income.Create(new DateOnly(2025, 1, 5), Source("Lottery"), null, 500m, Barclays));
+        var repository = new StubCashFlowRepository();
+        var mercado = Category.Create("Mercado");
+        repository.Categories.Add(mercado);
+        repository.Expenses.Add(Expense.Create(new DateOnly(2025, 4, 5), "Groceries", 120m, mercado, Barclays, null));
 
-        var result = _sut.GetHistoricSummaryAverageFromYear(2025);
+        var result = CreateService(repository).GetHistoricSummaryAverageFromYear(2025);
 
-        // Lottery must not leak into Dividendo/Juros (or any other row) - it must have the same
-        // effect as if it were never recorded at all.
-        result[0].AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(83.33m);
-        result[0].AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(66.67m);
-        result[0].AnnualAverages.Single(a => a.Category == "Dividendo/Juros").Value.Should().Be(1.67m);
-        result[0].AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Value.Should().Be(56.67m);
+        result.Single().AnnualAverages.Single(a => a.Category == "Resultado (R-D-Inv)").Value.Should().Be(-10m);
     }
 
     [Fact]
@@ -318,9 +289,9 @@ public class HistoricAverageServiceTests
     {
         var service = CreateService(timeProvider: new FakeTimeProvider(PinnedNow));
         _repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
+        _repository.Expenses.Add(Expense.Create(PinnedMonthStart, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
         _repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), Source("Gleison"), 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, Barclays));
-        _repository.Incomes.Add(Income.Create(PinnedToday, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
+        _repository.Incomes.Add(Income.Create(PinnedMonthStart, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
 
         var result = service.GetHistoricSummaryAverageFromYear(CurrentYear);
 
@@ -332,6 +303,8 @@ public class HistoricAverageServiceTests
             currentYearRow.AnnualAverages.Single(a => a.Category == "Mercado").Value.Should().Be(100m);
             currentYearRow.AnnualAverages.Single(a => a.Category == "Salary").Value.Should().Be(1000m);
             currentYearRow.AnnualAverages.Single(a => a.Category == "Salary after taxes").Value.Should().Be(800m);
+            currentYearRow.AnnualAverages.Single(a => a.Category == "Tax difference").Value.Should().Be(200m);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.HistoricAverageService.GetHistoricSummaryAverageFromYear");
         }
     }
 

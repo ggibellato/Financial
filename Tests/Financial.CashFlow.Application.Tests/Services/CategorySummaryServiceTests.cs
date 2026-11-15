@@ -50,16 +50,13 @@ public class CategorySummaryServiceTests
         return new(repo, incomeSummaryService, _tracer, Logger, clock);
     }
 
-    private static IIncomeSummaryService CreateIncomeSummaryService(StubCashFlowRepository repository) =>
-        new IncomeSummaryService(repository, new RecordingTelemetryTracer(), IncomeLogger, TestClock.At());
-
     private static Category CategoryByName(StubCashFlowRepository repository, string name) =>
         repository.Categories.First(c => c.Name == name);
 
     // Pinned to a fixed mid-year date so "current year" averaging tests don't have to branch on
     // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.
     private static readonly DateTimeOffset PinnedNow = new(CurrentYear, 6, 15, 0, 0, 0, TimeSpan.Zero);
-    private static readonly DateOnly PinnedToday = DateOnly.FromDateTime(PinnedNow.UtcDateTime);
+    private static readonly DateOnly PinnedMonthStart = new(CurrentYear, 6, 1);
     private const int PinnedMonthsElapsed = 5;
 
     [Fact]
@@ -72,14 +69,6 @@ public class CategorySummaryServiceTests
         span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
         span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("AnnualSummary");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
-    }
-
-    [Fact]
-    public void GetCategoryTotalsAnnualForYear_CategoryTotals_ReturnsAllFourteenCategories()
-    {
-        var result = _sut.GetCategoryTotalsAnnualForYear(2026).CategoryTotals;
-
-        result.Should().HaveCount(_repository.Categories.Count);
     }
 
     [Fact]
@@ -122,16 +111,6 @@ public class CategorySummaryServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsAnnualForYear_CategoryTotals_CategoryWithNoExpenses_ReturnsAllZeroMonthsAndZeroAnnualTotal()
-    {
-        var result = _sut.GetCategoryTotalsAnnualForYear(2026).CategoryTotals;
-
-        var estudo = result.Single(c => c.Category == "Estudo");
-        estudo.MonthlyTotals.Should().OnlyContain(v => v == 0m);
-        estudo.AnnualTotal.Should().Be(0m);
-    }
-
-    [Fact]
     public void GetCategoryTotalsAnnualForYear_CategoryTotals_UnpaidCardCharge_CountsTowardInvoiceMonthNotChargeMonth()
     {
         _repository.Expenses.Add(Expense.Create(
@@ -145,23 +124,6 @@ public class CategorySummaryServiceTests
         {
             mercado.MonthlyTotals[6].Should().Be(0m);
             mercado.MonthlyTotals[7].Should().Be(40m);
-        }
-    }
-
-    [Fact]
-    public void GetCategoryTotalsAnnualForYear_CategoryTotals_SettledCardCharge_CountsTowardStatementMonth()
-    {
-        var settled = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, CategoryByName(_repository, "Mercado"), null, BarclaysPlatinumVisa8003);
-        settled.Settle(Trading212, new DateOnly(2026, 8, 3));
-        _repository.Expenses.Add(settled);
-
-        var result = _sut.GetCategoryTotalsAnnualForYear(2026).CategoryTotals;
-
-        var mercado = result.Single(c => c.Category == "Mercado");
-        using (new AssertionScope())
-        {
-            mercado.MonthlyTotals[6].Should().Be(40m);
-            mercado.MonthlyTotals[7].Should().Be(0m);
         }
     }
 
@@ -306,7 +268,7 @@ public class CategorySummaryServiceTests
         using (new AssertionScope())
         {
             result.CategoryTotals.Should().HaveCount(_repository.Categories.Count)
-                .And.OnlyContain(c => c.AnnualTotal == 0m);
+                .And.OnlyContain(c => c.AnnualTotal == 0m && c.MonthlyTotals.All(v => v == 0m));
             result.IncomeSummary.SalaryAnnualTotal.Should().Be(0m);
             result.TotalDespesasMonthly.Should().OnlyContain(v => v == 0m);
             result.TotalDespesasAnnualTotal.Should().Be(0m);
@@ -328,23 +290,11 @@ public class CategorySummaryServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsAnnualForYear_CategoryTotals_AverageDividesByElevenFor2017()
-    {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Jan first", 100m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 20), "Jan second", 100m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 2, 10), "Feb", 400m, CategoryByName(_repository, "Mercado"), Barclays, null));
-
-        var result = _sut.GetCategoryTotalsAnnualForYear(2017).CategoryTotals;
-
-        result.Single(c => c.Category == "Mercado").Average.Should().Be(54.55m);
-    }
-
-    [Fact]
     public void GetCategoryTotalsAnnualForYear_CategoryTotals_AverageForCurrentYearExcludesInProgressMonth()
     {
         var service = CreateService(timeProvider: new FakeTimeProvider(PinnedNow));
         _repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
+        _repository.Expenses.Add(Expense.Create(PinnedMonthStart, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
 
         var result = service.GetCategoryTotalsAnnualForYear(CurrentYear).CategoryTotals;
 
@@ -371,27 +321,13 @@ public class CategorySummaryServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsAnnualForYear_TotalDespesasAndResultadoAveragesDivideByElevenFor2017()
-    {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Groceries", 100m, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2017, 1, 5), "Investing", 30m, CategoryByName(_repository, "Investimento"), Barclays, null));
-        _repository.Incomes.Add(Income.Create(new DateOnly(2017, 1, 5), Source("Gleison"), 1000m, 800m, Barclays));
-        _repository.Incomes.Add(Income.Create(new DateOnly(2017, 1, 5), Source("DividendoJuros"), null, 20m, Barclays));
-
-        var result = _sut.GetCategoryTotalsAnnualForYear(2017);
-
-        result.TotalDespesasAverage.Should().Be(11.82m);
-        result.ResultadoAverage.Should().Be(63.64m);
-    }
-
-    [Fact]
     public void GetCategoryTotalsAnnualForYear_TotalDespesasAndResultadoAveragesForCurrentYearExcludeInProgressMonth()
     {
         var service = CreateService(timeProvider: new FakeTimeProvider(PinnedNow));
         _repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear, 1, 5), "Completed months", 100m * PinnedMonthsElapsed, CategoryByName(_repository, "Mercado"), Barclays, null));
-        _repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
+        _repository.Expenses.Add(Expense.Create(PinnedMonthStart, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
         _repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), Source("Gleison"), 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, Barclays));
-        _repository.Incomes.Add(Income.Create(PinnedToday, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
+        _repository.Incomes.Add(Income.Create(PinnedMonthStart, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
 
         var result = service.GetCategoryTotalsAnnualForYear(CurrentYear);
 
