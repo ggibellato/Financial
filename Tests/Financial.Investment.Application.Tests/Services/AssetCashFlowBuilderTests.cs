@@ -227,6 +227,19 @@ public class AssetCashFlowBuilderTests
     }
 
     [Fact]
+    public void BuildWithoutCreditsAndNetOfTax_ReturnFlowsInDateOrder()
+    {
+        var asset = MakeAsset("TEST");
+        asset.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Buy, 1m, 12m, 0m));
+        asset.AddCredit(Credit.Create(new DateTime(2022, 9, 15), Credit.CreditType.Dividend, 5m, withheld: 1m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 1m, 10m, 0m));
+
+        using var _ = new AssertionScope();
+        AssetCashFlowBuilder.BuildWithoutCredits(asset).Select(flow => flow.Date).Should().BeInAscendingOrder();
+        AssetCashFlowBuilder.BuildNetOfTaxWithCredits(asset).Select(flow => flow.Date).Should().BeInAscendingOrder();
+    }
+
+    [Fact]
     public void BuildWithCredits_Empty_WhenNoTransactionsOrCredits()
     {
         var cashFlows = AssetCashFlowBuilder.BuildWithCredits(MakeAsset("TEST"));

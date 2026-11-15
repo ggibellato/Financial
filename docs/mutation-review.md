@@ -153,10 +153,10 @@ uses the repo folder.
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ✅ | 49.6% | 70.3% | 7 | 1 | 11 | [#1287](https://github.com/ggibellato/Financial/pull/1287) | See "Slice notes"; `BrokerCurrencyParser` is only used by 4.3/4.4 services |
-| 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ⬜ | 56.8% | | | | | | |
+| 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | 🔄 | 56.8% | 73.7% | 15 | 31 | 30 | | See "Slice notes"; 28 asset-summary tests that re-checked Domain results removed |
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
-| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | 🔄 | 52.7% | 74.5% | 9 | 1 | 6 | | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
+| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ✅ | 52.7% | 74.5% | 9 | 1 | 6 | [#1288](https://github.com/ggibellato/Financial/pull/1288) | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ⬜ | 63.9% | | | | | | `ReflectionJsonTypeInfoHelpers` 10 of 10 undetected |
@@ -374,6 +374,45 @@ The 48 still undetected, all reviewed:
   was found under that broker name (1); `AssetContextValidator`'s `||` → `&&` between broker and
   portfolio, because a blank name reaches a repository lookup that returns null anyway (1).
 
+### 4.3 Investment.Application summaries and dashboard (56.8% → 73.7%)
+
+Gaps closed:
+
+- **Converted figures.** With a constant rate the converted returns must equal the native ones, so
+  comparing them (with a withheld dividend in the holding) now catches a dropped transaction,
+  credit, gross or net flow. Converted unrealised gain, converted market value summed across
+  holdings, and converted invested as bought less sold are checked, as is the partial flag when
+  some records or one broker currency fail to convert.
+- **Edges**: a broker with no holdings reports a market value of 0, not unknown; a credit on
+  1 January counts towards this year's income; an empty dashboard is not "currency unavailable";
+  an unrecognised broker currency fails the span.
+- **Guards and spans** on `SummaryService`, `PortfolioService` (null requests, blank current name)
+  and `PortfolioAssetSummaryService`, including the blank-name guards seeded so they discriminate.
+- **Cash flows** returned in date order by every builder.
+
+Removed, after the simplify review's altitude check:
+
+- 28 `PortfolioAssetSummaryServiceTests` that only re-checked `CreditsAnalysisCalculator`,
+  `CreditFrequencyAnalyzer` and the asset's own totals (frequency bands, last-month and
+  current-month credits, annual estimates, realised gain). `CreditFrequencyAnalyzerTests` and
+  `CreditsAnalysisCalculatorTests` own those rules. One test now checks that the service passes
+  the right basis and the clock's date to the calculator and maps every field; another keeps the
+  fully-sold-holding yield case. The score rose with them gone.
+- The three `PortfolioServiceTests` constructor tests (covered by `ConstructorGuardTests`).
+
+The two methods Stryker cannot measure (Safe Mode) were read: `SumActiveScope` is covered by the
+dashboard market value, invested, unpriced and unvalued-count tests; `ConvertedAssetFlows`'
+transaction loop by `ConvertedSummaryBuilderTests.BuildAsync_SomeRecordsFailToConvert_...`.
+
+The 81 still undetected, all reviewed:
+
+- **Log and exception wording** (51).
+- **Equivalent** (30): `ConfigureAwait` (24); the early return when no holding is priced (it
+  would only convert a zero); `AttemptCount >= 0` (an unavailable context has always attempted a
+  lookup); the historic valuation in the dashboard (a historic holding never has a terminal
+  value); `holdingCount >= 0` (no holdings, nothing to compute); `as IReadOnlyList ?? ToList`; the
+  price-only flow sort (transactions are stored in date order).
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -387,3 +426,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 4.1 | Assets and transactions 48.0% → 65.0%; currency-preservation tests fixed, spans and gaps added, 9 duplicated tests removed or merged; most of the rest is log wording |
 | 2026-11-15 | 4.2 | Corporate actions 49.6% → 70.3%; update rollback, two-mergers-one-target and inline-target identity tested; 1 idle test removed |
 | 2026-11-15 | 4.6 | Navigation, brokers, validation 55.3% → 74.5%; cost-basis broker lookup, display names, lot mapping and spans tested |
+| 2026-11-15 | 4.3 | Summaries and dashboard 56.8% → 73.7%; converted figures and edges tested; 28 asset-summary tests that re-checked Domain results removed |
