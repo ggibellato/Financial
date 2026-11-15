@@ -132,6 +132,18 @@ public class LocalJsonStorageTests
     }
 
     [Fact]
+    public async Task ReadAsync_WhenTheFolderDoesNotExistEither_ThrowsFileNotFoundException()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "data.json");
+        var storage = new LocalJsonStorage(missingPath);
+
+        Func<Task> act = () => storage.ReadAsync();
+
+        var ex = await act.Should().ThrowExactlyAsync<FileNotFoundException>();
+        ex.Which.FileName.Should().Be(missingPath);
+    }
+
+    [Fact]
     public async Task Constructor_WithNullPath_UsesDefaultFileName()
     {
         // Null path resolves to AppContext.BaseDirectory/data.json; file won't exist there in tests
