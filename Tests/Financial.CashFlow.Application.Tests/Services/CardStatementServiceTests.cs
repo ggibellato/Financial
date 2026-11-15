@@ -1,6 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
-using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
@@ -236,6 +235,27 @@ public class CardStatementServiceTests
         using (new AssertionScope())
         {
             statement.IsPaid.Should().BeFalse();
+            _repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
+        }
+    }
+
+    [Fact]
+    public async Task MarkStatementPaidAsync_CreditCoversTheMonth_ThrowsNothingToPayAndSavesNothing()
+    {
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddCharge(_repository, new DateOnly(2026, 6, 10), -60m, visa);
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 50m, visa);
+        SeedStatements(2026, 7);
+        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
+
+        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("There is nothing to pay on this statement.");
+        using (new AssertionScope())
+        {
+            statement.IsPaid.Should().BeFalse();
+            _repository.Transfers.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CardStatementService.MarkStatementPaid");
         }
