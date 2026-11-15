@@ -1,7 +1,6 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
-using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
@@ -22,16 +21,6 @@ public class HoldingValuationServiceTests
         new(new XirrCalculationService(TestClock.At()), tracer ?? new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, timeProvider ?? new FakeTimeProvider(Today));
 
     [Fact]
-    public void GetValuation_NullAsset_Throws()
-    {
-        var service = CreateService();
-
-        Action act = () => service.GetValuation(null!, InvestmentScope.Active);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetValuation_ActiveWithNoRecordedPrice_ReportsMarketValueUnavailable()
     {
         var asset = MakeAsset();
@@ -42,15 +31,13 @@ public class HoldingValuationServiceTests
 
         using var _ = new AssertionScope();
         result.MarketValue.Should().BeNull();
-        result.UnrealisedGain.Should().BeNull();
-        result.PriceAsOfDate.Should().BeNull();
         result.PriceOnlyReturn.Should().BeNull();
         result.TotalReturn.Should().BeNull();
-        result.CostOfUnitsHeld.Should().Be(50m);
+        result.TotalReturnNetOfTax.Should().BeNull();
     }
 
     [Fact]
-    public void GetValuation_ActiveWithRecordedPrice_ReportsMarketValueAndUnrealisedGain()
+    public void GetValuation_ActiveWithRecordedPrice_ReportsMarketValue()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
@@ -59,11 +46,7 @@ public class HoldingValuationServiceTests
 
         var result = service.GetValuation(asset, InvestmentScope.Active);
 
-        using var _ = new AssertionScope();
         result.MarketValue.Should().Be(80m);
-        result.UnrealisedGain.Should().Be(30m);
-        result.PriceAsOfDate.Should().Be(new DateOnly(2026, 8, 14));
-        result.MarketStatus.Should().Be(MarketStatus.Current);
     }
 
     [Fact]
@@ -115,80 +98,21 @@ public class HoldingValuationServiceTests
     }
 
     [Fact]
-    public void GetValuation_NoMarketValue_TotalReturnNetOfTaxIsNull()
-    {
-        var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        var service = CreateService();
-
-        var result = service.GetValuation(asset, InvestmentScope.Active);
-
-        result.TotalReturnNetOfTax.Should().BeNull();
-    }
-
-    [Fact]
-    public void GetValuation_UsesTheAsOfDateThePriceWasRecordedOn_NotAnExactDateMatchRequirement()
-    {
-        var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        asset.SetPrice(new DateOnly(2026, 8, 10), 8m, isManual: false); // four days before FakeTimeProvider's "today"
-        var service = CreateService();
-
-        var result = service.GetValuation(asset, InvestmentScope.Active);
-
-        result.MarketValue.Should().Be(80m);
-        result.PriceAsOfDate.Should().Be(new DateOnly(2026, 8, 10));
-    }
-
-    [Fact]
-    public void GetValuation_ProviderValueMethod_MarketValueIsTheRecordedFigureDirectly()
-    {
-        var asset = MakeAsset();
-        asset.SetValuationMethod(ValuationMethod.ProviderValue);
-        asset.SetPrice(new DateOnly(2026, 8, 14), 5000m, isManual: false);
-        var service = CreateService();
-
-        var result = service.GetValuation(asset, InvestmentScope.Active);
-
-        result.MarketValue.Should().Be(5000m);
-    }
-
-    [Fact]
-    public void GetValuation_Historic_MarketValueIsZeroNotNull()
-    {
-        var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        var service = CreateService();
-
-        var result = service.GetValuation(asset, InvestmentScope.Historic);
-
-        result.MarketValue.Should().Be(0m);
-    }
-
-    [Fact]
-    public void GetValuation_Historic_NeverReportsUnrealisedGain()
-    {
-        var asset = MakeAsset();
-        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        var service = CreateService();
-
-        var result = service.GetValuation(asset, InvestmentScope.Historic);
-
-        result.UnrealisedGain.Should().BeNull();
-    }
-
-    [Fact]
     public void GetValuation_Historic_IgnoresAnyRecordedPrice()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 6, 1), Transaction.TransactionType.Sell, 10m, 6m, 0m));
         asset.SetPrice(new DateOnly(2026, 8, 14), 8m, isManual: false);
         var service = CreateService();
 
         var result = service.GetValuation(asset, InvestmentScope.Historic);
 
-        result.PriceAsOfDate.Should().BeNull();
+        using var _ = new AssertionScope();
         result.MarketValue.Should().Be(0m);
+        result.PriceAsOfDate.Should().BeNull();
+        result.UnrealisedGain.Should().BeNull();
+        result.TotalReturn.Should().NotBeNull("a closed holding still has a return from its own flows");
     }
 
     [Fact]

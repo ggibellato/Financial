@@ -32,6 +32,7 @@ public class BrokerBreakdownServiceTests
         portfolio.Assets.Should().HaveCount(2);
         portfolio.Assets.Should().Contain(a => a.AssetName == "AAAA" && a.TotalInvested == 100m);
         portfolio.Assets.Should().Contain(a => a.AssetName == "BBBB" && a.TotalInvested == 200m);
+        _tracer.ShouldHaveSucceededSpan("Investment.BrokerBreakdownService.GetBrokerBreakdown");
     }
 
     [Fact]
@@ -108,6 +109,7 @@ public class BrokerBreakdownServiceTests
         var result = CreateService().GetBrokerBreakdown("UNKNOWN", scope);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.BrokerBreakdownService.GetBrokerBreakdown");
     }
 
     [Theory]
@@ -122,6 +124,18 @@ public class BrokerBreakdownServiceTests
         var result = CreateService().GetBrokerBreakdown(brokerName!, scope);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.BrokerBreakdownService.GetBrokerBreakdown");
+    }
+
+    [Fact]
+    public void GetBrokerBreakdown_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnGetBrokerList = new InvalidOperationException("simulated failure");
+
+        var act = () => CreateService().GetBrokerBreakdown("XPI");
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.BrokerBreakdownService.GetBrokerBreakdown");
     }
 
     [Fact]

@@ -153,8 +153,8 @@ uses the repo folder.
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ✅ | 49.6% | 70.3% | 7 | 1 | 11 | [#1287](https://github.com/ggibellato/Financial/pull/1287) | See "Slice notes"; `BrokerCurrencyParser` is only used by 4.3/4.4 services |
-| 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | 🔄 | 56.8% | 73.7% | 15 | 31 | 30 | | See "Slice notes"; 28 asset-summary tests that re-checked Domain results removed |
-| 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
+| 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ✅ | 56.8% | 73.7% | 15 | 31 | 30 | [#1289](https://github.com/ggibellato/Financial/pull/1289) | See "Slice notes"; 28 asset-summary tests that re-checked Domain results removed |
+| 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | 🔄 | 70.2% | 78.5% | 2 | 10 | 5 | | See "Slice notes"; 10 tests that re-checked Domain XIRR and valuation results removed |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ✅ | 52.7% | 74.5% | 9 | 1 | 6 | [#1288](https://github.com/ggibellato/Financial/pull/1288) | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
@@ -413,6 +413,40 @@ The 81 still undetected, all reviewed:
   value); `holdingCount >= 0` (no holdings, nothing to compute); `as IReadOnlyList ?? ToList`; the
   price-only flow sort (transactions are stored in date order).
 
+### 4.4 Investment.Application breakdowns and returns (70.2% → 78.5%)
+
+Gaps closed:
+
+- **Spans** on `BrokerBreakdownService` (success on every path, and a failed span when the
+  repository throws) and on `AllocationBreakdownService`.
+- **Allocation flags**: a converted breakdown is neither partial nor unavailable when every rate
+  is found, and when nothing is priced (no conversion is attempted, so no context is unavailable).
+- **Gross and net XIRR wiring**: `PortfolioXirrBuilder.Calculate` with a withheld dividend gives a
+  lower net rate than gross, which pins the gross series to the credit values and the net series
+  to the net credit amounts. Nothing checked this before.
+
+Removed, after the simplify review's altitude check (`XirrCalculatorTests`,
+`HoldingValuationCalculator` and the asset's own tests own these rules):
+
+- Three `XirrCalculationServiceTests` that re-solved XIRR (10% growth, no flows, a loss). The two
+  kept pin the service's own choices: the terminal value dated on the given day, and the clock
+  default.
+- `PortfolioXirrBuilderTests.Calculate_ReturnsNullWhenNoHoldingContributesAnInflow` (a Domain rule).
+- Six `HoldingValuationServiceTests`: the provider-value method and the "price recorded before
+  today" cases, the null-asset throw (the failed-span test covers it), the separate no-market-value
+  net return test (merged into the unavailable test), and two historic tests merged into
+  `GetValuation_Historic_IgnoresAnyRecordedPrice`, which now also checks a closed holding still
+  gets a total return. Assertions on values the Domain computes (unrealised gain, cost of units,
+  market status) were trimmed.
+
+The 26 still undetected, all reviewed:
+
+- **Log and exception wording** (21), including the `BrokerCurrencyParser` message.
+- **Equivalent** (5): `ConfigureAwait` (4); `AttemptCount >= 0` (an unavailable context has
+  always attempted a lookup).
+
+Investment.Application is now done slice by slice (4.1 to 4.6).
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -427,3 +461,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 4.2 | Corporate actions 49.6% → 70.3%; update rollback, two-mergers-one-target and inline-target identity tested; 1 idle test removed |
 | 2026-11-15 | 4.6 | Navigation, brokers, validation 55.3% → 74.5%; cost-basis broker lookup, display names, lot mapping and spans tested |
 | 2026-11-15 | 4.3 | Summaries and dashboard 56.8% → 73.7%; converted figures and edges tested; 28 asset-summary tests that re-checked Domain results removed |
+| 2026-11-15 | 4.4 | Breakdowns and returns 70.2% → 78.5%; spans, allocation flags and gross/net XIRR wiring tested; 10 tests that re-checked Domain results removed |

@@ -170,6 +170,18 @@ public class AllocationBreakdownServiceTests
     }
 
     [Fact]
+    public async Task GetAllocationBreakdown_WithDisplayCurrency_NothingPriced_IsNeitherPartialNorUnavailable()
+    {
+        SeedActive(MakeBroker("Alpha", "GBP", BoughtAsset("A1", GlobalAssetClass.Equity, CountryCode.UK, 10m, 4m)));
+
+        var result = await CreateService().GetAllocationBreakdownAsync(displayCurrency: Currency.BRL);
+
+        using var _ = new AssertionScope();
+        result.IsUnavailable.Should().BeFalse("nothing was priced, so no conversion was attempted");
+        result.IsPartial.Should().BeFalse();
+    }
+
+    [Fact]
     public async Task GetAllocationBreakdown_WhenEveryActiveHoldingIsFlat_ReportsZeroPercentagesInsteadOfDividingByZero()
     {
         SeedActive(MakeBroker("Alpha", "GBP", ClosedAsset("A1", GlobalAssetClass.Equity, CountryCode.UK)));
@@ -243,6 +255,9 @@ public class AllocationBreakdownServiceTests
         result.ByBroker.Single(entry => entry.BrokerName == "Alpha").MarketValue.Should().Be(700m, "GBP holdings convert at identity (from == to)");
         result.ByBroker.Single(entry => entry.BrokerName == "Beta").MarketValue.Should().Be(300m * 0.2m, "BRL holdings convert at the stubbed rate");
         PercentageTotals(result).Should().AllSatisfy(total => total.Should().BeApproximately(100m, 0.0001m));
+        result.IsPartial.Should().BeFalse();
+        result.IsUnavailable.Should().BeFalse();
+        _tracer.ShouldHaveSucceededSpan("Investment.AllocationBreakdownService.GetAllocationBreakdown");
     }
 
     [Fact]
