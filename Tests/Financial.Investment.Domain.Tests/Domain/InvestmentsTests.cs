@@ -95,15 +95,24 @@ public class InvestmentsTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void GetBroker_OnlyOneScopeHasTheName_ReturnsItWhicheverScopeIsPreferred(bool preferHistoric)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    [InlineData(true, true)]
+    public void GetBroker_OnlyOneScopeHasTheName_ReturnsItWhicheverScopeIsPreferred(bool preferHistoric, bool onlyActive)
     {
         var investments = Investments.Create();
-        var historicBroker = Broker.Create("XPI", "BRL");
-        investments.AddHistoricBroker(historicBroker);
+        var broker = Broker.Create("XPI", "BRL");
+        if (onlyActive)
+        {
+            investments.AddActiveBroker(broker);
+        }
+        else
+        {
+            investments.AddHistoricBroker(broker);
+        }
 
-        investments.GetBroker("XPI", preferHistoric).Should().BeSameAs(historicBroker);
+        investments.GetBroker("XPI", preferHistoric).Should().BeSameAs(broker);
     }
 
     [Fact]
@@ -901,16 +910,6 @@ public class InvestmentsTests
         }
 
         return investments;
-    }
-
-    [Fact]
-    public void GetBroker_PreferringHistoricWhenOnlyAnActiveRecordExists_FallsBackToIt()
-    {
-        var investments = Investments.Create();
-        var activeBroker = Broker.Create("XPI", "BRL");
-        investments.AddActiveBroker(activeBroker);
-
-        investments.GetBroker("XPI", preferHistoric: true).Should().BeSameAs(activeBroker);
     }
 
     [Fact]

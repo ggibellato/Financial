@@ -604,4 +604,47 @@ public class AssetCorporateActionTests
         asset.CorporateActions.Should().ContainSingle();
         asset.Quantity.Should().Be(5m);
     }
+
+    [Theory]
+    [InlineData(new[] { 6 }, 30)]
+    [InlineData(new[] { 2, 6 }, 50)]
+    public void AddTransaction_DatedBeforeAnExistingSplit_ReplaysTheSplitOverIt(int[] splitMonths, int expectedQuantity)
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        foreach (var month in splitMonths)
+        {
+            asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, month, 1), 2.0m));
+        }
+
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Buy, 5m, 100m, 0m));
+
+        asset.Quantity.Should().Be(expectedQuantity);
+    }
+
+    [Fact]
+    public void PositionAsOf_TheSplitDate_IncludesTheSplit()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m));
+
+        asset.PositionAsOf(new DateTime(2021, 6, 1)).Quantity.Should().Be(20m);
+    }
+
+    [Fact]
+    public void ReviseCorporateAction_SplitMovedAfterAMergerThatClosedThePosition_IsRefused()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var split = CorporateAction.CreateSplit(new DateTime(2021, 2, 1), 2.0m);
+        asset.RecordCorporateAction(split);
+        asset.RecordCorporateAction(CorporateAction.CreateMergerSource(
+            new DateTime(2021, 6, 1), 0.5m, null, null, Guid.NewGuid(), "Asset B", 20m, 1000m));
+
+        Action act = () => asset.ReviseCorporateAction(CorporateAction.CreateSplitWithId(split.Id, new DateTime(2021, 9, 1), 2.0m));
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.CorporateActions.Single(ca => ca.Id == split.Id).EffectiveDate.Should().Be(new DateTime(2021, 2, 1));
+    }
 }
