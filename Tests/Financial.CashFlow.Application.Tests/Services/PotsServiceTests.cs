@@ -94,8 +94,8 @@ public class PotsServiceTests
             _repository.Expenses.Where(e => e.OperationId == result.OperationId).Select(e => (e.Category.Name, e.Value))
                 .Should().BeEquivalentTo([("Reserva", -30m), ("Saude", 30m)]);
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.Withdraw").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.OperationId.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.Withdraw").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.OperationId.ToString());
     }
 
     [Fact]
@@ -354,8 +354,8 @@ public class PotsServiceTests
                 .Should().BeEquivalentTo([("Reserva", -45m, "Barclays"), ("Familia", 45m, "Barclays")]);
             _repository.Expenses.Should().Contain(unrelated).And.HaveCount(3);
             _repository.SaveChangesCallCount.Should().Be(2);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.UpdateWithdrawal").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.UpdateWithdrawal").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
     }
 
     [Fact]
@@ -442,8 +442,8 @@ public class PotsServiceTests
             _repository.PotTransactions.Should().ContainSingle().Which.Description.Should().Be("Seed");
             _repository.Expenses.Should().Equal(unrelated);
             _repository.SaveChangesCallCount.Should().Be(2);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.DeleteOperation").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.DeleteOperation").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
     }
 
     [Fact]
@@ -490,8 +490,8 @@ public class PotsServiceTests
             Reserva.Pots!.Should().HaveCount(existingCount + 1);
             PotNamed("Holidays").IsActive.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.ReplacePots").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(Reserva.Id.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.ReplacePots").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(Reserva.Id.ToString());
     }
 
     [Fact]
@@ -563,8 +563,8 @@ public class PotsServiceTests
             _repository.Expenses.Where(e => e.OperationId == result.OperationId).Select(e => (e.Category.Name, e.Value, e.PaymentSourceAccount!.Name))
                 .Should().Equal(("Reserva", 85m, "Chase"), ("Reserva", 15m, "Barclays"));
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.Deposit").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.OperationId.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.Deposit").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.OperationId.ToString());
     }
 
     [Fact]
@@ -724,8 +724,8 @@ public class PotsServiceTests
                 .Should().Equal((60m, "Barclays"));
             _repository.Expenses.Should().Contain(unrelated).And.HaveCount(2);
             _repository.SaveChangesCallCount.Should().Be(2);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.UpdateDeposit").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.UpdateDeposit").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(created.OperationId.ToString());
     }
 
     [Fact]
@@ -795,8 +795,8 @@ public class PotsServiceTests
             result.Pots.Single(pot => pot.Id == investimento.Id).Balance.Should().Be(120m);
             result.Pots.Single(pot => pot.Name == "HouseTreats").Balance.Should().Be(10m);
             result.Pots.Single(pot => pot.Name == "Ariana").Balance.Should().Be(0m);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.GetPots").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(Reserva.Id.ToString());
         }
-        _tracer.ShouldHaveSucceededSpan("CashFlow.PotsService.GetPots").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(Reserva.Id.ToString());
     }
 
     [Fact]
@@ -855,11 +855,13 @@ public class PotsServiceTests
     [Fact]
     public async Task EveryWriteMethod_NullRequest_ThrowsArgumentNullException()
     {
-        using var scope = new AssertionScope();
-        await FluentActions.Awaiting(() => _sut.DepositAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-        await FluentActions.Awaiting(() => _sut.UpdateDepositAsync(Reserva.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-        await FluentActions.Awaiting(() => _sut.WithdrawAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-        await FluentActions.Awaiting(() => _sut.UpdateWithdrawalAsync(Reserva.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-        await FluentActions.Awaiting(() => _sut.ReplacePotsAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.DepositAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => _sut.UpdateDepositAsync(Reserva.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => _sut.WithdrawAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => _sut.UpdateWithdrawalAsync(Reserva.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => _sut.ReplacePotsAsync(Reserva.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+        }
     }
 }

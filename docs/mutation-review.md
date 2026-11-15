@@ -148,7 +148,7 @@ uses the repo folder.
 | 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ⬜ | 67.3% | | | | | | |
 | 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | ✅ | 54.9% | 66.7% | 6 | 4 | 31 | [#1291](https://github.com/ggibellato/Financial/pull/1291) | See "Slice notes"; `BestEffortDisconnectRemoteAsync` returns a value nobody reads |
 | 3.4 | CashFlow.Application | Movements: `ExpenseService`, `IncomeService`, `IncomeSourceService`, `IncomeSummaryService`, `IncomeGroupLookupBuilder`, `CategoryService`, `CategorySummaryService`, `HistoricAverageService`, `MensaisService` | ⬜ | 63.5% | | | | | | `MensaisService` 46%; `EnsureStatementsOpenForMove` unmeasured |
-| 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | 🔄 | 63.2% | 76.2% | 7 | 15 | 24 | | See "Slice notes"; 15 tests that re-checked Domain pot, tithe and settlement rules or duplicated others removed |
+| 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | 🔄 | 63.2% | 76.2% | 7 | 14 | 24 | | See "Slice notes"; 14 tests that re-checked Domain pot and tithe rules or duplicated others removed |
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ⬜ | 63.2% | | | | | | |
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
@@ -515,8 +515,9 @@ owns these rules):
 - Four `TitheServiceTests`: the counts-as-tithe-true case (same input as the subtraction test), the
   non-tithe category with counts-as-tithe false (cannot catch what the non-tithe test catches), the
   bank-less income test (a subset of another), and the empty-month test merged with its twin.
-- The reserve update span test merged into the update test; the settlement currency theory's
-  "account doesn't use BRL" row (a `SettlementTransaction` rule).
+- The reserve update span test merged into the update test. The settlement currency theory's
+  "account doesn't use BRL" row became its own test: it is the only one showing a one-currency
+  account refuses another currency rather than booking the amount in its own.
 
 The 84 still undetected, all reviewed:
 
@@ -542,4 +543,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 4.3 | Summaries and dashboard 56.8% → 73.7%; converted figures and edges tested; 28 asset-summary tests that re-checked Domain results removed |
 | 2026-11-15 | 4.4 | Breakdowns and returns 70.2% → 78.5%; spans, allocation flags and gross/net XIRR wiring tested; 10 tests that re-checked Domain results removed |
 | 2026-11-15 | 3.3 | Calendar 54.9% → 66.7%; spans, OAuth state expiry and reuse, refresh skew and rotation, invoice-month boundary tested; 4 tests removed or merged |
-| 2026-11-15 | 3.5 | Reserve and settlement 63.2% → 76.2%; spans, null requests and tithe boundaries tested; 15 tests that re-checked Domain rules or duplicated others removed |
+| 2026-11-15 | 3.5 | Reserve and settlement 63.2% → 76.2%; spans, null requests and tithe boundaries tested; 14 tests that re-checked Domain rules or duplicated others removed |

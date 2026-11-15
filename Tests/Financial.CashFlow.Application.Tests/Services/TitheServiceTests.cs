@@ -375,27 +375,6 @@ public class TitheServiceTests
     }
 
     [Fact]
-    public async Task GetTitheSummaryAsync_FirstCall_SavesThisMonthAsTheCarryForwardStartOnce()
-    {
-        await _sut.GetTitheSummaryAsync(2026, 7);
-        await _sut.GetTitheSummaryAsync(2026, 8);
-
-        _repository.GetTitheCarryForwardEffectiveFrom().Should().Be(ThisMonth);
-        _repository.SaveChangesCallCount.Should().Be(1);
-    }
-
-    [Fact]
-    public async Task GetTitheSummaryAsync_TwoTithePaymentsInAMonth_AreAddedTogether()
-    {
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Tithe", 30m, Dizimo, Barclays, null));
-        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 20), "Tithe", 50m, Dizimo, Barclays, null));
-
-        var result = await _sut.GetTitheSummaryAsync(2026, 7);
-
-        result.TithePaid.Should().Be(80m);
-    }
-
-    [Fact]
     [Trait("AC", "P61-F03-tithe-tab-and-history-01")]
     public async Task GetTitheSummary_ReturnsIncomeBaseAndTithePaid()
     {
@@ -416,16 +395,39 @@ public class TitheServiceTests
     }
 
     [Fact]
+    public async Task GetTitheSummary_FirstCall_SavesThisMonthAsTheCarryForwardStartOnce()
+    {
+        await _sut.GetTitheSummaryAsync(2026, 7);
+        await _sut.GetTitheSummaryAsync(2026, 8);
+
+        _repository.GetTitheCarryForwardEffectiveFrom().Should().Be(ThisMonth);
+        _repository.SaveChangesCallCount.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetTitheSummary_TwoTithePaymentsInAMonth_AreAddedTogether()
+    {
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 5), "Tithe", 30m, Dizimo, Barclays, null));
+        _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 7, 20), "Tithe", 50m, Dizimo, Barclays, null));
+
+        var result = await _sut.GetTitheSummaryAsync(2026, 7);
+
+        result.TithePaid.Should().Be(80m);
+    }
+
+    [Fact]
     public async Task GetTitheSummary_EmptyMonth_ReturnsZeros()
     {
         var result = await _sut.GetTitheSummaryAsync(2026, 7);
 
-        using var scope = new AssertionScope();
-        result.IncomeBase.Should().Be(0m);
-        result.CalculatedTithe.Should().Be(0m);
-        result.TithePaid.Should().Be(0m);
-        result.TitheBalance.Should().Be(0m);
-        result.CarryForward.Should().BeNull();
+        using (new AssertionScope())
+        {
+            result.IncomeBase.Should().Be(0m);
+            result.CalculatedTithe.Should().Be(0m);
+            result.TithePaid.Should().Be(0m);
+            result.TitheBalance.Should().Be(0m);
+            result.CarryForward.Should().BeNull();
+        }
     }
 
     [Fact]
@@ -568,6 +570,8 @@ public class TitheServiceTests
     [InlineData(9999)]
     public async Task GetTitheYear_FirstAndLastSupportedYear_ReturnsTwelveMonths(int year)
     {
+        _repository.SetTitheCarryForwardEffectiveFrom(new DateOnly(year, 1, 1));
+
         var months = await _sut.GetTitheYearAsync(year);
 
         months.Should().HaveCount(12);

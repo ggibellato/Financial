@@ -136,6 +136,15 @@ public class SettlementServiceTests
         _repository.SettlementTransactions.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task AddEntryAsync_OneCurrencyAccountGivenAnotherCurrency_IsRefusedRatherThanBookedInItsOwn()
+    {
+        var act = () => CreateService().AddEntryAsync(_son.Id, NewEntry("BRL"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Samuel doesn't use BRL.");
+        _repository.SettlementTransactions.Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData("you")]
     [InlineData("1")]
@@ -238,9 +247,8 @@ public class SettlementServiceTests
             result.Warning.Should().BeNull();
             provider.CallCount.Should().Be(0);
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.SettlementService.UpdateEntry").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(entry.Id.ToString());
         }
-
-        _tracer.ShouldHaveSucceededSpan("CashFlow.SettlementService.UpdateEntry").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(entry.Id.ToString());
     }
 
     [Fact]
@@ -477,9 +485,11 @@ public class SettlementServiceTests
     {
         var sut = CreateService();
 
-        using var scope = new AssertionScope();
-        await FluentActions.Awaiting(() => sut.AddEntryAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-        await FluentActions.Awaiting(() => sut.SettleAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-        await FluentActions.Awaiting(() => sut.UpdateEntryAsync(_mae.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => sut.AddEntryAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => sut.SettleAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => sut.UpdateEntryAsync(_mae.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+        }
     }
 }
