@@ -79,12 +79,14 @@ public class StandardAssetPriceFetcherTests
     public void GetSnapshot_ValidExchange_DelegatesToFinanceService()
     {
         var snapshot = new AssetValueSnapshot("BCIA11", "Some ETF", 10.5m, TestClock.Default);
-        var fetcher = new StandardAssetPriceFetcher(new StubFinanceService(snapshot));
+        var financeService = new StubFinanceService(snapshot);
+        var fetcher = new StandardAssetPriceFetcher(financeService);
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "BCIA11" };
 
         var result = fetcher.GetSnapshot(request);
 
         result.Should().Be(snapshot);
+        financeService.LastRequest.Should().BeEquivalentTo(new { Exchange = "BVMF", Ticker = "BCIA11" });
     }
 
     [Theory]

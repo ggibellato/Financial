@@ -48,8 +48,8 @@ public class InvestmentSerializerAdapterTests
         var portfolio = broker.AddPortfolio("Default");
         var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
         var snapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, new DateTimeOffset(2026, 7, 1, 9, 0, 0, TimeSpan.Zero));
-        asset.AddTransaction(Transaction.Create(new DateTime(2026, 7, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.BRL, fxRateSnapshot: snapshot));
-        asset.AddCredit(Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 10m, currency: Currency.BRL, fxRateSnapshot: snapshot));
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 7, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.USD, fxRateSnapshot: snapshot));
+        asset.AddCredit(Credit.Create(new DateTime(2026, 7, 1), Credit.CreditType.Dividend, 10m, currency: Currency.USD, fxRateSnapshot: snapshot));
         portfolio.AddAsset(asset);
         investments.AddActiveBroker(broker);
 
@@ -58,7 +58,7 @@ public class InvestmentSerializerAdapterTests
 
         var resultAsset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
         var transaction = resultAsset.Transactions.Should().ContainSingle().Subject;
-        transaction.Currency.Should().Be(Currency.BRL);
+        transaction.Currency.Should().Be(Currency.USD);
         transaction.FxRateSnapshot.Should().NotBeNull();
         transaction.FxRateSnapshot!.ToCurrency.Should().Be(Currency.GBP);
         transaction.FxRateSnapshot!.Rate.Should().Be(0.146m);
@@ -66,7 +66,7 @@ public class InvestmentSerializerAdapterTests
         transaction.FxRateSnapshot!.RetrievedAt.Should().Be(snapshot.RetrievedAt);
 
         var credit = resultAsset.Credits.Should().ContainSingle().Subject;
-        credit.Currency.Should().Be(Currency.BRL);
+        credit.Currency.Should().Be(Currency.USD);
         credit.FxRateSnapshot.Should().NotBeNull();
         credit.FxRateSnapshot!.Rate.Should().Be(0.146m);
     }
@@ -299,17 +299,20 @@ public class InvestmentSerializerAdapterTests
         asset.GetPriceForDate(new DateOnly(2026, 1, 1))!.IsManual.Should().BeTrue();
     }
 
-    [Fact]
+    [Theory]
     [Trait("AC", "P49-F02-transaction-and-credit-currency-04")]
-    public void Deserialize_TransactionAndCreditMissingCurrency_BackfillsFromBroker()
+    [InlineData("ActiveBrokers")]
+    [InlineData("HistoricBrokers")]
+    public void Deserialize_TransactionAndCreditMissingCurrency_BackfillsFromBroker(string brokerGroup)
     {
-        var json = BuildDocumentWithCurrency(transactionCurrency: null, creditCurrency: null, brokerCurrency: "BRL", version: 3);
+        var json = BuildDocumentWithCurrency(transactionCurrency: null, creditCurrency: null, brokerCurrency: "GBP", version: 3, brokerGroup);
 
         var result = Serializer.Deserialize(json);
 
-        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
-        asset.Transactions.Single().Currency.Should().Be(Currency.BRL);
-        asset.Credits.Single().Currency.Should().Be(Currency.BRL);
+        var brokers = brokerGroup == "ActiveBrokers" ? result.ActiveBrokers : result.HistoricBrokers;
+        var asset = brokers.Single().Portfolios.Single().Assets.Single();
+        asset.Transactions.Single().Currency.Should().Be(Currency.GBP);
+        asset.Credits.Single().Currency.Should().Be(Currency.GBP);
     }
 
     [Fact]
@@ -429,7 +432,7 @@ public class InvestmentSerializerAdapterTests
             """;
     }
 
-    private static string BuildDocumentWithCurrency(string? transactionCurrency, string? creditCurrency, string brokerCurrency, int? version)
+    private static string BuildDocumentWithCurrency(string? transactionCurrency, string? creditCurrency, string brokerCurrency, int? version, string brokerGroup = "ActiveBrokers")
     {
         var versionProperty = version is null ? string.Empty : $"""
             "Version": {version},
@@ -440,7 +443,7 @@ public class InvestmentSerializerAdapterTests
         return $$"""
             {
               {{versionProperty}}
-              "ActiveBrokers": [
+              "{{brokerGroup}}": [
                 {
                   "Name": "Broker A",
                   "Currency": "{{brokerCurrency}}",

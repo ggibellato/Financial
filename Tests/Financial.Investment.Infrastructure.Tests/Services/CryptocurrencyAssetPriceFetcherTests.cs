@@ -74,7 +74,8 @@ public class CryptocurrencyAssetPriceFetcherTests
     {
         var snapshot = new AssetValueSnapshot("BTC", "Bitcoin", 50000m, TestClock.Default);
         var brokers = new[] { Broker.Create("Coinbase", "GBP") };
-        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository(brokers), new StubFinanceService(snapshot));
+        var financeService = new StubFinanceService(snapshot);
+        var fetcher = new CryptocurrencyAssetPriceFetcher(new StubInvestmentRepository(brokers), financeService);
         var request = new AssetPriceRequestDTO
         {
             Exchange = "",
@@ -86,6 +87,7 @@ public class CryptocurrencyAssetPriceFetcherTests
         var result = fetcher.GetSnapshot(request);
 
         result.Should().Be(snapshot);
+        financeService.LastRequest.Should().BeEquivalentTo(new { Currency = "GBP", Ticker = "BTC" });
     }
 
     [Fact]

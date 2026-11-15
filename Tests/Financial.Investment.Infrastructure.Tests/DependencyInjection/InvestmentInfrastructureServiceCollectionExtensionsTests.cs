@@ -7,6 +7,7 @@ using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
 using Financial.TestUtilities;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -66,6 +67,42 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
         Action act = () => provider.GetRequiredService<IFinanceService>();
 
         act.Should().Throw<InvalidOperationException>().WithMessage("*Investment:PriceQuotes:CacheDuration*");
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_RegistersOnePriceFetcherPerQuoteSource()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
+        });
+
+        provider.GetServices<IAssetPriceFetcher>().Select(fetcher => fetcher.GetType()).Should().BeEquivalentTo(
+            [typeof(StandardAssetPriceFetcher), typeof(CryptocurrencyAssetPriceFetcher), typeof(BondAssetPriceFetcher)]);
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_RegistersThePriceServiceAndTheDividendAndSnapshotSources()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
+        });
+
+        using var _ = new AssertionScope();
+        provider.GetRequiredService<IAssetPriceService>().Should().BeOfType<AssetPriceService>();
+        provider.GetRequiredService<IDividendDataSource>().Should().BeOfType<DividendDataSourceAdapter>();
+        provider.GetRequiredService<IAssetSnapshotSource>().Should().BeOfType<AssetSnapshotSourceAdapter>();
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_OnItsOwn_RegistersTheSystemClock()
+    {
+        var services = new ServiceCollection();
+
+        services.AddFinancialInfrastructure(new ConfigurationBuilder().Build());
+
+        services.Should().ContainSingle(d => d.ServiceType == typeof(TimeProvider)).Which.ImplementationInstance.Should().BeSameAs(TimeProvider.System);
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
