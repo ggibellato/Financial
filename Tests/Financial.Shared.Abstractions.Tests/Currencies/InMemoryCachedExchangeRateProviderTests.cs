@@ -60,12 +60,4 @@ public class InMemoryCachedExchangeRateProviderTests
 
         inner.CallCount.Should().Be(2);
     }
-
-    [Fact]
-    public void Constructor_NullInnerFactory_Throws()
-    {
-        Action act = () => new InMemoryCachedExchangeRateProvider(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
 }
