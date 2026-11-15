@@ -242,6 +242,16 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
+    public async Task UpdateIncomeSourceAsync_BlankNameForAnUnknownId_IsRefusedForTheNameBeforeTheLookup()
+    {
+        var request = new IncomeSourceUpdateDTO { Name = " ", Group = "Salary", IsActive = true };
+
+        var act = async () => await _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), request);
+
+        await act.Should().ThrowExactlyAsync<ArgumentException>();
+    }
+
+    [Fact]
     public async Task UpdateIncomeSourceAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true };

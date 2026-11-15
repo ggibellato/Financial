@@ -133,6 +133,16 @@ public class CategoryServiceTests
     }
 
     [Fact]
+    public async Task UpdateCategoryAsync_BlankNameForAnUnknownId_IsRefusedForTheNameBeforeTheLookup()
+    {
+        var request = new CategoryUpdateDTO { Name = " ", Active = true, IsInvestment = false, IsTithe = false };
+
+        var act = async () => await _sut.UpdateCategoryAsync(Guid.NewGuid(), request);
+
+        await act.Should().ThrowExactlyAsync<ArgumentException>();
+    }
+
+    [Fact]
     public async Task UpdateCategoryAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var repository = new StubCashFlowRepository();

@@ -41,7 +41,6 @@ public class HistoricAverageServiceTests
     // Pinned to a fixed mid-year date so "current year" averaging tests don't have to branch on
     // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.
     private static readonly DateTimeOffset PinnedNow = new(CurrentYear, 6, 15, 0, 0, 0, TimeSpan.Zero);
-    private static readonly DateOnly PinnedToday = DateOnly.FromDateTime(PinnedNow.UtcDateTime);
     private static readonly DateOnly PinnedMonthStart = new(CurrentYear, 6, 1);
     private const int PinnedMonthsElapsed = 5;
 
@@ -312,7 +311,7 @@ public class HistoricAverageServiceTests
     public void GetHistoricSummaryAverageFromYear_OmitsCurrentYearEntirelyWhenOnlyInProgressMonthIsRecorded()
     {
         var service = CreateService(timeProvider: new FakeTimeProvider(PinnedNow));
-        _repository.Expenses.Add(Expense.Create(PinnedToday, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
+        _repository.Expenses.Add(Expense.Create(PinnedMonthStart, "In-progress month", 9999m, CategoryByName(_repository, "Mercado"), Barclays, null));
         _repository.Expenses.Add(Expense.Create(new DateOnly(CurrentYear - 1, 12, 5), "Prior year", 50m, CategoryByName(_repository, "Mercado"), Barclays, null));
 
         var result = service.GetHistoricSummaryAverageFromYear(CurrentYear);
