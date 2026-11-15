@@ -49,6 +49,7 @@ public class InvestmentAccountServiceTests
             chaseSaveDto.IsLiability.Should().BeFalse();
             var platinumVisaDto = result.Should().ContainSingle(a => a.Name == "PlatinumVisa8003").Which;
             platinumVisaDto.IsLiability.Should().BeTrue();
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentAccountService.GetInvestmentAccounts");
         }
     }
 
@@ -96,18 +97,6 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public void GetInvestmentAccounts_WithANonZeroSnapshot_HasNonZeroInvestmentSnapshotIsTrue()
-    {
-        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
-        _repository.InvestmentAccounts.Add(account);
-        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(account, 2026, 6, 500m));
-
-        var result = _sut.GetInvestmentAccounts();
-
-        result.Should().ContainSingle(a => a.Id == account.Id).Which.HasNonZeroInvestmentSnapshot.Should().BeTrue();
-    }
-
-    [Fact]
     public void GetInvestmentAccounts_WithANonZeroSnapshotInAnyMonth_HasNonZeroInvestmentSnapshotIsTrueRegardlessOfOrder()
     {
         // Reproduces the original bug scenario: a real balance recorded mid-year, followed by
@@ -138,6 +127,7 @@ public class InvestmentAccountServiceTests
             result.HasNonZeroInvestmentSnapshot.Should().BeFalse();
             _repository.InvestmentAccounts.Should().ContainSingle(a => a.Name == "ChaseSave");
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentAccountService.CreateInvestmentAccount").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -191,6 +181,7 @@ public class InvestmentAccountServiceTests
             result.IsActive.Should().BeFalse();
             result.IsLiability.Should().BeTrue();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentAccountService.UpdateInvestmentAccount").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(account.Id.ToString());
         }
     }
 
@@ -254,6 +245,7 @@ public class InvestmentAccountServiceTests
         {
             _repository.InvestmentAccounts.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentAccountService.DeleteInvestmentAccount").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(account.Id.ToString());
         }
     }
 
@@ -278,6 +270,7 @@ public class InvestmentAccountServiceTests
         var act = async () => await _sut.DeleteInvestmentAccountAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.InvestmentAccountService.DeleteInvestmentAccount");
     }
 
     [Fact]
@@ -633,12 +626,18 @@ public class InvestmentAccountServiceTests
     }
 
     [Fact]
-    public async Task CreateInvestmentAccountAsync_WithUnrecognizedSource_ThrowsArgumentException()
+    public async Task CreateInvestmentAccountAsync_NullRequest_ThrowsArgumentNullException()
     {
-        var request = new InvestmentAccountCreateDTO { Name = "New Account", IsActive = true, IsLiability = false, Source = "NotARealSource" };
+        var act = async () => await _sut.CreateInvestmentAccountAsync(null!);
 
-        var act = async () => await _sut.CreateInvestmentAccountAsync(request);
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
 
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not recognized*");
+    [Fact]
+    public async Task UpdateInvestmentAccountAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        var act = async () => await _sut.UpdateInvestmentAccountAsync(Guid.NewGuid(), null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 }

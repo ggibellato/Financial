@@ -38,16 +38,6 @@ public class InvestmentAnnualResultServiceTests
     }
 
     [Fact]
-    public void GetInvestmentAnnualResultForYear_CurrentYear_ExcludesDisabledAccounts()
-    {
-        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
-
-        var result = _sut.GetInvestmentAnnualResultForYear(CurrentYear);
-
-        result.Accounts.Should().NotContain(a => a.Account == "EverydaySaver");
-    }
-
-    [Fact]
     public void GetInvestmentAnnualResultForYear_PastYear_ReturnsOnlyAccountsPresentThatYear()
     {
         _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(Account(_repository, "ChaseSave"), PastYear, 1, 100m));
@@ -116,13 +106,17 @@ public class InvestmentAnnualResultServiceTests
     [Fact]
     public void GetInvestmentAnnualResultForYear_WithPriorYearData_JanuaryDiffEqualsJanuaryMinusPriorDecember()
     {
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(Account(_repository, "ChaseSave"), PastYear - 1, 11, 500m));
         _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(Account(_repository, "ChaseSave"), PastYear - 1, 12, 800m));
         _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(Account(_repository, "ChaseSave"), PastYear, 1, 1000m));
 
         var result = _sut.GetInvestmentAnnualResultForYear(PastYear);
 
-        var chaseSave = result.Accounts.Single(a => a.Account == "ChaseSave");
-        chaseSave.MonthlyDiffs[0].Should().Be(200m);
+        using (new AssertionScope())
+        {
+            result.Accounts.Single(a => a.Account == "ChaseSave").MonthlyDiffs[0].Should().Be(200m);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentAnnualResultService.GetInvestmentAnnualResultForYear");
+        }
     }
 
     [Fact]

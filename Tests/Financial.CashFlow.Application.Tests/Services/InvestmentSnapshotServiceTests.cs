@@ -44,6 +44,7 @@ public class InvestmentSnapshotServiceTests
             result.Should().HaveCount(11);
             result.Should().OnlyContain(s => s.Value == 0m);
             _repository.InvestmentSnapshots.Should().HaveCount(11);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentSnapshotService.GetSnapshotsForMonth");
         }
     }
 
@@ -76,14 +77,19 @@ public class InvestmentSnapshotServiceTests
     }
 
     [Fact]
-    public async Task GetSnapshotsForMonthAsync_CurrentYear_ExcludesDisabledAccounts()
+    public async Task GetSnapshotsForMonthAsync_CurrentYear_HidesTheExistingSnapshotOfAnInactiveAccount()
     {
-        _repository.InvestmentAccounts.Add(InvestmentAccount.Create("EverydaySaver", isActive: false, isLiability: false));
+        var inactive = InvestmentAccount.Create("ClosedSaver", isActive: false, isLiability: false);
+        _repository.InvestmentAccounts.Add(inactive);
+        _repository.InvestmentSnapshots.Add(InvestmentSnapshot.Create(inactive, CurrentYear, 7, 100m));
 
         var result = await _sut.GetSnapshotsForMonthAsync(CurrentYear, 7);
 
-        result.Should().HaveCount(11);
-        result.Should().NotContain(s => s.AccountName == "EverydaySaver");
+        using (new AssertionScope())
+        {
+            result.Should().HaveCount(11);
+            result.Should().NotContain(s => s.AccountId == inactive.Id);
+        }
     }
 
     [Fact]
@@ -130,6 +136,7 @@ public class InvestmentSnapshotServiceTests
     {
         await _sut.GetSnapshotsForMonthAsync(CurrentYear, 7);
         var snapshot = _repository.InvestmentSnapshots.Single(s => s.Month == 7 && s.Account.Name == "ChaseSave");
+        var savesBefore = _repository.SaveChangesCallCount;
 
         var result = await _sut.UpdateSnapshotValueAsync(snapshot.Id, new InvestmentSnapshotValueUpdateDTO { Value = -42.5m });
 
@@ -137,6 +144,8 @@ public class InvestmentSnapshotServiceTests
         {
             result.Value.Should().Be(-42.5m);
             snapshot.Value.Should().Be(-42.5m);
+            _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentSnapshotService.UpdateSnapshotValue").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(snapshot.Id.ToString());
         }
     }
 
@@ -146,6 +155,15 @@ public class InvestmentSnapshotServiceTests
         var act = async () => await _sut.UpdateSnapshotValueAsync(Guid.NewGuid(), new InvestmentSnapshotValueUpdateDTO { Value = 10m });
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.InvestmentSnapshotService.UpdateSnapshotValue");
+    }
+
+    [Fact]
+    public async Task UpdateSnapshotValueAsync_NullRequest_ThrowsArgumentNullException()
+    {
+        var act = async () => await _sut.UpdateSnapshotValueAsync(Guid.NewGuid(), null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     private static StubCashFlowRepository CreateRepository()
@@ -210,6 +228,7 @@ public class InvestmentSnapshotServiceTests
 
         var suggestion = result.Suggestions.Should().ContainSingle(s => s.AccountId == creditCardAccount.Id).Subject;
         suggestion.SuggestedValue.Should().Be(142.17m);
+        suggestion.SourceDescription.Should().Be($"{card.Name} — Aug 2026 statement");
     }
 
     [Fact]
@@ -340,6 +359,14 @@ public class InvestmentSnapshotServiceTests
 
         result.Suggestions.Should().NotContain(s => s.AccountId == creditCardAccount.Id);
         result.NotUpdated.Should().NotContain(s => s.AccountId == creditCardAccount.Id);
+    }
+
+    [Fact]
+    public async Task GetSuggestionsForMonthAsync_RecordsSuccessfulSpan()
+    {
+        await _sut.GetSuggestionsForMonthAsync(CurrentYear, 7);
+
+        _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentSnapshotService.GetSuggestionsForMonth");
     }
 
     #endregion
