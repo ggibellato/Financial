@@ -1,0 +1,222 @@
+# Mutation Review — Plan and Progress
+
+A slice-by-slice review of the test suite with Stryker.NET and StrykerJS. Each slice answers
+three questions:
+
+- **What is missing** — a Survived or NoCoverage mutant is a change no test noticed.
+- **What is not worth keeping** — a test that kills no mutant in its own scope.
+- **What is duplicated** — a test whose kills are all made by another test too.
+
+Tests are judged against `.claude/skills/testing-guide-Financial/SKILL.md` §2 before any is
+removed. AC-tracing tests and contract tests overlap on purpose and are never removed for
+overlap alone.
+
+## Status legend
+
+| Mark | Meaning |
+|---|---|
+| ⬜ | Not started |
+| 🔄 | In progress (branch named in the PR column) |
+| ✅ | Done and merged |
+| ⏭️ | Skipped, reason in Notes |
+
+## Baseline (nightly run 2026-11-14, `18089c83`)
+
+| Scope | Score | Mutants | Survived | No coverage | Run time (CI) |
+|---|---|---|---|---|---|
+| CashFlow.Domain | 90.5% | 1,005 | 85 | 10 | ~5 min |
+| Investment.Domain | 78.0% | 1,150 | 177 | 76 | ~5 min |
+| Web.Logic (`src/utils`, `src/hooks`) | 65.2% | 4,885 | 1,701 undetected | — | ~20 min |
+| Application, Infrastructure, Shared, Api, web components/pages | not mutated | — | — | — | — |
+
+## Local baseline (batch 0.4, 2026-11-14, `9a2be798`, bail off, whole project)
+
+Every project's own test project only, `Category!=Live&Category!=E2E`. Run times are this
+machine's, for the whole project; a slice is a fraction of that.
+
+| Project | Score | Detected / valid | Compile errors | Run time |
+|---|---|---|---|---|
+| CashFlow.Domain | 90.5% | 910 / 1,005 | 54 | 3.4 min |
+| Investment.Domain | 79.0% | 908 / 1,150 | 38 | 1.8 min |
+| CashFlow.Application | 64.4% | 1,385 / 2,151 | 308 | 2.6 min |
+| Investment.Application | 46.6% | 716 / 1,538 | 86 | 1.9 min |
+| Shared.Abstractions | 63.9% | 53 / 83 | — | 0.7 min |
+| Shared.Infrastructure | 74.3% | 113 / 152 | — | 1.7 min |
+| CashFlow.Infrastructure | 80.2% | 199 / 248 | 43 | 7.2 min |
+| Investment.Infrastructure | 81.1% | 215 / 265 | — | 4.7 min |
+| Api | 77.3% | 306 / 396 | 38 | 28.3 min |
+
+What it already shows:
+
+- **Every slice fits one sitting**, so no slice below needs splitting for run time. Api is the
+  only project near the limit as a whole (883 host tests per run); its slices are well under it.
+- **The Application projects are the gap**: Investment.Application 46.6%, CashFlow.Application
+  64.4%, against 79–91% for the Domains.
+- **Some tests live in another project.** `AssetPriceLookupService` (71 of 72 mutants undetected)
+  and `AssetPriceHistoryService` (31 of 32) are Investment.Application classes tested only from
+  `Financial.Investment.Infrastructure.Tests`, which a per-project run does not use. They run
+  the service over the real JSON repository, so they cannot move without the Application tests
+  referencing Infrastructure; slice 4.5 mutates with both test projects instead
+  (`-AlsoTestedBy Investment.Infrastructure`).
+- **DI registration files score 0%** in each Application project (27 and 30 mutants): they are
+  proven by the host tests in `Financial.Api.Tests`, not by the project's own tests. Exclude them
+  from the per-project score (`!**/DependencyInjection/**`) rather than write tests for them.
+- **Compile errors hide whole methods.** When a mutant does not compile, Stryker's Safe Mode drops
+  every mutant in that method: `RecreateCalendarAndResyncAllLockedAsync`
+  (`CreditCardCalendarSyncService`), `EnsureStatementsOpenForMove` (`ExpenseService`),
+  `UpdateMovementAsync`, `ApplyOtherParticipant` (`AccountJsonConverter`). Those methods are not
+  measured at all; their slices review them by reading.
+
+## How one slice is worked
+
+1. **Run** Stryker on the slice only, against the project's own test project, with bail off so
+   the report lists every test that kills each mutant:
+   - .NET: `pwsh scripts/stryker.ps1 -Target CashFlow.Domain -Mutate "**/Expense.cs" -Tests '\.ExpenseTests\.' -DisableBail -NoOpen`
+     (reports under `TestResults/stryker/<target>/<timestamp>/`). `-Mutate` takes several
+     patterns separated by commas; `-AlsoTestedBy <project>` adds another test project for code
+     tested from outside its own project.
+   - Web, in `Financial.Web`: `$env:STRYKER_TEST_INCLUDE = 'src/components/__tests__/CategoryTotalsGrid.test.tsx'; npx --no-install stryker run --mutate src/components/CategoryTotalsGrid.tsx --disableBail --concurrency 2 --force`,
+     then `pwsh ../scripts/mutation-test-value.ps1 -Report reports/mutation/mutation-report.json -Tests 'CategoryTotalsGrid'`.
+     `STRYKER_TEST_INCLUDE` (comma-separated globs) widens `vitest.mutation.config.ts` beyond the
+     utils and hooks tests; `--force` stops incremental mode reusing an earlier slice's results.
+2. **Report** with `scripts/mutation-test-value.ps1`: survivors and uncovered mutants by file;
+   tests in scope that run the mutated code but kill nothing; tests in scope whose every kill
+   another test also makes. `-Tests` (a regex on the test name) keeps the last two lists to the
+   slice's own tests.
+3. **Triage** each survivor as one of:
+   - *missing/weak test* — add or strengthen the test;
+   - *equivalent mutant* — record the count in this file, change nothing (no `// Stryker disable`
+     comments);
+   - *log or exception wording* — record the count; the "started"/"completed" information logs
+     and message text are not asserted (the testing guide asserts spans, and logged failures by
+     exception type only);
+   - *dead code* — remove it in its own PR, never mixed with test changes.
+4. **Prune** low-value and duplicated tests (merge into a `[Theory]` / `it.each`, or delete).
+   The redundancy list holds candidates, not verdicts: every test that builds the entity kills
+   the same constructor mutants, and the two sides of a rule (`IsInvestment_…_IsTrue` /
+   `…_IsFalse`) kill the same mutant while each pins a different case. Remove a test only when
+   it proves nothing the covering test does not, per the testing guide's §2.
+5. **Confirm** by re-running the same slice; record the score before and after.
+6. **Review** with the `simplify` skill on the diff, apply its fixes, commit, then run it again
+   on the committed branch until a pass finds nothing material. Re-run the slice if tests were
+   removed or moved, to confirm no kills were lost.
+7. **Ship** one PR per slice, within the PR size target. The slice PR adds its notes file
+   (`docs/mutation-review/<slice>.md`) and does not touch this file, so the next slice can start
+   before it merges without conflicts. Every few slices one docs-only PR updates the table rows,
+   PR numbers and log lines here.
+
+Slices are sized for one sitting: at most ~30 minutes of mutation run time. A slice that runs
+longer is split before it is worked.
+
+**Timeouts are not kills you can trust.** Stryker counts a timed-out mutant as detected. On
+this machine StrykerJS's default 7 runners plus 8 type checkers timed out 14 of 20 mutants of
+`CategoryTotalsGrid.tsx` and reported 100%; with `--concurrency 2` none timed out. The value
+script warns when more than 10% of mutants time out; re-run with fewer processes before
+recording a score.
+
+## Branches and folders
+
+The review runs alongside other work (a bug fix on `main` in the repo folder), so it never
+uses the repo folder.
+
+- Tooling and this tracker: branch `test/mutation-review` in the worktree
+  `../financial-wt-mutation-review`, removed after batch 0 merged (#1283). The tracker and every
+  slice's notes live in `docs/mutation-review/`.
+- Each slice that changes tests or code: its own branch off `main` in its own worktree
+  (`git worktree add ../financial-wt-mut-<slice> -b test/mutation-<slice> origin/main`), removed
+  after its PR merges. Stryker runs happen in that slice's worktree.
+- Stryker output (`TestResults/`, `StrykerOutput/`, `Financial.Web/reports/`) is ignored by git.
+- A new worktree needs `npm ci` in `Financial.Web` before any web run (about 12 minutes on this
+  machine). Always call the project's StrykerJS through `npx --no-install` or `npm run`: a bare
+  `npx stryker` with no `node_modules` downloads an unrelated, deprecated `stryker` package.
+
+## Progress
+
+### Batch 0 — Tooling
+
+| # | Task | Status | PR | Notes |
+|---|---|---|---|---|
+| 0.1 | `scripts/stryker.ps1` accepts any production project (Application, Infrastructure, Shared, Api), `-DisableBail` and `-Tests` | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | Trial: `Expense.cs` with bail off, 152 mutants in 36 s. Local runs pass `--break-at 0` so a low score still prints the report |
+| 0.2 | `scripts/mutation-test-value.ps1` reads a Stryker JSON report (.NET or JS) and prints survivors by file, idle tests and redundancy candidates | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | `[Theory]` rows merged by name; timeout warning added |
+| 0.3 | StrykerJS: check `disableBail` and a per-slice `--mutate` run work for `.tsx` files | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | `STRYKER_TEST_INCLUDE`; needs `--concurrency 2` here |
+| 0.4 | Measure run time per project and correct the slice sizes below | ✅ | [#1283](https://github.com/ggibellato/Financial/pull/1283) | See "Local baseline"; no slice needed splitting; 2.3 skipped; `Program.cs` added to 9.1 |
+| 0.5 | Ignore `StrykerOutput/` under `Tests/` | ⏭️ | | Already ignored (`StrykerOutput/` in `.gitignore`) |
+
+### Slices
+
+| # | Project | Slice (`--mutate`) | Status | Score before | Score after | Tests added | Tests removed | Equivalent | PR | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1.1 | CashFlow.Domain | `Entities/**` | ⬜ | 90.3% | | | | | | Trial on `Expense.cs`: 14 undetected (round-up suggestion, L43–45) |
+| 1.2 | CashFlow.Domain | `Rules/**`, `ValueObjects/**` | ⬜ | 91.1% | | | | | | |
+| 2.1 | Investment.Domain | `Entities/**` | ⬜ | 82.0% | | | | | | |
+| 2.2 | Investment.Domain | `Rules/**` | ✅ | 74.5% | 87.7% | 15 | 3 | ~35 | [#1284](https://github.com/ggibellato/Financial/pull/1284) | [Notes](2.2.md); 734 → 754 tests |
+| 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
+| 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ⬜ | 70.3% | | | | | | 85 compile errors |
+| 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ⬜ | 67.3% | | | | | | |
+| 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | ✅ | 54.9% | 66.7% | 6 | 4 | 31 | [#1291](https://github.com/ggibellato/Financial/pull/1291) | [Notes](3.3.md); `BestEffortDisconnectRemoteAsync` returns a value nobody reads |
+| 3.4 | CashFlow.Application | Movements: `ExpenseService`, `IncomeService`, `IncomeSourceService`, `IncomeSummaryService`, `IncomeGroupLookupBuilder`, `CategoryService`, `CategorySummaryService`, `HistoricAverageService`, `MensaisService` | 🔄 | 63.5% | 76.9% | 11 | 57 | 25 | [#1294](https://github.com/ggibellato/Financial/pull/1294) | [Notes](3.4.md); tests were 4× the code, 57 Domain re-checks and duplicates removed |
+| 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | ✅ | 63.2% | 76.2% | 7 | 14 | 24 | [#1292](https://github.com/ggibellato/Financial/pull/1292) | [Notes](3.5.md); 14 tests that re-checked Domain pot and tithe rules or duplicated others removed |
+| 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ✅ | 63.2% | 75.3% | 5 | 4 | 11 | [#1293](https://github.com/ggibellato/Financial/pull/1293) | [Notes](3.6.md); an inactive account's existing snapshot stays hidden (found by the second simplify pass) |
+| 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
+| 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | [Notes](4.1.md); 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
+| 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ✅ | 49.6% | 70.3% | 7 | 1 | 11 | [#1287](https://github.com/ggibellato/Financial/pull/1287) | [Notes](4.2.md); `BrokerCurrencyParser` is only used by 4.3/4.4 services |
+| 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ✅ | 56.8% | 73.7% | 15 | 31 | 30 | [#1289](https://github.com/ggibellato/Financial/pull/1289) | [Notes](4.3.md); 28 asset-summary tests that re-checked Domain results removed |
+| 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ✅ | 70.2% | 78.5% | 3 | 10 | 5 | [#1290](https://github.com/ggibellato/Financial/pull/1290) | [Notes](4.4.md); 10 tests that re-checked Domain XIRR and valuation results removed |
+| 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | [Notes](4.5.md); run with `-AlsoTestedBy Investment.Infrastructure` |
+| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ✅ | 52.7% | 74.5% | 9 | 1 | 6 | [#1288](https://github.com/ggibellato/Financial/pull/1288) | [Notes](4.6.md); 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
+| 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
+| 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
+| 7.1 | Shared.Abstractions | all | ⬜ | 63.9% | | | | | | `ReflectionJsonTypeInfoHelpers` 10 of 10 undetected |
+| 7.2 | Shared.Infrastructure | all | ⬜ | 74.3% | | | | | | `DebouncedJsonStorage` 19 of 55 undetected |
+| 7.3 | CashFlow.Infrastructure | all | ⬜ | 80.2% | | | | | | Slowest per mutant (7.2 min) |
+| 7.4 | Investment.Infrastructure | all | ⬜ | 81.1% | | | | | | DI file 11 of 19 undetected |
+| 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | ⬜ | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive |
+| 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ⬜ | 71.6% | | | | | | Middleware and helpers already 100%; `Program.cs` 23 of 64 undetected |
+| 9.2 | Financial.Api | Controllers with branching only | ⬜ | 78.7% | | | | | | Thin controllers skipped; `CalendarIntegrationController` 8 of 18 undetected |
+
+### Batch 10 — Keep it continuous
+
+| # | Task | Status | PR | Notes |
+|---|---|---|---|---|
+| 10.1 | Add each reviewed project to the nightly `stryker-dotnet` matrix with its own break threshold | ⬜ | | |
+| 10.2 | Widen the nightly StrykerJS `mutate` to the reviewed components | ⬜ | | |
+| 10.3 | Raise the existing break thresholds once scores hold for a week (`docs/ci-affected-pipeline.md`) | ⬜ | | |
+| 10.4 | Decide on an advisory PR job mutating changed files only (`--since origin/main`) | ⬜ | | |
+
+## Slice notes
+
+Each slice keeps its notes (gaps closed, tests removed and why, the undetected mutants by
+class, production notes) in its own file in this folder:
+
+- [2.2 Investment.Domain rules (74.5% → 87.7%)](2.2.md)
+- [3.3 CashFlow.Application calendar (54.9% → 66.7%)](3.3.md)
+- [3.4 CashFlow.Application movements (63.5% → 76.9%)](3.4.md)
+- [3.5 CashFlow.Application reserve and settlement (63.2% → 76.2%)](3.5.md)
+- [3.6 CashFlow.Application investment accounts (63.2% → 75.3%)](3.6.md)
+- [4.1 Investment.Application assets and transactions (48.0% → 65.0%)](4.1.md)
+- [4.2 Investment.Application corporate actions (49.6% → 70.3%)](4.2.md)
+- [4.3 Investment.Application summaries and dashboard (56.8% → 73.7%)](4.3.md)
+- [4.4 Investment.Application breakdowns and returns (70.2% → 78.5%)](4.4.md)
+- [4.5 Investment.Application prices, income and tax (47.7% → 77.5%)](4.5.md)
+- [4.6 Investment.Application navigation, brokers and validation (55.3% → 74.5%)](4.6.md)
+
+## Log
+
+One line per working session: date, slice, outcome.
+
+| Date | Slice | Outcome |
+|---|---|---|
+| 2026-11-14 | — | Plan written; baseline recorded from nightly run 43584910403 |
+| 2026-11-14 | 0 | Tooling built and tried on `Expense.cs` and `CategoryTotalsGrid.tsx`; every .NET project measured with bail off (local baseline); merged in #1283 |
+| 2026-11-14 | 2.2 | Rules 74.5% → 87.7%; 15 tests added, 3 removed or merged, 2 strengthened; unreachable XIRR clamp found |
+| 2026-11-14 | 4.5 | Prices, income, tax 47.7% → 77.5% (26.7% without the Infrastructure tests); span assertions added, 16 duplicated tests removed or merged; `-AlsoTestedBy` added to `stryker.ps1` |
+| 2026-11-15 | 4.1 | Assets and transactions 48.0% → 65.0%; currency-preservation tests fixed, spans and gaps added, 9 duplicated tests removed or merged; most of the rest is log wording |
+| 2026-11-15 | 4.2 | Corporate actions 49.6% → 70.3%; update rollback, two-mergers-one-target and inline-target identity tested; 1 idle test removed |
+| 2026-11-15 | 4.6 | Navigation, brokers, validation 55.3% → 74.5%; cost-basis broker lookup, display names, lot mapping and spans tested |
+| 2026-11-15 | 4.3 | Summaries and dashboard 56.8% → 73.7%; converted figures and edges tested; 28 asset-summary tests that re-checked Domain results removed |
+| 2026-11-15 | 4.4 | Breakdowns and returns 70.2% → 78.5%; spans, allocation flags and gross/net XIRR wiring tested; 10 tests that re-checked Domain results removed |
+| 2026-11-15 | 3.3 | Calendar 54.9% → 66.7%; spans, OAuth state expiry and reuse, refresh skew and rotation, invoice-month boundary tested; 4 tests removed or merged |
+| 2026-11-15 | 3.5 | Reserve and settlement 63.2% → 76.2%; spans, null requests and tithe boundaries tested; 14 tests that re-checked Domain rules or duplicated others removed |
+| 2026-11-15 | 3.6 | Investment accounts 63.2% → 75.3%; spans, null requests, the prior-December filter and the snapshot grid's filter on existing snapshots tested; 4 tests removed |
+| 2026-11-15 | 3.4 | Movements 63.5% → 76.9%; spans, null requests, the current-month cutoff and the historic tax difference tested; 57 tests that re-checked Domain rules or duplicated others removed |
+| 2026-11-15 | — | Tracker and slice notes moved to `docs/mutation-review/`, one file per slice; slice PRs no longer edit this file |
