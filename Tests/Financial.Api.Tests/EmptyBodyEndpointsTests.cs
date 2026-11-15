@@ -1,6 +1,8 @@
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Net.Http.Json;
 using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
@@ -12,7 +14,7 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
 {
     private static readonly HashSet<string> BodyMethods = ["POST", "PUT", "PATCH", "DELETE"];
 
-    [GeneratedRegex(@"\{(?<name>\w+)(?::(?<constraint>\w+))?[^}]*\}")]
+    [GeneratedRegex(@"\{(?<name>\w+)[^}]*\}")]
     private static partial Regex RouteParameter();
 
     [Fact]
@@ -37,13 +39,21 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
 
             var response = await Client.SendAsync(request);
 
-            if (response.StatusCode != HttpStatusCode.BadRequest || await ProblemDetailAsync(response) is not null)
+            if (response.StatusCode != HttpStatusCode.BadRequest || !await IsRejectedBeforeAnyServiceAsync(response, endpoint))
             {
                 offenders.Add($"{method} {url} -> {(int)response.StatusCode}");
             }
         }
 
         offenders.Should().BeEmpty("an empty body must be rejected with 400 rather than reach a service");
+    }
+
+    private static async Task<bool> IsRejectedBeforeAnyServiceAsync(HttpResponseMessage response, RouteEndpoint endpoint)
+    {
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        var routeParameters = endpoint.RoutePattern.Parameters.Select(p => p.Name);
+        return problem!.Detail is null
+            && !problem.Errors.Keys.Any(key => routeParameters.Contains(key, StringComparer.OrdinalIgnoreCase));
     }
 
     private static bool HasRequestBody(RouteEndpoint endpoint)
@@ -60,7 +70,7 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
     {
         var name = parameter.Groups["name"].Value;
         var type = action.Parameters.FirstOrDefault(p => p.Name == name)?.ParameterType;
-        return type == typeof(Guid) || parameter.Groups["constraint"].Value == "guid" ? Guid.NewGuid().ToString()
+        return type == typeof(Guid) ? Guid.NewGuid().ToString()
             : type == typeof(int) || type == typeof(long) || name == "version" ? "1"
             : "x";
     }

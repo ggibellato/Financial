@@ -13,6 +13,14 @@ public class TaxYearWorkbookAcceptanceTests : ApiEndpointTests
     private const string AssetName = "BCIA11";
 
     [Fact]
+    public async Task Workbook_WithoutATaxYear_ReturnsBadRequest()
+    {
+        var response = await Client.GetAsync("/api/v1/financial/tax-workbook?jurisdiction=BR");
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     [Trait("AC", "P51-F03-tax-year-workbook-01")]
     [Trait("AC", "P51-F03-tax-year-workbook-05")]
     public async Task WorkbookOptionsAndWorkbook_ReflectARecordedCreditForThatJurisdictionAndTaxYear()
