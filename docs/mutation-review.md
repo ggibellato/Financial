@@ -156,7 +156,7 @@ uses the repo folder.
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ⬜ | 56.8% | | | | | | |
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
-| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | 🔄 | 52.7% | 74.5% | 9 | 0 | 6 | | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
+| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | 🔄 | 52.7% | 74.5% | 9 | 1 | 6 | | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ⬜ | 63.9% | | | | | | `ReflectionJsonTypeInfoHelpers` 10 of 10 undetected |
@@ -340,15 +340,17 @@ Gaps closed:
   dropping either side of the fallback, or preferring historic over active all passed, and the
   historic fallback never ran. One test has a different active broker plus a historic broker with
   the same name; another prices a historic-only broker.
-- **Tax jurisdictions** in asset details are now checked in order, not only as a set.
+- **Tax jurisdictions** in asset details are now checked in order, not only as a set, with the
+  classifications added out of order so the sort is what puts them right.
 - **Navigation tree display names** ("Broker (BRL)", "Portfolio (1 assets)") and **disposal-record
   lots**, tested on `NavigationMapper` directly rather than through the service, so they do not
   depend on repository fixtures or on how the domain builds lots.
 - **`BrokerService`**: success and failure spans for every operation, null requests, a blank
   current name on update.
 - **`NavigationService`**: success spans on the early returns (blank or unknown asset) and on open
-  lots; the hand-built tree span test now uses `ShouldHaveSucceededSpan` and keeps the entity-type
-  check.
+  lots; the tree test now has two brokers, checks one child each in name order, and uses
+  `ShouldHaveSucceededSpan`, keeping the entity-type check. The older single-broker cost basis test
+  was removed: the new active-broker test checks the same and more.
 
 `IsinValidator`, `AssetContextValidator` and `RequiredValueValidator` have no tests of their own;
 the service tests cover them.
@@ -358,6 +360,11 @@ from the active list first, then the historic one, whatever scope was asked for,
 `BrokerService` uses the domain's `Investments.GetBroker(name, preferHistoric)`. A historic asset
 whose broker name is also an active broker would show the active broker's method. The tests here
 pin only the active-scope case.
+
+Also for later: every service method repeats the same span block (start, `MarkSuccess`,
+`MarkFailed` and rethrow), so each operation needs its own success and failure test to kill the
+same mutants. One wrapper in `Shared.Abstractions` that owns that block would be tested once, and
+service tests would only check the span name. A production change, not part of a test slice.
 
 The 48 still undetected, all reviewed:
 

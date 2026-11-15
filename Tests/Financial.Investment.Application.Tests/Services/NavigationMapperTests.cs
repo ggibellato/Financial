@@ -228,11 +228,9 @@ public class NavigationMapperTests
 
         var lot = NavigationMapper.MapDisposalRecord(record).LotsConsumed.Should().ContainSingle().Subject;
 
-        using (new AssertionScope())
-        {
-            lot.SourceTransactionId.Should().Be(sourceTransactionId);
-            lot.Quantity.Should().Be(3m);
-            lot.UnitCost.Should().Be(12.5m);
-        }
+        using var _ = new AssertionScope();
+        lot.SourceTransactionId.Should().Be(sourceTransactionId);
+        lot.Quantity.Should().Be(3m);
+        lot.UnitCost.Should().Be(12.5m);
     }
 }

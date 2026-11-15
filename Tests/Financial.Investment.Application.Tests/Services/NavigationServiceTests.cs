@@ -19,13 +19,13 @@ public class NavigationServiceTests
     private NavigationService CreateService() => new(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
 
     [Fact]
-    public void GetNavigationTree_AddsOneChildPerBrokerAndRecordsBothSpans()
+    public void GetNavigationTree_AddsOneChildPerBrokerInNameOrderAndRecordsBothSpans()
     {
-        _repository.Broker = BuildBrokerWithAsset("ASSET1", GlobalAssetClass.Equity, quantity: 10m);
+        _repository.Brokers = [Broker.Create("Zeta", "BRL"), Broker.Create("Alpha", "GBP")];
 
         var tree = CreateService().GetNavigationTree();
 
-        tree.Children.Should().ContainSingle();
+        tree.Children.Select(child => child.Metadata[NavigationMetadataKeys.BrokerName]).Should().Equal("Alpha", "Zeta");
         _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetNavigationTree")
             .Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Navigation");
         _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetBrokers");
@@ -105,8 +105,8 @@ public class NavigationServiceTests
         var portfolio = broker.AddPortfolio("Portfolio");
         var asset = BuildAssetWithQuantity("ASSET1", 0m);
         var investments = Investments.Create();
-        asset.AddCredit(Credit.Create(new DateTime(2026, 1, 1), Credit.CreditType.Dividend, 100m, currency: Currency.BRL), investments);
         asset.AddCredit(Credit.Create(new DateTime(2026, 1, 1), Credit.CreditType.Dividend, 50m, currency: Currency.GBP), investments);
+        asset.AddCredit(Credit.Create(new DateTime(2026, 1, 1), Credit.CreditType.Dividend, 100m, currency: Currency.BRL), investments);
         portfolio.AddAsset(asset);
         _repository.Broker = broker;
 
@@ -513,21 +513,6 @@ public class NavigationServiceTests
 
         details.Should().NotBeNull();
         details!.DisposalRecords.Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetAssetDetails_ReturnsTheBrokersConfiguredCostBasisMethod()
-    {
-        var broker = Broker.Create("Broker", "BRL");
-        broker.SetCostBasisMethod(CostBasisMethod.FIFO);
-        var portfolio = broker.AddPortfolio("Portfolio");
-        portfolio.AddAsset(BuildAssetWithQuantity("ASSET1", 10m));
-        _repository.Broker = broker;
-
-        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
-
-        details.Should().NotBeNull();
-        details!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
     }
 
     [Fact]
