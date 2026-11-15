@@ -57,9 +57,11 @@ public abstract class ReferenceConverterTests<T> where T : class
     [Fact]
     public void Read_NullToken_ReturnsNull()
     {
-        var options = CreateOptions([]);
+        var converter = (JsonConverter<T>)CreateConverter([]);
+        var reader = new Utf8JsonReader("null"u8);
+        reader.Read();
 
-        var result = JsonSerializer.Deserialize<T>("null", options);
+        var result = converter.Read(ref reader, typeof(T), new JsonSerializerOptions());
 
         result.Should().BeNull();
     }
