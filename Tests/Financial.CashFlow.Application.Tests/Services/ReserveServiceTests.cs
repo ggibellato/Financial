@@ -54,31 +54,6 @@ public class ReserveServiceTests
     }
 
     [Fact]
-    public async Task UpdateMovementAsync_ExistingId_RecordsASuccessfulPotTransactionSpan()
-    {
-        _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
-        var movement = _repository.PotTransactions[0];
-
-        await _sut.UpdateMovementAsync(movement.Id, new ReserveMovementUpdateDTO
-        {
-            BucketId = BucketId("HouseTreats"),
-            Amount = 150m,
-            Date = new DateOnly(2026, 7, 5),
-            Description = "Corrected"
-        });
-
-        var span = _tracer.Spans.Should().ContainSingle().Which;
-        using (new AssertionScope())
-        {
-            span.Name.Should().Be("CashFlow.ReserveService.UpdateMovement");
-            span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
-            span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("PotTransaction");
-            span.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(movement.Id.ToString());
-            span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
-        }
-    }
-
-    [Fact]
     public async Task UpdateMovementAsync_ExistingId_UpdatesFieldsAndSaves()
     {
         _repository.Seed("Investimento", 100m, new DateOnly(2026, 7, 1));
@@ -100,6 +75,9 @@ public class ReserveServiceTests
             result.Date.Should().Be(new DateOnly(2026, 7, 5));
             result.Description.Should().Be("Corrected");
             _repository.SaveChangesCallCount.Should().Be(1);
+            var span = _tracer.ShouldHaveSucceededSpan("CashFlow.ReserveService.UpdateMovement");
+            span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("PotTransaction");
+            span.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(movement.Id.ToString());
         }
     }
 
@@ -230,6 +208,7 @@ public class ReserveServiceTests
 
         _repository.PotTransactions.Should().ContainSingle();
         _repository.SaveChangesCallCount.Should().Be(1);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.ReserveService.DeleteMovement").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(toDelete.Id.ToString());
     }
 
     [Fact]

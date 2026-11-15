@@ -126,16 +126,22 @@ public class SettlementServiceTests
     }
 
     [Theory]
-    [InlineData(true, null, "Choose the currency.")]
-    [InlineData(true, "USX", "Unknown currency 'USX'.")]
-    [InlineData(false, "BRL", "Samuel doesn't use BRL.")]
-    public async Task AddEntryAsync_MissingUnknownOrUnheldCurrency_RefusedAndNothingSaved(bool twoCurrencyAccount, string? currency, string message)
+    [InlineData(null, "Choose the currency.")]
+    [InlineData("USX", "Unknown currency 'USX'.")]
+    public async Task AddEntryAsync_MissingOrUnknownCurrency_RefusedAndNothingSaved(string? currency, string message)
     {
-        var account = twoCurrencyAccount ? _mae : _son;
-
-        var act = () => CreateService().AddEntryAsync(account.Id, NewEntry(currency));
+        var act = () => CreateService().AddEntryAsync(_mae.Id, NewEntry(currency));
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage(message);
+        _repository.SettlementTransactions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task AddEntryAsync_OneCurrencyAccountGivenAnotherCurrency_IsRefusedRatherThanBookedInItsOwn()
+    {
+        var act = () => CreateService().AddEntryAsync(_son.Id, NewEntry("BRL"));
+
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Samuel doesn't use BRL.");
         _repository.SettlementTransactions.Should().BeEmpty();
     }
 
@@ -204,12 +210,11 @@ public class SettlementServiceTests
     }
 
     [Fact]
-    public async Task AddEntryAsync_Success_RecordsSuccessfulSpan()
+    public async Task AddEntryAsync_Success_RecordsSuccessfulSpanWithTheEntryId()
     {
-        await CreateService().AddEntryAsync(_mae.Id, NewEntry());
+        var result = await CreateService().AddEntryAsync(_mae.Id, NewEntry());
 
-        _tracer.Spans.Should().ContainSingle(s => s.Name == "CashFlow.SettlementService.AddEntry")
-            .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.SettlementService.AddEntry").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
     }
 
     [Fact]
@@ -242,6 +247,7 @@ public class SettlementServiceTests
             result.Warning.Should().BeNull();
             provider.CallCount.Should().Be(0);
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.SettlementService.UpdateEntry").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(entry.Id.ToString());
         }
     }
 
@@ -332,8 +338,7 @@ public class SettlementServiceTests
 
         _repository.SettlementTransactions.Should().BeEmpty();
         _repository.SaveChangesCallCount.Should().Be(1);
-        _tracer.Spans.Should().ContainSingle(s => s.Name == "CashFlow.SettlementService.DeleteEntry")
-            .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.SettlementService.DeleteEntry").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(entry.Id.ToString());
     }
 
     [Fact]
@@ -390,8 +395,7 @@ public class SettlementServiceTests
             result.Warning.Should().BeNull();
             provider.CallCount.Should().Be(0);
             _repository.SaveChangesCallCount.Should().Be(1);
-            _tracer.Spans.Should().ContainSingle(s => s.Name == "CashFlow.SettlementService.Settle")
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.SettlementService.Settle").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(stored.Id.ToString());
         }
     }
 
@@ -474,5 +478,18 @@ public class SettlementServiceTests
         var act = () => CreateService().SettleAsync(bank.Id, Settlement(10m, null, "GBP"));
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays is not a Settlement account.");
+    }
+
+    [Fact]
+    public async Task EveryWriteMethod_NullRequest_ThrowsArgumentNullException()
+    {
+        var sut = CreateService();
+
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => sut.AddEntryAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => sut.SettleAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
+            await FluentActions.Awaiting(() => sut.UpdateEntryAsync(_mae.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+        }
     }
 }
