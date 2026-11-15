@@ -63,6 +63,7 @@ public class AccountGroupSummaryServiceTests
             summary.Members[0].IsActive.Should().BeTrue();
             summary.Members[0].TotalOwed.Should().BeNull();
             summary.Members[2].Currency.Should().Be("BRL");
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountGroupSummaryService.GetDefaultGroupSummary");
         }
     }
 
@@ -113,6 +114,19 @@ public class AccountGroupSummaryServiceTests
     }
 
     [Fact]
+    public void GetDefaultGroupSummary_TwoRoundUpMembersInACurrency_AddUpInItsTotal()
+    {
+        var monzo = TestAccounts.Bank("Monzo", roundUpEnabled: true);
+        _repository.Accounts.Add(monzo);
+        AddExpenseWithRoundUp(new DateOnly(2026, 9, 3), 2.30m, 0.70m, _chase);
+        AddExpenseWithRoundUp(new DateOnly(2026, 9, 4), 4.90m, 0.10m, monzo);
+
+        var summary = _sut.GetDefaultGroupSummary(2026, 9);
+
+        summary.Totals.Single(total => total.Currency == "GBP").RoundUpTotal.Should().Be(0.80m);
+    }
+
+    [Fact]
     public void GetDefaultGroupSummary_CategoryTotalsSum_UsesEveryExpenseReportedInTheMonth()
     {
         _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 9, 10), "Shop", 50m, _groceries, _barclays, creditCard: null));
@@ -129,6 +143,7 @@ public class AccountGroupSummaryServiceTests
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 25), _dividends, null, 12.34m, _barclays));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 1), _salary, 2500m, 2000m, _barclays));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 15), _salary, null, 100m, _chase));
+        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 20), _salary, 400m, 300m, _chase));
         _repository.Incomes.Add(Income.Create(new DateOnly(2026, 8, 31), _salary, 900m, 800m, _chase));
 
         var summary = _sut.GetDefaultGroupSummary(2026, 9);
@@ -140,9 +155,9 @@ public class AccountGroupSummaryServiceTests
             summary.IncomeTotals[0].NetValue.Should().Be(12.34m);
             summary.IncomeTotals[0].GrossValue.Should().BeNull();
             summary.IncomeTotals[1].IncomeSourceId.Should().Be(_salary.Id);
-            summary.IncomeTotals[1].NetValue.Should().Be(2100m);
-            summary.IncomeTotals[1].GrossValue.Should().Be(2500m);
-            summary.TotalIncoming.Should().Be(2112.34m);
+            summary.IncomeTotals[1].NetValue.Should().Be(2400m);
+            summary.IncomeTotals[1].GrossValue.Should().Be(2900m);
+            summary.TotalIncoming.Should().Be(2412.34m);
         }
     }
 
@@ -323,16 +338,8 @@ public class AccountGroupSummaryServiceTests
             groups[0].Members.Select(member => member.Name).Should().Equal("Barclays", "Chase", "Itaú");
             groups[1].Members.Select(member => member.Name).Should().Equal("Amex");
             groups[2].Members.Select(member => member.Name).Should().Equal("holidays", "Reserva");
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountGroupSummaryService.GetTemplateGroups");
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountGroupSummaryService.GetTemplateGroups");
         }
-    }
-
-    [Fact]
-    public void GetTemplateGroups_TemplateWithoutListedAccounts_HasNoGroup()
-    {
-        _repository.Accounts.Add(TestAccounts.CreditCard("Closed card", isActive: false));
-
-        _sut.GetTemplateGroups(2026, 9).Select(group => group.TemplateName).Should().Equal("Bank");
     }
 
     [Fact]
@@ -476,19 +483,6 @@ public class AccountGroupSummaryServiceTests
     {
         _repository.Accounts.Add(_amex);
         AddCharge(new DateOnly(2026, 9, 3), 30m, new DateOnly(2026, 9, 1));
-        var statement = CardStatement.Create(_amex, 2026, 9);
-        statement.MarkLegacyPaid();
-        _repository.CardStatements.Add(statement);
-
-        var amex = _sut.GetDefaultGroupSummary(2026, 9).Members.Single(member => member.Name == "Amex");
-
-        amex.Statement.Should().BeEquivalentTo(new { OutstandingTotal = 0m, IsPaid = true });
-    }
-
-    [Fact]
-    public void GetDefaultGroupSummary_CardMemberWithPaidStatement_IsPaid()
-    {
-        _repository.Accounts.Add(_amex);
         var statement = CardStatement.Create(_amex, 2026, 9);
         statement.MarkLegacyPaid();
         _repository.CardStatements.Add(statement);

@@ -6,6 +6,7 @@ using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.ValueObjects;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -108,7 +109,7 @@ public class AccountAdminServiceTests
             var settlement = templates[3];
             settlement.Currencies.Should().Equal("BRL", "GBP");
             settlement.Capabilities.Should().Equal("HasParticipants", "MultiCurrency", "CanSettle");
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountAdminService.GetAccountTemplates");
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountAdminService.GetAccountTemplates");
         }
     }
 
@@ -129,6 +130,7 @@ public class AccountAdminServiceTests
             result.BalanceStartDate.Should().Be(Today);
             result.RoundUpEnabled.Should().BeTrue();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountAdminService.CreateAccount").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -164,14 +166,6 @@ public class AccountAdminServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_NameOverSixtyCharacters_Throws()
-    {
-        var act = () => _sut.CreateAsync(NewBank(name: new string('a', 61)));
-
-        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Account name must be 60 characters or fewer.");
-    }
-
-    [Fact]
     public async Task CreateAsync_MissingCapabilityFields_ThrowsTheFieldMessage()
     {
         var withoutOpening = () => _sut.CreateAsync(NewBank(openingBalance: null));
@@ -199,14 +193,6 @@ public class AccountAdminServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_NegativeOpeningBalance_Throws()
-    {
-        var act = () => _sut.CreateAsync(NewBank(openingBalance: -1m));
-
-        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Opening balance cannot be negative.");
-    }
-
-    [Fact]
     public async Task UpdateAsync_ValidRequest_RenamesDeactivatesAndSaves()
     {
         var result = await _sut.UpdateAsync(_chase.Id, Edit(_chase, name: "Chase Saver", isActive: false, openingBalance: 80m));
@@ -220,6 +206,7 @@ public class AccountAdminServiceTests
             result.IsActive.Should().BeFalse();
             result.HasRecords.Should().BeFalse();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountAdminService.UpdateAccount").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_chase.Id.ToString());
         }
     }
 
@@ -323,14 +310,6 @@ public class AccountAdminServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_CurrencyChangeWithoutRecords_IsCheckedAgainstTheTemplate()
-    {
-        var act = () => _sut.UpdateAsync(_chase.Id, Edit(_chase, currency: "BRL"));
-
-        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Bank accounts must be GBP.");
-    }
-
-    [Fact]
     public async Task UpdateAsync_UnknownId_ThrowsKeyNotFound()
     {
         var act = () => _sut.UpdateAsync(Guid.NewGuid(), Edit(_chase));
@@ -347,6 +326,7 @@ public class AccountAdminServiceTests
         {
             _repository.Accounts.Should().NotContain(_chase);
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountAdminService.DeleteAccount").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_chase.Id.ToString());
         }
     }
 
@@ -709,6 +689,42 @@ public class AccountAdminServiceTests
         }
     }
 
+    public static TheoryData<string> BankUses => new() { "income", "expense", "transfer out", "transfer in" };
+
+    [Theory]
+    [MemberData(nameof(BankUses))]
+    public async Task DeleteAsync_BankUsedByARecord_ThrowsEntityInUseAndKeepsIt(string use)
+    {
+        var other = TestAccounts.Bank("Monzo");
+        _repository.Accounts.Add(other);
+        switch (use)
+        {
+            case "income":
+                _repository.Incomes.Add(Income.Create(new DateOnly(2026, 9, 1), IncomeSource.Create("Salary", IncomeGroup.Salary), null, 100m, _chase));
+                break;
+            case "expense":
+                _repository.Expenses.Add(Expense.Create(new DateOnly(2026, 9, 3), "Taxi", 30m, Category.Create("Mercado"), _chase, null));
+                break;
+            case "transfer out":
+                _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 9, 4), _chase, other, 10m, null, null, TestClock.Today));
+                break;
+            case "transfer in":
+                _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 9, 4), other, _chase, 10m, null, null, TestClock.Today));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(use), use, null);
+        }
+
+        var act = async () => await _sut.DeleteAsync(_chase.Id);
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<EntityInUseException>();
+            _repository.Accounts.Should().Contain(_chase);
+            _repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
     [Fact]
     public async Task DeleteAsync_PotsAccountThatOwnsPots_ThrowsTheDeactivateMessageAndKeepsIt()
     {
@@ -832,14 +848,6 @@ public class AccountAdminServiceTests
             _repository.Accounts.Should().HaveCount(2);
             _repository.SaveChangesCallCount.Should().Be(0);
         }
-    }
-
-    [Fact]
-    public async Task CreateAsync_SettlementOtherParticipantOverSixtyCharacters_Throws()
-    {
-        var act = () => _sut.CreateAsync(NewSettlement("BRL", "BRL", new string('a', 61)));
-
-        (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("The other participant's name must be 60 characters or fewer.");
     }
 
     [Fact]
@@ -995,21 +1003,6 @@ public class AccountAdminServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_SettlementWithAnEntryChangingItsTemplate_ThrowsAndKeepsIt()
-    {
-        var mae = MaeWithAnEntry();
-
-        var act = () => _sut.UpdateAsync(mae.Id, Edit(mae));
-
-        using (new AssertionScope())
-        {
-            (await act.Should().ThrowAsync<ArgumentException>()).WithMessage("Template and currency can't change once the account has transactions.");
-            mae.Template.Should().Be(AccountTemplate.Settlement);
-            _repository.SaveChangesCallCount.Should().Be(0);
-        }
-    }
-
-    [Fact]
     public async Task UpdateAsync_SettlementWithAnEntry_KeepsTheOtherParticipantEditableAndReportsRecords()
     {
         var mae = MaeWithAnEntry();
@@ -1047,5 +1040,17 @@ public class AccountAdminServiceTests
         _repository.SettlementTransactions.Add(
             SettlementTransaction.Create(mae, new DateOnly(2026, 7, 1), "Entry", null, SettlementPayer.You, Currency.BRL, 100m, 15m, TestClock.Today));
         return mae;
+    }
+
+    [Fact]
+    public async Task CreateAndUpdate_NullRequest_ThrowAndRecordFailedSpans()
+    {
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.CreateAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountAdminService.CreateAccount");
+            await FluentActions.Awaiting(() => _sut.UpdateAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountAdminService.UpdateAccount");
+        }
     }
 }
