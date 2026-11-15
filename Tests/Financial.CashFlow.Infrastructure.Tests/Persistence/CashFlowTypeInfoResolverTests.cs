@@ -17,6 +17,38 @@ public class CashFlowTypeInfoResolverTests
         TypeInfoResolver = new CashFlowTypeInfoResolver(context)
     };
 
+    public static TheoryData<Type, string, bool> ReferenceProperties => new()
+    {
+        { typeof(Income), "AccountId", true },
+        { typeof(Income), "IncomeSourceId", true },
+        { typeof(Expense), "PaymentSourceAccountId", true },
+        { typeof(Transfer), "SourceAccountId", true },
+        { typeof(Transfer), "DestinationAccountId", true },
+        { typeof(BalanceAdjustment), "AccountId", true },
+        { typeof(SettlementTransaction), "AccountId", true },
+        { typeof(InvestmentSnapshot), "InvestmentAccountId", true },
+        { typeof(PotTransaction), "BucketId", true },
+        { typeof(Expense), "CreditCardId", true },
+        { typeof(CardStatement), "CreditCardId", true },
+        { typeof(Expense), "CategoryId", true },
+        { typeof(PotTransaction), "IncomeId", false },
+        { typeof(InvestmentAccount), "CreditCardId", false },
+        { typeof(InvestmentAccount), "PotsAccountId", false },
+        { typeof(IncomeSource), "PotsAccountId", false },
+        { typeof(Income), "PotsAccountId", false }
+    };
+
+    [Theory]
+    [MemberData(nameof(ReferenceProperties))]
+    public void GetTypeInfo_ReferenceProperty_IsWrittenUnderItsWireNameAndRequiredOnlyWhenEveryRecordHasIt(Type owningType, string wireName, bool isRequired)
+    {
+        var options = CreateOptions();
+
+        var typeInfo = options.TypeInfoResolver!.GetTypeInfo(owningType, options);
+
+        typeInfo!.Properties.Should().ContainSingle(p => p.Name == wireName).Which.IsRequired.Should().Be(isRequired);
+    }
+
     [Fact]
     public void GetTypeInfo_ForManagedType_EnablesPrivateConstructor()
     {

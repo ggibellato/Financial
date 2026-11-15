@@ -45,6 +45,16 @@ public abstract class ReferenceConverterTests<T> where T : class
     }
 
     [Fact]
+    public void Read_WithoutALookup_Throws()
+    {
+        var options = CreateOptions(lookup: null);
+
+        var act = () => JsonSerializer.Deserialize<T>($"\"{Guid.NewGuid()}\"", options);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
     public void Read_NullToken_ReturnsNull()
     {
         var options = CreateOptions([]);

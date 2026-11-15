@@ -37,6 +37,8 @@ public class CalendarConnectionStoreTests
             store.Save(connection);
             var loaded = store.Load();
 
+            File.Exists(path).Should().BeTrue();
+
             // BeEquivalentTo, not Be: record equality on IReadOnlyDictionary falls back to
             // reference equality, and deserialization always produces a new dictionary instance.
             loaded.Should().BeEquivalentTo(connection);
@@ -96,6 +98,38 @@ public class CalendarConnectionStoreTests
         {
             File.Delete(path);
         }
+    }
+
+    [Fact]
+    public void Save_IntoAFolderThatDoesNotExistYet_CreatesIt()
+    {
+        var folder = Path.Combine(Path.GetTempPath(), $"calendar-credentials-{Guid.NewGuid():N}");
+        var path = Path.Combine(folder, "credentials.json");
+        var store = new CalendarConnectionStore(path);
+
+        try
+        {
+            store.Save(new CalendarConnection("user@gmail.com", "cal", "at", "rt", TestClock.Default, TestClock.Default, new Dictionary<Guid, string>()));
+
+            File.Exists(path).Should().BeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(folder))
+            {
+                Directory.Delete(folder, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void Save_NullConnection_Throws()
+    {
+        var store = new CalendarConnectionStore(CreateTempPath());
+
+        Action act = () => store.Save(null!);
+
+        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
