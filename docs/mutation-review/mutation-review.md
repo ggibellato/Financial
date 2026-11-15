@@ -151,7 +151,7 @@ uses the repo folder.
 | 2.1 | Investment.Domain | `Entities/**` | ⬜ | 82.0% | | | | | | |
 | 2.2 | Investment.Domain | `Rules/**` | ✅ | 74.5% | 87.7% | 15 | 3 | ~35 | [#1284](https://github.com/ggibellato/Financial/pull/1284) | [Notes](2.2.md); 734 → 754 tests |
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
-| 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | 🔄 | 70.3% | 80.5% | 9 | 29 | 21 | [#1298](https://github.com/ggibellato/Financial/pull/1298) | [Notes](3.1.md); 29 Domain re-checks and duplicates removed; adjustment add span uses the account id |
+| 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ✅ | 70.3% | 80.5% | 9 | 29 | 21 | [#1298](https://github.com/ggibellato/Financial/pull/1298) | [Notes](3.1.md); 29 Domain re-checks and duplicates removed; adjustment add span uses the account id |
 | 3.2 | CashFlow.Application | Cards: `CardStatementCreation`, `CardStatementService`, `CreditCardAccounts`, `StatementDueDateService`, `PaymentsDueService` | ✅ | 67.3% | 78.4% | 3 | 6 | 5 | [#1297](https://github.com/ggibellato/Financial/pull/1297) | [Notes](3.2.md); the second simplify pass kept the only credit-covers-the-month refusal test |
 | 3.3 | CashFlow.Application | Calendar: `CalendarIntegrationService`, `CreditCardCalendarSyncService`, `CreditCardCalendarSyncStatusStore` | ✅ | 54.9% | 66.7% | 6 | 4 | 31 | [#1291](https://github.com/ggibellato/Financial/pull/1291) | [Notes](3.3.md); `BestEffortDisconnectRemoteAsync` returns a value nobody reads |
 | 3.4 | CashFlow.Application | Movements: `ExpenseService`, `IncomeService`, `IncomeSourceService`, `IncomeSummaryService`, `IncomeGroupLookupBuilder`, `CategoryService`, `CategorySummaryService`, `HistoricAverageService`, `MensaisService` | ✅ | 63.5% | 76.9% | 11 | 57 | 25 | [#1294](https://github.com/ggibellato/Financial/pull/1294) | [Notes](3.4.md); tests were 4× the code, 57 Domain re-checks and duplicates removed |
@@ -167,12 +167,12 @@ uses the repo folder.
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
-| 7.2 | Shared.Infrastructure | all | ⬜ | 74.3% | | | | | | `DebouncedJsonStorage` 19 of 55 undetected |
+| 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
 | 7.3 | CashFlow.Infrastructure | all | ⬜ | 80.2% | | | | | | Slowest per mutant (7.2 min) |
 | 7.4 | Investment.Infrastructure | all | ⬜ | 81.1% | | | | | | DI file 11 of 19 undetected |
 | 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | ⬜ | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive |
-| 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ⬜ | 71.6% | | | | | | Middleware and helpers already 100%; `Program.cs` 23 of 64 undetected |
-| 9.2 | Financial.Api | Controllers with branching only | ⬜ | 78.7% | | | | | | Thin controllers skipped; `CalendarIntegrationController` 8 of 18 undetected |
+| 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ✅ | 71.6% | 90.1% | 7 | 0 | 4 | [#1300](https://github.com/ggibellato/Financial/pull/1300) | [Notes](9.1.md); `Program.cs` wiring (CORS, versioning, options binding) asserted; `UseDeveloperExceptionPage` redundant |
+| 9.2 | Financial.Api | All controllers | 🔄 | 78.7% | 95.6% | 1 | 0 | 1 | [#1302](https://github.com/ggibellato/Financial/pull/1302) | [Notes](9.2.md); empty-body test now requires the guard to reject before any service; blank route-value guards are dead code |
 
 ### Batch 10 — Keep it continuous
 
@@ -202,6 +202,9 @@ class, production notes) in its own file in this folder:
 - [4.5 Investment.Application prices, income and tax (47.7% → 77.5%)](4.5.md)
 - [4.6 Investment.Application navigation, brokers and validation (55.3% → 74.5%)](4.6.md)
 - [7.1 Shared.Abstractions (63.9% → 86.7%)](7.1.md)
+- [7.2 Shared.Infrastructure (73.7% → 83.6%)](7.2.md)
+- [9.1 Api Program, Middleware and Helpers (71.6% → 90.1%)](9.1.md)
+- [9.2 Api controllers (78.7% → 95.6%)](9.2.md)
 
 ## Log
 
@@ -226,3 +229,6 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 7.1 | Shared.Abstractions 63.9% → 86.7%; direct tests for the telemetry, reflection JSON and enum helpers and the null-argument guards |
 | 2026-11-15 | 3.2 | Cards 67.3% → 78.4%; spans, null request, payments-due time zone, first-of-month and ordering tested; 6 ledger re-checks removed |
 | 2026-11-15 | 3.1 | Accounts 70.3% → 80.5%; spans, null requests, delete-in-use branches, group totals and month-end tested; 29 tests removed |
+| 2026-11-15 | 9.1 | Api wiring 71.6% → 90.1%; CORS, API versions, options binding, static files and Swagger UI asserted |
+| 2026-11-15 | 7.2 | Shared.Infrastructure 73.7% → 83.6%; debounced storage flush, generation and failure paths; missing-folder guard |
+| 2026-11-15 | 9.2 | Api controllers 78.7% → 95.6%; empty-body guards pinned, dividend exchange, enum casing, calendar pages, tax year |
