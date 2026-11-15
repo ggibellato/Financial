@@ -17,9 +17,7 @@ public class ProgramWiringTests : ApiEndpointTests
     [Fact]
     public async Task Cors_InProductionWithAConfiguredOrigin_AllowsIt()
     {
-        var response = await SendInProductionAsync(
-            RequestFrom(HttpMethod.Get, ClientOrigin),
-            builder => builder.UseSetting("Cors:AllowedOrigins:0", ClientOrigin));
+        var response = await SendInProductionAsync(RequestFrom(HttpMethod.Get, ClientOrigin), allowedOrigin: ClientOrigin);
 
         response.Headers.GetValues("Access-Control-Allow-Origin").Should().Equal(ClientOrigin);
     }
@@ -31,9 +29,7 @@ public class ProgramWiringTests : ApiEndpointTests
         preflight.Headers.Add("Access-Control-Request-Method", "DELETE");
         preflight.Headers.Add("Access-Control-Request-Headers", "content-type");
 
-        var response = await SendInProductionAsync(
-            preflight,
-            builder => builder.UseSetting("Cors:AllowedOrigins:0", ClientOrigin));
+        var response = await SendInProductionAsync(preflight, allowedOrigin: ClientOrigin);
 
         using var _ = new AssertionScope();
         response.Headers.GetValues("Access-Control-Allow-Methods").Should().Equal("DELETE");
@@ -43,7 +39,7 @@ public class ProgramWiringTests : ApiEndpointTests
     [Fact]
     public async Task Cors_InProductionWithNoConfiguredOrigins_AllowsNoOrigin()
     {
-        var response = await SendInProductionAsync(RequestFrom(HttpMethod.Get, ClientOrigin), _ => { });
+        var response = await SendInProductionAsync(RequestFrom(HttpMethod.Get, ClientOrigin));
 
         response.Headers.Contains("Access-Control-Allow-Origin").Should().BeFalse();
     }
@@ -83,13 +79,16 @@ public class ProgramWiringTests : ApiEndpointTests
         Services.GetService<IRemoteFileClientFactory>().Should().NotBeNull();
     }
 
-    private static async Task<HttpResponseMessage> SendInProductionAsync(HttpRequestMessage request, Action<IWebHostBuilder> configure)
+    private static async Task<HttpResponseMessage> SendInProductionAsync(HttpRequestMessage request, string? allowedOrigin = null)
     {
         await using var baseFactory = new ApiTestFactory();
         await using var factory = baseFactory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Production");
-            configure(builder);
+            if (allowedOrigin is not null)
+            {
+                builder.UseSetting("Cors:AllowedOrigins:0", allowedOrigin);
+            }
         });
         using var client = factory.CreateClient();
 
