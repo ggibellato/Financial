@@ -2,6 +2,7 @@ using Financial.CashFlow.Domain.Entities;
 using Financial.CashFlow.Domain.Enums;
 using Financial.CashFlow.Domain.ValueObjects;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -1101,5 +1102,39 @@ public class AccountTests
             account.OpeningBalance.Should().BeNull();
             account.RoundUp.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public void Create_Bank_StartsWithAZeroOpeningBalanceAndRoundUpOff()
+    {
+        var account = Account.Create("Barclays", AccountTemplate.Bank, Currency.GBP);
+
+        using var _ = new AssertionScope();
+        account.OpeningBalance!.Amount.Should().Be(0m);
+        account.RoundUp!.Enabled.Should().BeFalse();
+    }
+
+    [Fact]
+    public void NullArguments_AreRejected()
+    {
+        var bank = TestAccounts.Bank("Barclays");
+        var pots = TestAccounts.Pots("Reserva");
+
+        using var _ = new AssertionScope();
+        FluentActions.Invoking(() => Account.CreateWithCapabilities("Custom", Currency.GBP, null!)).Should().Throw<ArgumentNullException>().WithParameterName("capabilities");
+        FluentActions.Invoking(() => bank.SetCurrencies(null!)).Should().Throw<ArgumentNullException>().WithParameterName("currencies");
+        FluentActions.Invoking(() => pots.AddPot(null!)).Should().Throw<ArgumentNullException>().WithParameterName("pot");
+        FluentActions.Invoking(() => pots.EnsureCanReplacePots(null!)).Should().Throw<ArgumentNullException>().WithParameterName("changes");
+        FluentActions.Invoking(() => pots.SetCategory(null!)).Should().Throw<ArgumentNullException>().WithParameterName("category");
+    }
+
+    [Fact]
+    public void ChangeSetup_SettlementCurrencies_KeepsTheOtherParticipant()
+    {
+        var account = TestAccounts.Settlement("Mãe", [Currency.BRL, Currency.GBP], otherParticipant: "Mãe");
+
+        account.ChangeSetup(AccountTemplate.Settlement, [Currency.GBP], hasRecords: false);
+
+        account.OtherParticipant.Should().Be("Mãe");
     }
 }

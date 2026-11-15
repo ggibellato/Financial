@@ -287,4 +287,34 @@ public class IncomeTests
 
         income.NetValue.Should().Be(120m);
     }
+
+    [Fact]
+    public void Create_ZeroNetValue_IsAllowed()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 0m, Barclays);
+
+        income.NetValue.Should().Be(0m);
+    }
+
+    [Fact]
+    public void UpdateDetails_NullIncomeSource_Throws()
+    {
+        var income = Income.Create(new DateOnly(2026, 7, 1), Gleison, null, 100m, Barclays);
+
+        var act = () => income.UpdateDetails(new DateOnly(2026, 7, 1), null!, null, 100m, Barclays);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void UpdateDetails_MovingTheSplitToAnInactivePotsAccount_Throws()
+    {
+        var activePots = TestAccounts.Pots("Reserva");
+        var source = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: activePots);
+        var income = Income.Create(new DateOnly(2026, 7, 1), source, null, 100m, Barclays, potsAccount: activePots);
+
+        var act = () => income.UpdateDetails(new DateOnly(2026, 7, 1), source, null, 100m, Barclays, potsAccount: TestAccounts.Pots("Retired", isActive: false));
+
+        act.Should().Throw<ArgumentException>();
+    }
 }

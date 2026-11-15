@@ -935,4 +935,57 @@ public class ExpenseTests
 
         act.Should().Throw<ArgumentException>().WithMessage("Credit card 'Closed card' is inactive and cannot be used for new entries.");
     }
+
+    [Fact]
+    public void SuggestedRoundUpAmount_ImmediatePaymentFromARoundUpBank_OffersTheSuggestion()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Coffee", 2.30m, Casa, Chase, null);
+
+        expense.SuggestedRoundUpAmount.Should().Be(0.70m);
+    }
+
+    [Fact]
+    public void SuggestedRoundUpAmount_RoundUpAlreadySet_IsNull()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Coffee", 2.30m, Casa, Chase, null);
+        expense.SetRoundUpAmount(0.70m);
+
+        expense.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void SuggestedRoundUpAmount_CardChargeOrSettledCardExpense_IsNull()
+    {
+        var charge = Expense.Create(new DateOnly(2026, 7, 1), "Coffee", 2.30m, Extras, null, ChaseMaster4023);
+        var settled = Expense.Create(new DateOnly(2026, 7, 1), "Coffee", 2.30m, Extras, null, ChaseMaster4023);
+        settled.Settle(Chase, new DateOnly(2026, 7, 31));
+
+        using var _ = new AssertionScope();
+        charge.SuggestedRoundUpAmount.Should().BeNull();
+        settled.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void SuggestedRoundUpAmount_Reimbursement_IsNull()
+    {
+        var expense = Expense.Create(new DateOnly(2026, 7, 1), "Refund", -2.30m, Casa, Chase, null);
+
+        expense.SuggestedRoundUpAmount.Should().BeNull();
+    }
+
+    [Fact]
+    public void Create_OnAnInactiveCard_Throws()
+    {
+        var act = () => Expense.Create(new DateOnly(2026, 7, 1), "Charge", 10m, Extras, null, TestAccounts.CreditCard("Retired", isActive: false));
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void InvoiceDateAfterUpdate_SettledExpenseWithoutARequestedInvoice_KeepsItsInvoiceDate()
+    {
+        var expense = CreateSettledExpense();
+
+        expense.InvoiceDateAfterUpdate(new DateOnly(2026, 9, 15), ChaseMaster4023).Should().Be(expense.InvoiceDate);
+    }
 }

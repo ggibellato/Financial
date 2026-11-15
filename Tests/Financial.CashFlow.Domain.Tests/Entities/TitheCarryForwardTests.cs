@@ -38,4 +38,14 @@ public class TitheCarryForwardTests
 
         decision.Included.Should().BeFalse();
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(12)]
+    public void Create_FirstAndLastMonth_AreAllowed(int month)
+    {
+        var decision = TitheCarryForward.Create(2026, month, true);
+
+        decision.Month.Should().Be(month);
+    }
 }

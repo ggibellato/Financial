@@ -116,4 +116,12 @@ public class BalanceAdjustmentTests
 
         adjustment.Delta.Should().Be(50m);
     }
+
+    [Fact]
+    public void ContributionTo_AnotherAccount_IsZero()
+    {
+        var adjustment = CreateValidAdjustment();
+
+        adjustment.ContributionTo(TestAccounts.Bank("Chase")).Should().Be(0m);
+    }
 }
