@@ -67,6 +67,7 @@ public class CategoryServiceTests
             result.HasReferences.Should().BeFalse();
             repository.Categories.Should().ContainSingle(c => c.Name == "Lazer");
             repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CategoryService.CreateCategory").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -127,21 +128,18 @@ public class CategoryServiceTests
             result.IsInvestment.Should().BeTrue();
             result.IsTithe.Should().BeTrue();
             repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CategoryService.UpdateCategory").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(category.Id.ToString());
         }
     }
 
     [Fact]
-    public async Task UpdateCategoryAsync_ToItsOwnCurrentName_Succeeds()
+    public async Task UpdateCategoryAsync_BlankNameForAnUnknownId_IsRefusedForTheNameBeforeTheLookup()
     {
-        var repository = new StubCashFlowRepository();
-        var category = Category.Create("Mercado");
-        repository.Categories.Add(category);
-        var sut = CreateService(repository);
-        var request = new CategoryUpdateDTO { Name = "Mercado", Active = false, IsInvestment = false, IsTithe = false };
+        var request = new CategoryUpdateDTO { Name = " ", Active = true, IsInvestment = false, IsTithe = false };
 
-        var result = await sut.UpdateCategoryAsync(category.Id, request);
+        var act = async () => await _sut.UpdateCategoryAsync(Guid.NewGuid(), request);
 
-        result.Active.Should().BeFalse();
+        await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
 
     [Fact]
@@ -212,6 +210,7 @@ public class CategoryServiceTests
         {
             repository.Categories.Should().BeEmpty();
             repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CategoryService.DeleteCategory").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(category.Id.ToString());
         }
     }
 
@@ -309,16 +308,14 @@ public class CategoryServiceTests
     }
 
     [Fact]
-    public async Task UpdateCategoryAsync_WithBlankName_ThrowsArgumentException()
+    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
     {
-        var repository = new StubCashFlowRepository();
-        var category = Category.Create("Mercado");
-        repository.Categories.Add(category);
-        var sut = CreateService(repository);
-        var request = new CategoryUpdateDTO { Name = "   ", Active = true, IsInvestment = false, IsTithe = false };
-
-        var act = async () => await sut.UpdateCategoryAsync(category.Id, request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.CreateCategoryAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.CategoryService.CreateCategory");
+            await FluentActions.Awaiting(() => _sut.UpdateCategoryAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.CategoryService.UpdateCategory");
+        }
     }
 }

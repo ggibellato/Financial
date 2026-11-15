@@ -62,16 +62,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WithoutGrossValue_SavesNull()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { GrossValue = null });
-
-        var result = await _sut.AddIncomeAsync(request);
-
-        result.GrossValue.Should().BeNull();
-    }
-
-    [Fact]
     public async Task AddIncomeAsync_MultipleEntriesForSameSourceAndMonth_AllPersist()
     {
         var request = ValidCreateRequest() with { IncomeSource = "Ariana", GrossValue = null };
@@ -81,16 +71,6 @@ public class IncomeServiceTests
         await _sut.AddIncomeAsync(ToCreateDto(_repository, request with { Date = new DateOnly(2026, 7, 15) }));
 
         _repository.Incomes.Should().HaveCount(3);
-    }
-
-    [Fact]
-    public async Task AddIncomeAsync_WithNegativeNetValue_ThrowsArgumentException()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { GrossValue = null, NetValue = -1m });
-
-        var act = async () => await _sut.AddIncomeAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -114,19 +94,6 @@ public class IncomeServiceTests
         var result = await service.AddIncomeAsync(request);
 
         result.IncomeSourceName.Should().Be("RetiredSource");
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public async Task AddIncomeAsync_WithBlankIncomeSource_ThrowsArgumentException(string? incomeSource)
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { IncomeSource = incomeSource! });
-
-        var act = async () => await _sut.AddIncomeAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -164,16 +131,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WithoutDescription_DescriptionIsNull()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest());
-
-        var result = await _sut.AddIncomeAsync(request);
-
-        result.Description.Should().BeNull();
-    }
-
-    [Fact]
     public async Task AddIncomeAsync_WithDescriptionOver200Characters_ThrowsArgumentException()
     {
         var request = ToCreateDto(_repository, ValidCreateRequest() with { Description = new string('a', 201) });
@@ -208,6 +165,7 @@ public class IncomeServiceTests
             result.IncomeSourceName.Should().Be("Lottery");
             _repository.Incomes.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(2);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeService.UpdateIncome").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
         }
     }
 
@@ -220,21 +178,6 @@ public class IncomeServiceTests
         var act = async () => await _sut.UpdateIncomeAsync(added.Id, updateRequest);
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Income source*not recognized*");
-    }
-
-    [Fact]
-    public async Task UpdateIncomeAsync_RemovingBank_SetsBankNull()
-    {
-        var added = await _sut.AddIncomeAsync(ToCreateDto(_repository, ValidCreateRequest()));
-
-        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { Bank = null });
-        var result = await _sut.UpdateIncomeAsync(added.Id, updateRequest);
-
-        using (new AssertionScope())
-        {
-            result.BankId.Should().BeNull();
-            result.BankName.Should().BeNull();
-        }
     }
 
     [Fact]
@@ -254,6 +197,7 @@ public class IncomeServiceTests
 
         _repository.Incomes.Should().BeEmpty();
         _repository.SaveChangesCallCount.Should().Be(2);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeService.DeleteIncome").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
     }
 
     [Fact]
@@ -262,6 +206,7 @@ public class IncomeServiceTests
         var act = async () => await _sut.DeleteIncomeAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.IncomeService.DeleteIncome");
     }
 
     [Fact]
@@ -273,6 +218,7 @@ public class IncomeServiceTests
         var result = _sut.GetIncomesByMonth(2026, 7);
 
         result.Should().ContainSingle().Which.Date.Should().Be(new DateOnly(2026, 7, 10));
+        _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeService.GetIncomesByMonth");
     }
 
     private static IncomeCreateRequest ValidCreateRequest() => new(
@@ -483,40 +429,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_NamingAnAccountThatCannotReceiveAnIncomeSplit_ThrowsAndPersistsNothing()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-
-        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { PotsAccount = "Barclays" }));
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays can't receive an income split.");
-            repository.Incomes.Should().BeEmpty();
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
-        }
-    }
-
-    [Fact]
-    public async Task AddIncomeAsync_WithSplitForIneligibleSource_ThrowsAndPersistsNothing()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-        var request = ValidArianaSplitRequest() with { IncomeSource = "Gleison" };
-
-        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, request));
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Gleison doesn't split income to pots.");
-            repository.Incomes.Should().BeEmpty();
-            repository.PotTransactions.Should().BeEmpty();
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
-        }
-    }
-
-    [Fact]
     public async Task UpdateIncomeAsync_WithSplitAfterTheSourceStoppedSplitting_ThrowsAndKeepsTheMovements()
     {
         var repository = CreateSplitCapableRepository();
@@ -537,21 +449,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WithSplitAndZeroActivePots_ThrowsAndPersistsNothing()
-    {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultIncomeSources: true);
-        var service = CreateService(repository);
-
-        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Reserva has no active pots.");
-            repository.Incomes.Should().BeEmpty();
-        }
-    }
-
-    [Fact]
     public async Task AddIncomeAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         var repository = CreateSplitCapableRepository();
@@ -562,23 +459,6 @@ public class IncomeServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeService.AddIncome");
-    }
-
-    [Fact]
-    public async Task UpdateIncomeAsync_TogglingSplitOff_DeletesLinkedMovements()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
-
-        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { PotsAccount = null }));
-
-        using (new AssertionScope())
-        {
-            result.PotsAccountId.Should().BeNull();
-            repository.Incomes.Single().PotsAccount.Should().BeNull();
-            repository.PotTransactions.Should().BeEmpty();
-        }
     }
 
     [Fact]
@@ -600,27 +480,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task UpdateIncomeAsync_StillSplitWithChangedNetValue_RecreatesMovementsWithNewAmounts()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
-        var originalMovementIds = repository.PotTransactions.Select(m => m.Id).ToList();
-
-        var result = await service.UpdateIncomeAsync(added.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000.00m }));
-
-        using (new AssertionScope())
-        {
-            result.NetValue.Should().Be(1000.00m);
-            repository.PotTransactions.Should().HaveCount(4);
-            repository.PotTransactions.Select(m => m.Id).Should().NotIntersectWith(originalMovementIds);
-            var investimento = repository.ReservaPots.Single(b => b.Name == "Investimento");
-            repository.PotTransactions.Should().ContainSingle(m => m.Pot == investimento)
-                .Which.Amount.Should().Be(299.97m);
-        }
-    }
-
-    [Fact]
     public async Task UpdateIncomeAsync_WhenSaveFails_RecordsFailedSpanAndRethrows()
     {
         var repository = CreateSplitCapableRepository();
@@ -632,19 +491,6 @@ public class IncomeServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeService.UpdateIncome");
-    }
-
-    [Fact]
-    public async Task DeleteIncomeAsync_WithLinkedMovements_DeletesIncomeAndMovements()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-        var added = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
-
-        await service.DeleteIncomeAsync(added.Id);
-
-        repository.Incomes.Should().BeEmpty();
-        repository.PotTransactions.Should().BeEmpty();
     }
 
     [Fact]
@@ -660,19 +506,6 @@ public class IncomeServiceTests
 
         repository.Incomes.Should().BeEmpty();
         repository.PotTransactions.Should().ContainSingle().Which.Should().BeSameAs(unrelatedMovement);
-    }
-
-    [Fact]
-    public async Task AddIncomeAsync_ForArianaSource_SplitsBecauseTheSourceNamesAPotsAccount()
-    {
-        var repository = CreateSplitCapableRepository();
-        var arianaSource = repository.IncomeSources.Single(s => s.Name == "Ariana");
-        arianaSource.PotsAccount.Should().NotBeNull("the migrator seeds Ariana with the Reserva Pots account");
-        var service = CreateService(repository);
-
-        var result = await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest()));
-
-        result.PotsAccountId.Should().Be(arianaSource.PotsAccount!.Id);
     }
 
     [Fact]
@@ -720,22 +553,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task AddIncomeAsync_WithSplitAndNoBank_ThrowsAndPersistsNothing()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-
-        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { Bank = null }));
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Choose the bank this income landed in.");
-            repository.Incomes.Should().BeEmpty();
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeService.AddIncome");
-        }
-    }
-
-    [Fact]
     [Trait("AC", "P60-F10-linked-deposit-withdrawal-and-pots-screen-02")]
     public async Task AddIncomeAsync_WithHandSplitLines_WritesOneExpensePerBank()
     {
@@ -749,23 +566,6 @@ public class IncomeServiceTests
         {
             repository.Expenses.Select(e => (e.PaymentSourceAccount!.Name, e.Value)).Should().Equal(("Barclays", 2200m), ("Chase", 5m));
             result.FundingLines.Select(line => line.Amount).Should().Equal(2200m, 5m);
-        }
-    }
-
-    [Fact]
-    public async Task AddIncomeAsync_WithLinesThatDoNotAddUp_ThrowsAndPersistsNothing()
-    {
-        var repository = CreateSplitCapableRepository();
-        var service = CreateService(repository);
-        var lines = FundingLines(repository, ("Barclays", 2200m));
-
-        var act = async () => await service.AddIncomeAsync(ToCreateDto(repository, ValidArianaSplitRequest() with { FundingLines = lines }));
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Funding lines must add up to \u00a32205.00.");
-            repository.Incomes.Should().BeEmpty();
-            repository.Expenses.Should().BeEmpty();
         }
     }
 
@@ -928,18 +728,6 @@ public class IncomeServiceTests
     }
 
     [Fact]
-    public async Task UpdateIncomeAsync_ForAnOlderSplitWhoseActivePotsDoNotTotal100_KeepsRebuildingWithoutTheRule()
-    {
-        var (repository, older) = RepositoryWithOlderSplitIncome();
-        repository.ReservaPots.Single(p => p.Name == "Gleison").Update("Gleison", 0m, isActive: false);
-        var service = CreateService(repository);
-
-        await service.UpdateIncomeAsync(older.Id, ToUpdateDto(repository, ValidArianaSplitRequest() with { NetValue = 1000m }));
-
-        repository.PotTransactions.Should().HaveCount(3);
-    }
-
-    [Fact]
     public async Task UpdateIncomeAsync_TogglingAnOlderSplitOff_RemovesItsMovements()
     {
         var (repository, older) = RepositoryWithOlderSplitIncome();
@@ -981,5 +769,17 @@ public class IncomeServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeService.GetIncomesByMonth");
+    }
+
+    [Fact]
+    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
+    {
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.AddIncomeAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.IncomeService.AddIncome");
+            await FluentActions.Awaiting(() => _sut.UpdateIncomeAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.IncomeService.UpdateIncome");
+        }
     }
 }

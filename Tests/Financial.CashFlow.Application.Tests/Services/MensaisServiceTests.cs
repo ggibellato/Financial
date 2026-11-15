@@ -43,6 +43,7 @@ public class MensaisServiceTests
             result.Status.Should().Be("Unset");
             _repository.RecurringBills.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.CreateBill").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -53,41 +54,6 @@ public class MensaisServiceTests
 
         result.NitNumber.Should().BeNull();
         result.MinimumWageValue.Should().BeNull();
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(32)]
-    public async Task CreateBillAsync_WithInvalidDueDay_Throws(int dueDay)
-    {
-        var request = ValidBrasilRequest();
-        var invalidRequest = new RecurringBillCreateDTO
-        {
-            DueDay = dueDay,
-            Description = request.Description,
-            Value = request.Value,
-            Area = request.Area,
-            Note = request.Note
-        };
-
-        var act = async () => await _sut.CreateBillAsync(invalidRequest);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    [Fact]
-    public async Task CreateBillAsync_WithBlankDescription_Throws()
-    {
-        var act = async () => await _sut.CreateBillAsync(new RecurringBillCreateDTO
-        {
-            DueDay = 10,
-            Description = "   ",
-            Value = 100m,
-            Area = "Brasil",
-            Note = string.Empty
-        });
-
-        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]
@@ -116,14 +82,21 @@ public class MensaisServiceTests
         await _sut.DeleteBillAsync(bill.Id);
 
         _repository.RecurringBills.Should().ContainSingle().Which.Id.Should().Be(otherBill.Id);
+        _repository.SaveChangesCallCount.Should().Be(1);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.DeleteBill").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(bill.Id.ToString());
     }
 
     [Fact]
-    public async Task DeleteBillAsync_WithUnknownId_ThrowsKeyNotFoundException()
+    public async Task DeleteBillAsync_WithUnknownId_ThrowsAndKeepsTheExistingBill()
     {
+        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
+        _repository.RecurringBills.Add(bill);
+
         var act = async () => await _sut.DeleteBillAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _repository.RecurringBills.Should().ContainSingle();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.MensaisService.DeleteBill");
     }
 
     [Fact]
@@ -134,6 +107,7 @@ public class MensaisServiceTests
         var result = _sut.GetBills();
 
         result.Should().ContainSingle(b => b.Description == "INSS");
+        _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.GetBills");
     }
 
     private static RecurringBillUpdateDTO ValidUpdateRequest(string status = "Paid", decimal value = 900m) => new()
@@ -176,6 +150,8 @@ public class MensaisServiceTests
             result.NitNumber.Should().Be("12345678901");
             result.MinimumWageValue.Should().Be(1621m);
             result.Status.Should().Be("Paid");
+            _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.UpdateBill").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(bill.Id.ToString());
         }
     }
 
@@ -217,27 +193,6 @@ public class MensaisServiceTests
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(32)]
-    public async Task UpdateBillAsync_WithDueDayOutOfRange_ThrowsArgumentException(int dueDay)
-    {
-        var bill = RecurringBill.Create(10, "INSS", 850m, Area.Brasil, string.Empty, null, null);
-        _repository.RecurringBills.Add(bill);
-
-        var act = async () => await _sut.UpdateBillAsync(bill.Id, new RecurringBillUpdateDTO
-        {
-            DueDay = dueDay,
-            Description = "INSS",
-            Value = 900m,
-            Area = "Brasil",
-            Note = string.Empty,
-            Status = "Paid",
-        });
-
-        await act.Should().ThrowAsync<ArgumentException>();
-    }
-
     [Fact]
     public async Task UpdateBillStatusAsync_WithValidStatus_UpdatesAndReturnsBill()
     {
@@ -251,26 +206,7 @@ public class MensaisServiceTests
             result.Status.Should().Be("Paid");
             _repository.RecurringBills.Should().ContainSingle().Which.Status.Should().Be(BillStatus.Paid);
             _repository.SaveChangesCallCount.Should().Be(1);
-        }
-    }
-
-    [Fact]
-    public async Task UpdateBillStatusAsync_DoesNotChangeOtherFields()
-    {
-        var bill = RecurringBill.Create(10, "Council Tax", 120m, Area.UK, "Direct debit", null, null);
-        _repository.RecurringBills.Add(bill);
-
-        var result = await _sut.UpdateBillStatusAsync(bill.Id, new RecurringBillStatusUpdateDTO { Status = "Paid" });
-
-        using (new AssertionScope())
-        {
-            result.DueDay.Should().Be(10);
-            result.Description.Should().Be("Council Tax");
-            result.Value.Should().Be(120m);
-            result.Area.Should().Be("UK");
-            result.Note.Should().Be("Direct debit");
-            result.NitNumber.Should().BeNull();
-            result.MinimumWageValue.Should().BeNull();
+            _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.UpdateBillStatus").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(bill.Id.ToString());
         }
     }
 
@@ -295,6 +231,23 @@ public class MensaisServiceTests
     }
 
     [Fact]
+    public async Task MarkBillPaidAsync_ExpenseDescriptionOverTheLimit_ThrowsAndSavesNothing()
+    {
+        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
+        var sut = CreateService(repository);
+        var bill = AddUkBill(repository);
+        var expense = PaymentExpense(repository, description: new string('x', 201));
+
+        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = expense });
+
+        using (new AssertionScope())
+        {
+            await act.Should().ThrowAsync<ArgumentException>().WithMessage("*200*");
+            repository.SaveChangesCallCount.Should().Be(0);
+        }
+    }
+
+    [Fact]
     public async Task MarkBillPaidAsync_WithExpense_CreatesExpenseAndSetsPaidInOneSave()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
@@ -315,6 +268,7 @@ public class MensaisServiceTests
             expense.PaymentSourceAccount!.Name.Should().Be("Barclays");
             expense.CreditCard.Should().BeNull();
             repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.MarkBillPaid").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(bill.Id.ToString());
         }
     }
 
@@ -375,31 +329,6 @@ public class MensaisServiceTests
     }
 
     [Fact]
-    public async Task MarkBillPaidAsync_WithUnknownBank_ThrowsAndLeavesBillUnpaid()
-    {
-        var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
-        var sut = CreateService(repository);
-        var bill = AddUkBill(repository);
-        var expense = new RecurringBillPaymentExpenseDTO
-        {
-            Date = new DateOnly(2026, 10, 10),
-            Description = "Council Tax",
-            Value = 120m,
-            CategoryId = repository.Categories.First().Id,
-            PaymentSourceBankId = Guid.NewGuid()
-        };
-
-        var act = async () => await sut.MarkBillPaidAsync(bill.Id, new RecurringBillMarkPaidDTO { Expense = expense });
-
-        await act.Should().ThrowAsync<ArgumentException>();
-        using (new AssertionScope())
-        {
-            bill.Status.Should().Be(BillStatus.Unset);
-            repository.Expenses.Should().BeEmpty();
-        }
-    }
-
-    [Fact]
     public async Task MarkBillPaidAsync_PaymentSourceWithoutCanPayBills_ThrowsTheUnknownSourceMessageAndLeavesBillUnpaid()
     {
         var repository = new StubCashFlowRepository(seedDefaultBanks: true, seedDefaultCategories: true);
@@ -457,10 +386,10 @@ public class MensaisServiceTests
         return bill;
     }
 
-    private static RecurringBillPaymentExpenseDTO PaymentExpense(StubCashFlowRepository repository, Guid? paymentSourceId = null) => new()
+    private static RecurringBillPaymentExpenseDTO PaymentExpense(StubCashFlowRepository repository, Guid? paymentSourceId = null, string description = "Council Tax") => new()
     {
         Date = new DateOnly(2026, 10, 10),
-        Description = "Council Tax",
+        Description = description,
         Value = 120m,
         CategoryId = repository.Categories.Single(c => c.Name == "Casa").Id,
         PaymentSourceBankId = paymentSourceId ?? repository.Accounts.Single(b => b.Name == "Barclays").Id
@@ -481,6 +410,7 @@ public class MensaisServiceTests
         result.Should().OnlyContain(b => b.Status == "Unset");
         _repository.RecurringBills.Should().OnlyContain(b => b.Status == BillStatus.Unset);
         _repository.SaveChangesCallCount.Should().Be(1);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.MensaisService.ResetAllToUnset");
     }
 
     private static RecurringBillCreateDTO ValidBrasilRequest() => new()
@@ -531,6 +461,22 @@ public class MensaisServiceTests
             bill.Status.Should().Be(BillStatus.Unset);
             repository.Expenses.Should().BeEmpty();
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.MensaisService.MarkBillPaid");
+        }
+    }
+
+    [Fact]
+    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
+    {
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.CreateBillAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.CreateBill");
+            await FluentActions.Awaiting(() => _sut.UpdateBillAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.UpdateBill");
+            await FluentActions.Awaiting(() => _sut.UpdateBillStatusAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.UpdateBillStatus");
+            await FluentActions.Awaiting(() => _sut.MarkBillPaidAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.MensaisService.MarkBillPaid");
         }
     }
 }

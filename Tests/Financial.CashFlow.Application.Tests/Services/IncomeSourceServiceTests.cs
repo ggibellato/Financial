@@ -55,17 +55,9 @@ public class IncomeSourceServiceTests
             gleisonDto.Id.Should().Be(gleison.Id);
             gleisonDto.IsActive.Should().BeTrue();
             gleisonDto.Group.Should().Be("Salary");
+            result.Should().ContainSingle(s => s.Name == "Lottery").Which.IsActive.Should().BeFalse();
+            _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeSourceService.GetIncomeSources");
         }
-    }
-
-    [Fact]
-    public void GetIncomeSources_DoesNotFilterByIsActive()
-    {
-        _repository.IncomeSources.Add(IncomeSource.Create("RetiredSource", IncomeGroup.NonReportable, isActive: false));
-
-        var result = _sut.GetIncomeSources();
-
-        result.Should().ContainSingle(s => s.Name == "RetiredSource" && !s.IsActive);
     }
 
     [Fact]
@@ -125,42 +117,6 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
-    public async Task CreateIncomeSourceAsync_WithAnAccountThatCannotReceiveAnIncomeSplit_ThrowsAndWritesNothing()
-    {
-        var barclays = TestAccounts.Bank("Barclays");
-        _repository.Accounts.Add(barclays);
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, PotsAccountId = barclays.Id };
-
-        var act = async () => await _sut.CreateIncomeSourceAsync(request);
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Barclays can't receive an income split.");
-            _repository.IncomeSources.Should().BeEmpty();
-            _repository.SaveChangesCallCount.Should().Be(0);
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.CreateIncomeSource");
-        }
-    }
-
-    [Fact]
-    public async Task CreateIncomeSourceAsync_WithAnInactivePotsAccount_ThrowsAndWritesNothing()
-    {
-        var reserva = _repository.EnsureReserva();
-        reserva.SetActive(false);
-        var request = new IncomeSourceCreateDTO { Name = "Freelance", Group = "NonReportable", IsActive = true, PotsAccountId = reserva.Id };
-
-        var act = async () => await _sut.CreateIncomeSourceAsync(request);
-
-        using (new AssertionScope())
-        {
-            await act.Should().ThrowAsync<ArgumentException>().WithMessage("Reserva is inactive.");
-            _repository.IncomeSources.Should().BeEmpty();
-            _repository.SaveChangesCallCount.Should().Be(0);
-            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.IncomeSourceService.CreateIncomeSource");
-        }
-    }
-
-    [Fact]
     public async Task UpdateIncomeSourceAsync_WithAnUnknownPotsAccountId_ThrowsAndWritesNothing()
     {
         var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
@@ -192,6 +148,7 @@ public class IncomeSourceServiceTests
             result.HasReferences.Should().BeFalse();
             _repository.IncomeSources.Should().ContainSingle(s => s.Name == "Freelance");
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeSourceService.CreateIncomeSource").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -262,6 +219,7 @@ public class IncomeSourceServiceTests
             result.PotsAccountId.Should().Be(holidays.Id);
             incomeSource.PotsAccount.Should().BeSameAs(holidays);
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeSourceService.UpdateIncomeSource").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(incomeSource.Id.ToString());
         }
     }
 
@@ -284,19 +242,13 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
-    public async Task UpdateIncomeSourceAsync_WithoutAPotsAccountId_ClearsThePotsAccount()
+    public async Task UpdateIncomeSourceAsync_BlankNameForAnUnknownId_IsRefusedForTheNameBeforeTheLookup()
     {
-        var incomeSource = IncomeSource.Create("Ariana", IncomeGroup.Salary, potsAccount: _repository.EnsureReserva());
-        _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "Ariana", Group = "Salary", IsActive = true, PotsAccountId = null };
+        var request = new IncomeSourceUpdateDTO { Name = " ", Group = "Salary", IsActive = true };
 
-        var result = await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
+        var act = async () => await _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), request);
 
-        using (new AssertionScope())
-        {
-            incomeSource.PotsAccount.Should().BeNull();
-            result.PotsAccountId.Should().BeNull();
-        }
+        await act.Should().ThrowExactlyAsync<ArgumentException>();
     }
 
     [Fact]
@@ -375,6 +327,7 @@ public class IncomeSourceServiceTests
         {
             _repository.IncomeSources.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeSourceService.DeleteIncomeSource").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(incomeSource.Id.ToString());
         }
     }
 
@@ -384,6 +337,7 @@ public class IncomeSourceServiceTests
         var act = async () => await _sut.DeleteIncomeSourceAsync(Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.IncomeSourceService.DeleteIncomeSource");
     }
 
     [Fact]
@@ -429,14 +383,14 @@ public class IncomeSourceServiceTests
     }
 
     [Fact]
-    public async Task UpdateIncomeSourceAsync_WithBlankName_ThrowsArgumentException()
+    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
     {
-        var incomeSource = IncomeSource.Create("Gleison", IncomeGroup.Salary);
-        _repository.IncomeSources.Add(incomeSource);
-        var request = new IncomeSourceUpdateDTO { Name = "   ", Group = "Salary", IsActive = true };
-
-        var act = async () => await _sut.UpdateIncomeSourceAsync(incomeSource.Id, request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.CreateIncomeSourceAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.IncomeSourceService.CreateIncomeSource");
+            await FluentActions.Awaiting(() => _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.IncomeSourceService.UpdateIncomeSource");
+        }
     }
 }

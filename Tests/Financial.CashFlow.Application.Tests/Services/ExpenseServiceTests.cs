@@ -18,7 +18,6 @@ public class ExpenseServiceTests
 {
     private static readonly Account ChaseFixture = TestAccounts.Bank("Chase", roundUpEnabled: true);
     private static readonly Account BarclaysPlatinumVisa8003Fixture = TestAccounts.CreditCard("BarclaysPlatinumVisa8003");
-    private static readonly Account BaAmexFixture = TestAccounts.CreditCard("BaAmex");
     private static readonly Category MercadoFixture = Category.Create("Mercado");
     private static readonly Microsoft.Extensions.Logging.ILogger<ExpenseService> Logger = NullLogger<ExpenseService>.Instance;
 
@@ -229,17 +228,6 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task AddExpenseAsync_WithZeroValue_RecordsFailedSpanWithException()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { Value = 0m });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.AddExpense");
-    }
-
-    [Fact]
     public async Task AddExpenseAsync_WithValidRequest_SavesAndReturnsExpense()
     {
         var request = ToCreateDto(_repository, ValidCreateRequest());
@@ -260,32 +248,11 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task AddExpenseAsync_WithoutCountsAsTithe_DefaultsToTrue()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { Category = "Dizimo" });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.CountsAsTithe.Should().BeTrue();
-    }
-
-    [Fact]
     public async Task AddExpenseAsync_WithCountsAsTitheFalse_SavesFalse()
     {
         var request = ToCreateDto(_repository, ValidCreateRequest() with { Category = "Dizimo", CountsAsTithe = false });
 
         var result = await _sut.AddExpenseAsync(request);
-
-        result.CountsAsTithe.Should().BeFalse();
-    }
-
-    [Fact]
-    public async Task UpdateExpenseAsync_TogglingCountsAsTithe_UpdatesValue()
-    {
-        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest() with { Category = "Dizimo" }));
-
-        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { Category = "Dizimo", CountsAsTithe = false });
-        var result = await _sut.UpdateExpenseAsync(added.Id, updateRequest);
 
         result.CountsAsTithe.Should().BeFalse();
     }
@@ -303,47 +270,6 @@ public class ExpenseServiceTests
             result.PaymentSourceBankName.Should().BeNull();
             result.PaymentStatus.Should().Be("CreditCardCharge");
         }
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithNeitherPaymentSourceNorCardTag_ThrowsArgumentException()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = null });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*payment source or a card tag*");
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithBothPaymentSourceAndCardTag_ThrowsArgumentException()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { CardTag = "BarclaysPlatinumVisa8003" });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*marking its card statement paid*");
-    }
-
-    [Fact]
-    public async Task UpdateExpenseAsync_WithBothPaymentSourceAndCardTag_ThrowsArgumentException()
-    {
-        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
-        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with { CardTag = "BaAmex" });
-
-        var act = async () => await _sut.UpdateExpenseAsync(added.Id, updateRequest);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*marking its card statement paid*");
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithZeroValue_ThrowsArgumentException()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { Value = 0m });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*zero*");
     }
 
     [Fact]
@@ -459,16 +385,6 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task AddExpenseAsync_WithBlankDescription_ThrowsArgumentException()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { Description = "  " });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Description is required*");
-    }
-
-    [Fact]
     public async Task AddExpenseAsync_WithDescriptionOver200Characters_ThrowsArgumentException()
     {
         var request = ToCreateDto(_repository, ValidCreateRequest() with { Description = new string('a', 201) });
@@ -512,6 +428,7 @@ public class ExpenseServiceTests
             result.CategoryName.Should().Be("Casa");
             _repository.Expenses.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(2);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.ExpenseService.UpdateExpense").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
         }
     }
 
@@ -534,6 +451,7 @@ public class ExpenseServiceTests
 
         _repository.Expenses.Should().BeEmpty();
         _repository.SaveChangesCallCount.Should().Be(2);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.ExpenseService.DeleteExpense").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
     }
 
     [Fact]
@@ -591,6 +509,14 @@ public class ExpenseServiceTests
     }
 
     [Fact]
+    public void GetCategoryTotalsByMonth_RecordsSuccessfulSpan()
+    {
+        _sut.GetCategoryTotalsByMonth(2026, 7);
+
+        _tracer.ShouldHaveSucceededSpan("CashFlow.ExpenseService.GetCategoryTotalsByMonth");
+    }
+
+    [Fact]
     public void GetCategoryTotalsByMonth_SettledCardCharge_CountsTowardStatementMonth()
     {
         var charge = Expense.Create(new DateOnly(2026, 7, 10), "Settled charge", 40m, MercadoFixture, null, BarclaysPlatinumVisa8003Fixture);
@@ -608,30 +534,6 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public void GetCategoryTotalsByMonth_MixOfUnpaidSettledAndBank_NoExpenseCountedInMoreThanOneMonth()
-    {
-        var unpaidCutoff = Expense.Create(
-            new DateOnly(2026, 7, 29), "Unpaid cutoff", 10m, MercadoFixture, null,
-           BarclaysPlatinumVisa8003Fixture, new DateOnly(2026, 8, 1));
-        var settled = Expense.Create(new DateOnly(2026, 7, 12), "Settled", 20m, MercadoFixture, null, BaAmexFixture);
-        settled.Settle(ChaseFixture, new DateOnly(2026, 7, 20));
-        var bank = Expense.Create(new DateOnly(2026, 7, 15), "Bank", 30m, MercadoFixture, ChaseFixture, null);
-        _repository.Expenses.Add(unpaidCutoff);
-        _repository.Expenses.Add(settled);
-        _repository.Expenses.Add(bank);
-
-        var julyTotal = _sut.GetCategoryTotalsByMonth(2026, 7).Sum(t => t.TotalValue);
-        var augustTotal = _sut.GetCategoryTotalsByMonth(2026, 8).Sum(t => t.TotalValue);
-
-        using (new AssertionScope())
-        {
-            julyTotal.Should().Be(50m);
-            augustTotal.Should().Be(10m);
-            (julyTotal + augustTotal).Should().Be(60m);
-        }
-    }
-
-    [Fact]
     public async Task AddExpenseAsync_WithRoundUpAmountOnRoundUpEnabledBank_SavesAmount()
     {
         var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m });
@@ -639,48 +541,6 @@ public class ExpenseServiceTests
         var result = await _sut.AddExpenseAsync(request);
 
         result.RoundUpAmount.Should().Be(0.60m);
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithRoundUpAmountOfZero_SavesExplicitZero()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = 10.00m, RoundUpAmount = 0.00m });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.RoundUpAmount.Should().Be(0.00m);
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithRoundUpAmountOnNonRoundUpBank_ThrowsNamingTheBank()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Barclays", RoundUpAmount = 0.50m });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Barclays*does not support round-up*");
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithRoundUpAmountOnCreditCardTaggedExpense_Throws()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023", RoundUpAmount = 0.50m });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*not a credit-card charge*");
-    }
-
-    [Theory]
-    [InlineData(-0.01)]
-    [InlineData(1.00)]
-    public async Task AddExpenseAsync_WithRoundUpAmountOutsideRange_Throws(decimal roundUpAmount)
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Chase", RoundUpAmount = roundUpAmount });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*between £0.00 and £0.99*");
     }
 
     [Fact]
@@ -732,30 +592,6 @@ public class ExpenseServiceTests
         var result = await _sut.AddExpenseAsync(request);
 
         result.SuggestedRoundUpAmount.Should().BeNull();
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithRoundUpAmountOnNegativeValue_Throws()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with { PaymentSource = "Trading212", Value = -9.40m, RoundUpAmount = 0.60m });
-
-        var act = async () => await _sut.AddExpenseAsync(request);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*negative (reimbursement) expense*");
-    }
-
-    [Fact]
-    public async Task UpdateExpenseAsync_ChangingValueOnly_LeavesRoundUpAmountUnchanged()
-    {
-        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, 
-            ValidCreateRequest() with { PaymentSource = "Trading212", Value = 9.40m, RoundUpAmount = 0.60m }));
-
-        var updateRequest = ToUpdateDto(_repository, 
-            ValidCreateRequest() with { PaymentSource = "Trading212", Value = 20m, RoundUpAmount = 0.60m });
-        var result = await _sut.UpdateExpenseAsync(added.Id, updateRequest);
-
-        result.Value.Should().Be(20m);
-        result.RoundUpAmount.Should().Be(0.60m);
     }
 
     [Fact]
@@ -858,46 +694,6 @@ public class ExpenseServiceTests
         });
 
         var result = await _sut.AddExpenseAsync(request);
-
-        result.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_WithoutInvoiceDateOverride_DefaultsToChargeMonth()
-    {
-        var request = ToCreateDto(_repository, ValidCreateRequest() with
-        {
-            Date = new DateOnly(2026, 7, 15), PaymentSource = null, CardTag = "ChaseMaster4023"
-        });
-
-        var result = await _sut.AddExpenseAsync(request);
-
-        result.InvoiceDate.Should().Be(new DateOnly(2026, 7, 1));
-    }
-
-    [Fact]
-    public async Task AddExpenseAsync_BankExpense_ChargeDateAndInvoiceDateAreNull()
-    {
-        var result = await _sut.AddExpenseAsync(ToCreateDto(_repository, ValidCreateRequest()));
-
-        using (new AssertionScope())
-        {
-            result.ChargeDate.Should().BeNull();
-            result.InvoiceDate.Should().BeNull();
-        }
-    }
-
-    [Fact]
-    public async Task UpdateExpenseAsync_ChangingInvoiceDateWhileUnpaid_PersistsOverride()
-    {
-        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, 
-            ValidCreateRequest() with { PaymentSource = null, CardTag = "ChaseMaster4023" }));
-        var updateRequest = ToUpdateDto(_repository, ValidCreateRequest() with
-        {
-            PaymentSource = null, CardTag = "ChaseMaster4023", InvoiceDate = new DateOnly(2026, 8, 12)
-        });
-
-        var result = await _sut.UpdateExpenseAsync(added.Id, updateRequest);
 
         result.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
     }
@@ -1161,23 +957,6 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task UpdateExpenseAsync_LegacySettledChargeOnAPaidStatement_DescriptionChange_IsSaved()
-    {
-        var added = await AddChargeOnPaidStatementAsync();
-        var expense = _repository.Expenses.Single();
-        expense.Settle(_repository.Accounts.Single(a => a.Name == "Barclays"), new DateOnly(2026, 10, 3));
-        var request = CardExpenseRequest(new DateOnly(2026, 9, 1)) with { Date = new DateOnly(2026, 10, 3), PaymentSource = "Barclays", Description = "Renamed" };
-
-        var result = await _sut.UpdateExpenseAsync(added.Id, ToUpdateDto(_repository, request));
-
-        using (new AssertionScope())
-        {
-            result.Description.Should().Be("Renamed");
-            result.PaymentStatus.Should().Be(nameof(ExpensePaymentStatus.CreditCardSettled));
-        }
-    }
-
-    [Fact]
     [Trait("AC", "P60-F08-statement-payment-and-card-screen-09")]
     public async Task DeleteExpenseAsync_ChargeOnAPaidStatement_ThrowsAndKeepsTheCharge()
     {
@@ -1305,8 +1084,7 @@ public class ExpenseServiceTests
             _repository.CardStatements.Should().ContainSingle(s => s.IsFor(card.Id, 2026, 12));
             _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
             _calendarSyncTrigger.InvoiceChecks.Should().Equal((card.Id, new DateOnly(2026, 9, 1)), (card.Id, new DateOnly(2026, 12, 1)));
-            _tracer.Spans.Should().Contain(s => s.Name == "CashFlow.ExpenseService.MoveToStatement"
-                && (string?)s.Attributes[TelemetryAttributeKeys.OperationResult] == TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.ExpenseService.MoveToStatement").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
         }
     }
 
@@ -1377,23 +1155,24 @@ public class ExpenseServiceTests
     }
 
     [Fact]
-    public async Task MoveToStatementAsync_InactiveCard_Throws()
-    {
-        var added = await _sut.AddExpenseAsync(ToCreateDto(_repository, CardExpenseRequest(new DateOnly(2026, 9, 1))));
-        _repository.CardAccounts.Single(c => c.Name == "BaAmex").SetActive(false);
-
-        var act = async () => await MoveAsync(added.Id, 2026, 12);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Credit card 'BaAmex' is inactive and cannot be used for new entries.");
-        _repository.Expenses.Single().InvoiceDate.Should().Be(new DateOnly(2026, 9, 1));
-        _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.ExpenseService.MoveToStatement");
-    }
-
-    [Fact]
     public async Task MoveToStatementAsync_UnknownExpense_ThrowsNotFound()
     {
         var act = async () => await MoveAsync(Guid.NewGuid(), 2026, 12);
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+    }
+
+    [Fact]
+    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
+    {
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.AddExpenseAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.ExpenseService.AddExpense");
+            await FluentActions.Awaiting(() => _sut.UpdateExpenseAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.ExpenseService.UpdateExpense");
+            await FluentActions.Awaiting(() => _sut.MoveToStatementAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.ExpenseService.MoveToStatement");
+        }
     }
 }

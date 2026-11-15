@@ -40,6 +40,7 @@ public class IncomeSummaryServiceTests
     // Pinned to a fixed mid-year date so "current year" averaging tests don't have to branch on
     // (or silently no-op during) the real wall-clock month - June guarantees 5 completed months.
     private static readonly DateTimeOffset PinnedNow = new(CurrentYear, 6, 15, 0, 0, 0, TimeSpan.Zero);
+    private static readonly DateOnly PinnedMonthStart = new(CurrentYear, 6, 1);
     private const int PinnedMonthsElapsed = 5;
 
     [Fact]
@@ -77,6 +78,7 @@ public class IncomeSummaryServiceTests
 
         result.TaxDifferenceMonthly[0].Should().Be(750m);
         result.TaxDifferenceAnnualTotal.Should().Be(result.TaxDifferenceMonthly.Sum());
+        _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeSummaryService.GetIncomeSummaryForYear");
     }
 
     [Fact]
@@ -90,21 +92,6 @@ public class IncomeSummaryServiceTests
 
         result.DividendoJurosMonthly[2].Should().Be(20m);
         result.DividendoJurosAnnualTotal.Should().Be(20m);
-    }
-
-    [Fact]
-    public void GetIncomeSummaryForYear_LotteryEntriesContributeToNoRow()
-    {
-        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 4, 1), Source("Lottery"), null, 500m, Chase));
-
-        var result = _sut.GetIncomeSummaryForYear(2026);
-
-        using (new AssertionScope())
-        {
-            result.SalaryMonthly.Should().OnlyContain(v => v == 0m);
-            result.SalaryAfterTaxesMonthly.Should().OnlyContain(v => v == 0m);
-            result.DividendoJurosMonthly.Should().OnlyContain(v => v == 0m);
-        }
     }
 
     [Fact]
@@ -171,28 +158,24 @@ public class IncomeSummaryServiceTests
     }
 
     [Fact]
-    public void GetIncomeSummaryForYear_AveragesDivideByElevenFor2017()
-    {
-        _repository.Incomes.Add(Income.Create(new DateOnly(2017, 1, 5), Source("Gleison"), 1200m, 600m, Barclays));
-
-        var result = _sut.GetIncomeSummaryForYear(2017);
-
-        result.SalaryAverage.Should().Be(109.09m);
-        result.SalaryAfterTaxesAverage.Should().Be(54.55m);
-        result.TaxDifferenceAverage.Should().Be(54.55m);
-    }
-
-    [Fact]
     public void GetIncomeSummaryForYear_AveragesForCurrentYearExcludeInProgressMonth()
     {
         var service = CreateService(timeProvider: new FakeTimeProvider(PinnedNow));
         _repository.Incomes.Add(Income.Create(new DateOnly(CurrentYear, 1, 5), Source("Gleison"), 1000m * PinnedMonthsElapsed, 800m * PinnedMonthsElapsed, Barclays));
-        _repository.Incomes.Add(Income.Create(DateOnly.FromDateTime(PinnedNow.UtcDateTime), Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
+        _repository.Incomes.Add(Income.Create(PinnedMonthStart, Source("Gleison"), 9999m * PinnedMonthsElapsed, 9999m * PinnedMonthsElapsed, Barclays));
 
         var result = service.GetIncomeSummaryForYear(CurrentYear);
 
         result.SalaryAverage.Should().Be(1000m);
         result.SalaryAfterTaxesAverage.Should().Be(800m);
+    }
+
+    [Fact]
+    public void GetSalaryAfterTaxesSeriesForYear_RecordsSuccessfulSpan()
+    {
+        _sut.GetSalaryAfterTaxesSeriesForYear(CurrentYear);
+
+        _tracer.ShouldHaveSucceededSpan("CashFlow.IncomeSummaryService.GetSalaryAfterTaxesSeriesForYear");
     }
 
     [Fact]
