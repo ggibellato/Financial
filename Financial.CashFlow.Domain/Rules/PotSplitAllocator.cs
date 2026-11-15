@@ -41,21 +41,9 @@ public static class PotSplitAllocator
         }
 
         var step = Math.Sign(residual) * Cent;
-        while (residual != 0m)
+        foreach (var index in byLargestShare.Take((int)(residual / step)))
         {
-            foreach (var index in byLargestShare)
-            {
-                if (residual == 0m)
-                {
-                    return;
-                }
-
-                if (KeepsTheBaseSign(amounts[index] + step, baseAmount))
-                {
-                    amounts[index] += step;
-                    residual -= step;
-                }
-            }
+            amounts[index] += step;
         }
     }
 
