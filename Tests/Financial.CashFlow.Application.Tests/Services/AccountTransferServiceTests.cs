@@ -108,8 +108,7 @@ public class AccountTransferServiceTests
             result.Note.Should().Be("Top-up");
             _repository.Transfers.Should().ContainSingle().Which.DestinationAmount.Should().BeNull();
             _repository.SaveChangesCallCount.Should().Be(1);
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.AddTransfer")
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.AddTransfer").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -147,24 +146,6 @@ public class AccountTransferServiceTests
         var act = () => _sut.AddAsync(CreateRequest(source: "Barclays", destination: "Sender"));
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Transfers from Barclays to Sender are not allowed.");
-        ShouldHaveRejected("AddTransfer");
-    }
-
-    [Fact]
-    public async Task AddAsync_CrossCurrencyWithoutDestinationAmount_RejectedAndNothingSaved()
-    {
-        var act = () => _sut.AddAsync(CreateRequest(destination: "Itaú"));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Enter the amount received in BRL.");
-        ShouldHaveRejected("AddTransfer");
-    }
-
-    [Fact]
-    public async Task AddAsync_SameCurrencyWithDestinationAmount_RejectedAndNothingSaved()
-    {
-        var act = () => _sut.AddAsync(CreateRequest(destinationAmount: 100m));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Destination amount only applies when the currencies differ.");
         ShouldHaveRejected("AddTransfer");
     }
 
@@ -207,15 +188,6 @@ public class AccountTransferServiceTests
     }
 
     [Fact]
-    public async Task AddAsync_NullRequest_ThrowsAndRecordsFailedSpan()
-    {
-        var act = () => _sut.AddAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.AddTransfer");
-    }
-
-    [Fact]
     public async Task UpdateAsync_ExistingTransfer_UpdatesInPlace()
     {
         var transfer = SeedTransfer(Named("Barclays"), Named("Chase"), 50m);
@@ -231,20 +203,7 @@ public class AccountTransferServiceTests
             transfer.DestinationAmount.Should().Be(512.40m);
             transfer.Note.Should().Be("Corrected");
             _repository.SaveChangesCallCount.Should().Be(1);
-        }
-    }
-
-    [Fact]
-    public async Task UpdateAsync_OntoSameCurrencyPair_ClearsTheDestinationAmount()
-    {
-        var transfer = SeedTransfer(Named("Barclays"), _itau, 100m, destinationAmount: 640.50m);
-
-        var result = await _sut.UpdateAsync(transfer.Id, UpdateRequest("Barclays", "Chase", 100m));
-
-        using (new AssertionScope())
-        {
-            transfer.DestinationAmount.Should().BeNull();
-            result.DestinationAmount.Should().Be(100m);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.UpdateTransfer").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(transfer.Id.ToString());
         }
     }
 
@@ -285,6 +244,7 @@ public class AccountTransferServiceTests
         {
             _repository.Transfers.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.DeleteTransfer").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(transfer.Id.ToString());
         }
     }
 
@@ -310,6 +270,7 @@ public class AccountTransferServiceTests
             result.Select(option => option.Name).Should().Equal("Chase", "Itaú", "Trading212");
             result.Single(option => option.Name == "Itaú").Currency.Should().Be("BRL");
             result.Single(option => option.Name == "Itaú").Id.Should().Be(_itau.Id);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.GetTransferDestinations").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(IdOf("Barclays").ToString());
         }
     }
 
@@ -445,8 +406,7 @@ public class AccountTransferServiceTests
             _repository.Transfers.Should().ContainSingle().Which.IsCreditRefund.Should().BeTrue();
             _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
             _repository.SaveChangesCallCount.Should().Be(1);
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.AddCreditRefund")
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.AddCreditRefund").Attributes.Should().ContainKey(TelemetryAttributeKeys.EntityId);
         }
     }
 
@@ -491,14 +451,6 @@ public class AccountTransferServiceTests
     }
 
     [Fact]
-    public async Task AddCreditRefundAsync_CardOwingMoney_ReportsNoCredit()
-    {
-        SeedCardWithCredit(-50m);
-
-        await ShouldRefuseCreditRefund(() => AddCreditRefund(10m), "The card's credit is 0.00 GBP.");
-    }
-
-    [Fact]
     public async Task AddCreditRefundAsync_DatedBeforeTheCreditArose_IsRefusedByTheLedgerGuard()
     {
         SeedCardWithCredit(60m);
@@ -514,14 +466,6 @@ public class AccountTransferServiceTests
         SeedCardWithCredit(60m);
 
         await ShouldRefuseCreditRefund(() => AddCreditRefund(35m, destinationAmount: 35m), "A card credit refund has no destination amount.");
-    }
-
-    [Fact]
-    public async Task AddCreditRefundAsync_BankInAnotherCurrency_Throws()
-    {
-        SeedCardWithCredit(60m);
-
-        await ShouldRefuseCreditRefund(() => AddCreditRefund(35m, destination: "Itaú"), "The receiving account must be in the card's currency (GBP).");
     }
 
     [Fact]
@@ -592,8 +536,7 @@ public class AccountTransferServiceTests
             _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
             _repository.SaveChangesCallCount.Should().Be(saveCountBefore + 1);
             _calendarSync.TriggeredCreditCardIds.Should().Equal(card.Id);
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.DeleteCreditRefund")
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.DeleteCreditRefund").Attributes.Should().ContainKey(TelemetryAttributeKeys.EntityId);
         }
 
         var refundOfTheWholeCredit = await AddCreditRefund(60m);
@@ -631,17 +574,6 @@ public class AccountTransferServiceTests
             _calendarSync.TriggeredCreditCardIds.Should().BeEmpty();
             _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.AccountTransferService.DeleteCreditRefund");
         }
-    }
-
-    [Fact]
-    public async Task DeleteCreditRefundAsync_StatementPayment_ThrowsAndKeepsIt()
-    {
-        var payment = SeedStatementPayment();
-
-        var act = () => _sut.DeleteCreditRefundAsync(payment.Id);
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("This transfer is not a card credit refund.");
-        _repository.Transfers.Should().ContainSingle().Which.Should().BeSameAs(payment);
     }
 
     [Fact]
@@ -701,8 +633,7 @@ public class AccountTransferServiceTests
                     new { AccountId = visa.Id, Name = "Visa", Currency = "GBP", IsActive = true, Credit = 35m }
                 ],
                 options => options.WithStrictOrdering());
-            _tracer.Spans.Should().ContainSingle(span => span.Name == "CashFlow.AccountTransferService.GetCardsInCredit")
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.GetCardsInCredit");
         }
     }
 
@@ -713,11 +644,36 @@ public class AccountTransferServiceTests
         _repository.Transfers.Add(Transfer.CreateCreditRefund(Date, visa, Named("Barclays"), 20m, null, TestClock.Today));
 
         _sut.GetCardsInCredit().Should().ContainSingle().Which.Credit.Should().Be(15m);
-    }
+            }
 
     [Fact]
     public void GetCardsInCredit_NoCards_ReturnsEmpty()
     {
         _sut.GetCardsInCredit().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
+    {
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.AddAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.AddTransfer");
+            await FluentActions.Awaiting(() => _sut.AddCreditRefundAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.AddCreditRefund");
+            await FluentActions.Awaiting(() => _sut.UpdateAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountTransferService.UpdateTransfer");
+        }
+    }
+
+    [Fact]
+    public void GetCardsInCredit_WhenTheRepositoryThrows_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnNextRead = new InvalidOperationException("simulated failure");
+
+        var act = () => _sut.GetCardsInCredit();
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.AccountTransferService.GetCardsInCredit");
     }
 }

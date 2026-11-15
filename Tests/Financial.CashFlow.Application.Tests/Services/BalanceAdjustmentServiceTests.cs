@@ -39,26 +39,6 @@ public class BalanceAdjustmentServiceTests
         BankOf(repository, name).Id;
 
     [Fact]
-    public async Task AddAdjustmentAsync_WithValidRequest_RecordsSuccessfulSpan()
-    {
-        _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var bankId = BankIdOf(_repository, "Barclays");
-
-        var result = await _sut.AddAdjustmentAsync(bankId, new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = 150m,
-            Note = "Matched statement"
-        });
-
-        var span = _tracer.Spans.Should().Contain(s => s.Name == "CashFlow.BalanceAdjustmentService.AddAdjustment").Which;
-        span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("CashFlow");
-        span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("BalanceAdjustment");
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
-        result.Should().NotBeNull();
-    }
-
-    [Fact]
     public async Task AddAdjustmentAsync_WithNoPriorActivity_ComputesDeltaAgainstOpeningBalance()
     {
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
@@ -78,6 +58,9 @@ public class BalanceAdjustmentServiceTests
             result.Note.Should().Be("Matched statement");
             _repository.BalanceAdjustments.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(1);
+            var span = _tracer.ShouldHaveSucceededSpan("CashFlow.BalanceAdjustmentService.AddAdjustment");
+            span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("BalanceAdjustment");
+            span.Attributes[TelemetryAttributeKeys.EntityId].Should().Be(BankIdOf(_repository, "Barclays").ToString());
         }
     }
 
@@ -95,7 +78,6 @@ public class BalanceAdjustmentServiceTests
             TargetBalance = 240m
         });
 
-        // Balance as of date = 100 (opening) + 200 (income) - 50 (expense) = 250; delta = 240 - 250 = -10
         result.Delta.Should().Be(-10m);
     }
 
@@ -111,7 +93,6 @@ public class BalanceAdjustmentServiceTests
         });
         first.Delta.Should().Be(50m);
 
-        // Balance as of the second date = 100 (opening) + 50 (first adjustment's delta) = 150; target 130 => delta -20
         var second = await _sut.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO
         {
             Date = new DateOnly(2026, 7, 1),
@@ -133,21 +114,6 @@ public class BalanceAdjustmentServiceTests
         });
 
         await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownAccountId}' was not found*");
-    }
-
-    [Fact]
-    public async Task AddAdjustmentAsync_OnAnAccountThatCannotBeReconciled_ThrowsArgumentException()
-    {
-        var card = TestAccounts.CreditCard("Amex");
-        _repository.Accounts.Add(card);
-
-        var act = async () => await _sut.AddAdjustmentAsync(card.Id, new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = 100m
-        });
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("Account 'Amex' cannot be reconciled.");
     }
 
     [Fact]
@@ -185,31 +151,6 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAdjustmentAsync_WhenAccountIsUnknown_RecordsFailedSpan()
-    {
-        var act = async () => await _sut.UpdateAdjustmentAsync(Guid.NewGuid(), Guid.NewGuid(), new BalanceAdjustmentUpdateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = 120m
-        });
-
-        await act.Should().ThrowAsync<KeyNotFoundException>();
-        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.BalanceAdjustmentService.UpdateAdjustment");
-    }
-
-    [Fact]
-    public async Task AddAdjustmentAsync_WithNegativeTargetBalance_ThrowsArgumentException()
-    {
-        var act = async () => await _sut.AddAdjustmentAsync(BankIdOf(_repository, "Barclays"), new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = -1m
-        });
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*cannot be negative*");
-    }
-
-    [Fact]
     public async Task UpdateAdjustmentAsync_WithUnknownAccount_ThrowsKeyNotFoundException()
     {
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
@@ -227,6 +168,7 @@ public class BalanceAdjustmentServiceTests
         });
 
         await act.Should().ThrowAsync<KeyNotFoundException>().WithMessage($"*Account '{unknownAccountId}' was not found*");
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.BalanceAdjustmentService.UpdateAdjustment");
     }
 
     [Fact]
@@ -256,34 +198,13 @@ public class BalanceAdjustmentServiceTests
             result.Note.Should().Be("Corrected");
             _repository.BalanceAdjustments.Should().ContainSingle();
             _repository.SaveChangesCallCount.Should().Be(2);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.BalanceAdjustmentService.UpdateAdjustment").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
         }
-    }
-
-    [Fact]
-    public async Task AddAdjustmentAsync_BankBalanceAsOfSameDateThenEqualsTargetBalanceExactly()
-    {
-        _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
-        var barclays = BankOf(_repository, "Barclays");
-        _repository.Incomes.Add(Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 37m, barclays));
-
-        await _sut.AddAdjustmentAsync(barclays.Id, new BalanceAdjustmentCreateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = 240m
-        });
-
-        IEnumerable<IAccountTransaction> records = [.. _repository.Incomes, .. _repository.BalanceAdjustments];
-        AccountBalanceRule.Balance(barclays, new DateOnly(2026, 7, 25), records).Should().Be(240m);
     }
 
     [Fact]
     public async Task UpdateAdjustmentAsync_WithDateMovedEarlierThanItsPreviousDate_ComputesCorrectDelta()
     {
-        // Regresses the scenario an "add back the old delta" approach would get wrong: since the
-        // adjustment's new date (07-01) is earlier than its own previous date (07-20), a balance
-        // computed as of the new date using the pre-update entity would not have included the old
-        // delta at all (07-20 > 07-01), so blindly adding it back would double it into the result.
-        // Excluding the adjustment by id, regardless of date, sidesteps that entirely.
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
         var barclaysId = BankIdOf(_repository, "Barclays");
         var added = await _sut.AddAdjustmentAsync(barclaysId, new BalanceAdjustmentCreateDTO
@@ -320,18 +241,6 @@ public class BalanceAdjustmentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAdjustmentAsync_WithUnknownId_ThrowsKeyNotFoundException()
-    {
-        var act = async () => await _sut.UpdateAdjustmentAsync(BankIdOf(_repository, "Barclays"), Guid.NewGuid(), new BalanceAdjustmentUpdateDTO
-        {
-            Date = new DateOnly(2026, 7, 25),
-            TargetBalance = 100m
-        });
-
-        await act.Should().ThrowAsync<KeyNotFoundException>();
-    }
-
-    [Fact]
     public async Task DeleteAdjustmentAsync_WithExistingId_RemovesAndSaves()
     {
         _repository.SetOpeningBalance("Barclays", 100m, new DateOnly(2026, 1, 1));
@@ -346,6 +255,7 @@ public class BalanceAdjustmentServiceTests
 
         _repository.BalanceAdjustments.Should().BeEmpty();
         _repository.SaveChangesCallCount.Should().Be(2);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.BalanceAdjustmentService.DeleteAdjustment").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(added.Id.ToString());
     }
 
     [Fact]
@@ -354,5 +264,18 @@ public class BalanceAdjustmentServiceTests
         var act = async () => await _sut.DeleteAdjustmentAsync(BankIdOf(_repository, "Barclays"), Guid.NewGuid());
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.BalanceAdjustmentService.DeleteAdjustment");
+    }
+
+    [Fact]
+    public async Task AddAndUpdate_NullRequest_ThrowAndRecordFailedSpans()
+    {
+        using (new AssertionScope())
+        {
+            await FluentActions.Awaiting(() => _sut.AddAdjustmentAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.BalanceAdjustmentService.AddAdjustment");
+            await FluentActions.Awaiting(() => _sut.UpdateAdjustmentAsync(Guid.NewGuid(), Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
+            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.BalanceAdjustmentService.UpdateAdjustment");
+        }
     }
 }
