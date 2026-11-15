@@ -13,14 +13,16 @@ public class SwaggerEndpointsTests
     [Theory]
     [InlineData("Development")]
     [InlineData("Production")]
-    public async Task GetSwaggerUI_ReturnsOk(string environment)
+    public async Task GetSwaggerUI_ReturnsOkAndPointsAtTheV1Document(string environment)
     {
         await using var factory = CreateFactory(environment);
         using var client = factory.CreateClient();
 
         var response = await client.GetAsync("/swagger/index.html");
-
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var configuration = await client.GetStringAsync("/swagger/index.js");
+        configuration.Should().Contain("/openapi/v1.json").And.Contain("Financial API v1");
     }
 
     [Fact]

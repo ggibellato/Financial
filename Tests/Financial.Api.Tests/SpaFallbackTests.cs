@@ -6,8 +6,13 @@ namespace Financial.Api.Tests;
 public sealed class SpaFallbackFixture : IDisposable
 {
     public const string SpaMarker = "spa-shell-marker";
+    public const string AssetMarker = "spa-asset-marker";
 
-    private readonly ApiTestFactory _factory = new(spaIndexHtml: $"<html><body>{SpaMarker}</body></html>");
+    private readonly ApiTestFactory _factory = new(webRootFiles: new Dictionary<string, string>
+    {
+        ["index.html"] = $"<html><body>{SpaMarker}</body></html>",
+        ["app.js"] = $"console.log('{AssetMarker}');"
+    });
 
     public SpaFallbackFixture()
     {
@@ -53,6 +58,14 @@ public class SpaFallbackTests(SpaFallbackFixture fixture) : IClassFixture<SpaFal
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType?.MediaType.Should().Be("text/html");
         (await response.Content.ReadAsStringAsync()).Should().Contain(SpaFallbackFixture.SpaMarker);
+    }
+
+    [Fact]
+    public async Task StaticAsset_IsServedItselfNotTheSpaShell()
+    {
+        var body = await _client.GetStringAsync("/app.js");
+
+        body.Should().Contain(SpaFallbackFixture.AssetMarker).And.NotContain(SpaFallbackFixture.SpaMarker);
     }
 
     [Fact]

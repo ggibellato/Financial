@@ -29,13 +29,16 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         TimeProvider? timeProviderOverride = null,
         ICalendarProvider? calendarProviderOverride = null,
         bool useRealExchangeRates = false,
-        string? spaIndexHtml = null)
+        IReadOnlyDictionary<string, string>? webRootFiles = null)
     {
-        if (spaIndexHtml is not null)
+        if (webRootFiles is not null)
         {
             _webRootPath = Path.Combine(Path.GetTempPath(), $"financial-api-webroot-{Guid.NewGuid():N}");
             Directory.CreateDirectory(_webRootPath);
-            File.WriteAllText(Path.Combine(_webRootPath, "index.html"), spaIndexHtml);
+            foreach (var (name, content) in webRootFiles)
+            {
+                File.WriteAllText(Path.Combine(_webRootPath, name), content);
+            }
         }
 
         _dataFilePath = CreateTempDataFile();
