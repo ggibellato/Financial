@@ -31,6 +31,7 @@ public class XirrCalculationServiceTests
         var twoArgResult = _sut.Calculate(cashFlows, 1100m);
         var asOfResult = _sut.Calculate(cashFlows, 1100m, TestClock.LocalToday);
 
+        twoArgResult.Should().NotBeNull();
         asOfResult.Should().Be(twoArgResult);
     }
 }

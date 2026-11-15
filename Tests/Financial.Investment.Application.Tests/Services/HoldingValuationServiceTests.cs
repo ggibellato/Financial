@@ -1,6 +1,7 @@
 using Financial.Investment.Application.Enums;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
+using Financial.Investment.Domain.Rules;
 using Financial.Shared.Abstractions.Observability;
 using Financial.TestUtilities;
 using Microsoft.Extensions.Time.Testing;
@@ -17,8 +18,8 @@ public class HoldingValuationServiceTests
 
     private static Asset MakeAsset(string name = "AAAA") => Asset.Create(name, "ISIN", "BVMF", name);
 
-    private HoldingValuationService CreateService(ITelemetryTracer? tracer = null, TimeProvider? timeProvider = null) =>
-        new(new XirrCalculationService(TestClock.At()), tracer ?? new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, timeProvider ?? new FakeTimeProvider(Today));
+    private HoldingValuationService CreateService(ITelemetryTracer? tracer = null) =>
+        new(new XirrCalculationService(TestClock.At()), tracer ?? new RecordingTelemetryTracer(), NullLogger<HoldingValuationService>.Instance, new FakeTimeProvider(Today));
 
     [Fact]
     public void GetValuation_ActiveWithNoRecordedPrice_ReportsMarketValueUnavailable()
@@ -47,6 +48,21 @@ public class HoldingValuationServiceTests
         var result = service.GetValuation(asset, InvestmentScope.Active);
 
         result.MarketValue.Should().Be(80m);
+    }
+
+    [Fact]
+    public void GetValuation_PriceOlderThanThePreviousWeekday_IsStaleAgainstTheClocksToday()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2026, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.SetPrice(new DateOnly(2026, 8, 10), 8m, isManual: false);
+        var service = CreateService();
+
+        var result = service.GetValuation(asset, InvestmentScope.Active);
+
+        using var _ = new AssertionScope();
+        result.MarketValue.Should().Be(80m);
+        result.MarketStatus.Should().Be(MarketStatus.Stale);
     }
 
     [Fact]
@@ -94,11 +110,11 @@ public class HoldingValuationServiceTests
 
         result.TotalReturnNetOfTax.Should().NotBeNull();
         result.TotalReturn.Should().NotBeNull();
-        result.TotalReturnNetOfTax.Should().NotBe(result.TotalReturn);
+        result.TotalReturnNetOfTax.Should().BeLessThan(result.TotalReturn!.Value);
     }
 
     [Fact]
-    public void GetValuation_Historic_IgnoresAnyRecordedPrice()
+    public void GetValuation_Historic_IgnoresAnyRecordedPriceAndReturnsFromItsOwnFlows()
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));

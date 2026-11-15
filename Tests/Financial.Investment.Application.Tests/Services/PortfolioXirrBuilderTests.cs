@@ -67,7 +67,7 @@ public class PortfolioXirrBuilderTests
     }
 
     [Fact]
-    public void Calculate_SolvesOneRateOverEveryHoldingsFlowsCombined()
+    public void Calculate_DatesTheTerminalValueOnTheGivenAsOf()
     {
         var asset = MakeBoughtAsset("AAAA", quantity: 10m, unitPrice: 10m);
 

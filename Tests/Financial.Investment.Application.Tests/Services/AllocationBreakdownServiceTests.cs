@@ -14,6 +14,8 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class AllocationBreakdownServiceTests
 {
+    private const string SpanName = "Investment.AllocationBreakdownService.GetAllocationBreakdown";
+
     private static readonly DateTimeOffset Today = new(2026, 8, 14, 12, 0, 0, TimeSpan.Zero);
     private static readonly DateOnly TodayDate = DateOnly.FromDateTime(Today.UtcDateTime);
     private static readonly DateTime PurchaseDate = new(2025, 1, 1);
@@ -201,7 +203,7 @@ public class AllocationBreakdownServiceTests
         Func<Task> act = () => CreateService().GetAllocationBreakdownAsync();
 
         await act.Should().ThrowAsync<ArgumentException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.AllocationBreakdownService.GetAllocationBreakdown");
+        _tracer.ShouldHaveFailedSpan<ArgumentException>(SpanName);
     }
 
     [Fact]
@@ -213,7 +215,7 @@ public class AllocationBreakdownServiceTests
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         using var _ = new AssertionScope();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.AllocationBreakdownService.GetAllocationBreakdown");
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>(SpanName);
         _logger.Entries.Should().NotContain(entry => entry.Message.Contains("simulated failure"));
     }
 
@@ -257,7 +259,7 @@ public class AllocationBreakdownServiceTests
         PercentageTotals(result).Should().AllSatisfy(total => total.Should().BeApproximately(100m, 0.0001m));
         result.IsPartial.Should().BeFalse();
         result.IsUnavailable.Should().BeFalse();
-        _tracer.ShouldHaveSucceededSpan("Investment.AllocationBreakdownService.GetAllocationBreakdown");
+        _tracer.ShouldHaveSucceededSpan(SpanName);
     }
 
     [Fact]

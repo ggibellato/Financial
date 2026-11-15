@@ -11,6 +11,8 @@ namespace Financial.Investment.Application.Tests.Services;
 [Trait("Category", "Unit")]
 public class BrokerBreakdownServiceTests
 {
+    private const string SpanName = "Investment.BrokerBreakdownService.GetBrokerBreakdown";
+
     private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
@@ -32,7 +34,7 @@ public class BrokerBreakdownServiceTests
         portfolio.Assets.Should().HaveCount(2);
         portfolio.Assets.Should().Contain(a => a.AssetName == "AAAA" && a.TotalInvested == 100m);
         portfolio.Assets.Should().Contain(a => a.AssetName == "BBBB" && a.TotalInvested == 200m);
-        _tracer.ShouldHaveSucceededSpan("Investment.BrokerBreakdownService.GetBrokerBreakdown");
+        _tracer.ShouldHaveSucceededSpan(SpanName);
     }
 
     [Fact]
@@ -109,7 +111,7 @@ public class BrokerBreakdownServiceTests
         var result = CreateService().GetBrokerBreakdown("UNKNOWN", scope);
 
         result.Should().BeEmpty();
-        _tracer.ShouldHaveSucceededSpan("Investment.BrokerBreakdownService.GetBrokerBreakdown");
+        _tracer.ShouldHaveSucceededSpan(SpanName);
     }
 
     [Theory]
@@ -124,7 +126,7 @@ public class BrokerBreakdownServiceTests
         var result = CreateService().GetBrokerBreakdown(brokerName!, scope);
 
         result.Should().BeEmpty();
-        _tracer.ShouldHaveSucceededSpan("Investment.BrokerBreakdownService.GetBrokerBreakdown");
+        _tracer.ShouldHaveSucceededSpan(SpanName);
     }
 
     [Fact]
@@ -135,7 +137,7 @@ public class BrokerBreakdownServiceTests
         var act = () => CreateService().GetBrokerBreakdown("XPI");
 
         act.Should().Throw<InvalidOperationException>();
-        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.BrokerBreakdownService.GetBrokerBreakdown");
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>(SpanName);
     }
 
     [Fact]
