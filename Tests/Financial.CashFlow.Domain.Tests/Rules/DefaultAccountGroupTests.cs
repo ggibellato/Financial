@@ -197,4 +197,39 @@ public class DefaultAccountGroupTests
         account.SetOpeningBalance(openingAmount, StartDate);
         return account;
     }
+
+    [Fact]
+    public void ListedIn_InactiveBankWhoseOnlyRecordIsOnTheFirstOfNextMonth_IsNotListed()
+    {
+        var closed = TestAccounts.Bank("Closed");
+        var records = new IAccountTransaction[] { Income.Create(new DateOnly(2026, 10, 1), _salary, null, 40m, closed) };
+        closed.SetActive(false);
+
+        DefaultAccountGroup.ListedIn([closed], 2026, 9, records).Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(8, 31, 9, 1)]
+    [InlineData(9, 30, 8, 31)]
+    public void ListedIn_InactiveBankBackToZeroWithARecordOnTheFirstOrLastDayOfTheMonth_IsListed(
+        int incomeMonth, int incomeDay, int expenseMonth, int expenseDay)
+    {
+        var closed = TestAccounts.Bank("Closed");
+        var records = new IAccountTransaction[]
+        {
+            Income.Create(new DateOnly(2026, incomeMonth, incomeDay), _salary, null, 40m, closed),
+            Expense.Create(new DateOnly(2026, expenseMonth, expenseDay), "Settle", 40m, _groceries, closed, creditCard: null)
+        };
+        closed.SetActive(false);
+
+        DefaultAccountGroup.ListedIn([closed], 2026, 9, records).Should().Equal(closed);
+    }
+
+    [Fact]
+    public void ListedIn_NullArguments_AreRejected()
+    {
+        using var _ = new AssertionScope();
+        FluentActions.Invoking(() => DefaultAccountGroup.ListedIn(null!, 2026, 9, [])).Should().Throw<ArgumentNullException>().WithParameterName("accounts");
+        FluentActions.Invoking(() => DefaultAccountGroup.ListedIn([], 2026, 9, null!)).Should().Throw<ArgumentNullException>().WithParameterName("records");
+    }
 }

@@ -340,4 +340,19 @@ public class AccountBalanceRuleTests
 
         AccountBalanceRule.CurrentBalances(_barclays, records).Should().Equal((Currency.GBP, 1105m));
     }
+
+    [Fact]
+    public void NullArguments_AreRejected()
+    {
+        var bank = TestAccounts.Bank("Barclays");
+        var asOf = new DateOnly(2026, 9, 30);
+
+        using var _ = new AssertionScope();
+        FluentActions.Invoking(() => AccountBalanceRule.Balance(null!, asOf, [])).Should().Throw<ArgumentNullException>().WithParameterName("account");
+        FluentActions.Invoking(() => AccountBalanceRule.Balance(null!, Currency.GBP, asOf, [])).Should().Throw<ArgumentNullException>().WithParameterName("account");
+        FluentActions.Invoking(() => AccountBalanceRule.Balance(bank, Currency.GBP, asOf, null!)).Should().Throw<ArgumentNullException>().WithParameterName("records");
+        FluentActions.Invoking(() => AccountBalanceRule.Balances(null!, asOf, [])).Should().Throw<ArgumentNullException>().WithParameterName("account");
+        FluentActions.Invoking(() => AccountBalanceRule.PotBalance(null!, asOf, [])).Should().Throw<ArgumentNullException>().WithParameterName("pot");
+        FluentActions.Invoking(() => AccountBalanceRule.PotBalance(Pot.Create("Investimento", 50m), asOf, null!)).Should().Throw<ArgumentNullException>().WithParameterName("movements");
+    }
 }

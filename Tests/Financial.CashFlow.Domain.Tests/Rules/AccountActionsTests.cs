@@ -220,4 +220,11 @@ public class AccountActionsTests
 
         act.Should().Throw<ArgumentNullException>();
     }
+
+    [Fact]
+    public void DisabledFor_NullArguments_AreRejected()
+    {
+        FluentActions.Invoking(() => AccountActions.DisabledFor(null!, [])).Should().Throw<ArgumentNullException>().WithParameterName("account");
+        FluentActions.Invoking(() => AccountActions.DisabledFor(TestAccounts.Bank("Barclays"), null!)).Should().Throw<ArgumentNullException>().WithParameterName("currentBalances");
+    }
 }

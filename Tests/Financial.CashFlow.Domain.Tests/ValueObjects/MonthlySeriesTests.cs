@@ -44,7 +44,7 @@ public class MonthlySeriesTests
     {
         var act = () => MonthlySeries.FromMonths(null!);
 
-        act.Should().Throw<ArgumentNullException>();
+        act.Should().Throw<ArgumentNullException>().WithParameterName("valueForMonth");
     }
 
     [Fact]
@@ -166,5 +166,23 @@ public class MonthlySeriesTests
         var second = MonthlySeries.FromMonthlyValues(TwelveMonths);
 
         first.GetHashCode().Should().Be(second.GetHashCode());
+    }
+
+    [Fact]
+    public void Add_SumsEachMonth()
+    {
+        var first = MonthlySeries.FromMonths(month => month);
+        var second = MonthlySeries.FromMonths(month => month * 10);
+
+        first.Add(second).ToArray().Should().Equal(Enumerable.Range(1, 12).Select(month => month * 11m));
+    }
+
+    [Fact]
+    public void GetHashCode_DependsOnTheValues()
+    {
+        var first = MonthlySeries.FromMonths(month => month);
+        var second = MonthlySeries.FromMonths(month => month * 2);
+
+        first.GetHashCode().Should().NotBe(second.GetHashCode());
     }
 }
