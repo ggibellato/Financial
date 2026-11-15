@@ -708,9 +708,11 @@ public class AccountAdminServiceTests
             case "transfer out":
                 _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 9, 4), _chase, other, 10m, null, null, TestClock.Today));
                 break;
-            default:
+            case "transfer in":
                 _repository.Transfers.Add(Transfer.Create(new DateOnly(2026, 9, 4), other, _chase, 10m, null, null, TestClock.Today));
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(use), use, null);
         }
 
         var act = async () => await _sut.DeleteAsync(_chase.Id);
@@ -719,8 +721,10 @@ public class AccountAdminServiceTests
         {
             await act.Should().ThrowAsync<EntityInUseException>();
             _repository.Accounts.Should().Contain(_chase);
+            _repository.SaveChangesCallCount.Should().Be(0);
         }
     }
+
     [Fact]
     public async Task DeleteAsync_PotsAccountThatOwnsPots_ThrowsTheDeactivateMessageAndKeepsIt()
     {
@@ -1049,5 +1053,4 @@ public class AccountAdminServiceTests
             _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.AccountAdminService.UpdateAccount");
         }
     }
-
 }

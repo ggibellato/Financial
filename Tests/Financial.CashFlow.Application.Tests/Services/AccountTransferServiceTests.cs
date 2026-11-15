@@ -73,9 +73,9 @@ public class AccountTransferServiceTests
         return account;
     }
 
-    private Transfer SeedTransfer(Account source, Account destination, decimal amount, decimal? destinationAmount = null)
+    private Transfer SeedTransfer(Account source, Account destination, decimal amount)
     {
-        var transfer = Transfer.Create(Date, source, destination, amount, destinationAmount, note: null, TestClock.Today);
+        var transfer = Transfer.Create(Date, source, destination, amount, null, note: null, TestClock.Today);
         _repository.Transfers.Add(transfer);
         return transfer;
     }
@@ -371,12 +371,12 @@ public class AccountTransferServiceTests
         return card;
     }
 
-    private Task<AccountTransferDTO> AddCreditRefund(decimal amount, decimal? destinationAmount = null, string destination = "Barclays", DateOnly? date = null) =>
+    private Task<AccountTransferDTO> AddCreditRefund(decimal amount, decimal? destinationAmount = null, DateOnly? date = null) =>
         _sut.AddCreditRefundAsync(new AccountTransferCreateDTO
         {
             Date = date ?? Date,
             SourceAccountId = IdOf("Amex"),
-            DestinationAccountId = IdOf(destination),
+            DestinationAccountId = IdOf("Barclays"),
             Amount = amount,
             DestinationAmount = destinationAmount,
             Note = "Issuer refund"
@@ -406,7 +406,7 @@ public class AccountTransferServiceTests
             _repository.Transfers.Should().ContainSingle().Which.IsCreditRefund.Should().BeTrue();
             _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
             _repository.SaveChangesCallCount.Should().Be(1);
-            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.AddCreditRefund").Attributes.Should().ContainKey(TelemetryAttributeKeys.EntityId);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.AddCreditRefund").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(result.Id.ToString());
         }
     }
 
@@ -527,8 +527,9 @@ public class AccountTransferServiceTests
         var card = SeedCardWithCredit(60m);
         await AddCreditRefund(35m);
         var saveCountBefore = _repository.SaveChangesCallCount;
+        var refundId = _repository.Transfers.Single().Id;
 
-        await _sut.DeleteCreditRefundAsync(_repository.Transfers.Single().Id);
+        await _sut.DeleteCreditRefundAsync(refundId);
 
         using (new AssertionScope())
         {
@@ -536,7 +537,7 @@ public class AccountTransferServiceTests
             _repository.CardStatements.Should().ContainSingle().Which.Should().BeEquivalentTo(new { Year = 2026, Month = 9, IsPaid = false });
             _repository.SaveChangesCallCount.Should().Be(saveCountBefore + 1);
             _calendarSync.TriggeredCreditCardIds.Should().Equal(card.Id);
-            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.DeleteCreditRefund").Attributes.Should().ContainKey(TelemetryAttributeKeys.EntityId);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.AccountTransferService.DeleteCreditRefund").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(refundId.ToString());
         }
 
         var refundOfTheWholeCredit = await AddCreditRefund(60m);
@@ -644,7 +645,7 @@ public class AccountTransferServiceTests
         _repository.Transfers.Add(Transfer.CreateCreditRefund(Date, visa, Named("Barclays"), 20m, null, TestClock.Today));
 
         _sut.GetCardsInCredit().Should().ContainSingle().Which.Credit.Should().Be(15m);
-            }
+    }
 
     [Fact]
     public void GetCardsInCredit_NoCards_ReturnsEmpty()
