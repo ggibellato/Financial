@@ -152,11 +152,11 @@ uses the repo folder.
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ⬜ | 63.2% | | | | | | |
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
-| 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | 🔄 | 49.6% | 70.3% | 7 | 1 | 11 | | See "Slice notes"; `BrokerCurrencyParser` is only used by 4.3/4.4 services |
+| 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ✅ | 49.6% | 70.3% | 7 | 1 | 11 | [#1287](https://github.com/ggibellato/Financial/pull/1287) | See "Slice notes"; `BrokerCurrencyParser` is only used by 4.3/4.4 services |
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ⬜ | 56.8% | | | | | | |
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
-| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ⬜ | 52.7% | | | | | | |
+| 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | 🔄 | 52.7% | 74.5% | 9 | 0 | 6 | | See "Slice notes"; 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ⬜ | 63.9% | | | | | | `ReflectionJsonTypeInfoHelpers` 10 of 10 undetected |
@@ -329,6 +329,44 @@ The 79 still undetected, all reviewed:
 - **Left untested** (1): the same lookup for two spin-offs into one new asset, which does not
   happen in practice.
 
+### 4.6 Investment.Application navigation, brokers and validation (55.3% → 74.5%)
+
+Run with `-AlsoTestedBy Investment.Infrastructure`: `NavigationService` also has tests there.
+
+Gaps closed:
+
+- **Which broker's cost basis method asset details show.** The lookup takes the active broker with
+  the asset's broker name, then a historic one. No test had two brokers, so matching any broker,
+  dropping either side of the fallback, or preferring historic over active all passed, and the
+  historic fallback never ran. One test has a different active broker plus a historic broker with
+  the same name; another prices a historic-only broker.
+- **Tax jurisdictions** in asset details are now checked in order, not only as a set.
+- **Navigation tree display names** ("Broker (BRL)", "Portfolio (1 assets)") and **disposal-record
+  lots**, tested on `NavigationMapper` directly rather than through the service, so they do not
+  depend on repository fixtures or on how the domain builds lots.
+- **`BrokerService`**: success and failure spans for every operation, null requests, a blank
+  current name on update.
+- **`NavigationService`**: success spans on the early returns (blank or unknown asset) and on open
+  lots; the hand-built tree span test now uses `ShouldHaveSucceededSpan` and keeps the entity-type
+  check.
+
+`IsinValidator`, `AssetContextValidator` and `RequiredValueValidator` have no tests of their own;
+the service tests cover them.
+
+Open question for a separate change: `GetAssetDetails` picks the broker for the cost basis method
+from the active list first, then the historic one, whatever scope was asked for, while
+`BrokerService` uses the domain's `Investments.GetBroker(name, preferHistoric)`. A historic asset
+whose broker name is also an active broker would show the active broker's method. The tests here
+pin only the active-scope case.
+
+The 48 still undetected, all reviewed:
+
+- **Log and exception wording** (42): 40 from the "started"/"completed" logs, two exception
+  messages (`InvestmentScopeParser`, `RequiredValueValidator`).
+- **Equivalent** (6): `ConfigureAwait` (4); the historic broker lookup cannot miss once the asset
+  was found under that broker name (1); `AssetContextValidator`'s `||` → `&&` between broker and
+  portfolio, because a blank name reaches a repository lookup that returns null anyway (1).
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -341,3 +379,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-14 | 4.5 | Prices, income, tax 47.7% → 77.5% (26.7% without the Infrastructure tests); span assertions added, 16 duplicated tests removed or merged; `-AlsoTestedBy` added to `stryker.ps1` |
 | 2026-11-15 | 4.1 | Assets and transactions 48.0% → 65.0%; currency-preservation tests fixed, spans and gaps added, 9 duplicated tests removed or merged; most of the rest is log wording |
 | 2026-11-15 | 4.2 | Corporate actions 49.6% → 70.3%; update rollback, two-mergers-one-target and inline-target identity tested; 1 idle test removed |
+| 2026-11-15 | 4.6 | Navigation, brokers, validation 55.3% → 74.5%; cost-basis broker lookup, display names, lot mapping and spans tested |

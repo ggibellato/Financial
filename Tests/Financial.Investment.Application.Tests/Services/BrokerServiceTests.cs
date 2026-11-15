@@ -31,6 +31,7 @@ public class BrokerServiceTests
             result.PortfolioCount.Should().Be(0);
             _repository.Investments!.FindActiveBroker("XPI").Should().NotBeNull();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.CreateBroker");
         }
     }
 
@@ -43,6 +44,7 @@ public class BrokerServiceTests
 
         await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<InvestmentDuplicateNameException>("Investment.BrokerService.CreateBroker");
     }
 
     [Fact]
@@ -86,6 +88,7 @@ public class BrokerServiceTests
             result.Currency.Should().Be("USD");
             result.Status.Should().Be("Active");
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.UpdateBroker");
         }
     }
 
@@ -106,6 +109,7 @@ public class BrokerServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("Investment.BrokerService.UpdateBroker");
     }
 
     [Fact]
@@ -142,6 +146,7 @@ public class BrokerServiceTests
             _repository.Investments!.FindActiveBroker("XPI").Should().BeNull();
             _repository.Investments!.FindHistoricBroker("XPI").Should().NotBeNull();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.DeleteBroker");
         }
     }
 
@@ -156,6 +161,7 @@ public class BrokerServiceTests
 
         await act.Should().ThrowAsync<InvestmentRuleViolationException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<InvestmentRuleViolationException>("Investment.BrokerService.DeleteBroker");
     }
 
     [Fact]
@@ -180,6 +186,7 @@ public class BrokerServiceTests
             originalRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
             asset.DisposalRecords.Should().HaveCount(2);
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.SetCostBasisMethod");
         }
     }
 
@@ -209,6 +216,7 @@ public class BrokerServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("Investment.BrokerService.SetCostBasisMethod");
     }
 
     [Fact]
@@ -270,6 +278,7 @@ public class BrokerServiceTests
             result.Should().HaveCount(2);
             result.Should().ContainSingle(b => b.Name == "XPI" && b.Status == "Active" && b.PortfolioCount == 1);
             result.Should().ContainSingle(b => b.Name == "Avenue" && b.Status == "Historic" && b.PortfolioCount == 0);
+            _tracer.ShouldHaveSucceededSpan("Investment.BrokerService.GetBrokers");
         }
     }
 
@@ -283,6 +292,46 @@ public class BrokerServiceTests
         var result = CreateService().GetBrokers();
 
         result.Should().ContainSingle().Which.CostBasisMethod.Should().Be(CostBasisMethod.SpecificId);
+    }
+
+    [Fact]
+    public void GetBrokers_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
+    {
+        _repository.ThrowOnGetInvestments = new InvalidOperationException("simulated failure");
+
+        var act = () => CreateService().GetBrokers();
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.BrokerService.GetBrokers");
+    }
+
+    [Fact]
+    public async Task CreateBrokerAsync_NullRequest_ThrowsAndWritesNothing()
+    {
+        var act = async () => await CreateService().CreateBrokerAsync(null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateBrokerAsync_NullRequest_ThrowsAndWritesNothing()
+    {
+        var act = async () => await CreateService().UpdateBrokerAsync("XPI", null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdateBrokerAsync_BlankCurrentName_ThrowsAndWritesNothing()
+    {
+        _repository.Investments!.AddActiveBroker(Broker.Create("XPI", "BRL"));
+
+        var act = async () => await CreateService().UpdateBrokerAsync("  ", new BrokerUpdateDTO { Name = "XPI", Currency = "BRL" });
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     private BrokerService CreateService() => new(_repository, TestClock.At(), _tracer, _logger);

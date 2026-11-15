@@ -19,20 +19,16 @@ public class NavigationServiceTests
     private NavigationService CreateService() => new(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance);
 
     [Fact]
-    public void GetNavigationTree_RecordsSuccessfulSpan()
+    public void GetNavigationTree_AddsOneChildPerBrokerAndRecordsBothSpans()
     {
-        var tracer = new RecordingTelemetryTracer();
-        var service = new NavigationService(_repository, TestHoldingValuationService.Create(), tracer, NullLogger<NavigationService>.Instance);
+        _repository.Broker = BuildBrokerWithAsset("ASSET1", GlobalAssetClass.Equity, quantity: 10m);
 
-        service.GetNavigationTree();
+        var tree = CreateService().GetNavigationTree();
 
-        // GetNavigationTree calls this service's own GetBrokers internally, so both spans appear,
-        // correlated under the same call - not just the outer one.
-        var span = tracer.Spans.Should().Contain(s => s.Name == "Investment.NavigationService.GetNavigationTree").Which;
-        span.Attributes[TelemetryAttributeKeys.BoundedContext].Should().Be("Investment");
-        span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Navigation");
-        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
-        tracer.Spans.Should().Contain(s => s.Name == "Investment.NavigationService.GetBrokers");
+        tree.Children.Should().ContainSingle();
+        _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetNavigationTree")
+            .Attributes[TelemetryAttributeKeys.EntityType].Should().Be("Navigation");
+        _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetBrokers");
     }
 
     [Theory]
@@ -116,7 +112,8 @@ public class NavigationServiceTests
 
         var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
 
-        details!.TaxJurisdictions.Should().BeEquivalentTo(["BR", "UK"]);
+        details!.TaxJurisdictions.Should().Equal("BR", "UK");
+        _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetAssetDetails");
     }
 
     [Fact]
@@ -581,6 +578,54 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_PrefersTheActiveBrokerWithThatNameForTheCostBasisMethod()
+    {
+        var investments = Investments.Create();
+        var other = Broker.Create("Other", "BRL");
+        other.SetCostBasisMethod(CostBasisMethod.SpecificId);
+        investments.AddActiveBroker(other);
+        var active = BuildBrokerWithAsset("ASSET1", GlobalAssetClass.Equity, quantity: 10m);
+        active.SetCostBasisMethod(CostBasisMethod.FIFO);
+        investments.AddActiveBroker(active);
+        var historic = Broker.Create("Broker", "BRL");
+        historic.SetCostBasisMethod(CostBasisMethod.SpecificId);
+        investments.AddHistoricBroker(historic);
+        _repository.Investments = investments;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
+
+    [Fact]
+    public void GetAssetDetails_HistoricBroker_UsesItsCostBasisMethod()
+    {
+        var investments = Investments.Create();
+        var historic = Broker.Create("Old", "BRL");
+        historic.SetCostBasisMethod(CostBasisMethod.FIFO);
+        historic.AddPortfolio("Closed").AddAsset(BuildAssetWithQuantity("ASSET1", 0m));
+        investments.AddHistoricBroker(historic);
+        _repository.Investments = investments;
+
+        var details = CreateService().GetAssetDetails("Old", "Closed", "ASSET1", InvestmentScope.Historic);
+
+        details!.CostBasisMethod.Should().Be(CostBasisMethod.FIFO);
+    }
+
+    [Theory]
+    [InlineData("UNKNOWN")]
+    [InlineData(" ")]
+    public void GetAssetDetails_UnknownOrBlankAssetName_ReturnsNullAndSucceeds(string assetName)
+    {
+        _repository.Broker = Broker.Create("Broker", "BRL");
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", assetName);
+
+        details.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetAssetDetails");
+    }
+
+    [Fact]
     public void GetOpenLots_WithAPartiallyConsumedBuy_ReturnsItsRemainingQuantity()
     {
         var broker = Broker.Create("Broker", "BRL");
@@ -599,6 +644,7 @@ public class NavigationServiceTests
         lot.SourceTransactionId.Should().Be(buy.Id);
         lot.RemainingQuantity.Should().Be(6m);
         lot.UnitCost.Should().Be(100m);
+        _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetOpenLots");
     }
 
     [Fact]
@@ -626,6 +672,7 @@ public class NavigationServiceTests
         var openLots = CreateService().GetOpenLots("Broker", "Portfolio", "UNKNOWN");
 
         openLots.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.NavigationService.GetOpenLots");
     }
 
     [Fact]

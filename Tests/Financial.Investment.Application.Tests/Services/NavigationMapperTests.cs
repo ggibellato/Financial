@@ -1,6 +1,8 @@
+using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Services;
 using Financial.Investment.Domain.Entities;
 using Financial.Shared.Abstractions.Currencies;
+using Financial.TestUtilities;
 using FluentAssertions;
 using FluentAssertions.Execution;
 
@@ -198,5 +200,39 @@ public class NavigationMapperTests
         var dto = NavigationMapper.MapCorporateAction(target, asset);
 
         dto.CalculationStatus.Should().BeNull("only the active classification is matched, and retraction superseded it with no replacement");
+    }
+
+    [Fact]
+    public void BuildBrokerTreeNode_NamesTheBrokerAndPortfolioNodesWithCurrencyAndAssetCount()
+    {
+        var broker = new BrokerNodeDTO
+        {
+            Name = "Broker",
+            Currency = "BRL",
+            Portfolios = [new PortfolioNodeDTO { Name = "Portfolio", AssetCount = 1 }]
+        };
+
+        var node = NavigationMapper.BuildBrokerTreeNode(broker);
+
+        node.DisplayName.Should().Be("Broker (BRL)");
+        node.Children.Should().ContainSingle().Which.DisplayName.Should().Be("Portfolio (1 assets)");
+    }
+
+    [Fact]
+    public void MapDisposalRecord_CopiesEachConsumedLot()
+    {
+        var sourceTransactionId = Guid.NewGuid();
+        var record = DisposalRecord.Create(
+            Guid.NewGuid(), new DateTime(2022, 1, 1), CostBasisMethod.FIFO,
+            [new DisposalLotConsumption(sourceTransactionId, 3m, 12.5m)], 3m, 60m, Currency.GBP, "2021/22", TestClock.Default);
+
+        var lot = NavigationMapper.MapDisposalRecord(record).LotsConsumed.Should().ContainSingle().Subject;
+
+        using (new AssertionScope())
+        {
+            lot.SourceTransactionId.Should().Be(sourceTransactionId);
+            lot.Quantity.Should().Be(3m);
+            lot.UnitCost.Should().Be(12.5m);
+        }
     }
 }
