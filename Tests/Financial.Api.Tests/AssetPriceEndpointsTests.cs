@@ -48,7 +48,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         var stub = new AssetPriceServiceStub();
         await using var factory = CreateFactory(stub);
         using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=Cryptocurrency&brokerName=Coinbase");
+        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=cryptocurrency&brokerName=Coinbase");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         stub.LastRequest.Should().NotBeNull();
@@ -96,7 +96,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         var stub = new AssetPriceServiceStub();
         await using var factory = CreateFactory(stub);
         using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/prices/current?exchange=BVMF&ticker=TESOURO+IPCA%2B+2029&name=TESOURO+IPCA%2B+2029&valuationMethod=BondQuote");
+        var response = await client.GetAsync("/api/v1/financial/prices/current?exchange=BVMF&ticker=TESOURO+IPCA%2B+2029&name=TESOURO+IPCA%2B+2029&valuationMethod=bondquote");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         stub.LastRequest.Should().NotBeNull();

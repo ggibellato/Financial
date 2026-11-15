@@ -28,7 +28,8 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
         foreach (var endpoint in endpoints)
         {
             var method = endpoint.Metadata.GetMetadata<HttpMethodMetadata>()!.HttpMethods.Single(BodyMethods.Contains);
-            var url = "/" + RouteParameter().Replace(endpoint.RoutePattern.RawText!, PlaceholderFor).TrimStart('/');
+            var action = endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()!;
+            var url = "/" + RouteParameter().Replace(endpoint.RoutePattern.RawText!, parameter => PlaceholderFor(parameter, action)).TrimStart('/');
             using var request = new HttpRequestMessage(new HttpMethod(method), url)
             {
                 Content = new StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json")
@@ -36,7 +37,7 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
 
             var response = await Client.SendAsync(request);
 
-            if (response.StatusCode != HttpStatusCode.BadRequest)
+            if (response.StatusCode != HttpStatusCode.BadRequest || await ProblemDetailAsync(response) is not null)
             {
                 offenders.Add($"{method} {url} -> {(int)response.StatusCode}");
             }
@@ -55,10 +56,12 @@ public partial class EmptyBodyEndpointsTests : ApiEndpointTests
             && action.Parameters.Any(p => p.BindingInfo?.BindingSource == BindingSource.Body);
     }
 
-    private static string PlaceholderFor(Match parameter) => parameter.Groups["constraint"].Value switch
+    private static string PlaceholderFor(Match parameter, ControllerActionDescriptor action)
     {
-        "guid" => Guid.NewGuid().ToString(),
-        "int" or "long" or "apiVersion" => "1",
-        _ => "x"
-    };
+        var name = parameter.Groups["name"].Value;
+        var type = action.Parameters.FirstOrDefault(p => p.Name == name)?.ParameterType;
+        return type == typeof(Guid) || parameter.Groups["constraint"].Value == "guid" ? Guid.NewGuid().ToString()
+            : type == typeof(int) || type == typeof(long) || name == "version" ? "1"
+            : "x";
+    }
 }
