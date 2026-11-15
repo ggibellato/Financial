@@ -218,6 +218,46 @@ public class DebouncedJsonStorageTests
     }
 
     [Fact]
+    public async Task WriteAfterAFlush_IsNotSavedEarlyByTheDebounceTheFlushCancelled()
+    {
+        var clock = new ObservableFakeClock(TestClock.Default);
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await storage.FlushAsync();
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(10));
+        await storage.WriteAsync("{\"a\":2}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(10));
+
+        _inner.WrittenJson.Should().Equal("{\"a\":1}");
+
+        clock.Advance(TimeSpan.FromMilliseconds(10));
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Idle);
+
+        _inner.WrittenJson.Should().Equal("{\"a\":1}", "{\"a\":2}");
+    }
+
+    [Fact]
+    public async Task FlushAsync_DuringAnInFlightSaveWithNoNewerWrite_WaitsForIt()
+    {
+        var clock = new ObservableFakeClock(TestClock.Default);
+        _inner.HoldWritesUntilReleased();
+        var storage = new DebouncedJsonStorage(_inner, TimeSpan.FromMilliseconds(20), clock);
+
+        await storage.WriteAsync("{\"a\":1}");
+        await FireNextTimerAsync(clock, TimeSpan.FromMilliseconds(20));
+        await WaitForAsync(() => storage.GetStatus().State == SyncState.Saving);
+
+        var flush = storage.FlushAsync();
+        flush.IsCompleted.Should().BeFalse();
+        _inner.Release();
+        await flush;
+
+        _inner.WrittenJson.Should().Equal("{\"a\":1}");
+        storage.GetStatus().State.Should().Be(SyncState.Idle);
+    }
+
+    [Fact]
     public async Task FlushAsync_DuringAnInFlightSave_WaitsForItInsteadOfStartingASecondSave()
     {
         var clock = new ObservableFakeClock(TestClock.Default);
