@@ -1,6 +1,7 @@
 using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using FluentAssertions;
+using FluentAssertions.Execution;
 
 namespace Financial.Shared.Abstractions.Tests.Persistence;
 
@@ -43,6 +44,21 @@ public class JsonStorageFactoryExtensionsTests
         var act = () => _storageFactory.Create(selection, "data-investment.json", Keys);
 
         act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("Provider");
+        _storageFactory.Calls.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Create_NullArguments_ThrowBeforeCreatingAnyStorage()
+    {
+        var selection = new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, "data/custom.json", null, null);
+
+        using var _ = new AssertionScope();
+        FluentActions.Invoking(() => ((IJsonStorageFactory)null!).Create(selection, "data-investment.json", Keys))
+            .Should().Throw<ArgumentNullException>().WithParameterName("storageFactory");
+        FluentActions.Invoking(() => _storageFactory.Create(null!, "data-investment.json", Keys))
+            .Should().Throw<ArgumentNullException>().WithParameterName("selection");
+        FluentActions.Invoking(() => _storageFactory.Create(selection, "data-investment.json", null!))
+            .Should().Throw<ArgumentNullException>().WithParameterName("configurationKeys");
         _storageFactory.Calls.Should().BeEmpty();
     }
 
