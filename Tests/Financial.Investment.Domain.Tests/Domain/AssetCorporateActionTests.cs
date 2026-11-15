@@ -647,4 +647,32 @@ public class AssetCorporateActionTests
         act.Should().Throw<InvestmentRuleViolationException>();
         asset.CorporateActions.Single(ca => ca.Id == split.Id).EffectiveDate.Should().Be(new DateTime(2021, 2, 1));
     }
+
+    [Fact]
+    public void RecordCorporateAction_MergerTargetWithInvestmentsButNoBrokerCurrency_CreatesNoTaxClassification()
+    {
+        var target = Asset.Create("Asset B", "ISIN-B", "NASDAQ", "BBB");
+
+        target.RecordCorporateAction(
+            CorporateAction.CreateMergerTarget(new DateTime(2021, 6, 1), null, Guid.NewGuid(), "Asset A", 20m, 1000m),
+            investments: Investments.Create());
+
+        target.TaxClassifications.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RetractCorporateAction_RegenerationFailsWithAnUnexpectedError_RethrowsItAndKeepsTheSplit()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var split = CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m);
+        asset.RecordCorporateAction(split);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2021, 9, 1), Transaction.TransactionType.Sell, 5m, 80m, 0m));
+
+        Action act = () => asset.RetractCorporateAction(split.Id, TestClock.Default, (CostBasisMethod)99);
+
+        act.Should().Throw<ArgumentOutOfRangeException>();
+        asset.CorporateActions.Should().ContainSingle();
+        asset.Quantity.Should().Be(15m);
+    }
 }
