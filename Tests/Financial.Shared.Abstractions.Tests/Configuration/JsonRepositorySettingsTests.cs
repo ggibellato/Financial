@@ -73,7 +73,7 @@ public class JsonRepositorySettingsTests
         var settings = new TestRepositorySettings();
 
         using var _ = new AssertionScope();
-        settings.Invoking(s => s.Load(null!, _ => null))
+        settings.Invoking(s => s.Load(null!, key => null))
             .Should().Throw<ArgumentNullException>().WithParameterName("keys");
         settings.Invoking(s => s.Load(new JsonRepositoryConfigurationKeys("CashFlow"), null!))
             .Should().Throw<ArgumentNullException>().WithParameterName("readValue");

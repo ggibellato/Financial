@@ -47,7 +47,7 @@ public class ReflectionJsonTypeInfoHelpersTests
     };
 
     [Fact]
-    public void Deserialize_TypeWithPrivateConstructorAndPrivateSetters_FillsThePropertiesMatchedCaseInsensitively()
+    public void Deserialize_TypeWithPrivateConstructorAndPrivateSetters_FillsSettablePropertiesCaseInsensitivelyAndSkipsReadOnlyOnes()
     {
         var result = JsonSerializer.Deserialize<PrivatelyBuilt>("""{"name":"Mercado","count":3,"label":"ignored"}""", Options);
 
