@@ -299,17 +299,20 @@ public class InvestmentSerializerAdapterTests
         asset.GetPriceForDate(new DateOnly(2026, 1, 1))!.IsManual.Should().BeTrue();
     }
 
-    [Fact]
+    [Theory]
     [Trait("AC", "P49-F02-transaction-and-credit-currency-04")]
-    public void Deserialize_TransactionAndCreditMissingCurrency_BackfillsFromBroker()
+    [InlineData("ActiveBrokers")]
+    [InlineData("HistoricBrokers")]
+    public void Deserialize_TransactionAndCreditMissingCurrency_BackfillsFromBroker(string brokerGroup)
     {
-        var json = BuildDocumentWithCurrency(transactionCurrency: null, creditCurrency: null, brokerCurrency: "BRL", version: 3);
+        var json = BuildDocumentWithCurrency(transactionCurrency: null, creditCurrency: null, brokerCurrency: "GBP", version: 3, brokerGroup);
 
         var result = Serializer.Deserialize(json);
 
-        var asset = result.ActiveBrokers.Single().Portfolios.Single().Assets.Single();
-        asset.Transactions.Single().Currency.Should().Be(Currency.BRL);
-        asset.Credits.Single().Currency.Should().Be(Currency.BRL);
+        var brokers = brokerGroup == "ActiveBrokers" ? result.ActiveBrokers : result.HistoricBrokers;
+        var asset = brokers.Single().Portfolios.Single().Assets.Single();
+        asset.Transactions.Single().Currency.Should().Be(Currency.GBP);
+        asset.Credits.Single().Currency.Should().Be(Currency.GBP);
     }
 
     [Fact]
@@ -429,7 +432,7 @@ public class InvestmentSerializerAdapterTests
             """;
     }
 
-    private static string BuildDocumentWithCurrency(string? transactionCurrency, string? creditCurrency, string brokerCurrency, int? version)
+    private static string BuildDocumentWithCurrency(string? transactionCurrency, string? creditCurrency, string brokerCurrency, int? version, string brokerGroup = "ActiveBrokers")
     {
         var versionProperty = version is null ? string.Empty : $"""
             "Version": {version},
@@ -440,7 +443,7 @@ public class InvestmentSerializerAdapterTests
         return $$"""
             {
               {{versionProperty}}
-              "ActiveBrokers": [
+              "{{brokerGroup}}": [
                 {
                   "Name": "Broker A",
                   "Currency": "{{brokerCurrency}}",

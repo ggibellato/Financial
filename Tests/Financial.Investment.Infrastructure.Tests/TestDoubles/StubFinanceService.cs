@@ -13,5 +13,11 @@ internal sealed class StubFinanceService : IFinanceService
         _snapshot = snapshot;
     }
 
-    public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request) => _snapshot ?? throw new NotImplementedException();
+    public AssetValueRequestDTO? LastRequest { get; private set; }
+
+    public AssetValueSnapshot GetAssetValue(AssetValueRequestDTO request)
+    {
+        LastRequest = request;
+        return _snapshot ?? throw new NotImplementedException();
+    }
 }

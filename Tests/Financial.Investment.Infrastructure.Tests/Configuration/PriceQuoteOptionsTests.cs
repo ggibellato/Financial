@@ -35,6 +35,22 @@ public class PriceQuoteOptionsTests
         options.ProviderFailureCooldown.Should().Be(TimeSpan.FromHours(1));
     }
 
+    [Fact]
+    public void Load_NullReader_Throws()
+    {
+        Action act = () => new PriceQuoteOptions().Load(null!);
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("readValue");
+    }
+
+    [Fact]
+    public void Load_ZeroDuration_IsAccepted()
+    {
+        var options = LoadFrom(new Dictionary<string, string?> { [PriceQuoteOptions.CacheDurationKey] = "00:00:00" });
+
+        options.CacheDuration.Should().Be(TimeSpan.Zero);
+    }
+
     [Theory]
     [InlineData("ten minutes")]
     [InlineData("-00:05:00")]

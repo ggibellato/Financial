@@ -128,6 +128,30 @@ public class YahooFinanceServiceTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*request failed*");
     }
 
+    [Theory]
+    [InlineData("BVMF", "BBAS3", "BBAS3.SA")]
+    [InlineData("bvmf", "BBAS3", "BBAS3.SA")]
+    [InlineData("LON", "VOD", "VOD.L")]
+    [InlineData("NYSE", "KO", "KO")]
+    [InlineData("NASDAQ", "AAPL", "AAPL")]
+    public void GetAssetValue_RequestsTheExchangeSuffixedSymbolWithABrowserUserAgent(string exchange, string ticker, string expectedSymbol)
+    {
+        HttpRequestMessage? sent = null;
+        var service = CreateService(request =>
+        {
+            sent = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("""{"chart":{"result":[{"meta":{"regularMarketPrice":1}}]}}""")
+            };
+        });
+
+        service.GetAssetValue(new AssetValueRequestDTO { Exchange = exchange, Ticker = ticker });
+
+        sent!.RequestUri!.AbsolutePath.Should().Be($"/v8/finance/chart/{expectedSymbol}");
+        sent.Headers.UserAgent.ToString().Should().StartWith("Mozilla/5.0");
+    }
+
     private static YahooFinanceService CreateService(Func<HttpRequestMessage, HttpResponseMessage> responder)
     {
         var handler = new FakeHttpMessageHandler(responder);
