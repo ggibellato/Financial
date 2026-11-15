@@ -902,4 +902,78 @@ public class InvestmentsTests
 
         return investments;
     }
+
+    [Fact]
+    public void GetBroker_PreferringHistoricWhenOnlyAnActiveRecordExists_FallsBackToIt()
+    {
+        var investments = Investments.Create();
+        var activeBroker = Broker.Create("XPI", "BRL");
+        investments.AddActiveBroker(activeBroker);
+
+        investments.GetBroker("XPI", preferHistoric: true).Should().BeSameAs(activeBroker);
+    }
+
+    [Fact]
+    public void IsActiveBroker_AnyOfSeveralActiveBrokers_IsTrue()
+    {
+        var investments = Investments.Create();
+        investments.AddActiveBroker(Broker.Create("XPI", "BRL"));
+        var second = Broker.Create("Trading212", "GBP");
+        investments.AddActiveBroker(second);
+
+        investments.IsActiveBroker(second).Should().BeTrue();
+    }
+
+    [Fact]
+    public void DeleteBroker_HistoricWithPortfolios_ThrowsAndKeepsIt()
+    {
+        var investments = Investments.Create();
+        var historicBroker = Broker.Create("XPI", "BRL");
+        historicBroker.AddPortfolio("Default");
+        investments.AddHistoricBroker(historicBroker);
+
+        var act = () => investments.DeleteBroker("XPI");
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        investments.HistoricBrokers.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void CreateTaxRule_EndingWhereAnOpenEndedRuleStarts_Succeeds()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(Jurisdiction.BR, EventCategory.Dividend, "Later rule", "desc", new DateOnly(2027, 1, 1), null);
+
+        investments.CreateTaxRule(Jurisdiction.BR, EventCategory.Dividend, "Earlier rule", "desc", new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+
+        investments.TaxRules.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void DeleteTaxRule_ActiveFinalClassificationOnAHistoricBrokerDependsOnIt_Throws()
+    {
+        var investments = Investments.Create();
+        var rule = investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "BR dividend", "desc", new DateOnly(2026, 1, 1), null);
+        var broker = Broker.Create("XPI", "BRL");
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AppendTaxClassification(TaxClassification.CreateForCredit(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, rule.Id, TestClock.Default));
+        broker.AddPortfolio("Default").AddAsset(asset);
+        investments.AddHistoricBroker(broker);
+
+        var act = () => investments.DeleteTaxRule(rule.Id);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+    }
+
+    [Fact]
+    public void FindApplicableTaxRule_SameJurisdictionButAnotherCategory_ReturnsNull()
+    {
+        var investments = Investments.Create();
+        investments.CreateTaxRule(
+            Jurisdiction.BR, EventCategory.Dividend, "Rule", "desc", new DateOnly(2026, 1, 1), null);
+
+        investments.FindApplicableTaxRule(Jurisdiction.BR, EventCategory.CapitalGain, new DateOnly(2026, 6, 1)).Should().BeNull();
+    }
 }

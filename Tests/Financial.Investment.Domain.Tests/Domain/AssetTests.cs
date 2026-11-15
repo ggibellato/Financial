@@ -1029,4 +1029,123 @@ public class AssetTests
 
         asset.TaxClassifications.Should().BeEmpty();
     }
+
+    [Fact]
+    public void RecordTransaction_BuyOnTheLatestDisposalDate_RegeneratesTheDisposalAndAddsTheBuyOnce()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+
+        using var _ = new AssertionScope();
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+        asset.Transactions.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void RecordTransaction_BuyBetweenTwoDisposals_RegeneratesTheLaterOne()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 20m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var laterSale = Transaction.Create(new DateTime(2024, 4, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m);
+        asset.RecordTransaction(laterSale);
+        var laterRecord = asset.DisposalRecords.Single(r => r.TransactionId == laterSale.Id);
+
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
+
+        laterRecord.Status.Should().Be(DisposalRecordStatus.Superseded);
+    }
+
+    [Theory]
+    [InlineData(2024, 3, 1, 2024, 1, 15)]
+    [InlineData(2024, 1, 15, 2024, 3, 1)]
+    public void ReviseTransaction_MovingABuyAcrossTheLatestDisposal_RegeneratesIt(int fromYear, int fromMonth, int fromDay, int toYear, int toMonth, int toDay)
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var movedBuy = Transaction.Create(new DateTime(fromYear, fromMonth, fromDay), Transaction.TransactionType.Buy, 10m, 50m, 0m);
+        asset.AddTransaction(movedBuy);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        var revised = Transaction.CreateWithId(movedBuy.Id, new DateTime(toYear, toMonth, toDay), movedBuy.Type, movedBuy.Quantity, movedBuy.UnitPrice, movedBuy.Fees);
+        var result = asset.ReviseTransaction(revised);
+
+        using var _ = new AssertionScope();
+        result.Should().BeTrue();
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+    }
+
+    [Fact]
+    public void ReviseTransaction_BuyOnTheLatestDisposalDate_RegeneratesIt()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var sameDayBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m);
+        asset.AddTransaction(sameDayBuy);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        asset.ReviseTransaction(Transaction.CreateWithId(sameDayBuy.Id, sameDayBuy.Date, sameDayBuy.Type, sameDayBuy.Quantity, 60m, sameDayBuy.Fees));
+
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+    }
+
+    [Fact]
+    public void RetractTransaction_BuyOnTheLatestDisposalDate_RegeneratesItAndReturnsTrue()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var sameDayBuy = Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Buy, 5m, 50m, 0m);
+        asset.AddTransaction(sameDayBuy);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        var result = asset.RetractTransaction(sameDayBuy.Id);
+
+        using var _ = new AssertionScope();
+        result.Should().BeTrue();
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+    }
+
+    [Fact]
+    public void FindTaxClassificationBySource_MatchesTheSourceIdNotJustItsType()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        var first = TaxClassification.CreateForCredit(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 100m, 0m, 100m, CalculationStatus.Final, null, TestClock.Default);
+        var second = TaxClassification.CreateForCredit(
+            Guid.NewGuid(), Jurisdiction.BR, "2026", EventCategory.Dividend, 50m, 0m, 50m, CalculationStatus.Final, null, TestClock.Default);
+        asset.AppendTaxClassification(first);
+        asset.AppendTaxClassification(second);
+
+        asset.FindTaxClassificationBySource(SourceType.Credit, second.SourceId).Should().BeSameAs(second);
+    }
+
+    [Fact]
+    public void RemoveCredit_EmptyId_Throws()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "BVMF", "AAA");
+        asset.AddCredit(Credit.CreateWithId(Guid.Empty, new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m));
+
+        var act = () => asset.RemoveCredit(Guid.Empty);
+
+        act.Should().Throw<ArgumentException>();
+        asset.Credits.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void RealizedGainLossSharesOnly_SumsEveryActiveDisposal()
+    {
+        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 20m, 100m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 2, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        asset.RecordTransaction(Transaction.Create(new DateTime(2024, 3, 1), Transaction.TransactionType.Sell, 5m, 120m, 0m));
+
+        asset.RealizedGainLossSharesOnly.Should().Be(asset.DisposalRecords.Sum(r => r.GainLoss)).And.Be(350m);
+    }
 }

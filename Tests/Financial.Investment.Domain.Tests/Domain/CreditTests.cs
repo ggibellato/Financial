@@ -138,6 +138,37 @@ public class CreditTests
         act.Should().Throw<ArgumentException>();
     }
 
+    [Fact]
+    public void BackfillSharesForDividend_NonPositive_Throws()
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 100m);
+
+        var act = () => credit.BackfillSharesForDividend(0m);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(100, 100, 0)]
+    [InlineData(-100, -100, 0)]
+    [InlineData(100, 0, 100)]
+    public void Create_DeductionEqualToTheValue_IsAllowed(decimal value, decimal withheld, decimal intermediationFee)
+    {
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, value, withheld, intermediationFee: intermediationFee);
+
+        credit.NetAmount.Should().Be(0m);
+    }
+
+    [Theory]
+    [InlineData(-10, 20)]
+    [InlineData(20, -10)]
+    public void Create_DeductionWithTheOppositeSign_ThrowsEvenWhenTheCombinedTotalFits(decimal withheld, decimal intermediationFee)
+    {
+        var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 100m, withheld, intermediationFee: intermediationFee);
+
+        act.Should().Throw<ArgumentException>();
+    }
+
     [Theory]
     [InlineData(-100, 1)]
     [InlineData(-100, -101)]

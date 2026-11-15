@@ -526,4 +526,82 @@ public class AssetCorporateActionTests
         newAsset.Quantity.Should().Be(0m);
     }
 
+    [Theory]
+    [InlineData(2021, 6, 1, 2021, 2, 1)]
+    [InlineData(2021, 2, 1, 2021, 6, 1)]
+    public void ReviseCorporateAction_MovingASplitAcrossADisposal_RegeneratesIt(int fromYear, int fromMonth, int fromDay, int toYear, int toMonth, int toDay)
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var split = CorporateAction.CreateSplit(new DateTime(fromYear, fromMonth, fromDay), 2.0m);
+        asset.RecordCorporateAction(split);
+        asset.RecordTransaction(Transaction.Create(new DateTime(2021, 3, 1), Transaction.TransactionType.Sell, 5m, 150m, 0m));
+        var original = asset.DisposalRecords.Single();
+
+        asset.ReviseCorporateAction(CorporateAction.CreateSplitWithId(split.Id, new DateTime(toYear, toMonth, toDay), 2.0m));
+
+        original.Status.Should().Be(DisposalRecordStatus.Superseded);
+    }
+
+    [Fact]
+    public void ReviseCorporateAction_MovedToADateWithNoPosition_ThrowsAndKeepsTheOriginal()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        asset.AddTransaction(Transaction.Create(new DateTime(2021, 6, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
+        var split = CorporateAction.CreateSplit(new DateTime(2021, 7, 1), 2.0m);
+        asset.RecordCorporateAction(split);
+
+        Action act = () => asset.ReviseCorporateAction(CorporateAction.CreateSplitWithId(split.Id, new DateTime(2021, 1, 1), 2.0m));
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.CorporateActions.Should().ContainSingle().Which.EffectiveDate.Should().Be(new DateTime(2021, 7, 1));
+    }
+
+    [Fact]
+    public void ReviseCorporateAction_Null_ThrowsArgumentNullException()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+
+        Action act = () => asset.ReviseCorporateAction(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void RecordCorporateAction_ThatLeavesALaterSpecificIdSaleShort_ThrowsAndRestoresThePosition()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy);
+        asset.RecordTransaction(
+            Transaction.Create(new DateTime(2021, 9, 1), Transaction.TransactionType.Sell, 8m, 80m, 0m),
+            CostBasisMethod.SpecificId,
+            new[] { new SpecificLotAllocation(buy.Id, 8m) });
+
+        Action act = () => asset.RecordCorporateAction(CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 0.5m), CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.CorporateActions.Should().BeEmpty();
+        asset.Quantity.Should().Be(2m);
+    }
+
+    [Fact]
+    public void RetractCorporateAction_ALaterSaleDependsOnTheSplitsLots_ThrowsAndKeepsTheSplitApplied()
+    {
+        var asset = Asset.Create("Asset A", "ISIN-A", "LSE", "AAA");
+        var buy = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
+        asset.AddTransaction(buy);
+        var split = CorporateAction.CreateSplit(new DateTime(2021, 6, 1), 2.0m);
+        asset.RecordCorporateAction(split, CostBasisMethod.SpecificId);
+        asset.RecordTransaction(
+            Transaction.Create(new DateTime(2021, 9, 1), Transaction.TransactionType.Sell, 15m, 80m, 0m),
+            CostBasisMethod.SpecificId,
+            new[] { new SpecificLotAllocation(buy.Id, 15m) });
+
+        Action act = () => asset.RetractCorporateAction(split.Id, TestClock.Default, CostBasisMethod.SpecificId);
+
+        act.Should().Throw<InvestmentRuleViolationException>();
+        asset.CorporateActions.Should().ContainSingle();
+        asset.Quantity.Should().Be(5m);
+    }
 }
