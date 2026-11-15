@@ -42,10 +42,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task CreateAssetAsync_ValidRequest_AddsAssetWithZeroQuantityAndPersistsOnce()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default");
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset(null);
 
         var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
         {
@@ -88,10 +85,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task CreateAssetAsync_DuplicateNameInPortfolio_ThrowsDuplicateNameAndWritesNothing()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset("AAAA");
 
         var act = async () => await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
         {
@@ -107,10 +101,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task CreateAssetAsync_InvalidIsinFormat_ThrowsArgumentExceptionAndWritesNothing()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default");
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset(null);
 
         var act = async () => await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
         {
@@ -128,10 +119,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task CreateAssetAsync_ClassLeftUnset_AutoResolvesFromCountryAndLocalTypeCode()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default");
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset(null);
 
         var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
         {
@@ -148,10 +136,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task CreateAssetAsync_ValuationMethodAndIncomePolicyLeftUnset_DefaultToUnspecifiedAndUnknown()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default");
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset(null);
 
         var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
         {
@@ -170,10 +155,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task CreateAssetAsync_ValuationMethodAndIncomePolicySet_ArePersisted()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default");
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset(null);
 
         var result = await CreateService().CreateAssetAsync(new AssetAdminCreateDTO
         {
@@ -241,10 +223,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task UpdateAssetAsync_ValidRequest_UpdatesIdentityAndPersistsOnce()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default").RegisterAsset(Asset.Create("AAAA", "ISIN123", "NYSE", "AAA"));
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset("AAAA");
 
         var result = await CreateService().UpdateAssetAsync("XPI", "Default", "AAAA", new AssetAdminUpdateDTO
         {
@@ -308,10 +287,7 @@ public class AssetAdminServiceTests
     [Fact]
     public async Task UpdateAssetAsync_AssetMissing_ThrowsNotFoundAndWritesNothing()
     {
-        _repository.Investments = Investments.Create();
-        var broker = Broker.Create("XPI", "BRL");
-        broker.CreatePortfolio("Default");
-        _repository.Investments.AddActiveBroker(broker);
+        SeedBrokerWithAsset(null);
 
         var act = async () => await CreateService().UpdateAssetAsync("XPI", "Default", "Missing", new AssetAdminUpdateDTO { Name = "Missing" });
 
