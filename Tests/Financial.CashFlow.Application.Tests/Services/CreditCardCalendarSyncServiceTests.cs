@@ -264,15 +264,15 @@ public class CreditCardCalendarSyncServiceTests
     }
 
     [Theory]
-    [InlineData(2026, 9, 20)]
-    [InlineData(2026, 8, 31)]
-    public async Task TriggerSyncIfInvoiceSynced_WhenTheInvoiceMonthIsOnOrBeforeTheDueDateMonth_Syncs(int year, int month, int day)
+    [InlineData(9, 20)]
+    [InlineData(8, 31)]
+    public async Task TriggerSyncIfInvoiceSynced_WhenTheInvoiceMonthIsOnOrBeforeTheDueDateMonth_Syncs(int month, int day)
     {
         Connect();
         var card = Card("BarclaysPlatinumVisa8003");
         _repository.SetCardDueDate(card, new DateOnly(2026, 9, 1));
 
-        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(year, month, day));
+        _sut.TriggerSyncIfInvoiceSynced(card.Id, new DateOnly(2026, month, day));
         var resolvedState = await _statusStore.ResolvedStateAsync(card.Id);
 
         resolvedState.Should().Be(CreditCardCalendarSyncState.Synced);

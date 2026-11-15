@@ -14,6 +14,7 @@ public class CalendarIntegrationServiceTests
     private static readonly Microsoft.Extensions.Logging.ILogger<CalendarIntegrationService> Logger =
         NullLogger<CalendarIntegrationService>.Instance;
     private static readonly DateTimeOffset Now = new(2026, 9, 7, 10, 0, 0, TimeSpan.Zero);
+    private static readonly TimeSpan PendingStateLifetime = TimeSpan.FromMinutes(10);
 
     private readonly FakeCalendarProvider _provider;
     private readonly FakeCalendarConnectionStore _store;
@@ -103,7 +104,7 @@ public class CalendarIntegrationServiceTests
     public async Task CompleteConnectionAsync_AtTheExactMomentThePendingStateExpires_StillAcceptsIt()
     {
         _sut.BuildAuthorizationUrl();
-        _timeProvider.Advance(TimeSpan.FromMinutes(10));
+        _timeProvider.Advance(PendingStateLifetime);
 
         var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
 
@@ -114,7 +115,7 @@ public class CalendarIntegrationServiceTests
     public async Task CompleteConnectionAsync_AfterThePendingStateExpires_DoesNotExchangeCode()
     {
         _sut.BuildAuthorizationUrl();
-        _timeProvider.Advance(TimeSpan.FromMinutes(10) + TimeSpan.FromSeconds(1));
+        _timeProvider.Advance(PendingStateLifetime + TimeSpan.FromSeconds(1));
 
         var result = await _sut.CompleteConnectionAsync(code: "auth-code", state: _provider.LastState, error: null);
 
@@ -219,6 +220,8 @@ public class CalendarIntegrationServiceTests
         {
             span.Name.Should().Be("CashFlow.CalendarIntegrationService.GetStatus");
             span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            span.RecordedException.Should().BeNull();
+            span.Disposed.Should().BeTrue();
         });
     }
 
