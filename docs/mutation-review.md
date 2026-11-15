@@ -151,8 +151,8 @@ uses the repo folder.
 | 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | ⬜ | 63.2% | | | | | | `ReserveService` 38 compile errors |
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ⬜ | 63.2% | | | | | | |
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
-| 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | 🔄 | 47.7% | 65.0% | 11 | 9 | 16 | | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
-| 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ⬜ | 49.6% | | | | | | `CorporateActionService` 133 of 260 undetected |
+| 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
+| 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | 🔄 | 49.6% | 70.3% | 7 | 1 | 11 | | See "Slice notes"; `BrokerCurrencyParser` is only used by 4.3/4.4 services |
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ⬜ | 56.8% | | | | | | |
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
@@ -295,6 +295,40 @@ The 116 still undetected, all reviewed:
 - **Equivalent** (16): `ConfigureAwait(false)` → `true` (15), and `AssetMutationHelper`'s early
   return before a lookup that returns null anyway.
 
+### 4.2 Investment.Application corporate actions (49.6% → 70.3%)
+
+Gaps closed:
+
+- **Rollback of a failed merger or spin-off update.** The update retracts both linked records and
+  re-records them, undoing each step if a later one fails. No test reached the undo path. An
+  invalid new exchange ratio or allocation now checks that both records come back unchanged and
+  nothing is written.
+- **Two mergers into one target.** Updating or deleting the second merger must touch only its own
+  record on the target. With one merger per target, the linked-record lookup could drop its
+  correlation-id condition (`&&` → `||`) and still pass.
+- **The "empty id or blank holding" guard** on merger and spin-off updates (`||` → `&&`).
+- **A merger target created inline**: its ISIN, exchange, ticker, country, type code and class
+  (entered or derived), and empty values when none are given.
+- The carried cost basis after a merger update, and the save on both updates.
+- **Spans**: success on every path, failure on add merger, add spin-off, the update rollbacks and
+  delete, and the entity id on update and delete.
+
+Removed: `AddSplitAsync_InvalidRatioFactor_ThrowsAndWritesNothing`, which killed no mutant. The
+service has no ratio check of its own; `CorporateActionTests.CreateSplit_InvalidRatio_...` covers
+the domain rule.
+
+The 79 still undetected, all reviewed:
+
+- **Log and exception wording** (65): 53 from the "started"/"completed" logs, 12 exception
+  messages (one in `BrokerCurrencyParser`, whose callers belong to slices 4.3 and 4.4).
+- **Equivalent** (11): `ConfigureAwait` (7); `FirstOrDefault` → `First` on the linked-record
+  lookups, which throw the same exception type either way (3); a default type code that resolves
+  to the same class (1).
+- **Unreachable** (2): the undo step for the second new record failing after the first succeeded,
+  when both are built from the same validated values.
+- **Left untested** (1): the same lookup for two spin-offs into one new asset, which does not
+  happen in practice.
+
 ## Log
 
 One line per working session: date, slice, outcome.
@@ -306,3 +340,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-14 | 2.2 | Rules 74.5% → 87.7%; 15 tests added, 3 removed or merged, 2 strengthened; unreachable XIRR clamp found |
 | 2026-11-14 | 4.5 | Prices, income, tax 47.7% → 77.5% (26.7% without the Infrastructure tests); span assertions added, 16 duplicated tests removed or merged; `-AlsoTestedBy` added to `stryker.ps1` |
 | 2026-11-15 | 4.1 | Assets and transactions 48.0% → 65.0%; currency-preservation tests fixed, spans and gaps added, 9 duplicated tests removed or merged; most of the rest is log wording |
+| 2026-11-15 | 4.2 | Corporate actions 49.6% → 70.3%; update rollback, two-mergers-one-target and inline-target identity tested; 1 idle test removed |
