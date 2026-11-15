@@ -75,6 +75,38 @@ public class PotSplitAllocatorTests
         amounts.Should().BeEmpty();
     }
 
+    [Fact]
+    public void Allocate_TinyAmountWhoseRoundingOvershoots_NeverGivesAPotANegativeShare()
+    {
+        var pots = CreatePots([25m, 25m, 25m, 25m]);
+
+        var amounts = PotSplitAllocator.Allocate(pots, 0.02m);
+
+        amounts.Should().Equal(0m, 0m, 0.01m, 0.01m);
+    }
+
+    [Fact]
+    public void Allocate_TinyWithdrawalWhoseRoundingOvershoots_NeverGivesAPotAPositiveShare()
+    {
+        var pots = CreatePots([25m, 25m, 25m, 25m]);
+
+        var amounts = PotSplitAllocator.Allocate(pots, -0.02m);
+
+        amounts.Should().Equal(0m, 0m, -0.01m, -0.01m);
+    }
+
+    [Theory]
+    [MemberData(nameof(TinyAmounts))]
+    public void Allocate_TinyAmounts_ConserveTheBaseWithEveryShareOnTheBasesSide(decimal baseAmount)
+    {
+        var amounts = PotSplitAllocator.Allocate(CreatePots([25m, 25m, 25m, 25m]), baseAmount);
+
+        amounts.Sum().Should().Be(baseAmount);
+        amounts.Should().OnlyContain(share => Math.Sign(share) * Math.Sign(baseAmount) >= 0);
+    }
+
+    public static TheoryData<decimal> TinyAmounts => new() { 0.01m, 0.02m, 0.03m, 0.05m, 0.06m, 0.07m, -0.02m, -0.06m };
+
     [Theory]
     [MemberData(nameof(Amounts))]
     public void Allocate_ThreePotsSummingTo100_ConservesTheBaseToThePenny(decimal baseAmount)

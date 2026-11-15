@@ -322,4 +322,21 @@ public class PotDepositTests
 
         PotDeposit.OlderIncomeTransactions(income).Should().OnlyContain(transaction => transaction.Description == "October salary");
     }
+
+    [Fact]
+    public void Build_TinyDepositAcrossEqualPots_IsStillADepositWithNoNegativeMovement()
+    {
+        var quarters = TestAccounts.Pots("Quarters", category: _reservaCategory);
+        foreach (var name in new[] { "A", "B", "C", "D" })
+        {
+            quarters.AddPot(Pot.Create(name, 25m));
+        }
+
+        var operation = PotDeposit.Build(quarters, 0.02m, Date, "Round-up", pot: null, [], OperationId, Today);
+
+        using var _ = new AssertionScope();
+        operation.Kind.Should().Be(PotOperationKind.Deposit);
+        operation.Transactions.Should().OnlyContain(transaction => transaction.Amount >= 0m);
+        operation.Transactions.Sum(transaction => transaction.Amount).Should().Be(0.02m);
+    }
 }
