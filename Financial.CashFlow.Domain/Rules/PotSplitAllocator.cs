@@ -7,6 +7,8 @@ namespace Financial.CashFlow.Domain.Rules;
 
 public static class PotSplitAllocator
 {
+    private const decimal Cent = 0.01m;
+
     public static IReadOnlyList<decimal> Allocate(IReadOnlyList<Pot> pots, decimal baseAmount)
     {
         ArgumentNullException.ThrowIfNull(pots);
@@ -22,23 +24,28 @@ public static class PotSplitAllocator
 
         if (residual != 0m)
         {
-            amounts[IndexOfLargestPercentage(pots)] += residual;
+            SpreadResidual(amounts, pots, baseAmount, residual);
         }
 
         return amounts;
     }
 
-    private static int IndexOfLargestPercentage(IReadOnlyList<Pot> pots)
+    private static void SpreadResidual(decimal[] amounts, IReadOnlyList<Pot> pots, decimal baseAmount, decimal residual)
     {
-        var largest = 0;
-        for (var i = 1; i < pots.Count; i++)
+        var byLargestShare = Enumerable.Range(0, pots.Count).OrderByDescending(index => pots[index].SplitPercentage).ToList();
+        var largest = byLargestShare[0];
+        if (KeepsTheBaseSign(amounts[largest] + residual, baseAmount))
         {
-            if (pots[i].SplitPercentage > pots[largest].SplitPercentage)
-            {
-                largest = i;
-            }
+            amounts[largest] += residual;
+            return;
         }
 
-        return largest;
+        var step = Math.Sign(residual) * Cent;
+        foreach (var index in byLargestShare.Take((int)(residual / step)))
+        {
+            amounts[index] += step;
+        }
     }
+
+    private static bool KeepsTheBaseSign(decimal share, decimal baseAmount) => Math.Sign(share) * Math.Sign(baseAmount) >= 0;
 }
