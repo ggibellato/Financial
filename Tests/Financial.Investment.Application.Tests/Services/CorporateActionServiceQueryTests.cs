@@ -27,6 +27,7 @@ public class CorporateActionServiceQueryTests
         var result = CreateService().GetCorporateActionsByPortfolio("XPI", "Default");
 
         result.Should().ContainSingle(i => i.AssetName == "AAAA" && i.Type == CorporateAction.CorporateActionType.Split);
+        _tracer.ShouldHaveSucceededSpan("Investment.CorporateActionService.GetCorporateActionsByPortfolio");
     }
 
     [Fact]
@@ -51,6 +52,7 @@ public class CorporateActionServiceQueryTests
         var result = CreateService().GetCorporateActionsByPortfolio(brokerName!, portfolioName!);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.CorporateActionService.GetCorporateActionsByPortfolio");
     }
 
     [Fact]
