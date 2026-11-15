@@ -221,6 +221,14 @@ public class CashFlowDataConverterTests
     }
 
     [Fact]
+    public void Load_ANullCollection_IsReadAsEmpty()
+    {
+        var data = _serializer.Deserialize(V5File.Replace("\"Transfers\":[]", "\"Transfers\":null"));
+
+        data.Transfers.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Load_IncomeSourceWithUnknownPotsAccountId_FailsTheLoad()
     {
         var file = V5File.Replace(ArianaPotsAccount, "\"Group\":\"Salary\",\"PotsAccountId\":\"5db5c88d-0000-0000-0000-000000000999\"}");

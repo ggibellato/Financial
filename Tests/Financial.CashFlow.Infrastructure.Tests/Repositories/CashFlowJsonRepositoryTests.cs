@@ -426,13 +426,19 @@ public class CashFlowJsonRepositoryTests
     }
 
     [Fact]
-    public void Constructor_WithNullData_Throws()
+    public void Load_NullStorageOrSerializer_Throws()
     {
         var path = Path.GetTempFileName();
         try
         {
-            Action act = () => new CashFlowJsonRepository(null!, new LocalJsonStorage(path), new CashFlowSerializerAdapter());
-            act.Should().Throw<ArgumentNullException>().WithParameterName("data");
+            File.WriteAllText(path, "{}");
+            var storage = new LocalJsonStorage(path);
+
+            using var _ = new AssertionScope();
+            FluentActions.Invoking(() => CashFlowJsonRepository.Load(null!, new CashFlowSerializerAdapter()))
+                .Should().Throw<ArgumentNullException>().WithParameterName("storage");
+            FluentActions.Invoking(() => CashFlowJsonRepository.Load(storage, null!))
+                .Should().Throw<ArgumentNullException>().WithParameterName("serializer");
         }
         finally
         {

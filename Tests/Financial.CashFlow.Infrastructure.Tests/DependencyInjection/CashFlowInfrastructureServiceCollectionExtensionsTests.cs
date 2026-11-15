@@ -7,6 +7,8 @@ using Financial.Shared.Infrastructure.Persistence;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using Financial.CashFlow.Infrastructure.Configuration;
 
 namespace Financial.CashFlow.Infrastructure.Tests.DependencyInjection;
 
@@ -54,6 +56,39 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
 
         provider.GetRequiredService<ICalendarConnectionStore>().Should().NotBeNull();
         provider.GetRequiredService<ICalendarProvider>().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_BindsTheGoogleCalendarSettings()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["CashFlow:DataJsonFile"] = Path.Combine(Path.GetTempPath(), $"cashflow-di-{Guid.NewGuid()}.json"),
+            [CashFlowGoogleCalendarConfigurationKeys.ClientId] = "client-id",
+            [CashFlowGoogleCalendarConfigurationKeys.ClientSecret] = "client-secret",
+            [CashFlowGoogleCalendarConfigurationKeys.RedirectUri] = "http://localhost/callback",
+            [CashFlowGoogleCalendarConfigurationKeys.CredentialsPath] = "calendar.json"
+        });
+
+        var settings = provider.GetRequiredService<IOptions<GoogleCalendarSettingsOptions>>().Value;
+
+        settings.Should().BeEquivalentTo(new
+        {
+            ClientId = "client-id",
+            ClientSecret = "client-secret",
+            RedirectUri = "http://localhost/callback",
+            CredentialsPath = "calendar.json"
+        });
+    }
+
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_OnItsOwn_RegistersTheSystemClock()
+    {
+        var services = new ServiceCollection();
+
+        services.AddFinancialCashFlowInfrastructure(new ConfigurationBuilder().Build());
+
+        services.Should().ContainSingle(d => d.ServiceType == typeof(TimeProvider)).Which.ImplementationInstance.Should().BeSameAs(TimeProvider.System);
     }
 
     private static IServiceProvider BuildServiceProvider(Dictionary<string, string?> settings)
