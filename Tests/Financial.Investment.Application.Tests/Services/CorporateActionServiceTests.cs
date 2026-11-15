@@ -292,9 +292,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddMergerAsync_CreateTargetAssetInline_ClosesSourceAndCarriesConvertedPositionToNewTarget()
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, source) = SeedMergerFixture();
 
         var result = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -331,12 +329,10 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddMergerAsync_ExistingTargetAsset_IncreasesTargetPositionAndCarriesCostBasis()
     {
-        var (broker, portfolio, _) = MakeMergerFixture();
+        var (broker, portfolio, _) = SeedMergerFixture();
         var target = Asset.Create("TGT", "ISIN2", "BVMF", "TGT");
         target.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Buy, 10m, 2m, 0m));
         portfolio.RegisterAsset(target);
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
 
         var result = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -360,10 +356,8 @@ public class CorporateActionServiceTests
     [InlineData("Tgt")]
     public async Task AddMergerAsync_TargetNameCollidesWithExistingDistinctAssetInAnyCase_ThrowsAndWritesNothing(string targetName)
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
+        var (broker, portfolio, source) = SeedMergerFixture();
         portfolio.RegisterAsset(Asset.Create("TGT", "ISIN2", "BVMF", "TGT"));
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
 
         var act = async () => await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -385,10 +379,8 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddMergerAsync_ExistingTargetLookedUpInAnotherCase_IsNotFound()
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
+        var (broker, portfolio, source) = SeedMergerFixture();
         portfolio.RegisterAsset(Asset.Create("TGT", "ISIN2", "BVMF", "TGT"));
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
 
         var act = async () => await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -482,9 +474,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateMergerAsync_UnknownId_ReturnsNull()
     {
-        var (broker, _, _) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        SeedMergerFixture();
 
         var result = await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
         {
@@ -504,9 +494,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateMergerAsync_EmptyId_ReturnsNull()
     {
-        var (broker, _, _) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        SeedMergerFixture();
 
         var result = await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
         {
@@ -525,9 +513,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateMergerAsync_ExistingId_UpdatesBothLinkedRecordsWithNewRatio()
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, source) = SeedMergerFixture();
 
         var added = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -568,9 +554,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task DeleteCorporateActionAsync_ExistingMergerId_RemovesBothLinkedRecordsAndRestoresSourcePosition()
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, source) = SeedMergerFixture();
 
         var added = await CreateService().AddMergerAsync(new CorporateActionMergerCreateDTO
         {
@@ -602,10 +586,8 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task DeleteCorporateActionAsync_MergerWhoseTargetLotsFundALaterSale_RestoresTheSourceRecordAndWritesNothing()
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
+        var (broker, portfolio, source) = SeedMergerFixture();
         broker.SetCostBasisMethod(CostBasisMethod.SpecificId);
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
         await CreateService().AddMergerAsync(ValidMergerRequest());
         var target = portfolio.FindAsset("TGT")!;
         var targetLotId = target.CorporateActions.Single().Id;
@@ -654,9 +636,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddMergerAsync_BlankTargetName_ReturnsNullAndWritesNothing()
     {
-        var (broker, _, source) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, _, source) = SeedMergerFixture();
 
         var result = await CreateService().AddMergerAsync(ValidMergerRequest(targetAssetName: " "));
 
@@ -669,9 +649,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddSpinOffAsync_BlankNewAssetName_ReturnsNullAndWritesNothing()
     {
-        var (broker, _, parent) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, _, parent) = SeedSpinOffFixture();
 
         var result = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
         {
@@ -717,9 +695,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateMergerAsync_WhenTheSaveFails_RecordsFailedSpanAndRethrows()
     {
-        var (broker, _, source) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, _, source) = SeedMergerFixture();
         await CreateService().AddMergerAsync(ValidMergerRequest());
         _repository.ThrowOnApplyAndSaveAsync = new InvalidOperationException("simulated failure");
 
@@ -740,9 +716,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddSpinOffAsync_CreateNewAssetInline_ReducesParentCostBasisAndCreatesNewHoldingAtCarriedUnitCost()
     {
-        var (broker, portfolio, parent) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, parent) = SeedSpinOffFixture();
 
         var result = await CreateService().AddSpinOffAsync(ValidSpinOffRequest());
 
@@ -766,12 +740,10 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddSpinOffAsync_ExistingNewAsset_IncreasesNewAssetPositionAndCarriesCostBasis()
     {
-        var (broker, portfolio, _) = MakeSpinOffFixture();
+        var (broker, portfolio, _) = SeedSpinOffFixture();
         var newAsset = Asset.Create("NEWCO", "ISIN2", "BVMF", "NEWCO");
         newAsset.AddTransaction(Transaction.Create(new DateTime(2023, 1, 1), Transaction.TransactionType.Buy, 10m, 2m, 0m));
         portfolio.RegisterAsset(newAsset);
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
 
         var result = await CreateService().AddSpinOffAsync(new CorporateActionSpinOffCreateDTO
         {
@@ -820,10 +792,8 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task AddSpinOffAsync_NewAssetNameCollidesWithExistingDistinctAsset_ThrowsAndWritesNothing()
     {
-        var (broker, portfolio, parent) = MakeSpinOffFixture();
+        var (broker, portfolio, parent) = SeedSpinOffFixture();
         portfolio.RegisterAsset(Asset.Create("NEWCO", "ISIN2", "BVMF", "NEWCO"));
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
 
         var act = async () => await CreateService().AddSpinOffAsync(ValidSpinOffRequest());
 
@@ -875,9 +845,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateSpinOffAsync_UnknownId_ReturnsNull()
     {
-        var (broker, _, _) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        SeedSpinOffFixture();
 
         var result = await CreateService().UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
         {
@@ -898,9 +866,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateSpinOffAsync_EmptyId_ReturnsNull()
     {
-        var (broker, _, _) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        SeedSpinOffFixture();
 
         var result = await CreateService().UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
         {
@@ -920,9 +886,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateSpinOffAsync_ExistingId_UpdatesBothLinkedRecordsWithNewAllocation()
     {
-        var (broker, portfolio, parent) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, parent) = SeedSpinOffFixture();
 
         var added = await CreateService().AddSpinOffAsync(ValidSpinOffRequest());
         added.Should().NotBeNull();
@@ -954,9 +918,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task DeleteCorporateActionAsync_ExistingSpinOffId_RemovesBothLinkedRecordsAndRestoresParentPosition()
     {
-        var (broker, portfolio, parent) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, parent) = SeedSpinOffFixture();
 
         var added = await CreateService().AddSpinOffAsync(ValidSpinOffRequest());
         added.Should().NotBeNull();
@@ -981,9 +943,7 @@ public class CorporateActionServiceTests
     [InlineData(GlobalAssetClass.Cryptocurrency, GlobalAssetClass.Cryptocurrency)]
     public async Task AddMergerAsync_CreateTargetAssetInline_GivesTheNewTargetTheEnteredIdentity(GlobalAssetClass? enteredClass, GlobalAssetClass expectedClass)
     {
-        var (broker, portfolio, _) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, _) = SeedMergerFixture();
         var request = ValidMergerRequest();
         request.TargetISIN = "BRTGTXACNOR1";
         request.TargetExchange = "BVMF";
@@ -1006,9 +966,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateMergerAsync_BlankSourceAssetName_ReturnsNullAndWritesNothing()
     {
-        var (broker, _, _) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        SeedMergerFixture();
 
         var result = await CreateService().UpdateMergerAsync(new CorporateActionMergerUpdateDTO
         {
@@ -1027,9 +985,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateMergerAsync_InvalidNewRatio_RestoresBothRecordsAndWritesNothing()
     {
-        var (broker, portfolio, source) = MakeMergerFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, source) = SeedMergerFixture();
         await CreateService().AddMergerAsync(ValidMergerRequest());
         var sourceActionId = source.CorporateActions.Single().Id;
         var target = portfolio.FindAsset("TGT")!;
@@ -1095,9 +1051,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateSpinOffAsync_BlankParentAssetName_ReturnsNullAndWritesNothing()
     {
-        var (broker, _, _) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        SeedSpinOffFixture();
 
         var result = await CreateService().UpdateSpinOffAsync(new CorporateActionSpinOffUpdateDTO
         {
@@ -1117,9 +1071,7 @@ public class CorporateActionServiceTests
     [Fact]
     public async Task UpdateSpinOffAsync_InvalidNewAllocation_RestoresBothRecordsAndWritesNothing()
     {
-        var (broker, portfolio, parent) = MakeSpinOffFixture();
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
+        var (_, portfolio, parent) = SeedSpinOffFixture();
         await CreateService().AddSpinOffAsync(ValidSpinOffRequest());
         var parentActionId = parent.CorporateActions.Single().Id;
         var newAsset = portfolio.FindAsset("NEWCO")!;
@@ -1146,12 +1098,10 @@ public class CorporateActionServiceTests
 
     private async Task<(Asset FirstSource, Portfolio Portfolio, Asset SecondSource)> SeedTargetFedByTwoMergersAsync()
     {
-        var (broker, portfolio, firstSource) = MakeMergerFixture();
+        var (_, portfolio, firstSource) = SeedMergerFixture();
         var secondSource = Asset.Create("SRC2", "ISIN2", "BVMF", "SRC2");
         secondSource.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 4m, 5m, 0m));
         portfolio.RegisterAsset(secondSource);
-        _repository.Broker = broker;
-        _repository.Brokers = [broker];
         await CreateService().AddMergerAsync(ValidMergerRequest());
         var secondMerger = ValidMergerRequest();
         secondMerger.SourceAssetName = "SRC2";
@@ -1195,6 +1145,17 @@ public class CorporateActionServiceTests
         var asset = Asset.Create(name, "ISIN", "BVMF", name);
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
         return asset;
+    }
+
+    private (Broker Broker, Portfolio Portfolio, Asset Source) SeedMergerFixture() => Register(MakeMergerFixture());
+
+    private (Broker Broker, Portfolio Portfolio, Asset Parent) SeedSpinOffFixture() => Register(MakeSpinOffFixture());
+
+    private (Broker, Portfolio, Asset) Register((Broker Broker, Portfolio Portfolio, Asset Asset) fixture)
+    {
+        _repository.Broker = fixture.Broker;
+        _repository.Brokers = [fixture.Broker];
+        return fixture;
     }
 
     private static (Broker Broker, Portfolio Portfolio, Asset Source) MakeMergerFixture(decimal sourceQuantity = 10m, decimal sourceUnitPrice = 5m)
