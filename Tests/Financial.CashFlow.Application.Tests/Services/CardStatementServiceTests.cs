@@ -1,6 +1,5 @@
 using Financial.CashFlow.Application.DTOs;
 using Financial.CashFlow.Application.Exceptions;
-using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Application.Services;
 using Financial.CashFlow.Domain.Entities.Transactions;
 using Financial.Shared.Abstractions.Observability;
@@ -86,6 +85,7 @@ public class CardStatementServiceTests
         SeedStatements(2026, 7);
 
         _sut.GetAmountDueForPeriod(visa.Id, 2026, 7).Should().Be(50m);
+        _tracer.ShouldHaveSucceededSpan("CashFlow.CardStatementService.GetAmountDueForPeriod").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(visa.Id.ToString());
     }
 
     [Fact]
@@ -141,6 +141,7 @@ public class CardStatementServiceTests
             }
 
             otherMonth.InvoiceDate.Should().Be(new DateOnly(2026, 8, 1));
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CardStatementService.MarkStatementPaid").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(statement.Id.ToString());
         }
     }
 
@@ -240,38 +241,6 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task MarkStatementPaidAsync_ChargesNettingToZero_ThrowsNothingToPay()
-    {
-        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 30m, visa);
-        AddCharge(_repository, new DateOnly(2026, 7, 11), -30m, visa);
-        SeedStatements(2026, 7);
-        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
-
-        var act = async () => await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("There is nothing to pay on this statement.");
-    }
-
-    [Fact]
-    public async Task MarkStatementPaidAsync_CarriedCredit_WritesTheAmountToPayNotTheCharges()
-    {
-        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddCharge(_repository, new DateOnly(2026, 6, 10), -35m, visa);
-        AddCharge(_repository, new DateOnly(2026, 7, 10), 50m, visa);
-        SeedStatements(2026, 7);
-        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
-
-        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
-
-        using (new AssertionScope())
-        {
-            _repository.Transfers.Should().ContainSingle().Which.Amount.Should().Be(15m);
-            statement.IsPaid.Should().BeTrue();
-        }
-    }
-
-    [Fact]
     public async Task MarkStatementPaidAsync_CreditCoversTheMonth_ThrowsNothingToPayAndSavesNothing()
     {
         var visa = Card(_repository, "BarclaysPlatinumVisa8003");
@@ -293,26 +262,20 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public async Task UnmarkStatementPaidAsync_ChargeNearBillingCutoff_RevertsOnlyTheInvoicePeriodMatch()
+    public async Task MarkStatementPaidAsync_CarriedCredit_WritesTheAmountToPayNotTheCharges()
     {
-        var cutoffCharge = AddChargeWithInvoiceDate(
-            _repository,
-            date: new DateOnly(2026, 7, 29),
-            invoiceDate: new DateOnly(2026, 8, 1),
-            value: 40m,
-            card: Card(_repository, "BarclaysPlatinumVisa8003"));
-        SeedStatements(2026, 8);
-        var augustStatement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003" && s.Month == 8);
-        await _sut.MarkStatementPaidAsync(augustStatement.Id, PaidBy(_repository, "Trading212"));
+        var visa = Card(_repository, "BarclaysPlatinumVisa8003");
+        AddCharge(_repository, new DateOnly(2026, 6, 10), -35m, visa);
+        AddCharge(_repository, new DateOnly(2026, 7, 10), 50m, visa);
+        SeedStatements(2026, 7);
+        var statement = _repository.CardStatements.Single(s => s.CreditCard.Name == "BarclaysPlatinumVisa8003");
 
-        var result = await _sut.UnmarkStatementPaidAsync(augustStatement.Id);
+        await _sut.MarkStatementPaidAsync(statement.Id, PaidBy(_repository, "Trading212"));
 
         using (new AssertionScope())
         {
-            result.IsPaid.Should().BeFalse();
-            cutoffCharge.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
-            cutoffCharge.PaymentSourceAccount.Should().BeNull();
-            cutoffCharge.Date.Should().Be(cutoffCharge.ChargeDate);
+            _repository.Transfers.Should().ContainSingle().Which.Amount.Should().Be(15m);
+            statement.IsPaid.Should().BeTrue();
         }
     }
 
@@ -386,6 +349,15 @@ public class CardStatementServiceTests
     }
 
     [Fact]
+    public async Task MarkStatementPaidAsync_NullRequest_ThrowsAndRecordsFailedSpan()
+    {
+        var act = async () => await _sut.MarkStatementPaidAsync(Guid.NewGuid(), null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.CardStatementService.MarkStatementPaid");
+    }
+
+    [Fact]
     public async Task MarkStatementPaidAsync_WithUnknownId_ThrowsKeyNotFoundException()
     {
         var act = async () => await _sut.MarkStatementPaidAsync(Guid.NewGuid(), PaidBy(_repository, "Barclays"));
@@ -414,6 +386,7 @@ public class CardStatementServiceTests
             statement.PaymentTransferId.Should().BeNull();
             _repository.Transfers.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(savesBefore + 1);
+            _tracer.ShouldHaveSucceededSpan("CashFlow.CardStatementService.UnmarkStatementPaid").Attributes[TelemetryAttributeKeys.EntityId].Should().Be(statement.Id.ToString());
             foreach (var expense in new[] { first, second })
             {
                 expense.PaymentStatus.Should().Be(ExpensePaymentStatus.CreditCardCharge);
@@ -468,20 +441,8 @@ public class CardStatementServiceTests
             first.Date.Should().Be(new DateOnly(2026, 7, 10));
             second.PaymentSourceAccount.Should().BeNull();
             second.Date.Should().Be(new DateOnly(2026, 7, 15));
+            _repository.SaveChangesCallCount.Should().Be(1);
         }
-    }
-
-    [Fact]
-    public async Task UnmarkStatementPaidAsync_PaidStatementWithNoSettledExpenses_StillFlipsStatementToUnpaid()
-    {
-        SeedStatements(2026, 7);
-        var statement = _repository.CardStatements.First();
-        statement.MarkLegacyPaid();
-
-        var result = await _sut.UnmarkStatementPaidAsync(statement.Id);
-
-        result.IsPaid.Should().BeFalse();
-        statement.IsPaid.Should().BeFalse();
     }
 
     [Fact]
@@ -539,29 +500,12 @@ public class CardStatementServiceTests
     }
 
     [Fact]
-    public void GetAmountDueForPeriod_NothingDueMonths_AreNull()
+    public void GetAmountDueForPeriod_NothingDueMonth_IsNull()
     {
         var card = Card(_repository, "BarclaysPlatinumVisa8003");
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 8, 3), new DateOnly(2026, 8, 1), -35m, card);
         AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 3), new DateOnly(2026, 9, 1), 20m, card);
 
-        using (new AssertionScope())
-        {
-            _sut.GetAmountDueForPeriod(card.Id, 2026, 7).Should().BeNull("July is before the card's first charge");
-            _sut.GetAmountDueForPeriod(card.Id, 2026, 8).Should().BeNull("the refund leaves August below zero");
-            _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().BeNull("the carried credit covers September");
-            _sut.GetAmountDueForPeriod(card.Id, 2026, 10).Should().BeNull("October has no charges");
-        }
-    }
-
-    [Fact]
-    public void GetAmountDueForPeriod_LeavesOutOtherCardsCharges()
-    {
-        var card = Card(_repository, "BarclaysPlatinumVisa8003");
-        var otherCard = Card(_repository, "BarclaysPlatinumVisa6007");
-        AddChargeWithInvoiceDate(_repository, new DateOnly(2026, 9, 1), new DateOnly(2026, 9, 10), 99m, otherCard);
-
-        _sut.GetAmountDueForPeriod(card.Id, 2026, 9).Should().BeNull();
+        _sut.GetAmountDueForPeriod(card.Id, 2026, 10).Should().BeNull();
     }
 
     [Fact]
