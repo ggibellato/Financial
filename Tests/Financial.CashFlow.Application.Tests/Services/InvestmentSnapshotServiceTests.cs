@@ -368,6 +368,7 @@ public class InvestmentSnapshotServiceTests
 
         _tracer.ShouldHaveSucceededSpan("CashFlow.InvestmentSnapshotService.GetSuggestionsForMonth");
     }
+
     #endregion
 
     [Fact]
