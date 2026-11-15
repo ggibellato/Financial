@@ -146,9 +146,9 @@ uses the repo folder.
 
 | # | Project | Slice (`--mutate`) | Status | Score before | Score after | Tests added | Tests removed | Equivalent | PR | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1.1 | CashFlow.Domain | `Entities/**` | ⬜ | 90.3% | | | | | | Trial on `Expense.cs`: 14 undetected (round-up suggestion, L43–45) |
+| 1.1 | CashFlow.Domain | `Entities/**` | 🔄 | 90.3% | 94.5% | 18 | 0 | 10 | [#1307](https://github.com/ggibellato/Financial/pull/1307) | [Notes](1.1.md); round-up suggestion, inactive card/pots checks, capability defaults on setup change |
 | 1.2 | CashFlow.Domain | `Rules/**`, `ValueObjects/**` | ⬜ | 91.1% | | | | | | |
-| 2.1 | Investment.Domain | `Entities/**` | ⬜ | 82.0% | | | | | | |
+| 2.1 | Investment.Domain | `Entities/**` | ✅ | 82.0% | 88.1% | 28 | 0 | 8 | [#1306](https://github.com/ggibellato/Financial/pull/1306) | [Notes](2.1.md); disposal regeneration boundaries, corporate action revise/rollback; most survivors are wording |
 | 2.2 | Investment.Domain | `Rules/**` | ✅ | 74.5% | 87.7% | 15 | 3 | ~35 | [#1284](https://github.com/ggibellato/Financial/pull/1284) | [Notes](2.2.md); 734 → 754 tests |
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
 | 3.1 | CashFlow.Application | Accounts: `AccountAdminService`, `AccountGroupSummaryService`, `AccountQueryService`, `AccountReferenceReader`, `AccountTransactionReader`, `AccountTransferService`, `BalanceAdjustmentService` | ✅ | 70.3% | 80.5% | 9 | 29 | 21 | [#1298](https://github.com/ggibellato/Financial/pull/1298) | [Notes](3.1.md); 29 Domain re-checks and duplicates removed; adjustment add span uses the account id |
@@ -168,11 +168,11 @@ uses the repo folder.
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
 | 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
-| 7.3 | CashFlow.Infrastructure | all | ⬜ | 80.2% | | | | | | Slowest per mutant (7.2 min) |
-| 7.4 | Investment.Infrastructure | all | ⬜ | 81.1% | | | | | | DI file 11 of 19 undetected |
+| 7.3 | CashFlow.Infrastructure | all | ✅ | 80.6% | 92.7% | 9 | 1 | 4 | [#1304](https://github.com/ggibellato/Financial/pull/1304) | [Notes](7.3.md); reference wire names and required flags, credentials path, dead converter code |
+| 7.4 | Investment.Infrastructure | all | ✅ | 81.1% | 93.2% | 7 | 0 | 4 | [#1305](https://github.com/ggibellato/Financial/pull/1305) | [Notes](7.4.md); two tests passed vacuously because BRL is the Currency default |
 | 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | ⬜ | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive |
 | 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ✅ | 71.6% | 90.1% | 7 | 0 | 4 | [#1300](https://github.com/ggibellato/Financial/pull/1300) | [Notes](9.1.md); `Program.cs` wiring (CORS, versioning, options binding) asserted; `UseDeveloperExceptionPage` redundant |
-| 9.2 | Financial.Api | All controllers | 🔄 | 78.7% | 95.6% | 1 | 0 | 1 | [#1302](https://github.com/ggibellato/Financial/pull/1302) | [Notes](9.2.md); empty-body test now requires the guard to reject before any service; blank route-value guards are dead code |
+| 9.2 | Financial.Api | All controllers | ✅ | 78.7% | 95.6% | 1 | 0 | 1 | [#1302](https://github.com/ggibellato/Financial/pull/1302) | [Notes](9.2.md); empty-body test now requires the guard to reject before any service; blank route-value guards are dead code |
 
 ### Batch 10 — Keep it continuous
 
@@ -205,6 +205,10 @@ class, production notes) in its own file in this folder:
 - [7.2 Shared.Infrastructure (73.7% → 83.6%)](7.2.md)
 - [9.1 Api Program, Middleware and Helpers (71.6% → 90.1%)](9.1.md)
 - [9.2 Api controllers (78.7% → 95.6%)](9.2.md)
+- [7.3 CashFlow.Infrastructure (80.6% → 92.7%)](7.3.md)
+- [7.4 Investment.Infrastructure (81.1% → 93.2%)](7.4.md)
+- [2.1 Investment.Domain entities (82.0% → 88.1%)](2.1.md)
+- [1.1 CashFlow.Domain entities (90.3% → 94.5%)](1.1.md)
 
 ## Log
 
@@ -232,3 +236,7 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 9.1 | Api wiring 71.6% → 90.1%; CORS, API versions, options binding, static files and Swagger UI asserted |
 | 2026-11-15 | 7.2 | Shared.Infrastructure 73.7% → 83.6%; debounced storage flush, generation and failure paths; missing-folder guard |
 | 2026-11-15 | 9.2 | Api controllers 78.7% → 95.6%; empty-body guards pinned, dividend exchange, enum casing, calendar pages, tax year |
+| 2026-11-15 | 7.3 | CashFlow.Infrastructure 80.6% → 92.7%; reference wire names and required flags, credentials file path, calendar settings binding |
+| 2026-11-15 | 7.4 | Investment.Infrastructure 81.1% → 93.2%; two vacuous currency tests fixed (BRL is the default), Yahoo suffixes, fetcher requests |
+| 2026-11-15 | 2.1 | Investment.Domain entities 82.0% → 88.1%; disposal regeneration boundaries, corporate action revise and rollback |
+| 2026-11-15 | 1.1 | CashFlow.Domain entities 90.3% → 94.5%; round-up suggestion, inactive card and pots checks, setup-change defaults |
