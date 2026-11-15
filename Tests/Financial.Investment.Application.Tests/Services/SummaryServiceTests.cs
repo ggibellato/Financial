@@ -1,4 +1,5 @@
 using Financial.Investment.Application.Enums;
+using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Application.Services;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Observability;
@@ -15,6 +16,7 @@ namespace Financial.Investment.Application.Tests.Services;
 public class SummaryServiceTests
 {
     private static readonly DateTimeOffset Today = new(2026, 8, 14, 12, 0, 0, TimeSpan.Zero);
+    private static readonly DateOnly TodayDate = DateOnly.FromDateTime(Today.UtcDateTime);
     private readonly RecordingTelemetryTracer _tracer = new();
 
     private readonly StubInvestmentRepository _repository = new();
@@ -30,6 +32,7 @@ public class SummaryServiceTests
         var result = await CreateService().GetBrokerSummaryAsync("XPI");
 
         result.TotalBought.Should().Be(250m);
+        _tracer.ShouldHaveSucceededSpan("Investment.SummaryService.GetBrokerSummary");
     }
 
     [Fact]
@@ -123,6 +126,7 @@ public class SummaryServiceTests
         result.UnvaluedHoldingCount.Should().Be(0);
         result.PriceOnlyReturn.Should().BeNull();
         result.TotalReturn.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.SummaryService.GetBrokerSummary");
     }
 
     [Fact]
@@ -186,6 +190,7 @@ public class SummaryServiceTests
         result.TotalInvested.Should().Be(0m);
         result.MarketValue.Should().Be(0m);
         result.HoldingCount.Should().Be(0);
+        _tracer.ShouldHaveSucceededSpan("Investment.SummaryService.GetBrokerSummary");
     }
 
     [Fact]
@@ -199,6 +204,7 @@ public class SummaryServiceTests
         var result = await CreateService().GetPortfolioSummaryAsync("XPI", "Default");
 
         result.TotalBought.Should().Be(200m);
+        _tracer.ShouldHaveSucceededSpan("Investment.SummaryService.GetPortfolioSummary");
     }
 
     [Fact]
@@ -301,6 +307,11 @@ public class SummaryServiceTests
     [InlineData("XPI", "   ")]
     public async Task GetPortfolioSummary_ReturnsZerosOnNullOrWhitespaceInput(string? brokerName, string? portfolioName)
     {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(TestClock.LocalToday, Transaction.TransactionType.Buy, 8m, 25m, 0m));
+        _repository.AssetsByBrokerPortfolio = [asset];
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
         var result = await CreateService().GetPortfolioSummaryAsync(brokerName!, portfolioName!);
 
         using var _ = new AssertionScope();
@@ -310,13 +321,17 @@ public class SummaryServiceTests
         result.TotalInvested.Should().Be(0m);
         result.MarketValue.Should().Be(0m);
         result.HoldingCount.Should().Be(0);
+        _tracer.ShouldHaveSucceededSpan("Investment.SummaryService.GetPortfolioSummary");
     }
 
-    private SummaryService CreateService(TimeProvider? timeProvider = null)
+    private SummaryService CreateService(
+        TimeProvider? timeProvider = null,
+        IExchangeRateProvider? exchangeRateProvider = null,
+        IReportingCurrencyProvider? reportingCurrencyProvider = null)
     {
         var clock = timeProvider ?? TestClock.At();
         return new(_repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(clock), new XirrCalculationService(clock),
-            new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.BRL), clock);
+            exchangeRateProvider ?? new StubExchangeRateProvider(null), reportingCurrencyProvider ?? new StubReportingCurrencyProvider(Currency.BRL), clock);
     }
 
     private static Asset MakeAsset(string name = "TEST", string ticker = "TEST") =>
@@ -330,9 +345,12 @@ public class SummaryServiceTests
         return asset;
     }
 
-    private static Broker MakeBrokerWithAssets(string brokerName, string portfolioName, params Asset[] assets)
+    private static Broker MakeBrokerWithAssets(string brokerName, string portfolioName, params Asset[] assets) =>
+        MakeBrokerWithAssets(brokerName, portfolioName, "BRL", assets);
+
+    private static Broker MakeBrokerWithAssets(string brokerName, string portfolioName, string currency, params Asset[] assets)
     {
-        var broker = Broker.Create(brokerName, "BRL");
+        var broker = Broker.Create(brokerName, currency);
         var portfolio = broker.AddPortfolio(portfolioName);
         foreach (var asset in assets)
         {
@@ -368,11 +386,11 @@ public class SummaryServiceTests
     {
         var asset1 = MakeAsset("AAAA", "AAAA");
         asset1.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        asset1.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        asset1.SetPrice(TodayDate, 8m, isManual: false);
 
         var asset2 = MakeAsset("BBBB", "BBBB");
         asset2.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 4m, 2m, 0m));
-        asset2.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 3m, isManual: false);
+        asset2.SetPrice(TodayDate, 3m, isManual: false);
 
         _repository.AssetsByBrokerPortfolio = [asset1, asset2];
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset1, asset2)];
@@ -395,7 +413,7 @@ public class SummaryServiceTests
         var asset = MakeAsset("AAAA", "AAAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
         asset.AddCredit(Credit.Create(new DateTime(2025, 6, 1), Credit.CreditType.Dividend, 100m, withheld: 15m));
-        asset.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        asset.SetPrice(TodayDate, 8m, isManual: false);
 
         _repository.AssetsByBrokerPortfolio = [asset];
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
@@ -412,7 +430,7 @@ public class SummaryServiceTests
     {
         var priced = MakeAsset("AAAA", "AAAA");
         priced.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        priced.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        priced.SetPrice(TodayDate, 8m, isManual: false);
 
         var unpriced = MakeAsset("BBBB", "BBBB");
         unpriced.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 4m, 2m, 0m));
@@ -494,13 +512,11 @@ public class SummaryServiceTests
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        asset.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        asset.SetPrice(TodayDate, 8m, isManual: false);
+        asset.AddCredit(Credit.Create(new DateTime(2025, 6, 1), Credit.CreditType.Dividend, 10m, withheld: 2m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
-        var service = new SummaryService(
-            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
-            new XirrCalculationService(TestClock.At()), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP),
-            new FakeTimeProvider(Today));
+        var service = CreateService(new FakeTimeProvider(Today), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP));
 
         var result = await service.GetBrokerSummaryAsync("XPI");
 
@@ -508,6 +524,10 @@ public class SummaryServiceTests
         result.ReportingCurrency.Should().Be("GBP");
         result.ConvertedMarketValue.Should().Be(result.MarketValue * 0.2m);
         result.ConvertedInvested.Should().Be(result.TotalBought * 0.2m);
+        result.ConvertedUnrealisedGainLoss.Should().Be(30m * 0.2m);
+        result.ConvertedTotalReturn.Should().BeApproximately(result.TotalReturn!.Value, 0.0001m, "a constant rate scales every flow alike");
+        result.ConvertedTotalReturnNetOfTax.Should().BeApproximately(result.TotalReturnNetOfTax!.Value, 0.0001m);
+        result.ConvertedTotalReturnNetOfTax.Should().NotBe(result.ConvertedTotalReturn);
         result.IsPartial.Should().BeFalse();
         result.IsReportingCurrencyUnavailable.Should().BeFalse();
     }
@@ -519,10 +539,7 @@ public class SummaryServiceTests
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
-        var service = new SummaryService(
-            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
-            new XirrCalculationService(TestClock.At()), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP),
-            new FakeTimeProvider(Today));
+        var service = CreateService(new FakeTimeProvider(Today), new StubExchangeRateProvider(null), new StubReportingCurrencyProvider(Currency.GBP));
 
         var result = await service.GetBrokerSummaryAsync("XPI");
 
@@ -540,10 +557,7 @@ public class SummaryServiceTests
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
 
-        var service = new SummaryService(
-            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
-            new XirrCalculationService(TestClock.At()), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP),
-            new FakeTimeProvider(Today));
+        var service = CreateService(new FakeTimeProvider(Today), new StubExchangeRateProvider(0.2m), new StubReportingCurrencyProvider(Currency.GBP));
 
         var result = await service.GetBrokerSummaryAsync("XPI");
 
@@ -558,14 +572,11 @@ public class SummaryServiceTests
     {
         var asset = MakeAsset();
         asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
-        asset.SetPrice(DateOnly.FromDateTime(Today.UtcDateTime), 8m, isManual: false);
+        asset.SetPrice(TodayDate, 8m, isManual: false);
         _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
         var exchangeRateProvider = new StubExchangeRateProvider(0.2m);
 
-        var service = new SummaryService(
-            _repository, _tracer, NullLogger<SummaryService>.Instance, TestHoldingValuationService.Create(new FakeTimeProvider(Today)),
-            new XirrCalculationService(TestClock.At()), exchangeRateProvider, new StubReportingCurrencyProvider(Currency.GBP, enabled: false),
-            new FakeTimeProvider(Today));
+        var service = CreateService(new FakeTimeProvider(Today), exchangeRateProvider, new StubReportingCurrencyProvider(Currency.GBP, enabled: false));
 
         var result = await service.GetBrokerSummaryAsync("XPI");
 
@@ -594,5 +605,60 @@ public class SummaryServiceTests
         var result = await CreateService().GetPortfolioSummaryAsync("XPI", "Default");
 
         result.IsReportingCurrencyEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetBrokerSummary_BrokerWithNoHoldings_ReportsZeroMarketValueNotUnknown()
+    {
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default")];
+
+        var result = await CreateService().GetBrokerSummaryAsync("XPI");
+
+        using var _ = new AssertionScope();
+        result.HoldingCount.Should().Be(0);
+        result.MarketValue.Should().Be(0m);
+        result.ConvertedUnrealisedGainLoss.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetPortfolioSummary_UnknownBroker_ReturnsZerosAndSucceeds()
+    {
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", MakeAsset())];
+
+        var result = await CreateService().GetPortfolioSummaryAsync("UNKNOWN", "Default");
+
+        using var _ = new AssertionScope();
+        result.HoldingCount.Should().Be(0);
+        result.TotalBought.Should().Be(0m);
+        _tracer.ShouldHaveSucceededSpan("Investment.SummaryService.GetPortfolioSummary");
+    }
+
+    [Fact]
+    public async Task GetBrokerSummary_UnrecognisedBrokerCurrency_RecordsFailedSpanAndThrows()
+    {
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", "XYZ", MakeAsset())];
+
+        Func<Task> act = () => CreateService().GetBrokerSummaryAsync("XPI");
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.SummaryService.GetBrokerSummary");
+    }
+
+    [Fact]
+    public async Task GetBrokerSummary_SomeRecordsFailToConvert_FlagsPartial()
+    {
+        var asset = MakeAsset();
+        asset.AddTransaction(Transaction.Create(new DateTime(2025, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
+        asset.SetPrice(TodayDate, 8m, isManual: false);
+        _repository.Brokers = [MakeBrokerWithAssets("XPI", "Default", asset)];
+
+        var service = CreateService(
+            new FakeTimeProvider(Today), new FakeExchangeRateProvider((date, _, _) => date == TodayDate ? 0.2m : null), new StubReportingCurrencyProvider(Currency.GBP));
+
+        var result = await service.GetBrokerSummaryAsync("XPI");
+
+        using var _ = new AssertionScope();
+        result.IsPartial.Should().BeTrue();
+        result.IsReportingCurrencyUnavailable.Should().BeFalse();
     }
 }

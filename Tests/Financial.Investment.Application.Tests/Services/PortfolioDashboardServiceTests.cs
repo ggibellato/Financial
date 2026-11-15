@@ -33,6 +33,7 @@ public class PortfolioDashboardServiceTests
         var result = await CreateService().GetDashboardAsync();
 
         result.MarketValue.Should().Be(80m + 12m);
+        _tracer.ShouldHaveSucceededSpan("Investment.PortfolioDashboardService.GetDashboard");
     }
 
     [Fact]
@@ -278,6 +279,7 @@ public class PortfolioDashboardServiceTests
         result.IncomeLifetime.Should().Be(0m);
         result.GrossXirr.Should().BeNull();
         result.IsPartial.Should().BeFalse();
+        result.IsReportingCurrencyUnavailable.Should().BeFalse();
     }
 
     [Fact]
@@ -367,6 +369,48 @@ public class PortfolioDashboardServiceTests
             .GetDashboardAsync();
 
         result.IsReportingCurrencyEnabled.Should().BeFalse("omitting both parameters preserves today's exact gated behavior");
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_WhenReportingCurrencyEnabled_SumsEveryPricedHoldingAndNetsSalesIntoInvested()
+    {
+        var partlySold = DisposedAsset("AAAA", buyQuantity: 10m, buyPrice: 5m, sellQuantity: 4m, sellPrice: 6m);
+        partlySold.SetPrice(TodayDate, 8m, isManual: false);
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", partlySold, PricedAsset("BBBB", 5m, 4m, 6m))]);
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.2m)).GetDashboardAsync();
+
+        using var _ = new AssertionScope();
+        result.ConvertedMarketValue.Should().Be(result.MarketValue * 0.2m);
+        result.ConvertedInvested.Should().Be((50m - 24m + 20m) * 0.2m, "converted invested is what was bought less what was sold");
+        result.ConvertedUnrealisedGainLoss.Should().Be(result.UnrealisedGainLoss * 0.2m);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_CreditOnTheFirstOfJanuary_CountsTowardsThisYearsIncome()
+    {
+        var asset = BoughtAsset("AAAA", quantity: 10m, unitPrice: 5m);
+        asset.AddCredit(Credit.Create(new DateTime(Today.Year, 1, 1), Credit.CreditType.Dividend, 30m));
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", asset)]);
+
+        var result = await CreateService(exchangeRateProvider: new StubExchangeRateProvider(0.2m)).GetDashboardAsync();
+
+        using var _ = new AssertionScope();
+        result.IncomeYtd.Should().Be(30m);
+        result.ConvertedIncomeYtd.Should().Be(30m * 0.2m);
+    }
+
+    [Fact]
+    public async Task GetDashboardAsync_OneBrokerCurrencyFailsToConvert_FlagsPartial()
+    {
+        SeedInvestments(active: [MakeBroker("XPI", "BRL", PricedAsset("AAAA", 10m, 5m, 8m)), MakeBroker("Avenue", "USD", PricedAsset("BBBB", 2m, 10m, 12m))]);
+        var provider = new FakeExchangeRateProvider((_, from, _) => from == Currency.BRL ? 0.2m : null);
+
+        var result = await CreateService(exchangeRateProvider: provider).GetDashboardAsync();
+
+        using var _ = new AssertionScope();
+        result.IsReportingCurrencyPartial.Should().BeTrue();
+        result.IsReportingCurrencyUnavailable.Should().BeFalse();
     }
 
     private PortfolioDashboardService CreateService(

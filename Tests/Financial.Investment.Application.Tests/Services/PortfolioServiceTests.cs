@@ -35,6 +35,7 @@ public class PortfolioServiceTests
             result.Should().HaveCount(2);
             result.Should().ContainSingle(p => p.Name == "Default" && p.BrokerName == "XPI" && p.BrokerStatus == "Active" && p.AssetCount == 1);
             result.Should().ContainSingle(p => p.Name == "Old" && p.BrokerName == "Avenue" && p.BrokerStatus == "Historic" && p.AssetCount == 0);
+            _tracer.ShouldHaveSucceededSpan("Investment.PortfolioService.GetPortfolios");
         }
     }
 
@@ -53,6 +54,7 @@ public class PortfolioServiceTests
             result.BrokerStatus.Should().Be("Active");
             _repository.Investments!.FindActiveBroker("XPI")!.FindPortfolio("Default").Should().NotBeNull();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.PortfolioService.CreatePortfolio");
         }
     }
 
@@ -80,6 +82,7 @@ public class PortfolioServiceTests
 
         await act.Should().ThrowAsync<InvestmentDuplicateNameException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<InvestmentDuplicateNameException>("Investment.PortfolioService.CreatePortfolio");
     }
 
     [Theory]
@@ -108,6 +111,7 @@ public class PortfolioServiceTests
             result.Name.Should().Be("Growth");
             result.BrokerStatus.Should().Be("Active");
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.PortfolioService.UpdatePortfolio");
         }
     }
 
@@ -160,6 +164,7 @@ public class PortfolioServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
         _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("Investment.PortfolioService.UpdatePortfolio");
     }
 
     [Fact]
@@ -174,6 +179,7 @@ public class PortfolioServiceTests
             _repository.Broker!.FindPortfolio("Stale").Should().BeNull();
             _repository.Broker.FindPortfolio("Default").Should().NotBeNull();
             _repository.WriteCallCount.Should().Be(1);
+            _tracer.ShouldHaveSucceededSpan("Investment.PortfolioService.DeleteEmptyPortfolio");
         }
     }
 
@@ -255,24 +261,46 @@ public class PortfolioServiceTests
     }
 
     [Fact]
-    public void Constructor_WithNullRepository_Throws()
+    public void GetPortfolios_WhenRepositoryThrows_RecordsFailedSpanAndRethrows()
     {
-        var act = () => new PortfolioService(null!, _tracer, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("repository");
+        _repository.ThrowOnGetInvestments = new InvalidOperationException("simulated failure");
+
+        var act = () => CreateService().GetPortfolios();
+
+        act.Should().Throw<InvalidOperationException>();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.PortfolioService.GetPortfolios");
     }
 
     [Fact]
-    public void Constructor_WithNullTracer_Throws()
+    public async Task CreatePortfolioAsync_NullRequest_ThrowsAndWritesNothing()
     {
-        var act = () => new PortfolioService(_repository, null!, _logger);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("tracer");
+        var act = async () => await CreateService().CreatePortfolioAsync(null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]
-    public void Constructor_WithNullLogger_Throws()
+    public async Task UpdatePortfolioAsync_NullRequest_ThrowsAndWritesNothing()
     {
-        var act = () => new PortfolioService(_repository, _tracer, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        var act = async () => await CreateService().UpdatePortfolioAsync("XPI", "Default", null!);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+        _repository.WriteCallCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task UpdatePortfolioAsync_BlankCurrentName_ThrowsAndWritesNothing()
+    {
+        _repository.Investments = Investments.Create();
+        var broker = Broker.Create("XPI", "BRL");
+        broker.CreatePortfolio("Default");
+        _repository.Investments.AddActiveBroker(broker);
+
+        var act = async () => await CreateService().UpdatePortfolioAsync("XPI", "  ", new PortfolioUpdateDTO { Name = "Growth" });
+
+        await act.Should().ThrowAsync<ArgumentException>();
+        _repository.WriteCallCount.Should().Be(0);
     }
 
     private PortfolioService CreateService() => new(_repository, _tracer, _logger);
