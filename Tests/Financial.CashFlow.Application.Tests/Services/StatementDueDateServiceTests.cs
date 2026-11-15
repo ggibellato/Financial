@@ -71,8 +71,7 @@ public class StatementDueDateServiceTests
             october.DueDate.Should().Be(new DateOnly(2026, 10, 25));
             _repository.SaveChangesCallCount.Should().Be(1);
             _calendarSync.TriggeredCreditCardIds.Should().Equal(_amex.Id);
-            _tracer.Spans.Should().ContainSingle(span => span.Name == SpanName)
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan(SpanName).Attributes[TelemetryAttributeKeys.EntityId].Should().Be(_amex.Id.ToString());
         }
     }
 
@@ -131,8 +130,7 @@ public class StatementDueDateServiceTests
             _repository.CardStatements.Should().BeEmpty();
             _repository.SaveChangesCallCount.Should().Be(0);
             _calendarSync.TriggeredCreditCardIds.Should().Equal(_amex.Id);
-            _tracer.Spans.Should().ContainSingle(span => span.Name == SpanName)
-                .Which.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
+            _tracer.ShouldHaveSucceededSpan(SpanName);
         }
     }
 

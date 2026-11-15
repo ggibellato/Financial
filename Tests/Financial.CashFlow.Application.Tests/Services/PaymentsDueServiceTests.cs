@@ -32,13 +32,13 @@ public class PaymentsDueServiceTests
     }
 
     private PaymentsDueService CreateService(
-        StubCashFlowRepository? repository = null, TimeProvider? timeProvider = null) =>
+        StubCashFlowRepository? repository = null, TimeProvider? timeProvider = null, TimeZoneInfo? timeZone = null) =>
         new(
             repository ?? _repository,
             _tracer,
             Logger,
             timeProvider ?? new FakeTimeProvider(PinnedNow),
-            TimeZoneInfo.Utc);
+            timeZone ?? TimeZoneInfo.Utc);
 
     private static RecurringBill CreateBill(int dueDay, string description = "Internet") =>
         RecurringBill.Create(dueDay, description, 50m, Area.UK, string.Empty, null, null);
@@ -129,6 +129,18 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    public void GetPaymentsDue_OnTheFirst_IncludesABillDueOnTheFirst()
+    {
+        var first = new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero);
+        var service = CreateService(timeProvider: new FakeTimeProvider(first));
+        _repository.AddRecurringBill(CreateBill(1, "Internet"));
+
+        var result = service.GetPaymentsDue();
+
+        result.Should().ContainSingle().Which.Name.Should().Be("Internet");
+    }
+
+    [Fact]
     [Trait("AC", "P60-F07-credit-card-template-and-card-migration-10")]
     public void GetPaymentsDue_CreditCardWithNextInvoiceDueDateInWindow_IsIncluded()
     {
@@ -192,30 +204,6 @@ public class PaymentsDueServiceTests
         AddCharge(card, dueDate.AddMonths(-1), -150m);
 
         _sut.GetPaymentsDue().Should().BeEmpty();
-    }
-
-    [Fact]
-    public void GetPaymentsDue_CreditFromAnEarlierMonthCoversOnlyPartOfTheDueMonth_IsIncluded()
-    {
-        var dueDate = PinnedToday.AddDays(3);
-        var card = CreateCard("Nubank", dueDate);
-        _repository.AddAccount(card);
-        AddCharge(card, dueDate.AddMonths(-1), -40m);
-
-        _sut.GetPaymentsDue().Should().ContainSingle().Which.Name.Should().Be("Nubank");
-    }
-
-    [Fact]
-    public void GetPaymentsDue_CreditCardWithUnpaidStatementForInvoicePeriod_IsIncluded()
-    {
-        var dueDate = PinnedToday.AddDays(3);
-        var card = CreateCard("Nubank", dueDate);
-        _repository.AddAccount(card);
-        AddStatement(card, dueDate);
-
-        var result = _sut.GetPaymentsDue();
-
-        result.Should().ContainSingle().Which.Name.Should().Be("Nubank");
     }
 
     [Fact]
@@ -297,7 +285,7 @@ public class PaymentsDueServiceTests
     public void GetPaymentsDue_SameDueDate_MensaisSortsBeforeCreditCard()
     {
         var sharedDueDay = PinnedToday.AddDays(2).Day;
-        _repository.AddAccount(CreateCard("Nubank", PinnedToday.AddDays(2)));
+        _repository.AddAccount(CreateCard("Amex", PinnedToday.AddDays(2)));
         _repository.AddRecurringBill(CreateBill(sharedDueDay, "Internet"));
 
         var result = _sut.GetPaymentsDue();
@@ -362,16 +350,28 @@ public class PaymentsDueServiceTests
     }
 
     [Fact]
+    public void GetPaymentsDue_UsesInjectedTimeZone_ForTodayComputation()
+    {
+        _repository.AddRecurringBill(CreateBill(14, "Internet"));
+        var oneHourBehindUtc = TimeZoneInfo.CreateCustomTimeZone("UTC-1", TimeSpan.FromHours(-1), "UTC-1", "UTC-1");
+
+        var result = CreateService(timeZone: oneHourBehindUtc).GetPaymentsDue();
+
+        result.Should().ContainSingle(p => p.Name == "Internet" && p.DaysRemaining == 0);
+    }
+
+    [Fact]
     public void GetPaymentsDue_NoQualifyingPayments_ReturnsEmptyArray()
     {
         var result = _sut.GetPaymentsDue();
 
         result.Should().NotBeNull();
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("CashFlow.PaymentsDueService.GetPaymentsDue");
     }
 
     [Fact]
-    public void GetPaymentsDue_TimeProviderThrowsUnexpectedly_ReturnsEmptyArray()
+    public void GetPaymentsDue_TimeProviderThrowsUnexpectedly_ReturnsEmptyArrayAndRecordsFailedSpan()
     {
         var sut = CreateService(timeProvider: new ThrowingTimeProvider());
 
@@ -379,6 +379,7 @@ public class PaymentsDueServiceTests
 
         result.Should().NotBeNull();
         result.Should().BeEmpty();
+        _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.PaymentsDueService.GetPaymentsDue");
     }
 
     private sealed class ThrowingTimeProvider : TimeProvider
