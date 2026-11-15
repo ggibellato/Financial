@@ -33,6 +33,7 @@ public class TransactionServiceQueryTests
         result.Should().HaveCount(2);
         result.Should().Contain(t => t.AssetName == "AAAA" && t.Type == "Buy" && t.NetCash == -100m);
         result.Should().Contain(t => t.AssetName == "BBBB" && t.Type == "Sell" && t.NetCash == 100m);
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.GetTransactionsByBroker");
     }
 
     [Fact]
@@ -117,6 +118,7 @@ public class TransactionServiceQueryTests
         var result = CreateService().GetTransactionsByBroker(brokerName!);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.GetTransactionsByBroker");
     }
 
     [Fact]
@@ -130,6 +132,7 @@ public class TransactionServiceQueryTests
         var result = CreateService().GetTransactionsByPortfolio("XPI", "Default");
 
         result.Should().ContainSingle(t => t.AssetName == "AAAA");
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.GetTransactionsByPortfolio");
     }
 
     [Fact]
@@ -180,6 +183,7 @@ public class TransactionServiceQueryTests
         var result = CreateService().GetTransactionsByPortfolio(brokerName!, portfolioName!);
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.GetTransactionsByPortfolio");
     }
 
     [Fact]
@@ -202,6 +206,17 @@ public class TransactionServiceQueryTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.TransactionService.GetTransactionsByPortfolio");
+    }
+
+    [Fact]
+    public void GetTransactionTypeEffects_ListsEveryTypeOnceWithItsQuantityAndCashEffect()
+    {
+        var result = CreateService().GetTransactionTypeEffects();
+
+        result.Select(effect => effect.Type).Should().BeEquivalentTo(Enum.GetNames<Transaction.TransactionType>());
+        var buy = result.Single(effect => effect.Type == "Buy");
+        buy.QuantityEffect.Should().Be("Increase");
+        buy.CashEffect.Should().Be("Out");
     }
 
     private TransactionService CreateService() => new(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), ExchangeRateProvider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<TransactionService>.Instance);

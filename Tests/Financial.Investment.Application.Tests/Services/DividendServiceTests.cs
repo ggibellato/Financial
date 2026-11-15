@@ -27,6 +27,7 @@ public class DividendServiceTests
         Action act = () => service.GetDividendHistory(null!);
 
         act.Should().Throw<ArgumentNullException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("Investment.DividendService.GetDividendHistory");
     }
 
     /// <summary>
@@ -70,6 +71,7 @@ public class DividendServiceTests
         var result = service.GetDividendHistory(MakeRequest());
 
         result.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.DividendService.GetDividendHistory");
     }
 
     [Fact]
@@ -128,7 +130,7 @@ public class DividendServiceTests
     }
 
     [Fact]
-    public void GetDividendSummary_GroupsDividendsByYear()
+    public void GetDividendSummary_GroupsDividendsByYear_LatestYearFirst()
     {
         _dataSource.Dividends =
         [
@@ -140,9 +142,8 @@ public class DividendServiceTests
 
         var result = service.GetDividendSummary(MakeRequest());
 
-        result.YearTotals.Should().HaveCount(2);
-        result.YearTotals.First(t => t.Year == 2020).Total.Should().Be(5.0m);
-        result.YearTotals.First(t => t.Year == 2019).Total.Should().Be(4.0m);
+        result.YearTotals.Select(t => (t.Year, t.Total)).Should().Equal((2020, 5.0m), (2019, 4.0m));
+        _tracer.ShouldHaveSucceededSpan("Investment.DividendService.GetDividendSummary");
     }
 
     [Fact]
@@ -223,6 +224,15 @@ public class DividendServiceTests
             result.YearTotals.Should().BeEmpty();
             result.History.Should().BeEmpty();
         }
+    }
+
+    [Fact]
+    public void GetDividendSummary_WithNullRequest_RecordsFailedSpanAndThrows()
+    {
+        Action act = () => CreateService().GetDividendSummary(null!);
+
+        act.Should().Throw<ArgumentNullException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("Investment.DividendService.GetDividendSummary");
     }
 
     private DividendService CreateService() => new(_dataSource, _snapshotSource, TestClock.At(), _tracer, NullLogger<DividendService>.Instance);

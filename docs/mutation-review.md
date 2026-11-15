@@ -151,11 +151,11 @@ uses the repo folder.
 | 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | ⬜ | 63.2% | | | | | | `ReserveService` 38 compile errors |
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ⬜ | 63.2% | | | | | | |
 | 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
-| 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ⬜ | 47.7% | | | | | | |
+| 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | 🔄 | 47.7% | 65.0% | 11 | 9 | 16 | | See "Slice notes"; 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ⬜ | 49.6% | | | | | | `CorporateActionService` 133 of 260 undetected |
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ⬜ | 56.8% | | | | | | |
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ⬜ | 69.6% | | | | | | |
-| 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | 🔄 | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
+| 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | See "Slice notes"; run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ⬜ | 52.7% | | | | | | |
 | 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
@@ -258,8 +258,42 @@ The 59 still undetected, all reviewed:
   return before a repository lookup that returns null anyway (1).
 
 For later slices: per-class constructor-null tests that `ConstructorGuardTests` already covers
-remain in `AssetMoveServiceTests`, `PortfolioServiceTests`, `CashFlowJsonRepositoryTests` and three
+remain in `PortfolioServiceTests`, `CashFlowJsonRepositoryTests` and three
 Shared.Infrastructure test classes.
+
+### 4.1 Investment.Application assets and transactions (48.0% → 65.0%)
+
+Run with `-AlsoTestedBy Investment.Infrastructure`: `TransactionService` and `CreditService` also
+have tests there.
+
+Gaps closed:
+
+- **Updates keep the stored currency.** The two tests that said so stored BRL, which is also the
+  enum's default, so dropping `existing?.Currency` went unnoticed in both services. They now store
+  USD.
+- **Credits by portfolio**: newest first, and a blank broker alone returns nothing (`||` → `&&`
+  survived because the repository stub held no credits).
+- **`AssetAdminService`**: an explicit class on create, an invalid ISIN and a blank current name on
+  update, null requests.
+- **`TransactionService`**: adding for an unknown broker returns null and writes nothing; the
+  transaction-type effects list.
+- **`DividendService`**: year totals newest year first.
+- **Spans**: success and failure for each operation, and the entity id on update and delete.
+
+Removed or merged:
+
+- The four `AssetMoveServiceTests` constructor tests (covered by `ConstructorGuardTests`).
+- Four "add a credit with field X" tests merged into one that sends every field; two update tests
+  likewise; the Application-side negative-value test, which the Infrastructure test repeats with
+  persistence.
+
+The 116 still undetected, all reviewed:
+
+- **Log and exception wording** (100): the "started"/"completed" information logs are 93 of them
+  (their statements and their text), which is why this slice stays at 65%. Seven are exception
+  messages, two of them on read-backs that cannot fail.
+- **Equivalent** (16): `ConfigureAwait(false)` → `true` (15), and `AssetMutationHelper`'s early
+  return before a lookup that returns null anyway.
 
 ## Log
 
@@ -271,3 +305,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-14 | 0 | Tooling built and tried on `Expense.cs` and `CategoryTotalsGrid.tsx`; every .NET project measured with bail off (local baseline); merged in #1283 |
 | 2026-11-14 | 2.2 | Rules 74.5% → 87.7%; 15 tests added, 3 removed or merged, 2 strengthened; unreachable XIRR clamp found |
 | 2026-11-14 | 4.5 | Prices, income, tax 47.7% → 77.5% (26.7% without the Infrastructure tests); span assertions added, 16 duplicated tests removed or merged; `-AlsoTestedBy` added to `stryker.ps1` |
+| 2026-11-15 | 4.1 | Assets and transactions 48.0% → 65.0%; currency-preservation tests fixed, spans and gaps added, 9 duplicated tests removed or merged; most of the rest is log wording |

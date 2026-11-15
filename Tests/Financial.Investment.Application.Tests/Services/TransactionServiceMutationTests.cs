@@ -153,6 +153,27 @@ public class TransactionServiceMutationTests
     }
 
     [Fact]
+    public async Task AddTransactionAsync_UnknownBroker_ReturnsNullAndWritesNothing()
+    {
+        _repository.Asset = MakeAsset();
+
+        var result = await CreateService().AddTransactionAsync(new TransactionCreateDTO
+        {
+            BrokerName = "NotABroker",
+            PortfolioName = "Default",
+            AssetName = "AAAA",
+            Date = new DateTime(2024, 1, 1),
+            Type = "Buy",
+            Quantity = 10m,
+            UnitPrice = 5m
+        });
+
+        result.Should().BeNull();
+        _repository.WriteCallCount.Should().Be(0);
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.AddTransaction");
+    }
+
+    [Fact]
     public async Task UpdateTransactionAsync_EmptyId_ReturnsNull()
     {
         _repository.Asset = MakeAsset();
@@ -169,6 +190,7 @@ public class TransactionServiceMutationTests
         });
 
         result.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.UpdateTransaction");
     }
 
     [Fact]
@@ -193,6 +215,8 @@ public class TransactionServiceMutationTests
 
         result.Should().NotBeNull();
         asset.Quantity.Should().Be(20m);
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.UpdateTransaction")
+            .Attributes[TelemetryAttributeKeys.EntityId].Should().Be(txId.ToString());
     }
 
     [Fact]
@@ -201,7 +225,7 @@ public class TransactionServiceMutationTests
         var asset = MakeAsset();
         var txId = Guid.NewGuid();
         var originalSnapshot = FxRateSnapshot.Create(Currency.GBP, 0.146m, FxRateSource.Frankfurter, TestClock.Default);
-        asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.BRL, fxRateSnapshot: originalSnapshot));
+        asset.AddTransaction(Transaction.CreateWithId(txId, new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m, currency: Currency.USD, fxRateSnapshot: originalSnapshot));
         _repository.Asset = asset;
         var provider = new StubExchangeRateProvider(0.99m);
         var service = new TransactionService(_repository, new NavigationService(_repository, TestHoldingValuationService.Create(), _tracer, NullLogger<NavigationService>.Instance), provider, ReportingCurrencyProvider, TimeProvider.System, _tracer, NullLogger<TransactionService>.Instance);
@@ -219,7 +243,7 @@ public class TransactionServiceMutationTests
         });
 
         var updated = asset.Transactions.Should().ContainSingle().Subject;
-        updated.Currency.Should().Be(Currency.BRL);
+        updated.Currency.Should().Be(Currency.USD);
         updated.FxRateSnapshot.Should().Be(originalSnapshot);
         provider.CallCount.Should().Be(0, "revising a transaction must not recapture its entry-time FX rate");
     }
@@ -258,6 +282,7 @@ public class TransactionServiceMutationTests
         });
 
         result.Should().BeNull();
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.DeleteTransaction");
     }
 
     [Fact]
@@ -278,6 +303,8 @@ public class TransactionServiceMutationTests
 
         result.Should().NotBeNull();
         asset.Transactions.Should().BeEmpty();
+        _tracer.ShouldHaveSucceededSpan("Investment.TransactionService.DeleteTransaction")
+            .Attributes[TelemetryAttributeKeys.EntityId].Should().Be(txId.ToString());
     }
 
     [Fact]
