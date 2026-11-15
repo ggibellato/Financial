@@ -103,4 +103,22 @@ public class RemoteJsonStorageTests
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
         span.RecordedException.Should().NotBeNull();
     }
+
+    [Fact]
+    public async Task WriteAsync_WhenUploadThrows_RecordsFailedSpanWithException()
+    {
+        var storage = new RemoteJsonStorage(
+            _ => "{}",
+            (_, _) => throw new InvalidOperationException("boom"),
+            "Pessoais/Gleison/Financeiros",
+            _tracer);
+
+        var act = async () => await storage.WriteAsync("{}");
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        var span = _tracer.Spans.Should().ContainSingle().Which;
+        span.Name.Should().Be("RemoteStorage.Upload");
+        span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Failed);
+        span.RecordedException.Should().NotBeNull();
+    }
 }

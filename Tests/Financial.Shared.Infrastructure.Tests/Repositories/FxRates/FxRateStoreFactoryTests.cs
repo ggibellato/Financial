@@ -52,6 +52,18 @@ public class FxRateStoreFactoryTests
     }
 
     [Fact]
+    public void Create_WithGoogleDriveProvider_CredentialsFileMissing_ThrowsFileNotFoundException()
+    {
+        var missingPath = Path.Combine(Path.GetTempPath(), $"fxrates-credentials-{Guid.NewGuid()}.json");
+        var options = new JsonRepositorySelection(
+            JsonRepositoryProvider.GoogleDriveJson, null, missingPath, "Pessoais/Gleison/Financeiros");
+
+        Action act = () => Factory.Create(options);
+
+        act.Should().Throw<FileNotFoundException>().Which.FileName.Should().Be(missingPath);
+    }
+
+    [Fact]
     public void Create_WithUnsupportedProvider_ThrowsArgumentOutOfRangeException()
     {
         var options = new JsonRepositorySelection((JsonRepositoryProvider)999, null, null, null);
