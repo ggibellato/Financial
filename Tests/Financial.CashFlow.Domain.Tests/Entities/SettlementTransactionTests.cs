@@ -443,4 +443,16 @@ public class SettlementTransactionTests
 
         entry.ContributionTo(mae).Should().Be(65m);
     }
+
+    [Fact]
+    public void NullAccount_IsRejected()
+    {
+        var entry = SettlementTransaction.Create(Mae(), EntryDate, "Medical appointment", null, SettlementPayer.Other, Currency.GBP, 40m, null, TestClock.Today);
+
+        using var _ = new AssertionScope();
+        FluentActions.Invoking(() => SettlementTransaction.EnsureSettlementAccount(null!)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => entry.ContributionTo(null!)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => entry.ContributionTo(null!, Currency.GBP)).Should().Throw<ArgumentNullException>();
+        FluentActions.Invoking(() => SettlementTransaction.ConvertedCurrencyOf(null!, Currency.GBP)).Should().Throw<ArgumentNullException>();
+    }
 }

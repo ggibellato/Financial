@@ -274,4 +274,23 @@ public class InvestmentAccountTests
 
         act.Should().Throw<ArgumentException>().WithMessage("Chase is not a card account.");
     }
+
+    [Fact]
+    public void Update_NamingAPotsAccountForANonPotsSource_Throws()
+    {
+        var account = InvestmentAccount.Create("ChaseSave", isActive: true, isLiability: false);
+
+        var act = () => account.Update("ChaseSave", true, false, InvestmentAccountSource.None, potsAccount: TestAccounts.Pots("Reserva"));
+
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Create_LinkedToAnInactiveCard_Throws()
+    {
+        var act = () => InvestmentAccount.Create(
+            "Amex balance", isActive: true, isLiability: true, InvestmentAccountSource.CreditCard, TestAccounts.CreditCard("Retired", isActive: false));
+
+        act.Should().Throw<ArgumentException>();
+    }
 }

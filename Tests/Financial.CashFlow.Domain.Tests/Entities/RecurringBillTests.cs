@@ -156,4 +156,14 @@ public class RecurringBillTests
 
         bill.Status.Should().Be(BillStatus.Unset);
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(31)]
+    public void Create_DueDayAtTheEdgesOfTheMonth_IsAllowed(int dueDay)
+    {
+        var bill = RecurringBill.Create(dueDay, "Council Tax", 120m, Area.UK, string.Empty, null, null);
+
+        bill.DueDay.Should().Be(dueDay);
+    }
 }
