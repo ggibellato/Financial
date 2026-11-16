@@ -623,17 +623,20 @@ describe('useAccountActionForms', () => {
 
   it('moves focus to the next entry once only after a save', async () => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
-    const { result, rerender } = renderActionForms()
+    const { result, rerender, formArea } = renderActionForms()
     act(() => result.current.openAction('AddExpense', openerButton()))
     act(() => result.current.expenseForm.setField('date', '2026-10-14'))
     act(() => result.current.expenseForm.setField('description', 'Tesco'))
     act(() => result.current.expenseForm.setField('value', '42.10'))
     act(() => result.current.expenseForm.setField('categoryId', 'category-extras'))
     await act(() => result.current.expenseForm.submit())
+    const focusedAfterSave = document.activeElement
     const elsewhere = openerButton()
     elsewhere.focus()
 
     rerender({ routeAccountId: 'bank-barclays', account: BARCLAYS })
+
+    expect(focusedAfterSave).toBe(formArea.querySelector('input[name="description"]'))
 
     expect(document.activeElement).toBe(elsewhere)
   })
@@ -644,5 +647,24 @@ describe('useAccountActionForms', () => {
     act(() => result.current.openAction('AddExpense', openerButton()))
 
     expect(result.current.activeAction).toBe('AddExpense')
+  })
+
+  it('moves focus to the form again when a pots account deposit switches to an income deposit', () => {
+    const potsAccounts = [potsAccount({ id: 'p1', name: 'Reserva' })]
+    const { result } = renderHook(() =>
+      useAccountActionForms('bank-barclays', BARCLAYS, OPTIONS, { year: 2026, month: 10 }, vi.fn(), undefined, { accounts: potsAccounts, hasPots: true }),
+    )
+    const formArea = document.createElement('div')
+    formArea.innerHTML = '<input name="date" /><input name="description" /><button>Save</button>'
+    document.body.appendChild(formArea)
+    result.current.formAreaRef.current = formArea
+    act(() => result.current.openAction('Deposit', openerButton()))
+    const elsewhere = openerButton()
+    elsewhere.focus()
+
+    act(() => result.current.openDepositFromIncome())
+
+    expect(result.current.activeAction).toBe('Deposit')
+    expect(document.activeElement).toBe(formArea.querySelector('input[name="date"]'))
   })
 })
