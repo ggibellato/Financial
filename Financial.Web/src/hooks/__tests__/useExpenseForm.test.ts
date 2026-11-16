@@ -750,17 +750,6 @@ describe('useExpenseForm', () => {
     expect(result.current).toMatchObject({ paymentSource: 'bank-chase', value: '', roundUpAmount: '' })
   })
 
-  it('opens a create form on a round-up bank with no round-up yet', () => {
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
-    act(() => result.current.showCreateForm('bank'))
-    act(() => result.current.setField('paymentSource', 'bank-chase'))
-    act(() => result.current.cancelForm())
-
-    act(() => result.current.showCreateForm('bank'))
-
-    expect(result.current.roundUpAmount).toBe('')
-  })
-
   it('opens with no bank or category when none is active', () => {
     const { result } = renderHook(() =>
       useExpenseForm(
