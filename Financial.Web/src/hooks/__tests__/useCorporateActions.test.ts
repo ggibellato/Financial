@@ -919,6 +919,62 @@ describe('useCorporateActions', () => {
     return rendered.result
   }
 
+  async function saveNewMerger(result: { current: ReturnType<typeof useCorporateActions> }) {
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+  }
+
+  it('reports a merger that saved but returned neither asset', async () => {
+    addMergerMock.mockResolvedValueOnce({ source: null, target: null })
+    const result = await renderLoadedForAsset()
+
+    await saveNewMerger(result)
+
+    expect(result.current.saveError).toBe('Merger saved but the asset could not be refreshed — reload the page.')
+  })
+
+  it('reports a spin-off that saved but returned neither asset', async () => {
+    addSpinOffMock.mockResolvedValueOnce({ parent: null, new: null })
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.saveForm())
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+
+    expect(result.current.saveError).toBe('Spin-off saved but the asset could not be refreshed — reload the page.')
+  })
+
+  it('shows the source side of a merger result when neither side is the selected asset', async () => {
+    const source = { ...ASSET_DETAILS, name: 'Old name' }
+    addMergerMock.mockResolvedValueOnce({ source, target: { ...ASSET_DETAILS, name: 'Company B' } })
+    const result = await renderLoadedForAsset()
+
+    await saveNewMerger(result)
+
+    expect(result.current.asset).toEqual(source)
+  })
+
+  it('shows the target side of a merger result when the source side is missing', async () => {
+    const target = { ...ASSET_DETAILS, name: 'Company B' }
+    addMergerMock.mockResolvedValueOnce({ source: null, target })
+    const result = await renderLoadedForAsset()
+
+    await saveNewMerger(result)
+
+    expect(result.current.asset).toEqual(target)
+  })
+
   it('saves a split ratio as the numerator over the denominator, with a blank note sent as null', async () => {
     addSplitMock.mockResolvedValueOnce(ASSET_DETAILS)
     const result = await renderLoadedForAsset()
