@@ -911,6 +911,337 @@ describe('useCorporateActions', () => {
     expect(addSpinOffMock).not.toHaveBeenCalled()
   })
 
+  async function renderLoadedForAsset() {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const rendered = renderHook(() => useCorporateActions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(rendered.result.current.isLoading).toBe(false))
+    return rendered.result
+  }
+
+  it('saves a split ratio as the numerator over the denominator, with a blank note sent as null', async () => {
+    addSplitMock.mockResolvedValueOnce(ASSET_DETAILS)
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formRatioNumerator', '3'))
+    act(() => result.current.setFormField('formRatioDenominator', '2'))
+    act(() => result.current.setFormField('formNote', '   '))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addSplitMock).toHaveBeenCalled())
+    expect(addSplitMock).toHaveBeenCalledWith(expect.objectContaining({ ratioFactor: 1.5, note: null }))
+  })
+
+  it('sends a typed split note as written', async () => {
+    addSplitMock.mockResolvedValueOnce(ASSET_DETAILS)
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formRatioNumerator', '2'))
+    act(() => result.current.setFormField('formRatioDenominator', '1'))
+    act(() => result.current.setFormField('formNote', ' Board approved '))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addSplitMock).toHaveBeenCalled())
+    expect(addSplitMock).toHaveBeenCalledWith(expect.objectContaining({ note: ' Board approved ' }))
+  })
+
+  it('rejects a zero numerator without calling the API', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formRatioNumerator', '0'))
+    act(() => result.current.setFormField('formRatioDenominator', '1'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields.formRatio).toBe('Enter a valid split ratio other than 1-for-1.')
+    expect(addSplitMock).not.toHaveBeenCalled()
+  })
+
+  it('reopens a split without a stored ratio, and an exact 1-for-1 factor, as typed fractions', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showEditForm({ ...SPLIT_RECORD, ratioFactor: null }))
+    const blank = [result.current.formRatioNumerator, result.current.formRatioDenominator]
+    act(() => result.current.showEditForm({ ...SPLIT_RECORD, ratioFactor: 1 }))
+
+    expect(blank).toEqual(['', '1'])
+    expect([result.current.formRatioNumerator, result.current.formRatioDenominator]).toEqual(['1', '1'])
+  })
+
+  it('loads a merger being edited into the merger fields only', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showEditForm({ ...MERGER_RECORD, cashInLieu: 3.25 }))
+
+    expect(result.current).toMatchObject({
+      formType: 'Merger',
+      formTargetAsset: { assetName: 'Company B' },
+      formExchangeRatio: '0.5',
+      formCashInLieu: '3.25',
+      formNewAsset: { assetName: '' },
+      formQuantityReceived: '100',
+      formAllocationPercentage: '',
+    })
+  })
+
+  it('loads a spin-off being edited into the spin-off fields only', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showEditForm(SPINOFF_RECORD))
+
+    expect(result.current).toMatchObject({
+      formType: 'SpinOff',
+      formNewAsset: { assetName: 'Company D' },
+      formTargetAsset: { assetName: '' },
+      formExchangeRatio: '',
+      formCashInLieu: '',
+      formQuantityReceived: '40',
+      formAllocationPercentage: '25',
+    })
+  })
+
+  it('sends a merger with whitespace-only identity fields and cash in lieu as null, and typed ones as written', async () => {
+    addMergerMock.mockResolvedValueOnce({ source: { ...ASSET_DETAILS, quantity: 0 }, target: { ...ASSET_DETAILS, name: 'Company B' } })
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+    act(() =>
+      result.current.setTargetAsset({
+        assetName: 'Company B',
+        identity: { ...BLANK_TARGET_ASSET_IDENTITY, isin: '  ', exchange: 'BVMF', ticker: '  ' },
+      }),
+    )
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formCashInLieu', '  '))
+    act(() => result.current.setFormField('formNote', ' Approved '))
+    act(() => result.current.setFormField('formEffectiveDate', '2024-05-01'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addMergerMock).toHaveBeenCalled())
+    expect(addMergerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ targetISIN: null, targetExchange: 'BVMF', targetTicker: null, cashInLieuAmount: null, note: ' Approved ' }),
+    )
+  })
+
+  it('sends merger identity fields as written when every one is typed, with a blank note as null', async () => {
+    addMergerMock.mockResolvedValueOnce({ source: { ...ASSET_DETAILS, quantity: 0 }, target: { ...ASSET_DETAILS, name: 'Company B' } })
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+    act(() =>
+      result.current.setTargetAsset({
+        assetName: 'Company B',
+        identity: { ...BLANK_TARGET_ASSET_IDENTITY, isin: 'BRCOMB', exchange: '  ', ticker: 'COMB3' },
+      }),
+    )
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formCashInLieu', '0'))
+    act(() => result.current.setFormField('formNote', '  '))
+    act(() => result.current.setFormField('formEffectiveDate', '2024-05-01'))
+    act(() => result.current.advanceToConfirm())
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addMergerMock).toHaveBeenCalled())
+    expect(addMergerMock).toHaveBeenCalledWith(
+      expect.objectContaining({ targetISIN: 'BRCOMB', targetExchange: null, targetTicker: 'COMB3', cashInLieuAmount: 0, note: null }),
+    )
+  })
+
+  it.each(['0', '100'])('accepts a spin-off allocation of %s%%, sending whitespace-only identity fields as null', async (allocation) => {
+    addSpinOffMock.mockResolvedValueOnce({ parent: ASSET_DETAILS, new: { ...ASSET_DETAILS, name: 'Company D' } })
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+    act(() =>
+      result.current.setNewAsset({
+        assetName: 'Company D',
+        identity: { ...BLANK_TARGET_ASSET_IDENTITY, isin: '  ', exchange: 'BVMF', ticker: '  ' },
+      }),
+    )
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', allocation))
+    act(() => result.current.setFormField('formNote', ' Approved '))
+    act(() => result.current.setFormField('formEffectiveDate', '2024-06-01'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addSpinOffMock).toHaveBeenCalled())
+    expect(addSpinOffMock).toHaveBeenCalledWith(
+      expect.objectContaining({ allocationPercentage: Number(allocation), newISIN: null, newExchange: 'BVMF', newTicker: null, note: ' Approved ' }),
+    )
+  })
+
+  it('sends spin-off identity fields as written when typed, with a blank note as null', async () => {
+    addSpinOffMock.mockResolvedValueOnce({ parent: ASSET_DETAILS, new: { ...ASSET_DETAILS, name: 'Company D' } })
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    await waitFor(() => expect(result.current.targetAssetOptions.isLoading).toBe(false))
+    act(() =>
+      result.current.setNewAsset({
+        assetName: 'Company D',
+        identity: { ...BLANK_TARGET_ASSET_IDENTITY, isin: 'BRCOMD', exchange: '  ', ticker: 'COMD3' },
+      }),
+    )
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.setFormField('formNote', '  '))
+    act(() => result.current.setFormField('formEffectiveDate', '2024-06-01'))
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addSpinOffMock).toHaveBeenCalled())
+    expect(addSpinOffMock).toHaveBeenCalledWith(
+      expect.objectContaining({ newISIN: 'BRCOMD', newExchange: null, newTicker: 'COMD3', note: null }),
+    )
+  })
+
+  it('rejects a blank spin-off allocation without calling the API', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields.formAllocationPercentage).toBe('Allocation percentage must be between 0 and 100.')
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
+  it('opens a new form with the merger and spin-off fields blank, and cancelling closes it', async () => {
+    const result = await renderLoadedForAsset()
+    act(() => result.current.showEditForm(SPINOFF_RECORD))
+
+    act(() => result.current.showNewForm())
+    const opened = { ...result.current }
+    act(() => result.current.cancelForm())
+
+    expect(opened).toMatchObject({ formExchangeRatio: '', formQuantityReceived: '', formAllocationPercentage: '', isFormVisible: true })
+    expect(result.current.isFormVisible).toBe(false)
+  })
+
+  it('opens a split being edited with the merger and spin-off quantities blank', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showEditForm(SPLIT_RECORD))
+
+    expect(result.current).toMatchObject({ formQuantityReceived: '', formAllocationPercentage: '', formExchangeRatio: '' })
+  })
+
+  it('looks up assets for a new merger or spin-off only, not for a split', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    const callsForSplit = getAdminAssetsMock.mock.calls.length
+    act(() => result.current.setFormField('formType', 'Merger'))
+    await waitFor(() => expect(getAdminAssetsMock).toHaveBeenCalled())
+
+    expect(callsForSplit).toBe(0)
+  })
+
+  it('rejects a negative spin-off allocation without calling the API', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '-1'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields.formAllocationPercentage).toBe('Allocation percentage must be between 0 and 100.')
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a spin-off allocation above 100% without calling the API', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: 'Company D', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '100.01'))
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields.formAllocationPercentage).toBeDefined()
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a whitespace-only merger effective date and target name', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: '   ', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formEffectiveDate', '  '))
+    act(() => result.current.advanceToConfirm())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(Object.keys(result.current.saveErrorFields)).toEqual(expect.arrayContaining(['formEffectiveDate', 'formTargetAsset']))
+  })
+
+  it('rejects a negative cash in lieu', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'Merger'))
+    act(() => result.current.setTargetAsset({ assetName: 'Company B', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formExchangeRatio', '0.5'))
+    act(() => result.current.setFormField('formCashInLieu', '-1'))
+    act(() => result.current.advanceToConfirm())
+
+    expect(result.current.formStep).toBe('fields')
+    expect(result.current.saveErrorFields.formCashInLieu).toBeDefined()
+  })
+
+  it('rejects a whitespace-only spin-off effective date and new asset name', async () => {
+    const result = await renderLoadedForAsset()
+
+    act(() => result.current.showNewForm())
+    act(() => result.current.setFormField('formType', 'SpinOff'))
+    act(() => result.current.setNewAsset({ assetName: '   ', identity: BLANK_TARGET_ASSET_IDENTITY }))
+    act(() => result.current.setFormField('formQuantityReceived', '40'))
+    act(() => result.current.setFormField('formAllocationPercentage', '25'))
+    act(() => result.current.setFormField('formEffectiveDate', '  '))
+    act(() => result.current.saveForm())
+
+    expect(Object.keys(result.current.saveErrorFields)).toEqual(expect.arrayContaining(['formEffectiveDate', 'formNewAsset']))
+    expect(addSpinOffMock).not.toHaveBeenCalled()
+  })
+
+  it('keeps the edit form open when a different corporate action is deleted', async () => {
+    deleteCorporateActionMock.mockResolvedValueOnce(ASSET_DETAILS)
+    const result = await renderLoadedForAsset()
+    act(() => result.current.showEditForm(SPLIT_RECORD))
+
+    act(() => result.current.deleteCorporateAction(MERGER_RECORD.id))
+    await waitFor(() => expect(result.current.deletingId).toBeNull())
+
+    expect(result.current.isFormVisible).toBe(true)
+    expect(result.current.editingId).toBe(SPLIT_RECORD.id)
+  })
+
+  it('stops loading when the fetch fails', async () => {
+    getAssetDetailsMock.mockReset().mockRejectedValue('unexpected')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCorporateActions(), { wrapper })
+
+    setNode(ASSET_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load corporate actions.'))
+    expect(result.current.isLoading).toBe(false)
+  })
+
   describe('responses for a node the user has already left', () => {
     const OTHER_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, name: 'TASA4', corporateActions: [MERGER_RECORD] }
     const LEFT_NODE_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, corporateActions: [] }
