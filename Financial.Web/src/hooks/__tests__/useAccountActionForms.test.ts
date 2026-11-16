@@ -550,8 +550,10 @@ describe('useAccountActionForms', () => {
     const { result, formArea } = renderActionForms()
     act(() => result.current.openOperation({ operation: DEPOSIT_OPERATION, income: null }))
     const navigate = vi.fn()
+    const opener = openerButton()
+    opener.focus()
 
-    act(() => result.current.followOperation(DEPOSIT_OPERATION.operationId, openerButton(), navigate))
+    act(() => result.current.followOperation(DEPOSIT_OPERATION.operationId, opener, navigate))
 
     expect(navigate).not.toHaveBeenCalled()
     expect(document.activeElement).toBe(formArea.querySelector('input[name="date"]'))
@@ -584,5 +586,63 @@ describe('useAccountActionForms', () => {
     act(() => result.current.closeFormOfRemovedRow([INCOME_ROW]))
 
     expect(result.current.expenseForm.isOpen).toBe(false)
+  })
+
+  it('moves focus to the form again when a row being edited is moved instead', () => {
+    const { result, formArea } = renderActionForms()
+    act(() => result.current.openRowEdit(EXPENSE_ROW, openerButton()))
+    const elsewhere = openerButton()
+    elsewhere.focus()
+
+    act(() => result.current.openRowMove(EXPENSE_ROW, openerButton()))
+
+    expect(document.activeElement).toBe(formArea.querySelector('input[name="date"]'))
+  })
+
+  it('returns focus to the opener when the form closes with focus on the page body', () => {
+    const { result } = renderActionForms()
+    const opener = openerButton()
+    act(() => result.current.openRowEdit(EXPENSE_ROW, opener))
+    ;(document.activeElement as HTMLElement).blur()
+
+    act(() => result.current.closeFormsOf(EXPENSE_ROW))
+
+    expect(document.activeElement).toBe(opener)
+  })
+
+  it('leaves focus where it is when the form closes with focus elsewhere', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openRowEdit(EXPENSE_ROW, openerButton()))
+    const elsewhere = openerButton()
+    elsewhere.focus()
+
+    act(() => result.current.closeFormsOf(EXPENSE_ROW))
+
+    expect(document.activeElement).toBe(elsewhere)
+  })
+
+  it('moves focus to the next entry once only after a save', async () => {
+    createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
+    const { result, rerender } = renderActionForms()
+    act(() => result.current.openAction('AddExpense', openerButton()))
+    act(() => result.current.expenseForm.setField('date', '2026-10-14'))
+    act(() => result.current.expenseForm.setField('description', 'Tesco'))
+    act(() => result.current.expenseForm.setField('value', '42.10'))
+    act(() => result.current.expenseForm.setField('categoryId', 'category-extras'))
+    await act(() => result.current.expenseForm.submit())
+    const elsewhere = openerButton()
+    elsewhere.focus()
+
+    rerender({ routeAccountId: 'bank-barclays', account: BARCLAYS })
+
+    expect(document.activeElement).toBe(elsewhere)
+  })
+
+  it('treats an account that has not loaded yet as not a card', () => {
+    const { result } = renderHook(() => useAccountActionForms('bank-barclays', null, OPTIONS, { year: 2026, month: 10 }, vi.fn()))
+
+    act(() => result.current.openAction('AddExpense', openerButton()))
+
+    expect(result.current.activeAction).toBe('AddExpense')
   })
 })
