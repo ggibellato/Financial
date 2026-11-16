@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AssetDetailsDto, CreditDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
-import { useCredits } from '../useCredits'
+import { buildSelectionKey, useCredits } from '../useCredits'
 import { pinDate } from '../../test-utils/pinDate'
 import { deferred } from '../../test-utils/deferred'
 
@@ -704,6 +704,183 @@ describe('useCredits', () => {
     expect(result.current.selectedMode).toBe('Stacked')
     act(() => result.current.setChartType('Line'))
     expect(result.current.selectedMode).toBe('Stacked')
+  })
+
+  function credit(id: string, date: string, value = 10): CreditDto {
+    return {
+      id, date, type: 'Dividend', value, withheld: 0, intermediationFee: 0, netAmount: value, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+    }
+  }
+
+  async function renderLoadedAsset(credits: CreditDto[] = [CREDIT_A, CREDIT_B]) {
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const rendered = renderHook(() => useCredits(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(rendered.result.current.credits).toHaveLength(credits.length))
+    return rendered.result
+  }
+
+  it('builds a separate selection key for an asset, a portfolio and a broker', () => {
+    expect(buildSelectionKey(ASSET_NODE)).toBe('Asset|XPI|Acoes|KLBN4')
+    expect(buildSelectionKey({ nodeType: 'Asset', brokerName: 'XPI' })).toBe('Asset|XPI||')
+    expect(buildSelectionKey(PORTFOLIO_NODE)).toBe('Portfolio|XPI|Acoes')
+    expect(buildSelectionKey({ nodeType: 'Portfolio', brokerName: 'XPI' })).toBe('Portfolio|XPI|')
+    expect(buildSelectionKey(BROKER_NODE)).toBe('Broker|XPI')
+  })
+
+  it('orders the monthly totals by year, then month', async () => {
+    const result = await renderLoadedAsset([credit('c1', '2024-03-05T00:00:00'), credit('c2', '2023-11-05T00:00:00'), credit('c3', '2024-01-05T00:00:00'), credit('c4', '2023-02-05T00:00:00')])
+
+    act(() => result.current.setFilter('all-time'))
+
+    expect(result.current.chartData.map((bucket) => bucket.month)).toEqual(['02/2023', '11/2023', '01/2024', '03/2024'])
+  })
+
+  it('keeps credits from the first day of the chosen period and leaves earlier ones out', async () => {
+    pinDate('2024-06-15T12:00:00Z')
+    const result = await renderLoadedAsset([
+      credit('recent', '2024-05-05T00:00:00'),
+      credit('first-day', '2023-07-01T00:00:00'),
+      credit('old', '2023-06-30T00:00:00'),
+    ])
+
+    act(() => result.current.setFilter('last-12-months'))
+
+    expect(result.current.chartData.map((bucket) => bucket.month)).toEqual(['07/2023', '05/2024'])
+  })
+
+  it.each([
+    ['broker', BROKER_NODE, () => getCreditsByBrokerMock],
+    ['portfolio', PORTFOLIO_NODE, () => getCreditsByPortfolioMock],
+  ] as const)('shows the load message when the %s credits fail to load', async (_, node, mockOf) => {
+    mockOf().mockRejectedValue('unexpected')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+
+    setNode(node)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load credits.'))
+  })
+
+  it('shows the load message when the asset credits fail to load', async () => {
+    getAssetDetailsMock.mockRejectedValue('unexpected')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+
+    setNode(ASSET_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load credits.'))
+  })
+
+  it('loads nothing for an asset or portfolio node missing its names', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    renderHook(() => useCredits(), { wrapper })
+
+    setNode({ nodeType: 'Asset', brokerName: 'XPI', portfolioName: 'Acoes' })
+    setNode({ nodeType: 'Portfolio', brokerName: 'XPI' })
+
+    expect(getAssetDetailsMock).not.toHaveBeenCalled()
+    expect(getCreditsByPortfolioMock).not.toHaveBeenCalled()
+  })
+
+  it('refuses a whitespace-only date and non-positive shares', async () => {
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '  ')
+      result.current.setFormField('formValue', '50')
+      result.current.setFormField('formSharesForDividend', '0')
+    })
+
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields).toMatchObject({ formDate: 'Date is required.', formSharesForDividend: 'Shares must be greater than zero.' })
+    expect(addCreditMock).not.toHaveBeenCalled()
+  })
+
+  it('sends whitespace-only withheld and fee as zero', async () => {
+    addCreditMock.mockResolvedValue(ASSET_DETAILS)
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formValue', '50')
+      result.current.setFormField('formWithheld', '  ')
+      result.current.setFormField('formIntermediationFee', '  ')
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ withheld: 0, intermediationFee: 0 })))
+  })
+
+  it('sends the withheld and fee typed in', async () => {
+    addCreditMock.mockResolvedValue(ASSET_DETAILS)
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formValue', '50')
+      result.current.setFormField('formWithheld', '2.5')
+      result.current.setFormField('formIntermediationFee', '1.25')
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ withheld: 2.5, intermediationFee: 1.25 })))
+  })
+
+  it('treats whitespace-only shares as no shares', async () => {
+    addCreditMock.mockResolvedValue(ASSET_DETAILS)
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formValue', '50')
+      result.current.setFormField('formSharesForDividend', '  ')
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ sharesForDividend: null })))
+  })
+
+  it('shows the save fallback message when the save fails without one', async () => {
+    addCreditMock.mockRejectedValue('unexpected')
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formValue', '50')
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(result.current.saveError).toBe('Failed to save credit.'))
+  })
+
+  it('keeps the edit form open when a different credit is deleted', async () => {
+    deleteCreditMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [CREDIT_A] })
+    const result = await renderLoadedAsset()
+    act(() => result.current.showEditForm(CREDIT_A))
+
+    act(() => result.current.deleteCredit(CREDIT_B.id))
+    await waitFor(() => expect(result.current.deletingId).toBeNull())
+
+    expect(result.current.isFormVisible).toBe(true)
+  })
+
+  it('does not delete while a portfolio is selected', async () => {
+    getCreditsByPortfolioMock.mockResolvedValue([CREDIT_B])
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useCredits(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() => expect(result.current.credits).toHaveLength(1))
+
+    act(() => result.current.deleteCredit(CREDIT_B.id))
+
+    expect(deleteCreditMock).not.toHaveBeenCalled()
   })
 
   describe('responses for a node the user has already left', () => {
