@@ -545,6 +545,197 @@ describe('useTransactions', () => {
     expect(result.current.asset).toEqual(ASSET_DETAILS)
   })
 
+  async function renderLoadedAsset(asset: AssetDetailsDto = ASSET_DETAILS) {
+    getAssetDetailsMock.mockResolvedValue(asset)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const rendered = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(rendered.result.current).toMatchObject({ asset: expect.anything(), typeEffectsLoaded: true }))
+    return rendered.result
+  }
+
+  it('reports the transaction types as not loaded until they arrive', () => {
+    getTransactionTypeEffectsMock.mockReset().mockReturnValue(new Promise(() => {}))
+    const { wrapper } = createSelectedNodeWrapper()
+
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+
+    expect(result.current.typeEffectsLoaded).toBe(false)
+  })
+
+  it('shows the asset load message when the asset fails to load', async () => {
+    getAssetDetailsMock.mockRejectedValue('unexpected')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+
+    setNode(ASSET_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load asset details.'))
+  })
+
+  it.each([
+    ['broker', BROKER_NODE, () => getTransactionsByBrokerMock],
+    ['portfolio', PORTFOLIO_NODE, () => getTransactionsByPortfolioMock],
+  ] as const)('shows the transactions load message when the %s transactions fail to load', async (_, node, mockOf) => {
+    mockOf().mockRejectedValue('unexpected')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+
+    setNode(node)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load transactions.'))
+  })
+
+  it('loads nothing for an asset or portfolio node missing its names', () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+
+    setNode({ nodeType: 'Asset', brokerName: 'XPI', portfolioName: 'Acoes' })
+    setNode({ nodeType: 'Portfolio', brokerName: 'XPI' })
+
+    expect(getAssetDetailsMock).not.toHaveBeenCalled()
+    expect(getTransactionsByPortfolioMock).not.toHaveBeenCalled()
+    expect(result.current.isLoading).toBe(false)
+  })
+
+  it('clears the loaded asset when a node missing its names is selected', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    setNode({ nodeType: 'Asset', brokerName: 'XPI', portfolioName: 'Acoes' })
+
+    expect(result.current.asset).toBeNull()
+  })
+
+  it('charts an asset from its own transactions', async () => {
+    const result = await renderLoadedAsset({ ...ASSET_DETAILS, transactions: [TRANSACTION_A] })
+
+    act(() => result.current.setFilter('all-time'))
+
+    expect(result.current.chartData.some((bucket) => bucket.netInvested === 420.5)).toBe(true)
+  })
+
+  it('saves a type that moves no quantity without a quantity or unit price', async () => {
+    getTransactionTypeEffectsMock.mockReset().mockResolvedValue([{ type: 'Fee', quantityEffect: 'None', cashEffect: 'Decrease' }])
+    addTransactionMock.mockResolvedValue(ASSET_DETAILS)
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formType', 'Fee')
+      result.current.setFormField('formFees', '3')
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'Fee', quantity: 0, unitPrice: 0 })))
+  })
+
+  it('refuses a zero quantity and a zero unit price for a type that moves quantity', async () => {
+    getTransactionTypeEffectsMock.mockReset().mockResolvedValue([{ type: 'Buy', quantityEffect: 'Increase', cashEffect: 'Decrease' }])
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '  ')
+      result.current.setFormField('formType', 'Buy')
+      result.current.setFormField('formQuantity', '0')
+      result.current.setFormField('formUnitPrice', '0')
+    })
+
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields).toMatchObject({
+      formDate: 'Date is required.',
+      formQuantity: 'Quantity must be a positive number.',
+      formUnitPrice: 'Unit price must be a positive number.',
+    })
+    expect(addTransactionMock).not.toHaveBeenCalled()
+  })
+
+  it('leaves a zero lot allocation out of a specific-ID sale', async () => {
+    const specificIdAsset = { ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const }
+    addTransactionMock.mockResolvedValue(specificIdAsset)
+    const result = await renderLoadedAsset(specificIdAsset)
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-01-01')
+      result.current.setFormField('formType', 'Sell')
+      result.current.setFormField('formQuantity', '10')
+      result.current.setFormField('formUnitPrice', '5')
+      result.current.setLotAllocation('lot-1', '10')
+      result.current.setLotAllocation('lot-2', '0')
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() =>
+      expect(addTransactionMock).toHaveBeenCalledWith(
+        expect.objectContaining({ specificLotAllocations: [{ sourceTransactionId: 'lot-1', quantity: 10 }] }),
+      ),
+    )
+  })
+
+  it('refuses a specific-ID sale with no lot allocated', async () => {
+    const result = await renderLoadedAsset({ ...ASSET_DETAILS, costBasisMethod: 'SpecificId' as const })
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2026-01-01')
+      result.current.setFormField('formType', 'Sell')
+      result.current.setFormField('formQuantity', '10')
+      result.current.setFormField('formUnitPrice', '5')
+    })
+
+    act(() => result.current.saveForm())
+
+    expect(result.current.saveErrorFields.formLotAllocations).toBe('Allocate exactly 10 across one or more lots (currently allocated: 0).')
+    expect(addTransactionMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['  ', '  ', 0, 0],
+    ['1.5', '0.75', 1.5, 0.75],
+  ])('sends fees %j and withheld %j as %d and %d', async (fees, withheld, expectedFees, expectedWithheld) => {
+    addTransactionMock.mockResolvedValue(ASSET_DETAILS)
+    const result = await renderLoadedAsset()
+    act(() => result.current.showNewForm())
+    act(() => {
+      result.current.setFormField('formDate', '2024-06-01')
+      result.current.setFormField('formQuantity', '50')
+      result.current.setFormField('formUnitPrice', '10')
+      result.current.setFormField('formFees', fees)
+      result.current.setFormField('formWithheld', withheld)
+    })
+
+    act(() => result.current.saveForm())
+
+    await waitFor(() => expect(addTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ fees: expectedFees, withheld: expectedWithheld })))
+  })
+
+  it('keeps the edit form open when a different transaction is deleted', async () => {
+    deleteTransactionMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [TRANSACTION_A] })
+    const result = await renderLoadedAsset()
+    act(() => result.current.showEditForm(TRANSACTION_A))
+
+    act(() => result.current.deleteTransaction(TRANSACTION_B.id))
+    await waitFor(() => expect(result.current.deletingId).toBeNull())
+
+    expect(result.current.isFormVisible).toBe(true)
+  })
+
+  it('does not delete while a portfolio is selected', async () => {
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(PORTFOLIO_NODE)
+    await waitFor(() => expect(getTransactionsByPortfolioMock).toHaveBeenCalled())
+
+    act(() => result.current.deleteTransaction(TRANSACTION_B.id))
+
+    expect(deleteTransactionMock).not.toHaveBeenCalled()
+  })
+
   describe('responses for a node the user has already left', () => {
     const OTHER_ASSET_NODE: SelectedNode = { ...ASSET_NODE, assetName: 'TAEE3', ticker: 'TAEE3' }
     const OTHER_DETAILS: AssetDetailsDto = { ...ASSET_DETAILS, name: 'TAEE3', transactions: [TRANSACTION_B] }
@@ -675,6 +866,17 @@ describe('useTransactions', () => {
     await waitFor(() => expect(result.current.chartData.length).toBeGreaterThan(0))
   })
 
+  it('charts a broker from its transaction summary', async () => {
+    getTransactionsByBrokerMock.mockResolvedValue([SUMMARY_ITEM_A])
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useTransactions(), { wrapper })
+    setNode(BROKER_NODE)
+
+    act(() => result.current.setFilter('all-time'))
+
+    await waitFor(() => expect(result.current.chartData.some((bucket) => bucket.netInvested === 420.5)).toBe(true))
+  })
+
   it('fetches_transactions_on_portfolio_selection', async () => {
     getTransactionsByPortfolioMock.mockResolvedValue([SUMMARY_ITEM_A])
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -775,6 +977,13 @@ describe('buildMonthlyNetInvested', () => {
 
     expect(buckets[0].month).toBe(formatMonthKey(new Date(2024, 0, 10)))
     expect(buckets[buckets.length - 1].month).toBe(formatMonthKey(referenceDate))
+  })
+
+  it('starts the range at the earliest transaction even when it is listed first', () => {
+    const referenceDate = new Date(2024, 2, 31)
+    const buckets = buildMonthlyNetInvested([SUMMARY_ITEM_B, SUMMARY_ITEM_A], 'all-time', referenceDate)
+
+    expect(buckets[0].month).toBe(formatMonthKey(new Date(2024, 0, 10)))
   })
 
   it('starts the range at the reference month when the all-time filter is selected with no transactions', () => {
