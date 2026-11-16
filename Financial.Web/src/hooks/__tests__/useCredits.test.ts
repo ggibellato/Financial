@@ -706,9 +706,9 @@ describe('useCredits', () => {
     expect(result.current.selectedMode).toBe('Stacked')
   })
 
-  function credit(id: string, date: string, value = 10): CreditDto {
+  function credit(id: string, date: string): CreditDto {
     return {
-      id, date, type: 'Dividend', value, withheld: 0, intermediationFee: 0, netAmount: value, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
+      id, date, type: 'Dividend', value: 10, withheld: 0, intermediationFee: 0, netAmount: 10, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
     }
   }
 
@@ -753,6 +753,7 @@ describe('useCredits', () => {
   it.each([
     ['broker', BROKER_NODE, () => getCreditsByBrokerMock],
     ['portfolio', PORTFOLIO_NODE, () => getCreditsByPortfolioMock],
+    ['asset', ASSET_NODE, () => getAssetDetailsMock],
   ] as const)('shows the load message when the %s credits fail to load', async (_, node, mockOf) => {
     mockOf().mockRejectedValue('unexpected')
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -763,17 +764,7 @@ describe('useCredits', () => {
     await waitFor(() => expect(result.current.error).toBe('Unable to load credits.'))
   })
 
-  it('shows the load message when the asset credits fail to load', async () => {
-    getAssetDetailsMock.mockRejectedValue('unexpected')
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-
-    setNode(ASSET_NODE)
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load credits.'))
-  })
-
-  it('loads nothing for an asset or portfolio node missing its names', async () => {
+  it('loads nothing for an asset or portfolio node missing its names', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => useCredits(), { wrapper })
 
@@ -799,36 +790,23 @@ describe('useCredits', () => {
     expect(addCreditMock).not.toHaveBeenCalled()
   })
 
-  it('sends whitespace-only withheld and fee as zero', async () => {
+  it.each([
+    ['  ', '  ', 0, 0],
+    ['2.5', '1.25', 2.5, 1.25],
+  ])('sends withheld %j and fee %j as %d and %d', async (withheld, fee, expectedWithheld, expectedFee) => {
     addCreditMock.mockResolvedValue(ASSET_DETAILS)
     const result = await renderLoadedAsset()
     act(() => result.current.showNewForm())
     act(() => {
       result.current.setFormField('formDate', '2024-06-01')
       result.current.setFormField('formValue', '50')
-      result.current.setFormField('formWithheld', '  ')
-      result.current.setFormField('formIntermediationFee', '  ')
+      result.current.setFormField('formWithheld', withheld)
+      result.current.setFormField('formIntermediationFee', fee)
     })
 
     act(() => result.current.saveForm())
 
-    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ withheld: 0, intermediationFee: 0 })))
-  })
-
-  it('sends the withheld and fee typed in', async () => {
-    addCreditMock.mockResolvedValue(ASSET_DETAILS)
-    const result = await renderLoadedAsset()
-    act(() => result.current.showNewForm())
-    act(() => {
-      result.current.setFormField('formDate', '2024-06-01')
-      result.current.setFormField('formValue', '50')
-      result.current.setFormField('formWithheld', '2.5')
-      result.current.setFormField('formIntermediationFee', '1.25')
-    })
-
-    act(() => result.current.saveForm())
-
-    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ withheld: 2.5, intermediationFee: 1.25 })))
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ withheld: expectedWithheld, intermediationFee: expectedFee })))
   })
 
   it('treats whitespace-only shares as no shares', async () => {

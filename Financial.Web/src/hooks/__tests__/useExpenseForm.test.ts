@@ -53,6 +53,15 @@ const EXPENSE: ExpenseDto = {
   countsAsTithe: true,
 }
 
+const CARD_CHARGE: ExpenseDto = {
+  ...EXPENSE,
+  paymentSourceBankId: null,
+  paymentSourceBankName: null,
+  creditCardId: 'card-baamex',
+  creditCardName: 'BaAmex',
+  paymentStatus: 'CreditCardCharge',
+}
+
 describe('useExpenseForm', () => {
   let onSaved: () => void
 
@@ -273,41 +282,24 @@ describe('useExpenseForm', () => {
   })
 
   it('opens edit in card mode for a credit card charge', () => {
-    const charge: ExpenseDto = {
-      ...EXPENSE,
-      id: 'e3',
-      paymentSourceBankId: null,
-      paymentSourceBankName: null,
-      creditCardId: 'card-baamex',
-      creditCardName: 'BaAmex',
-      paymentStatus: 'CreditCardCharge',
-    }
+    const charge: ExpenseDto = { ...CARD_CHARGE, id: 'e3', invoiceDate: '2026-08-01' }
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(charge))
 
     expect(result.current.paymentMode).toBe('card')
     expect(result.current.isSettled).toBe(false)
+    expect(result.current).toMatchObject({ creditCardId: 'card-baamex', creditCardName: 'BaAmex', invoiceDate: '2026-08', roundUpAmount: '', paymentSource: '' })
   })
 
   it('editing the date of an unsettled card charge moves the invoice month along with it', async () => {
-    const charge: ExpenseDto = {
-      ...EXPENSE,
-      id: 'e7',
-      date: '2026-10-24',
-      paymentSourceBankId: null,
-      paymentSourceBankName: null,
-      creditCardId: 'card-baamex',
-      creditCardName: 'BaAmex',
-      chargeDate: '2026-10-24',
-      invoiceDate: '2026-10-01',
-      paymentStatus: 'CreditCardCharge',
-    }
+    const charge: ExpenseDto = { ...CARD_CHARGE, id: 'e7', date: '2026-10-24', chargeDate: '2026-10-24', invoiceDate: '2026-10-01' }
     updateExpenseMock.mockResolvedValue(charge)
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
     act(() => result.current.showEditForm(charge))
     act(() => result.current.setField('date', '2026-08-24'))
+    expect(result.current.invoiceDate).toBe('2026-08')
     await act(() => result.current.submit())
 
     expect(updateExpenseMock).toHaveBeenCalledWith('e7', expect.objectContaining({ invoiceDate: '2026-08-01' }))
@@ -712,23 +704,6 @@ describe('useExpenseForm', () => {
     expect(createExpenseMock).not.toHaveBeenCalled()
   })
 
-  it('loads a card charge being edited with its card, invoice month and no round-up', () => {
-    const charge: ExpenseDto = {
-      ...EXPENSE,
-      paymentSourceBankId: null,
-      paymentSourceBankName: null,
-      creditCardId: 'card-baamex',
-      creditCardName: 'BaAmex',
-      invoiceDate: '2026-08-01',
-      paymentStatus: 'CreditCardCharge',
-    }
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
-
-    act(() => result.current.showEditForm(charge))
-
-    expect(result.current).toMatchObject({ creditCardId: 'card-baamex', creditCardName: 'BaAmex', invoiceDate: '2026-08', roundUpAmount: '', paymentSource: '' })
-  })
-
   it('loads a bank expense being edited with blank card fields', () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
 
@@ -746,17 +721,13 @@ describe('useExpenseForm', () => {
     expect(result.current.roundUpAmount).toBe('0.70')
   })
 
-  it('closes and leaves edit mode on cancel and after an edit is saved', async () => {
+  it.each(['cancelForm', 'submit'] as const)('closes and leaves edit mode after %s on an edit', async (close) => {
     updateExpenseMock.mockResolvedValue(EXPENSE)
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
     act(() => result.current.showEditForm(EXPENSE))
-    act(() => result.current.cancelForm())
-    const afterCancel = { isOpen: result.current.isOpen, isEditing: result.current.isEditing }
-    act(() => result.current.showEditForm(EXPENSE))
 
-    await act(() => result.current.submit())
+    await act(async () => result.current[close]())
 
-    expect(afterCancel).toEqual({ isOpen: false, isEditing: false })
     expect(result.current).toMatchObject({ isOpen: false, isEditing: false })
   })
 
@@ -794,24 +765,6 @@ describe('useExpenseForm', () => {
     expect(result.current).toMatchObject({ paymentSource: '', categoryId: '' })
   })
 
-  it('moves the invoice month with the date while editing a charge on its default month', () => {
-    const charge: ExpenseDto = {
-      ...EXPENSE,
-      paymentSourceBankId: null,
-      paymentSourceBankName: null,
-      creditCardId: 'card-baamex',
-      creditCardName: 'BaAmex',
-      invoiceDate: '2026-07-01',
-      paymentStatus: 'CreditCardCharge',
-    }
-    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
-    act(() => result.current.showEditForm(charge))
-
-    act(() => result.current.setField('date', '2026-09-12'))
-
-    expect(result.current.invoiceDate).toBe('2026-09')
-  })
-
   it('saves an edit with the description cleared', async () => {
     updateExpenseMock.mockResolvedValue(EXPENSE)
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
@@ -823,25 +776,21 @@ describe('useExpenseForm', () => {
     expect(updateExpenseMock).toHaveBeenCalledWith('e1', expect.objectContaining({ description: '' }))
   })
 
-  it('sends no round-up for a bank without round-up, and none for a whitespace-only amount', async () => {
+  it.each([
+    ['a bank without round-up', 'bank-barclays', '0.70'],
+    ['a whitespace-only amount', 'bank-chase', '  '],
+  ])('sends no round-up and no invoice date for %s', async (_, paymentSource, roundUpAmount) => {
     createExpenseMock.mockResolvedValue({ ...EXPENSE, id: 'e2' })
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
     act(() => result.current.showCreateForm('bank'))
-    act(() => result.current.setField('paymentSource', 'bank-barclays'))
+    act(() => result.current.setField('paymentSource', paymentSource))
     act(() => result.current.setField('description', 'Waitrose'))
     act(() => result.current.setField('value', '2.30'))
-    act(() => result.current.setField('roundUpAmount', '0.70'))
-    await act(() => result.current.submit())
-    act(() => result.current.showCreateForm('bank'))
-    act(() => result.current.setField('paymentSource', 'bank-chase'))
-    act(() => result.current.setField('description', 'Waitrose'))
-    act(() => result.current.setField('value', '2.30'))
-    act(() => result.current.setField('roundUpAmount', '  '))
+    act(() => result.current.setField('roundUpAmount', roundUpAmount))
 
     await act(() => result.current.submit())
 
-    expect(createExpenseMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ roundUpAmount: null, invoiceDate: null }))
-    expect(createExpenseMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ roundUpAmount: null }))
+    expect(createExpenseMock).toHaveBeenCalledWith(expect.objectContaining({ roundUpAmount: null, invoiceDate: null }))
   })
 })
 

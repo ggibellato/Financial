@@ -550,8 +550,7 @@ describe('useTransactions', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const rendered = renderHook(() => useTransactions(), { wrapper })
     setNode(ASSET_NODE)
-    await waitFor(() => expect(rendered.result.current.asset).not.toBeNull())
-    await waitFor(() => expect(rendered.result.current.typeEffectsLoaded).toBe(true))
+    await waitFor(() => expect(rendered.result.current).toMatchObject({ asset: expect.anything(), typeEffectsLoaded: true }))
     return rendered.result
   }
 
@@ -608,7 +607,7 @@ describe('useTransactions', () => {
 
     setNode({ nodeType: 'Asset', brokerName: 'XPI', portfolioName: 'Acoes' })
 
-    await waitFor(() => expect(result.current.asset).toBeNull())
+    expect(result.current.asset).toBeNull()
   })
 
   it('charts an asset from its own transactions', async () => {
@@ -695,7 +694,10 @@ describe('useTransactions', () => {
     expect(addTransactionMock).not.toHaveBeenCalled()
   })
 
-  it('sends whitespace-only fees and withheld as zero', async () => {
+  it.each([
+    ['  ', '  ', 0, 0],
+    ['1.5', '0.75', 1.5, 0.75],
+  ])('sends fees %j and withheld %j as %d and %d', async (fees, withheld, expectedFees, expectedWithheld) => {
     addTransactionMock.mockResolvedValue(ASSET_DETAILS)
     const result = await renderLoadedAsset()
     act(() => result.current.showNewForm())
@@ -703,30 +705,13 @@ describe('useTransactions', () => {
       result.current.setFormField('formDate', '2024-06-01')
       result.current.setFormField('formQuantity', '50')
       result.current.setFormField('formUnitPrice', '10')
-      result.current.setFormField('formFees', '  ')
-      result.current.setFormField('formWithheld', '  ')
+      result.current.setFormField('formFees', fees)
+      result.current.setFormField('formWithheld', withheld)
     })
 
     act(() => result.current.saveForm())
 
-    await waitFor(() => expect(addTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ fees: 0, withheld: 0 })))
-  })
-
-  it('sends the fees and withheld typed in', async () => {
-    addTransactionMock.mockResolvedValue(ASSET_DETAILS)
-    const result = await renderLoadedAsset()
-    act(() => result.current.showNewForm())
-    act(() => {
-      result.current.setFormField('formDate', '2024-06-01')
-      result.current.setFormField('formQuantity', '50')
-      result.current.setFormField('formUnitPrice', '10')
-      result.current.setFormField('formFees', '1.5')
-      result.current.setFormField('formWithheld', '0.75')
-    })
-
-    act(() => result.current.saveForm())
-
-    await waitFor(() => expect(addTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ fees: 1.5, withheld: 0.75 })))
+    await waitFor(() => expect(addTransactionMock).toHaveBeenCalledWith(expect.objectContaining({ fees: expectedFees, withheld: expectedWithheld })))
   })
 
   it('keeps the edit form open when a different transaction is deleted', async () => {
@@ -886,7 +871,6 @@ describe('useTransactions', () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useTransactions(), { wrapper })
     setNode(BROKER_NODE)
-    await waitFor(() => expect(getTransactionsByBrokerMock).toHaveBeenCalled())
 
     act(() => result.current.setFilter('all-time'))
 
