@@ -1,14 +1,28 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { AccountDetailDto, BankOption, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto } from '../../api/types'
+import type { AccountDetailDto, BankOption, CategoryDto, ExpenseDto, IncomeDto, IncomeSourceDto, PotOperationDto } from '../../api/types'
 import { potsAccount } from '../../test/account'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { pinDate } from '../../test-utils/pinDate'
 import type { AccountFormOptions } from '../useAccountFormOptions'
 import { useAccountActionForms } from '../useAccountActionForms'
 
-const { createExpenseMock, createIncomeMock, getMensaisBillsMock, getAccountsMock, updateSettlementEntryMock } = vi.hoisted(() => ({
+const {
+  createExpenseMock,
+  createIncomeMock,
+  getMensaisBillsMock,
+  getAccountsMock,
+  updateSettlementEntryMock,
+  getPayableStatementsMock,
+  getAccountStatementsMock,
+  getCardsInCreditMock,
+  getPotsMock,
+} = vi.hoisted(() => ({
+  getPayableStatementsMock: vi.fn<FinancialApiClient['getPayableStatements']>(),
+  getAccountStatementsMock: vi.fn<FinancialApiClient['getAccountStatements']>(),
+  getCardsInCreditMock: vi.fn<FinancialApiClient['getCardsInCredit']>(),
+  getPotsMock: vi.fn<FinancialApiClient['getPots']>(),
   updateSettlementEntryMock: vi.fn<FinancialApiClient['updateSettlementEntry']>(),
   createExpenseMock: vi.fn<FinancialApiClient['createExpense']>(),
   createIncomeMock: vi.fn<FinancialApiClient['createIncome']>(),
@@ -23,6 +37,10 @@ vi.mock('../../api/financialApiClient', () => ({
     createIncome: createIncomeMock,
     getMensaisBills: getMensaisBillsMock,
     getAccounts: getAccountsMock,
+    getPayableStatements: getPayableStatementsMock,
+    getAccountStatements: getAccountStatementsMock,
+    getCardsInCredit: getCardsInCreditMock,
+    getPots: getPotsMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -96,6 +114,21 @@ const INCOME: IncomeDto = {
   fundingLines: [],
 }
 
+const DEPOSIT_OPERATION: PotOperationDto = {
+  operationId: 'op-1',
+  kind: 'Deposit',
+  potsAccountId: 'p1',
+  date: '2026-10-05',
+  description: 'Bonus',
+  amount: 30,
+  into: 'ActivePots',
+  incomeId: null,
+  potId: null,
+  bankId: null,
+  categoryId: null,
+  fundingLines: [],
+}
+
 const EXPENSE_ROW = accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-05', amount: -42.5, expense: EXPENSE })
 const INCOME_ROW = accountTransactionRow({ id: 'i1', kind: 'Income', date: '2026-10-01', amount: 2450, income: INCOME })
 
@@ -130,6 +163,10 @@ describe('useAccountActionForms', () => {
     getMensaisBillsMock.mockReset()
     getMensaisBillsMock.mockResolvedValue([])
     getAccountsMock.mockReset().mockResolvedValue([potsAccount({ id: 'p1', name: 'Reserva' })])
+    getPayableStatementsMock.mockReset().mockReturnValue(new Promise(() => {}))
+    getAccountStatementsMock.mockReset().mockReturnValue(new Promise(() => {}))
+    getCardsInCreditMock.mockReset().mockReturnValue(new Promise(() => {}))
+    getPotsMock.mockReset().mockReturnValue(new Promise(() => {}))
     sessionStorage.clear()
   })
 
@@ -426,5 +463,126 @@ describe('useAccountActionForms', () => {
     })
 
     expect(onSaved).toHaveBeenCalledWith(message)
+  })
+
+  it.each(['PayRecurringBill', 'PayCardStatement', 'ReceiveCardCredit'] as const)(
+    'closes the %s form when another action is opened',
+    (action) => {
+      const { result } = renderActionForms()
+      act(() => result.current.openAction(action, openerButton()))
+      const openedAs = result.current.activeAction
+
+      act(() => result.current.openAction('AddExpense', openerButton()))
+
+      expect(openedAs).toBe(action)
+      expect([result.current.payBillForm.isOpen, result.current.payStatementForm.isOpen, result.current.creditRefundForm.isOpen]).toEqual([false, false, false])
+    },
+  )
+
+  it('names a credit refund on a card account as a refund to a bank', () => {
+    const card: AccountDetailDto = { ...BARCLAYS, id: 'card-amex', name: 'Amex', templateName: 'CreditCard', hasStatements: true }
+    const { result } = renderHook(() => useAccountActionForms('card-amex', card, OPTIONS, { year: 2026, month: 10 }, vi.fn()))
+
+    act(() => result.current.openAction('RefundCreditToBank', openerButton()))
+
+    expect(result.current.activeAction).toBe('RefundCreditToBank')
+  })
+
+  it('closes a move form when an action is opened', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openRowMove(EXPENSE_ROW, openerButton()))
+    const moveOpened = result.current.moveForm.isOpen
+
+    act(() => result.current.openAction('AddIncome', openerButton()))
+
+    expect(moveOpened).toBe(true)
+    expect(result.current.moveForm.isOpen).toBe(false)
+  })
+
+  it('closes an open action before editing or moving a row', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openAction('AddIncome', openerButton()))
+    act(() => result.current.openRowEdit(EXPENSE_ROW, openerButton()))
+    const incomeOpenAfterEdit = result.current.incomeForm.isIncomeFormOpen
+    act(() => result.current.openAction('Reconcile', openerButton()))
+
+    act(() => result.current.openRowMove(EXPENSE_ROW, openerButton()))
+
+    expect(incomeOpenAfterEdit).toBe(false)
+    expect(result.current.adjustmentForm.isOpen).toBe(false)
+    expect(result.current.moveForm.isOpen).toBe(true)
+  })
+
+  it('keeps a create action open when the row edited before it is closed', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openRowEdit(EXPENSE_ROW, openerButton()))
+    act(() => result.current.openAction('AddIncome', openerButton()))
+
+    act(() => result.current.closeFormsOf(EXPENSE_ROW))
+
+    expect(result.current.incomeForm.isIncomeFormOpen).toBe(true)
+  })
+
+  it('closes the moved row\'s form, but not after another row is closed', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openRowMove(EXPENSE_ROW, openerButton()))
+
+    act(() => result.current.closeFormsOf(INCOME_ROW))
+    const stillOpen = result.current.moveForm.isOpen
+    act(() => result.current.closeFormsOf(EXPENSE_ROW))
+
+    expect(stillOpen).toBe(true)
+    expect(result.current.moveForm.isOpen).toBe(false)
+  })
+
+  it('closes an open action before opening an operation, and keeps the operation open when rows are refreshed', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openAction('AddExpense', openerButton()))
+
+    act(() => result.current.openOperation({ operation: DEPOSIT_OPERATION, income: null }))
+    act(() => result.current.closeFormOfRemovedRow([]))
+
+    expect(result.current.expenseForm.isOpen).toBe(false)
+    expect(result.current.depositForm.isEditing).toBe(true)
+  })
+
+  it('focuses the open operation instead of leaving it when that same operation is followed', () => {
+    const { result, formArea } = renderActionForms()
+    act(() => result.current.openOperation({ operation: DEPOSIT_OPERATION, income: null }))
+    const navigate = vi.fn()
+
+    act(() => result.current.followOperation(DEPOSIT_OPERATION.operationId, openerButton(), navigate))
+
+    expect(navigate).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(formArea.querySelector('input[name="date"]'))
+  })
+
+  it('closes the open operation and navigates when a different operation is followed', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openOperation({ operation: DEPOSIT_OPERATION, income: null }))
+    const navigate = vi.fn()
+
+    act(() => result.current.followOperation('another-operation', openerButton(), navigate))
+
+    expect(navigate).toHaveBeenCalledOnce()
+    expect(result.current.depositForm.isOpen).toBe(false)
+  })
+
+  it('navigates when an operation is followed while no operation is open', () => {
+    const { result } = renderActionForms()
+    const navigate = vi.fn()
+
+    act(() => result.current.followOperation(DEPOSIT_OPERATION.operationId, openerButton(), navigate))
+
+    expect(navigate).toHaveBeenCalledOnce()
+  })
+
+  it('closes an edited row\'s form when the refreshed rows no longer hold it', () => {
+    const { result } = renderActionForms()
+    act(() => result.current.openRowEdit(EXPENSE_ROW, openerButton()))
+
+    act(() => result.current.closeFormOfRemovedRow([INCOME_ROW]))
+
+    expect(result.current.expenseForm.isOpen).toBe(false)
   })
 })
