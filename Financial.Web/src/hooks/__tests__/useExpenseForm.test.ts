@@ -740,6 +740,16 @@ describe('useExpenseForm', () => {
     expect(result.current.categoryId).toBe('category-mercado')
   })
 
+  it('opens a create form with no round-up after editing an expense on a round-up bank', () => {
+    setStoredDefault('expense.paymentSource', 'bank-chase')
+    const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
+    act(() => result.current.showEditForm({ ...EXPENSE, paymentSourceBankId: 'bank-chase', value: 12.3 }))
+
+    act(() => result.current.showCreateForm('bank'))
+
+    expect(result.current).toMatchObject({ paymentSource: 'bank-chase', value: '', roundUpAmount: '' })
+  })
+
   it('opens a create form on a round-up bank with no round-up yet', () => {
     const { result } = renderHook(() => useExpenseForm(BANKS, CATEGORIES, onSaved))
     act(() => result.current.showCreateForm('bank'))

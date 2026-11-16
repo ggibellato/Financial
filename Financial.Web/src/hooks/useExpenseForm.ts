@@ -94,7 +94,7 @@ interface ExpenseFormState {
 type ExpenseFormAction =
   | {
       type: 'SHOW_CREATE_FORM'
-      payload: { mode: PaymentMode; isRefund: boolean; date: string; paymentSource: string; creditCardId: string; roundUpAmount: string; categoryId: string }
+      payload: { mode: PaymentMode; isRefund: boolean; date: string; paymentSource: string; creditCardId: string; categoryId: string }
     }
   | { type: 'SHOW_EDIT_FORM'; payload: { expense: ExpenseDto; isRefund: boolean } }
   | { type: 'CANCEL_FORM' }
@@ -155,7 +155,6 @@ function reducer(state: ExpenseFormState, action: ExpenseFormAction): ExpenseFor
         isRefund: action.payload.isRefund,
         paymentSource: action.payload.paymentSource,
         creditCardId: action.payload.creditCardId,
-        roundUpAmount: action.payload.roundUpAmount,
         categoryId: action.payload.categoryId,
       })
     case 'SHOW_EDIT_FORM': {
@@ -265,14 +264,13 @@ export function useExpenseForm(
     const date = getCreateFormDate(DATE_KEY, viewedMonth)
     const paymentSource = mode === 'bank' ? defaultPaymentSource() : ''
     const creditCardId = mode === 'card' ? (lockedCard?.id ?? '') : ''
-    const suggestion = mode === 'bank' ? suggestRoundUpAmount(banks, paymentSource, state.value) : null
     const storedCategoryId = getStoredDefault(CATEGORY_KEY)
     const categoryId =
       state.categoryId ||
       (storedCategoryId && categories.some((c) => c.id === storedCategoryId) ? storedCategoryId : (categories.find((c) => c.active)?.id ?? ''))
     dispatch({
       type: 'SHOW_CREATE_FORM',
-      payload: { mode, isRefund, date: isRefund ? notAfterToday(date) : date, paymentSource, creditCardId, roundUpAmount: suggestion ?? '', categoryId },
+      payload: { mode, isRefund, date: isRefund ? notAfterToday(date) : date, paymentSource, creditCardId, categoryId },
     })
   }
 
