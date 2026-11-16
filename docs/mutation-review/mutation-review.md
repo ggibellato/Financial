@@ -146,8 +146,8 @@ uses the repo folder.
 
 | # | Project | Slice (`--mutate`) | Status | Score before | Score after | Tests added | Tests removed | Equivalent | PR | Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| 1.1 | CashFlow.Domain | `Entities/**` | 🔄 | 90.3% | 94.5% | 18 | 0 | 10 | [#1307](https://github.com/ggibellato/Financial/pull/1307) | [Notes](1.1.md); round-up suggestion, inactive card/pots checks, capability defaults on setup change |
-| 1.2 | CashFlow.Domain | `Rules/**`, `ValueObjects/**` | ⬜ | 91.1% | | | | | | |
+| 1.1 | CashFlow.Domain | `Entities/**` | ✅ | 90.3% | 94.5% | 18 | 0 | 10 | [#1307](https://github.com/ggibellato/Financial/pull/1307) | [Notes](1.1.md); round-up suggestion, inactive card/pots checks, capability defaults on setup change |
+| 1.2 | CashFlow.Domain | `Rules/**`, `ValueObjects/**` | ✅ | 91.1% | 97.0% | 12 | 0 | 7 | [#1309](https://github.com/ggibellato/Financial/pull/1309) | [Notes](1.2.md); found the negative pot share bug, fixed in [#1310](https://github.com/ggibellato/Financial/pull/1310) |
 | 2.1 | Investment.Domain | `Entities/**` | ✅ | 82.0% | 88.1% | 28 | 0 | 8 | [#1306](https://github.com/ggibellato/Financial/pull/1306) | [Notes](2.1.md); disposal regeneration boundaries, corporate action revise/rollback; most survivors are wording |
 | 2.2 | Investment.Domain | `Rules/**` | ✅ | 74.5% | 87.7% | 15 | 3 | ~35 | [#1284](https://github.com/ggibellato/Financial/pull/1284) | [Notes](2.2.md); 734 → 754 tests |
 | 2.3 | Investment.Domain | `ValueObjects/**`, `Exceptions/**` | ⏭️ | — | | | | | | No mutants generated |
@@ -164,7 +164,10 @@ uses the repo folder.
 | 4.4 | Investment.Application | Breakdowns and returns: `AllocationBreakdown*`, `BrokerBreakdown*`, `PortfolioXirrBuilder`, `XirrCalculationService`, `HoldingValuationService`, `CurrencyConversionContext` | ✅ | 70.2% | 78.5% | 3 | 10 | 5 | [#1290](https://github.com/ggibellato/Financial/pull/1290) | [Notes](4.4.md); 10 tests that re-checked Domain XIRR and valuation results removed |
 | 4.5 | Investment.Application | Prices, income, tax: `AssetPriceHistoryService`, `AssetPriceLookupService`, `UpcomingIncome*`, `TaxRuleService`, `TaxWorkbookService`, `DataQualityReportService` | ✅ | 26.7% (47.7% with the Infrastructure tests) | 77.5% | 8 | 16 | 11 | [#1285](https://github.com/ggibellato/Financial/pull/1285) | [Notes](4.5.md); run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.6 | Investment.Application | `NavigationMapper`, `NavigationService`, `BrokerService`, `ReportingCurrencySettingService`, `Validation/**` | ✅ | 52.7% | 74.5% | 9 | 1 | 6 | [#1288](https://github.com/ggibellato/Financial/pull/1288) | [Notes](4.6.md); 55.3% when run with `-AlsoTestedBy Investment.Infrastructure` |
-| 5.x | Financial.Web | `src/hooks` — slices of ~10 files, worst score first, taken from the nightly `stryker-js` report (no local run needed to triage) | ⬜ | 65.2% | | | | | | Slice list made when the batch starts |
+| 5.1 | Financial.Web | 11 hooks the nightly report scored worst (pot forms, manage pots, row edit route, …) | ✅ | 80.3% | 96.1% | 37 | 0 | 3 | [#1311](https://github.com/ggibellato/Financial/pull/1311) | [Notes](5.1.md); measured with every web test: the nightly hook score leaves out component tests |
+| 5.2 | Financial.Web | `useCorporateActions`, `useAccountActionForms` | ✅ | 75.5% | 89.5% | 25 | 0 | 14 | [#1312](https://github.com/ggibellato/Financial/pull/1312) | [Notes](5.2.md); split ratio `/` vs `*`; account action forms deferred to 5.3 |
+| 5.3 | Financial.Web | `useAccountActionForms` | 🔄 | 87.5% | 94.7% | 20 | 0 | 13 | [#1313](https://github.com/ggibellato/Financial/pull/1313) | [Notes](5.3.md); which forms close each other, focus; last kills hand-checked |
+| 5.x | Financial.Web | remaining `src/hooks`: slices of a few files, worst score first; measure each with the tests that reach it (`STRYKER_TEST_INCLUDE`), not the nightly score | ⬜ | | | | | | | Nightly ranking is only a starting list (see 5.1) |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
 | 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
@@ -209,6 +212,10 @@ class, production notes) in its own file in this folder:
 - [7.4 Investment.Infrastructure (81.1% → 93.2%)](7.4.md)
 - [2.1 Investment.Domain entities (82.0% → 88.1%)](2.1.md)
 - [1.1 CashFlow.Domain entities (90.3% → 94.5%)](1.1.md)
+- [1.2 CashFlow.Domain rules and value objects (91.1% → 97.0%)](1.2.md)
+- [5.1 Web hooks: the eleven worst by the nightly report (80.3% → 96.1%)](5.1.md)
+- [5.2 Web hooks: corporate actions and account action forms (75.5% → 89.5%)](5.2.md)
+- [5.3 Web hooks: account action form orchestration (87.5% → 94.7%)](5.3.md)
 
 ## Log
 
@@ -240,3 +247,7 @@ One line per working session: date, slice, outcome.
 | 2026-11-15 | 7.4 | Investment.Infrastructure 81.1% → 93.2%; two vacuous currency tests fixed (BRL is the default), Yahoo suffixes, fetcher requests |
 | 2026-11-15 | 2.1 | Investment.Domain entities 82.0% → 88.1%; disposal regeneration boundaries, corporate action revise and rollback |
 | 2026-11-15 | 1.1 | CashFlow.Domain entities 90.3% → 94.5%; round-up suggestion, inactive card and pots checks, setup-change defaults |
+| 2026-11-15 | 1.2 | CashFlow.Domain rules 91.1% → 97.0%; found a negative pot share in `PotSplitAllocator`, fixed in #1310 |
+| 2026-11-16 | 5.1 | Worst eleven web hooks 80.3% → 96.1%; the nightly hook score leaves out component tests, so it understates coverage |
+| 2026-11-16 | 5.2 | `useCorporateActions` 62.8% → 91.7%; split ratio, blank optional fields, validation edges |
+| 2026-11-16 | 5.3 | `useAccountActionForms` 87.5% → 94.7%; which forms close each other, focus handling |
