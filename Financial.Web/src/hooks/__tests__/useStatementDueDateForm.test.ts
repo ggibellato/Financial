@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto } from '../../api/types'
+import { deferred } from '../../test-utils/deferred'
 import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { dueDateRangeOf, useStatementDueDateForm } from '../useStatementDueDateForm'
 
@@ -15,6 +16,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const CARD_ID = 'card-amex'
+
+type SaveRequest = ReturnType<typeof deferred<void>>
 
 const OCTOBER: AccountStatementDto = {
   id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-10-25', paidOn: null, paidAmount: null, paidFromAccountName: null,
@@ -81,6 +84,15 @@ describe('useStatementDueDateForm', () => {
     expect(result.current.form?.dateError).toBeUndefined()
   })
 
+  it.each(['2026-10-01', '2026-10-31'])('accepts %s, the edge of October', async (date) => {
+    const { result } = renderForm()
+    act(() => result.current.setDate(date))
+
+    await act(async () => result.current.save())
+
+    expect(setStatementDueDateMock).toHaveBeenCalledWith(CARD_ID, 2026, 10, { dueDate: date })
+  })
+
   it('saves the date by year and month, closes and reports it', async () => {
     const { result, onSaved } = renderForm(NOVEMBER_UNSTORED)
     act(() => result.current.setDate('2026-11-25'))
@@ -130,15 +142,18 @@ describe('useStatementDueDateForm', () => {
     expect(onSaved).not.toHaveBeenCalled()
   })
 
-  it('leaves a form reopened on another month alone when the earlier request settles', async () => {
-    let rejectSave: (reason: unknown) => void = () => {}
-    setStatementDueDateMock.mockReturnValue(new Promise((_, reject) => { rejectSave = reject }))
+  it.each([
+    ['succeeds', (request: SaveRequest) => request.resolve()],
+    ['fails', (request: SaveRequest) => request.reject(new ApiError('Refused.', 400))],
+  ])('leaves a form reopened on another month alone when the earlier request %s', async (_, settle) => {
+    const request = deferred<void>()
+    setStatementDueDateMock.mockReturnValue(request.promise)
     const { result } = renderForm()
     act(() => result.current.clear())
     act(() => result.current.close())
     act(() => result.current.open(NOVEMBER_UNSTORED))
 
-    await act(async () => rejectSave(new ApiError('Refused.', 400)))
+    await act(async () => settle(request))
 
     expect(result.current.form?.statement).toBe(NOVEMBER_UNSTORED)
     expect(result.current.form?.error).toBeNull()

@@ -5,6 +5,7 @@ import { ApiError } from '../../api/apiError'
 import type { BalanceAdjustmentDto, BankOption } from '../../api/types'
 import { useBalanceAdjustmentForm } from '../useBalanceAdjustmentForm'
 import { pinDate } from '../../test-utils/pinDate'
+import { never } from '../../test-utils/deferred'
 import { getStoredDefault, setStoredDefault } from '../../utils/createFormDefaults'
 
 const { createBalanceAdjustmentMock, updateBalanceAdjustmentMock } = vi.hoisted(() => ({
@@ -77,6 +78,7 @@ describe('useBalanceAdjustmentForm', () => {
     act(() => result.current.setField('bankName', 'bank-trading212'))
 
     expect(result.current.bankName).toBe('bank-trading212')
+    expect(result.current.bankDisplayName).toBe('Trading212')
     expect(result.current.currentBalance).toBe(8.8)
   })
 
@@ -87,6 +89,7 @@ describe('useBalanceAdjustmentForm', () => {
     act(() => result.current.setField('bankName', 'UnknownBank'))
 
     expect(result.current.currentBalance).toBe(0)
+    expect(result.current.bankDisplayName).toBe('')
   })
 
   it('openEditForm pre-fills bank/currentBalance/targetBalance/date/note from the given adjustment', () => {
@@ -101,6 +104,14 @@ describe('useBalanceAdjustmentForm', () => {
     expect(result.current.date).toBe('2026-07-20')
     expect(result.current.targetBalance).toBe('150')
     expect(result.current.note).toBe('Matched statement')
+  })
+
+  it('openEditForm shows an adjustment with no note as an empty note', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, vi.fn()))
+
+    act(() => result.current.openEditForm({ ...ADJUSTMENT, note: null }))
+
+    expect(result.current.note).toBe('')
   })
 
   it('cancel resets the form to closed and clears savedDelta', () => {
@@ -142,8 +153,36 @@ describe('useBalanceAdjustmentForm', () => {
 
     act(() => result.current.submit())
 
-    expect(result.current.saveErrorFields).toHaveProperty('targetBalance')
+    expect(result.current.saveError).toBe('Balance cannot be negative.')
+    expect(result.current.saveErrorFields).toEqual({ targetBalance: 'Balance cannot be negative.' })
     expect(createBalanceAdjustmentMock).not.toHaveBeenCalled()
+  })
+
+  it('submit refuses a date of spaces as missing', () => {
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'bank-barclays'))
+    act(() => result.current.setField('targetBalance', '150'))
+    act(() => result.current.setField('date', '  '))
+
+    act(() => result.current.submit())
+
+    expect(result.current.saveError).toBe('Date is required.')
+    expect(result.current.saveErrorFields).toEqual({ date: 'Date is required.' })
+    expect(createBalanceAdjustmentMock).not.toHaveBeenCalled()
+  })
+
+  it('submit sends a note of spaces as no note', () => {
+    createBalanceAdjustmentMock.mockReturnValue(never())
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, vi.fn()))
+    act(() => result.current.openCreateForm())
+    act(() => result.current.setField('bankName', 'bank-barclays'))
+    act(() => result.current.setField('targetBalance', '150'))
+    act(() => result.current.setField('note', '  '))
+
+    act(() => result.current.submit())
+
+    expect(createBalanceAdjustmentMock.mock.calls[0][1].note).toBeNull()
   })
 
   it('submit calls createBalanceAdjustment, sets isSaving, and sets savedDelta on success while staying open', async () => {
@@ -234,13 +273,23 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('falls back to no bank pre-selected when the persisted bank no longer exists', () => {
-    sessionStorage.setItem('financial.createFormDefault.balanceAdjustment.bank', 'bank-deleted')
+    setStoredDefault('balanceAdjustment.bank', 'bank-deleted')
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, vi.fn()))
 
     act(() => result.current.openCreateForm())
 
     expect(result.current.bankName).toBe('')
     expect(result.current.currentBalance).toBe(0)
+  })
+
+  it('falls back to no bank pre-selected when the persisted bank has no balance', () => {
+    setStoredDefault('balanceAdjustment.bank', 'bank-monzo')
+    const banks = [...BANKS, { id: 'bank-monzo', name: 'Monzo', roundUpEnabled: false, isActive: true }]
+    const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, banks, vi.fn()))
+
+    act(() => result.current.openCreateForm())
+
+    expect(result.current.bankName).toBe('')
   })
 
   it('[AC P60-F06-admin-accounts-page-05] falls back to no bank pre-selected when the persisted bank is inactive', () => {
