@@ -48,24 +48,26 @@ const SAVED: AccountTransferDto = {
   note: null,
 }
 
+type FormResult = { current: ReturnType<typeof useCardCreditRefundForm> }
+
 function renderForm(onRefunded = vi.fn(), credit = 35) {
   return renderHook(() => useCardCreditRefundForm('card', AMEX, credit, onRefunded))
 }
 
-async function openLoaded(result: { current: ReturnType<typeof useCardCreditRefundForm> }) {
+async function openLoaded(result: FormResult) {
   act(() => result.current.open())
   await waitFor(() => expect(result.current.counterparts).toHaveLength(2))
 }
 
 const INACTIVE_BANK = new ApiError('Bank is inactive.', 400)
 
-async function failSave(result: { current: ReturnType<typeof useCardCreditRefundForm> }) {
+async function failSave(result: FormResult) {
   await openLoaded(result)
   act(() => result.current.setField('counterpartId', 'barclays'))
   act(() => {
     result.current.submit()
   })
-  await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+  await waitFor(() => expect(result.current.saveError).toBe(INACTIVE_BANK.message))
 }
 
 describe('useCardCreditRefundForm', () => {
@@ -196,8 +198,8 @@ describe('useCardCreditRefundForm', () => {
   })
 
   it.each([
-    ['a field changes', (result: { current: ReturnType<typeof useCardCreditRefundForm> }) => act(() => result.current.setField('date', '2026-11-04'))],
-    ['the refund is sent again', (result: { current: ReturnType<typeof useCardCreditRefundForm> }) => act(() => {
+    ['a field changes', (result: FormResult) => act(() => result.current.setField('date', '2026-11-04'))],
+    ['the refund is sent again', (result: FormResult) => act(() => {
       result.current.submit()
     })],
   ])('clears the save message when %s', async (_, next) => {
@@ -300,7 +302,7 @@ function renderBankForm(onRefunded = vi.fn()) {
   return renderHook(() => useCardCreditRefundForm('bank', BARCLAYS_BANK, 0, onRefunded))
 }
 
-async function openBankLoaded(result: { current: ReturnType<typeof useCardCreditRefundForm> }) {
+async function openBankLoaded(result: FormResult) {
   act(() => result.current.open())
   await waitFor(() => expect(result.current.counterparts).toHaveLength(2))
 }

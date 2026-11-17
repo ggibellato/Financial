@@ -145,7 +145,7 @@ describe('useMoveChargeForm', () => {
 
     act(() => result.current.submit())
 
-    await waitFor(() => expect(result.current.form?.error).toBe('Charges can only move to a later, unpaid statement.'))
+    await waitFor(() => expect(result.current.form?.error).toBe(REFUSED_MOVE.message))
     expect(result.current.form?.isSaving).toBe(false)
     expect(onMoved).not.toHaveBeenCalled()
   })

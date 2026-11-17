@@ -82,7 +82,7 @@ describe('useCardStatements', () => {
   it.each([
     ['a card', CARD_ID, true],
     ['no card', null, false],
-  ])('reports loading on the first render with %s: %s', (_, cardId, loading) => {
+  ])('reports loading on the first render with %s', (_, cardId, loading) => {
     const seen: boolean[] = []
 
     renderHook(() => {
