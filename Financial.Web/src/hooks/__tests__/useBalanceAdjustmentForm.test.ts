@@ -273,7 +273,7 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('falls back to no bank pre-selected when the persisted bank no longer exists', () => {
-    sessionStorage.setItem('financial.createFormDefault.balanceAdjustment.bank', 'bank-deleted')
+    setStoredDefault('balanceAdjustment.bank', 'bank-deleted')
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, BANKS, vi.fn()))
 
     act(() => result.current.openCreateForm())
@@ -283,7 +283,7 @@ describe('useBalanceAdjustmentForm', () => {
   })
 
   it('falls back to no bank pre-selected when the persisted bank has no balance', () => {
-    sessionStorage.setItem('financial.createFormDefault.balanceAdjustment.bank', 'bank-monzo')
+    setStoredDefault('balanceAdjustment.bank', 'bank-monzo')
     const banks = [...BANKS, { id: 'bank-monzo', name: 'Monzo', roundUpEnabled: false, isActive: true }]
     const { result } = renderHook(() => useBalanceAdjustmentForm(BANK_TOTALS, banks, vi.fn()))
 

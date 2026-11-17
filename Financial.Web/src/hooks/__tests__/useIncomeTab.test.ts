@@ -60,6 +60,7 @@ describe('useIncomeTab', () => {
     getAccountsMock.mockReset().mockResolvedValue(ACCOUNTS)
     deleteIncomeMock.mockReset()
     showSuccessMock.mockReset()
+    sessionStorage.clear()
   })
 
   it('[AC P61-F02-income-tab-and-bankless-income-01] loads the month once and again only for a new month', async () => {
@@ -111,9 +112,9 @@ describe('useIncomeTab', () => {
   })
 
   it.each([
-    ['closes the form on the deleted income', INCOME, false],
-    ['keeps the form on another income', { ...INCOME, id: 'i2' }, true],
-  ])('%s after a delete', async (_, edited, staysOpen) => {
+    ['closes the form on the deleted income', INCOME, null],
+    ['keeps the form on another income', { ...INCOME, id: 'i2' }, 'i2'],
+  ])('%s after a delete', async (_, edited, editingId) => {
     deleteIncomeMock.mockResolvedValue()
     const { result } = await renderLoaded()
     act(() => result.current.openEdit(edited))
@@ -122,7 +123,7 @@ describe('useIncomeTab', () => {
     act(() => result.current.incomeDelete.confirm())
 
     await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted'))
-    expect(result.current.incomeForm.editingIncomeId !== null).toBe(staysOpen)
+    expect(result.current.incomeForm.editingIncomeId).toBe(editingId)
   })
 
   it('[AC P61-F02-income-tab-and-bankless-income-06] refreshes and shows the gone notice, without a toast, when the income no longer exists', async () => {

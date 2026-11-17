@@ -1,9 +1,9 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
-import { deferred } from '../../test-utils/deferred'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto } from '../../api/types'
+import { deferred } from '../../test-utils/deferred'
 import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { dueDateRangeOf, useStatementDueDateForm } from '../useStatementDueDateForm'
 
@@ -16,6 +16,8 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const CARD_ID = 'card-amex'
+
+type SaveRequest = ReturnType<typeof deferred<void>>
 
 const OCTOBER: AccountStatementDto = {
   id: 's-oct', year: 2026, month: 10, total: 210.45, creditIn: 0, outstandingTotal: 210.45, creditCarried: 0, status: 'Unpaid', isPaid: false, dueDate: '2026-10-25', paidOn: null, paidAmount: null, paidFromAccountName: null,
@@ -141,8 +143,8 @@ describe('useStatementDueDateForm', () => {
   })
 
   it.each([
-    ['succeeds', (request: ReturnType<typeof deferred<void>>) => request.resolve()],
-    ['fails', (request: ReturnType<typeof deferred<void>>) => request.reject(new ApiError('Refused.', 400))],
+    ['succeeds', (request: SaveRequest) => request.resolve()],
+    ['fails', (request: SaveRequest) => request.reject(new ApiError('Refused.', 400))],
   ])('leaves a form reopened on another month alone when the earlier request %s', async (_, settle) => {
     const request = deferred<void>()
     setStatementDueDateMock.mockReturnValue(request.promise)
