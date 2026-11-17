@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransferDto, CardCreditDto } from '../../api/types'
 import { account, cardAccount, potsAccount } from '../../test/account'
+import { never } from '../../test-utils/deferred'
 import { pinDate } from '../../test-utils/pinDate'
 import { useCardCreditRefundForm } from '../useCardCreditRefundForm'
 
@@ -47,13 +48,26 @@ const SAVED: AccountTransferDto = {
   note: null,
 }
 
+type FormResult = { current: ReturnType<typeof useCardCreditRefundForm> }
+
 function renderForm(onRefunded = vi.fn(), credit = 35) {
   return renderHook(() => useCardCreditRefundForm('card', AMEX, credit, onRefunded))
 }
 
-async function openLoaded(result: { current: ReturnType<typeof useCardCreditRefundForm> }) {
+async function openLoaded(result: FormResult) {
   act(() => result.current.open())
   await waitFor(() => expect(result.current.counterparts).toHaveLength(2))
+}
+
+const INACTIVE_BANK = new ApiError('Bank is inactive.', 400)
+
+async function failSave(result: FormResult) {
+  await openLoaded(result)
+  act(() => result.current.setField('counterpartId', 'barclays'))
+  act(() => {
+    result.current.submit()
+  })
+  await waitFor(() => expect(result.current.saveError).toBe(INACTIVE_BANK.message))
 }
 
 describe('useCardCreditRefundForm', () => {
@@ -151,6 +165,7 @@ describe('useCardCreditRefundForm', () => {
     })
     act(() => result.current.setField('date', ''))
     expect(result.current.fieldErrors.date).toBeUndefined()
+    expect(result.current.fieldErrors.amount).toBe('Amount must be greater than zero.')
     act(() => {
       result.current.submit()
     })
@@ -175,6 +190,51 @@ describe('useCardCreditRefundForm', () => {
     expect(result.current.isSaving).toBe(false)
     expect(result.current.isOpen).toBe(true)
     expect(result.current.values).toEqual({ counterpartId: '', amount: '35.00', date: '2026-11-01' })
+
+    act(() => {
+      expect(result.current.submit()).toBe('counterpartId')
+    })
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it.each([
+    ['a field changes', (result: FormResult) => act(() => result.current.setField('date', '2026-11-04'))],
+    ['the refund is sent again', (result: FormResult) => act(() => {
+      result.current.submit()
+    })],
+  ])('clears the save message when %s', async (_, next) => {
+    createCardCreditRefundMock.mockRejectedValueOnce(INACTIVE_BANK).mockReturnValue(never())
+    const { result } = renderForm()
+    await failSave(result)
+
+    next(result)
+
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('drops the field messages when reopened', async () => {
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('amount', '0'))
+    act(() => {
+      result.current.submit()
+    })
+    act(() => result.current.cancel())
+
+    await openLoaded(result)
+
+    expect(result.current.fieldErrors).toEqual({})
+  })
+
+  it('drops the save message when reopened', async () => {
+    createCardCreditRefundMock.mockRejectedValue(INACTIVE_BANK)
+    const { result } = renderForm()
+    await failSave(result)
+    act(() => result.current.cancel())
+
+    await openLoaded(result)
+
+    expect(result.current.saveError).toBeNull()
   })
 
   it('reports a load error with retry, then no banks on an empty list', async () => {
@@ -226,6 +286,8 @@ describe('useCardCreditRefundForm', () => {
     })
 
     expect(createCardCreditRefundMock).not.toHaveBeenCalled()
+    expect(result.current.accountName).toBe('')
+    expect(result.current.currency).toBe('')
   })
 })
 
@@ -240,7 +302,7 @@ function renderBankForm(onRefunded = vi.fn()) {
   return renderHook(() => useCardCreditRefundForm('bank', BARCLAYS_BANK, 0, onRefunded))
 }
 
-async function openBankLoaded(result: { current: ReturnType<typeof useCardCreditRefundForm> }) {
+async function openBankLoaded(result: FormResult) {
   act(() => result.current.open())
   await waitFor(() => expect(result.current.counterparts).toHaveLength(2))
 }
@@ -297,6 +359,27 @@ describe('useCardCreditRefundForm in bank mode', () => {
     act(() => result.current.setField('counterpartId', 'visa'))
 
     expect(result.current.values.amount).toBe('10')
+  })
+
+  it('fills the credit again once the amount was cleared', async () => {
+    const { result } = renderBankForm()
+    await openBankLoaded(result)
+    act(() => result.current.setField('counterpartId', 'amex'))
+    act(() => result.current.setField('amount', ''))
+
+    act(() => result.current.setField('counterpartId', 'visa'))
+
+    expect(result.current.values.amount).toBe('12.50')
+  })
+
+  it('empties the amount when the card is unselected', async () => {
+    const { result } = renderBankForm()
+    await openBankLoaded(result)
+    act(() => result.current.setField('counterpartId', 'amex'))
+
+    act(() => result.current.setField('counterpartId', ''))
+
+    expect(result.current.values.amount).toBe('')
   })
 
   it('[AC P60-F15-card-refunds-and-credit-05] posts one credit refund from the chosen card to the bank', async () => {

@@ -4,6 +4,7 @@ import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CardStatementDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
+import { never } from '../../test-utils/deferred'
 import { pinDate } from '../../test-utils/pinDate'
 import { STATEMENTS_LOAD_ERROR, useCardStatements, type StoredStatement } from '../useCardStatements'
 
@@ -48,6 +49,15 @@ async function renderLoaded(onChanged = vi.fn()) {
   return hook
 }
 
+async function failPaymentAndReload(result: { current: ReturnType<typeof useCardStatements> }) {
+  markCardStatementPaidMock.mockRejectedValueOnce(new ApiError('Something went wrong on the server.', 500))
+  getAccountStatementsMock.mockRejectedValueOnce(new Error('Network down'))
+  act(() => result.current.openPayForm(OCTOBER))
+  act(() => result.current.setPayField('bankId', 'barclays'))
+  act(() => result.current.submitPayForm())
+  await waitFor(() => expect(result.current.error).not.toBeNull())
+}
+
 describe('useCardStatements', () => {
   beforeEach(() => {
     pinDate('2026-10-15T12:00:00+01:00')
@@ -67,6 +77,19 @@ describe('useCardStatements', () => {
     expect(result.current.isLoading).toBe(false)
     expect(getAccountStatementsMock).not.toHaveBeenCalled()
     expect(getAccountsMock).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ['a card', CARD_ID, true],
+    ['no card', null, false],
+  ])('reports loading on the first render with %s', (_, cardId, loading) => {
+    const seen: boolean[] = []
+
+    renderHook(() => {
+      seen.push(useCardStatements(cardId, vi.fn()).isLoading)
+    })
+
+    expect(seen[0]).toBe(loading)
   })
 
   it('loads the statements and the banks that may pay', async () => {
@@ -111,6 +134,7 @@ describe('useCardStatements', () => {
     expect(markCardStatementPaidMock).not.toHaveBeenCalled()
 
     act(() => result.current.setPayField('bankId', 'barclays'))
+    expect(result.current.payForm?.fieldErrors.date).toBe('Date must not be in the future.')
     act(() => result.current.setPayField('date', ''))
     act(() => result.current.submitPayForm())
 
@@ -169,14 +193,9 @@ describe('useCardStatements', () => {
 
   it('clears the reload error once a later payment and its reload succeed', async () => {
     const { result } = await renderLoaded()
-    markCardStatementPaidMock.mockRejectedValueOnce(new ApiError('Something went wrong on the server.', 500))
-    getAccountStatementsMock.mockRejectedValueOnce(new Error('Network down'))
-    act(() => result.current.openPayForm(OCTOBER))
-    act(() => result.current.setPayField('bankId', 'barclays'))
 
-    act(() => result.current.submitPayForm())
+    await failPaymentAndReload(result)
 
-    await waitFor(() => expect(result.current.error).not.toBeNull())
     expect(result.current.statements).toHaveLength(2)
 
     markCardStatementPaidMock.mockResolvedValueOnce(PAID_STATEMENT)
@@ -186,6 +205,17 @@ describe('useCardStatements', () => {
     await waitFor(() => expect(result.current.statements[0].status).toBe('Paid'))
     expect(result.current.payForm).toBeNull()
     expect(result.current.error).toBeNull()
+  })
+
+  it('keeps the statements on screen while a failed reload is retried', async () => {
+    const { result } = await renderLoaded()
+    await failPaymentAndReload(result)
+    getAccountStatementsMock.mockReturnValue(never())
+
+    act(() => result.current.retry())
+
+    expect(result.current.statements).toHaveLength(2)
+    expect(result.current.isLoading).toBe(false)
   })
 
   it('ignores opening another payment while one is saving', async () => {
@@ -205,11 +235,44 @@ describe('useCardStatements', () => {
     await waitFor(() => expect(result.current.statements).toHaveLength(2))
     act(() => result.current.openPayForm(OCTOBER))
     act(() => result.current.requestUnmark(SEPTEMBER))
+    act(() => result.current.dueDateForm.open(OCTOBER))
 
     rerender({ cardId: null })
 
     expect(result.current.payForm).toBeNull()
     expect(result.current.unmark).toBeNull()
+    expect(result.current.dueDateForm.form).toBeNull()
+  })
+
+  it('closes the pay and due date forms together', async () => {
+    const { result } = await renderLoaded()
+    act(() => result.current.openPayForm(OCTOBER))
+    act(() => result.current.dueDateForm.open(OCTOBER))
+
+    act(() => result.current.closeForms())
+
+    expect(result.current.payForm).toBeNull()
+    expect(result.current.dueDateForm.form).toBeNull()
+  })
+
+  it('is dirty while the due date form has changes', async () => {
+    const { result } = await renderLoaded()
+    act(() => result.current.dueDateForm.open(OCTOBER))
+
+    act(() => result.current.dueDateForm.setDate('2026-11-05'))
+
+    expect(result.current.isFormDirty).toBe(true)
+  })
+
+  it('holds the unmark request while it is being sent', async () => {
+    unmarkCardStatementPaidMock.mockReturnValue(never())
+    const { result } = await renderLoaded()
+    act(() => result.current.requestUnmark(SEPTEMBER))
+
+    act(() => result.current.confirmUnmark())
+    act(() => result.current.cancelUnmark())
+
+    expect(result.current.unmark?.isBusy).toBe(true)
   })
 
   it('unmarks after confirmation, then reloads and reports it', async () => {

@@ -1,12 +1,13 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountDetailDto, AccountDto, AccountTransactionDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
 import { useAccountScreen } from '../useAccountScreen'
+import { never } from '../../test-utils/deferred'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { account, potsAccount, settlementAccount } from '../../test/account'
 
@@ -25,6 +26,7 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BARCLAYS_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
+const OTHER_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
 
 const ACCOUNTS: AccountDto[] = [account({ id: BARCLAYS_ID, name: 'Barclays' })]
 
@@ -59,7 +61,10 @@ function renderAccountScreen(entry: string) {
       </Routes>
     </MemoryRouter>
   )
-  return renderHook(() => ({ screen: useAccountScreen(), location: useLocation() }), { wrapper })
+  return renderHook(
+    () => ({ screen: useAccountScreen(), location: useLocation(), navigationType: useNavigationType(), navigate: useNavigate() }),
+    { wrapper },
+  )
 }
 
 describe('useAccountScreen', () => {
@@ -95,6 +100,16 @@ describe('useAccountScreen', () => {
     await waitFor(() => expect(result.current.location.search).toBe('?month=2026-10'))
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
     expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 10)
+    expect(result.current.navigationType).toBe('REPLACE')
+  })
+
+  it('replaces a month that becomes invalid later with the current month', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+
+    act(() => result.current.navigate('?month=2026-13'))
+
+    await waitFor(() => expect(result.current.location.search).toBe('?month=2026-10'))
   })
 
   it('replaces an invalid month with the current month in the URL', async () => {
@@ -160,6 +175,7 @@ describe('useAccountScreen', () => {
 
     await waitFor(() => expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 8))
     expect(result.current.location.search).toBe('?month=2026-08')
+    expect(result.current.navigationType).toBe('REPLACE')
   })
 
   it('reads the Statements tab from the URL and keeps it across a month change', async () => {
@@ -204,6 +220,7 @@ describe('useAccountScreen', () => {
 
       expect(result.current.screen.tab).toBe('transactions')
       expect(result.current.location.search).toBe('?month=2026-10&tab=transactions')
+      expect(result.current.navigationType).toBe('REPLACE')
 
       act(() => result.current.screen.setTab('pots'))
 
@@ -216,6 +233,17 @@ describe('useAccountScreen', () => {
       await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
 
       expect(result.current.screen.tab).toBe('pots')
+    })
+
+    it('stops reporting pots as soon as another account is selected', async () => {
+      const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+      await waitFor(() => expect(result.current.screen.hasPots).toBe(true))
+      getAccountMock.mockReturnValue(never())
+
+      act(() => result.current.screen.selectAccount(OTHER_ID))
+
+      await waitFor(() => expect(result.current.screen.accountId).toBe(OTHER_ID))
+      expect(result.current.screen.hasPots).toBe(false)
     })
   })
 
@@ -245,22 +273,44 @@ describe('useAccountScreen', () => {
   })
 
   it('ignores an empty month value', async () => {
-    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
 
     act(() => result.current.screen.setMonthInputValue(''))
 
-    expect(result.current.location.search).toBe('?month=2026-10')
+    expect(result.current.location.search).toBe('?month=2026-09')
   })
 
-  it('navigates to another account keeping the month', async () => {
-    const otherId = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
+  it('reads the operation from the URL and clears it in place', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op-1`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+    expect(result.current.screen.operationId).toBe('op-1')
+
+    act(() => result.current.screen.clearOperation())
+
+    expect(result.current.screen.operationId).toBeNull()
+    expect(result.current.location.search).toBe('?month=2026-10')
+    expect(result.current.navigationType).toBe('REPLACE')
+  })
+
+  it('keeps a month chosen since when the operation is cleared', async () => {
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&operation=op-1`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+    act(() => result.current.screen.setMonthInputValue('2026-08'))
+
+    act(() => result.current.screen.clearOperation())
+
+    expect(result.current.location.search).toBe('?month=2026-08')
+  })
+
+  it('navigates to another account keeping the month chosen on this one', async () => {
     const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+    act(() => result.current.screen.setMonthInputValue('2026-08'))
 
-    act(() => result.current.screen.selectAccount(otherId))
+    act(() => result.current.screen.selectAccount(OTHER_ID))
 
-    await waitFor(() => expect(result.current.location.pathname).toBe(`/cashflow/accounts/${otherId}`))
-    expect(result.current.location.search).toBe('?month=2026-09')
+    await waitFor(() => expect(result.current.location.pathname).toBe(`/cashflow/accounts/${OTHER_ID}`))
+    expect(result.current.location.search).toBe('?month=2026-08')
   })
 })
