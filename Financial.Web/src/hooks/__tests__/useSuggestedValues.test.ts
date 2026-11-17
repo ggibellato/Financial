@@ -159,4 +159,34 @@ describe('useSuggestedValues', () => {
     expect(updateInvestmentSnapshotValueMock).toHaveBeenLastCalledWith('s1', { value: 142.17 })
     expect(result.current.phase).toBe('closed')
   })
+
+  function pendingLoad() {
+    let resolve: (value: InvestmentSnapshotSuggestionsDto) => void = () => {}
+    getInvestmentSnapshotSuggestionsMock.mockReturnValueOnce(new Promise((settle) => { resolve = settle }))
+    return (value: InvestmentSnapshotSuggestionsDto) => resolve(value)
+  }
+
+  it('stays closed when suggestions arrive after the panel was closed', async () => {
+    const resolveLoad = pendingLoad()
+    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
+    act(() => result.current.open())
+    act(() => result.current.close())
+
+    await act(async () => resolveLoad(SUGGESTIONS))
+
+    expect(result.current.phase).toBe('closed')
+  })
+
+  it('keeps the suggestions of the latest load when an earlier one arrives last', async () => {
+    const resolveFirst = pendingLoad()
+    const resolveSecond = pendingLoad()
+    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
+    act(() => result.current.open())
+    act(() => result.current.retryFetch())
+
+    await act(async () => resolveSecond(SUGGESTIONS))
+    await act(async () => resolveFirst({ suggestions: [], notUpdated: [] }))
+
+    expect(result.current.rows).toHaveLength(2)
+  })
 })
