@@ -47,11 +47,17 @@ function renderTransferForm(onSaved = vi.fn()) {
   return renderHook(() => useAccountTransferForm(BARCLAYS, COUNTERPARTS, onSaved, { viewedMonth: { year: 2026, month: 10 } }))
 }
 
+function fillTransferToChase(result: ReturnType<typeof renderTransferForm>['result']) {
+  act(() => result.current.openCreateForm('to'))
+  act(() => {
+    result.current.setField('destinationBank', 'chase')
+    result.current.setField('amount', '10')
+  })
+}
+
 async function submitTransferToChase() {
   const { result } = renderTransferForm()
-  act(() => result.current.openCreateForm('to'))
-  act(() => result.current.setField('destinationBank', 'chase'))
-  act(() => result.current.setField('amount', '10'))
+  fillTransferToChase(result)
   await act(async () => result.current.submit())
   return result
 }
@@ -138,15 +144,6 @@ describe('useAccountTransferForm', () => {
     )
   })
 
-  it('opens with the last-used counterpart when it is still listed', () => {
-    setStoredDefault('accountTransfer.destination', 'chase')
-    const { result } = renderTransferForm()
-
-    act(() => result.current.openCreateForm('to'))
-
-    expect(result.current.destinationBank).toBe('chase')
-  })
-
   it('validates the counterpart, the amount and the destination amount before saving', async () => {
     const { result } = renderTransferForm()
 
@@ -217,5 +214,110 @@ describe('useAccountTransferForm', () => {
     expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
     expect(result.current.saveErrorFields).toEqual({})
     expect(result.current.amount).toBe('10')
+  })
+
+  const EUR_TRANSFER: AccountTransferDto = {
+    ...TRANSFER,
+    id: 't2',
+    sourceAccountId: 'barclays',
+    sourceAccountName: 'Barclays',
+    sourceCurrency: 'GBP',
+    destinationAccountId: 'wise-eur',
+    destinationAccountName: 'Wise EUR',
+    destinationCurrency: 'EUR',
+    amount: 100,
+    destinationAmount: 115.4,
+    note: null,
+  }
+
+  it('does not list an edited counterpart twice when it is still listed', () => {
+    const { result } = renderHook(() => useAccountTransferForm(BARCLAYS, { destinations: [WISE_EUR], sources: [] }, vi.fn()))
+
+    act(() => result.current.openEditForm(EUR_TRANSFER))
+
+    expect(result.current.counterpartOptions).toEqual([WISE_EUR])
+  })
+
+  it('edits a transfer out of this account against its destination, with the amount received', () => {
+    const { result } = renderHook(() => useAccountTransferForm(BARCLAYS, { destinations: [], sources: [] }, vi.fn()))
+
+    act(() => result.current.openEditForm(EUR_TRANSFER))
+
+    expect(result.current).toMatchObject({
+      direction: 'to',
+      counterpartOptions: [WISE_EUR],
+      destinationAmount: '115.4',
+      note: '',
+      destinationCurrency: 'EUR',
+    })
+  })
+
+  it('leaves the amount received blank when editing a transfer in one currency', () => {
+    const { result } = renderTransferForm()
+
+    act(() => result.current.openEditForm(TRANSFER))
+
+    expect(result.current.destinationAmount).toBe('')
+  })
+
+  it.each([
+    ['to', 'accountTransfer.destination', 'wise-eur', 'destinationBank', 'wise-eur'],
+    ['from', 'accountTransfer.source', 'wise-eur', 'sourceBank', ''],
+    ['to', 'accountTransfer.destination', 'gone', 'destinationBank', ''],
+  ] as const)('opening %s with %s stored as %s sets %s to %j', (direction, key, stored, field, expected) => {
+    setStoredDefault(key, stored)
+    const { result } = renderTransferForm()
+
+    act(() => result.current.openCreateForm(direction))
+
+    expect(result.current[field]).toBe(expected)
+  })
+
+  it('refuses a whitespace-only date, a zero amount and a zero amount received', async () => {
+    const { result } = renderTransferForm()
+    act(() => result.current.openCreateForm('to'))
+    act(() => {
+      result.current.setField('date', '  ')
+      result.current.setField('destinationBank', 'wise-eur')
+      result.current.setField('amount', '0')
+      result.current.setField('destinationAmount', '0')
+    })
+
+    await act(async () => result.current.submit())
+
+    expect(result.current.saveErrorFields).toEqual({
+      date: 'Enter the transfer date.',
+      amount: 'Transfer amount must be greater than zero.',
+      destinationAmount: 'Enter the amount received in EUR.',
+    })
+    expect(result.current.saveError).toBe('Enter the transfer date.')
+  })
+
+  it('shows the form as saving until the save settles, then the fallback message', async () => {
+    createAccountTransferMock.mockRejectedValue('unexpected')
+    const { result } = renderTransferForm()
+    fillTransferToChase(result)
+
+    act(() => result.current.submit())
+    expect(result.current.isSaving).toBe(true)
+    await act(async () => {})
+
+    expect(result.current.isSaving).toBe(false)
+    expect(result.current.saveError).toBe('Failed to save transfer.')
+  })
+
+  it('sends a whitespace-only note as no note and remembers the date', async () => {
+    createAccountTransferMock.mockResolvedValue(TRANSFER)
+    const { result } = renderTransferForm()
+    fillTransferToChase(result)
+    act(() => {
+      result.current.setField('date', '2026-10-03')
+      result.current.setField('note', '  ')
+    })
+
+    await act(async () => result.current.submit())
+
+    expect(createAccountTransferMock).toHaveBeenCalledWith(expect.objectContaining({ note: null }))
+    expect(getStoredDefault('transfer.date')).toBe('2026-10-03')
   })
 })

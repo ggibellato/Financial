@@ -137,13 +137,16 @@ describe('useMensais', () => {
     expect(getMensaisBillsMock).toHaveBeenCalledTimes(1)
   })
 
-  it('surfaces a fetch error', async () => {
-    getMensaisBillsMock.mockRejectedValue(new Error('Network down'))
+  it.each([
+    [new Error('Network down'), 'Network down'],
+    ['unexpected', 'Unable to load Mensais data.'],
+  ])('surfaces a fetch error %s as %s', async (reason, message) => {
+    getMensaisBillsMock.mockRejectedValue(reason)
     const { result } = renderHook(() => useMensais())
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
-    expect(result.current.error).toBe('Network down')
+    expect(result.current.error).toBe(message)
   })
 
   it('saves an edit and re-fetches the bill list', async () => {
@@ -301,18 +304,19 @@ describe('useMensais', () => {
     expect(result.current.newDescription).toBe('')
   })
 
-  it('rejects an edit with a non-numeric value and a blank status, without calling the API', async () => {
+  it.each(['', '  '])('rejects an edit with a non-numeric value and the status %j, without calling the API', async (status) => {
     const { result } = renderHook(() => useMensais())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     act(() => result.current.showEditForm(BILLS[0]))
     act(() => result.current.setEditField('editValue', 'not-a-number'))
-    act(() => result.current.setEditField('editStatus', ''))
+    act(() => result.current.setEditField('editStatus', status))
     act(() => result.current.saveEdit())
 
     expect(updateMensaisBillMock).not.toHaveBeenCalled()
     expect(result.current.saveErrorFields.editValue).toBe('Value must be a number.')
     expect(result.current.saveErrorFields.editStatus).toBe('Status is required.')
+    expect(result.current.saveError).toBe('Value must be a number.')
   })
 
   it('cancelEdit clears the editing bill and its form fields', async () => {
@@ -434,6 +438,103 @@ describe('useMensais', () => {
     await waitFor(() => expect(result.current.deleteError).toBe('Recurring bill not found.'))
   })
 
+  async function renderLoaded() {
+    const rendered = renderHook(() => useMensais())
+    await waitFor(() => expect(rendered.result.current.isLoading).toBe(false))
+    return rendered.result
+  }
+
+  it.each([
+    ['succeeds', () => updateMensaisBillMock.mockResolvedValue({ ...BILLS[0], value: 900 })],
+    ['fails', () => updateMensaisBillMock.mockRejectedValue(new Error('down'))],
+  ])('clears the saving flag when a save %s', async (_, arrange) => {
+    arrange()
+    const result = await renderLoaded()
+    act(() => result.current.showEditForm(BILLS[0]))
+
+    act(() => result.current.saveEdit())
+
+    expect(result.current.isSaving).toBe(true)
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+  })
+
+  it('clears the adding flag when an add succeeds', async () => {
+    createMensaisBillMock.mockResolvedValue({ ...BILLS[0], id: 'b3' })
+    const result = await renderLoaded()
+    act(() => result.current.showAddForm())
+    act(() => {
+      result.current.setAddField('newDescription', 'Aluguel')
+      result.current.setAddField('newDueDay', '5')
+      result.current.setAddField('newValue', '1000')
+    })
+
+    act(() => result.current.submitAdd())
+
+    expect(result.current.isAdding).toBe(true)
+    await waitFor(() => expect(result.current.isAdding).toBe(false))
+  })
+
+  it.each([
+    ['succeeds', () => resetMensaisToUnsetMock.mockResolvedValue(BILLS)],
+    ['fails', () => resetMensaisToUnsetMock.mockRejectedValue(new Error('down'))],
+  ])('clears the resetting flag when a reset %s', async (_, arrange) => {
+    arrange()
+    const result = await renderLoaded()
+
+    act(() => result.current.resetAllToUnset())
+
+    expect(result.current.isResetting).toBe(true)
+    await waitFor(() => expect(result.current.isResetting).toBe(false))
+  })
+
+  it('keeps the expense prompt open when another bill status is updated', async () => {
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
+    const result = await renderLoaded()
+    act(() => result.current.updateBillStatus('b2', 'Paid'))
+
+    act(() => result.current.updateBillStatus('b1', 'Paid'))
+    await waitFor(() => expect(result.current.updatingStatusBillId).toBeNull())
+
+    expect(result.current.expensePromptBill?.id).toBe('b2')
+  })
+
+  it('ignores a load error from an earlier request that settles after a later one loaded', async () => {
+    let rejectFirst: (reason: unknown) => void = () => {}
+    getMensaisBillsMock.mockReturnValueOnce(new Promise((_, reject) => { rejectFirst = reject }))
+    const { result } = renderHook(() => useMensais())
+
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => rejectFirst(new Error('stale')))
+
+    expect(result.current.error).toBeNull()
+  })
+
+  it('saves the bill being edited, not the first one listed', async () => {
+    updateMensaisBillMock.mockResolvedValue(BILLS[1])
+    const result = await renderLoaded()
+    act(() => result.current.showEditForm(BILLS[1]))
+
+    act(() => result.current.saveEdit())
+
+    expect(updateMensaisBillMock).toHaveBeenCalledWith('b2', expect.objectContaining({ description: 'Council Tax', area: 'UK', dueDay: 15 }))
+  })
+
+  it('refuses a whitespace-only description and a value that is not a number', async () => {
+    const result = await renderLoaded()
+    act(() => result.current.showAddForm())
+    act(() => {
+      result.current.setAddField('newDescription', '  ')
+      result.current.setAddField('newDueDay', '5')
+      result.current.setAddField('newValue', 'abc')
+    })
+
+    act(() => result.current.submitAdd())
+
+    expect(result.current.addErrorFields).toEqual({ newDescription: 'Description is required.', newValue: 'Value must be a number.' })
+    expect(createMensaisBillMock).not.toHaveBeenCalled()
+  })
+
   it('resets all bills to Unset using the server response directly, without an extra fetch', async () => {
     resetMensaisToUnsetMock.mockResolvedValue([
       { ...BILLS[0], status: 'Unset' },
@@ -520,28 +621,21 @@ describe('useMensais', () => {
       },
     )
 
-    it('updates a Brasil bill directly, without opening the prompt', async () => {
-      updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
-      const { result } = renderHook(() => useMensais())
-      await waitFor(() => expect(result.current.isLoading).toBe(false))
+    it.each([
+      ['a Brasil bill to Paid', BILLS[0], 'Paid'],
+      ['an already-Paid UK bill to Unset', { ...ukBill, status: 'Paid' }, 'Unset'],
+      ['an already-Paid UK bill to Paid again', { ...ukBill, status: 'Paid' }, 'Paid'],
+      ['an unpaid UK bill to Scheduled', ukBill, 'Scheduled'],
+    ])('updates %s directly, without opening the prompt', async (_, bill, status) => {
+      getMensaisBillsMock.mockResolvedValue([bill])
+      updateMensaisBillStatusMock.mockResolvedValue({ ...bill, status })
+      const result = await renderLoaded()
 
-      act(() => result.current.updateBillStatus(BILLS[0].id, 'Paid'))
-
-      expect(result.current.expensePromptBill).toBeNull()
-      await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(BILLS[0].id, { status: 'Paid' }))
-    })
-
-    it('updates an already-Paid UK bill directly, without opening the prompt', async () => {
-      const paidUkBill = { ...ukBill, status: 'Paid' }
-      getMensaisBillsMock.mockResolvedValue([BILLS[0], paidUkBill])
-      updateMensaisBillStatusMock.mockResolvedValue({ ...paidUkBill, status: 'Unset' })
-      const { result } = renderHook(() => useMensais())
-      await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-      act(() => result.current.updateBillStatus(paidUkBill.id, 'Unset'))
+      act(() => result.current.updateBillStatus(bill.id, status))
 
       expect(result.current.expensePromptBill).toBeNull()
-      await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(paidUkBill.id, { status: 'Unset' }))
+      expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(bill.id, { status })
+      await waitFor(() => expect(result.current.updatingStatusBillId).toBeNull())
     })
 
     it('confirming the prompt marks the bill Paid with its expense in one call and closes the prompt', async () => {

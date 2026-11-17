@@ -520,11 +520,11 @@ describe('useIncomeForm', () => {
     expect(result.current.saveIncomeErrorFields.grossValue).toBe('Gross value must be at least the net value.')
   })
 
-  it('rejects a submit with a non-numeric net value, without calling the API', () => {
+  it.each(['not-a-number', '-5'])('rejects a submit with the net value %s, without calling the API', (netValue) => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
-    act(() => result.current.setIncomeField('netValue', 'not-a-number'))
+    act(() => result.current.setIncomeField('netValue', netValue))
 
     act(() => result.current.submitIncome())
 
@@ -555,6 +555,179 @@ describe('useIncomeForm', () => {
     })
 
     expect(result.current.saveIncomeError).toBe('Income source is inactive')
+  })
+
+  const PLAIN_INCOME: IncomeDto = {
+    id: 'i5', date: '2026-07-01', incomeSourceId: '1', incomeSourceName: 'Gleison',
+    grossValue: null, netValue: 100, bankId: null, bankName: null, description: null,
+    potsAccountId: null,
+    hasLinkedDeposit: false,
+    fundingLines: [],
+  }
+
+  function fillNewIncome(result: { current: ReturnType<typeof useIncomeForm> }) {
+    act(() => result.current.showCreateIncomeForm())
+    act(() => {
+      result.current.setIncomeField('date', '2026-07-25')
+      result.current.setIncomeField('netValue', '42.50')
+    })
+  }
+
+  it('keeps the gross value across sources that report one and clears it for one that does not', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('grossValue', '120'))
+
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    const afterAriana = result.current.incomeGrossValue
+    act(() => result.current.setIncomeField('incomeSource', '3'))
+
+    expect(afterAriana).toBe('120')
+    expect(result.current.incomeGrossValue).toBe('')
+  })
+
+  it('opens an income with no gross value, bank or description as blank fields, and leaves edit mode on cancel', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    act(() => result.current.showEditIncomeForm(PLAIN_INCOME))
+    const opened = { gross: result.current.incomeGrossValue, bank: result.current.incomeBank, description: result.current.incomeDescription }
+
+    act(() => result.current.cancelIncomeForm())
+
+    expect(opened).toEqual({ gross: '', bank: '', description: '' })
+    expect(result.current.isIncomeEditing).toBe(false)
+  })
+
+  it('opens an income with its gross value', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+
+    act(() => result.current.showEditIncomeForm({ ...PLAIN_INCOME, grossValue: 120 }))
+
+    expect(result.current.incomeGrossValue).toBe('120')
+  })
+
+  it.each([
+    ['succeeds', false, () => createIncomeMock.mockResolvedValue(PLAIN_INCOME)],
+    ['succeeds and the form stays open', true, () => createIncomeMock.mockResolvedValue(PLAIN_INCOME)],
+    ['fails', false, () => createIncomeMock.mockRejectedValue(new Error('down'))],
+  ])('clears the saving flag when a save %s', async (_, keepOpenAfterSave, arrange) => {
+    arrange()
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { keepOpenAfterSave }))
+    fillNewIncome(result)
+
+    act(() => result.current.submitIncome())
+
+    expect(result.current.isSavingIncome).toBe(true)
+    await waitFor(() => expect(result.current.isSavingIncome).toBe(false))
+  })
+
+  it.each([
+    ['p1', '2'],
+    ['p2', '2'],
+    ['p3', '5'],
+  ])('opens a deposit into %s on the source %s', (potsAccountId, sourceId) => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+
+    act(() => result.current.showDepositIncomeForm(potsAccountId))
+
+    expect(result.current.incomeSource).toBe(sourceId)
+  })
+
+  it('opens a deposit with no source when none splits to pots', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES.filter((source) => source.potsAccountId === null), BANKS, onSaved))
+
+    act(() => result.current.showDepositIncomeForm('p1'))
+
+    expect(result.current.incomeSource).toBe('')
+  })
+
+  it.each([
+    ['a listed source', '3', '3'],
+    ['a source no longer listed', 'gone', '1'],
+  ])('opens a new income for %s remembered on the expected source', (_, stored, expected) => {
+    setStoredDefault('income.incomeSource', stored)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeSource).toBe(expected)
+  })
+
+  it('keeps a chosen Pots account when the split is unticked and ticked again', async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('potsAccountId', 'p2'))
+
+    act(() => result.current.setIncomeField('splitToReserve', 'false'))
+    act(() => result.current.setIncomeField('splitToReserve', 'true'))
+
+    expect(result.current.incomePotsAccountId).toBe('p2')
+  })
+
+  it("fills the source's Pots account only when the split is ticked with none chosen", async () => {
+    const { result } = await renderIncomeForm(onSaved)
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('potsAccountId', ''))
+
+    act(() => result.current.setIncomeField('splitToReserve', 'false'))
+    act(() => result.current.setIncomeField('date', '2026-07-25'))
+    const beforeTicking = result.current.incomePotsAccountId
+    act(() => result.current.setIncomeField('splitToReserve', 'true'))
+
+    expect(beforeTicking).toBe('')
+    expect(result.current.incomePotsAccountId).toBe('p1')
+  })
+
+  it('saves a split unticked after its Pots account was cleared', async () => {
+    createIncomeMock.mockResolvedValue(PLAIN_INCOME)
+    const { result } = await renderIncomeForm(onSaved)
+    fillNewIncome(result)
+    act(() => result.current.setIncomeField('incomeSource', '2'))
+    act(() => result.current.setIncomeField('potsAccountId', ''))
+    act(() => result.current.setIncomeField('splitToReserve', 'false'))
+
+    await act(async () => result.current.submitIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: null }))
+  })
+
+  it('refuses a whitespace-only date and source, with the first message in the banner', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    fillNewIncome(result)
+    act(() => {
+      result.current.setIncomeField('date', '  ')
+      result.current.setIncomeField('incomeSource', '  ')
+    })
+
+    act(() => result.current.submitIncome())
+
+    expect(result.current.saveIncomeErrorFields).toMatchObject({ date: 'Date is required.', incomeSource: 'Income source is required.' })
+    expect(result.current.saveIncomeError).toBe('Date is required.')
+    expect(createIncomeMock).not.toHaveBeenCalled()
+  })
+
+  it('sends a whitespace-only gross value as none', async () => {
+    createIncomeMock.mockResolvedValue(PLAIN_INCOME)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    fillNewIncome(result)
+    act(() => result.current.setIncomeField('grossValue', '  '))
+
+    await act(async () => result.current.submitIncome())
+
+    expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ grossValue: null }))
+  })
+
+  it('names the chosen bank and the bank an edited income opened on for its funding', () => {
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    act(() => result.current.showCreateIncomeForm())
+    act(() => result.current.setIncomeField('bank', 'bank-trading212'))
+    const created = { bankName: result.current.incomeFunding.bankName, openedBankIds: result.current.incomeFunding.openedBankIds }
+
+    act(() => result.current.showEditIncomeForm({ ...PLAIN_INCOME, bankId: 'bank-barclays', bankName: 'Barclays' }))
+
+    expect(created).toEqual({ bankName: 'Trading212', openedBankIds: [] })
+    expect(result.current.incomeFunding.openedBankIds).toEqual(['bank-barclays'])
   })
 })
 
@@ -847,6 +1020,14 @@ describe('useIncomeForm on a bank screen', () => {
     expect(result.current.incomeFunding.mismatch).toBeNull()
   })
 
+  it('opens the screen bank line with no amount until there is a net value', async () => {
+    const result = await renderOnBankScreen()
+
+    act(() => result.current.showCreateIncomeForm())
+
+    expect(result.current.incomeFunding.lines[0].amount).toBe('')
+  })
+
   it('keeps the line on the whole deposit while the net value changes', async () => {
     const result = await openNewIncomeOnBankScreen()
 
@@ -981,7 +1162,7 @@ describe('useIncomeForm account settings', () => {
 
   it('does not remember the locked bank as the default bank', async () => {
     createIncomeMock.mockResolvedValue(SAVED)
-    const locked = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE }))
+    const locked = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: { id: 'bank-trading212', name: 'Trading212' } }))
     await addIncome(locked.result)
 
     const monthly = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
