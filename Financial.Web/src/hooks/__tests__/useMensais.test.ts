@@ -434,6 +434,129 @@ describe('useMensais', () => {
     await waitFor(() => expect(result.current.deleteError).toBe('Recurring bill not found.'))
   })
 
+  async function renderLoaded() {
+    const rendered = renderHook(() => useMensais())
+    await waitFor(() => expect(rendered.result.current.isLoading).toBe(false))
+    return rendered.result
+  }
+
+  it.each([
+    ['succeeds', () => updateMensaisBillMock.mockResolvedValue({ ...BILLS[0], value: 900 })],
+    ['fails', () => updateMensaisBillMock.mockRejectedValue(new Error('down'))],
+  ])('clears the saving flag when a save %s', async (_, arrange) => {
+    arrange()
+    const result = await renderLoaded()
+    act(() => result.current.showEditForm(BILLS[0]))
+
+    act(() => result.current.saveEdit())
+
+    expect(result.current.isSaving).toBe(true)
+    await waitFor(() => expect(result.current.isSaving).toBe(false))
+  })
+
+  it('clears the adding flag when an add succeeds', async () => {
+    createMensaisBillMock.mockResolvedValue({ ...BILLS[0], id: 'b3' })
+    const result = await renderLoaded()
+    act(() => result.current.showAddForm())
+    act(() => {
+      result.current.setAddField('newDescription', 'Aluguel')
+      result.current.setAddField('newDueDay', '5')
+      result.current.setAddField('newValue', '1000')
+    })
+
+    act(() => result.current.submitAdd())
+
+    expect(result.current.isAdding).toBe(true)
+    await waitFor(() => expect(result.current.isAdding).toBe(false))
+  })
+
+  it.each([
+    ['succeeds', () => resetMensaisToUnsetMock.mockResolvedValue(BILLS)],
+    ['fails', () => resetMensaisToUnsetMock.mockRejectedValue(new Error('down'))],
+  ])('clears the resetting flag when a reset %s', async (_, arrange) => {
+    arrange()
+    const result = await renderLoaded()
+
+    act(() => result.current.resetAllToUnset())
+
+    expect(result.current.isResetting).toBe(true)
+    await waitFor(() => expect(result.current.isResetting).toBe(false))
+  })
+
+  it('keeps the expense prompt open when another bill status is updated', async () => {
+    updateMensaisBillStatusMock.mockResolvedValue({ ...BILLS[0], status: 'Paid' })
+    const result = await renderLoaded()
+    act(() => result.current.updateBillStatus('b2', 'Paid'))
+
+    act(() => result.current.updateBillStatus('b1', 'Paid'))
+    await waitFor(() => expect(result.current.updatingStatusBillId).toBeNull())
+
+    expect(result.current.expensePromptBill?.id).toBe('b2')
+  })
+
+  it('ignores a load error from an earlier request that settles after a later one loaded', async () => {
+    let rejectFirst: (reason: unknown) => void = () => {}
+    getMensaisBillsMock.mockReset()
+      .mockReturnValueOnce(new Promise((_, reject) => { rejectFirst = reject }))
+      .mockResolvedValue(BILLS)
+    const { result } = renderHook(() => useMensais())
+
+    act(() => result.current.retry())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => rejectFirst(new Error('stale')))
+
+    expect(result.current.error).toBeNull()
+  })
+
+  it('shows the load fallback message when the load fails without one', async () => {
+    getMensaisBillsMock.mockRejectedValue('unexpected')
+
+    const result = await renderLoaded()
+
+    expect(result.current.error).toBe('Unable to load Mensais data.')
+  })
+
+  it('refuses a whitespace-only status and shows the first error in the banner', async () => {
+    const result = await renderLoaded()
+    act(() => result.current.showEditForm(BILLS[0]))
+    act(() => {
+      result.current.setEditField('editValue', 'x')
+      result.current.setEditField('editStatus', '  ')
+    })
+
+    act(() => result.current.saveEdit())
+
+    expect(result.current.saveErrorFields.editStatus).toBe('Status is required.')
+    expect(result.current.saveError).toBe('Value must be a number.')
+  })
+
+  it('saves the bill being edited, not the first one listed', async () => {
+    updateMensaisBillMock.mockResolvedValue(BILLS[1])
+    const result = await renderLoaded()
+    act(() => result.current.showEditForm(BILLS[1]))
+
+    act(() => result.current.saveEdit())
+
+    await waitFor(() =>
+      expect(updateMensaisBillMock).toHaveBeenCalledWith('b2', expect.objectContaining({ description: 'Council Tax', area: 'UK', dueDay: 15 })),
+    )
+  })
+
+  it('refuses a whitespace-only description and a value that is not a number', async () => {
+    const result = await renderLoaded()
+    act(() => result.current.showAddForm())
+    act(() => {
+      result.current.setAddField('newDescription', '  ')
+      result.current.setAddField('newDueDay', '5')
+      result.current.setAddField('newValue', 'abc')
+    })
+
+    act(() => result.current.submitAdd())
+
+    expect(result.current.addErrorFields).toEqual({ newDescription: 'Description is required.', newValue: 'Value must be a number.' })
+    expect(createMensaisBillMock).not.toHaveBeenCalled()
+  })
+
   it('resets all bills to Unset using the server response directly, without an extra fetch', async () => {
     resetMensaisToUnsetMock.mockResolvedValue([
       { ...BILLS[0], status: 'Unset' },
@@ -542,6 +665,22 @@ describe('useMensais', () => {
 
       expect(result.current.expensePromptBill).toBeNull()
       await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(paidUkBill.id, { status: 'Unset' }))
+    })
+
+    it.each([
+      ['an unpaid UK bill to another status', 'Unset', 'Pending'],
+      ['an already-Paid UK bill to Paid again', 'Paid', 'Paid'],
+    ])('updates %s directly, without opening the prompt', async (_, current, status) => {
+      const bill = { ...ukBill, status: current }
+      getMensaisBillsMock.mockResolvedValue([BILLS[0], bill])
+      updateMensaisBillStatusMock.mockResolvedValue({ ...bill, status })
+      const { result } = renderHook(() => useMensais())
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      act(() => result.current.updateBillStatus(bill.id, status))
+
+      expect(result.current.expensePromptBill).toBeNull()
+      await waitFor(() => expect(updateMensaisBillStatusMock).toHaveBeenCalledWith(bill.id, { status }))
     })
 
     it('confirming the prompt marks the bill Paid with its expense in one call and closes the prompt', async () => {
