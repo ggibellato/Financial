@@ -37,6 +37,11 @@ const PAID: CardStatementDto = {
 
 const BARCLAYS = { id: 'barclays', name: 'Barclays', currency: 'GBP' }
 
+const REOPENERS = [
+  ['opened again', (result: { current: ReturnType<typeof usePayCardStatementForm> }) => act(() => result.current.open())],
+  ['cancelled', (result: { current: ReturnType<typeof usePayCardStatementForm> }) => act(() => result.current.cancel())],
+] as const
+
 function renderForm(onPaid = vi.fn()) {
   return renderHook(() => usePayCardStatementForm(BARCLAYS, onPaid))
 }
@@ -47,8 +52,8 @@ async function openLoaded(result: { current: ReturnType<typeof usePayCardStateme
 }
 
 describe('payableCardsOf', () => {
-  it('lists each card once, in the order the statements come', () => {
-    expect(payableCardsOf(STATEMENTS)).toEqual([
+  it('lists each card once, in the order the statements come, named by its first statement', () => {
+    expect(payableCardsOf([...STATEMENTS, { ...STATEMENTS[0], id: 'amex-dec', creditCardName: 'Amex renamed' }])).toEqual([
       { id: 'amex', name: 'Amex' },
       { id: 'visa', name: 'Visa' },
     ])
@@ -165,6 +170,11 @@ describe('usePayCardStatementForm', () => {
     expect(result.current.isOpen).toBe(true)
     expect(result.current.values.cardId).toBe('')
     expect(result.current.values.statementId).toBe('')
+
+    act(() => {
+      expect(result.current.submit()).toBe('cardId')
+    })
+    expect(result.current.saveError).toBeNull()
   })
 
   it('reports a load error with retry, and nothing to pay on an empty list', async () => {
@@ -180,7 +190,7 @@ describe('usePayCardStatementForm', () => {
     expect(result.current.loadError).toBeNull()
   })
 
-  it('is dirty once a card is chosen or the date changes, and clean again after cancel', async () => {
+  it('is clean again after cancel', async () => {
     const { result } = renderForm()
     await openLoaded(result)
     expect(result.current.isDirty).toBe(false)
@@ -191,5 +201,113 @@ describe('usePayCardStatementForm', () => {
 
     expect(result.current.isDirty).toBe(false)
     expect(result.current.isOpen).toBe(false)
+  })
+
+  it.each(REOPENERS)('starts over with today and no field messages when %s', async (_, reopen) => {
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('date', '2026-10-14'))
+    act(() => {
+      result.current.submit()
+    })
+
+    reopen(result)
+
+    expect(result.current.values.date).toBe('2026-10-15')
+    expect(result.current.fieldErrors).toEqual({})
+  })
+
+  it('drops the save message when opened again', async () => {
+    markCardStatementPaidMock.mockRejectedValue(new ApiError('Bank is inactive.', 400))
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('cardId', 'visa'))
+    act(() => {
+      result.current.submit()
+    })
+    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+
+    act(() => result.current.open())
+
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('clears the save message when a field changes and when a payment starts', async () => {
+    markCardStatementPaidMock.mockRejectedValue(new ApiError('Bank is inactive.', 400))
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('cardId', 'visa'))
+    const failPayment = async () => {
+      act(() => {
+        result.current.submit()
+      })
+      await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+    }
+
+    await failPayment()
+    act(() => result.current.setField('date', '2026-10-14'))
+    const afterEdit = result.current.saveError
+    await failPayment()
+    markCardStatementPaidMock.mockReturnValue(new Promise(() => {}))
+    act(() => {
+      result.current.submit()
+    })
+
+    expect(afterEdit).toBeNull()
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('clears the card and statement messages when the card changes, and only the date message when the date changes', async () => {
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('date', ''))
+    act(() => {
+      result.current.submit()
+    })
+
+    act(() => result.current.setField('date', '2026-10-14'))
+    const afterDate = result.current.fieldErrors
+    act(() => result.current.setField('cardId', 'amex'))
+
+    expect(afterDate).toEqual({ cardId: 'Select a card.', statementId: 'Select a statement.', date: undefined })
+    expect(result.current.fieldErrors).toEqual({ cardId: undefined, statementId: undefined, date: undefined })
+  })
+
+  it('has nothing to pay only once an open form has loaded an empty list', async () => {
+    let resolveLoad: (statements: PayableStatementDto[]) => void = () => {}
+    getPayableStatementsMock.mockReturnValue(new Promise((resolve) => { resolveLoad = resolve }))
+    const { result } = renderForm()
+    const closed = result.current.hasNothingToPay
+    act(() => result.current.open())
+    const loading = result.current.hasNothingToPay
+
+    await act(async () => resolveLoad([]))
+    const loaded = result.current.hasNothingToPay
+    act(() => result.current.cancel())
+
+    expect({ closed, loading, loaded, cancelled: result.current.hasNothingToPay }).toEqual({ closed: false, loading: false, loaded: true, cancelled: false })
+  })
+
+  it.each([
+    ['a card with several statements', 'cardId', 'amex'],
+    ['a statement', 'statementId', 'amex-oct'],
+    ['another date', 'date', '2026-10-14'],
+  ] as const)('is dirty once %s is chosen', async (_, field, value) => {
+    const { result } = renderForm()
+    await openLoaded(result)
+
+    act(() => result.current.setField(field, value))
+
+    expect(result.current.isDirty).toBe(true)
+  })
+
+  it('is clean again once a card with several statements is unchosen', async () => {
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('cardId', 'amex'))
+
+    act(() => result.current.setField('cardId', ''))
+
+    expect(result.current.isDirty).toBe(false)
   })
 })
