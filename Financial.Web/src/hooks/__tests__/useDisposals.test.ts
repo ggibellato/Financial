@@ -142,9 +142,10 @@ describe('useDisposals', () => {
   })
 
   it('groups a superseded record and its replacement into one chain, sorted newest-created-first', async () => {
+    const first = disposal({ id: 'd0', createdAt: '2025-10-01T09:00:00Z', status: 'Superseded', supersededByRecordId: 'd1' })
     const original = disposal({ id: 'd1', createdAt: '2025-11-03T09:00:00Z', status: 'Superseded', supersededByRecordId: 'd2' })
     const replacement = disposal({ id: 'd2', createdAt: '2025-12-01T09:00:00Z', status: 'Active', method: 'FIFO' })
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [original, replacement] })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [first, replacement, original] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => useDisposals(), { wrapper })
     setNode(ASSET_NODE)
@@ -152,7 +153,7 @@ describe('useDisposals', () => {
 
     const chain = result.current.chains[0]
     expect(chain.active.id).toBe('d2')
-    expect(chain.history).toEqual([original])
+    expect(chain.history).toEqual([original, first])
   })
 
   it('excludes a transaction group with no Active record (retired with nothing to show)', async () => {
@@ -185,6 +186,8 @@ describe('useDisposals', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.chains).toHaveLength(2))
 
+    expect(result.current.filteredChains).toEqual(result.current.chains)
+
     act(() => result.current.setTaxYear('2024/25'))
 
     expect(result.current.filteredChains).toHaveLength(1)
@@ -203,5 +206,20 @@ describe('useDisposals', () => {
 
     act(() => result.current.toggleExpanded('d1'))
     expect(result.current.expandedIds.has('d1')).toBe(false)
+  })
+
+  it('starts from all years with nothing expanded when another asset is selected', async () => {
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, disposalRecords: [disposal({ id: 'd1' })] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useDisposals(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.chains).toHaveLength(1))
+    act(() => result.current.setTaxYear('2024/25'))
+    act(() => result.current.toggleExpanded('d1'))
+
+    setNode({ ...ASSET_NODE, assetName: 'TRPL4' })
+
+    await waitFor(() => expect(result.current.selectedTaxYear).toBe(ALL_TAX_YEARS))
+    expect(result.current.expandedIds.size).toBe(0)
   })
 })

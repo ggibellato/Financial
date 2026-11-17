@@ -202,6 +202,7 @@ describe('usePortfolioAssetSummary', () => {
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
     expect(result.current.items).toBeNull()
+    expect(result.current.isLoading).toBe(false)
   })
 
   it('resets_state_on_node_change', async () => {
@@ -308,7 +309,7 @@ describe('usePortfolioAssetSummary', () => {
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.items).not.toBeNull())
-    expect(result.current.rowPrices[0].isLoading).toBe(true)
+    expect(result.current.rowPrices).toEqual([{ isLoading: true, currentPrice: null, fetchFailed: false, isManual: false }])
   })
 
   it('populates_row_price_on_price_success', async () => {
@@ -329,22 +330,20 @@ describe('usePortfolioAssetSummary', () => {
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
     await waitFor(() => expect(result.current.rowPrices[0]?.fetchFailed).toBe(true))
-    expect(result.current.rowPrices[0].currentPrice).toBeNull()
-    expect(result.current.rowPrices[0].isLoading).toBe(false)
+    expect(result.current.rowPrices).toEqual([{ isLoading: false, currentPrice: null, fetchFailed: true, isManual: false }])
   })
 
   it('failed_price_for_one_row_does_not_affect_other_rows', async () => {
+    const failing = deferred<AssetPriceDto>()
     getPortfolioAssetsSummaryMock.mockResolvedValue([ITEM_1, ITEM_2])
-    getCurrentPriceMock
-      .mockRejectedValueOnce(new Error('Price fetch failed'))
-      .mockResolvedValueOnce(PRICE_DTO)
+    getCurrentPriceMock.mockReturnValueOnce(failing.promise).mockResolvedValueOnce(PRICE_DTO)
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
     setNode(PORTFOLIO_NODE)
-    await waitFor(() => {
-      expect(result.current.rowPrices[0]?.isLoading).toBe(false)
-      expect(result.current.rowPrices[1]?.isLoading).toBe(false)
-    })
+    await waitFor(() => expect(result.current.rowPrices[1]?.isLoading).toBe(false))
+
+    await act(async () => failing.reject(new Error('Price fetch failed')))
+
     expect(result.current.rowPrices[0].fetchFailed).toBe(true)
     expect(result.current.rowPrices[1].currentPrice).toBe(100.5)
     expect(result.current.rowPrices[1].fetchFailed).toBe(false)
@@ -465,6 +464,21 @@ describe('usePortfolioAssetSummary', () => {
       await act(async () => pending.resolve({ ...PRICE_DTO, price: 999, isManual: true }))
 
       expectOtherPortfolioUntouched(result)
+      expect(getPortfolioAssetsSummaryMock.mock.calls.filter(([, portfolioName]) => portfolioName === 'Acoes')).toHaveLength(1)
+    })
+
+    it('does_not_reread_the_valuation_of_a_portfolio_left_while_its_prices_were_loading', async () => {
+      const secondRow = deferred<AssetPriceDto>()
+      getPortfolioAssetsSummaryMock.mockImplementation(answerOnlyFor('Acoes', [ITEM_1, ITEM_2]))
+      getCurrentPriceMock.mockResolvedValueOnce(PRICE_DTO).mockReturnValueOnce(secondRow.promise)
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => usePortfolioAssetSummary(), { wrapper })
+      setNode(PORTFOLIO_NODE)
+      await waitFor(() => expect(result.current.rowPrices[0]?.currentPrice).toBe(100.5))
+      await moveToOtherPortfolio(setNode, result)
+
+      await act(async () => secondRow.resolve(PRICE_DTO))
+
       expect(getPortfolioAssetsSummaryMock.mock.calls.filter(([, portfolioName]) => portfolioName === 'Acoes')).toHaveLength(1)
     })
 
