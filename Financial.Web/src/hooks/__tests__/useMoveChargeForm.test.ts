@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto, ExpenseDto } from '../../api/types'
+import { never } from '../../test-utils/deferred'
 import { STATEMENTS_LOAD_ERROR } from '../useCardStatements'
 import { moveTargetsFor, useMoveChargeForm } from '../useMoveChargeForm'
 
@@ -122,7 +123,11 @@ describe('useMoveChargeForm', () => {
     act(() => result.current.setTarget('2027-01'))
 
     expect(result.current.isDirty).toBe(true)
-    act(() => result.current.submit())
+    let submitted = false
+    act(() => {
+      submitted = result.current.submit()
+    })
+    expect(submitted).toBe(true)
     expect(result.current.form?.isSaving).toBe(true)
 
     await waitFor(() => expect(result.current.isOpen).toBe(false))
@@ -166,6 +171,42 @@ describe('useMoveChargeForm', () => {
     await waitFor(() => expect(getAccountStatementsMock).toHaveBeenCalledTimes(2))
   })
 
+  it('sends the move once while it is saving', () => {
+    moveChargeToStatementMock.mockReturnValue(never())
+    const { result } = renderHook(() => useMoveChargeForm(onMoved))
+    act(() => result.current.open(CHARGE))
+    act(() => result.current.setTarget('2026-12'))
+    act(() => {
+      result.current.submit()
+    })
+
+    let submitted = false
+    act(() => {
+      submitted = result.current.submit()
+    })
+
+    expect(submitted).toBe(true)
+    expect(moveChargeToStatementMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps the targets while a failed reload is retried', async () => {
+    moveChargeToStatementMock.mockRejectedValue(new ApiError('Charges can only move to a later, unpaid statement.', 400))
+    const { result } = renderHook(() => useMoveChargeForm(onMoved))
+    act(() => result.current.open(CHARGE))
+    await waitFor(() => expect(result.current.isLoadingTargets).toBe(false))
+    getAccountStatementsMock.mockRejectedValueOnce('offline')
+    act(() => result.current.setTarget('2026-12'))
+    act(() => {
+      result.current.submit()
+    })
+    await waitFor(() => expect(result.current.targetsError).toBe(STATEMENTS_LOAD_ERROR))
+    getAccountStatementsMock.mockReturnValue(never())
+
+    act(() => result.current.retryTargets())
+
+    expect(result.current.targets[0]).toEqual({ value: '2026-12', label: 'December 2026' })
+  })
+
   it('closes on cancel', () => {
     const { result } = renderHook(() => useMoveChargeForm(onMoved))
     act(() => result.current.open(CHARGE))
@@ -173,5 +214,6 @@ describe('useMoveChargeForm', () => {
     act(() => result.current.cancel())
 
     expect(result.current.isOpen).toBe(false)
+    expect(result.current.hasNoTargets).toBe(false)
   })
 })
