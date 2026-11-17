@@ -621,15 +621,13 @@ describe('useMensais', () => {
       },
     )
 
-
-
     it.each([
       ['a Brasil bill to Paid', BILLS[0], 'Paid'],
       ['an already-Paid UK bill to Unset', { ...ukBill, status: 'Paid' }, 'Unset'],
       ['an already-Paid UK bill to Paid again', { ...ukBill, status: 'Paid' }, 'Paid'],
       ['an unpaid UK bill to Scheduled', ukBill, 'Scheduled'],
     ])('updates %s directly, without opening the prompt', async (_, bill, status) => {
-      getMensaisBillsMock.mockResolvedValue([bill.id === BILLS[0].id ? bill : BILLS[0], bill])
+      getMensaisBillsMock.mockResolvedValue([bill])
       updateMensaisBillStatusMock.mockResolvedValue({ ...bill, status })
       const result = await renderLoaded()
 

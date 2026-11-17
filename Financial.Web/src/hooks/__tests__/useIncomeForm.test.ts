@@ -620,7 +620,6 @@ describe('useIncomeForm', () => {
     await waitFor(() => expect(result.current.isSavingIncome).toBe(false))
   })
 
-
   it.each([
     ['p1', '2'],
     ['p2', '2'],

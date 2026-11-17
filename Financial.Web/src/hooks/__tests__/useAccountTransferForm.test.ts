@@ -144,7 +144,6 @@ describe('useAccountTransferForm', () => {
     )
   })
 
-
   it('validates the counterpart, the amount and the destination amount before saving', async () => {
     const { result } = renderTransferForm()
 
