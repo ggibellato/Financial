@@ -38,6 +38,16 @@ const SUGGESTIONS: InvestmentSnapshotSuggestionsDto = {
   notUpdated: [{ accountId: 'a3', accountName: 'ChaseMaster4023', reason: 'No statement for this month yet' }],
 }
 
+const SNAPSHOT = { id: 's1', accountId: 'a1', accountName: 'PlatinumVisa8003', isLiability: true, year: 2026, month: 8, value: 142.17 }
+
+async function renderOpened(onApplied = vi.fn(), suggestions: InvestmentSnapshotSuggestionsDto = SUGGESTIONS) {
+  getInvestmentSnapshotSuggestionsMock.mockResolvedValue(suggestions)
+  const rendered = renderHook(() => useSuggestedValues(2026, 8, onApplied))
+  act(() => rendered.result.current.open())
+  await waitFor(() => expect(rendered.result.current.phase).toBe('ready'))
+  return rendered.result
+}
+
 describe('useSuggestedValues', () => {
   beforeEach(() => {
     getInvestmentSnapshotSuggestionsMock.mockReset()
@@ -46,19 +56,13 @@ describe('useSuggestedValues', () => {
   })
 
   it('defaults zero current value rows to included', async () => {
-    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
-
-    act(() => result.current.open())
-    await waitFor(() => expect(result.current.phase).toBe('ready'))
+    const result = await renderOpened()
 
     expect(result.current.rows.find((r) => r.accountId === 'a1')?.included).toBe(true)
   })
 
   it('defaults nonzero current value rows to unchecked', async () => {
-    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
-
-    act(() => result.current.open())
-    await waitFor(() => expect(result.current.phase).toBe('ready'))
+    const result = await renderOpened()
 
     expect(result.current.rows.find((r) => r.accountId === 'a2')?.included).toBe(false)
   })
@@ -78,20 +82,9 @@ describe('useSuggestedValues', () => {
   })
 
   it('applies only checked rows sequentially', async () => {
-    updateInvestmentSnapshotValueMock.mockResolvedValue({
-      id: 's1',
-      accountId: 'a1',
-      accountName: 'PlatinumVisa8003',
-      isLiability: true,
-      year: 2026,
-      month: 8,
-      value: 142.17,
-    })
+    updateInvestmentSnapshotValueMock.mockResolvedValue(SNAPSHOT)
     const onApplied = vi.fn()
-    const { result } = renderHook(() => useSuggestedValues(2026, 8, onApplied))
-
-    act(() => result.current.open())
-    await waitFor(() => expect(result.current.phase).toBe('ready'))
+    const result = await renderOpened(onApplied)
 
     await act(async () => {
       await result.current.apply()
@@ -102,22 +95,16 @@ describe('useSuggestedValues', () => {
     expect(onApplied).toHaveBeenCalledTimes(1)
   })
 
-  it('continues past a failed row', async () => {
-    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
-
-    act(() => result.current.open())
-    await waitFor(() => expect(result.current.phase).toBe('ready'))
-
-    act(() => result.current.toggleIncluded('a2'))
-    updateInvestmentSnapshotValueMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({
-      id: 's2',
-      accountId: 'a2',
-      accountName: 'ReservasPessoais',
-      isLiability: true,
-      year: 2026,
-      month: 8,
-      value: 5612.3,
+  it('continues past a failed row, counting only the applied rows that succeeded or failed', async () => {
+    const result = await renderOpened(vi.fn(), {
+      ...SUGGESTIONS,
+      suggestions: [
+        ...SUGGESTIONS.suggestions,
+        { snapshotId: 's3', accountId: 'a3', accountName: 'Untouched', currentValue: 10, suggestedValue: 12, sourceDescription: 'x' },
+      ],
     })
+    act(() => result.current.toggleIncluded('a2'))
+    updateInvestmentSnapshotValueMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ ...SNAPSHOT, id: 's2', accountId: 'a2' })
 
     await act(async () => {
       await result.current.apply()
@@ -125,15 +112,12 @@ describe('useSuggestedValues', () => {
 
     expect(updateInvestmentSnapshotValueMock).toHaveBeenCalledTimes(2)
     expect(result.current.phase).toBe('completed')
-    expect(result.current.failedRows).toHaveLength(1)
+    expect(result.current.failedRows.map((row) => row.accountId)).toEqual(['a1'])
     expect(result.current.succeededCount).toBe(1)
   })
 
   it('retry failed resubmits prior values without refetching', async () => {
-    const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
-
-    act(() => result.current.open())
-    await waitFor(() => expect(result.current.phase).toBe('ready'))
+    const result = await renderOpened()
 
     updateInvestmentSnapshotValueMock.mockRejectedValueOnce(new Error('boom'))
     await act(async () => {
@@ -142,15 +126,7 @@ describe('useSuggestedValues', () => {
     expect(result.current.phase).toBe('completed')
     expect(getInvestmentSnapshotSuggestionsMock).toHaveBeenCalledTimes(1)
 
-    updateInvestmentSnapshotValueMock.mockResolvedValueOnce({
-      id: 's1',
-      accountId: 'a1',
-      accountName: 'PlatinumVisa8003',
-      isLiability: true,
-      year: 2026,
-      month: 8,
-      value: 142.17,
-    })
+    updateInvestmentSnapshotValueMock.mockResolvedValueOnce(SNAPSHOT)
     await act(async () => {
       await result.current.retryFailed()
     })
@@ -160,16 +136,6 @@ describe('useSuggestedValues', () => {
     expect(updateInvestmentSnapshotValueMock).toHaveBeenLastCalledWith('s1', { value: 142.17 })
     expect(result.current.phase).toBe('closed')
   })
-
-  const SNAPSHOT = { id: 's1', accountId: 'a1', accountName: 'PlatinumVisa8003', isLiability: true, year: 2026, month: 8, value: 142.17 }
-
-  async function renderOpened(onApplied = vi.fn(), suggestions: InvestmentSnapshotSuggestionsDto = SUGGESTIONS) {
-    getInvestmentSnapshotSuggestionsMock.mockResolvedValue(suggestions)
-    const rendered = renderHook(() => useSuggestedValues(2026, 8, onApplied))
-    act(() => rendered.result.current.open())
-    await waitFor(() => expect(rendered.result.current.phase).toBe('ready'))
-    return rendered.result
-  }
 
   it('is closed until opened', () => {
     const { result } = renderHook(() => useSuggestedValues(2026, 8, vi.fn()))
@@ -183,7 +149,8 @@ describe('useSuggestedValues', () => {
     rerender({ month: 9 })
     act(() => result.current.open())
 
-    await waitFor(() => expect(getInvestmentSnapshotSuggestionsMock).toHaveBeenCalledWith(2026, 9))
+    expect(getInvestmentSnapshotSuggestionsMock).toHaveBeenCalledWith(2026, 9)
+    await waitFor(() => expect(result.current.phase).toBe('ready'))
   })
 
   it('shows the load fallback message when the load fails without one', async () => {
@@ -241,25 +208,6 @@ describe('useSuggestedValues', () => {
     })
 
     expect(result.current.applyProgress).toEqual({ current: 1, total: 1, accountName: 'PlatinumVisa8003' })
-  })
-
-  it('counts only the rows that succeeded and lists only the rows that failed', async () => {
-    const result = await renderOpened(vi.fn(), {
-      ...SUGGESTIONS,
-      suggestions: [
-        ...SUGGESTIONS.suggestions,
-        { snapshotId: 's3', accountId: 'a3', accountName: 'Untouched', currentValue: 10, suggestedValue: 12, sourceDescription: 'x' },
-      ],
-    })
-    act(() => result.current.toggleIncluded('a2'))
-    updateInvestmentSnapshotValueMock.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce({ ...SNAPSHOT, id: 's2' })
-
-    await act(async () => {
-      await result.current.apply()
-    })
-
-    expect(result.current.succeededCount).toBe(1)
-    expect(result.current.failedRows.map((row) => row.accountId)).toEqual(['a1'])
   })
 
   it('reports the applied values to the latest callback it was given', async () => {

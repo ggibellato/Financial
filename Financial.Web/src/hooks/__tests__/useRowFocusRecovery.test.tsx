@@ -162,20 +162,15 @@ describe('useRowFocusRecovery', () => {
     expect(document.body).toHaveFocus()
   })
 
-  it('focuses the same control in the next row when the focused row goes away', async () => {
-    render(<SelfDeletingGrid />)
+  it.each([
+    ['the same table body', false, 'Edit'],
+    ['a table body drawn again', true, 'Delete'],
+  ])('focuses the same control in the next row of %s when the focused row goes away', async (_, redrawsBody, control) => {
+    render(<SelfDeletingGrid redrawsBody={redrawsBody} />)
 
-    removeWhileFocused(screen.getByRole('button', { name: 'Edit Food' }))
+    removeWhileFocused(screen.getByRole('button', { name: `${control} Food` }))
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit Fuel' })).toHaveFocus())
-  })
-
-  it('finds the next row in a table body that was drawn again', async () => {
-    render(<SelfDeletingGrid redrawsBody />)
-
-    removeWhileFocused(screen.getByRole('button', { name: 'Delete Food' }))
-
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Fuel' })).toHaveFocus())
+    await waitFor(() => expect(screen.getByRole('button', { name: `${control} Fuel` })).toHaveFocus())
   })
 
   it('leaves focus to the page when a cell rather than a control of the row had it', async () => {
@@ -183,7 +178,7 @@ describe('useRowFocusRecovery', () => {
 
     removeWhileFocused(screen.getByText('Food'))
 
-    await waitFor(() => expect(screen.queryByText('Food')).not.toBeInTheDocument())
+    expect(screen.queryByText('Food')).not.toBeInTheDocument()
     expect(document.body).toHaveFocus()
   })
 

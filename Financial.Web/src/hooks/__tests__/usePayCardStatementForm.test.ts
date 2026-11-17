@@ -37,6 +37,11 @@ const PAID: CardStatementDto = {
 
 const BARCLAYS = { id: 'barclays', name: 'Barclays', currency: 'GBP' }
 
+const REOPENERS = [
+  ['opened again', (result: { current: ReturnType<typeof usePayCardStatementForm> }) => act(() => result.current.open())],
+  ['cancelled', (result: { current: ReturnType<typeof usePayCardStatementForm> }) => act(() => result.current.cancel())],
+] as const
+
 function renderForm(onPaid = vi.fn()) {
   return renderHook(() => usePayCardStatementForm(BARCLAYS, onPaid))
 }
@@ -165,6 +170,11 @@ describe('usePayCardStatementForm', () => {
     expect(result.current.isOpen).toBe(true)
     expect(result.current.values.cardId).toBe('')
     expect(result.current.values.statementId).toBe('')
+
+    act(() => {
+      expect(result.current.submit()).toBe('cardId')
+    })
+    expect(result.current.saveError).toBeNull()
   })
 
   it('reports a load error with retry, and nothing to pay on an empty list', async () => {
@@ -180,7 +190,7 @@ describe('usePayCardStatementForm', () => {
     expect(result.current.loadError).toBeNull()
   })
 
-  it('is dirty once a card is chosen or the date changes, and clean again after cancel', async () => {
+  it('is clean again after cancel', async () => {
     const { result } = renderForm()
     await openLoaded(result)
     expect(result.current.isDirty).toBe(false)
@@ -193,10 +203,7 @@ describe('usePayCardStatementForm', () => {
     expect(result.current.isOpen).toBe(false)
   })
 
-  it.each([
-    ['opened again', (result: { current: ReturnType<typeof usePayCardStatementForm> }) => act(() => result.current.open())],
-    ['cancelled', (result: { current: ReturnType<typeof usePayCardStatementForm> }) => act(() => result.current.cancel())],
-  ])('starts over with today and no field messages when %s', async (_, reopen) => {
+  it.each(REOPENERS)('starts over with today and no field messages when %s', async (_, reopen) => {
     const { result } = renderForm()
     await openLoaded(result)
     act(() => result.current.setField('date', '2026-10-14'))
@@ -221,24 +228,6 @@ describe('usePayCardStatementForm', () => {
     await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
 
     act(() => result.current.open())
-
-    expect(result.current.saveError).toBeNull()
-  })
-
-  it('clears the save message when the statement it was for is gone and the form is sent again', async () => {
-    markCardStatementPaidMock.mockRejectedValue(new ApiError('This statement is already paid.', 409))
-    const { result } = renderForm()
-    await openLoaded(result)
-    act(() => result.current.setField('cardId', 'visa'))
-    getPayableStatementsMock.mockResolvedValue(STATEMENTS.filter((statement) => statement.id !== 'visa-oct'))
-    act(() => {
-      result.current.submit()
-    })
-    await waitFor(() => expect(result.current.cards).toHaveLength(1))
-
-    act(() => {
-      expect(result.current.submit()).toBe('cardId')
-    })
 
     expect(result.current.saveError).toBeNull()
   })
@@ -302,6 +291,7 @@ describe('usePayCardStatementForm', () => {
   it.each([
     ['a card with several statements', 'cardId', 'amex'],
     ['a statement', 'statementId', 'amex-oct'],
+    ['another date', 'date', '2026-10-14'],
   ] as const)('is dirty once %s is chosen', async (_, field, value) => {
     const { result } = renderForm()
     await openLoaded(result)
@@ -309,5 +299,15 @@ describe('usePayCardStatementForm', () => {
     act(() => result.current.setField(field, value))
 
     expect(result.current.isDirty).toBe(true)
+  })
+
+  it('is clean again once a card with several statements is unchosen', async () => {
+    const { result } = renderForm()
+    await openLoaded(result)
+    act(() => result.current.setField('cardId', 'amex'))
+
+    act(() => result.current.setField('cardId', ''))
+
+    expect(result.current.isDirty).toBe(false)
   })
 })

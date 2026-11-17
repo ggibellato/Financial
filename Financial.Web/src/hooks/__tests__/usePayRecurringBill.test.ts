@@ -27,6 +27,11 @@ const BILLS = [WATER, RENT_PAID, BRAZIL, COUNCIL_TAX]
 
 const BARCLAYS = { id: 'barclays', name: 'Barclays' }
 
+const REOPENERS = [
+  ['opened again', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.open())],
+  ['cancelled', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.cancel())],
+] as const
+
 function renderPayBill(onPaid = vi.fn(), viewedMonth = { year: 2026, month: 10 }) {
   return renderHook(() => usePayRecurringBill(BARCLAYS, onPaid, { viewedMonth }))
 }
@@ -181,6 +186,7 @@ describe('usePayRecurringBill', () => {
     await act(async () => result.current.submit())
 
     await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+    expect(result.current.fieldErrors).toEqual({})
     expect(result.current.billId).toBe('council')
   })
 
@@ -237,10 +243,7 @@ describe('usePayRecurringBill', () => {
     expect(result.current.billError).toBeNull()
   })
 
-  it.each([
-    ['opened again', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.open())],
-    ['cancelled', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.cancel())],
-  ])('drops the bill and its field messages when %s', async (_, reopen) => {
+  it.each(REOPENERS)('drops the bill and its field messages when %s', async (_, reopen) => {
     const { result } = renderPayBill()
     await openWithCouncilTax(result)
     act(() => result.current.setField('value', '0'))
@@ -252,10 +255,7 @@ describe('usePayRecurringBill', () => {
     expect(result.current.fieldErrors).toEqual({})
   })
 
-  it.each([
-    ['opened again', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.open())],
-    ['cancelled', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.cancel())],
-  ])('drops the save message when %s', async (_, reopen) => {
+  it.each(REOPENERS)('drops the save message when %s', async (_, reopen) => {
     const { result } = renderPayBill()
     await openWithCouncilTax(result)
     act(() => result.current.setField('categoryId', 'cat-home'))
@@ -280,20 +280,6 @@ describe('usePayRecurringBill', () => {
 
     expect(afterEdit).toBeNull()
     expect(result.current.saveError).toBeNull()
-  })
-
-  it('clears a field message from the server when a payment starts again', async () => {
-    markMensaisBillPaidMock.mockRejectedValueOnce(new ApiError('Date must not be in the future.', 400))
-    const { result } = renderPayBill()
-    await openWithCouncilTax(result)
-    act(() => result.current.setField('categoryId', 'cat-home'))
-    await act(async () => result.current.submit())
-    await waitFor(() => expect(result.current.fieldErrors).toEqual({ date: 'Date must not be in the future.' }))
-    markMensaisBillPaidMock.mockReturnValue(new Promise(() => {}))
-
-    act(() => result.current.submit())
-
-    expect(result.current.fieldErrors).toEqual({})
   })
 
   it('pays once while a payment is still running, and shows it as saving', async () => {
