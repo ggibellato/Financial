@@ -256,6 +256,22 @@ describe('useAccountScreen', () => {
     expect(result.current.screen.tabs).toEqual([])
   })
 
+  it.each([
+    ['the Statements tab of a card', () => getAccountMock.mockResolvedValue({ ...DETAIL, hasStatements: true })],
+    ['the participants of a Settlement account', () => getAccountsMock.mockResolvedValue([settlementAccount({ id: BARCLAYS_ID, name: 'Mãe' })])],
+  ])('drops %s as soon as another account is selected', async (_, arrange) => {
+    arrange()
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+    getAccountMock.mockReturnValue(never())
+
+    act(() => result.current.screen.selectAccount(OTHER_ID))
+
+    await waitFor(() => expect(result.current.screen.accountId).toBe(OTHER_ID))
+    expect(result.current.screen.tabs).toEqual([])
+    expect(result.current.screen.hasParticipants).toBe(false)
+  })
+
   it('does not report hasParticipants for a bank', async () => {
     const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))

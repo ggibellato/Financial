@@ -51,8 +51,8 @@ function loadedAccountHas({ accounts, account }: AccountScreenData, capability: 
   return accounts.some((candidate) => candidate.id === account.id && candidate.capabilities.includes(capability))
 }
 
-function isPotsAccount(data: AccountScreenData, routeAccountId: string): boolean {
-  return data.account.id.toLowerCase() === routeAccountId.toLowerCase() && loadedAccountHas(data, 'HasPots')
+function isRouteAccount(data: AccountScreenData, routeAccountId: string): boolean {
+  return data.account.id.toLowerCase() === routeAccountId.toLowerCase()
 }
 
 function tabsOf(data: AccountScreenData | null, hasPots: boolean): ScreenTab[] {
@@ -127,8 +127,9 @@ export function useAccountScreen(): AccountScreen {
   )
 
   const loaded = resource.data === 'not-found' ? null : resource.data
-  const hasPots = loaded !== null && isPotsAccount(loaded, accountId)
-  const tabs = tabsOf(loaded, hasPots)
+  const routeAccount = loaded !== null && isRouteAccount(loaded, accountId) ? loaded : null
+  const hasPots = routeAccount !== null && loadedAccountHas(routeAccount, 'HasPots')
+  const tabs = tabsOf(routeAccount, hasPots)
   const defaultTab: AccountScreenTab = tabs[0]?.value ?? 'transactions'
   const tabParam = searchParams.get('tab')
 
@@ -160,7 +161,7 @@ export function useAccountScreen(): AccountScreen {
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
     hasPots,
-    hasParticipants: loaded !== null && loadedAccountHas(loaded, 'HasParticipants'),
+    hasParticipants: routeAccount !== null && loadedAccountHas(routeAccount, 'HasParticipants'),
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',
