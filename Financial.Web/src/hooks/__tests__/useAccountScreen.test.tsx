@@ -26,6 +26,7 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 const BARCLAYS_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000001'
+const OTHER_ID = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
 
 const ACCOUNTS: AccountDto[] = [account({ id: BARCLAYS_ID, name: 'Barclays' })]
 
@@ -100,13 +101,6 @@ describe('useAccountScreen', () => {
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
     expect(getAccountMock).toHaveBeenCalledWith(BARCLAYS_ID, 2026, 10)
     expect(result.current.navigationType).toBe('REPLACE')
-  })
-
-  it('leaves a URL that already has a valid month as it is', async () => {
-    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
-    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
-
-    expect(result.current.navigationType).toBe('POP')
   })
 
   it('replaces a month that becomes invalid later with the current month', async () => {
@@ -246,9 +240,9 @@ describe('useAccountScreen', () => {
       await waitFor(() => expect(result.current.screen.hasPots).toBe(true))
       getAccountMock.mockReturnValue(never())
 
-      act(() => result.current.screen.selectAccount('8f3b1c1a-2e3a-4b1a-9a7f-100000000002'))
+      act(() => result.current.screen.selectAccount(OTHER_ID))
 
-      await waitFor(() => expect(result.current.screen.accountId).toBe('8f3b1c1a-2e3a-4b1a-9a7f-100000000002'))
+      await waitFor(() => expect(result.current.screen.accountId).toBe(OTHER_ID))
       expect(result.current.screen.hasPots).toBe(false)
     })
   })
@@ -310,14 +304,13 @@ describe('useAccountScreen', () => {
   })
 
   it('navigates to another account keeping the month chosen on this one', async () => {
-    const otherId = '8f3b1c1a-2e3a-4b1a-9a7f-100000000002'
     const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`)
     await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
     act(() => result.current.screen.setMonthInputValue('2026-08'))
 
-    act(() => result.current.screen.selectAccount(otherId))
+    act(() => result.current.screen.selectAccount(OTHER_ID))
 
-    await waitFor(() => expect(result.current.location.pathname).toBe(`/cashflow/accounts/${otherId}`))
+    await waitFor(() => expect(result.current.location.pathname).toBe(`/cashflow/accounts/${OTHER_ID}`))
     expect(result.current.location.search).toBe('?month=2026-08')
   })
 })

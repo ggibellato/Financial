@@ -69,6 +69,8 @@ describe('moveTargetsFor', () => {
   })
 })
 
+const REFUSED_MOVE = new ApiError('Charges can only move to a later, unpaid statement.', 400)
+
 describe('useMoveChargeForm', () => {
   let onMoved: (message: string) => void
 
@@ -136,7 +138,7 @@ describe('useMoveChargeForm', () => {
   })
 
   it('keeps the form open with the server message when the move fails', async () => {
-    moveChargeToStatementMock.mockRejectedValue(new ApiError('Charges can only move to a later, unpaid statement.', 400))
+    moveChargeToStatementMock.mockRejectedValue(REFUSED_MOVE)
     const { result } = renderHook(() => useMoveChargeForm(onMoved))
     act(() => result.current.open(CHARGE))
     act(() => result.current.setTarget('2026-12'))
@@ -160,7 +162,7 @@ describe('useMoveChargeForm', () => {
   })
 
   it('reloads the statements after a refused move', async () => {
-    moveChargeToStatementMock.mockRejectedValue(new ApiError('Charges can only move to a later, unpaid statement.', 400))
+    moveChargeToStatementMock.mockRejectedValue(REFUSED_MOVE)
     const { result } = renderHook(() => useMoveChargeForm(onMoved))
     act(() => result.current.open(CHARGE))
     await waitFor(() => expect(result.current.isLoadingTargets).toBe(false))
@@ -190,7 +192,7 @@ describe('useMoveChargeForm', () => {
   })
 
   it('keeps the targets while a failed reload is retried', async () => {
-    moveChargeToStatementMock.mockRejectedValue(new ApiError('Charges can only move to a later, unpaid statement.', 400))
+    moveChargeToStatementMock.mockRejectedValue(REFUSED_MOVE)
     const { result } = renderHook(() => useMoveChargeForm(onMoved))
     act(() => result.current.open(CHARGE))
     await waitFor(() => expect(result.current.isLoadingTargets).toBe(false))

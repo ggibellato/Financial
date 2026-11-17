@@ -57,6 +57,17 @@ async function openLoaded(result: { current: ReturnType<typeof useCardCreditRefu
   await waitFor(() => expect(result.current.counterparts).toHaveLength(2))
 }
 
+const INACTIVE_BANK = new ApiError('Bank is inactive.', 400)
+
+async function failSave(result: { current: ReturnType<typeof useCardCreditRefundForm> }) {
+  await openLoaded(result)
+  act(() => result.current.setField('counterpartId', 'barclays'))
+  act(() => {
+    result.current.submit()
+  })
+  await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+}
+
 describe('useCardCreditRefundForm', () => {
   beforeEach(() => {
     pinDate('2026-11-05T12:00:00Z')
@@ -184,34 +195,17 @@ describe('useCardCreditRefundForm', () => {
     expect(result.current.saveError).toBeNull()
   })
 
-  it('clears the save message when a field changes', async () => {
-    createCardCreditRefundMock.mockRejectedValue(new ApiError('Bank is inactive.', 400))
+  it.each([
+    ['a field changes', (result: { current: ReturnType<typeof useCardCreditRefundForm> }) => act(() => result.current.setField('date', '2026-11-04'))],
+    ['the refund is sent again', (result: { current: ReturnType<typeof useCardCreditRefundForm> }) => act(() => {
+      result.current.submit()
+    })],
+  ])('clears the save message when %s', async (_, next) => {
+    createCardCreditRefundMock.mockRejectedValueOnce(INACTIVE_BANK).mockReturnValue(never())
     const { result } = renderForm()
-    await openLoaded(result)
-    act(() => result.current.setField('counterpartId', 'barclays'))
-    act(() => {
-      result.current.submit()
-    })
-    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+    await failSave(result)
 
-    act(() => result.current.setField('date', '2026-11-04'))
-
-    expect(result.current.saveError).toBeNull()
-  })
-
-  it('clears the save message when the refund is sent again', async () => {
-    createCardCreditRefundMock.mockRejectedValueOnce(new ApiError('Bank is inactive.', 400)).mockReturnValue(never())
-    const { result } = renderForm()
-    await openLoaded(result)
-    act(() => result.current.setField('counterpartId', 'barclays'))
-    act(() => {
-      result.current.submit()
-    })
-    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
-
-    act(() => {
-      result.current.submit()
-    })
+    next(result)
 
     expect(result.current.saveError).toBeNull()
   })
@@ -231,14 +225,9 @@ describe('useCardCreditRefundForm', () => {
   })
 
   it('drops the save message when reopened', async () => {
-    createCardCreditRefundMock.mockRejectedValue(new ApiError('Bank is inactive.', 400))
+    createCardCreditRefundMock.mockRejectedValue(INACTIVE_BANK)
     const { result } = renderForm()
-    await openLoaded(result)
-    act(() => result.current.setField('counterpartId', 'barclays'))
-    act(() => {
-      result.current.submit()
-    })
-    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+    await failSave(result)
     act(() => result.current.cancel())
 
     await openLoaded(result)

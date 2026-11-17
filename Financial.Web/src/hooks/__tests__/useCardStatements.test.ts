@@ -49,6 +49,15 @@ async function renderLoaded(onChanged = vi.fn()) {
   return hook
 }
 
+async function failPaymentAndReload(result: { current: ReturnType<typeof useCardStatements> }) {
+  markCardStatementPaidMock.mockRejectedValueOnce(new ApiError('Something went wrong on the server.', 500))
+  getAccountStatementsMock.mockRejectedValueOnce(new Error('Network down'))
+  act(() => result.current.openPayForm(OCTOBER))
+  act(() => result.current.setPayField('bankId', 'barclays'))
+  act(() => result.current.submitPayForm())
+  await waitFor(() => expect(result.current.error).not.toBeNull())
+}
+
 describe('useCardStatements', () => {
   beforeEach(() => {
     pinDate('2026-10-15T12:00:00+01:00')
@@ -70,19 +79,17 @@ describe('useCardStatements', () => {
     expect(getAccountsMock).not.toHaveBeenCalled()
   })
 
-  it('reports loading from the first render only when there is a card', () => {
-    const firstRenderLoading = (cardId: string | null) => {
-      const seen: boolean[] = []
-      renderHook(() => {
-        const hook = useCardStatements(cardId, vi.fn())
-        seen.push(hook.isLoading)
-        return hook
-      })
-      return seen[0]
-    }
+  it.each([
+    ['a card', CARD_ID, true],
+    ['no card', null, false],
+  ])('reports loading on the first render with %s: %s', (_, cardId, loading) => {
+    const seen: boolean[] = []
 
-    expect(firstRenderLoading(CARD_ID)).toBe(true)
-    expect(firstRenderLoading(null)).toBe(false)
+    renderHook(() => {
+      seen.push(useCardStatements(cardId, vi.fn()).isLoading)
+    })
+
+    expect(seen[0]).toBe(loading)
   })
 
   it('loads the statements and the banks that may pay', async () => {
@@ -186,14 +193,9 @@ describe('useCardStatements', () => {
 
   it('clears the reload error once a later payment and its reload succeed', async () => {
     const { result } = await renderLoaded()
-    markCardStatementPaidMock.mockRejectedValueOnce(new ApiError('Something went wrong on the server.', 500))
-    getAccountStatementsMock.mockRejectedValueOnce(new Error('Network down'))
-    act(() => result.current.openPayForm(OCTOBER))
-    act(() => result.current.setPayField('bankId', 'barclays'))
 
-    act(() => result.current.submitPayForm())
+    await failPaymentAndReload(result)
 
-    await waitFor(() => expect(result.current.error).not.toBeNull())
     expect(result.current.statements).toHaveLength(2)
 
     markCardStatementPaidMock.mockResolvedValueOnce(PAID_STATEMENT)
@@ -207,12 +209,7 @@ describe('useCardStatements', () => {
 
   it('keeps the statements on screen while a failed reload is retried', async () => {
     const { result } = await renderLoaded()
-    markCardStatementPaidMock.mockRejectedValueOnce(new ApiError('Something went wrong on the server.', 500))
-    getAccountStatementsMock.mockRejectedValueOnce(new Error('Network down'))
-    act(() => result.current.openPayForm(OCTOBER))
-    act(() => result.current.setPayField('bankId', 'barclays'))
-    act(() => result.current.submitPayForm())
-    await waitFor(() => expect(result.current.error).not.toBeNull())
+    await failPaymentAndReload(result)
     getAccountStatementsMock.mockReturnValue(never())
 
     act(() => result.current.retry())
