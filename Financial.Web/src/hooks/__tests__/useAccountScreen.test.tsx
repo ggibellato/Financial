@@ -256,20 +256,30 @@ describe('useAccountScreen', () => {
     expect(result.current.screen.tabs).toEqual([])
   })
 
-  it.each([
-    ['the Statements tab of a card', () => getAccountMock.mockResolvedValue({ ...DETAIL, hasStatements: true })],
-    ['the participants of a Settlement account', () => getAccountsMock.mockResolvedValue([settlementAccount({ id: BARCLAYS_ID, name: 'Mãe' })])],
-  ])('drops %s as soon as another account is selected', async (_, arrange) => {
-    arrange()
-    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
-    await waitFor(() => expect(result.current.screen.isLoading).toBe(false))
+  it('drops the Statements tab of a card as soon as another account is selected, without its tab', async () => {
+    getAccountMock.mockResolvedValue({ ...DETAIL, hasStatements: true })
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&tab=statements`)
+    await waitFor(() => expect(result.current.screen.tab).toBe('statements'))
     getAccountMock.mockReturnValue(never())
 
     act(() => result.current.screen.selectAccount(OTHER_ID))
 
     await waitFor(() => expect(result.current.screen.accountId).toBe(OTHER_ID))
     expect(result.current.screen.tabs).toEqual([])
-    expect(result.current.screen.hasParticipants).toBe(false)
+    expect(result.current.screen.tab).toBe('transactions')
+  })
+
+  it('keeps reporting the participants of the Settlement account still shown while another account loads', async () => {
+    getAccountsMock.mockResolvedValue([settlementAccount({ id: BARCLAYS_ID, name: 'Mãe' })])
+    const { result } = renderAccountScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+    await waitFor(() => expect(result.current.screen.hasParticipants).toBe(true))
+    getAccountMock.mockReturnValue(never())
+
+    act(() => result.current.screen.selectAccount(OTHER_ID))
+
+    await waitFor(() => expect(result.current.screen.accountId).toBe(OTHER_ID))
+    expect(result.current.screen.account?.id).toBe(BARCLAYS_ID)
+    expect(result.current.screen.hasParticipants).toBe(true)
   })
 
   it('does not report hasParticipants for a bank', async () => {

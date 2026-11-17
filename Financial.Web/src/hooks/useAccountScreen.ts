@@ -161,7 +161,7 @@ export function useAccountScreen(): AccountScreen {
     accounts: loaded?.accounts ?? NO_ACCOUNTS,
     account: loaded?.account ?? null,
     hasPots,
-    hasParticipants: routeAccount !== null && loadedAccountHas(routeAccount, 'HasParticipants'),
+    hasParticipants: loaded !== null && loadedAccountHas(loaded, 'HasParticipants'),
     transactions: loaded?.transactions ?? NO_TRANSACTIONS,
     isLoading: resource.isLoading,
     isNotFound: !isValidId || resource.data === 'not-found',
