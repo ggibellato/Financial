@@ -2,6 +2,7 @@ import { useCallback, useMemo, useReducer } from 'react'
 import { apiClient } from '../api/financialApiClient'
 import type { InvestmentSnapshotSuggestionDto, InvestmentSnapshotSuggestionSkippedDto } from '../api/types'
 import { getErrorMessage, parseValidatedNumber } from '../utils/formatters'
+import { useLatestRequestGuard } from './useAsyncResource'
 
 export type SuggestionRowStatus = 'pending' | 'success' | 'error'
 
@@ -139,23 +140,30 @@ export interface UseSuggestedValuesResult {
  * with progress, and a Retry Failed that resubmits currently-shown values without refetching. */
 export function useSuggestedValues(year: number, month: number, onApplied: () => void): UseSuggestedValuesResult {
   const [state, dispatch] = useReducer(reducer, INITIAL_STATE)
+  const beginRequest = useLatestRequestGuard()
 
   const fetchSuggestions = useCallback(() => {
+    const isLatest = beginRequest()
     dispatch({ type: 'FETCH_START' })
     return apiClient
       .getInvestmentSnapshotSuggestions(year, month)
-      .then((result) => dispatch({ type: 'FETCH_SUCCESS', payload: result }))
-      .catch((err: unknown) => {
-        dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, "Couldn't load suggestions") })
+      .then((result) => {
+        if (isLatest()) dispatch({ type: 'FETCH_SUCCESS', payload: result })
       })
-  }, [year, month])
+      .catch((err: unknown) => {
+        if (isLatest()) dispatch({ type: 'FETCH_ERROR', payload: getErrorMessage(err, "Couldn't load suggestions") })
+      })
+  }, [year, month, beginRequest])
 
   const open = useCallback(() => {
     dispatch({ type: 'OPEN' })
     void fetchSuggestions()
   }, [fetchSuggestions])
 
-  const close = useCallback(() => dispatch({ type: 'CLOSE' }), [])
+  const close = useCallback(() => {
+    beginRequest()
+    dispatch({ type: 'CLOSE' })
+  }, [beginRequest])
   const retryFetch = useCallback(() => void fetchSuggestions(), [fetchSuggestions])
   const toggleIncluded = useCallback(
     (accountId: string) => dispatch({ type: 'TOGGLE_INCLUDED', payload: accountId }),
