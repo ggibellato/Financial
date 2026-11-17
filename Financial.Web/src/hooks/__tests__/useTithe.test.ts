@@ -57,6 +57,26 @@ describe('useTithe', () => {
     expect(result.current.history.data).toHaveLength(12)
   })
 
+  it('shows the detail and the history loading from the first render', () => {
+    const seen: boolean[][] = []
+
+    renderHook(() => {
+      const tithe = useTithe(2026, 10)
+      seen.push([tithe.detail.isLoading, tithe.history.isLoading])
+    })
+
+    expect(seen[0]).toEqual([true, true])
+  })
+
+  it('loads the history again for another year', async () => {
+    const { rerender } = renderHook(({ y }) => useTithe(y, 10), { initialProps: { y: 2026 } })
+    await waitFor(() => expect(getTitheYearMock).toHaveBeenCalledWith(2026))
+
+    rerender({ y: 2025 })
+
+    await waitFor(() => expect(getTitheYearMock).toHaveBeenCalledWith(2025))
+  })
+
   it('keeps the history when the detail fails to load', async () => {
     getTitheSummaryByMonthMock.mockRejectedValue(new Error('boom'))
 

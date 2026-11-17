@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { IncomeDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
+import { setStoredDefault } from '../../utils/createFormDefaults'
 import { useIncomeTab } from '../useIncomeTab'
 
 const { getIncomesByMonthMock, getIncomeSourcesMock, getAccountsMock, deleteIncomeMock, showSuccessMock } = vi.hoisted(() => ({
@@ -41,8 +42,8 @@ const INCOME: IncomeDto = {
 }
 
 const ACCOUNTS = [
-  account({ id: 'barclays', name: 'Barclays' }),
   account({ id: 'old', name: 'Old bank', isActive: false }),
+  account({ id: 'barclays', name: 'Barclays' }),
   cardAccount({ id: 'amex', name: 'Amex' }),
 ]
 
@@ -72,6 +73,25 @@ describe('useIncomeTab', () => {
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
   })
 
+  it('shows the loading state from the first render', () => {
+    const seen: boolean[] = []
+
+    renderHook(() => {
+      seen.push(useIncomeTab(2026, 10).isLoading)
+    })
+
+    expect(seen[0]).toBe(true)
+  })
+
+  it('opens a new income with no bank, even with a bank remembered from an earlier save', async () => {
+    setStoredDefault('income.bank', 'barclays')
+    const { result } = await renderLoaded()
+
+    act(() => result.current.openCreate())
+
+    expect(result.current.incomeForm.incomeBank).toBe('')
+  })
+
   it('[AC P61-F02-income-tab-and-bankless-income-03] offers the accounts that receive income, keeping inactive ones for the form to filter', async () => {
     const { result } = await renderLoaded()
 
@@ -88,6 +108,21 @@ describe('useIncomeTab', () => {
     await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted'))
     expect(getIncomesByMonthMock).toHaveBeenCalledTimes(2)
     expect(result.current.isGoneNoticeShown).toBe(false)
+  })
+
+  it.each([
+    ['closes the form on the deleted income', INCOME, false],
+    ['keeps the form on another income', { ...INCOME, id: 'i2' }, true],
+  ])('%s after a delete', async (_, edited, staysOpen) => {
+    deleteIncomeMock.mockResolvedValue()
+    const { result } = await renderLoaded()
+    act(() => result.current.openEdit(edited))
+
+    act(() => result.current.incomeDelete.request(INCOME))
+    act(() => result.current.incomeDelete.confirm())
+
+    await waitFor(() => expect(showSuccessMock).toHaveBeenCalledWith('Income deleted'))
+    expect(result.current.incomeForm.editingIncomeId !== null).toBe(staysOpen)
   })
 
   it('[AC P61-F02-income-tab-and-bankless-income-06] refreshes and shows the gone notice, without a toast, when the income no longer exists', async () => {

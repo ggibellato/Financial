@@ -137,6 +137,39 @@ describe('useSettlementEntryForm in Settle mode', () => {
     expect(result.current.impliedRate).toBe('Implied rate: 1 GBP = R$21.14')
   })
 
+  it('leaves who pays and the amounts empty for a currency that is already settled', () => {
+    const { result } = openSettle(maeWith(100, 0))
+
+    fill(result, { currency: 'GBP' })
+
+    expect(result.current.values).toMatchObject({ currency: 'GBP', paidBy: '', amount: '', convertedValue: '' })
+  })
+
+  it('says what remains when you pay part of what you owe', () => {
+    const { result } = openSettle(maeWith(0, -10))
+
+    fill(result, { amount: '4' })
+    submit(result)
+
+    expect(result.current.confirmation).toBe('This leaves R$0.00 / £6.00 outstanding (you owe Mãe).')
+  })
+
+  it('shows no implied rate without an amount paid', () => {
+    const { result } = openSettle()
+
+    fill(result, { amount: '0' })
+
+    expect(result.current.impliedRate).toBeNull()
+  })
+
+  it('quotes the paid currency when both values are equal', () => {
+    const { result } = openSettle()
+
+    fill(result, { amount: '10', convertedValue: '10' })
+
+    expect(result.current.impliedRate).toBe('Implied rate: 1 BRL = £1.00')
+  })
+
   it('pre-fills only the amount on a one-currency account', () => {
     const { result } = openSettle(SAMUEL)
 
@@ -399,6 +432,18 @@ describe('useSettlementEntryForm', () => {
       await waitFor(() => expect(onSaved).toHaveBeenCalledWith('Entry added'))
     })
 
+    it('sends the description without surrounding spaces', async () => {
+      const { result, onSaved } = renderForm()
+      act(() => result.current.openAdd())
+      fillValidEntry(result)
+      fill(result, { description: '  Farmácia  ' })
+
+      submit(result)
+
+      expect(createSettlementEntryMock.mock.calls[0][1].description).toBe('Farmácia')
+      await waitFor(() => expect(onSaved).toHaveBeenCalled())
+    })
+
     it('sends a blank note as null', async () => {
       const { result, onSaved } = renderForm()
       act(() => result.current.openAdd())
@@ -571,6 +616,17 @@ describe('useSettlementEntryForm', () => {
       fill(result, { convertedValue: '' })
 
       submit(result)
+
+      expect(updateSettlementEntryMock.mock.calls[0][2].convertedValue).toBeNull()
+      await waitFor(() => expect(onSaved).toHaveBeenCalled())
+    })
+
+    it('accepts a converted value of spaces and sends it as null', async () => {
+      const { result, onSaved } = renderForm()
+      act(() => result.current.openEdit(ENTRY))
+      fill(result, { convertedValue: '  ' })
+
+      expect(submit(result)).toBeNull()
 
       expect(updateSettlementEntryMock.mock.calls[0][2].convertedValue).toBeNull()
       await waitFor(() => expect(onSaved).toHaveBeenCalled())
