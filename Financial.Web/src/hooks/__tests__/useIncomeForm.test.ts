@@ -520,11 +520,11 @@ describe('useIncomeForm', () => {
     expect(result.current.saveIncomeErrorFields.grossValue).toBe('Gross value must be at least the net value.')
   })
 
-  it('rejects a submit with a non-numeric net value, without calling the API', () => {
+  it.each(['not-a-number', '-5'])('rejects a submit with the net value %s, without calling the API', (netValue) => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     act(() => result.current.showCreateIncomeForm())
     act(() => result.current.setIncomeField('date', '2026-07-25'))
-    act(() => result.current.setIncomeField('netValue', 'not-a-number'))
+    act(() => result.current.setIncomeField('netValue', netValue))
 
     act(() => result.current.submitIncome())
 
@@ -620,16 +620,6 @@ describe('useIncomeForm', () => {
     await waitFor(() => expect(result.current.isSavingIncome).toBe(false))
   })
 
-  it('refuses a negative net value', () => {
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
-    fillNewIncome(result)
-    act(() => result.current.setIncomeField('netValue', '-5'))
-
-    act(() => result.current.submitIncome())
-
-    expect(result.current.saveIncomeErrorFields.netValue).toBe('Net value must be a non-negative number.')
-    expect(createIncomeMock).not.toHaveBeenCalled()
-  })
 
   it.each([
     ['p1', '2'],
@@ -652,9 +642,9 @@ describe('useIncomeForm', () => {
   })
 
   it.each([
-    ['3', '3'],
-    ['gone', '1'],
-  ])('opens on the remembered source %s as %s when it is still listed', (stored, expected) => {
+    ['a listed source', '3', '3'],
+    ['a source no longer listed', 'gone', '1'],
+  ])('opens a new income for %s remembered on the expected source', (_, stored, expected) => {
     setStoredDefault('income.incomeSource', stored)
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
 
@@ -690,7 +680,7 @@ describe('useIncomeForm', () => {
     expect(result.current.incomePotsAccountId).toBe('p1')
   })
 
-  it('saves an unticked split with no Pots account chosen', async () => {
+  it('saves a split unticked after its Pots account was cleared', async () => {
     createIncomeMock.mockResolvedValue(PLAIN_INCOME)
     const { result } = await renderIncomeForm(onSaved)
     fillNewIncome(result)
@@ -698,32 +688,34 @@ describe('useIncomeForm', () => {
     act(() => result.current.setIncomeField('potsAccountId', ''))
     act(() => result.current.setIncomeField('splitToReserve', 'false'))
 
-    act(() => result.current.submitIncome())
+    await act(async () => result.current.submitIncome())
 
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ potsAccountId: null }))
   })
 
-  it('refuses a whitespace-only date and source, and sends a whitespace-only gross value as none', () => {
-    createIncomeMock.mockResolvedValue(PLAIN_INCOME)
+  it('refuses a whitespace-only date and source, with the first message in the banner', () => {
     const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
     fillNewIncome(result)
     act(() => {
       result.current.setIncomeField('date', '  ')
       result.current.setIncomeField('incomeSource', '  ')
     })
-    act(() => result.current.submitIncome())
-    const errors = result.current.saveIncomeErrorFields
-    const banner = result.current.saveIncomeError
-    act(() => {
-      result.current.setIncomeField('date', '2026-07-25')
-      result.current.setIncomeField('incomeSource', '1')
-      result.current.setIncomeField('grossValue', '  ')
-    })
 
     act(() => result.current.submitIncome())
 
-    expect(errors).toMatchObject({ date: 'Date is required.', incomeSource: 'Income source is required.' })
-    expect(banner).toBe('Date is required.')
+    expect(result.current.saveIncomeErrorFields).toMatchObject({ date: 'Date is required.', incomeSource: 'Income source is required.' })
+    expect(result.current.saveIncomeError).toBe('Date is required.')
+    expect(createIncomeMock).not.toHaveBeenCalled()
+  })
+
+  it('sends a whitespace-only gross value as none', async () => {
+    createIncomeMock.mockResolvedValue(PLAIN_INCOME)
+    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved))
+    fillNewIncome(result)
+    act(() => result.current.setIncomeField('grossValue', '  '))
+
+    await act(async () => result.current.submitIncome())
+
     expect(createIncomeMock).toHaveBeenCalledWith(expect.objectContaining({ grossValue: null }))
   })
 

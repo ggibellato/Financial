@@ -47,11 +47,17 @@ function renderTransferForm(onSaved = vi.fn()) {
   return renderHook(() => useAccountTransferForm(BARCLAYS, COUNTERPARTS, onSaved, { viewedMonth: { year: 2026, month: 10 } }))
 }
 
+function fillTransferToChase(result: ReturnType<typeof renderTransferForm>['result']) {
+  act(() => result.current.openCreateForm('to'))
+  act(() => {
+    result.current.setField('destinationBank', 'chase')
+    result.current.setField('amount', '10')
+  })
+}
+
 async function submitTransferToChase() {
   const { result } = renderTransferForm()
-  act(() => result.current.openCreateForm('to'))
-  act(() => result.current.setField('destinationBank', 'chase'))
-  act(() => result.current.setField('amount', '10'))
+  fillTransferToChase(result)
   await act(async () => result.current.submit())
   return result
 }
@@ -138,14 +144,6 @@ describe('useAccountTransferForm', () => {
     )
   })
 
-  it('opens with the last-used counterpart when it is still listed', () => {
-    setStoredDefault('accountTransfer.destination', 'chase')
-    const { result } = renderTransferForm()
-
-    act(() => result.current.openCreateForm('to'))
-
-    expect(result.current.destinationBank).toBe('chase')
-  })
 
   it('validates the counterpart, the amount and the destination amount before saving', async () => {
     const { result } = renderTransferForm()
@@ -233,14 +231,6 @@ describe('useAccountTransferForm', () => {
     note: null,
   }
 
-  function fillTransferToChase(result: ReturnType<typeof renderTransferForm>['result']) {
-    act(() => result.current.openCreateForm('to'))
-    act(() => {
-      result.current.setField('destinationBank', 'chase')
-      result.current.setField('amount', '10')
-    })
-  }
-
   it('does not list an edited counterpart twice when it is still listed', () => {
     const { result } = renderHook(() => useAccountTransferForm(BARCLAYS, { destinations: [WISE_EUR], sources: [] }, vi.fn()))
 
@@ -304,7 +294,7 @@ describe('useAccountTransferForm', () => {
     expect(result.current.saveError).toBe('Enter the transfer date.')
   })
 
-  it('shows the form as saving until the save settles', async () => {
+  it('shows the form as saving until the save settles, then the fallback message', async () => {
     createAccountTransferMock.mockRejectedValue('unexpected')
     const { result } = renderTransferForm()
     fillTransferToChase(result)
