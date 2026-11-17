@@ -5,7 +5,7 @@ import type { AssetDetailsDto, AssetPriceSnapshotDto, SelectedNode, TransactionD
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { usePriceHistory } from '../usePriceHistory'
 import { pinDate } from '../../test-utils/pinDate'
-import { deferred } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getAssetDetailsMock, setAssetPriceMock, deleteAssetPriceMock } = vi.hoisted(() => ({
   getAssetDetailsMock: vi.fn<FinancialApiClient['getAssetDetails']>(),
@@ -285,10 +285,10 @@ describe('usePriceHistory', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.entries).toHaveLength(2))
     act(() => result.current.showNewForm())
-    act(() => result.current.setFormField('formDate', ''))
+    act(() => result.current.setFormField('formDate', '  '))
     act(() => result.current.setFormField('formPrice', '50'))
     act(() => result.current.saveForm())
-    expect(result.current.saveError).not.toBeNull()
+    expect(result.current.saveError).toBe('Date is required.')
     expect(setAssetPriceMock).not.toHaveBeenCalled()
   })
 
@@ -345,6 +345,36 @@ describe('usePriceHistory', () => {
     await waitFor(() => expect(result.current.entries).toEqual([ENTRY_B]))
   })
 
+  it('keeps the form open on one entry when another entry is deleted', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    deleteAssetPriceMock.mockResolvedValue({ ...ASSET_DETAILS, priceSnapshots: [ENTRY_A] })
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePriceHistory(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.entries).toHaveLength(2))
+    act(() => result.current.showEditForm(ENTRY_A))
+
+    act(() => result.current.deleteEntry('2026-08-01'))
+
+    await waitFor(() => expect(result.current.entries).toEqual([ENTRY_A]))
+    expect(result.current.isFormVisible).toBe(true)
+    expect(result.current.editingDate).toBe('2026-08-15')
+  })
+
+  it('deletes one entry at a time', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    deleteAssetPriceMock.mockReturnValue(never())
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => usePriceHistory(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.entries).toHaveLength(2))
+    act(() => result.current.deleteEntry('2026-08-15'))
+
+    act(() => result.current.deleteEntry('2026-08-01'))
+
+    expect(deleteAssetPriceMock).toHaveBeenCalledOnce()
+  })
+
   it('delete_failure_sets_delete_error', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     deleteAssetPriceMock.mockRejectedValue(new Error('Delete failed'))
@@ -387,15 +417,15 @@ describe('usePriceHistory', () => {
       id: 'tx-recent',
       date: '2026-07-15T12:00:00',
     }
+    const firstOfMonthTransaction: TransactionDto = { ...BUY_TRANSACTION, id: 'tx-first', date: '2026-07-01T00:00:00' }
     const oldTransaction: TransactionDto = { ...BUY_TRANSACTION, id: 'tx-old', date: '2020-01-01T00:00:00' }
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [recentTransaction, oldTransaction] })
+    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [recentTransaction, firstOfMonthTransaction, oldTransaction] })
     const { wrapper, setNode } = createSelectedNodeWrapper()
     const { result } = renderHook(() => usePriceHistory(), { wrapper })
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.entries).toHaveLength(2))
     act(() => result.current.setFilter('this-month'))
-    expect(result.current.filteredTransactions).toHaveLength(1)
-    expect(result.current.filteredTransactions[0].id).toBe('tx-recent')
+    expect(result.current.filteredTransactions.map((transaction) => transaction.id)).toEqual(['tx-recent', 'tx-first'])
   })
 
   describe('responses for a node the user has already left', () => {

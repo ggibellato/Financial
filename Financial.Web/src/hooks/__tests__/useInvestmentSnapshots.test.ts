@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { InvestmentSnapshotDto } from '../../api/types'
+import { deferred, never } from '../../test-utils/deferred'
 import { useInvestmentSnapshots } from '../useInvestmentSnapshots'
 
 const NOW = new Date()
@@ -138,6 +139,22 @@ describe('useInvestmentSnapshots', () => {
 
     await waitFor(() => expect(updateInvestmentSnapshotValueMock).toHaveBeenCalledWith('s1', { value: 1500 }))
     await waitFor(() => expect(getInvestmentSnapshotsMock).toHaveBeenCalledTimes(2))
+    expect(result.current.editingId).toBeNull()
+    expect(result.current.editValue).toBe('')
+    expect(result.current.isSaving).toBe(false)
+  })
+
+  it('keeps the edit open and marked as saving while the value is sent', async () => {
+    updateInvestmentSnapshotValueMock.mockReturnValue(never())
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showEditForm(SNAPSHOTS[0]))
+    act(() => result.current.setEditValue('1500'))
+
+    act(() => result.current.saveEdit())
+
+    expect(result.current.isSaving).toBe(true)
+    expect(result.current.editingId).toBe('s1')
   })
 
   it('saves a negative value', async () => {
@@ -162,7 +179,23 @@ describe('useInvestmentSnapshots', () => {
     act(() => result.current.saveEdit())
 
     expect(result.current.saveError).toBe('Value must be a number.')
+    expect(result.current.saveErrorFields).toEqual({ editValue: 'Value must be a number.' })
     expect(updateInvestmentSnapshotValueMock).not.toHaveBeenCalled()
+  })
+
+  it('drops the edit and its messages on cancel', async () => {
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    act(() => result.current.showEditForm(SNAPSHOTS[0]))
+    act(() => result.current.setEditValue('abc'))
+    act(() => result.current.saveEdit())
+
+    act(() => result.current.cancelEdit())
+
+    expect(result.current.editingId).toBeNull()
+    expect(result.current.editValue).toBe('')
+    expect(result.current.saveError).toBeNull()
+    expect(result.current.saveErrorFields).toEqual({})
   })
 
   it('surfaces a save error without crashing', async () => {
@@ -175,5 +208,29 @@ describe('useInvestmentSnapshots', () => {
     act(() => result.current.saveEdit())
 
     await waitFor(() => expect(result.current.saveError).toBe('Snapshot not found'))
+    expect(result.current.isSaving).toBe(false)
+  })
+
+  it('loads again on retry after a failed load', async () => {
+    getInvestmentSnapshotsMock.mockRejectedValueOnce(new Error('Network down'))
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    await waitFor(() => expect(result.current.error).toBe('Network down'))
+
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(result.current.snapshots).toEqual(SNAPSHOTS))
+    expect(result.current.error).toBeNull()
+  })
+
+  it('ignores an older month that fails after the newer month loaded', async () => {
+    const currentMonth = deferred<InvestmentSnapshotDto[]>()
+    getInvestmentSnapshotsMock.mockReturnValueOnce(currentMonth.promise)
+    const { result } = renderHook(() => useInvestmentSnapshots())
+    act(() => result.current.setMonthInputValue(NEXT_MONTH_INPUT))
+    await waitFor(() => expect(result.current.snapshots).toEqual(SNAPSHOTS))
+
+    await act(async () => currentMonth.reject(new Error('Network down')))
+
+    expect(result.current.error).toBeNull()
   })
 })

@@ -111,11 +111,39 @@ describe('useAssetSummary', () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     getCurrentPriceMock.mockResolvedValue(PRICE)
     const { wrapper, setNode } = createSelectedNodeWrapper()
-    renderHook(() => useAssetSummary(), { wrapper })
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
-    await waitFor(() => {
-      expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
-    })
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+    expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active')
+    expect(result.current.isLoadingAsset).toBe(false)
+  })
+
+  it('clears the asset when a node that is not an asset is chosen', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    getCurrentPriceMock.mockResolvedValue(PRICE)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+
+    setNode({ nodeType: 'Portfolio', brokerName: 'XPI', portfolioName: 'Acoes' })
+
+    await waitFor(() => expect(result.current.asset).toBeNull())
+    expect(result.current.isLoadingAsset).toBe(false)
+  })
+
+  it('loads the asset again on retry after a failed load', async () => {
+    getAssetDetailsMock.mockRejectedValueOnce(new Error('Network error')).mockResolvedValue(ASSET_DETAILS)
+    getCurrentPriceMock.mockReturnValue(never())
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.assetError).toBe('Network error'))
+
+    act(() => result.current.retryAsset())
+
+    await waitFor(() => expect(result.current.asset).toEqual(ASSET_DETAILS))
+    expect(result.current.assetError).toBeNull()
   })
 
   it('fetches_asset_details_with_historic_scope_when_context_scope_is_historic', async () => {
@@ -167,7 +195,7 @@ describe('useAssetSummary', () => {
       estimatedAnnualPercent: null,
       currentMonthCredits: 0,
     }
-    getPortfolioAssetsSummaryMock.mockResolvedValue([summaryItem, { ...summaryItem, assetName: 'OTHER' }])
+    getPortfolioAssetsSummaryMock.mockResolvedValue([{ ...summaryItem, assetName: 'OTHER', portfolioWeight: 40 }, summaryItem])
     const { wrapper, setNode } = createSelectedNodeWrapper('historic')
     const { result } = renderHook(() => useAssetSummary(), { wrapper })
     setNode(ASSET_NODE)
@@ -212,14 +240,17 @@ describe('useAssetSummary', () => {
     })
   })
 
-  it('fetches_current_price_for_cryptocurrency_asset_with_blank_exchange', async () => {
+  it.each([
+    ['a blank', ''],
+    ['no', undefined],
+  ])('fetches_current_price_for_cryptocurrency_asset_with_%s_exchange', async (_, exchange) => {
     const cryptoNode: SelectedNode = {
       nodeType: 'Asset',
       brokerName: 'Coinbase',
       portfolioName: 'Cryptocurrency',
       assetName: 'Bitcoin',
       ticker: 'BTC',
-      exchange: '',
+      exchange,
       positionType: 'Long',
       assetClass: 'Cryptocurrency',
     }
@@ -267,6 +298,17 @@ describe('useAssetSummary', () => {
     })
   })
 
+  it('does_not_fetch_a_price_for_an_equity_with_no_exchange', async () => {
+    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSummary(), { wrapper })
+
+    setNode({ ...ASSET_NODE, exchange: '' })
+
+    await waitFor(() => expect(result.current.asset).not.toBeNull())
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+  })
+
   it('returns_isLoadingAsset_true_while_fetching', async () => {
     getAssetDetailsMock.mockReturnValue(new Promise(() => {}))
     getCurrentPriceMock.mockReturnValue(new Promise(() => {}))
@@ -298,6 +340,7 @@ describe('useAssetSummary', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.assetError).toBe('Network error'))
     expect(result.current.asset).toBeNull()
+    expect(result.current.isLoadingAsset).toBe(false)
   })
 
   it('sets_price_error_on_price_fetch_failure', async () => {
@@ -308,6 +351,7 @@ describe('useAssetSummary', () => {
     setNode(ASSET_NODE)
     await waitFor(() => expect(result.current.asset).not.toBeNull())
     await waitFor(() => expect(result.current.priceError).toBe('Price unavailable'))
+    expect(result.current.isLoadingPrice).toBe(false)
     expect(result.current.assetError).toBeNull()
     expect(getAssetDetailsMock).toHaveBeenCalledTimes(1)
   })
