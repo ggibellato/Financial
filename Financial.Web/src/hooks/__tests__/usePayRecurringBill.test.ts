@@ -41,6 +41,12 @@ describe('unpaidUkBills', () => {
   it('keeps only unpaid UK bills, ordered by due day', () => {
     expect(unpaidUkBills(BILLS).map((b) => b.id)).toEqual(['council', 'water'])
   })
+
+  it('orders bills due on the same day by description', () => {
+    const gas = recurringBill({ id: 'gas', dueDay: 5, description: 'Gas', value: 40 })
+
+    expect(unpaidUkBills([gas, COUNCIL_TAX]).map((b) => b.id)).toEqual(['council', 'gas'])
+  })
 })
 
 describe('usePayRecurringBill', () => {
@@ -107,6 +113,7 @@ describe('usePayRecurringBill', () => {
 
     act(() => result.current.setField('categoryId', 'cat-home'))
     expect(result.current.fieldErrors.categoryId).toBeUndefined()
+    expect(result.current.fieldErrors.value).toBe('Enter a value greater than 0.')
   })
 
   it('opens on the last day of a past viewed month, keeping a last-used date inside it', async () => {
@@ -188,5 +195,129 @@ describe('usePayRecurringBill', () => {
     expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
     expect(result.current.values?.categoryId).toBe('cat-home')
     expect(getMensaisBillsMock).toHaveBeenCalledOnce()
+  })
+
+  async function failWithInactiveBank(result: { current: ReturnType<typeof usePayRecurringBill> }) {
+    markMensaisBillPaidMock.mockRejectedValueOnce(new ApiError('Bank is inactive.', 400))
+    await act(async () => result.current.submit())
+    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
+  }
+
+  it('shows the bills as loading only while an open form waits for them', async () => {
+    let resolveLoad: (bills: typeof BILLS) => void = () => {}
+    getMensaisBillsMock.mockReturnValue(new Promise((resolve) => { resolveLoad = resolve }))
+    const { result } = renderPayBill()
+    const closed = result.current.isLoadingBills
+    act(() => result.current.open())
+    const waiting = result.current.isLoadingBills
+
+    await act(async () => resolveLoad(BILLS))
+
+    expect({ closed, waiting, loaded: result.current.isLoadingBills }).toEqual({ closed: false, waiting: true, loaded: false })
+  })
+
+  it('stops showing the bills as loading when they fail to load', async () => {
+    getMensaisBillsMock.mockRejectedValue(new Error('offline'))
+    const { result } = renderPayBill()
+
+    act(() => result.current.open())
+
+    await waitFor(() => expect(result.current.billsError).not.toBeNull())
+    expect(result.current.isLoadingBills).toBe(false)
+  })
+
+  it('clears the bill message once a bill is chosen', async () => {
+    const { result } = renderPayBill()
+    act(() => result.current.open())
+    await waitFor(() => expect(result.current.bills).toHaveLength(2))
+    act(() => result.current.submit())
+
+    act(() => result.current.selectBill('council'))
+
+    expect(result.current.billError).toBeNull()
+  })
+
+  it.each([
+    ['opened again', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.open())],
+    ['cancelled', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.cancel())],
+  ])('drops the bill and its field messages when %s', async (_, reopen) => {
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+    act(() => result.current.setField('value', '0'))
+    act(() => result.current.submit())
+
+    reopen(result)
+
+    expect(result.current.billId).toBe('')
+    expect(result.current.fieldErrors).toEqual({})
+  })
+
+  it.each([
+    ['opened again', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.open())],
+    ['cancelled', (result: { current: ReturnType<typeof usePayRecurringBill> }) => act(() => result.current.cancel())],
+  ])('drops the save message when %s', async (_, reopen) => {
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+    act(() => result.current.setField('categoryId', 'cat-home'))
+    await failWithInactiveBank(result)
+
+    reopen(result)
+
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('clears the save message when a field changes and when a payment starts', async () => {
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+    act(() => result.current.setField('categoryId', 'cat-home'))
+    await failWithInactiveBank(result)
+
+    act(() => result.current.setField('description', 'Council Tax October'))
+    const afterEdit = result.current.saveError
+    await failWithInactiveBank(result)
+    markMensaisBillPaidMock.mockReturnValue(new Promise(() => {}))
+    act(() => result.current.submit())
+
+    expect(afterEdit).toBeNull()
+    expect(result.current.saveError).toBeNull()
+  })
+
+  it('clears a field message from the server when a payment starts again', async () => {
+    markMensaisBillPaidMock.mockRejectedValueOnce(new ApiError('Date must not be in the future.', 400))
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+    act(() => result.current.setField('categoryId', 'cat-home'))
+    await act(async () => result.current.submit())
+    await waitFor(() => expect(result.current.fieldErrors).toEqual({ date: 'Date must not be in the future.' }))
+    markMensaisBillPaidMock.mockReturnValue(new Promise(() => {}))
+
+    act(() => result.current.submit())
+
+    expect(result.current.fieldErrors).toEqual({})
+  })
+
+  it('pays once while a payment is still running, and shows it as saving', async () => {
+    markMensaisBillPaidMock.mockReturnValue(new Promise(() => {}))
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+    act(() => result.current.setField('categoryId', 'cat-home'))
+
+    act(() => result.current.submit())
+    act(() => result.current.submit())
+
+    expect(result.current.isSaving).toBe(true)
+    expect(markMensaisBillPaidMock).toHaveBeenCalledOnce()
+  })
+
+  it('shows the refusal above the form when the bills cannot be reloaded after it', async () => {
+    markMensaisBillPaidMock.mockRejectedValue(new ApiError('Bank is inactive.', 400))
+    const { result } = renderPayBill()
+    await openWithCouncilTax(result)
+    getMensaisBillsMock.mockRejectedValue(new Error('offline'))
+    act(() => result.current.setField('categoryId', 'cat-home'))
+
+    await act(async () => result.current.submit())
+
+    await waitFor(() => expect(result.current.saveError).toBe('Bank is inactive.'))
   })
 })

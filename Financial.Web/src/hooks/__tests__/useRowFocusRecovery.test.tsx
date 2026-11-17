@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { useRowFocusRecovery } from '../useRowFocusRecovery'
 
@@ -35,6 +35,22 @@ function InlineForm({ onSave }: { onSave: () => void }) {
   )
 }
 
+function NoteButton() {
+  const [notes, setNotes] = useState(0)
+  return (
+    <>
+      <button tabIndex={-1} onClick={() => setNotes((count) => count + 1)}>
+        Add note
+      </button>
+      <ul>
+        {Array.from({ length: notes }, (_, index) => (
+          <li key={index}>Note {index + 1}</li>
+        ))}
+      </ul>
+    </>
+  )
+}
+
 function Grid() {
   const [rows, setRows] = useState(['Rent', 'Food', 'Fuel'])
   const removeFood = () => setRows((current) => current.filter((row) => row !== 'Food'))
@@ -62,6 +78,7 @@ function Grid() {
       </div>
       <ClosingOverlay onConfirm={removeFood} />
       <InlineForm onSave={removeFood} />
+      <NoteButton />
     </>
   )
 }
@@ -74,6 +91,43 @@ function deleteFoodWhileTheOverlayHoldsFocus() {
   fireEvent.click(confirm)
   expect(screen.queryByRole('button', { name: 'Delete Food' })).not.toBeInTheDocument()
   expect(confirm).toHaveFocus()
+}
+
+function SelfDeletingGrid({ redrawsBody = false }: { redrawsBody?: boolean }) {
+  const [rows, setRows] = useState(['Rent', 'Food', 'Fuel'])
+  const remove = (name: string) => setRows((current) => current.filter((row) => row !== name))
+  const regionRef = useRef<HTMLDivElement>(null)
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const recordRowFocus = useRowFocusRecovery(regionRef, headingRef, false)
+  return (
+    <>
+      <h2 ref={headingRef} tabIndex={-1}>
+        Rows
+      </h2>
+      <div ref={regionRef} onFocus={recordRowFocus}>
+        <table>
+          <tbody key={redrawsBody ? rows.join() : 'rows'}>
+            {rows.map((row) => (
+              <tr key={row}>
+                <td tabIndex={-1} onClick={() => remove(row)}>
+                  {row}
+                </td>
+                <td>
+                  <button onClick={() => remove(row)}>Edit {row}</button>
+                  <button onClick={() => remove(row)}>Delete {row}</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  )
+}
+
+function removeWhileFocused(element: HTMLElement) {
+  element.focus()
+  fireEvent.click(element)
 }
 
 describe('useRowFocusRecovery', () => {
@@ -106,5 +160,39 @@ describe('useRowFocusRecovery', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Save and close' })).not.toBeInTheDocument())
     expect(screen.queryByRole('button', { name: 'Delete Food' })).not.toBeInTheDocument()
     expect(document.body).toHaveFocus()
+  })
+
+  it('focuses the same control in the next row when the focused row goes away', async () => {
+    render(<SelfDeletingGrid />)
+
+    removeWhileFocused(screen.getByRole('button', { name: 'Edit Food' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Edit Fuel' })).toHaveFocus())
+  })
+
+  it('finds the next row in a table body that was drawn again', async () => {
+    render(<SelfDeletingGrid redrawsBody />)
+
+    removeWhileFocused(screen.getByRole('button', { name: 'Delete Food' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete Fuel' })).toHaveFocus())
+  })
+
+  it('leaves focus to the page when a cell rather than a control of the row had it', async () => {
+    render(<SelfDeletingGrid />)
+
+    removeWhileFocused(screen.getByText('Food'))
+
+    await waitFor(() => expect(screen.queryByText('Food')).not.toBeInTheDocument())
+    expect(document.body).toHaveFocus()
+  })
+
+  it('keeps focus in an open dialog while other parts of the page change', async () => {
+    deleteFoodWhileTheOverlayHoldsFocus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add note' }))
+    await act(async () => {})
+
+    expect(screen.getByRole('button', { name: 'Confirm' })).toHaveFocus()
   })
 })
