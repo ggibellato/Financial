@@ -168,6 +168,10 @@ uses the repo folder.
 | 5.2 | Financial.Web | `useCorporateActions`, `useAccountActionForms` | ✅ | 75.5% | 89.5% | 25 | 0 | 14 | [#1312](https://github.com/ggibellato/Financial/pull/1312) | [Notes](5.2.md); split ratio `/` vs `*`; account action forms deferred to 5.3 |
 | 5.3 | Financial.Web | `useAccountActionForms` | ✅ | 87.5% | 94.7% | 20 | 0 | 13 | [#1313](https://github.com/ggibellato/Financial/pull/1313) | [Notes](5.3.md); which forms close each other, focus; last kills hand-checked |
 | 5.4 | Financial.Web | `useTransactions`, `useExpenseForm`, `useCredits` | ✅ | 76.5% | 93.2% | 44 | 0 | 23 | [#1315](https://github.com/ggibellato/Financial/pull/1315) | [Notes](5.4.md); found a create form opening with the edited expense's round-up, fixed in [#1316](https://github.com/ggibellato/Financial/pull/1316) |
+| 5.5 | Financial.Web | `useIncomeForm`, `useMensais`, `useAccountTransferForm` | ✅ | 81.0% | 95.4% | 41 | 0 | 19 | [#1318](https://github.com/ggibellato/Financial/pull/1318) | [Notes](5.5.md) |
+| 5.6 | Financial.Web | `useRowFocusRecovery`, `useSuggestedValues`, `usePayRecurringBill`, `usePayCardStatementForm` | ✅ | 72.5% | 90.7% | 33 | 0 | 17 | [#1319](https://github.com/ggibellato/Financial/pull/1319) | [Notes](5.6.md); found the Suggest Values panel reopening after a close while loading, fixed in [#1320](https://github.com/ggibellato/Financial/pull/1320) |
+| 5.7 | Financial.Web | `useAccountScreen`, `useCardStatements`, `useMoveChargeForm`, `useCardCreditRefundForm` | ✅ | 80.5% | 93.0% | 18 | 0 | 22 | [#1321](https://github.com/ggibellato/Financial/pull/1321) | [Notes](5.7.md); found the previous account's tabs shown while another account loads, fixed in [#1322](https://github.com/ggibellato/Financial/pull/1322) |
+| 5.8 | Financial.Web | `useInvestmentSnapshots`, `useAssetSummary`, `usePortfolioAssetSummary`, `useDisposals`, `usePriceHistory` | ✅ | 76.9% | 88.1% | 12 | 0 | 26 | [#1323](https://github.com/ggibellato/Financial/pull/1323) | [Notes](5.8.md); found the price history window dropping first-day prices at a negative UTC offset (not fixed yet) |
 | 5.x | Financial.Web | remaining `src/hooks`: slices of a few files, worst score first; measure each with the tests that reach it (`STRYKER_TEST_INCLUDE`), not the nightly score | ⬜ | | | | | | | Nightly ranking is only a starting list (see 5.1) |
 | 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
@@ -218,6 +222,10 @@ class, production notes) in its own file in this folder:
 - [5.2 Web hooks: corporate actions and account action forms (75.5% → 89.5%)](5.2.md)
 - [5.3 Web hooks: account action form orchestration (87.5% → 94.7%)](5.3.md)
 - [5.4 Web hooks: transactions, expense form and credits (76.5% → 93.2%)](5.4.md)
+- [5.5 Web hooks: income form, Mensais and account transfers (81.0% → 95.4%)](5.5.md)
+- [5.6 Web hooks: row focus recovery, suggested values, bill and statement payment (72.5% → 90.7%)](5.6.md)
+- [5.7 Web hooks: account screen, card statements, moving a charge, card credit refund (80.5% → 93.0%)](5.7.md)
+- [5.8 Web hooks: investment snapshots, asset and portfolio summaries, disposals, price history (76.9% → 88.1%)](5.8.md)
 
 ## Log
 
@@ -254,3 +262,7 @@ One line per working session: date, slice, outcome.
 | 2026-11-16 | 5.2 | `useCorporateActions` 62.8% → 91.7%; split ratio, blank optional fields, validation edges |
 | 2026-11-16 | 5.3 | `useAccountActionForms` 87.5% → 94.7%; which forms close each other, focus handling |
 | 2026-11-16 | 5.4 | Transactions, expense form and credits hooks 76.5% → 93.2%; found a create form opening with the edited expense's round-up, fixed in #1316 |
+| 2026-11-17 | 5.5 | Income form, Mensais and account transfer hooks 81.0% → 95.4% |
+| 2026-11-17 | 5.6 | Row focus recovery, suggested values and payment hooks 72.5% → 90.7%; found the Suggest Values panel reopening after a close while loading, fixed in #1320 |
+| 2026-11-17 | 5.7 | Account screen, card statements, move charge and card credit refund hooks 80.5% → 93.0%; found stale tabs on an account switch, fixed in #1322 |
+| 2026-11-17 | 5.8 | Snapshot, asset and portfolio summary, disposal and price history hooks 76.9% → 88.1%; found the price history window dropping first-day prices at a negative UTC offset |
