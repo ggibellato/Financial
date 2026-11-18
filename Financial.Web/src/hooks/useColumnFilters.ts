@@ -4,6 +4,8 @@ export const NO_FILTER_MATCH_MESSAGE = 'No rows match the current filters.'
 
 export type ColumnFilterAccessor<T> = (row: T) => string | string[] | null | undefined
 
+export type TextFilterAccessor<T> = (row: T) => string | null | undefined
+
 export type ColumnSelections = Record<string, Set<string>>
 
 export type ColumnSelectionsState = [ColumnSelections, (change: (current: ColumnSelections) => ColumnSelections) => void]
@@ -22,6 +24,8 @@ export interface UseColumnFiltersResult<T> {
   toggleValue: (columnKey: string, value: string) => void
   toggleAll: (columnKey: string) => void
   isColumnFiltered: (columnKey: string) => boolean
+  searchText: (columnKey: string) => string
+  setSearchText: (columnKey: string, text: string) => void
   isFiltered: boolean
   clearFilters: () => void
   filterSummary: FilterSummary
@@ -29,6 +33,18 @@ export interface UseColumnFiltersResult<T> {
 
 function hasUncheckedValue(selected: Set<string> | undefined, available: string[] = []): boolean {
   return selected !== undefined && available.some((value) => !selected.has(value))
+}
+
+function searchTextIn(selected: Set<string> | undefined): string {
+  return selected?.values().next().value ?? ''
+}
+
+function searchNeedle(text: string): string {
+  return text.trim().toLocaleLowerCase()
+}
+
+function containsText(value: string | null | undefined, needle: string): boolean {
+  return (value ?? '').toLocaleLowerCase().includes(needle)
 }
 
 function normalizeValues(value: string | string[] | null | undefined): string[] {
@@ -41,12 +57,14 @@ function normalizeValues(value: string | string[] | null | undefined): string[] 
  * full unfiltered `rows`, so a value never disappears just because another column's filter
  * currently hides its rows. Multiple filtered columns combine with AND; a row with more than one
  * value for a single column (e.g. a transfer touching two banks) is visible if ANY of its values
- * is checked (OR within the column).
+ * is checked (OR within the column). A text column keeps its search text as its only selected
+ * value, so one selections state (and one address update) covers both kinds of filter.
  */
 export function useColumnFilters<T>(
   rows: T[],
   accessors: Record<string, ColumnFilterAccessor<T>>,
   selectionsState?: ColumnSelectionsState,
+  textAccessors: Record<string, TextFilterAccessor<T>> = {},
 ): UseColumnFiltersResult<T> {
   const localSelections = useState<ColumnSelections>({})
   const [selections, setSelections] = selectionsState ?? localSelections
@@ -66,7 +84,21 @@ export function useColumnFilters<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows])
 
-  const isColumnFiltered = (columnKey: string): boolean => hasUncheckedValue(selections[columnKey], availableValues[columnKey])
+  const searchText = (columnKey: string): string => searchTextIn(selections[columnKey])
+
+  const isColumnFiltered = (columnKey: string): boolean =>
+    columnKey in textAccessors
+      ? searchNeedle(searchText(columnKey)) !== ''
+      : hasUncheckedValue(selections[columnKey], availableValues[columnKey])
+
+  const setSearchText = (columnKey: string, text: string) => {
+    setSelections((current) => {
+      const next = { ...current }
+      if (text) next[columnKey] = new Set([text])
+      else delete next[columnKey]
+      return next
+    })
+  }
 
   const toggleValue = (columnKey: string, value: string) => {
     setSelections((current) => {
@@ -100,22 +132,24 @@ export function useColumnFilters<T>(
   const clearFilters = () => setSelections(() => ({}))
 
   const filteredRows = useMemo(() => {
-    const activeColumns = Object.keys(accessors).filter((columnKey) => isColumnFiltered(columnKey))
-    if (activeColumns.length === 0) {
-      return rows
-    }
-
-    return rows.filter((row) =>
-      activeColumns.every((columnKey) => {
+    const valuePredicates = Object.entries(accessors)
+      .filter(([columnKey]) => isColumnFiltered(columnKey))
+      .map(([columnKey, accessor]) => {
         const selected = selections[columnKey]
-        const rowValues = normalizeValues(accessors[columnKey](row))
-        return selected != null && rowValues.some((value) => selected.has(value))
-      }),
-    )
+        return (row: T) => normalizeValues(accessor(row)).some((value) => selected.has(value))
+      })
+    const textPredicates = Object.entries(textAccessors)
+      .filter(([columnKey]) => isColumnFiltered(columnKey))
+      .map(([columnKey, accessor]) => {
+        const needle = searchNeedle(searchText(columnKey))
+        return (row: T) => containsText(accessor(row), needle)
+      })
+    const predicates = [...valuePredicates, ...textPredicates]
+    return predicates.length === 0 ? rows : rows.filter((row) => predicates.every((matches) => matches(row)))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, selections, availableValues])
 
-  const isFiltered = Object.keys(accessors).some(isColumnFiltered)
+  const isFiltered = [...Object.keys(accessors), ...Object.keys(textAccessors)].some(isColumnFiltered)
   const filterSummary = { isFiltered, shownCount: filteredRows.length, totalCount: rows.length, onClearFilters: clearFilters }
 
   return {
@@ -125,6 +159,8 @@ export function useColumnFilters<T>(
     toggleValue,
     toggleAll,
     isColumnFiltered,
+    searchText,
+    setSearchText,
     isFiltered,
     clearFilters,
     filterSummary,

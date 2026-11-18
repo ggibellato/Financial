@@ -322,7 +322,14 @@ Grids must provide applicable:
 - Sort state
 - Filter state (All transactions keeps its column filters in the page
   address through `useColumnFilterAddress`, so a refresh or Back restores them;
-  other grids keep filters in component state for now)
+  other grids keep filters in component state for now). A free-text column
+  such as Description filters through `TextFilterMenu`: a case-insensitive
+  "contains" search in the same header popover as the checklist filters,
+  combined with them and cleared by the same Clear filters. A grid with no
+  totals footer (the Account screen's Transactions) shows "Showing N of M
+  rows" beside Clear filters. Header filters are desktop-only: the stacked
+  narrow layout clips the header row and offers only the filtered count and
+  Clear filters
 - Selection state
 - Keyboard navigation
 - Loading state

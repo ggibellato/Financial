@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
 import {
   Button,
   Skeleton,
@@ -12,9 +12,14 @@ import {
 } from '@fluentui/react-components'
 import { CalendarArrowRightRegular } from '@fluentui/react-icons'
 import type { AccountTransactionDto, AccountTransactionOperationDto } from '../api/types'
+import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
 import { formatAmount, formatCurrency, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
+import ClearFiltersToolbar from './grid/ClearFiltersToolbar'
+import { focusFilterTrigger } from './grid/columnFilterText'
+import ColumnHeaderFilter, { type ColumnFilterKind } from './grid/ColumnHeaderFilter'
 import DataTableCell from './grid/DataTableCell'
+import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import RowActionsCell from './grid/RowActionsCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
 import TruncatedText from './TruncatedText'
@@ -41,6 +46,7 @@ interface TransactionColumn {
   numeric?: boolean
   accessor: SortAccessor<AccountTransactionDto>
   render: (row: AccountTransactionDto) => ReactNode
+  filter?: ColumnFilterKind
 }
 
 const DATE_COLUMN: TransactionColumn = { key: 'date', header: 'Date', accessor: (row) => row.date, render: (row) => formatShortDateUtc(row.date) }
@@ -48,8 +54,9 @@ const DATE_COLUMN: TransactionColumn = { key: 'date', header: 'Date', accessor: 
 const DESCRIPTION_COLUMN: TransactionColumn = {
   key: 'description',
   header: 'Description',
-  accessor: (row) => row.description,
+  accessor: shownDescription,
   render: (row) => <TruncatedText text={shownDescription(row)} />,
+  filter: 'text',
 }
 
 const COUNTERPART_COLUMN: TransactionColumn = {
@@ -70,8 +77,20 @@ const AMOUNT_COLUMN: TransactionColumn = {
 const ACCOUNT_COLUMNS: TransactionColumn[] = [
   DATE_COLUMN,
   DESCRIPTION_COLUMN,
-  { key: 'kind', header: 'Type', accessor: (row) => kindLabel(row.kind), render: (row) => kindLabel(row.kind) },
-  { key: 'category', header: 'Category', accessor: (row) => row.categoryName, render: (row) => <TruncatedText text={row.categoryName} /> },
+  {
+    key: 'kind',
+    header: 'Type',
+    accessor: (row) => kindLabel(row.kind),
+    render: (row) => kindLabel(row.kind),
+    filter: 'values',
+  },
+  {
+    key: 'category',
+    header: 'Category',
+    accessor: (row) => row.categoryName,
+    render: (row) => <TruncatedText text={row.categoryName} />,
+    filter: 'values',
+  },
   COUNTERPART_COLUMN,
   AMOUNT_COLUMN,
   {
@@ -119,6 +138,13 @@ function columnsOf(selection: ColumnSelection): TransactionColumn[] {
   return selection.columns === 'pots' ? POT_COLUMNS : ACCOUNT_COLUMNS
 }
 
+function filterTextOf(accessor: SortAccessor<AccountTransactionDto>) {
+  return (row: AccountTransactionDto) => {
+    const value = accessor(row)
+    return value == null ? null : String(value)
+  }
+}
+
 function actionColumnClass(hasMove: boolean): string {
   return hasMove ? 'data-table__col--action data-table__col--action-triple' : 'data-table__col--action'
 }
@@ -160,7 +186,16 @@ export default function AccountTransactionsGrid({
   const columns = columnsOf(columnSelection)
   const columnCount = columns.length + 1
   const accessors = Object.fromEntries(columns.map((column) => [column.key, column.accessor]))
-  const { sortedRows, sortState, requestSort } = useSortableRows(transactions, accessors, DATE_DESC_SORT)
+  const accessorsOf = (kind: ColumnFilterKind) =>
+    Object.fromEntries(columns.filter((column) => column.filter === kind).map((column) => [column.key, filterTextOf(column.accessor)]))
+  const filters = useColumnFilters(transactions, accessorsOf('values'), undefined, accessorsOf('text'))
+  const { filteredRows, isFiltered, clearFilters, filterSummary } = filters
+  const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, accessors, DATE_DESC_SORT)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const clearAllFilters = () => {
+    clearFilters()
+    focusFilterTrigger(tableRef.current, DESCRIPTION_COLUMN.header)
+  }
   const headerOf = (column: TransactionColumn) => (column.key === 'date' ? dateHeader : column.header)
   const actionClassName = actionColumnClass(onMove !== undefined)
   const editHandler = (edit: RowEdit, row: AccountTransactionDto): ((button: HTMLButtonElement) => void) | undefined => {
@@ -210,58 +245,64 @@ export default function AccountTransactionsGrid({
   }
 
   return (
-    <div className="account-screen__grid-scroll">
-      <Table className="data-table" aria-label="Transactions">
-        <TableHeader>
-          <TableRow>
-            {columns.map((column) => (
-              <SortableColumnHeader
-                key={column.key}
-                label={headerOf(column)}
-                columnKey={column.key}
-                numeric={column.numeric}
-                sortDirection={sortState?.columnKey === column.key ? sortState.direction : undefined}
-                onSort={requestSort}
-              />
-            ))}
-            <ActionsColumnHeader className={actionClassName} />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {isLoading ? (
+    <div className="account-screen__grid">
+      <FilteredRowsNotice {...filterSummary} tableRef={tableRef} />
+      <ClearFiltersToolbar isFiltered={isFiltered} onClearFilters={clearAllFilters} rowCount={filterSummary} />
+      <div className="account-screen__grid-scroll">
+        <Table ref={tableRef} tabIndex={-1} className="data-table" aria-label="Transactions">
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={columnCount}>
-                <Skeleton aria-label="Loading transactions" className="account-screen__grid-skeleton">
-                  <SkeletonItem />
-                  <SkeletonItem />
-                  <SkeletonItem />
-                </Skeleton>
-              </TableCell>
+              {columns.map((column) => (
+                <SortableColumnHeader
+                  key={column.key}
+                  label={headerOf(column)}
+                  columnKey={column.key}
+                  numeric={column.numeric}
+                  sortDirection={sortState?.columnKey === column.key ? sortState.direction : undefined}
+                  onSort={requestSort}
+                >
+                  <ColumnHeaderFilter columnKey={column.key} label={headerOf(column)} kind={column.filter} filters={filters} />
+                </SortableColumnHeader>
+              ))}
+              <ActionsColumnHeader className={actionClassName} />
             </TableRow>
-          ) : sortedRows.length === 0 ? (
-            <TableRow>
-              <TableCell className="data-table__cell--message" colSpan={columnCount}>
-                {emptyMessage}
-              </TableCell>
-            </TableRow>
-          ) : (
-            sortedRows.map((row) => (
-              <TableRow key={rowKey(row)}>
-                {columns.map((column) => (
-                  <DataTableCell
-                    key={column.key}
-                    label={headerOf(column)}
-                    className={column.numeric ? 'data-table__col--numeric' : undefined}
-                  >
-                    {column.render(row)}
-                  </DataTableCell>
-                ))}
-                {renderActions(row)}
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columnCount}>
+                  <Skeleton aria-label="Loading transactions" className="account-screen__grid-skeleton">
+                    <SkeletonItem />
+                    <SkeletonItem />
+                    <SkeletonItem />
+                  </Skeleton>
+                </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : sortedRows.length === 0 ? (
+              <TableRow>
+                <TableCell className="data-table__cell--message" colSpan={columnCount}>
+                  {transactions.length === 0 ? emptyMessage : NO_FILTER_MATCH_MESSAGE}
+                </TableCell>
+              </TableRow>
+            ) : (
+              sortedRows.map((row) => (
+                <TableRow key={rowKey(row)}>
+                  {columns.map((column) => (
+                    <DataTableCell
+                      key={column.key}
+                      label={headerOf(column)}
+                      className={column.numeric ? 'data-table__col--numeric' : undefined}
+                    >
+                      {column.render(row)}
+                    </DataTableCell>
+                  ))}
+                  {renderActions(row)}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   )
 }

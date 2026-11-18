@@ -8,7 +8,6 @@ import { useRowFocusRecovery } from '../hooks/useRowFocusRecovery'
 import { useSuccessToast } from '../hooks/useSuccessToast'
 import {
   Badge,
-  Button,
   Skeleton,
   SkeletonItem,
   Table,
@@ -22,15 +21,15 @@ import {
 import type { MonthTransactionDto } from '../api/types'
 import { NO_FILTER_MATCH_MESSAGE, useColumnFilters } from '../hooks/useColumnFilters'
 import { useColumnFilterAddress } from '../hooks/useColumnFilterAddress'
-import { useMediaQuery } from '../hooks/useMediaQuery'
 import { DATE_DESC_SORT, useSortableRows, type SortAccessor } from '../hooks/useSortableRows'
-import { MOBILE_MEDIA_QUERY } from '../styles/breakpoints'
 import { deleteFailedMessage, formatLongMonthYear, formatMonthInputValue, formatN2, formatShortDateUtc, formatSignedN2 } from '../utils/formatters'
 import { monthTransactionTotals } from '../utils/monthTransactionTotals'
 import ConfirmDeleteDialog from './ConfirmDeleteDialog'
 import ErrorState from './ErrorState'
 import ActionsColumnHeader from './grid/ActionsColumnHeader'
-import ColumnFilterMenu from './grid/ColumnFilterMenu'
+import ClearFiltersToolbar from './grid/ClearFiltersToolbar'
+import { focusFilterTrigger } from './grid/columnFilterText'
+import ColumnHeaderFilter, { type ColumnFilterKind } from './grid/ColumnHeaderFilter'
 import DataTableCell from './grid/DataTableCell'
 import FilteredRowsNotice from './grid/FilteredRowsNotice'
 import RowActionsCell from './grid/RowActionsCell'
@@ -52,12 +51,6 @@ import {
 } from './accountActions'
 
 const useStyles = makeStyles({
-  toolbar: {
-    display: 'flex',
-    flexShrink: 0,
-    justifyContent: 'flex-start',
-    marginBottom: tokens.spacingVerticalM,
-  },
   account: {
     display: 'inline-flex',
     alignItems: 'center',
@@ -94,7 +87,14 @@ const SORT_ACCESSORS = Object.fromEntries(COLUMNS.map((column) => [column.key, c
 
 const FILTER_ACCESSORS = { account: accountName, kind: typeLabel, category: categoryName }
 
-const FILTER_KEYS = Object.keys(FILTER_ACCESSORS)
+const TEXT_FILTER_ACCESSORS = { description: (row: MonthTransactionDto) => shownDescription(row.transaction) }
+
+const FILTER_KINDS: Record<string, ColumnFilterKind> = {
+  ...Object.fromEntries(Object.keys(FILTER_ACCESSORS).map((key) => [key, 'values'])),
+  ...Object.fromEntries(Object.keys(TEXT_FILTER_ACCESSORS).map((key) => [key, 'text'])),
+}
+
+const FILTER_KEYS = Object.keys(FILTER_KINDS)
 
 const GRID_LABEL = 'All transactions'
 
@@ -144,9 +144,8 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
   const isDeletingRow = ({ transaction }: MonthTransactionDto) =>
     (rowDelete.isDeleting && rowDelete.row === transaction) ||
     (operationDelete.isDeleting && operationDelete.target?.operationId === transaction.operation?.operationId)
-  const isStackedLayout = useMediaQuery(MOBILE_MEDIA_QUERY)
-  const { filteredRows, availableValues, selectedValues, toggleValue, toggleAll, isColumnFiltered, isFiltered, clearFilters, filterSummary } =
-    useColumnFilters(rows, FILTER_ACCESSORS, useColumnFilterAddress(FILTER_KEYS))
+  const filters = useColumnFilters(rows, FILTER_ACCESSORS, useColumnFilterAddress(FILTER_KEYS), TEXT_FILTER_ACCESSORS)
+  const { filteredRows, isColumnFiltered, isFiltered, clearFilters, filterSummary } = filters
   const { sortedRows, sortState, requestSort } = useSortableRows(filteredRows, SORT_ACCESSORS, DATE_DESC_SORT)
   const monthValue = formatMonthInputValue(year, month)
 
@@ -154,7 +153,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
 
   const clearAllFilters = () => {
     clearFilters()
-    gridRef.current?.querySelector<HTMLButtonElement>(`button[aria-label="Filter by ${CATEGORY_HEADER}"]`)?.focus()
+    focusFilterTrigger(gridRef.current, CATEGORY_HEADER)
   }
 
   const renderCell = (column: Column, row: MonthTransactionDto): ReactNode => {
@@ -247,13 +246,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
   return (
     <section ref={gridRef} className="monthly-page__section monthly-page__section--grid" onFocus={recordRowFocus}>
       <FilteredRowsNotice {...filterSummary} tableRef={tableRef} />
-      {isFiltered && !isStackedLayout && (
-        <div className={styles.toolbar}>
-          <Button appearance="primary" onClick={clearAllFilters}>
-            Clear filters
-          </Button>
-        </div>
-      )}
+      <ClearFiltersToolbar isFiltered={isFiltered} onClearFilters={clearAllFilters} />
       <div className="monthly-page__table-scroll">
         <Table ref={tableRef} tabIndex={-1} className="data-table" aria-label={GRID_LABEL}>
           <TableHeader>
@@ -267,17 +260,7 @@ export default function MonthTransactionsGrid({ year, month, rows, isLoading, er
                   sortDirection={sortState?.columnKey === column.key ? sortState.direction : undefined}
                   onSort={requestSort}
                 >
-                  {FILTER_KEYS.includes(column.key) && (
-                    <ColumnFilterMenu
-                      columnKey={column.key}
-                      label={column.header}
-                      availableValues={availableValues[column.key]}
-                      selectedValues={selectedValues[column.key]}
-                      onToggleValue={toggleValue}
-                      onToggleAll={toggleAll}
-                      isFiltered={isColumnFiltered(column.key)}
-                    />
-                  )}
+                  <ColumnHeaderFilter columnKey={column.key} label={column.header} kind={FILTER_KINDS[column.key]} filters={filters} />
                 </SortableColumnHeader>
               ))}
               <ActionsColumnHeader />
