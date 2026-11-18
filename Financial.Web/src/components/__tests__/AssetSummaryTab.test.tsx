@@ -160,7 +160,7 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab()
     expect(screen.getByText('Current')).toBeInTheDocument()
-    expect(screen.getByText('Current value')).toBeInTheDocument()
+    expect(screen.getByText('Current price')).toBeInTheDocument()
     expect(screen.getByText('As of')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
   })
@@ -172,7 +172,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('Current value').nextElementSibling?.textContent).toBe('25.00 (Manual)')
+    expect(screen.getByText('Current price').nextElementSibling?.textContent).toBe('25.00 (Manual)')
   })
 
   it('renders_stale_badge_when_asset_market_status_is_stale', () => {
@@ -269,7 +269,7 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Portfolio weight')).toBeInTheDocument()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
     expect(screen.getByText('XIRR')).toBeInTheDocument()
-    expect(screen.getByText('XIRR (Shares only)')).toBeInTheDocument()
+    expect(screen.getByText('XIRR (shares only)')).toBeInTheDocument()
   })
 
   it('renders_dash_for_historic_xirr_while_not_yet_computed', () => {
@@ -281,7 +281,7 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab('historic')
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
-    const xirrSharesOnlyLabel = screen.getByText('XIRR (Shares only)')
+    const xirrSharesOnlyLabel = screen.getByText('XIRR (shares only)')
     expect(xirrSharesOnlyLabel.nextElementSibling?.textContent).toBe('—')
   })
 
@@ -360,11 +360,11 @@ describe('AssetSummaryTab', () => {
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
   })
 
-  it('renders_dash_for_current_value_while_price_loads', () => {
+  it('renders_dash_for_current_price_while_price_loads', () => {
     setMock({ asset: ASSET, showCurrentSection: true, isLoadingPrice: true, price: null })
     renderAssetSummaryTab()
-    const currentValueLabel = screen.getByText('Current value')
-    expect(currentValueLabel.nextElementSibling?.textContent).toBe('—')
+    const currentPriceLabel = screen.getByText('Current price')
+    expect(currentPriceLabel.nextElementSibling?.textContent).toBe('—')
   })
 
   it('renders_positive_result_percent_in_green', () => {
@@ -378,8 +378,8 @@ describe('AssetSummaryTab', () => {
     const valueEl = resultLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--green')
     expect(valueEl?.textContent).toMatch(/^25[.,]00\s?%$/)
-    expect(screen.getByText('Result % with Credits').nextElementSibling?.textContent).toMatch(/^30[.,]00\s?%$/)
-    expect(screen.getByText('Result % with Credits').nextElementSibling).toHaveClass('asset-summary__value--green')
+    expect(screen.getByText('Result % with credits').nextElementSibling?.textContent).toMatch(/^30[.,]00\s?%$/)
+    expect(screen.getByText('Result % with credits').nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
   it('renders_negative_result_percent_in_red', () => {
@@ -392,7 +392,7 @@ describe('AssetSummaryTab', () => {
     const resultLabel = screen.getByText('Result %')
     const valueEl = resultLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--red')
-    expect(screen.getByText('Result % with Credits').nextElementSibling).toHaveClass('asset-summary__value--red')
+    expect(screen.getByText('Result % with credits').nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
   it('renders_price_error_in_status_field', () => {
@@ -480,7 +480,7 @@ describe('AssetSummaryTab', () => {
     setMock({ asset: { ...ASSET, marketValue: 2500 }, price: PRICE, showCurrentSection: true })
     renderAssetSummaryTab()
 
-    expect(screen.getByText('Current value').nextElementSibling?.textContent).toBe('25.00')
+    expect(screen.getByText('Current price').nextElementSibling?.textContent).toBe('25.00')
     expect(screen.getByText('Total current + credits').nextElementSibling?.textContent).toBe('2,550.00')
   })
 
@@ -499,6 +499,6 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab('historic')
 
     expect(screen.getByText('XIRR').nextElementSibling).toHaveClass(withCreditsClass)
-    expect(screen.getByText('XIRR (Shares only)').nextElementSibling).toHaveClass(sharesOnlyClass)
+    expect(screen.getByText('XIRR (shares only)').nextElementSibling).toHaveClass(sharesOnlyClass)
   })
 })
