@@ -172,8 +172,12 @@ uses the repo folder.
 | 5.6 | Financial.Web | `useRowFocusRecovery`, `useSuggestedValues`, `usePayRecurringBill`, `usePayCardStatementForm` | ✅ | 72.5% | 90.7% | 33 | 0 | 17 | [#1319](https://github.com/ggibellato/Financial/pull/1319) | [Notes](5.6.md); found the Suggest Values panel reopening after a close while loading, fixed in [#1320](https://github.com/ggibellato/Financial/pull/1320) |
 | 5.7 | Financial.Web | `useAccountScreen`, `useCardStatements`, `useMoveChargeForm`, `useCardCreditRefundForm` | ✅ | 80.5% | 93.0% | 18 | 0 | 22 | [#1321](https://github.com/ggibellato/Financial/pull/1321) | [Notes](5.7.md); found the previous account's tabs shown while another account loads, fixed in [#1322](https://github.com/ggibellato/Financial/pull/1322) |
 | 5.8 | Financial.Web | `useInvestmentSnapshots`, `useAssetSummary`, `usePortfolioAssetSummary`, `useDisposals`, `usePriceHistory` | ✅ | 76.9% | 88.1% | 12 | 0 | 26 | [#1323](https://github.com/ggibellato/Financial/pull/1323) | [Notes](5.8.md); found the price history window dropping first-day prices at a negative UTC offset (not fixed yet) |
+| 5.9 | Financial.Web | `useSettlementEntryForm`, `useIncomeTab`, `useBalanceAdjustmentForm`, `useStatementDueDateForm`, `useTithe` | ✅ | 88.0% | 97.5% | 19 | 0 | 5 | [#1325](https://github.com/ggibellato/Financial/pull/1325) | [Notes](5.9.md) |
+| 5.10 | Financial.Web | Shared helpers: `useCrudResource`, `useAsyncResource`, `useSortableRows`, `useColumnFilters`, `useMediaQuery`, `useConfirmedDelete`, `useDuplicateNameField` | ✅ | 72.8% | 84.4% | 22 | 2 | 33 | [#1326](https://github.com/ggibellato/Financial/pull/1326) | [Notes](5.10.md); most survivors are stable dependency lists; three sort mutants are equivalent only on V8 |
+| 5.11 | Financial.Web | `useCalendarConnection`, `useCalendarSyncStatuses`, `useReportingCurrency`, `useSyncStatus` | ✅ | 60.4% | 76.9% | 7 | 0 | 15 | [#1327](https://github.com/ggibellato/Financial/pull/1327) | [Notes](5.11.md); the reporting currency `enabled ?? true` fallback is dead code |
+| 5.12 | Financial.Web | Admin list loaders: `useBrokers`, `useCategories`, `useIncomeSources`, `useInvestmentAccounts`, `useRecurringBills`, `usePortfolios` | ✅ | 18.4% | 18.4% | 0 | 0 | 19 | [#1328](https://github.com/ggibellato/Financial/pull/1328) | [Notes](5.12.md); notes only: thin wrappers over `useCrudResource`, the rest is wording |
 | 5.x | Financial.Web | remaining `src/hooks`: slices of a few files, worst score first; measure each with the tests that reach it (`STRYKER_TEST_INCLUDE`), not the nightly score | ⬜ | | | | | | | Nightly ranking is only a starting list (see 5.1) |
-| 6.1 | Financial.Web | `src/utils/**` | ⬜ | | | | | | | |
+| 6.1 | Financial.Web | `src/utils/**` | 🔄 | | | | | | | |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
 | 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
 | 7.3 | CashFlow.Infrastructure | all | ✅ | 80.6% | 92.7% | 9 | 1 | 4 | [#1304](https://github.com/ggibellato/Financial/pull/1304) | [Notes](7.3.md); reference wire names and required flags, credentials path, dead converter code |
@@ -226,6 +230,10 @@ class, production notes) in its own file in this folder:
 - [5.6 Web hooks: row focus recovery, suggested values, bill and statement payment (72.5% → 90.7%)](5.6.md)
 - [5.7 Web hooks: account screen, card statements, moving a charge, card credit refund (80.5% → 93.0%)](5.7.md)
 - [5.8 Web hooks: investment snapshots, asset and portfolio summaries, disposals, price history (76.9% → 88.1%)](5.8.md)
+- [5.9 Web hooks: settlement entry, income tab, balance adjustment, statement due date, tithe (88.0% → 97.5%)](5.9.md)
+- [5.10 Web hooks: shared helpers (72.8% → 84.4%)](5.10.md)
+- [5.11 Web hooks: calendar connection, calendar sync statuses, reporting currency, sync status (60.4% → 76.9%)](5.11.md)
+- [5.12 Web hooks: small admin list loaders (18.4%, no gaps)](5.12.md)
 
 ## Log
 
@@ -266,3 +274,7 @@ One line per working session: date, slice, outcome.
 | 2026-11-17 | 5.6 | Row focus recovery, suggested values and payment hooks 72.5% → 90.7%; found the Suggest Values panel reopening after a close while loading, fixed in #1320 |
 | 2026-11-17 | 5.7 | Account screen, card statements, move charge and card credit refund hooks 80.5% → 93.0%; found stale tabs on an account switch, fixed in #1322 |
 | 2026-11-17 | 5.8 | Snapshot, asset and portfolio summary, disposal and price history hooks 76.9% → 88.1%; found the price history window dropping first-day prices at a negative UTC offset |
+| 2026-11-17 | 5.9 | Settlement entry, income tab, balance adjustment, due date and tithe hooks 88.0% → 97.5% |
+| 2026-11-18 | 5.10 | Shared helper hooks 72.8% → 84.4%; `useConfirmedDelete` gets its own test file |
+| 2026-11-18 | 5.11 | Calendar, reporting currency and sync status hooks 60.4% → 76.9% |
+| 2026-11-18 | 5.12 | Admin list loader hooks reviewed, no gaps: thin wrappers over `useCrudResource` |
