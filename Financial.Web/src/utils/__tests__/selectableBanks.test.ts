@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { selectableBanks } from '../selectableBanks'
+import { inactiveMarked, selectableBanks } from '../selectableBanks'
 
 const BARCLAYS = { id: 'bank-barclays', name: 'Barclays', isActive: true }
 const CHASE = { id: 'bank-chase', name: 'Chase', isActive: false }
@@ -29,5 +29,15 @@ describe('selectableBanks', () => {
   it('keeps options without an active flag', () => {
     const option = { id: 'acc-1', name: 'Pots' }
     expect(selectableBanks([option])).toEqual([option])
+  })
+})
+
+describe('inactiveMarked', () => {
+  it.each([
+    [BARCLAYS, 'Barclays'],
+    [{ name: 'Wise' }, 'Wise'],
+    [CHASE, 'Chase (inactive)'],
+  ])('shows %o as %s', (bank, expected) => {
+    expect(inactiveMarked(bank)).toBe(expected)
   })
 })

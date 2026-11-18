@@ -108,6 +108,12 @@ describe('findAssetInTree', () => {
     )
   })
 
+  it('returns_null_when_the_holding_is_under_another_broker', () => {
+    const tree = makeTree('XPI', 'ISA', 'VUSA')
+
+    expect(findAssetInTree(tree, { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' })).toBeNull()
+  })
+
   it('returns_null_when_no_asset_matches', () => {
     const tree = makeTree('Trading212', 'ISA', 'VUSA')
 
@@ -126,6 +132,7 @@ describe('readPendingSelection', () => {
     ['null state', null],
     ['a string state', 'pendingSelection'],
     ['an unrelated state', { other: true }],
+    ['a null selection', { pendingSelection: null }],
     ['a partial selection', { pendingSelection: { brokerName: 'XPI' } }],
     ['a non-string field', { pendingSelection: { brokerName: 1, portfolioName: 'Acoes', assetName: 'KLBN4' } }],
   ])('returns_null_for_%s', (_label, state) => {
