@@ -106,6 +106,11 @@ function filterToNone(label: string) {
   fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
 }
 
+function searchDescription(text: string) {
+  fireEvent.click(screen.getByRole('button', { name: 'Filter by Description' }))
+  fireEvent.change(screen.getByRole('searchbox', { name: 'Description contains' }), { target: { value: text } })
+}
+
 function filterTo(label: string, value: string) {
   filterToNone(label)
   fireEvent.click(screen.getByRole('checkbox', { name: value }))
@@ -337,6 +342,41 @@ describe('MonthTransactionsGrid', () => {
 
     expect(screen.getByText(`at:${GRID_ADDRESS}`)).toBeInTheDocument()
     expect(bodyRows()).toHaveLength(7)
+  })
+
+  it('filters by description text, ignoring case, together with the column filters', () => {
+    renderGrid()
+
+    searchDescription('amex')
+
+    expect(descriptions()).toEqual(['Description:BA Amex payment', 'Description:BA Amex payment'])
+    expect(footer()).toHaveTextContent('2 of 7 rows')
+    expect(screen.getByRole('button', { name: 'Filter by Description' })).toHaveClass('column-filter-menu__trigger--active')
+
+    filterTo('Account', 'Barclays')
+
+    expect(bodyRows()).toHaveLength(1)
+    expect(footer()).toHaveTextContent('1 of 7 rows · Total -100.00 GBP')
+  })
+
+  it('keeps the description search in the address and clears it with the other filters', () => {
+    renderGrid()
+
+    searchDescription('tes')
+    filterTo('Type', 'Expense')
+
+    expect(screen.getByText(`at:${GRID_ADDRESS}&kind=Expense&description=tes`)).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+    expect(screen.getByText(`at:${GRID_ADDRESS}`)).toBeInTheDocument()
+    expect(bodyRows()).toHaveLength(7)
+  })
+
+  it('restores the description search from the address', () => {
+    renderGrid({ address: `${GRID_ADDRESS}&description=PADARIA` })
+
+    expect(descriptions()).toEqual(['Description:Padaria'])
   })
 
   it('[AC P60-F16-month-transactions-view-03] links the account and keeps every description plain text', () => {

@@ -150,4 +150,62 @@ describe('useColumnFilters', () => {
 
     expect(result.current.isColumnFiltered('notes')).toBe(false)
   })
+
+  describe('a text column', () => {
+    interface Payment {
+      id: string
+      description: string | null
+      category: string
+    }
+
+    const PAYMENTS: Payment[] = [
+      { id: 'p1', description: 'Grocery Store', category: 'Mercado' },
+      { id: 'p2', description: 'Online grocery', category: 'Casa' },
+      { id: 'p3', description: 'Rent', category: 'Casa' },
+      { id: 'p4', description: null, category: 'Mercado' },
+    ]
+
+    const TEXT_ACCESSORS = { description: (p: Payment) => p.description }
+
+    function renderPayments() {
+      return renderHook(() => useColumnFilters(PAYMENTS, { category: (p: Payment) => p.category }, undefined, TEXT_ACCESSORS))
+    }
+
+    it('keeps the rows whose text contains the search, ignoring case and surrounding spaces', () => {
+      const { result } = renderPayments()
+
+      act(() => result.current.setSearchText('description', '  GROCERY '))
+
+      expect(result.current.filteredRows.map((p) => p.id)).toEqual(['p1', 'p2'])
+      expect(result.current.searchText('description')).toBe('  GROCERY ')
+      expect(result.current.isColumnFiltered('description')).toBe(true)
+      expect(result.current.filterSummary).toMatchObject({ isFiltered: true, shownCount: 2, totalCount: 4 })
+    })
+
+    it('combines with the checklist columns, and blank search text filters nothing', () => {
+      const { result } = renderPayments()
+
+      act(() => result.current.setSearchText('description', 'grocery'))
+      act(() => result.current.toggleValue('category', 'Mercado'))
+
+      expect(result.current.filteredRows.map((p) => p.id)).toEqual(['p2'])
+
+      act(() => result.current.setSearchText('description', '   '))
+
+      expect(result.current.filteredRows.map((p) => p.id)).toEqual(['p2', 'p3'])
+      expect(result.current.isColumnFiltered('description')).toBe(false)
+    })
+
+    it('clears the search with every other filter', () => {
+      const { result } = renderPayments()
+      act(() => result.current.setSearchText('description', 'rent'))
+      act(() => result.current.toggleValue('category', 'Casa'))
+
+      act(() => result.current.clearFilters())
+
+      expect(result.current.filteredRows).toEqual(PAYMENTS)
+      expect(result.current.searchText('description')).toBe('')
+      expect(result.current.isFiltered).toBe(false)
+    })
+  })
 })

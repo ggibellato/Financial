@@ -29,3 +29,7 @@
   max-height: 240px;
   overflow-y: auto;
 }
+
+.column-filter-menu__text {
+  width: 100%;
+}

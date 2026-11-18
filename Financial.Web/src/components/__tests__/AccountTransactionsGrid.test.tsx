@@ -439,4 +439,80 @@ describe('AccountTransactionsGrid', () => {
 
     expect(within(bodyRows()[0]).queryByRole('button', { name: /^Move/ })).not.toBeInTheDocument()
   })
+
+  describe('filters', () => {
+    function renderAccountGrid(transactions: AccountTransactionDto[] = ROWS) {
+      render(<AccountTransactionsGrid accountId="bank-1" transactions={transactions} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+    }
+
+    function shownDescriptions() {
+      return bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)
+    }
+
+    function filterTo(label: string, value: string) {
+      fireEvent.click(screen.getByRole('button', { name: `Filter by ${label}` }))
+      fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
+      fireEvent.click(screen.getByRole('checkbox', { name: value }))
+    }
+
+    function searchDescription(text: string) {
+      fireEvent.click(screen.getByRole('button', { name: 'Filter by Description' }))
+      const search = screen.getByRole('searchbox', { name: 'Description contains' })
+      expect(search).toHaveFocus()
+      fireEvent.change(search, { target: { value: text } })
+    }
+
+    it('narrows by type and by category', () => {
+      renderAccountGrid()
+
+      filterTo('Type', 'Expense')
+
+      expect(shownDescriptions()).toEqual(['Description:Tesco'])
+
+      fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+      filterTo('Category', 'Home')
+
+      expect(shownDescriptions()).toEqual(['Description:Amazon'])
+    })
+
+    it('narrows by description text, ignoring case, combined with the type filter', () => {
+      renderAccountGrid()
+
+      searchDescription('O')
+
+      expect(shownDescriptions()).toEqual(['Description:Tesco', 'Description:October pay', 'Description:Amazon'])
+
+      filterTo('Type', 'Income')
+
+      expect(shownDescriptions()).toEqual(['Description:October pay'])
+      expect(screen.getByRole('status')).toHaveTextContent('Filtered: 1 of 5 rows')
+      expect(screen.getAllByText('Filtered: 1 of 5 rows')).toHaveLength(2)
+    })
+
+    it('says when no row matches, and Clear filters restores every row and focuses the Description filter', () => {
+      renderAccountGrid()
+
+      searchDescription('no such payee')
+
+      expect(screen.getByText('No rows match the current filters.')).toBeInTheDocument()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+      expect(bodyRows()).toHaveLength(5)
+      expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Filter by Description' })).toHaveFocus()
+    })
+
+    it('keeps the month empty message when the month has no rows', () => {
+      renderAccountGrid([])
+
+      expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument()
+    })
+
+    it('offers only the Description filter on a pots account', () => {
+      render(<AccountTransactionsGrid accountId="pots-1" columns="pots" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+      expect(screen.getAllByRole('button', { name: /^Filter by / }).map((button) => button.getAttribute('aria-label'))).toEqual(['Filter by Description'])
+    })
+  })
 })

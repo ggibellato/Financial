@@ -4,6 +4,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery'
 import type { FilterSummary } from '../../hooks/useColumnFilters'
 import { MOBILE_MEDIA_QUERY } from '../../styles/breakpoints'
 import { useVisuallyHiddenStyles } from '../../styles/visuallyHidden'
+import { clearedRowsMessage, filteredRowsMessage } from './columnFilterText'
 
 const useStyles = makeStyles({
   notice: {
@@ -15,10 +16,6 @@ const useStyles = makeStyles({
     marginBottom: tokens.spacingVerticalM,
   },
 })
-
-function rowsNoun(count: number) {
-  return count === 1 ? 'row' : 'rows'
-}
 
 interface FilteredRowsNoticeProps extends FilterSummary {
   tableRef: RefObject<HTMLTableElement | null>
@@ -34,8 +31,8 @@ export default function FilteredRowsNotice({ isFiltered, shownCount, totalCount,
     setLastChange({ isFiltered, clearedCount: isFiltered ? null : totalCount })
   }
   const message = isFiltered
-    ? `Filtered: ${shownCount} of ${totalCount} ${rowsNoun(totalCount)}`
-    : lastChange.clearedCount !== null && `Filters cleared: showing all ${lastChange.clearedCount} ${rowsNoun(lastChange.clearedCount)}`
+    ? filteredRowsMessage(shownCount, totalCount)
+    : lastChange.clearedCount !== null && clearedRowsMessage(lastChange.clearedCount)
 
   const clearFilters = () => {
     onClearFilters()
