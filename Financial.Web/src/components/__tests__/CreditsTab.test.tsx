@@ -28,8 +28,10 @@ vi.mock('../../api/financialApiClient', () => ({
 }))
 
 vi.mock('recharts', () => ({
-  BarChart: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="bar-chart">{children}</div>
+  BarChart: ({ children, accessibilityLayer }: { children: React.ReactNode; accessibilityLayer?: boolean }) => (
+    <div data-testid="bar-chart" data-accessibility-layer={String(accessibilityLayer)}>
+      {children}
+    </div>
   ),
   Bar: ({
     name,
@@ -55,8 +57,10 @@ vi.mock('recharts', () => ({
       {children}
     </div>
   ),
-  LineChart: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="line-chart">{children}</div>
+  LineChart: ({ children, accessibilityLayer }: { children: React.ReactNode; accessibilityLayer?: boolean }) => (
+    <div data-testid="line-chart" data-accessibility-layer={String(accessibilityLayer)}>
+      {children}
+    </div>
   ),
   Line: ({ name, dataKey }: { name?: string; dataKey: BucketReader | string }) => (
     <div
@@ -755,8 +759,10 @@ describe('CreditsTab', () => {
     expect(screen.getByText('Bonus')).toHaveClass('credits-tab__type--dividend')
   })
 
-  it('chart_tooltip_formats_numbers_to_two_decimals_and_leaves_other_values_untouched', async () => {
+  it.each(['Bar', 'Line'])('the_%s_chart_tooltip_formats_numbers_to_two_decimals_and_leaves_other_values_untouched', async (chart) => {
     await renderBrokerTab([CREDIT_DIVIDEND])
+
+    fireEvent.click(screen.getByRole('tab', { name: chart }))
 
     const tooltip = screen.getByTestId('tooltip')
     expect(tooltip).toHaveAttribute('data-number', '12.50')
@@ -792,12 +798,15 @@ describe('CreditsTab', () => {
     expect(screen.getByTestId('line')).toHaveAttribute('data-own', 'total')
   })
 
-  it('the_line_chart_tooltip_also_formats_numbers_to_two_decimals', async () => {
+  it.each([
+    ['Bar', 'bar-chart'],
+    ['Line', 'line-chart'],
+  ])('the_%s_chart_turns_off_the_recharts_keyboard_layer_so_the_chart_image_holds_no_focus_stop', async (chart, testId) => {
     await renderBrokerTab([CREDIT_DIVIDEND])
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
+    fireEvent.click(screen.getByRole('tab', { name: chart }))
 
-    expect(screen.getByTestId('tooltip')).toHaveAttribute('data-number', '12.50')
+    expect(screen.getByTestId(testId)).toHaveAttribute('data-accessibility-layer', 'false')
   })
 
   it('colours_a_single_credit_type_in_the_single_type_blue', async () => {
