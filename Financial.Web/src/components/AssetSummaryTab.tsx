@@ -153,7 +153,7 @@ export default function AssetSummaryTab() {
               </span>
             </div>
             <div className="asset-summary__field">
-              <span className="asset-summary__label">XIRR (Shares only)</span>
+              <span className="asset-summary__label">XIRR (shares only)</span>
               <span className={`asset-summary__value ${xirrClass}`}>
                 {orMissing(xirr, formatPercentFraction)}
               </span>
@@ -179,13 +179,13 @@ export default function AssetSummaryTab() {
             </div>
 
             <div className="asset-summary__field">
-              <span className="asset-summary__label">Current value</span>
+              <span className="asset-summary__label">Current price</span>
               <span className="asset-summary__value">
                 {isLoadingPrice ? <MissingValue label="Loading" /> : orMissing(price, (current) => formatN2(current.price))}
                 {!isLoadingPrice && price?.isManual && (
                   <span
                     className="asset-summary__manual-badge"
-                    title="This value came from a manually-entered price, not a live fetch."
+                    title="This price was entered manually, not fetched live."
                   >
                     {' '}
                     (Manual)
@@ -232,7 +232,7 @@ export default function AssetSummaryTab() {
                   </span>
                 </div>
                 <div className="asset-summary__field">
-                  <span className="asset-summary__label">Result % with Credits</span>
+                  <span className="asset-summary__label">Result % with credits</span>
                   <span className={`asset-summary__value ${resultWithCreditsClass}`}>
                     {orMissing(resultWithCreditsPercent, formatPercentPoints)}
                   </span>
