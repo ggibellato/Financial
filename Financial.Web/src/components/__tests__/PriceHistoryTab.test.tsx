@@ -317,6 +317,8 @@ describe('PriceHistoryTab', () => {
   it('saving_a_new_price_posts_the_payload_and_shows_the_new_row', async () => {
     const created: AssetPriceSnapshotDto = { ...MANUAL_ENTRY, date: '2026-08-18', price: 125.75 }
     const table = await renderLoaded(AUTOMATIC_ENTRY)
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }))
+    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-points', '1')
     setAssetPriceMock.mockResolvedValue(detailsWith(created, AUTOMATIC_ENTRY))
 
     fireEvent.click(screen.getByRole('button', { name: 'New price' }))
@@ -325,6 +327,7 @@ describe('PriceHistoryTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
 
     expect(await within(table).findByText('18/08/2026')).toBeInTheDocument()
+    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-points', '2')
     expect(within(table).getByText('125.75')).toBeInTheDocument()
     expect(setAssetPriceMock).toHaveBeenCalledWith({
       brokerName: 'XPI',
@@ -526,6 +529,7 @@ describe('PriceHistoryTab', () => {
     rows = dataRows(table)
     expect(within(rows[0]).getByText('350.00')).toBeInTheDocument()
     expect(within(rows[1]).getByText('120.50')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Price' }).closest('th')).toHaveAttribute('aria-sort', 'descending')
   })
 
   it('defaults_to_sorting_by_date_descending_with_the_header_showing_the_active_sort', async () => {
@@ -559,6 +563,7 @@ describe('PriceHistoryTab', () => {
     expect(rows).toHaveLength(2)
     expect(within(rows[0]).getByText('Google')).toBeInTheDocument()
     expect(within(rows[1]).getByText('Manual')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Source' }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
   })
 
   it('draws_each_kind_of_point_with_its_own_marker_shape_and_skips_a_point_without_coordinates', async () => {
@@ -581,26 +586,9 @@ describe('PriceHistoryTab', () => {
     expect(screen.getByTestId('line-chart')).toHaveAttribute('data-accessibility-layer', 'false')
   })
 
-  it('charts_the_prices_shown_and_follows_a_new_one', async () => {
-    const created: AssetPriceSnapshotDto = { ...MANUAL_ENTRY, date: '2026-08-18', price: 125.75 }
-    await renderLoaded(AUTOMATIC_ENTRY)
-    fireEvent.click(screen.getByRole('tab', { name: 'All time' }))
-    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-points', '1')
-    setAssetPriceMock.mockResolvedValue(detailsWith(created, AUTOMATIC_ENTRY))
+  it('shows_the_hovered_points_kind_date_and_price_in_the_chart_tooltip', async () => {
+    await renderLoaded(MANUAL_ENTRY)
 
-    fireEvent.click(screen.getByRole('button', { name: 'New price' }))
-    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-08-18' } })
-    fireEvent.change(priceInput(), { target: { value: '125.75' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
-
-    await waitFor(() => expect(screen.getByTestId('line-chart')).toHaveAttribute('data-points', '2'))
-  })
-
-  it.each(['Price', 'Source'])('clicking_the_%s_header_marks_it_as_the_active_sort', async (header) => {
-    const table = await renderLoaded(MANUAL_ENTRY, AUTOMATIC_ENTRY)
-
-    fireEvent.click(within(table).getByRole('button', { name: header }))
-
-    expect(within(table).getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
+    expect(screen.getByTestId('chart-tooltip').textContent).toBe('Manual2024-01-0220.50')
   })
 })

@@ -4,7 +4,7 @@ import type { AggregatedSummaryData } from '../../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryData, RowPriceState } from '../../hooks/usePortfolioAssetSummary'
 import type { AggregatedSummaryDto, InvestmentScope, PortfolioAssetSummaryItemDto } from '../../api/types'
 import { SelectedNodeProvider } from '../../context/SelectedNodeContext'
-import { formatMonthYear, formatN2, formatPercentN2 } from '../../utils/formatters'
+import { formatN2 } from '../../utils/formatters'
 import PortfolioHoldingsTab from '../PortfolioHoldingsTab'
 
 function renderComponent(scope: InvestmentScope = 'active') {
@@ -117,6 +117,55 @@ function setAggregatedMock(overrides: Partial<AggregatedSummaryData>) {
 function setPortfolioMock(overrides: Partial<PortfolioAssetSummaryData>) {
   Object.assign(mockPortfolioHookValue, overrides)
 }
+
+const firstCellOf = (row: HTMLElement) => within(row).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')
+const dataRowNames = () => screen.getAllByRole('row').slice(2).map(firstCellOf)
+
+const LATER: PortfolioAssetSummaryItemDto = {
+  ...ITEM_1,
+  assetName: 'ZZZ11',
+  firstInvestmentDate: '2022-01-01T00:00:00',
+  currentQuantity: 20,
+  portfolioWeight: 50,
+  totalInvested: 2000,
+  marketValue: 200,
+  totalCredits: 20,
+  averagePrice: 20,
+  averageSellPrice: 20,
+  realizedGainLoss: 50,
+  resultPercent: 5,
+  resultWithCreditsPercent: 5,
+  priceOnlyReturn: 0.2,
+  lastMonthCredits: 20,
+  lastCreditMonth: '2026-05',
+  lastMonthCreditsPercent: 2,
+  estimatedAnnualCredits: 200,
+  estimatedAnnualPercent: 4,
+}
+const EARLIER: PortfolioAssetSummaryItemDto = {
+  ...LATER,
+  assetName: 'AAA11',
+  firstInvestmentDate: '2021-01-01T00:00:00',
+  currentQuantity: 10,
+  portfolioWeight: 10,
+  totalInvested: 1000,
+  marketValue: 100,
+  totalCredits: 10,
+  averagePrice: 10,
+  averageSellPrice: 10,
+  realizedGainLoss: 10,
+  resultPercent: 1,
+  resultWithCreditsPercent: 1,
+  priceOnlyReturn: 0.1,
+  lastMonthCredits: 10,
+  lastCreditMonth: '2026-01',
+  lastMonthCreditsPercent: 1,
+  estimatedAnnualCredits: 100,
+  estimatedAnnualPercent: 2,
+}
+const pricedAt = (currentPrice: number): RowPriceState => ({ isLoading: false, currentPrice, fetchFailed: false, isManual: false })
+
+const header = (label: string, index = 0) => screen.getAllByRole('columnheader', { name: label })[index]
 
 describe('PortfolioHoldingsTab', () => {
   beforeEach(() => {
@@ -279,7 +328,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
     renderComponent('historic')
-    expect(footerTotal('Realized (shares only)')).toHaveTextContent('225.00')
+    expect(footerTotal('Realized (shares only)')?.textContent).toBe(formatN2(225))
   })
 
   it('applies_positive_or_negative_color_class_to_realized_gain_loss_shares_only_independent_of_realized_gain_loss_sign', () => {
@@ -349,6 +398,7 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [IDLE_ROW_PRICE] })
     renderComponent()
     expect(footerTotal('Current value')).toHaveTextContent('—')
+    expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
   })
 
   it('renders_average_price_with_formatted_value', () => {
@@ -502,14 +552,6 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByText(/10[.,]50/)).toBeInTheDocument()
   })
 
-  it('renders_dash_in_current_price_when_price_fetch_fails', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(5)
-  })
-
   it('renders_the_server_computed_profit_percents', () => {
     const item: PortfolioAssetSummaryItemDto = { ...ITEM_1, resultPercent: 5, resultWithCreditsPercent: 10 }
     const rowPrice: RowPriceState = { isLoading: false, currentPrice: 10.5, fetchFailed: false, isManual: false }
@@ -537,14 +579,6 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
     const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
     expect(cells[11].textContent?.replace('XIRR:', '')).toBe('…')
-  })
-
-  it('renders_dash_in_current_value_and_price_dependent_columns_on_price_failure', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
-    renderComponent()
-    const dashes = screen.getAllByText('—')
-    expect(dashes.length).toBeGreaterThanOrEqual(5)
   })
 
   it('renders_dash_in_profit_when_the_server_reports_no_result', () => {
@@ -791,7 +825,7 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [LOADING_ROW_PRICE, LOADING_ROW_PRICE] })
     renderComponent()
-    expect(footerTotal(`Credits ${formatMonthYear(new Date())}`)?.textContent).toBe(formatN2(30))
+    expect(footerTotals().getByText(/^Credits /).nextElementSibling?.textContent).toBe(formatN2(30))
   })
 
   it('renders_footer_estimated_annual_credits_sum_of_non_null', () => {
@@ -816,6 +850,7 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
     renderComponent()
     expect(footerTotals().getByText('Calculating…')).toBeInTheDocument()
+    expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
   })
 
   it('renders_footer_current_value_as_partial_sum_with_asterisk_while_prices_loading', () => {
@@ -849,23 +884,8 @@ describe('PortfolioHoldingsTab', () => {
     setAggregatedMock({ summary: SUMMARY })
     setPortfolioMock({ items: [item1, item2], rowPrices: [livePrice, manualPrice] })
     renderComponent()
-    expect(footerTotals().getByText(/100[.,]00/)).toBeInTheDocument()
+    expect(footerTotal('Current value')?.textContent).toBe(formatN2(100))
     expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
-  })
-
-  it('sorts_rows_by_quantity_ascending_when_the_quantity_header_button_is_clicked', () => {
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11', currentQuantity: 25 }
-    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11', currentQuantity: 5 }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
-    renderComponent()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Quantity' }))
-
-    // rows[0]/[1] are the two header rows; rows[2]/[3] are the data rows.
-    const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
   })
 
   it('sorts_rows_by_quantity_descending_on_a_second_click_of_the_same_header', () => {
@@ -879,9 +899,7 @@ describe('PortfolioHoldingsTab', () => {
     fireEvent.click(quantityHeaderButton)
     fireEvent.click(quantityHeaderButton)
 
-    const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
+    expect(dataRowNames()).toEqual(['AAA11', 'BBB11'])
   })
 
   it('sorts_rows_by_a_derived_column_using_the_underlying_current_value_not_display_text', () => {
@@ -898,20 +916,7 @@ describe('PortfolioHoldingsTab', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Current value' }))
 
-    const rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
-  })
-
-  it('clicking_the_realized_gain_loss_header_engages_that_columns_sort_in_historic_scope', () => {
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11' }
-    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11' }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
-    renderComponent('historic')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Realized gain/loss' }))
-    expect(screen.getByRole('columnheader', { name: 'Realized gain/loss' })).toHaveAttribute('aria-sort', 'ascending')
+    expect(dataRowNames()).toEqual(['AAA11', 'BBB11'])
   })
 
   it('sorts_rows_by_realized_gain_loss_shares_only_ascending_then_descending_independently_of_realized_gain_loss', () => {
@@ -925,47 +930,12 @@ describe('PortfolioHoldingsTab', () => {
     expect(screen.getByRole('columnheader', { name: 'Realized (shares only)' })).toHaveAttribute('aria-sort', 'ascending')
     expect(screen.getByRole('columnheader', { name: 'Realized gain/loss' })).toHaveAttribute('aria-sort', 'none')
 
-    let rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
+    expect(dataRowNames()).toEqual(['BBB11', 'AAA11'])
 
     fireEvent.click(screen.getByRole('button', { name: 'Realized (shares only)' }))
     expect(screen.getByRole('columnheader', { name: 'Realized (shares only)' })).toHaveAttribute('aria-sort', 'descending')
 
-    rows = screen.getAllByRole('row')
-    expect(within(rows[2]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('AAA11')
-    expect(within(rows[3]).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')).toBe('BBB11')
-  })
-
-  it('clicking_each_remaining_sortable_header_engages_that_columns_sort', () => {
-    const item1: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'AAA11' }
-    const item2: PortfolioAssetSummaryItemDto = { ...ITEM_1, assetName: 'BBB11' }
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [item1, item2], rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE] })
-    renderComponent()
-
-    fireEvent.click(screen.getByRole('button', { name: 'Total credits' }))
-    expect(screen.getByRole('columnheader', { name: 'Total credits' })).toHaveAttribute('aria-sort', 'ascending')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Average price' }))
-    expect(screen.getByRole('columnheader', { name: 'Average price' })).toHaveAttribute('aria-sort', 'ascending')
-
-    fireEvent.click(screen.getByRole('button', { name: 'w/ credits' }))
-    expect(screen.getByRole('columnheader', { name: 'w/ credits' })).toHaveAttribute('aria-sort', 'ascending')
-
-    const creditsHeaders = screen.getAllByRole('columnheader', { name: 'Credits' })
-    fireEvent.click(within(creditsHeaders[0]).getByRole('button'))
-    expect(creditsHeaders[0]).toHaveAttribute('aria-sort', 'ascending')
-
-    fireEvent.click(screen.getByRole('button', { name: 'Month' }))
-    expect(screen.getByRole('columnheader', { name: 'Month' })).toHaveAttribute('aria-sort', 'ascending')
-
-    fireEvent.click(within(creditsHeaders[1]).getByRole('button'))
-    expect(creditsHeaders[1]).toHaveAttribute('aria-sort', 'ascending')
-
-    const percentHeaders = screen.getAllByRole('columnheader', { name: '%' })
-    fireEvent.click(within(percentHeaders[2]).getByRole('button'))
-    expect(percentHeaders[2]).toHaveAttribute('aria-sort', 'ascending')
+    expect(dataRowNames()).toEqual(['AAA11', 'BBB11'])
   })
 
   it('footer_panel_is_not_inside_table_element', () => {
@@ -975,57 +945,6 @@ describe('PortfolioHoldingsTab', () => {
     expect(document.querySelector('.portfolio-holdings__footer')).not.toBeNull()
     expect(document.querySelector('table tfoot')).toBeNull()
   })
-
-  const firstCellOf = (row: HTMLElement) => within(row).getAllByRole('cell')[0].textContent?.replace('Asset name:', '')
-  const dataRowNames = () => screen.getAllByRole('row').slice(2).map(firstCellOf)
-
-  const LATER: PortfolioAssetSummaryItemDto = {
-    ...ITEM_1,
-    assetName: 'ZZZ11',
-    firstInvestmentDate: '2022-01-01T00:00:00',
-    currentQuantity: 20,
-    portfolioWeight: 50,
-    totalInvested: 2000,
-    marketValue: 200,
-    totalCredits: 20,
-    averagePrice: 20,
-    averageSellPrice: 20,
-    realizedGainLoss: 50,
-    resultPercent: 5,
-    resultWithCreditsPercent: 5,
-    priceOnlyReturn: 0.2,
-    lastMonthCredits: 20,
-    lastCreditMonth: '2026-05',
-    lastMonthCreditsPercent: 2,
-    estimatedAnnualCredits: 200,
-    estimatedAnnualPercent: 4,
-  }
-  const EARLIER: PortfolioAssetSummaryItemDto = {
-    ...LATER,
-    assetName: 'AAA11',
-    firstInvestmentDate: '2021-01-01T00:00:00',
-    currentQuantity: 10,
-    portfolioWeight: 10,
-    totalInvested: 1000,
-    marketValue: 100,
-    totalCredits: 10,
-    averagePrice: 10,
-    averageSellPrice: 10,
-    realizedGainLoss: 10,
-    resultPercent: 1,
-    resultWithCreditsPercent: 1,
-    priceOnlyReturn: 0.1,
-    lastMonthCredits: 10,
-    lastCreditMonth: '2026-01',
-    lastMonthCreditsPercent: 1,
-    estimatedAnnualCredits: 100,
-    estimatedAnnualPercent: 2,
-  }
-  const pricedAt = (currentPrice: number): RowPriceState => ({ isLoading: false, currentPrice, fetchFailed: false, isManual: false })
-
-  function header(label: string, index = 0) {
-    return screen.getAllByRole('columnheader', { name: label })[index]
-  }
 
   it.each([
     ['Asset name', 0, 'active'],
@@ -1083,15 +1002,7 @@ describe('PortfolioHoldingsTab', () => {
     expect(cell('Current value')?.textContent).toBe('Current value:—')
     expect(cell('Current price')?.textContent).toBe('Current price:—')
     expect(cell('Profit %')?.textContent).toBe('Profit %:—')
-  })
-
-  it('names_the_price_cell_for_its_scope', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [{ ...ITEM_1, averageSellPrice: 12 }], rowPrices: [pricedAt(12)] })
-    renderComponent('historic')
-
-    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells.some((c) => c.textContent === `Sold price:${formatN2(12)}`)).toBe(true)
+    expect(cell('Profit % w/ credits')?.textContent).toBe('Profit % w/ credits:—')
   })
 
   it.each([
@@ -1102,33 +1013,7 @@ describe('PortfolioHoldingsTab', () => {
     setPortfolioMock({ items: [{ ...ITEM_1, marketValue: 50 }], rowPrices: [rowPrice] })
     renderComponent()
 
-    expect(screen.queryByText('This value came from a manually-entered price, not a live fetch.')).not.toBeInTheDocument()
-  })
-
-  it('renders_footer_current_value_without_the_pending_footnote_while_calculating_or_missing', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [LOADING_ROW_PRICE] })
-    const { unmount } = renderComponent()
-    expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
-    unmount()
-
-    setPortfolioMock({ items: [ITEM_1], rowPrices: [FAILED_ROW_PRICE] })
-    renderComponent()
-    expect(screen.queryByText('excludes assets with pending prices')).not.toBeInTheDocument()
-  })
-
-  it('renders_footer_realized_gain_loss_shares_only_as_the_exact_sum', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({
-      items: [
-        { ...ITEM_1, realizedGainLossSharesOnly: 30 },
-        { ...ITEM_1, assetName: 'MXRF11', realizedGainLossSharesOnly: 20 },
-      ],
-      rowPrices: [IDLE_ROW_PRICE, IDLE_ROW_PRICE],
-    })
-    renderComponent('historic')
-
-    expect(footerTotal('Realized (shares only)')?.textContent).toBe(formatN2(50))
+    expect(screen.queryByText('(M)')).not.toBeInTheDocument()
   })
 
   it('shows_no_totals_without_holdings', () => {
@@ -1148,14 +1033,5 @@ describe('PortfolioHoldingsTab', () => {
     renderComponent()
 
     expect(screen.queryByRole('table', { name: 'Holdings' })).not.toBeInTheDocument()
-  })
-
-  it('formats_the_last_month_credits_percent', () => {
-    setAggregatedMock({ summary: SUMMARY })
-    setPortfolioMock({ items: [LATER], rowPrices: [pricedAt(20)] })
-    renderComponent()
-
-    const cells = within(screen.getAllByRole('row')[2]).getAllByRole('cell')
-    expect(cells.some((c) => c.textContent === `Last month credits %:${formatPercentN2(2)}`)).toBe(true)
   })
 })

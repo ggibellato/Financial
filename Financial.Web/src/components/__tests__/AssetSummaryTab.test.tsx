@@ -172,7 +172,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('(Manual)')).toBeInTheDocument()
+    expect(screen.getByText('Current value').nextElementSibling?.textContent).toBe('25.00 (Manual)')
   })
 
   it('renders_stale_badge_when_asset_market_status_is_stale', () => {
@@ -182,7 +182,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('(Stale)')).toBeInTheDocument()
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Stale)')
   })
 
   it('renders_unavailable_badge_when_asset_market_status_is_unavailable', () => {
@@ -192,7 +192,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('(Unavailable)')).toBeInTheDocument()
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Unavailable)')
   })
 
   it('does_not_render_stale_or_unavailable_badge_when_asset_market_status_is_current', () => {
@@ -226,16 +226,6 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab()
     expect(screen.queryByText(/16\/08\/2026 \d{2}:\d{2}/)).not.toBeInTheDocument()
-  })
-
-  it('renders_a_dash_under_as_of_when_no_price_was_obtained', () => {
-    setMock({
-      asset: ASSET,
-      price: { ...PRICE, asOf: null, asOfDate: null, isManual: true },
-      showCurrentSection: true,
-    })
-    renderAssetSummaryTab()
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
   })
 
   it('still_renders_date_and_time_for_a_live_quote', () => {
