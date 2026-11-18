@@ -70,6 +70,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   ticker: 'KLBN4',
   isin: 'BRKLBN',
   exchange: 'BVMF',
+  currency: 'BRL',
   country: 'BR',
   localTypeCode: 'ON',
   class: 'Equity',

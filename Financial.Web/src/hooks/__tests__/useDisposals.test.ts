@@ -57,6 +57,7 @@ const ASSET_DETAILS: AssetDetailsDto = {
   ticker: 'AAA',
   isin: 'ISIN-A',
   exchange: 'LSE',
+  currency: 'GBP',
   country: 'UK',
   localTypeCode: '',
   class: 'Equity',
