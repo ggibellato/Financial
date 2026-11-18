@@ -21,6 +21,7 @@ const SETTLEMENT: AccountTemplateDto = {
   capabilities: ['HasParticipants', 'MultiCurrency', 'CanSettle'],
 }
 const MAE = settlementAccount({ id: 'm1', name: 'Mãe' })
+const SETTLEMENT_USD: AccountTemplateDto = { ...SETTLEMENT, name: 'SettlementUsd', currencies: ['GBP', 'USD'] }
 
 const category = (id: string, name: string, overrides: Partial<CategoryDto> = {}): CategoryDto => ({
   id,
@@ -229,6 +230,45 @@ describe('AccountFormDialog', () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
+  it('refuses a name of spaces as missing', () => {
+    const { onSubmit } = renderDialog()
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: '   ' } })
+    save()
+
+    expect(screen.getByLabelText(/Name/)).toHaveAccessibleDescription('Account name is required.')
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('accepts a name of exactly 60 characters', async () => {
+    const { onSubmit } = renderDialog()
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'x'.repeat(60) } })
+    save()
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ name: 'x'.repeat(60) })))
+  })
+
+  it('sends the currency chosen for a template with several', async () => {
+    const { onSubmit } = renderDialog({ templates: [PLAIN] })
+
+    fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Wise' } })
+    fireEvent.change(screen.getByLabelText(/Currency/), { target: { value: 'BRL' } })
+    save()
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ currency: 'BRL' })))
+  })
+
+  it('takes the currency of a one-currency template it switches to', () => {
+    renderDialog({ templates: [PLAIN, BANK] })
+    fireEvent.change(screen.getByLabelText(/Currency/), { target: { value: 'BRL' } })
+
+    fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'Bank' } })
+
+    expect(screen.getByLabelText(/Currency/)).toHaveValue('GBP')
+    expect(screen.getByText('Bank accounts use GBP.')).toBeInTheDocument()
+  })
+
   it('[AC P60-F06-admin-accounts-page-02] shows a duplicate-name 409 under Name, and clears it once the name changes', async () => {
     const message = 'An account named "Barclays" already exists.'
     renderDialog({ onSubmit: vi.fn().mockRejectedValue(duplicateNameRejection(message)) })
@@ -381,6 +421,16 @@ describe('AccountFormDialog', () => {
     expect(screen.queryByText('Balance start date is required.')).not.toBeInTheDocument()
   })
 
+  it('requires a start date when editing an account that has one', () => {
+    const { onSubmit } = renderDialog({ account: account({ id: 'a1', name: 'Barclays', balanceStartDate: '2026-02-01' }) })
+
+    fireEvent.change(screen.getByLabelText(/Balance start date/), { target: { value: '' } })
+    save('Save')
+
+    expect(screen.getByText('Balance start date is required.')).toBeInTheDocument()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
+
   it('requires a start date on a new account', () => {
     const { onSubmit } = renderDialog()
 
@@ -502,6 +552,55 @@ describe('AccountFormDialog', () => {
       fireEvent.click(within(summary).getByRole('button', { name: 'Choose at least one currency.' }))
       expect(currencyBox('BRL')).toHaveFocus()
       expect(onSubmit).not.toHaveBeenCalled()
+    })
+
+    it('accepts another participant of exactly 60 characters', async () => {
+      const { onSubmit } = renderDialog({ templates: [SETTLEMENT] })
+
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+      fireEvent.click(currencyBox('BRL'))
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'a'.repeat(60) } })
+      save()
+
+      await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ otherParticipant: 'a'.repeat(60) })))
+    })
+
+    it('focuses the first currency when it is the only problem, and describes only that box with the message', () => {
+      renderDialog({ templates: [SETTLEMENT] })
+      expect(currencyBox('BRL')).not.toHaveAttribute('aria-describedby')
+
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'Mãe' } })
+      save()
+
+      expect(currencyBox('BRL')).toHaveFocus()
+      expect(currencyBox('BRL')).toHaveAccessibleDescription('Choose at least one currency.')
+      expect(currencyBox('GBP')).not.toHaveAttribute('aria-describedby')
+    })
+
+    it('marks Currencies as required', () => {
+      renderDialog({ templates: [SETTLEMENT] })
+
+      const labelId = screen.getByRole('group', { name: /Currencies/ }).getAttribute('aria-labelledby') as string
+      expect(document.getElementById(labelId)?.textContent).toContain('*')
+    })
+
+    it('keeps the ticked currencies the new template has, and the other participant, when switching between Settlement templates', async () => {
+      const { onSubmit } = renderDialog({ templates: [SETTLEMENT, SETTLEMENT_USD] })
+      fireEvent.change(screen.getByLabelText(/Name/), { target: { value: 'Mãe' } })
+      fireEvent.click(currencyBox('BRL'))
+      fireEvent.click(currencyBox('GBP'))
+      fireEvent.change(screen.getByLabelText(/Other participant/), { target: { value: 'Mãe' } })
+
+      fireEvent.change(screen.getByLabelText(/Template/), { target: { value: 'SettlementUsd' } })
+
+      expect(currencyBox('GBP')).toBeChecked()
+      expect(currencyBox('USD')).not.toBeChecked()
+      expect(screen.getByLabelText(/Other participant/)).toHaveValue('Mãe')
+      save()
+      await waitFor(() =>
+        expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ currencies: ['GBP'], otherParticipant: 'Mãe' })),
+      )
     })
 
     it.each([
