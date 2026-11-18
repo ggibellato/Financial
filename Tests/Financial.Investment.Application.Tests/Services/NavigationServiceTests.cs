@@ -516,6 +516,18 @@ public class NavigationServiceTests
     }
 
     [Fact]
+    public void GetAssetDetails_ReturnsTheCurrencyOfItsBroker()
+    {
+        var broker = Broker.Create("Broker", "GBP");
+        broker.AddPortfolio("Portfolio").AddAsset(BuildAssetWithQuantity("ASSET1", 10m));
+        _repository.Broker = broker;
+
+        var details = CreateService().GetAssetDetails("Broker", "Portfolio", "ASSET1");
+
+        details!.Currency.Should().Be("GBP");
+    }
+
+    [Fact]
     public void GetAssetDetails_WithNoCostBasisMethodExplicitlySet_DefaultsToAverageCost()
     {
         var broker = Broker.Create("Broker", "BRL");

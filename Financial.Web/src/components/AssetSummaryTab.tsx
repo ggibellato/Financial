@@ -1,15 +1,22 @@
-import type { ReactNode } from 'react'
+import { useId, type ReactNode } from 'react'
 import { Button } from '@fluentui/react-components'
 import { ArrowSyncRegular } from '@fluentui/react-icons'
 import type { AssetPriceDto } from '../api/types'
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
+import PriceBadge from './PriceBadge'
 import { useAssetSummary } from '../hooks/useAssetSummary'
 import { useSelectedNode } from '../context/SelectedNodeContext'
+import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 import { formatDateTime, formatN2, formatN8, formatPercentFraction, formatShortDateUtc, signClass } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import MissingValue from './MissingValue'
 import './AssetSummaryTab.css'
+
+const MANUAL_PRICE_MEANING = 'This price was entered manually, not fetched live.'
+const STALE_PRICE_MEANING = 'This price is older than the most recent weekday.'
+const NO_PRICE_MEANING = 'No price or value has been recorded for this holding yet.'
+const VALUE_CLASS = 'asset-summary__value'
 
 /** A live quote carries a time of day; a price read from Price History carries only a date, and
  * is read as UTC so the reader's time zone cannot shift it onto the previous day. */
@@ -24,8 +31,31 @@ function formatPercentPoints(percent: number): string {
   return formatPercentFraction(percent / 100)
 }
 
+function signedClass(value: number | null): string | undefined {
+  return value === null ? undefined : signClass(value, VALUE_CLASS)
+}
+
+interface FieldProps {
+  label: string
+  children: ReactNode
+  valueClassName?: string
+  full?: boolean
+}
+
+function Field({ label, children, valueClassName, full = false }: FieldProps) {
+  return (
+    <div className={full ? 'asset-summary__field asset-summary__field--full' : 'asset-summary__field'}>
+      <dt className="asset-summary__label">{label}</dt>
+      <dd className={valueClassName ? `${VALUE_CLASS} ${valueClassName}` : VALUE_CLASS}>{children}</dd>
+    </div>
+  )
+}
+
 export default function AssetSummaryTab() {
   const { scope } = useSelectedNode()
+  const hidden = useVisuallyHiddenStyles()
+  const realizedTitleId = useId()
+  const currentTitleId = useId()
   const {
     asset,
     isLoadingAsset,
@@ -52,218 +82,117 @@ export default function AssetSummaryTab() {
     return null
   }
 
+  const inCurrency = (label: string) => (asset.currency ? `${label} (${asset.currency})` : label)
   const marketValue = asset.marketValue
   const totalCurrentPlusCredits = marketValue === null ? null : marketValue + asset.totalCredits
   const { resultPercent, resultWithCreditsPercent } = asset
   const xirr = asset.priceOnlyReturn
   const xirrWithCredits = asset.totalReturn
 
-  const resultClass = resultPercent === null ? '' : signClass(resultPercent, 'asset-summary__value')
-  const resultWithCreditsClass = resultWithCreditsPercent === null ? '' : signClass(resultWithCreditsPercent, 'asset-summary__value')
-  const xirrClass = xirr === null ? '' : signClass(xirr, 'asset-summary__value')
-  const xirrWithCreditsClass = xirrWithCredits === null ? '' : signClass(xirrWithCredits, 'asset-summary__value')
-
   return (
     <div className="asset-summary">
-      <div className="asset-summary__grid">
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Quantity</span>
-          <span className="asset-summary__value">{formatN8(asset.quantity)}</span>
-        </div>
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Average price</span>
-          <span className="asset-summary__value">{formatN2(asset.averagePrice)}</span>
-        </div>
+      <dl className="asset-summary__grid">
+        <Field label="Quantity">{formatN8(asset.quantity)}</Field>
+        <Field label={inCurrency('Average price')}>{formatN2(asset.averagePrice)}</Field>
+        <Field label="ISIN">{asset.isin || <MissingValue label="None" />}</Field>
+        <Field label="Country">{asset.country}</Field>
+        <Field label="Tax jurisdiction">
+          {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : <MissingValue label="None" />}
+        </Field>
+        <Field label="Local type">{asset.localTypeCode || <MissingValue label="None" />}</Field>
+        <Field label="Asset class">{asset.class}</Field>
+      </dl>
 
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">ISIN</span>
-          <span className="asset-summary__value">{asset.isin || <MissingValue label="None" />}</span>
-        </div>
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Country</span>
-          <span className="asset-summary__value">{asset.country}</span>
-        </div>
+      <dl className="asset-summary__grid asset-summary__group">
+        <Field label={inCurrency('Total bought')}>{formatN2(asset.totalBought)}</Field>
+        <Field label={inCurrency('Total sold')}>{formatN2(asset.totalSold)}</Field>
+        <Field label={inCurrency('Total credits')} full>
+          {formatN2(asset.totalCredits)}
+        </Field>
+      </dl>
 
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Tax jurisdiction</span>
-          <span className="asset-summary__value">
-            {asset.taxJurisdictions.length > 0 ? asset.taxJurisdictions.join(', ') : <MissingValue label="None" />}
-          </span>
-        </div>
+      {scope === 'historic' && (
+        <section className="asset-summary__group" aria-labelledby={realizedTitleId}>
+          <div className="asset-summary__section-header">
+            <h3 id={realizedTitleId} className="asset-summary__section-title">
+              Realized
+            </h3>
+          </div>
+          <dl className="asset-summary__grid">
+            <Field label={inCurrency('Realized gain/loss')} valueClassName={signedClass(asset.realizedGainLoss)}>
+              {formatN2(asset.realizedGainLoss)}
+            </Field>
+            <Field label={inCurrency('Realized (shares only)')} valueClassName={signedClass(asset.realizedGainLossSharesOnly)}>
+              {formatN2(asset.realizedGainLossSharesOnly)}
+            </Field>
+            <Field label="XIRR with credits" valueClassName={signedClass(xirrWithCredits)}>
+              {orMissing(xirrWithCredits, formatPercentFraction)}
+            </Field>
+            <Field label="XIRR (shares only)" valueClassName={signedClass(xirr)}>
+              {orMissing(xirr, formatPercentFraction)}
+            </Field>
+            <Field label="Portfolio weight">{orMissing(portfolioWeight, formatPercentPoints)}</Field>
+          </dl>
+        </section>
+      )}
 
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Local type</span>
-          <span className="asset-summary__value">{asset.localTypeCode || <MissingValue label="None" />}</span>
-        </div>
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Asset class</span>
-          <span className="asset-summary__value">{asset.class}</span>
-        </div>
-
-        <div className="asset-summary__separator" />
-
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Total bought</span>
-          <span className="asset-summary__value asset-summary__value--green">
-            {formatN2(asset.totalBought)}
-          </span>
-        </div>
-        <div className="asset-summary__field">
-          <span className="asset-summary__label">Total sold</span>
-          <span className="asset-summary__value asset-summary__value--red">
-            {formatN2(asset.totalSold)}
-          </span>
-        </div>
-
-        <div className="asset-summary__field asset-summary__field--full">
-          <span className="asset-summary__label">Total credits</span>
-          <span className="asset-summary__value asset-summary__value--blue">
-            {formatN2(asset.totalCredits)}
-          </span>
-        </div>
-
-        {scope === 'historic' && (
-          <>
-            <div className="asset-summary__separator" />
-
-            <div className="asset-summary__section-header">
-              <span className="asset-summary__section-title">Realized</span>
-            </div>
-
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">Realized gain/loss</span>
-              <span
-                className={`asset-summary__value ${signClass(asset.realizedGainLoss, 'asset-summary__value')}`}
-              >
-                {formatN2(asset.realizedGainLoss)}
-              </span>
-            </div>
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">Realized (shares only)</span>
-              <span
-                className={`asset-summary__value ${signClass(asset.realizedGainLossSharesOnly, 'asset-summary__value')}`}
-              >
-                {formatN2(asset.realizedGainLossSharesOnly)}
-              </span>
-            </div>
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">XIRR</span>
-              <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                {orMissing(xirrWithCredits, formatPercentFraction)}
-              </span>
-            </div>
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">XIRR (shares only)</span>
-              <span className={`asset-summary__value ${xirrClass}`}>
-                {orMissing(xirr, formatPercentFraction)}
-              </span>
-            </div>
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">Portfolio weight</span>
-              <span className="asset-summary__value">
-                {orMissing(portfolioWeight, formatPercentPoints)}
-              </span>
-            </div>
-          </>
-        )}
-
-        {scope === 'active' && showCurrentSection && (
-          <>
-            <div className="asset-summary__separator" />
-
-            <div className="asset-summary__section-header">
-              <span className="asset-summary__section-title">Current</span>
-              <Button appearance="primary" icon={<ArrowSyncRegular />} onClick={refresh} disabled={!canRefresh}>
-                Refresh
-              </Button>
-            </div>
-
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">Current price</span>
-              <span className="asset-summary__value">
-                {isLoadingPrice ? <MissingValue label="Loading" /> : orMissing(price, (current) => formatN2(current.price))}
-                {!isLoadingPrice && price?.isManual && (
-                  <span
-                    className="asset-summary__manual-badge"
-                    title="This price was entered manually, not fetched live."
-                  >
-                    {' '}
-                    (Manual)
-                  </span>
-                )}
-              </span>
-            </div>
-            <div className="asset-summary__field">
-              <span className="asset-summary__label">As of</span>
-              <span className="asset-summary__value">
-                {isLoadingPrice ? <MissingValue label="Loading" /> : formatAsOf(price)}
-                {!isLoadingPrice && asset.marketStatus === 'Stale' && (
-                  <span className="asset-summary__stale-badge" title="This price is older than the most recent weekday.">
-                    {' '}
-                    (Stale)
-                  </span>
-                )}
-                {!isLoadingPrice && asset.marketStatus === 'Unavailable' && (
-                  <span className="asset-summary__stale-badge" title="No price or value has been recorded for this holding yet.">
-                    {' '}
-                    (Unavailable)
-                  </span>
-                )}
-              </span>
-            </div>
+      {scope === 'active' && showCurrentSection && (
+        <section className="asset-summary__group" aria-labelledby={currentTitleId}>
+          <div className="asset-summary__section-header">
+            <h3 id={currentTitleId} className="asset-summary__section-title">
+              Current
+            </h3>
+            <Button appearance="primary" icon={<ArrowSyncRegular />} onClick={refresh} disabledFocusable={!canRefresh}>
+              Refresh price
+            </Button>
+          </div>
+          <p className={hidden.visuallyHidden} role="status">
+            {isLoadingPrice ? 'Loading the current price.' : ''}
+          </p>
+          <dl className="asset-summary__grid">
+            <Field label={inCurrency('Current price')}>
+              {isLoadingPrice ? <MissingValue label="Loading" /> : orMissing(price, (current) => formatN2(current.price))}
+              {!isLoadingPrice && price?.isManual && (
+                <PriceBadge abbreviation="Manual" meaning={MANUAL_PRICE_MEANING} className="asset-summary__badge" />
+              )}
+            </Field>
+            <Field label="As of">
+              {isLoadingPrice ? <MissingValue label="Loading" /> : formatAsOf(price)}
+              {!isLoadingPrice && asset.marketStatus === 'Stale' && (
+                <PriceBadge abbreviation="Stale" meaning={STALE_PRICE_MEANING} className="asset-summary__badge" />
+              )}
+              {!isLoadingPrice && asset.marketStatus === 'Unavailable' && (
+                <PriceBadge abbreviation="Unavailable" meaning={NO_PRICE_MEANING} className="asset-summary__badge" />
+              )}
+            </Field>
 
             {!isLoadingPrice && (
               <>
-                <div className="asset-summary__field">
-                  <span className="asset-summary__label">Total current value</span>
-                  <span className="asset-summary__value">{orMissing(marketValue, formatN2)}</span>
-                </div>
-                <div className="asset-summary__field">
-                  <span className="asset-summary__label">Result %</span>
-                  <span className={`asset-summary__value ${resultClass}`}>
-                    {orMissing(resultPercent, formatPercentPoints)}
-                  </span>
-                </div>
-
-                <div className="asset-summary__field">
-                  <span className="asset-summary__label">Total current + credits</span>
-                  <span className="asset-summary__value">
-                    {orMissing(totalCurrentPlusCredits, formatN2)}
-                  </span>
-                </div>
-                <div className="asset-summary__field">
-                  <span className="asset-summary__label">Result % with credits</span>
-                  <span className={`asset-summary__value ${resultWithCreditsClass}`}>
-                    {orMissing(resultWithCreditsPercent, formatPercentPoints)}
-                  </span>
-                </div>
-
-                <div className="asset-summary__field">
-                  <span className="asset-summary__label">XIRR</span>
-                  <span className={`asset-summary__value ${xirrClass}`}>
-                    {orMissing(xirr, formatPercentFraction)}
-                  </span>
-                </div>
-                <div className="asset-summary__field">
-                  <span className="asset-summary__label">XIRR w/ credits</span>
-                  <span className={`asset-summary__value ${xirrWithCreditsClass}`}>
-                    {orMissing(xirrWithCredits, formatPercentFraction)}
-                  </span>
-                </div>
+                <Field label={inCurrency('Total current value')}>{orMissing(marketValue, formatN2)}</Field>
+                <Field label="Result %" valueClassName={signedClass(resultPercent)}>
+                  {orMissing(resultPercent, formatPercentPoints)}
+                </Field>
+                <Field label={inCurrency('Total current + credits')}>{orMissing(totalCurrentPlusCredits, formatN2)}</Field>
+                <Field label="Result % with credits" valueClassName={signedClass(resultWithCreditsPercent)}>
+                  {orMissing(resultWithCreditsPercent, formatPercentPoints)}
+                </Field>
+                <Field label="XIRR (shares only)" valueClassName={signedClass(xirr)}>
+                  {orMissing(xirr, formatPercentFraction)}
+                </Field>
+                <Field label="XIRR with credits" valueClassName={signedClass(xirrWithCredits)}>
+                  {orMissing(xirrWithCredits, formatPercentFraction)}
+                </Field>
               </>
             )}
 
             {priceError && (
-              <div className="asset-summary__field asset-summary__field--full">
-                <span className="asset-summary__label">Status</span>
-                <span className="asset-summary__value asset-summary__value--error">
-                  {priceError}
-                </span>
-              </div>
+              <Field label="Status" valueClassName="asset-summary__value--error" full>
+                <span role="alert">{priceError} Select Refresh price to try again.</span>
+              </Field>
             )}
-          </>
-        )}
-      </div>
+          </dl>
+        </section>
+      )}
     </div>
   )
 }

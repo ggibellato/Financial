@@ -130,6 +130,7 @@ public sealed class NavigationService : INavigationService
                 Ticker = asset.Ticker,
                 ISIN = asset.ISIN,
                 Exchange = asset.Exchange,
+                Currency = broker?.Currency ?? string.Empty,
                 Country = asset.Country,
                 LocalTypeCode = asset.LocalTypeCode,
                 Class = asset.Class,

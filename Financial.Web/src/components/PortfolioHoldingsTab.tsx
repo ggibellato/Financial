@@ -3,6 +3,7 @@ import { Table, TableBody, TableHeader, TableHeaderCell, TableRow } from '@fluen
 import ErrorState from './ErrorState'
 import LoadingState from './LoadingState'
 import MissingValue from './MissingValue'
+import PriceBadge from './PriceBadge'
 import TruncatedText from './TruncatedText'
 import DataTableCell from './grid/DataTableCell'
 import SortableColumnHeader from './grid/SortableColumnHeader'
@@ -12,7 +13,6 @@ import type { RowPriceState } from '../hooks/usePortfolioAssetSummary'
 import { useAggregatedSummary } from '../hooks/useAggregatedSummary'
 import type { PortfolioAssetSummaryItemDto } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
-import { useVisuallyHiddenStyles } from '../styles/visuallyHidden'
 import { formatMonthYear, formatN2, formatN8, formatPercentN2, formatShortDate, signClass } from '../utils/formatters'
 import { orMissing } from '../utils/orMissing'
 import './PortfolioHoldingsTab.css'
@@ -70,16 +70,6 @@ function renderGatedCell(
 const MANUAL_PRICE_MEANING = 'This value came from a manually-entered price, not a live fetch.'
 const STALE_PRICE_MEANING = 'This price is older than the most recent weekday.'
 const NO_PRICE_MEANING = 'No price or value has been recorded for this holding yet.'
-
-function PriceBadge({ abbreviation, meaning, className }: { abbreviation: string; meaning: string; className: string }) {
-  const hidden = useVisuallyHiddenStyles()
-  return (
-    <span className={className} title={meaning}>
-      <span aria-hidden="true"> ({abbreviation})</span>
-      <span className={hidden.visuallyHidden}> {meaning}</span>
-    </span>
-  )
-}
 
 function FooterTotal({ label, value, children }: { label: string; value: ReactNode; children?: ReactNode }) {
   return (

@@ -41,6 +41,7 @@ const ASSET: AssetDetailsDto = {
   ticker: 'KLBN4',
   isin: 'BRKLBN',
   exchange: 'BVMF',
+  currency: '',
   country: 'BR',
   localTypeCode: 'ON',
   class: 'Equity',
@@ -142,14 +143,38 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Tax jurisdiction').nextElementSibling).toHaveTextContent('—')
   })
 
-  it.each([
-    ['Total bought', 'asset-summary__value--green'],
-    ['Total sold', 'asset-summary__value--red'],
-    ['Total credits', 'asset-summary__value--blue'],
-  ])('renders_%s_value_with_its_colour_class', (label, colourClass) => {
+  it.each(['Total bought', 'Total sold', 'Total credits'])('renders_%s_without_a_gain_or_loss_colour', (label) => {
     setMock({ asset: ASSET })
     renderAssetSummaryTab()
-    expect(screen.getByText(label).nextElementSibling).toHaveClass(colourClass)
+    expect(screen.getByText(label).nextElementSibling?.className).toBe('asset-summary__value')
+  })
+
+  it('names_the_currency_of_each_money_figure', () => {
+    setMock({ asset: { ...ASSET, currency: 'BRL', marketValue: 2500 }, price: PRICE, showCurrentSection: true })
+    renderAssetSummaryTab()
+
+    for (const label of ['Average price', 'Total bought', 'Total sold', 'Total credits', 'Current price', 'Total current value', 'Total current + credits']) {
+      expect(screen.getByText(`${label} (BRL)`)).toBeInTheDocument()
+    }
+    expect(screen.getByText('Quantity')).toBeInTheDocument()
+    expect(screen.getByText('Result %')).toBeInTheDocument()
+  })
+
+  it('groups_each_label_with_its_value_and_titles_the_current_section_as_a_heading', () => {
+    setMock({ asset: ASSET, price: PRICE, showCurrentSection: true })
+    renderAssetSummaryTab()
+
+    expect(screen.getByText('Quantity').tagName).toBe('DT')
+    expect(screen.getByText('Quantity').nextElementSibling?.tagName).toBe('DD')
+    expect(screen.getByRole('heading', { name: 'Current', level: 3 })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Current' })).toBeInTheDocument()
+  })
+
+  it('announces_while_the_current_price_loads', () => {
+    setMock({ asset: ASSET, showCurrentSection: true, isLoadingPrice: true, canRefresh: false })
+    renderAssetSummaryTab()
+
+    expect(screen.getByRole('status')).toHaveTextContent('Loading the current price.')
   })
 
   it('renders_current_section_when_quantity_and_price_nonzero', () => {
@@ -162,7 +187,7 @@ describe('AssetSummaryTab', () => {
     expect(screen.getByText('Current')).toBeInTheDocument()
     expect(screen.getByText('Current price')).toBeInTheDocument()
     expect(screen.getByText('As of')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Refresh' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Refresh price' })).toBeInTheDocument()
   })
 
   it('renders_manual_badge_when_price_is_manual', () => {
@@ -172,7 +197,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('Current price').nextElementSibling?.textContent).toBe('25.00 (Manual)')
+    expect(screen.getByText('Current price').nextElementSibling?.textContent).toBe('25.00 (Manual) This price was entered manually, not fetched live.')
   })
 
   it('renders_stale_badge_when_asset_market_status_is_stale', () => {
@@ -182,7 +207,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Stale)')
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Stale) This price is older than the most recent weekday.')
   })
 
   it('renders_unavailable_badge_when_asset_market_status_is_unavailable', () => {
@@ -192,7 +217,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Unavailable)')
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Unavailable) No price or value has been recorded for this holding yet.')
   })
 
   it('does_not_render_stale_or_unavailable_badge_when_asset_market_status_is_current', () => {
@@ -252,7 +277,7 @@ describe('AssetSummaryTab', () => {
     setMock({ asset: { ...ASSET, quantity: 0 }, showCurrentSection: false })
     renderAssetSummaryTab()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Refresh' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Refresh price' })).not.toBeInTheDocument()
   })
 
   it('renders_realized_totals_section_for_historic_scope', () => {
@@ -268,7 +293,7 @@ describe('AssetSummaryTab', () => {
     expect(label.nextElementSibling).toHaveClass('asset-summary__value--red')
     expect(screen.getByText('Portfolio weight')).toBeInTheDocument()
     expect(screen.queryByText('Current')).not.toBeInTheDocument()
-    expect(screen.getByText('XIRR')).toBeInTheDocument()
+    expect(screen.getByText('XIRR with credits')).toBeInTheDocument()
     expect(screen.getByText('XIRR (shares only)')).toBeInTheDocument()
   })
 
@@ -279,7 +304,7 @@ describe('AssetSummaryTab', () => {
       portfolioWeight: 100,
     })
     renderAssetSummaryTab('historic')
-    const xirrLabel = screen.getByText('XIRR')
+    const xirrLabel = screen.getByText('XIRR with credits')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
     const xirrSharesOnlyLabel = screen.getByText('XIRR (shares only)')
     expect(xirrSharesOnlyLabel.nextElementSibling?.textContent).toBe('—')
@@ -400,26 +425,26 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab()
     expect(screen.getByText('Status')).toBeInTheDocument()
     const statusLabel = screen.getByText('Status')
-    expect(statusLabel.nextElementSibling?.textContent).toBe('Price unavailable')
+    expect(statusLabel.nextElementSibling?.textContent).toBe('Price unavailable Select Refresh price to try again.')
     expect(statusLabel.nextElementSibling).toHaveClass('asset-summary__value--error')
   })
 
   it('refresh_button_enabled_after_price_load', () => {
     setMock({ asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 }, price: PRICE, showCurrentSection: true, canRefresh: true })
     renderAssetSummaryTab()
-    expect(screen.getByRole('button', { name: 'Refresh' })).not.toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Refresh price' })).not.toBeDisabled()
   })
 
   it('disables_refresh_button_while_price_is_loading', () => {
     setMock({ asset: ASSET, showCurrentSection: true, isLoadingPrice: true, canRefresh: false })
     renderAssetSummaryTab()
-    expect(screen.getByRole('button', { name: 'Refresh' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Refresh price' })).toHaveAttribute('aria-disabled', 'true')
   })
 
   it('calls_refresh_on_button_click', () => {
     setMock({ asset: { ...ASSET, marketValue: 2500, unrealisedGain: 500 }, price: PRICE, showCurrentSection: true, canRefresh: true })
     renderAssetSummaryTab()
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh price' }))
     expect(mockRefresh).toHaveBeenCalledTimes(1)
   })
 
@@ -430,9 +455,9 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    const xirrLabel = screen.getByText('XIRR')
+    const xirrLabel = screen.getByText('XIRR (shares only)')
     expect(xirrLabel.nextElementSibling?.textContent).toBe('—')
-    const xirrWithCreditsLabel = screen.getByText('XIRR w/ credits')
+    const xirrWithCreditsLabel = screen.getByText('XIRR with credits')
     expect(xirrWithCreditsLabel.nextElementSibling?.textContent).toBe('—')
   })
 
@@ -443,9 +468,9 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    const xirrLabel = screen.getByText('XIRR')
+    const xirrLabel = screen.getByText('XIRR (shares only)')
     expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
-    expect(screen.getByText('XIRR w/ credits').nextElementSibling).toHaveClass('asset-summary__value--green')
+    expect(screen.getByText('XIRR with credits').nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
   it('renders_negative_xirr_in_red', () => {
@@ -455,9 +480,9 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    const xirrLabel = screen.getByText('XIRR')
+    const xirrLabel = screen.getByText('XIRR (shares only)')
     expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
-    expect(screen.getByText('XIRR w/ credits').nextElementSibling).toHaveClass('asset-summary__value--red')
+    expect(screen.getByText('XIRR with credits').nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
   it('renders_the_isin_and_local_type_when_set', () => {
@@ -498,7 +523,7 @@ describe('AssetSummaryTab', () => {
     setMock({ asset: { ...ASSET, quantity: 0, totalReturn, priceOnlyReturn } })
     renderAssetSummaryTab('historic')
 
-    expect(screen.getByText('XIRR').nextElementSibling).toHaveClass(withCreditsClass)
+    expect(screen.getByText('XIRR with credits').nextElementSibling).toHaveClass(withCreditsClass)
     expect(screen.getByText('XIRR (shares only)').nextElementSibling).toHaveClass(sharesOnlyClass)
   })
 })

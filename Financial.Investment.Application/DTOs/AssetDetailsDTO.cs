@@ -12,6 +12,7 @@ public class AssetDetailsDTO
     public required string Ticker { get; set; }
     public string ISIN { get; set; } = string.Empty;
     public string Exchange { get; set; } = string.Empty;
+    public string Currency { get; set; } = string.Empty;
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public CountryCode Country { get; set; } = CountryCode.Unknown;
     public string LocalTypeCode { get; set; } = string.Empty;

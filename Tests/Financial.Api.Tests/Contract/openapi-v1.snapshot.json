@@ -1388,6 +1388,9 @@
             },
             "type": "array"
           },
+          "currency": {
+            "type": "string"
+          },
           "disposalRecords": {
             "items": {
               "$ref": "#/components/schemas/DisposalRecordDTO"

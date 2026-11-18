@@ -7446,6 +7446,7 @@ export interface components {
             costOfUnitsHeld?: number;
             country?: components["schemas"]["CountryCode"];
             credits?: components["schemas"]["CreditDTO"][];
+            currency?: string;
             disposalRecords?: components["schemas"]["DisposalRecordDTO"][];
             exchange?: string;
             incomePolicy?: components["schemas"]["IncomePolicy"];
