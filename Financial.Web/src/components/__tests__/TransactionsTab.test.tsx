@@ -17,8 +17,16 @@ import TransactionsTab from '../TransactionsTab'
 import { findErrorAlert } from '../../test-utils/errorAlert'
 
 vi.mock('recharts', () => ({
-  BarChart: ({ children }: { children: ReactNode }) => <div data-testid="bar-chart">{children}</div>,
-  LineChart: ({ children }: { children: ReactNode }) => <div data-testid="line-chart">{children}</div>,
+  BarChart: ({ children, accessibilityLayer }: { children: ReactNode; accessibilityLayer?: boolean }) => (
+    <div data-testid="bar-chart" data-accessibility-layer={String(accessibilityLayer)}>
+      {children}
+    </div>
+  ),
+  LineChart: ({ children, accessibilityLayer }: { children: ReactNode; accessibilityLayer?: boolean }) => (
+    <div data-testid="line-chart" data-accessibility-layer={String(accessibilityLayer)}>
+      {children}
+    </div>
+  ),
   Bar: ({ children }: { children?: ReactNode }) => <div data-testid="bar">{children}</div>,
   Line: () => null,
   LabelList: ({ formatter }: { formatter: (value: unknown) => string }) => (
@@ -319,6 +327,17 @@ describe('TransactionsTab', () => {
     expect(screen.getByRole('tab', { name: 'Line' })).toHaveAttribute('aria-selected', 'true')
     expect(screen.getByRole('tab', { name: 'Bar' })).toHaveAttribute('aria-selected', 'false')
     expect(screen.getByTestId('line-chart')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['Bar', 'bar-chart'],
+    ['Line', 'line-chart'],
+  ])('the_%s_chart_turns_off_the_recharts_keyboard_layer_so_the_chart_image_holds_no_focus_stop', async (chart, testId) => {
+    await renderAssetTab()
+
+    fireEvent.click(screen.getByRole('tab', { name: chart }))
+
+    expect(screen.getByTestId(testId)).toHaveAttribute('data-accessibility-layer', 'false')
   })
 
   it('clicking_filter_button_selects_that_period', async () => {
@@ -878,6 +897,17 @@ describe('TransactionsTab', () => {
     fireEvent.click(screen.getByRole('button', { name: header }))
     expect(rowTypes()).toEqual([...ascendingTypes].reverse())
   })
+
+  it.each(['Type', 'Quantity', 'Unit price', 'Fees', 'Withheld', 'Net'])(
+    'clicking_the_%s_header_marks_it_as_the_active_sort',
+    async (header) => {
+      await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+      fireEvent.click(screen.getByRole('button', { name: header }))
+
+      expect(screen.getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
+    },
+  )
 
   it('shows_the_fx_provenance_affordance_for_a_transaction_with_a_captured_snapshot', async () => {
     await renderAssetTab([
