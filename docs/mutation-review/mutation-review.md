@@ -157,7 +157,7 @@ uses the repo folder.
 | 3.4 | CashFlow.Application | Movements: `ExpenseService`, `IncomeService`, `IncomeSourceService`, `IncomeSummaryService`, `IncomeGroupLookupBuilder`, `CategoryService`, `CategorySummaryService`, `HistoricAverageService`, `MensaisService` | ✅ | 63.5% | 76.9% | 11 | 57 | 25 | [#1294](https://github.com/ggibellato/Financial/pull/1294) | [Notes](3.4.md); tests were 4× the code, 57 Domain re-checks and duplicates removed |
 | 3.5 | CashFlow.Application | Reserve and settlement: `ReserveService`, `ReserveSplitRule`, `PotsService`, `TitheService`, `SettlementService`, `CurrencyBalanceMapper` | ✅ | 63.2% | 76.2% | 7 | 14 | 24 | [#1292](https://github.com/ggibellato/Financial/pull/1292) | [Notes](3.5.md); 14 tests that re-checked Domain pot and tithe rules or duplicated others removed |
 | 3.6 | CashFlow.Application | Investment accounts: `InvestmentAccountService`, `InvestmentAnnualResultService`, `InvestmentSnapshotService` | ✅ | 63.2% | 75.3% | 5 | 4 | 11 | [#1293](https://github.com/ggibellato/Financial/pull/1293) | [Notes](3.6.md); an inactive account's existing snapshot stays hidden (found by the second simplify pass) |
-| 3.7 | CashFlow.Application | `Validation/**` | ⬜ | 96.4% | | | | | | Likely review-only |
+| 3.7 | CashFlow.Application | `Validation/**` | ✅ | 96.4% | 98.2% | 1 | 0 | 1 | [#1333](https://github.com/ggibellato/Financial/pull/1333) | [Notes](3.7.md); withdrawing exactly a pot's balance; the account name check takes a nullable name it never receives |
 | 4.1 | Investment.Application | Assets and transactions: `AssetAdminService`, `AssetMoveService`, `AssetMutationHelper`, `TransactionService`, `CreditService`, `DividendService`, `FxEntryCaptureHelper` | ✅ | 47.7% | 65.0% | 11 | 9 | 16 | [#1286](https://github.com/ggibellato/Financial/pull/1286) | [Notes](4.1.md); 48.0% when run with `-AlsoTestedBy Investment.Infrastructure` |
 | 4.2 | Investment.Application | Corporate actions: `CorporateActionService`, `BrokerCurrencyParser` | ✅ | 49.6% | 70.3% | 7 | 1 | 11 | [#1287](https://github.com/ggibellato/Financial/pull/1287) | [Notes](4.2.md); `BrokerCurrencyParser` is only used by 4.3/4.4 services |
 | 4.3 | Investment.Application | Summaries: `PortfolioService`, `PortfolioAssetSummary*`, `PortfolioDashboard*`, `SummaryService`, `ConvertedSummaryBuilder`, `ConvertedAssetFlows`, `AssetTotals`, `AssetAmountBases`, `AssetCashFlowBuilder` | ✅ | 56.8% | 73.7% | 15 | 31 | 30 | [#1289](https://github.com/ggibellato/Financial/pull/1289) | [Notes](4.3.md); 28 asset-summary tests that re-checked Domain results removed |
@@ -177,12 +177,15 @@ uses the repo folder.
 | 5.11 | Financial.Web | `useCalendarConnection`, `useCalendarSyncStatuses`, `useReportingCurrency`, `useSyncStatus` | ✅ | 60.4% | 76.9% | 7 | 0 | 15 | [#1327](https://github.com/ggibellato/Financial/pull/1327) | [Notes](5.11.md); the reporting currency `enabled ?? true` fallback is dead code |
 | 5.12 | Financial.Web | Admin list loaders: `useBrokers`, `useCategories`, `useIncomeSources`, `useInvestmentAccounts`, `useRecurringBills`, `usePortfolios` | ✅ | 18.4% | 18.4% | 0 | 0 | 19 | [#1328](https://github.com/ggibellato/Financial/pull/1328) | [Notes](5.12.md); notes only: thin wrappers over `useCrudResource`, the rest is wording |
 | 5.x | Financial.Web | remaining `src/hooks`: slices of a few files, worst score first; measure each with the tests that reach it (`STRYKER_TEST_INCLUDE`), not the nightly score | ⬜ | | | | | | | Nightly ranking is only a starting list (see 5.1) |
-| 6.1 | Financial.Web | `src/utils/**` | 🔄 | | | | | | | |
+| 6.1 | Financial.Web | `src/utils/**` | ✅ | 80.1% | 95.4% | 51 | 0 | 21 | [#1332](https://github.com/ggibellato/Financial/pull/1332) | [Notes](6.1.md); formatters and funding lines; `signClass` shows zero in green; `holdingNavigation` node checks can never fail |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
 | 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
 | 7.3 | CashFlow.Infrastructure | all | ✅ | 80.6% | 92.7% | 9 | 1 | 4 | [#1304](https://github.com/ggibellato/Financial/pull/1304) | [Notes](7.3.md); reference wire names and required flags, credentials path, dead converter code |
 | 7.4 | Investment.Infrastructure | all | ✅ | 81.1% | 93.2% | 7 | 0 | 4 | [#1305](https://github.com/ggibellato/Financial/pull/1305) | [Notes](7.4.md); two tests passed vacuously because BRL is the Currency default |
-| 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | ⬜ | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive |
+| 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | 🔄 | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive; ranked by logic held, eight slices planned (8.1–8.8, see [8.1](8.1.md)) |
+| 8.1 | Financial.Web | `AccountFormDialog`, `InvestmentTree` | ✅ | 76.2% | 90.2% | 23 | 1 | 42 | [#1334](https://github.com/ggibellato/Financial/pull/1334) | [Notes](8.1.md); `queryByRole('dialog')` can pass while a dialog stays open; the opening balance number message can never show |
+| 8.2 | Financial.Web | `TransactionsTab`, `CreditsTab` | ✅ | 70.1% | 86.6% | 17 | 0 | 4 | [#1335](https://github.com/ggibellato/Financial/pull/1335) | [Notes](8.2.md); credit chart colours and stacking; most survivors are chart styling |
+| 8.3 | Financial.Web | `PortfolioHoldingsTab`, `AssetSummaryTab`, `PriceHistoryTab` | ✅ | 71.1% | 97.9% | 34 | 6 | 0 | [#1337](https://github.com/ggibellato/Financial/pull/1337) | [Notes](8.3.md); led to the "Current price" label ([#1338](https://github.com/ggibellato/Financial/pull/1338)) and the asset summary clean-up ([#1339](https://github.com/ggibellato/Financial/pull/1339)) |
 | 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ✅ | 71.6% | 90.1% | 7 | 0 | 4 | [#1300](https://github.com/ggibellato/Financial/pull/1300) | [Notes](9.1.md); `Program.cs` wiring (CORS, versioning, options binding) asserted; `UseDeveloperExceptionPage` redundant |
 | 9.2 | Financial.Api | All controllers | ✅ | 78.7% | 95.6% | 1 | 0 | 1 | [#1302](https://github.com/ggibellato/Financial/pull/1302) | [Notes](9.2.md); empty-body test now requires the guard to reject before any service; blank route-value guards are dead code |
 
@@ -234,6 +237,11 @@ class, production notes) in its own file in this folder:
 - [5.10 Web hooks: shared helpers (72.8% → 84.4%)](5.10.md)
 - [5.11 Web hooks: calendar connection, calendar sync statuses, reporting currency, sync status (60.4% → 76.9%)](5.11.md)
 - [5.12 Web hooks: small admin list loaders (18.4%, no gaps)](5.12.md)
+- [6.1 Web utils (80.1% → 95.4%)](6.1.md)
+- [3.7 CashFlow.Application validation (96.4% → 98.2%)](3.7.md)
+- [8.1 Web components: account form dialog, investment tree (76.2% → 90.2%)](8.1.md)
+- [8.2 Web components: transactions tab, credits tab (70.1% → 86.6%)](8.2.md)
+- [8.3 Web components: portfolio holdings, asset summary, price history (71.1% → 97.9%)](8.3.md)
 
 ## Log
 
@@ -278,3 +286,8 @@ One line per working session: date, slice, outcome.
 | 2026-11-18 | 5.10 | Shared helper hooks 72.8% → 84.4%; `useConfirmedDelete` gets its own test file |
 | 2026-11-18 | 5.11 | Calendar, reporting currency and sync status hooks 60.4% → 76.9% |
 | 2026-11-18 | 5.12 | Admin list loader hooks reviewed, no gaps: thin wrappers over `useCrudResource` |
+| 2026-11-18 | 6.1 | Web utils 80.1% → 95.4%; formatters, funding lines and field errors; module-level constants misreported as survivors, checked by replay |
+| 2026-11-18 | 3.7 | CashFlow validation 96.4% → 98.2%; one boundary test, one equivalent |
+| 2026-11-18 | 8.1 | Account form dialog and investment tree 76.2% → 90.2%; first components slice, 8.x planned as eight slices |
+| 2026-11-18 | 8.2 | Transactions and credits tabs 70.1% → 86.6% |
+| 2026-11-18 | 8.3 | Portfolio holdings, asset summary and price history tabs 71.1% → 97.9%; asset summary label and clean-up PRs followed |
