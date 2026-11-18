@@ -28,6 +28,25 @@ describe('collectFieldErrors', () => {
     expect(collectFieldErrors(container)).toEqual([{ fieldId: 'code', message: 'Code: check this field.' }])
   })
 
+  it('skips an empty message and trims the one it reads', () => {
+    const container = mount(`
+      <input id="name" aria-invalid="true" aria-describedby="blank message" />
+      <span id="blank">   </span>
+      <span id="message">  Name is required.  </span>`)
+
+    expect(collectFieldErrors(container)).toEqual([{ fieldId: 'name', message: 'Name is required.' }])
+  })
+
+  it.each([
+    ['the element that labels it', '<span id="code-label">Code</span><input id="code" aria-invalid="true" aria-labelledby="code-label" />'],
+    ['its label, trimmed', '<label for="code">  Code  </label><input id="code" aria-invalid="true" />'],
+    ['its aria-label', '<input id="code" aria-invalid="true" aria-label="Code" />'],
+  ])('names the field by %s when no message describes it', (_, html) => {
+    const container = mount(html)
+
+    expect(collectFieldErrors(container)).toEqual([{ fieldId: 'code', message: 'Code: check this field.' }])
+  })
+
   it('skips an invalid control without an id, which no link could reach', () => {
     const container = mount(`<input aria-invalid="true" aria-label="Orphan" />`)
 

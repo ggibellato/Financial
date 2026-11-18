@@ -41,6 +41,12 @@ describe('monthTransactionTotals', () => {
     ])
   })
 
+  it('lists the currencies in code order and the no-currency bucket last, whatever order the rows come in', () => {
+    const totals = monthTransactionTotals([row('USD', 1), row(null, 2), row('BRL', 3)])
+
+    expect(totals.map((total) => total.currency)).toEqual(['BRL', 'USD', null])
+  })
+
   it('sums in pence so float error never reaches the figure', () => {
     const totals = monthTransactionTotals([row('GBP', -0.1), row('GBP', -0.2), row('GBP', -0.7)])
 

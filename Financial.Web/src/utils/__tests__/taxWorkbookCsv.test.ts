@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { TaxWorkbookDto, TaxWorkbookEntryDto } from '../../api/types'
-import { buildTaxWorkbookCsv, buildTaxWorkbookCsvFilename } from '../taxWorkbookCsv'
+import { buildTaxWorkbookCsv, buildTaxWorkbookCsvFilename, downloadCsv } from '../taxWorkbookCsv'
 
 function buildWorkbook(overrides: Partial<TaxWorkbookDto> = {}): TaxWorkbookDto {
   return {
@@ -131,6 +131,32 @@ describe('buildTaxWorkbookCsv', () => {
 
     expect(csv.split('\r\n')[1]).toContain('"Dividend, extra"')
   })
+
+  it('doubles a quote inside a field and leaves an empty value empty', () => {
+    const csv = buildTaxWorkbookCsv(
+      buildWorkbook({
+        jurisdiction: 'BR',
+        entries: [
+          {
+            id: '1',
+            date: '2026-01-01',
+            eventCategory: 'Dividend',
+            proceeds: null,
+            costBasis: null,
+            gainLoss: null,
+            grossAmount: 10,
+            withheldAmount: 0,
+            netAmount: 10,
+            calculationStatus: 'Final',
+            evidenceReference: 'say "hi"',
+            taxRuleLabel: null,
+          },
+        ],
+      }),
+    )
+
+    expect(csv.split('\r\n')[1]).toBe('2026-01-01,BR,2026,Dividend,,,,10,0,10,BRL,"say ""hi"""')
+  })
 })
 
 describe('buildTaxWorkbookCsvFilename', () => {
@@ -140,5 +166,30 @@ describe('buildTaxWorkbookCsvFilename', () => {
 
   it('leaves a BR tax year unchanged', () => {
     expect(buildTaxWorkbookCsvFilename('BR', '2026')).toBe('tax-workbook-BR-2026.csv')
+  })
+})
+
+describe('downloadCsv', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('saves the text as a CSV file of the given name and leaves nothing behind', async () => {
+    const createObjectURL = vi.fn<(blob: Blob) => string>(() => 'blob:csv')
+    const revokeObjectURL = vi.fn()
+    Object.assign(URL, { createObjectURL, revokeObjectURL })
+    const clicks: { download: string; href: string; attached: boolean }[] = []
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) {
+      clicks.push({ download: this.download, href: this.href, attached: document.body.contains(this) })
+    })
+
+    downloadCsv('tax.csv', 'a,b')
+
+    expect(clicks).toEqual([{ download: 'tax.csv', href: 'blob:csv', attached: true }])
+    const blob = createObjectURL.mock.calls[0][0]
+    expect(blob.type).toBe('text/csv;charset=utf-8;')
+    expect(await blob.text()).toBe('a,b')
+    expect(document.body.querySelector('a')).toBeNull()
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:csv')
   })
 })

@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { fundingLineErrors, fundingLinesMismatch, incomeDepositAmount, remainingAmount, type FundingLineValues } from '../fundingLines'
+import {
+  MAX_FUNDING_LINES,
+  fundingLineErrors,
+  fundingLinesMismatch,
+  incomeDepositAmount,
+  newFundingLine,
+  remainingAmount,
+  withAddedLine,
+  withChangedLine,
+  withoutLine,
+  type FundingLineValues,
+} from '../fundingLines'
 
 const line = (amount: string): FundingLineValues => ({ key: amount, bankId: 'b1', amount })
 
@@ -49,5 +60,44 @@ describe('remainingAmount', () => {
     expect(remainingAmount([line('90')], 90)).toBe('')
     expect(remainingAmount([line('95')], 90)).toBe('')
     expect(remainingAmount([line('5')], null)).toBe('')
+  })
+})
+
+describe('newFundingLine', () => {
+  it('starts empty, with a key of its own', () => {
+    const first = newFundingLine()
+    const second = newFundingLine()
+
+    expect(first).toMatchObject({ bankId: '', amount: '' })
+    expect(first.key).not.toBe(second.key)
+  })
+})
+
+describe('withChangedLine', () => {
+  it('changes only the line with the key', () => {
+    const lines = [line('10'), line('20')]
+
+    expect(withChangedLine(lines, '20', { bankId: 'b2' })).toEqual([line('10'), { key: '20', bankId: 'b2', amount: '20' }])
+  })
+})
+
+describe('withAddedLine', () => {
+  it('adds a line holding what the others have not covered', () => {
+    const added = withAddedLine([line('30')], 100)
+
+    expect(added).toHaveLength(2)
+    expect(added[1]).toMatchObject({ bankId: '', amount: '70.00' })
+  })
+
+  it('adds no line past the limit', () => {
+    const lines = Array.from({ length: MAX_FUNDING_LINES }, (_, i) => line(String(i + 1)))
+
+    expect(withAddedLine(lines, 100)).toEqual(lines)
+  })
+})
+
+describe('withoutLine', () => {
+  it('removes only the line with the key', () => {
+    expect(withoutLine([line('10'), line('20')], '10')).toEqual([line('20')])
   })
 })

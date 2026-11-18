@@ -10,7 +10,12 @@ import {
   formatLongMonthYear,
   formatMonthInputValue,
   formatN2,
+  formatMonthKey,
+  formatN2To4,
   formatN8,
+  formatShortDateUtc,
+  parseValidatedNumber,
+  signClass,
   formatPercent1,
   formatPercentFraction,
   formatShortDate,
@@ -100,6 +105,15 @@ describe('formatLongMonthYear', () => {
 describe('formatDayMonthYearUtc', () => {
   it('formatDayMonthYearUtc_DateOnly_ReturnsDayShortMonthAndYearInUtc', () => {
     expect(formatDayMonthYearUtc('2026-11-03')).toBe('3 Nov 2026')
+  })
+})
+
+describe('formatN2To4', () => {
+  it.each([
+    [1, '1.00'],
+    [1.23456, '1.2346'],
+  ])('shows %s with two to four decimals as %s', (value, expected) => {
+    expect(formatN2To4(value)).toBe(expected)
   })
 })
 
@@ -221,6 +235,10 @@ describe('parseMonthInputValue', () => {
     expect(parseMonthInputValue('not-a-value')).toBeNull()
   })
 
+  it.each([' 2026-07', '2026-07 ', 'x2026-07', '2026-07-01'])('rejects %j, which is more than a month', (value) => {
+    expect(parseMonthInputValue(value)).toBeNull()
+  })
+
   it('parseMonthInputValue_MonthOutOfRange_ReturnsNull', () => {
     expect(parseMonthInputValue('2026-13')).toBeNull()
   })
@@ -312,5 +330,47 @@ describe('sumPence', () => {
 
   it('is zero for no items', () => {
     expect(sumPence([], () => 1)).toBe(0)
+  })
+})
+
+describe('formatShortDateUtc', () => {
+  it.each([null, undefined, ''])('shows nothing for %j', (value) => {
+    expect(formatShortDateUtc(value)).toBe('')
+  })
+})
+
+describe('formatMonthKey', () => {
+  it('shows the month and year as MM/yyyy', () => {
+    expect(formatMonthKey(new Date(2026, 0, 15))).toBe('01/2026')
+  })
+})
+
+describe('signClass', () => {
+  it.each([
+    [1, 'amount--green'],
+    [0, 'amount--green'],
+    [-1, 'amount--red'],
+  ])('marks %s as %s', (value, expected) => {
+    expect(signClass(value, 'amount')).toBe(expected)
+  })
+})
+
+describe('parseValidatedNumber', () => {
+  it('reads blank text as no number', () => {
+    expect(parseValidatedNumber('  ')).toBeNull()
+  })
+
+  it.each([
+    ['-1', null],
+    ['0', 0],
+  ])('reads %s with a minimum of 0 as %s', (value, expected) => {
+    expect(parseValidatedNumber(value, { min: 0 })).toBe(expected)
+  })
+
+  it.each([
+    ['100', 100],
+    ['100.01', null],
+  ])('reads %s with a maximum of 100 as %s', (value, expected) => {
+    expect(parseValidatedNumber(value, { max: 100 })).toBe(expected)
   })
 })
