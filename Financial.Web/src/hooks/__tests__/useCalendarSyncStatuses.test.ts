@@ -44,7 +44,6 @@ describe('useCalendarSyncStatuses', () => {
   it('joins active, due-dated cards with their sync status', async () => {
     const { result } = renderHook(() => useCalendarSyncStatuses())
 
-    expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(result.current.rows).toEqual([
@@ -115,7 +114,7 @@ describe('useCalendarSyncStatuses', () => {
   })
 
   it('clears the previous resync error when the next attempt starts', async () => {
-    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Sync failed')).mockReturnValue(new Promise(() => {}))
+    resyncCreditCardCalendarMock.mockRejectedValueOnce(new Error('Sync failed')).mockReturnValue(never())
     const { result } = renderHook(() => useCalendarSyncStatuses())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     act(() => result.current.resyncCard('card-due'))

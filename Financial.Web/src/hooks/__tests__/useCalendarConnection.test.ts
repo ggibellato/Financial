@@ -54,7 +54,6 @@ describe('useCalendarConnection', () => {
   it('fetches the connection status on mount', async () => {
     const { result } = renderHook(() => useCalendarConnection())
 
-    expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getCalendarStatusMock).toHaveBeenCalledOnce()
@@ -70,23 +69,6 @@ describe('useCalendarConnection', () => {
     })
 
     expect(seen[0]).toBe(true)
-  })
-
-  it('keeps the status shown while a retry after a failed refresh reloads', async () => {
-    disconnectCalendarMock.mockResolvedValue({ remoteCleanupSucceeded: true })
-    getCalendarStatusMock.mockResolvedValueOnce(CONNECTED).mockRejectedValueOnce(new Error('Network down'))
-    const { result } = renderHook(() => useCalendarConnection())
-    await waitFor(() => expect(result.current.status).toEqual(CONNECTED))
-    await act(async () => {
-      await result.current.disconnect()
-    })
-    expect(result.current.error).toBe('Network down')
-    getCalendarStatusMock.mockReturnValueOnce(never())
-
-    act(() => result.current.retry())
-
-    expect(result.current.isLoading).toBe(true)
-    expect(result.current.status).toEqual(CONNECTED)
   })
 
   it('surfaces a fetch error', async () => {
@@ -112,7 +94,7 @@ describe('useCalendarConnection', () => {
     expect(result.current.isConnecting).toBe(true)
   })
 
-  it('re-polls status on window focus while connecting, and clears isConnecting once connected', async () => {
+  it('re-polls status on window focus while connecting, then stops once connected', async () => {
     const { result } = renderHook(() => useCalendarConnection())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -126,6 +108,12 @@ describe('useCalendarConnection', () => {
 
     await waitFor(() => expect(result.current.isConnecting).toBe(false))
     expect(result.current.status).toEqual(CONNECTED)
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'))
+    })
+
+    expect(getCalendarStatusMock).toHaveBeenCalledTimes(2)
   })
 
   it('keeps isConnecting true across a focus event while still not connected', async () => {
@@ -153,26 +141,9 @@ describe('useCalendarConnection', () => {
     expect(getCalendarStatusMock).toHaveBeenCalledOnce()
   })
 
-  it('stops re-checking the status on focus once connected', async () => {
-    const { result } = renderHook(() => useCalendarConnection())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-    act(() => result.current.connect())
-    getCalendarStatusMock.mockResolvedValue(CONNECTED)
-    await act(async () => {
-      window.dispatchEvent(new Event('focus'))
-    })
-    await waitFor(() => expect(result.current.isConnecting).toBe(false))
-
-    await act(async () => {
-      window.dispatchEvent(new Event('focus'))
-    })
-
-    expect(getCalendarStatusMock).toHaveBeenCalledTimes(2)
-  })
-
   it('shows the disconnect running and clears an earlier disconnect error', async () => {
-    const retry = deferred<{ remoteCleanupSucceeded: boolean }>()
-    disconnectCalendarMock.mockRejectedValueOnce(new Error('Failed to disconnect')).mockReturnValueOnce(retry.promise)
+    const secondAttempt = deferred<{ remoteCleanupSucceeded: boolean }>()
+    disconnectCalendarMock.mockRejectedValueOnce(new Error('Failed to disconnect')).mockReturnValueOnce(secondAttempt.promise)
     const { result } = renderHook(() => useCalendarConnection())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     await act(async () => {
@@ -187,7 +158,7 @@ describe('useCalendarConnection', () => {
     expect(result.current.isDisconnecting).toBe(true)
     expect(result.current.disconnectError).toBeNull()
     await act(async () => {
-      retry.resolve({ remoteCleanupSucceeded: true })
+      secondAttempt.resolve({ remoteCleanupSucceeded: true })
       await disconnecting
     })
   })

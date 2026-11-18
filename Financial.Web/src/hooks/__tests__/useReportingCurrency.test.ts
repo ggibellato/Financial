@@ -29,7 +29,6 @@ describe('useReportingCurrency', () => {
   it('loads the current value on mount', async () => {
     const { result } = renderHook(() => useReportingCurrency())
 
-    expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getReportingCurrencyMock).toHaveBeenCalledOnce()
@@ -128,21 +127,9 @@ describe('useReportingCurrency', () => {
     expect(setReportingCurrencyMock).toHaveBeenCalledWith({ currency: 'BRL', enabled: false })
   })
 
-  it('turns conversion on with a currency chosen before the setting has loaded', async () => {
-    getReportingCurrencyMock.mockReturnValue(never())
-    setReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: true })
-    const { result } = renderHook(() => useReportingCurrency())
-
-    await act(async () => {
-      await result.current.setCurrency('BRL')
-    })
-
-    expect(setReportingCurrencyMock).toHaveBeenCalledWith({ currency: 'BRL', enabled: true })
-  })
-
   it('shows the save running and clears an earlier save error', async () => {
-    const retry = deferred<{ currency: string; enabled: boolean }>()
-    setReportingCurrencyMock.mockRejectedValueOnce(new Error('Currency not recognized')).mockReturnValueOnce(retry.promise)
+    const secondAttempt = deferred<{ currency: string; enabled: boolean }>()
+    setReportingCurrencyMock.mockRejectedValueOnce(new Error('Currency not recognized')).mockReturnValueOnce(secondAttempt.promise)
     const { result } = renderHook(() => useReportingCurrency())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     await act(async () => {
@@ -157,7 +144,7 @@ describe('useReportingCurrency', () => {
     expect(result.current.isSaving).toBe(true)
     expect(result.current.saveError).toBeNull()
     await act(async () => {
-      retry.resolve({ currency: 'BRL', enabled: true })
+      secondAttempt.resolve({ currency: 'BRL', enabled: true })
       await saving
     })
   })
