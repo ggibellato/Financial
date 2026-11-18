@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { useReportingCurrency } from '../useReportingCurrency'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getReportingCurrencyMock, setReportingCurrencyMock, setReportingCurrencyEnabledMock } = vi.hoisted(() => ({
   getReportingCurrencyMock: vi.fn<FinancialApiClient['getReportingCurrency']>(),
@@ -28,12 +29,22 @@ describe('useReportingCurrency', () => {
   it('loads the current value on mount', async () => {
     const { result } = renderHook(() => useReportingCurrency())
 
-    expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getReportingCurrencyMock).toHaveBeenCalledOnce()
     expect(result.current.currency).toBe('GBP')
     expect(result.current.enabled).toBe(true)
+  })
+
+  it('shows loading from the first render', () => {
+    getReportingCurrencyMock.mockReturnValue(never())
+    const seen: boolean[] = []
+
+    renderHook(() => {
+      seen.push(useReportingCurrency().isLoading)
+    })
+
+    expect(seen[0]).toBe(true)
   })
 
   it('surfaces a load error', async () => {
@@ -101,5 +112,40 @@ describe('useReportingCurrency', () => {
     expect(result.current.saveError).toBe('Save failed')
     expect(result.current.enabled).toBe(true)
     expect(result.current.isSaving).toBe(false)
+  })
+
+  it('keeps conversion off when the currency changes while it is off', async () => {
+    getReportingCurrencyMock.mockResolvedValue({ currency: 'GBP', enabled: false })
+    setReportingCurrencyMock.mockResolvedValue({ currency: 'BRL', enabled: false })
+    const { result } = renderHook(() => useReportingCurrency())
+    await waitFor(() => expect(result.current.enabled).toBe(false))
+
+    await act(async () => {
+      await result.current.setCurrency('BRL')
+    })
+
+    expect(setReportingCurrencyMock).toHaveBeenCalledWith({ currency: 'BRL', enabled: false })
+  })
+
+  it('shows the save running and clears an earlier save error', async () => {
+    const secondAttempt = deferred<{ currency: string; enabled: boolean }>()
+    setReportingCurrencyMock.mockRejectedValueOnce(new Error('Currency not recognized')).mockReturnValueOnce(secondAttempt.promise)
+    const { result } = renderHook(() => useReportingCurrency())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => {
+      await result.current.setCurrency('XYZ')
+    })
+
+    let saving!: Promise<void>
+    act(() => {
+      saving = result.current.setCurrency('BRL')
+    })
+
+    expect(result.current.isSaving).toBe(true)
+    expect(result.current.saveError).toBeNull()
+    await act(async () => {
+      secondAttempt.resolve({ currency: 'BRL', enabled: true })
+      await saving
+    })
   })
 })

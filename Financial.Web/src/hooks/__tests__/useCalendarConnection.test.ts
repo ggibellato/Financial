@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CalendarConnectionStatusDto } from '../../api/types'
 import { useCalendarConnection } from '../useCalendarConnection'
+import { deferred, never } from '../../test-utils/deferred'
 
 const { getCalendarStatusMock, disconnectCalendarMock, buildCalendarConnectUrlMock } = vi.hoisted(() => ({
   getCalendarStatusMock: vi.fn<FinancialApiClient['getCalendarStatus']>(),
@@ -53,11 +54,21 @@ describe('useCalendarConnection', () => {
   it('fetches the connection status on mount', async () => {
     const { result } = renderHook(() => useCalendarConnection())
 
-    expect(result.current.isLoading).toBe(true)
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
     expect(getCalendarStatusMock).toHaveBeenCalledOnce()
     expect(result.current.status).toEqual(NOT_CONNECTED)
+  })
+
+  it('shows loading from the first render', () => {
+    getCalendarStatusMock.mockReturnValue(never())
+    const seen: boolean[] = []
+
+    renderHook(() => {
+      seen.push(useCalendarConnection().isLoading)
+    })
+
+    expect(seen[0]).toBe(true)
   })
 
   it('surfaces a fetch error', async () => {
@@ -83,7 +94,7 @@ describe('useCalendarConnection', () => {
     expect(result.current.isConnecting).toBe(true)
   })
 
-  it('re-polls status on window focus while connecting, and clears isConnecting once connected', async () => {
+  it('re-polls status on window focus while connecting, then stops once connected', async () => {
     const { result } = renderHook(() => useCalendarConnection())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
 
@@ -97,6 +108,12 @@ describe('useCalendarConnection', () => {
 
     await waitFor(() => expect(result.current.isConnecting).toBe(false))
     expect(result.current.status).toEqual(CONNECTED)
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'))
+    })
+
+    expect(getCalendarStatusMock).toHaveBeenCalledTimes(2)
   })
 
   it('keeps isConnecting true across a focus event while still not connected', async () => {
@@ -111,6 +128,39 @@ describe('useCalendarConnection', () => {
     })
 
     expect(result.current.isConnecting).toBe(true)
+  })
+
+  it('does not re-check the status on focus unless connecting', async () => {
+    const { result } = renderHook(() => useCalendarConnection())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    await act(async () => {
+      window.dispatchEvent(new Event('focus'))
+    })
+
+    expect(getCalendarStatusMock).toHaveBeenCalledOnce()
+  })
+
+  it('shows the disconnect running and clears an earlier disconnect error', async () => {
+    const secondAttempt = deferred<{ remoteCleanupSucceeded: boolean }>()
+    disconnectCalendarMock.mockRejectedValueOnce(new Error('Failed to disconnect')).mockReturnValueOnce(secondAttempt.promise)
+    const { result } = renderHook(() => useCalendarConnection())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    await act(async () => {
+      await result.current.disconnect().catch(() => {})
+    })
+
+    let disconnecting!: Promise<void>
+    act(() => {
+      disconnecting = result.current.disconnect()
+    })
+
+    expect(result.current.isDisconnecting).toBe(true)
+    expect(result.current.disconnectError).toBeNull()
+    await act(async () => {
+      secondAttempt.resolve({ remoteCleanupSucceeded: true })
+      await disconnecting
+    })
   })
 
   it('disconnect calls the API and refreshes status', async () => {
