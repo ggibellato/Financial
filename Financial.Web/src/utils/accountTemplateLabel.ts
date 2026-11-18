@@ -21,6 +21,13 @@ const TEMPLATE_GRIDS: Record<string, AccountTemplateGrid> = {
   Settlement: { heading: 'Settlement', columns: 'settlement', linksRows: true },
 }
 
+const TEMPLATE_ORDER = ['Bank', 'CreditCard', 'Pots', 'Settlement']
+
+export function accountTemplateOrder(templateName: string): number {
+  const index = TEMPLATE_ORDER.indexOf(templateName)
+  return index === -1 ? TEMPLATE_ORDER.length : index
+}
+
 export function accountTemplateLabel(templateName: string): string {
   return TEMPLATE_LABELS[templateName] ?? templateName
 }

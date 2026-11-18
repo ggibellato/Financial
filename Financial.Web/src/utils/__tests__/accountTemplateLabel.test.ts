@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { accountTemplateGrid, accountTemplateLabel } from '../accountTemplateLabel'
+import { accountTemplateGrid, accountTemplateLabel, accountTemplateOrder } from '../accountTemplateLabel'
 
 describe('accountTemplateLabel', () => {
   it('names the Bank template "Bank"', () => {
@@ -16,6 +16,14 @@ describe('accountTemplateLabel', () => {
 
   it('shows any other template by its name', () => {
     expect(accountTemplateLabel('Settlement')).toBe('Settlement')
+  })
+})
+
+describe('accountTemplateOrder', () => {
+  it('orders templates as the Accounts page groups them, any other template last', () => {
+    const templates = ['Cash', 'Settlement', 'Pots', 'CreditCard', 'Bank']
+
+    expect(templates.sort((a, b) => accountTemplateOrder(a) - accountTemplateOrder(b))).toEqual(['Bank', 'CreditCard', 'Pots', 'Settlement', 'Cash'])
   })
 })
 
