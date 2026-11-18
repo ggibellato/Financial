@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AssetSummaryData } from '../../hooks/useAssetSummary'
 import type { AssetDetailsDto, AssetPriceDto, InvestmentScope } from '../../api/types'
@@ -172,7 +172,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('(Manual)')).toBeInTheDocument()
+    expect(screen.getByText('Current value').nextElementSibling?.textContent).toBe('25.00 (Manual)')
   })
 
   it('renders_stale_badge_when_asset_market_status_is_stale', () => {
@@ -182,7 +182,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('(Stale)')).toBeInTheDocument()
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Stale)')
   })
 
   it('renders_unavailable_badge_when_asset_market_status_is_unavailable', () => {
@@ -192,7 +192,7 @@ describe('AssetSummaryTab', () => {
       showCurrentSection: true,
     })
     renderAssetSummaryTab()
-    expect(screen.getByText('(Unavailable)')).toBeInTheDocument()
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('26/06/2026 10:00 (Unavailable)')
   })
 
   it('does_not_render_stale_or_unavailable_badge_when_asset_market_status_is_current', () => {
@@ -226,16 +226,6 @@ describe('AssetSummaryTab', () => {
     })
     renderAssetSummaryTab()
     expect(screen.queryByText(/16\/08\/2026 \d{2}:\d{2}/)).not.toBeInTheDocument()
-  })
-
-  it('renders_a_dash_under_as_of_when_no_price_was_obtained', () => {
-    setMock({
-      asset: ASSET,
-      price: { ...PRICE, asOf: null, asOfDate: null, isManual: true },
-      showCurrentSection: true,
-    })
-    renderAssetSummaryTab()
-    expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(1)
   })
 
   it('still_renders_date_and_time_for_a_live_quote', () => {
@@ -389,6 +379,7 @@ describe('AssetSummaryTab', () => {
     expect(valueEl).toHaveClass('asset-summary__value--green')
     expect(valueEl?.textContent).toMatch(/^25[.,]00\s?%$/)
     expect(screen.getByText('Result % with Credits').nextElementSibling?.textContent).toMatch(/^30[.,]00\s?%$/)
+    expect(screen.getByText('Result % with Credits').nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
   it('renders_negative_result_percent_in_red', () => {
@@ -401,6 +392,7 @@ describe('AssetSummaryTab', () => {
     const resultLabel = screen.getByText('Result %')
     const valueEl = resultLabel.nextElementSibling
     expect(valueEl).toHaveClass('asset-summary__value--red')
+    expect(screen.getByText('Result % with Credits').nextElementSibling).toHaveClass('asset-summary__value--red')
   })
 
   it('renders_price_error_in_status_field', () => {
@@ -453,6 +445,7 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--green')
+    expect(screen.getByText('XIRR w/ credits').nextElementSibling).toHaveClass('asset-summary__value--green')
   })
 
   it('renders_negative_xirr_in_red', () => {
@@ -464,5 +457,48 @@ describe('AssetSummaryTab', () => {
     renderAssetSummaryTab()
     const xirrLabel = screen.getByText('XIRR')
     expect(xirrLabel.nextElementSibling).toHaveClass('asset-summary__value--red')
+    expect(screen.getByText('XIRR w/ credits').nextElementSibling).toHaveClass('asset-summary__value--red')
+  })
+
+  it('renders_the_isin_and_local_type_when_set', () => {
+    setMock({ asset: ASSET })
+    renderAssetSummaryTab()
+
+    expect(screen.getByText('ISIN').nextElementSibling).toHaveTextContent('BRKLBN')
+    expect(screen.getByText('Local type').nextElementSibling).toHaveTextContent('ON')
+  })
+
+  it('renders_none_for_a_missing_isin_and_local_type', () => {
+    setMock({ asset: { ...ASSET, isin: '', localTypeCode: '' } })
+    renderAssetSummaryTab()
+
+    expect(within(screen.getByText('ISIN').nextElementSibling as HTMLElement).getByRole('img', { name: 'None' })).toBeInTheDocument()
+    expect(within(screen.getByText('Local type').nextElementSibling as HTMLElement).getByRole('img', { name: 'None' })).toBeInTheDocument()
+  })
+
+  it('renders_the_current_price_and_the_current_value_plus_credits', () => {
+    setMock({ asset: { ...ASSET, marketValue: 2500 }, price: PRICE, showCurrentSection: true })
+    renderAssetSummaryTab()
+
+    expect(screen.getByText('Current value').nextElementSibling?.textContent).toBe('25.00')
+    expect(screen.getByText('Total current + credits').nextElementSibling?.textContent).toBe('2,550.00')
+  })
+
+  it('renders_a_dash_under_as_of_for_a_price_with_no_date', () => {
+    setMock({ asset: ASSET, price: { ...PRICE, asOf: null, asOfDate: null }, showCurrentSection: true })
+    renderAssetSummaryTab()
+
+    expect(screen.getByText('As of').nextElementSibling?.textContent).toBe('—')
+  })
+
+  it.each([
+    [0.12, -0.05, 'asset-summary__value--green', 'asset-summary__value--red'],
+    [-0.12, 0.05, 'asset-summary__value--red', 'asset-summary__value--green'],
+  ])('colours_the_historic_xirr_figures_by_their_own_sign_%s_%s', (totalReturn, priceOnlyReturn, withCreditsClass, sharesOnlyClass) => {
+    setMock({ asset: { ...ASSET, quantity: 0, totalReturn, priceOnlyReturn } })
+    renderAssetSummaryTab('historic')
+
+    expect(screen.getByText('XIRR').nextElementSibling).toHaveClass(withCreditsClass)
+    expect(screen.getByText('XIRR (Shares only)').nextElementSibling).toHaveClass(sharesOnlyClass)
   })
 })
