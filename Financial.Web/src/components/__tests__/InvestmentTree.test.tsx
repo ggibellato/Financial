@@ -1,19 +1,22 @@
 import type { ReactElement } from 'react'
-import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
-import { MemoryRouter, useLocation } from 'react-router-dom'
+import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
+import { deferred } from '../../test-utils/deferred'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import InvestmentTree from '../InvestmentTree'
 import { SelectedNodeProvider, useSelectedNode } from '../../context/SelectedNodeContext'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PositionType, TreeNodeDto } from '../../api/types'
 
-const { getNavigationTreeMock } = vi.hoisted(() => ({
+const { getNavigationTreeMock, moveAssetMock } = vi.hoisted(() => ({
   getNavigationTreeMock: vi.fn(),
+  moveAssetMock: vi.fn(),
 }))
 
 vi.mock('../../api/financialApiClient', () => ({
   apiClient: {
     getNavigationTree: getNavigationTreeMock,
+    moveAsset: moveAssetMock,
   } as Partial<FinancialApiClient>,
 }))
 
@@ -82,7 +85,12 @@ function render(ui: ReactElement) {
 
 function RouterStateDisplay() {
   const { state } = useLocation()
-  return <div data-testid="router-state">{state === null || state === undefined ? 'none' : JSON.stringify(state)}</div>
+  return (
+    <>
+      <div data-testid="router-state">{state === null || state === undefined ? 'none' : JSON.stringify(state)}</div>
+      <div data-testid="navigation-type">{useNavigationType()}</div>
+    </>
+  )
 }
 
 function SelectedNodeDisplay() {
@@ -96,6 +104,7 @@ function SelectedNodeDisplay() {
       <div data-testid="selected-asset-class">{selectedNode.assetClass ?? 'absent'}</div>
       <div data-testid="selected-asset-count">{selectedNode.assetCount ?? 'absent'}</div>
       <div data-testid="selected-pending-corporate-action-id">{selectedNode.pendingCorporateActionId ?? 'absent'}</div>
+      <div data-testid="selected-currency">{selectedNode.currency ?? 'absent'}</div>
     </>
   )
 }
@@ -135,6 +144,7 @@ function renderWithPendingSelection(
 describe('InvestmentTree', () => {
   beforeEach(() => {
     getNavigationTreeMock.mockReset()
+    moveAssetMock.mockReset()
     Element.prototype.scrollIntoView = vi.fn()
   })
 
@@ -268,7 +278,14 @@ describe('InvestmentTree', () => {
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getByText('Acoes (1 assets)'))
     const asset = screen.getByRole('treeitem', { name: 'Long KLBN4' })
-    fireEvent.dragStart(asset, { dataTransfer: dataTransfer() })
+    const transfer = dataTransfer()
+    fireEvent.dragStart(asset, { dataTransfer: transfer })
+    return { asset, transfer }
+  }
+
+  async function dropOnBroker() {
+    fireEvent.drop(rowOf('XPI (BRL)'), { dataTransfer: dataTransfer() })
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'New portfolio name' })).toBeEnabled())
   }
 
   it('a sibling portfolio of the same broker accepts the drop', async () => {
@@ -303,14 +320,15 @@ describe('InvestmentTree', () => {
     expect(accepts(rowOf('FII (0 assets)'))).toBe(false)
   })
 
-  it('highlights only the row the drag is over, and clears it on leave', async () => {
+  it.each(['XPI (BRL)', 'FII (0 assets)'])('highlights %s only while the drag is over it', async (label) => {
     await startDraggingKLBN4()
+    expect(rowOf(label)).not.toHaveClass('investment-tree__row--drop-target')
 
-    accepts(rowOf('XPI (BRL)'))
-    expect(rowOf('XPI (BRL)')).toHaveClass('investment-tree__row--drop-target')
+    accepts(rowOf(label))
+    expect(rowOf(label)).toHaveClass('investment-tree__row--drop-target')
 
-    fireEvent.dragLeave(rowOf('XPI (BRL)'))
-    expect(rowOf('XPI (BRL)')).not.toHaveClass('investment-tree__row--drop-target')
+    fireEvent.dragLeave(rowOf(label))
+    expect(rowOf(label)).not.toHaveClass('investment-tree__row--drop-target')
   })
 
   it('dropping on a portfolio moves straight there, without asking anything', async () => {
@@ -322,13 +340,73 @@ describe('InvestmentTree', () => {
     await waitFor(() => expect(screen.getByText('Moving…')).toBeInTheDocument())
   })
 
-  it('dropping on the broker asks for a name for the new portfolio', async () => {
+  it('dropping on the broker asks for a name for the new portfolio, offering no existing one', async () => {
     await startDraggingKLBN4()
 
-    fireEvent.drop(rowOf('XPI (BRL)'), { dataTransfer: dataTransfer() })
+    await dropOnBroker()
 
-    await waitFor(() => expect(screen.getByRole('textbox', { name: 'New portfolio name' })).toBeEnabled())
     expect(screen.queryByText('Moving…')).not.toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'FII' })).not.toBeInTheDocument()
+  })
+
+  it.each(['FII (0 assets)', 'XPI (BRL)'])('takes a drop on %s and clears its highlight', async (label) => {
+    await startDraggingKLBN4()
+    accepts(rowOf(label))
+
+    const notTaken = fireEvent.drop(rowOf(label), { dataTransfer: dataTransfer() })
+
+    expect(notTaken).toBe(false)
+    expect(rowOf(label)).not.toHaveClass('investment-tree__row--drop-target')
+  })
+
+  it('puts the asset name on the drag, and ends the drag when it is let go', async () => {
+    const { asset, transfer } = await startDraggingKLBN4()
+
+    fireEvent.dragEnd(asset)
+
+    expect(transfer.setData).toHaveBeenCalledWith(expect.any(String), 'KLBN4')
+    expect(accepts(rowOf('FII (0 assets)'))).toBe(false)
+  })
+
+  it('closes the move dialog on Cancel', async () => {
+    await startDraggingKLBN4()
+    await dropOnBroker()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByText('Move asset')).not.toBeInTheDocument())
+  })
+
+  it('does not offer to archive a closed asset dropped on its broker', async () => {
+    await startDraggingKLBN4()
+    getNavigationTreeMock.mockResolvedValue({
+      ...twoBrokerTree,
+      children: [makeBroker('XPI', 'BRL', [makePortfolio('Acoes', [makeAsset('KLBN4', false, 1)])])],
+    })
+
+    await dropOnBroker()
+
+    expect(screen.queryByText('Archive to historic investments')).not.toBeInTheDocument()
+  })
+
+  it('selects the moved asset in its new portfolio and reloads the tree once a drop has moved it', async () => {
+    moveAssetMock.mockResolvedValue({ brokerName: 'XPI', portfolioName: 'FII', assetName: 'KLBN4' })
+    await startDraggingKLBN4()
+    getNavigationTreeMock.mockResolvedValue({
+      ...twoBrokerTree,
+      children: [
+        makeBroker('XPI', 'BRL', [
+          makePortfolio('Acoes', [makeAsset('VALE3', true, 1)]),
+          makePortfolio('FII', [makeAsset('KLBN4', true, 1)]),
+        ]),
+      ],
+    })
+
+    fireEvent.drop(rowOf('FII (0 assets)'), { dataTransfer: dataTransfer() })
+
+    await waitFor(() => expect(screen.getByTestId('selected').textContent).toBe('Asset:XPI:FII:KLBN4'))
+    expect(screen.queryByText('Moving…')).not.toBeInTheDocument()
+    expect(await screen.findByText('FII (1 assets)')).toBeInTheDocument()
   })
 
   it('dropping on a refusing target does nothing at all', async () => {
@@ -339,11 +417,51 @@ describe('InvestmentTree', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
+  const repeatedNamesTree: TreeNodeDto = {
+    nodeType: 'Investments',
+    displayName: 'Investments',
+    metadata: {},
+    children: [
+      makeBroker('XPI', 'BRL', [
+        makePortfolio('Acoes', [makeAsset('KLBN4', true, 1), makeAsset('VALE3', true, 1)]),
+        makePortfolio('Extra', [makeAsset('KLBN4', true, 1)]),
+      ]),
+      makeBroker('Rico', 'BRL', [makePortfolio('Acoes', [makeAsset('KLBN4', true, 1)])]),
+    ],
+  }
+
+  const treeItemOf = (element: HTMLElement) => element.closest('[role="treeitem"]')
+  const selectedItems = () => screen.queryAllByRole('treeitem').filter((item) => item.getAttribute('aria-selected') === 'true')
+
+  it('marks only the portfolio or broker that is selected, even where names repeat', async () => {
+    renderTree(repeatedNamesTree)
+    await screen.findByText('XPI (BRL)')
+    expect(selectedItems()).toEqual([])
+
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
+    expect(selectedItems()).toEqual([treeItemOf(screen.getByText('Acoes (2 assets)'))])
+
+    fireEvent.click(screen.getByText('XPI (BRL)'))
+    expect(selectedItems()).toEqual([treeItemOf(screen.getByText('XPI (BRL)'))])
+  })
+
+  it('marks only the selected asset, not another of its portfolio or one of the same name elsewhere', async () => {
+    renderTree(repeatedNamesTree)
+    await screen.findByText('XPI (BRL)')
+    fireEvent.click(screen.getByText('Acoes (2 assets)'))
+    fireEvent.click(screen.getByText('Extra (1 assets)'))
+
+    fireEvent.click(screen.getAllByText('KLBN4')[0])
+
+    expect(selectedItems()).toEqual([treeItemOf(screen.getAllByText('KLBN4')[0])])
+  })
+
   it('clicking broker node sets selectedNode in context', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
     fireEvent.click(screen.getByText('XPI (BRL)'))
     expect(screen.getByTestId('selected').textContent).toBe('Broker:XPI::')
+    expect(screen.getByTestId('selected-currency').textContent).toBe('BRL')
   })
 
   it('clicking a portfolio carries its asset count onto the selection', async () => {
@@ -484,6 +602,34 @@ describe('InvestmentTree', () => {
     expect(screen.queryByRole('treeitem', { name: 'Long TREA3' })).not.toBeInTheDocument()
   })
 
+  it('shows a broker with no portfolios, and an empty portfolio, as leaves while every class is shown', async () => {
+    renderTree({
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [makeBroker('XPI', 'BRL', [makePortfolio('Empty', [])]), makeBroker('Coinbase', 'GBP', [])],
+    })
+    await screen.findByText('XPI (BRL)')
+
+    expect(screen.getByText('Coinbase (GBP)').closest('[role="treeitem"]')).not.toHaveAttribute('aria-expanded')
+    expect(screen.getByText('Empty (0 assets)').closest('[role="treeitem"]')).not.toHaveAttribute('aria-expanded')
+  })
+
+  it('asset class filter hides a portfolio with nothing of that class, under a broker that keeps another', async () => {
+    renderTree({
+      nodeType: 'Investments',
+      displayName: 'Investments',
+      metadata: {},
+      children: [makeBroker('XPI', 'BRL', [makePortfolio('Acoes', [makeAsset('KLBN4', true, 1)]), makePortfolio('Crypto', [makeAsset('BTC', true, 9)])])],
+    })
+    await screen.findByText('XPI (BRL)')
+
+    fireEvent.change(screen.getByLabelText('Asset class'), { target: { value: '9' } })
+
+    expect(screen.getByText('Crypto (1 assets)')).toBeInTheDocument()
+    expect(screen.queryByText('Acoes (1 assets)')).not.toBeInTheDocument()
+  })
+
   it('broker node is retained in tree when filter is active', async () => {
     renderTree()
     await screen.findByText('XPI (BRL)')
@@ -539,6 +685,22 @@ describe('InvestmentTree', () => {
     expect(screen.queryByRole('radio')).not.toBeInTheDocument()
   })
 
+  it('shows loading again on retry and drops the error, then the tree', async () => {
+    const retried = deferred<TreeNodeDto>()
+    getNavigationTreeMock.mockRejectedValueOnce(new Error('Network down')).mockReturnValueOnce(retried.promise)
+    render(
+      <SelectedNodeProvider>
+        <InvestmentTree />
+      </SelectedNodeProvider>,
+    )
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    expect(screen.getByText('Loading investments…')).toBeInTheDocument()
+
+    retried.resolve(stubTree)
+    expect(await screen.findByText('XPI (BRL)')).toBeInTheDocument()
+  })
+
   it('shows error state on fetch failure', async () => {
     getNavigationTreeMock.mockRejectedValue(new Error('Network error'))
     render(
@@ -576,6 +738,22 @@ describe('InvestmentTree', () => {
     await waitFor(() => expect(screen.getByText('KLBN4').closest('[role="treeitem"]')).toHaveFocus())
   })
 
+  it('leaves the history alone when there is no pendingSelection', async () => {
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    rtlRender(
+      <MemoryRouter initialEntries={['/investments/active-investments']}>
+        <SelectedNodeProvider>
+          <InvestmentTree />
+          <RouterStateDisplay />
+        </SelectedNodeProvider>
+      </MemoryRouter>,
+    )
+
+    await screen.findByText('XPI (BRL)')
+    await act(async () => {})
+    expect(screen.getByTestId('navigation-type').textContent).toBe('POP')
+  })
+
   it('a pendingSelection for a node not present in the loaded tree is a no-op', async () => {
     getNavigationTreeMock.mockResolvedValue(stubTree)
     renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'MISSING' })
@@ -584,26 +762,43 @@ describe('InvestmentTree', () => {
     expect(screen.getByTestId('selected')).toHaveTextContent('none')
   })
 
-  it('router state is cleared after the pending selection is applied', async () => {
+  it('router state is cleared after the pending selection is applied, replacing its history entry', async () => {
     getNavigationTreeMock.mockResolvedValue(stubTree)
     renderWithPendingSelection({ brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' })
 
     await waitFor(() => expect(screen.getByTestId('selected')).toHaveTextContent('Asset:XPI:Acoes:KLBN4'))
     await waitFor(() => expect(screen.getByTestId('router-state')).toHaveTextContent('none'))
+    expect(screen.getByTestId('navigation-type').textContent).toBe('REPLACE')
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
   })
 
-  it('retry button re-fetches tree', async () => {
-    getNavigationTreeMock
-      .mockRejectedValueOnce(new Error('Fail'))
-      .mockResolvedValueOnce(stubTree)
-    render(
-      <SelectedNodeProvider>
-        <InvestmentTree />
-      </SelectedNodeProvider>,
+  it('does not apply a consumed pending selection again when the tree reloads', async () => {
+    function ReloadButton() {
+      const { reload } = useSelectedNode()
+      return <button onClick={reload}>Reload tree</button>
+    }
+    getNavigationTreeMock.mockResolvedValue(stubTree)
+    rtlRender(
+      <MemoryRouter
+        initialEntries={[
+          { pathname: '/investments/active-investments', state: { pendingSelection: { brokerName: 'XPI', portfolioName: 'Acoes', assetName: 'KLBN4' } } },
+        ]}
+      >
+        <SelectedNodeProvider>
+          <InvestmentTree />
+          <SelectedNodeDisplay />
+          <RouterStateDisplay />
+          <ReloadButton />
+        </SelectedNodeProvider>
+      </MemoryRouter>,
     )
-    await screen.findByRole('alert')
-    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
-    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
-    expect(screen.getByText('XPI (BRL)')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('router-state')).toHaveTextContent('none'))
+    fireEvent.click(screen.getByText('XPI (BRL)'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reload tree' }))
+
+    await waitFor(() => expect(getNavigationTreeMock).toHaveBeenCalledTimes(2))
+    await screen.findByText('XPI (BRL)')
+    expect(screen.getByTestId('selected').textContent).toBe('Broker:XPI::')
   })
 })
