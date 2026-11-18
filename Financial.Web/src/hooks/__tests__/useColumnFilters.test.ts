@@ -143,4 +143,11 @@ describe('useColumnFilters', () => {
     expect(result.current.filteredRows.map((r) => r.id)).toEqual(['e1', 'e3'])
     expect(result.current.isColumnFiltered('category')).toBe(true)
   })
+
+  it('reads a column with no accessor as unfiltered, whatever it is handed', () => {
+    const selections = { notes: new Set<string>() }
+    const { result } = renderHook(() => useColumnFilters(ROWS, ACCESSORS, [selections, () => {}]))
+
+    expect(result.current.isColumnFiltered('notes')).toBe(false)
+  })
 })

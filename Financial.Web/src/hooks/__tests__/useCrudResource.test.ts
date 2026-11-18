@@ -104,19 +104,6 @@ describe('useCrudResource', () => {
     expect(result.current.isLoading).toBe(false)
   })
 
-  it('mutateAndRefresh in silent mode awaits the reload without flipping isLoading', async () => {
-    const { result } = await renderLoaded('silent')
-    load.mockResolvedValueOnce([{ id: 'c' }])
-
-    await act(async () => {
-      await result.current.mutateAndRefresh(() => Promise.resolve('ok'))
-    })
-
-    expect(result.current.isLoading).toBe(false)
-    expect(result.current.data).toEqual([{ id: 'c' }])
-    expect(load).toHaveBeenCalledTimes(2)
-  })
-
   it('mutateAndRefresh rejects with the mutation error and does not reload', async () => {
     const { result } = await renderLoaded()
 
@@ -156,20 +143,58 @@ describe('useCrudResource', () => {
     expect(result.current.data).toEqual(ITEMS)
   })
 
-  it('ignores an older silent refresh that settles after a newer one failed', async () => {
+  it('mutateAndRefresh in silent mode settles only once the reload has', async () => {
+    const { result } = await renderLoaded('silent')
+    const pendingLoad = deferred<Item[]>()
+    load.mockReturnValueOnce(pendingLoad.promise)
+    let settled = false
+
+    await act(async () => {
+      void result.current.mutateAndRefresh(() => Promise.resolve('ok')).then(() => {
+        settled = true
+      })
+    })
+    expect(settled).toBe(false)
+
+    expect(result.current.isLoading).toBe(false)
+
+    await act(async () => pendingLoad.resolve([{ id: 'c' }]))
+    expect(settled).toBe(true)
+    expect(result.current.data).toEqual([{ id: 'c' }])
+    expect(load).toHaveBeenCalledTimes(2)
+  })
+
+  it('loads with the newest options it was given', async () => {
+    const laterLoad = vi.fn<() => Promise<Item[]>>().mockRejectedValue('boom')
+    const { result, rerender } = renderHook(
+      (options: CrudResourceOptions<Item[]>) => useCrudResource(options),
+      { initialProps: { load, initialData: NO_ITEMS, loadErrorMessage: 'Unable to load items' } },
+    )
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    rerender({ load: laterLoad, initialData: NO_ITEMS, loadErrorMessage: 'Unable to load others' })
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load others'))
+    expect(load).toHaveBeenCalledTimes(1)
+  })
+
+  it.each([
+    ['fails after a newer one succeeded', (older: ReturnType<typeof deferred<Item[]>>) => older.reject(new Error('Stale')), () => Promise.resolve([{ id: 'c' }]), null, [{ id: 'c' }]],
+    ['succeeds after a newer one failed', (older: ReturnType<typeof deferred<Item[]>>) => older.resolve([{ id: 'c' }]), () => Promise.reject(new Error('Network down')), 'Network down', ITEMS],
+  ])('ignores an older silent refresh that %s', async (_, settleOlder, newer, error, data) => {
     const { result } = await renderLoaded('silent')
     const olderLoad = deferred<Item[]>()
-    load.mockReturnValueOnce(olderLoad.promise).mockRejectedValueOnce(new Error('Network down'))
-    act(() => {
+    load.mockReturnValueOnce(olderLoad.promise).mockImplementationOnce(newer)
+    await act(async () => {
       void result.current.refresh()
-      void result.current.refresh()
+      await result.current.refresh()
     })
-    await waitFor(() => expect(result.current.error).toBe('Network down'))
 
-    await act(async () => olderLoad.resolve([{ id: 'c' }]))
+    await act(async () => settleOlder(olderLoad))
 
-    expect(result.current.error).toBe('Network down')
-    expect(result.current.data).toEqual(ITEMS)
+    expect(result.current.error).toBe(error)
+    expect(result.current.data).toEqual(data)
   })
 
   it('clears an earlier delete error once a later save succeeds', async () => {

@@ -76,16 +76,6 @@ describe('useSortableRows', () => {
     expect(result.current.sortedRows.map((row) => row.id)).toEqual(['a', 'b', 'c'])
   })
 
-  it('places rows with a null accessor value last in both ascending and descending order', () => {
-    const { result } = renderHook(() => useSortableRows(ROWS, ACCESSORS))
-
-    act(() => result.current.requestSort('value'))
-    expect(result.current.sortedRows.at(-1)?.id).toBe('c')
-
-    act(() => result.current.requestSort('value'))
-    expect(result.current.sortedRows.at(-1)?.id).toBe('c')
-  })
-
   it('starts sorted by the given defaultSort, as if that column had been clicked', () => {
     const { result } = renderHook(() =>
       useSortableRows(ROWS, ACCESSORS, { columnKey: 'date', direction: 'descending' }),
@@ -102,6 +92,33 @@ describe('useSortableRows', () => {
 
     act(() => result.current.requestSort('date'))
     expect(result.current.sortState).toBeNull()
+    expect(result.current.sortedRows.map((row) => row.id)).toEqual(['b', 'a', 'c'])
+  })
+
+  it.each([
+    ['value', 'ascending', ['y', 'x', 'n1', 'n2']],
+    ['value', 'descending', ['x', 'y', 'n1', 'n2']],
+    ['date', 'ascending', ['y', 'x', 'n1', 'n2']],
+    ['date', 'descending', ['x', 'y', 'n1', 'n2']],
+  ] as const)('sorts %s %s with the empty rows last, in their original order', (columnKey, direction, ids) => {
+    const rows: Row[] = [
+      { id: 'n1', name: 'N1', value: null, date: null },
+      { id: 'x', name: 'X', value: 5, date: new Date('2026-02-01') },
+      { id: 'n2', name: 'N2', value: null, date: null },
+      { id: 'y', name: 'Y', value: 1, date: new Date('2026-01-01') },
+    ]
+
+    const { result } = renderHook(() => useSortableRows(rows, ACCESSORS, { columnKey, direction }))
+
+    expect(result.current.sortedRows.map((row) => row.id)).toEqual(ids)
+  })
+
+  it('leaves the rows in their order for a column it cannot sort', () => {
+    const { result } = renderHook(() => useSortableRows(ROWS, ACCESSORS))
+
+    act(() => result.current.requestSort('notes'))
+
+    expect(result.current.sortState).toEqual({ columnKey: 'notes', direction: 'ascending' })
     expect(result.current.sortedRows.map((row) => row.id)).toEqual(['b', 'a', 'c'])
   })
 })
