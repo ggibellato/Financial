@@ -31,8 +31,10 @@ type MockDotProps = {
 }
 
 vi.mock('recharts', () => ({
-  LineChart: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="line-chart">{children}</div>
+  LineChart: ({ children, accessibilityLayer, data }: { children: React.ReactNode; accessibilityLayer?: boolean; data?: unknown[] }) => (
+    <div data-testid="line-chart" data-accessibility-layer={String(accessibilityLayer)} data-points={String(data?.length)}>
+      {children}
+    </div>
   ),
   Line: ({ dot }: { dot?: (props: MockDotProps) => React.ReactNode }) => (
     <div data-testid="chart-dots">
@@ -54,6 +56,7 @@ vi.mock('recharts', () => ({
     content ? (
       <div data-testid="chart-tooltip">
         {React.cloneElement(content, { active: false })}
+        {React.cloneElement(content, { active: true, payload: [] })}
         {React.cloneElement(content, {
           active: true,
           payload: [{ payload: { kind: 'manual', date: '2024-01-02', value: 20.5 } }],
@@ -556,5 +559,48 @@ describe('PriceHistoryTab', () => {
     expect(rows).toHaveLength(2)
     expect(within(rows[0]).getByText('Google')).toBeInTheDocument()
     expect(within(rows[1]).getByText('Manual')).toBeInTheDocument()
+  })
+
+  it('draws_each_kind_of_point_with_its_own_marker_shape_and_skips_a_point_without_coordinates', async () => {
+    await renderLoaded(MANUAL_ENTRY)
+
+    const dots = screen.getByTestId('chart-dots')
+    expect(dots.querySelector('circle')).toHaveAttribute('cx', '10')
+    expect(dots.querySelector('rect')).toHaveAttribute('x', '7')
+    expect(dots.querySelector('rect')).toHaveAttribute('y', '17')
+    expect([...dots.querySelectorAll('polygon')].map((polygon) => polygon.getAttribute('points'))).toEqual([
+      '10,16 6,24 14,24',
+      '10,24 6,16 14,16',
+    ])
+    expect(dots.querySelectorAll('g')).toHaveLength(1)
+  })
+
+  it('keeps_the_recharts_keyboard_layer_off_so_the_chart_image_holds_no_focus_stop', async () => {
+    await renderLoaded(MANUAL_ENTRY)
+
+    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-accessibility-layer', 'false')
+  })
+
+  it('charts_the_prices_shown_and_follows_a_new_one', async () => {
+    const created: AssetPriceSnapshotDto = { ...MANUAL_ENTRY, date: '2026-08-18', price: 125.75 }
+    await renderLoaded(AUTOMATIC_ENTRY)
+    fireEvent.click(screen.getByRole('tab', { name: 'All time' }))
+    expect(screen.getByTestId('line-chart')).toHaveAttribute('data-points', '1')
+    setAssetPriceMock.mockResolvedValue(detailsWith(created, AUTOMATIC_ENTRY))
+
+    fireEvent.click(screen.getByRole('button', { name: 'New price' }))
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-08-18' } })
+    fireEvent.change(priceInput(), { target: { value: '125.75' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add price' }))
+
+    await waitFor(() => expect(screen.getByTestId('line-chart')).toHaveAttribute('data-points', '2'))
+  })
+
+  it.each(['Price', 'Source'])('clicking_the_%s_header_marks_it_as_the_active_sort', async (header) => {
+    const table = await renderLoaded(MANUAL_ENTRY, AUTOMATIC_ENTRY)
+
+    fireEvent.click(within(table).getByRole('button', { name: header }))
+
+    expect(within(table).getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
   })
 })
