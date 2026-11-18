@@ -4,6 +4,7 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { CreditCardCalendarSyncStatusDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
 import { useCalendarSyncStatuses } from '../useCalendarSyncStatuses'
+import { never } from '../../test-utils/deferred'
 
 const { getAccountsMock, getCalendarSyncStatusesMock, resyncCreditCardCalendarMock } = vi.hoisted(() => ({
   getAccountsMock: vi.fn<FinancialApiClient['getAccounts']>(),
@@ -52,6 +53,17 @@ describe('useCalendarSyncStatuses', () => {
     ])
   })
 
+  it('shows loading from the first render', () => {
+    getAccountsMock.mockReturnValue(never())
+    const seen: boolean[] = []
+
+    renderHook(() => {
+      seen.push(useCalendarSyncStatuses().isLoading)
+    })
+
+    expect(seen[0]).toBe(true)
+  })
+
   it('excludes inactive cards, cards with no due date and accounts without statements', async () => {
     const { result } = renderHook(() => useCalendarSyncStatuses())
     await waitFor(() => expect(result.current.isLoading).toBe(false))
@@ -88,7 +100,7 @@ describe('useCalendarSyncStatuses', () => {
     expect(updated?.state).toBe('Synced')
     expect(updated?.lastSuccessfulSyncUtc).toBe('2026-09-02T08:00:00Z')
     const untouched = result.current.rows.find((row) => row.creditCardId === 'card-due')
-    expect(untouched?.state).toBe('Synced')
+    expect(untouched?.lastSuccessfulSyncUtc).toBe('2026-09-01T10:00:00Z')
   })
 
   it('surfaces a resync error for the card it belongs to without touching the row', async () => {
