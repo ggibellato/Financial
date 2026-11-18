@@ -130,6 +130,14 @@ public class PotsServiceTests
     }
 
     [Fact]
+    public async Task WithdrawAsync_ExactlyTheBalanceWithoutConfirmation_Saves()
+    {
+        var result = await _sut.WithdrawAsync(Reserva.Id, Withdrawal(amount: 100m));
+
+        result.Amount.Should().Be(100m);
+    }
+
+    [Fact]
     public async Task WithdrawAsync_OverdraftConfirmed_Saves()
     {
         var result = await _sut.WithdrawAsync(Reserva.Id, Withdrawal(amount: 150m, confirmed: true));
