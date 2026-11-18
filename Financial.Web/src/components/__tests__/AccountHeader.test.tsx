@@ -6,12 +6,13 @@ import AccountHeader from '../AccountHeader'
 import { account, settlementAccount } from '../../test/account'
 
 const ACCOUNTS: AccountDto[] = [
+  account({ id: 'amex', name: 'BA Amex', templateName: 'CreditCard' }),
   account({ id: 'barclays', name: 'Barclays' }),
   account({ id: 'chase', name: 'Chase' }),
-  account({ id: 'old', name: 'Old Savings', isActive: false }),
-  account({ id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL' }),
-  account({ id: 'amex', name: 'BA Amex', templateName: 'CreditCard' }),
   settlementAccount({ id: 'mae', name: 'Mãe' }),
+  account({ id: 'old', name: 'Old Savings', isActive: false }),
+  account({ id: 'reserva', name: 'Reserva', templateName: 'Pots' }),
+  account({ id: 'wallet', name: 'Wallet', templateName: 'Cash', currency: 'BRL' }),
 ]
 
 const OCTOBER_UNPAID: AccountStatementDto = {
@@ -239,6 +240,21 @@ describe('AccountHeader', () => {
     expect(within(screen.getByRole('group', { name: 'Cash' })).getByRole('option', { name: 'Wallet' })).toBeInTheDocument()
     expect(within(screen.getByRole('group', { name: 'Credit card' })).getByRole('option', { name: 'BA Amex' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Old Savings' })).not.toBeInTheDocument()
+  })
+
+  it('orders the picker groups by account type as the Accounts page does, whatever order the accounts arrive in', async () => {
+    const user = userEvent.setup()
+    renderHeader()
+
+    await user.click(screen.getByRole('combobox', { name: 'Account' }))
+
+    expect(screen.getAllByRole('group').map((group) => within(group).getAllByRole('option').map((option) => option.textContent))).toEqual([
+      ['Barclays', 'Chase'],
+      ['BA Amex'],
+      ['Reserva'],
+      ['Mãe'],
+      ['Wallet'],
+    ])
   })
 
   it('lists an active Settlement account under Settlement in the picker', async () => {

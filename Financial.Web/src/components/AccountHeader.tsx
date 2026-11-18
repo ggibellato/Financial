@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Badge, Dropdown, Field, Input, Option, OptionGroup, Text } from '@fluentui/react-components'
 import type { AccountDetailDto, AccountDto, AccountStatementDto } from '../api/types'
-import { accountTemplateLabel } from '../utils/accountTemplateLabel'
+import { accountTemplateLabel, accountTemplateOrder } from '../utils/accountTemplateLabel'
 import { formatLongMonthYear, formatN2 } from '../utils/formatters'
 import { balanceLabel, formatOwedOrCredit, formatShownBalance, nothingDueText, statementStatusText, UNPAID_STATEMENT_STATUS } from '../utils/owedBalance'
 import { settlementBalanceText, settlementCounterparty } from '../utils/settlementBalance'
@@ -20,12 +20,13 @@ interface AccountHeaderProps {
 function groupActiveByTemplate(accounts: AccountDto[]): [string, AccountDto[]][] {
   const groups = new Map<string, AccountDto[]>()
   for (const account of accounts.filter((candidate) => candidate.isActive)) {
-    const label = accountTemplateLabel(account.templateName)
-    const members = groups.get(label)
+    const members = groups.get(account.templateName)
     if (members) members.push(account)
-    else groups.set(label, [account])
+    else groups.set(account.templateName, [account])
   }
   return [...groups.entries()]
+    .sort(([a], [b]) => accountTemplateOrder(a) - accountTemplateOrder(b))
+    .map(([templateName, members]) => [accountTemplateLabel(templateName), members])
 }
 
 function viewedStatementAmount(statement: AccountStatementDto | null): number {
