@@ -8,9 +8,9 @@ function mountRegion(html = ''): HTMLElement {
   return region
 }
 
-async function reloadInto(region: HTMLElement, reloaded = region) {
+async function reload(content: HTMLElement) {
   const finishReload = beginReload()
-  finishReload(reloaded)
+  finishReload(content)
   await Promise.resolve()
 }
 
@@ -24,7 +24,7 @@ describe('retry outcome focus', () => {
     const region = mountRegion('<p>Loaded</p><button>Edit</button>')
     awaitRetryOutcome(region)
 
-    await reloadInto(region)
+    await reload(region)
 
     expect(document.activeElement).toBe(region.querySelector('button'))
   })
@@ -33,7 +33,7 @@ describe('retry outcome focus', () => {
     const region = mountRegion('<p>Loaded</p>')
     awaitRetryOutcome(region)
 
-    await reloadInto(region)
+    await reload(region)
 
     expect(document.activeElement).toBe(region)
     expect(region.getAttribute('tabindex')).toBe('-1')
@@ -44,7 +44,7 @@ describe('retry outcome focus', () => {
     region.tabIndex = 0
     awaitRetryOutcome(region)
 
-    await reloadInto(region)
+    await reload(region)
 
     expect(document.activeElement).toBe(region)
     expect(region.getAttribute('tabindex')).toBe('0')
@@ -55,7 +55,7 @@ describe('retry outcome focus', () => {
     const elsewhere = mountRegion('<button>Other</button>')
     awaitRetryOutcome(region)
 
-    await reloadInto(region, elsewhere)
+    await reload(elsewhere)
 
     expect(document.activeElement).toBe(document.body)
   })

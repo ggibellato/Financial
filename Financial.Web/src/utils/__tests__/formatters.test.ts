@@ -235,7 +235,7 @@ describe('parseMonthInputValue', () => {
     expect(parseMonthInputValue('not-a-value')).toBeNull()
   })
 
-  it.each([' 2026-07', '2026-07 ', 'x2026-07', '2026-07-01'])('rejects %j, which is more than a month', (value) => {
+  it.each([' 2026-07', '2026-07 ', 'x2026-07', '2026-07-01'])('parseMonthInputValue_ExtraCharacters_ReturnsNull: %j', (value) => {
     expect(parseMonthInputValue(value)).toBeNull()
   })
 

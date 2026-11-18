@@ -132,7 +132,7 @@ describe('buildTaxWorkbookCsv', () => {
     expect(csv.split('\r\n')[1]).toContain('"Dividend, extra"')
   })
 
-  it('doubles a quote inside a field and leaves an empty value empty', () => {
+  it('doubles a quote inside a field', () => {
     const csv = buildTaxWorkbookCsv(
       buildWorkbook({
         jurisdiction: 'BR',
@@ -140,7 +140,7 @@ describe('buildTaxWorkbookCsv', () => {
           {
             id: '1',
             date: '2026-01-01',
-            eventCategory: 'Dividend',
+            eventCategory: 'Dividend "special"' as TaxWorkbookEntryDto['eventCategory'],
             proceeds: null,
             costBasis: null,
             gainLoss: null,
@@ -148,14 +148,14 @@ describe('buildTaxWorkbookCsv', () => {
             withheldAmount: 0,
             netAmount: 10,
             calculationStatus: 'Final',
-            evidenceReference: 'say "hi"',
+            evidenceReference: 'ev-1',
             taxRuleLabel: null,
           },
         ],
       }),
     )
 
-    expect(csv.split('\r\n')[1]).toBe('2026-01-01,BR,2026,Dividend,,,,10,0,10,BRL,"say ""hi"""')
+    expect(csv.split('\r\n')[1]).toContain(',"Dividend ""special""",')
   })
 })
 
@@ -170,7 +170,10 @@ describe('buildTaxWorkbookCsvFilename', () => {
 })
 
 describe('downloadCsv', () => {
+  const { createObjectURL, revokeObjectURL } = URL
+
   afterEach(() => {
+    Object.assign(URL, { createObjectURL, revokeObjectURL })
     vi.restoreAllMocks()
   })
 

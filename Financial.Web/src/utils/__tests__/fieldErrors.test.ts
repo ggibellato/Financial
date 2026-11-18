@@ -23,7 +23,7 @@ describe('collectFieldErrors', () => {
   })
 
   it('falls back to the field label when no message describes it', () => {
-    const container = mount(`<label for="code">Code</label><input id="code" aria-invalid="true" />`)
+    const container = mount(`<label for="code">  Code  </label><input id="code" aria-invalid="true" />`)
 
     expect(collectFieldErrors(container)).toEqual([{ fieldId: 'code', message: 'Code: check this field.' }])
   })
@@ -39,7 +39,6 @@ describe('collectFieldErrors', () => {
 
   it.each([
     ['the element that labels it', '<span id="code-label">Code</span><input id="code" aria-invalid="true" aria-labelledby="code-label" />'],
-    ['its label, trimmed', '<label for="code">  Code  </label><input id="code" aria-invalid="true" />'],
     ['its aria-label', '<input id="code" aria-invalid="true" aria-label="Code" />'],
   ])('names the field by %s when no message describes it', (_, html) => {
     const container = mount(html)

@@ -10,7 +10,7 @@ function total(currency: string, balance: number): CurrencyTotalDto {
 const BALANCE: CurrencyFigure[] = [{ label: 'Balance', pick: (t) => t.balance }]
 
 describe('currencyFooterItems', () => {
-  it('shows one unlabelled figure for a single currency', () => {
+  it('labels a single currency\'s figure without its code', () => {
     expect(currencyFooterItems([total('GBP', 12.5)], BALANCE)).toEqual([{ label: 'Balance', value: formatN2(12.5) }])
   })
 
