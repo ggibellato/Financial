@@ -1,7 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { useAsyncResource, useSelectionGuard, type AsyncResourceOptions } from '../useAsyncResource'
-import { deferred } from '../../test-utils/deferred'
+import { deferred, never } from '../../test-utils/deferred'
 
 function renderResource(fetcher: (key: string) => Promise<string> | null, options?: AsyncResourceOptions) {
   return renderHook(({ key }) => useAsyncResource<string>(() => fetcher(key), [key], 'Fallback message', options), {
@@ -18,15 +18,17 @@ describe('useAsyncResource', () => {
     expect(result.current.error).toBeNull()
   })
 
-  it('is not loading on the first render by default', () => {
+  it.each([
+    ['is not loading', undefined, false],
+    ['reports loading', { initialLoading: true }, true],
+  ])('%s on the first render with options %o', (_, options, loading) => {
     const seen: boolean[] = []
-    const pending = deferred<string>()
 
     renderHook(() => {
-      seen.push(useAsyncResource<string>(() => pending.promise, [], 'Fallback message').isLoading)
+      seen.push(useAsyncResource<string>(() => never(), [], 'Fallback message', options).isLoading)
     })
 
-    expect(seen[0]).toBe(false)
+    expect(seen[0]).toBe(loading)
   })
 
   it('ignores a response that arrives after the selection was cleared', async () => {
@@ -46,13 +48,6 @@ describe('useAsyncResource', () => {
     )
 
     expect(result.current.isLoading).toBe(false)
-  })
-
-  it('reports loading before the first fetch settles when initialLoading is set', () => {
-    const pending = deferred<string>()
-    const { result } = renderResource(() => pending.promise, { initialLoading: true })
-
-    expect(result.current.isLoading).toBe(true)
   })
 
   it('clears the previous data while a dependency change reloads by default', async () => {

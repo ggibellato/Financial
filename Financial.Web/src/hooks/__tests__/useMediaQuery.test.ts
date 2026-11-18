@@ -57,8 +57,10 @@ describe('useMediaQuery', () => {
     window.matchMedia = vi.fn(() => ({ matches: false, addEventListener, removeEventListener })) as unknown as typeof window.matchMedia
     const { unmount } = renderHook(() => useMediaQuery('(max-width: 599px)'))
 
+    expect(addEventListener).toHaveBeenCalledOnce()
+
     unmount()
 
-    expect(removeEventListener).toHaveBeenCalledWith(...addEventListener.mock.calls[0])
+    expect(removeEventListener.mock.calls).toEqual(addEventListener.mock.calls)
   })
 })

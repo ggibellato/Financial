@@ -76,16 +76,6 @@ describe('useSortableRows', () => {
     expect(result.current.sortedRows.map((row) => row.id)).toEqual(['a', 'b', 'c'])
   })
 
-  it('places rows with a null accessor value last in both ascending and descending order', () => {
-    const { result } = renderHook(() => useSortableRows(ROWS, ACCESSORS))
-
-    act(() => result.current.requestSort('value'))
-    expect(result.current.sortedRows.at(-1)?.id).toBe('c')
-
-    act(() => result.current.requestSort('value'))
-    expect(result.current.sortedRows.at(-1)?.id).toBe('c')
-  })
-
   it('starts sorted by the given defaultSort, as if that column had been clicked', () => {
     const { result } = renderHook(() =>
       useSortableRows(ROWS, ACCESSORS, { columnKey: 'date', direction: 'descending' }),

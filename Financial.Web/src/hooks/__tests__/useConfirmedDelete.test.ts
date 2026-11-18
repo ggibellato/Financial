@@ -9,14 +9,22 @@ function renderDelete(remove: (target: string) => Promise<void>) {
   return { ...rendered, onDeleted }
 }
 
+async function renderFailed(remove: (target: string) => Promise<void>) {
+  const rendered = renderDelete(remove)
+  act(() => rendered.result.current.request('rent'))
+  act(() => rendered.result.current.confirm())
+  await waitFor(() => expect(rendered.result.current.error).not.toBeNull())
+  return rendered
+}
+
 describe('useConfirmedDelete', () => {
   it('deletes the requested target, closes and reports it', async () => {
     const { result, onDeleted } = renderDelete(() => Promise.resolve())
 
     act(() => result.current.request('rent'))
-    act(() => result.current.confirm())
+    await act(async () => result.current.confirm())
 
-    await waitFor(() => expect(onDeleted).toHaveBeenCalledWith('rent'))
+    expect(onDeleted).toHaveBeenCalledWith('rent')
     expect(result.current.isOpen).toBe(false)
     expect(result.current.isDeleting).toBe(false)
   })
@@ -33,10 +41,7 @@ describe('useConfirmedDelete', () => {
   })
 
   it('clears the earlier failure when another delete is requested', async () => {
-    const { result } = renderDelete(() => Promise.reject('nope'))
-    act(() => result.current.request('rent'))
-    act(() => result.current.confirm())
-    await waitFor(() => expect(result.current.error).not.toBeNull())
+    const { result } = await renderFailed(() => Promise.reject('nope'))
 
     act(() => result.current.request('gym'))
 
@@ -46,10 +51,7 @@ describe('useConfirmedDelete', () => {
   it('clears the earlier failure while the delete is tried again', async () => {
     const retry = deferred<void>()
     const remove = vi.fn<(target: string) => Promise<void>>().mockRejectedValueOnce('nope').mockReturnValueOnce(retry.promise)
-    const { result } = renderDelete(remove)
-    act(() => result.current.request('rent'))
-    act(() => result.current.confirm())
-    await waitFor(() => expect(result.current.error).not.toBeNull())
+    const { result } = await renderFailed(remove)
 
     act(() => result.current.confirm())
 
