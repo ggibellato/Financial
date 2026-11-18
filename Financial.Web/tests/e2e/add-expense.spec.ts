@@ -10,7 +10,7 @@ async function openNewExpenseForm(page: Page) {
 }
 
 async function fillValidExpense(page: Page, description: string) {
-  await page.getByLabel('Description').fill(description)
+  await page.getByLabel(/^Description/).fill(description)
   await page.getByLabel('Value').fill('12.34')
   await page.getByRole('combobox', { name: /^Category/ }).selectOption({ label: 'Mercado' })
 }
@@ -32,7 +32,7 @@ test('@smoke a blank value is rejected with a validation message and nothing is 
   })
   await openNewExpenseForm(page)
 
-  await page.getByLabel('Description').fill('blank value')
+  await page.getByLabel(/^Description/).fill('blank value')
   await page.getByRole('form', { name: 'New expense' }).getByRole('button', { name: 'Add expense', exact: true }).click()
 
   await expect(page.getByText('Value must be a non-zero number.')).toBeVisible()
