@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
-import { useAsyncResource, type AsyncResourceOptions } from '../useAsyncResource'
+import { useAsyncResource, useSelectionGuard, type AsyncResourceOptions } from '../useAsyncResource'
 import { deferred } from '../../test-utils/deferred'
 
 function renderResource(fetcher: (key: string) => Promise<string> | null, options?: AsyncResourceOptions) {
@@ -16,6 +16,28 @@ describe('useAsyncResource', () => {
     await waitFor(() => expect(result.current.data).toBe('value-a'))
     expect(result.current.isLoading).toBe(false)
     expect(result.current.error).toBeNull()
+  })
+
+  it('is not loading on the first render by default', () => {
+    const seen: boolean[] = []
+    const pending = deferred<string>()
+
+    renderHook(() => {
+      seen.push(useAsyncResource<string>(() => pending.promise, [], 'Fallback message').isLoading)
+    })
+
+    expect(seen[0]).toBe(false)
+  })
+
+  it('ignores a response that arrives after the selection was cleared', async () => {
+    const slow = deferred<string>()
+    const { result, rerender } = renderResource((key) => (key === 'a' ? slow.promise : null))
+
+    rerender({ key: '' })
+    await act(async () => slow.resolve('value-a'))
+
+    expect(result.current.data).toBeNull()
+    expect(result.current.isLoading).toBe(false)
   })
 
   it('settles to idle when there is nothing to fetch even with initialLoading set', () => {
@@ -195,5 +217,26 @@ describe('useAsyncResource', () => {
     expect(result.current.data).toBe('value-updated')
     expect(result.current.isLoading).toBe(false)
     expect(result.current.error).toBeNull()
+  })
+
+  describe('useSelectionGuard', () => {
+    it('dispatches before any selection has begun', () => {
+      const dispatch = vi.fn()
+      const { result } = renderHook(() => useSelectionGuard<string>(dispatch))
+
+      expect(result.current.dispatchForCurrentSelection()('loaded')).toBe(true)
+      expect(dispatch).toHaveBeenCalledWith('loaded')
+    })
+
+    it('drops what an earlier selection dispatches once a newer one begins', () => {
+      const dispatch = vi.fn()
+      const { result } = renderHook(() => useSelectionGuard<string>(dispatch))
+      const earlier = result.current.beginSelection()
+      const newer = result.current.beginSelection()
+
+      expect(earlier('stale')).toBe(false)
+      expect(newer('fresh')).toBe(true)
+      expect(dispatch.mock.calls).toEqual([['fresh']])
+    })
   })
 })

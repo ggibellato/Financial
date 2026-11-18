@@ -156,6 +156,53 @@ describe('useCrudResource', () => {
     expect(result.current.data).toEqual(ITEMS)
   })
 
+  it('ignores an older silent refresh that fails after a newer one succeeded', async () => {
+    const { result } = await renderLoaded('silent')
+    const olderLoad = deferred<Item[]>()
+    load.mockReturnValueOnce(olderLoad.promise).mockResolvedValueOnce([{ id: 'c' }])
+    act(() => {
+      void result.current.refresh()
+      void result.current.refresh()
+    })
+    await waitFor(() => expect(result.current.data).toEqual([{ id: 'c' }]))
+
+    await act(async () => olderLoad.reject(new Error('Network down')))
+
+    expect(result.current.error).toBeNull()
+  })
+
+  it('mutateAndRefresh in silent mode settles only once the reload has', async () => {
+    const { result } = await renderLoaded('silent')
+    const pendingLoad = deferred<Item[]>()
+    load.mockReturnValueOnce(pendingLoad.promise)
+    let settled = false
+
+    await act(async () => {
+      void result.current.mutateAndRefresh(() => Promise.resolve('ok')).then(() => {
+        settled = true
+      })
+    })
+    expect(settled).toBe(false)
+
+    await act(async () => pendingLoad.resolve(ITEMS))
+    expect(settled).toBe(true)
+  })
+
+  it('loads with the newest options it was given', async () => {
+    const laterLoad = vi.fn<() => Promise<Item[]>>().mockRejectedValue('boom')
+    const { result, rerender } = renderHook(
+      (options: CrudResourceOptions<Item[]>) => useCrudResource(options),
+      { initialProps: { load, initialData: NO_ITEMS, loadErrorMessage: 'Unable to load items' } },
+    )
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+    rerender({ load: laterLoad, initialData: NO_ITEMS, loadErrorMessage: 'Unable to load others' })
+    act(() => result.current.retry())
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load others'))
+    expect(load).toHaveBeenCalledTimes(1)
+  })
+
   it('ignores an older silent refresh that settles after a newer one failed', async () => {
     const { result } = await renderLoaded('silent')
     const olderLoad = deferred<Item[]>()
