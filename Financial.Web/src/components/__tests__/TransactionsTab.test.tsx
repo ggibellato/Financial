@@ -879,6 +879,17 @@ describe('TransactionsTab', () => {
     expect(rowTypes()).toEqual([...ascendingTypes].reverse())
   })
 
+  it.each(['Type', 'Quantity', 'Unit price', 'Fees', 'Withheld', 'Net'])(
+    'clicking_the_%s_header_marks_it_as_the_active_sort',
+    async (header) => {
+      await renderAssetTab([TRANSACTION_BUY, TRANSACTION_SELL])
+
+      fireEvent.click(screen.getByRole('button', { name: header }))
+
+      expect(screen.getByRole('button', { name: header }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
+    },
+  )
+
   it('shows_the_fx_provenance_affordance_for_a_transaction_with_a_captured_snapshot', async () => {
     await renderAssetTab([
       {

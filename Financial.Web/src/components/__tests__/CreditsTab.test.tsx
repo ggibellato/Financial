@@ -31,10 +31,24 @@ vi.mock('recharts', () => ({
   BarChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="bar-chart">{children}</div>
   ),
-  Bar: ({ name, dataKey, children }: { name?: string; dataKey: BucketReader | string; children?: React.ReactNode }) => (
+  Bar: ({
+    name,
+    dataKey,
+    fill,
+    stackId,
+    children,
+  }: {
+    name?: string
+    dataKey: BucketReader | string
+    fill?: string
+    stackId?: string
+    children?: React.ReactNode
+  }) => (
     <div
       data-testid="bar"
       data-name={name}
+      data-fill={fill}
+      data-stack={stackId}
       data-own={typeof dataKey === 'function' ? String(dataKey(bucketWith(name))) : dataKey}
       data-other={typeof dataKey === 'function' ? String(dataKey(bucketWith(undefined))) : dataKey}
     >
@@ -342,6 +356,19 @@ describe('CreditsTab', () => {
     })
     expect(screen.queryByRole('heading', { name: 'New credit' })).not.toBeInTheDocument()
     expect(dataRows()).toHaveLength(2)
+  })
+
+  it('saving_a_new_credit_sends_the_withheld_amount_and_intermediation_fee_typed', async () => {
+    await renderAssetTab([CREDIT_DIVIDEND])
+    addCreditMock.mockResolvedValue(assetDetails([CREDIT_DIVIDEND]))
+    await openNewForm()
+
+    fireEvent.change(screen.getByLabelText(/^Value/), { target: { value: '99.5' } })
+    fireEvent.change(screen.getByLabelText('Withheld'), { target: { value: '3.5' } })
+    fireEvent.change(screen.getByLabelText(/^Intermediation fee/), { target: { value: '1.25' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add credit' }))
+
+    await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ withheld: 3.5, intermediationFee: 1.25 })))
   })
 
   it('saving_an_edited_credit_puts_the_payload_and_shows_the_updated_row', async () => {
@@ -711,7 +738,7 @@ describe('CreditsTab', () => {
     ])
   })
 
-  it.each(['Withheld', 'Intermediation fee', 'Net'])(
+  it.each(['Type', 'Value', 'Withheld', 'Intermediation fee', 'Net'])(
     'clicking_the_%s_header_marks_it_as_the_active_sort',
     async (header) => {
       await renderAssetTab([CREDIT_DIVIDEND])
@@ -763,5 +790,38 @@ describe('CreditsTab', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: 'Grouped' }))
     expect(screen.getByTestId('line')).toHaveAttribute('data-own', 'total')
+  })
+
+  it('the_line_chart_tooltip_also_formats_numbers_to_two_decimals', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND])
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Line' }))
+
+    expect(screen.getByTestId('tooltip')).toHaveAttribute('data-number', '12.50')
+  })
+
+  it('colours_a_single_credit_type_in_the_single_type_blue', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND])
+
+    expect(screen.getByTestId('bar')).toHaveAttribute('data-fill', '#4682b4')
+  })
+
+  it('shades_several_credit_types_from_light_to_dark_blue', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND, CREDIT_JCP, CREDIT_SECURITIES_LENDING_INCOME])
+
+    expect(screen.getAllByTestId('bar').map((bar) => bar.getAttribute('data-fill'))).toEqual([
+      'rgb(173, 216, 230)',
+      'rgb(91, 149, 193)',
+      'rgb(8, 81, 156)',
+    ])
+  })
+
+  it('stacks_the_bars_of_every_type_together_only_while_stacked', async () => {
+    await renderBrokerTab([CREDIT_DIVIDEND, CREDIT_JCP])
+    expect(screen.getAllByTestId('bar').map((bar) => bar.getAttribute('data-stack'))).toEqual(['credits', 'credits'])
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Grouped' }))
+
+    expect(screen.getAllByTestId('bar').map((bar) => bar.getAttribute('data-stack'))).toEqual([null, null])
   })
 })
