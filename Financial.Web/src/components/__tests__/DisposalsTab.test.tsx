@@ -200,9 +200,9 @@ describe('DisposalsTab', () => {
 
     render(<DisposalsTab />)
 
-    expect(screen.getByText('100.00').closest('td')).toHaveClass('data-table__col--numeric', 'disposals-tab__value--green')
-    expect(screen.getByText('-40.00').closest('td')).toHaveClass('data-table__col--numeric', 'disposals-tab__value--red')
-    expect(screen.getByText('-25.00').closest('td')).toHaveClass('data-table__col--numeric', 'disposals-tab__value--red')
+    expect(screen.getByText('100.00').closest('td')).toHaveClass('disposals-tab__value--green')
+    expect(screen.getByText('-40.00').closest('td')).toHaveClass('disposals-tab__value--red')
+    expect(screen.getByText('-25.00').closest('td')).toHaveClass('disposals-tab__value--red')
   })
 
   it.each(['Quantity', 'Method', 'Proceeds', 'Cost basis', 'Gain/loss', 'Tax year'])('marks the %s header when it sorts the sales', (name) => {

@@ -391,6 +391,15 @@ describe('CorporateActionsTab', () => {
     expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
   })
 
+  it('ignores a record asked for that is not loaded, whatever its id holds', () => {
+    setMock({ corporateActions: [split({ id: 'ca1' })] })
+    Element.prototype.scrollIntoView = vi.fn()
+
+    render(<CorporateActionsTab focusRecordId={'not"loaded'} />)
+
+    expect(document.body).toHaveFocus()
+  })
+
   it('focuses the only record when it is the one asked for', () => {
     setMock({ corporateActions: [split({ id: 'ca1' })] })
     Element.prototype.scrollIntoView = vi.fn()
@@ -426,8 +435,10 @@ describe('CorporateActionsTab', () => {
 
     it('clears the highlight after two seconds', () => {
       render(<CorporateActionsTab focusRecordId="ca2" />)
+      act(() => vi.advanceTimersByTime(1999))
+      expect(highlighted('ca2')).toHaveClass('corporate-actions-tab__row--highlighted')
 
-      act(() => vi.advanceTimersByTime(2000))
+      act(() => vi.advanceTimersByTime(1))
 
       expect(highlighted('ca2')).not.toHaveClass('corporate-actions-tab__row--highlighted')
     })

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import MoveAssetDialog from '../MoveAssetDialog'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -81,19 +81,20 @@ function movedAsset(destination: string): AssetDetailsDto {
   return { name: 'BCIA11', portfolioName: destination } as AssetDetailsDto
 }
 
-function renderDialog(
+function dialog(
   overrides: {
     onCancel?: () => void
     onMoved?: (a: AssetDetailsDto, archived: boolean) => void
     offerArchive?: boolean
+    portfolioName?: string
     presetDestination?: string
     newPortfolioOnly?: boolean
   } = {},
 ) {
-  return render(
+  return (
     <MoveAssetDialog
       brokerName="XPI"
-      portfolioName="Default"
+      portfolioName={overrides.portfolioName ?? 'Default'}
       assetName="BCIA11"
       scope="active"
       offerArchive={overrides.offerArchive ?? false}
@@ -101,8 +102,12 @@ function renderDialog(
       newPortfolioOnly={overrides.newPortfolioOnly}
       onCancel={overrides.onCancel ?? vi.fn()}
       onMoved={overrides.onMoved ?? vi.fn()}
-    />,
+    />
   )
+}
+
+function renderDialog(overrides: Parameters<typeof dialog>[0] = {}) {
+  return render(dialog(overrides))
 }
 
 function broker(name: string, portfolios: TreeNodeDto[]): TreeNodeDto {
@@ -461,7 +466,7 @@ describe('MoveAssetDialog', () => {
     const { rerender } = renderDialog()
     await waitForDestinations()
 
-    rerender(<MoveAssetDialog brokerName="XPI" portfolioName="ISA" assetName="BCIA11" scope="active" offerArchive={false} onCancel={vi.fn()} onMoved={vi.fn()} />)
+    rerender(dialog({ portfolioName: 'ISA' }))
 
     await waitFor(() => expect(optionTexts()).toEqual(['Default', 'SIPP']))
   })
@@ -477,8 +482,11 @@ describe('MoveAssetDialog', () => {
   it('offers only a new portfolio for a drop on a broker', async () => {
     renderDialog({ newPortfolioOnly: true })
 
-    await waitFor(() => expect(getNavigationTreeMock).toHaveBeenCalled())
-    await waitFor(() => expect(newRadio()).toBeChecked())
+    await act(async () => {
+      await getNavigationTreeMock.mock.results[0].value
+    })
+    expect(newRadio()).toBeChecked()
+    expect(existingRadio()).toBeDisabled()
     expect(optionTexts()).toEqual([])
   })
 

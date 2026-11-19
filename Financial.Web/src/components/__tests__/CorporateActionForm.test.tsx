@@ -179,9 +179,10 @@ describe('CorporateActionForm', () => {
     ])
   })
 
-  it('locks Type while saving and on the merger confirm step, and leaves it open on the merger fields step', () => {
+  it('locks Type while saving and on the merger confirm step; the fields step keeps Type open with Note and Cancel, not Back', () => {
     const { rerender } = render(<CorporateActionForm {...baseProps} formType="Merger" />)
     expect(screen.getByLabelText('Type')).toBeEnabled()
+    expect(screen.getByLabelText('Note')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
 
