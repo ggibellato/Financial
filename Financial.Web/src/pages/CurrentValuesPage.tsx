@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
+import { Button, MessageBar, MessageBarBody, MessageBarTitle, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
@@ -139,6 +139,7 @@ export default function CurrentValuesPage() {
     price: (r) => r.price,
   }
   const { sortedRows, sortState, requestSort } = useSortableRows(results, priceAccessors)
+  const failedResults = results.filter((result) => result.error)
 
   if (isLoading) {
     return <LoadingState message="Loading data…" />
@@ -171,6 +172,21 @@ export default function CurrentValuesPage() {
       ) : progressText ? (
         <p>{progressText}</p>
       ) : null}
+
+      {failedResults.length > 0 && (
+        <MessageBar intent="warning" layout="multiline">
+          <MessageBarBody>
+            <MessageBarTitle>{failedResults.length === 1 ? 'One price could not be fetched' : `${failedResults.length} prices could not be fetched`}</MessageBarTitle>
+            <ul className="current-values__failures">
+              {failedResults.map((result) => (
+                <li key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
+                  {result.ticker}: {result.error}
+                </li>
+              ))}
+            </ul>
+          </MessageBarBody>
+        </MessageBar>
+      )}
 
       {results.length > 0 && (
         <section className="current-values__results">
