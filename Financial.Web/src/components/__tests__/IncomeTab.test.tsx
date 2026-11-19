@@ -7,6 +7,7 @@ import type { IncomeDto, IncomeSourceDto } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
 import { account, potsAccount } from '../../test/account'
 import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
+import { mockMatchMedia } from '../../test/mockMatchMedia'
 import { confirmDelete, requestDelete } from '../../test-utils/confirmDelete'
 import { never } from '../../test-utils/deferred'
 import { pinDate } from '../../test-utils/pinDate'
@@ -160,6 +161,59 @@ describe('IncomeTab', () => {
       ['Date:02/10/2026', 'Source:DividendoJuros', 'Bank:No bank', 'Description:Interest', 'Gross:—', 'Net:0.10'],
     ])
     expect(footer()).toHaveTextContent('3 incomes · Total net 4,185.30')
+    expect(within(table).getAllByRole('img', { name: 'No gross value' })).toHaveLength(2)
+  })
+
+  it('offers Clear filters only while filtered, bringing every income back and focusing the Source filter', async () => {
+    renderTab()
+    const table = await grid()
+    expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
+
+    filterTo('Bank', 'No bank')
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
+
+    expect(bodyRows(table)).toHaveLength(3)
+    expect(screen.getByRole('button', { name: 'Filter by Source' })).toHaveFocus()
+  })
+
+  describe('in the stacked narrow layout', () => {
+    const originalMatchMedia = window.matchMedia
+
+    afterEach(() => {
+      window.matchMedia = originalMatchMedia
+    })
+
+    it('offers a single Clear filters, above the table', async () => {
+      mockMatchMedia(true)
+      renderTab()
+      await grid()
+
+      filterTo('Bank', 'No bank')
+
+      expect(screen.getAllByRole('button', { name: 'Clear filters' })).toHaveLength(1)
+    })
+  })
+
+  it('takes focus on the table without putting it in the tab order', async () => {
+    renderTab()
+
+    expect(await grid()).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('opens an income that splits to pots with Split to pots ticked, and one that does not with it unticked', async () => {
+    getIncomesByMonthMock.mockResolvedValue([
+      income({ id: 'split', date: '2026-10-20', incomeSourceId: 'ariana', incomeSourceName: 'Ariana', netValue: 900, bankId: 'barclays', bankName: 'Barclays', potsAccountId: 'pots' }),
+      income({ id: 'plain', date: '2026-10-10', incomeSourceId: 'ariana', incomeSourceName: 'Ariana', netValue: 800, bankId: 'barclays', bankName: 'Barclays' }),
+    ])
+    renderTab()
+    await grid()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit income 20/10/2026 Ariana' }))
+    expect(within(await screen.findByRole('form', { name: 'Edit income' })).getByRole('checkbox', { name: 'Split to pots' })).toBeChecked()
+
+    fireEvent.click(within(screen.getByRole('form', { name: 'Edit income' })).getByRole('button', { name: 'Cancel' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Edit income 10/10/2026 Ariana' }))
+    expect(within(await screen.findByRole('form', { name: 'Edit income' })).getByRole('checkbox', { name: 'Split to pots' })).not.toBeChecked()
   })
 
   it(`${AC('01')} filters by Bank and Source, showing the filtered count of all incomes`, async () => {
@@ -248,6 +302,15 @@ describe('IncomeTab', () => {
     const form = await screen.findByRole('form', { name: 'Edit income' })
     expect(field(form, 'Description')).toHaveValue('XP dividends')
     expect(await screen.findByText('search:?month=2026-10&tab=income')).toBeInTheDocument()
+    expect(screen.queryByText('This income is no longer in this month.')).not.toBeInTheDocument()
+  })
+
+  it('waits for the incomes before saying the edit address names one the month does not have', () => {
+    getIncomesByMonthMock.mockReturnValue(never())
+    renderTab('/cashflow/accounts?month=2026-10&tab=income&edit=dividends-1')
+
+    expect(screen.getByLabelText('Loading incomes')).toBeInTheDocument()
+    expect(screen.queryByText('This income is no longer in this month.')).not.toBeInTheDocument()
   })
 
   it('says when the edit address names an income the month no longer has, and dismissing drops it', async () => {
@@ -361,6 +424,7 @@ describe('IncomeTab', () => {
     renderTab()
 
     expect(screen.getByLabelText('Loading incomes')).toBeInTheDocument()
+    expect(screen.getByLabelText('Loading incomes').closest('td')).toHaveAttribute('colspan', '7')
     expect(screen.getByRole('button', { name: 'New income' })).toBeEnabled()
   })
 
@@ -368,7 +432,7 @@ describe('IncomeTab', () => {
     getIncomesByMonthMock.mockResolvedValue([])
     renderTab()
 
-    expect(await screen.findByText('No income in October 2026.')).toBeInTheDocument()
+    expect(await screen.findByText('No income in October 2026.')).toHaveAttribute('colspan', '7')
     expect(screen.getByRole('button', { name: 'New income' })).toBeInTheDocument()
     expect(screen.queryByRole('group', { name: 'Totals for Incomes' })).not.toBeInTheDocument()
   })
@@ -391,7 +455,9 @@ describe('IncomeTab', () => {
 
     await confirmDelete('income 15/10/2026 DividendoJuros, XP dividends', 'income')
 
-    expect(await screen.findByRole('button', { name: 'Deleting income 15/10/2026 DividendoJuros, XP dividends' })).toBeInTheDocument()
+    expect(await screen.findByRole('button', { name: 'Deleting income 15/10/2026 DividendoJuros, XP dividends' })).not.toHaveAccessibleDescription(
+      'Another delete is in progress.',
+    )
     expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Delete income 28/10/2026 Gleison' })).toHaveAccessibleDescription('Another delete is in progress.')
     expect(screen.getByRole('button', { name: 'Edit income 28/10/2026 Gleison' })).toBeDisabled()
@@ -417,6 +483,19 @@ describe('IncomeTab', () => {
     fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'New income' })).toHaveFocus())
+  })
+
+  it('leaves focus where it is when the form closes while focus is elsewhere', async () => {
+    renderTab()
+
+    const form = await openNewIncome()
+    await waitFor(() => expect(field(form, 'Date')).toHaveFocus())
+    const table = screen.getByRole('table', { name: 'Incomes' })
+    table.focus()
+    fireEvent.click(within(form).getByRole('button', { name: 'Cancel' }))
+
+    expect(screen.queryByRole('form', { name: 'New income' })).not.toBeInTheDocument()
+    expect(table).toHaveFocus()
   })
 
   it('asks before discarding unsaved changes on Cancel, and closes at once with none', async () => {
