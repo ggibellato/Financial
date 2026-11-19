@@ -86,6 +86,8 @@ function renderDialog(
     onCancel?: () => void
     onMoved?: (a: AssetDetailsDto, archived: boolean) => void
     offerArchive?: boolean
+    presetDestination?: string
+    newPortfolioOnly?: boolean
   } = {},
 ) {
   return render(
@@ -95,11 +97,32 @@ function renderDialog(
       assetName="BCIA11"
       scope="active"
       offerArchive={overrides.offerArchive ?? false}
+      presetDestination={overrides.presetDestination}
+      newPortfolioOnly={overrides.newPortfolioOnly}
       onCancel={overrides.onCancel ?? vi.fn()}
       onMoved={overrides.onMoved ?? vi.fn()}
     />,
   )
 }
+
+function broker(name: string, portfolios: TreeNodeDto[]): TreeNodeDto {
+  return { nodeType: 'Broker', displayName: name, metadata: { BrokerName: name }, children: portfolios }
+}
+
+function root(...brokers: TreeNodeDto[]): TreeNodeDto {
+  return { nodeType: 'Investments', displayName: 'Root', metadata: {}, children: brokers }
+}
+
+const closedAssetTrees = (scope?: string) =>
+  Promise.resolve(scope === 'historic' ? tree(['Closed']) : tree(['Default', 'ISA', 'SIPP'], 0))
+
+const archiveRadio = () => screen.getByRole('radio', { name: 'Archive to historic investments' })
+const keepRadio = () => screen.getByRole('radio', { name: 'Keep in active investments' })
+const existingRadio = () => screen.getByRole('radio', { name: 'Move to an existing portfolio' })
+const newRadio = () => screen.getByRole('radio', { name: 'Move to a new portfolio' })
+const destinationSelect = () => screen.getByRole('combobox', { name: 'Destination portfolio' })
+const newNameBox = () => screen.getByRole('textbox', { name: 'New portfolio name' })
+const optionTexts = () => screen.queryAllByRole('option').map((option) => option.textContent)
 
 /**
  * The dialog paints its destination `<select>` immediately — empty and disabled — and fills it only
@@ -379,6 +402,174 @@ describe('MoveAssetDialog', () => {
 
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('still holds'))
     expect(screen.getByRole('button', { name: 'Keep' })).toBeInTheDocument()
+  })
+
+  it("offers only this broker's named portfolios when the tree holds other brokers first", async () => {
+    getNavigationTreeMock.mockResolvedValue(
+      root(broker('Other', [portfolio('Elsewhere')]), broker('XPI', [portfolio('Default'), portfolio('ISA'), { ...portfolio(''), metadata: {} }])),
+    )
+    renderDialog()
+
+    await waitForDestinations()
+    expect(optionTexts()).toEqual(['ISA'])
+  })
+
+  it("reads whether the source emptied from this broker's own source portfolio", async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValue(
+      root(broker('Other', [portfolio('Default', 0)]), broker('XPI', [portfolio('ISA', 0), portfolio('Default', 1)])),
+    )
+    renderDialog({ onMoved })
+
+    await waitForDestinations()
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(screen.queryByText(/is now empty/)).not.toBeInTheDocument()
+  })
+
+  it('reports the move when the tree cannot be read afterwards to check the source', async () => {
+    const onMoved = vi.fn()
+    getNavigationTreeMock.mockResolvedValueOnce(tree(['Default', 'ISA'])).mockRejectedValueOnce(new Error('offline'))
+    renderDialog({ onMoved })
+
+    await waitForDestinations()
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(onMoved).toHaveBeenCalled())
+    expect(screen.queryByText(/is now empty/)).not.toBeInTheDocument()
+  })
+
+  it('offers nothing and starts on a new portfolio while the portfolios load', () => {
+    getNavigationTreeMock.mockReturnValue(new Promise(() => undefined))
+    renderDialog({ offerArchive: true })
+
+    expect(optionTexts()).toEqual([])
+    expect(newRadio()).toBeChecked()
+    expect(newNameBox()).toHaveValue('')
+    expect(screen.queryByRole('radio', { name: 'Archive to historic investments' })).not.toBeInTheDocument()
+  })
+
+  it('says the portfolios could not be loaded', async () => {
+    getNavigationTreeMock.mockRejectedValue('offline')
+    renderDialog()
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Unable to load portfolios.'))
+  })
+
+  it('reads the portfolios again for another asset', async () => {
+    const { rerender } = renderDialog()
+    await waitForDestinations()
+
+    rerender(<MoveAssetDialog brokerName="XPI" portfolioName="ISA" assetName="BCIA11" scope="active" offerArchive={false} onCancel={vi.fn()} onMoved={vi.fn()} />)
+
+    await waitFor(() => expect(optionTexts()).toEqual(['Default', 'SIPP']))
+  })
+
+  it('does not look at Historic for a closed asset unless archiving is offered', async () => {
+    getNavigationTreeMock.mockResolvedValue(tree(['Default', 'ISA'], 0))
+    renderDialog()
+
+    await waitForDestinations()
+    expect(getNavigationTreeMock).not.toHaveBeenCalledWith('historic')
+  })
+
+  it('offers only a new portfolio for a drop on a broker', async () => {
+    renderDialog({ newPortfolioOnly: true })
+
+    await waitFor(() => expect(getNavigationTreeMock).toHaveBeenCalled())
+    await waitFor(() => expect(newRadio()).toBeChecked())
+    expect(optionTexts()).toEqual([])
+  })
+
+  it('starts on an existing portfolio, switches between it and a new one, and enables only the chosen field', async () => {
+    renderDialog()
+    await waitForDestinations()
+
+    expect(existingRadio()).toBeChecked()
+    expect(existingRadio()).toBeEnabled()
+    expect(destinationSelect()).toBeEnabled()
+    expect(newNameBox()).toBeDisabled()
+
+    fireEvent.click(newRadio())
+    expect(destinationSelect()).toBeDisabled()
+    expect(newNameBox()).toBeEnabled()
+
+    fireEvent.click(existingRadio())
+    expect(existingRadio()).toBeChecked()
+    expect(destinationSelect()).toBeEnabled()
+    expect(newNameBox()).toBeDisabled()
+  })
+
+  it('starts a closed asset on keeping it active, and Keep brings the active portfolios back', async () => {
+    getNavigationTreeMock.mockImplementation(closedAssetTrees)
+    renderDialog({ offerArchive: true })
+    await waitFor(() => expect(archiveRadio()).toBeInTheDocument())
+
+    expect(keepRadio()).toBeChecked()
+    fireEvent.click(archiveRadio())
+    await waitFor(() => expect(optionTexts()).toEqual(['Closed']))
+
+    fireEvent.click(keepRadio())
+
+    expect(keepRadio()).toBeChecked()
+    expect(optionTexts()).toEqual(['ISA', 'SIPP'])
+  })
+
+  it('disables Move while the move runs', async () => {
+    moveAssetMock.mockReturnValue(new Promise(() => undefined))
+    renderDialog()
+    await waitForDestinations()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Move' })).toBeDisabled())
+  })
+
+  it('names a failed move, lets it be tried again, and clears the message while it runs again', async () => {
+    moveAssetMock.mockRejectedValueOnce('offline').mockReturnValueOnce(new Promise(() => undefined))
+    renderDialog()
+    await waitForDestinations()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('The asset could not be moved.'))
+    expect(screen.getByRole('button', { name: 'Move' })).toBeEnabled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
+  })
+
+  it('moves a dropped asset once, even when the move empties the source', async () => {
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    renderDialog({ presetDestination: 'ISA' })
+
+    expect(await screen.findByText(/is now empty/)).toBeInTheDocument()
+    expect(moveAssetMock).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ destinationPortfolioName: 'ISA' }))
+  })
+
+  it('disables Delete and Keep while the emptied source is deleted', async () => {
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    deleteEmptyPortfolioMock.mockReturnValue(new Promise(() => undefined))
+    renderDialog()
+    await waitForDestinations()
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Delete' })).toBeDisabled())
+    expect(screen.getByRole('button', { name: 'Keep' })).toBeDisabled()
+  })
+
+  it('names a failed tidy-up and lets it be tried again', async () => {
+    getNavigationTreeMock.mockResolvedValue(treeWithEmptiedSource())
+    deleteEmptyPortfolioMock.mockRejectedValue('offline')
+    renderDialog()
+    await waitForDestinations()
+    fireEvent.click(screen.getByRole('button', { name: 'Move' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete' }))
+
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('The portfolio could not be deleted.'))
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeEnabled()
   })
 
   it('cancels without moving anything', async () => {

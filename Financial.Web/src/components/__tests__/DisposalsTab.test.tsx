@@ -179,5 +179,39 @@ describe('DisposalsTab', () => {
     expect(screen.getByRole('button', { name: /Hide audit trail/ })).toHaveAttribute('aria-expanded', 'true')
     expect(screen.getByText(/Audit trail for the/)).toBeInTheDocument()
     expect(screen.getByText('50.00')).toBeInTheDocument()
+    const history = screen.getByRole('table', { name: 'Audit trail for the 03/11/2025 sale' })
+    const panelId = screen.getByRole('button', { name: /Hide audit trail/ }).getAttribute('aria-controls')!
+    expect(document.getElementById(panelId)).toContainElement(history)
+  })
+
+  it('shows no audit trail for a disposal marked expanded that has no history', () => {
+    const chain = { active: disposal({ id: 'd1' }), history: [] }
+    setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'], expandedIds: new Set(['d1']) })
+
+    render(<DisposalsTab />)
+
+    expect(screen.queryByText(/Audit trail for the/)).not.toBeInTheDocument()
+  })
+
+  it('colours a gain green and a loss red, in the sale and its audit trail', () => {
+    const gain = { active: disposal({ id: 'd1', gainLoss: 100 }), history: [disposal({ id: 'd0', gainLoss: -40 })] }
+    const loss = { active: disposal({ id: 'd2', transactionId: 't2', date: '2025-10-01T00:00:00', gainLoss: -25 }), history: [] }
+    setMock({ chains: [gain, loss], filteredChains: [gain, loss], taxYearOptions: ['2025/26'], expandedIds: new Set(['d1']) })
+
+    render(<DisposalsTab />)
+
+    expect(screen.getByText('100.00').closest('td')).toHaveClass('data-table__col--numeric', 'disposals-tab__value--green')
+    expect(screen.getByText('-40.00').closest('td')).toHaveClass('data-table__col--numeric', 'disposals-tab__value--red')
+    expect(screen.getByText('-25.00').closest('td')).toHaveClass('data-table__col--numeric', 'disposals-tab__value--red')
+  })
+
+  it.each(['Quantity', 'Method', 'Proceeds', 'Cost basis', 'Gain/loss', 'Tax year'])('marks the %s header when it sorts the sales', (name) => {
+    const chain = { active: disposal({}), history: [] }
+    setMock({ chains: [chain], filteredChains: [chain], taxYearOptions: ['2025/26'] })
+    render(<DisposalsTab />)
+
+    fireEvent.click(screen.getByRole('button', { name }))
+
+    expect(screen.getByRole('button', { name }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
   })
 })

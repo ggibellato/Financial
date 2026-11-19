@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { fireEvent, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { render } from '../../test/renderWithFluent'
@@ -151,6 +151,48 @@ describe('CorporateActionForm', () => {
     expect(onFieldChange).toHaveBeenCalledWith('formRatioNumerator', expect.any(String))
   })
 
+  it('reports every field change with its field key', () => {
+    const onFieldChange = vi.fn()
+    const { rerender } = render(<CorporateActionForm {...baseProps} onFieldChange={onFieldChange} />)
+    fireEvent.change(screen.getByLabelText(/^Effective date/), { target: { value: '2026-07-26' } })
+    fireEvent.change(screen.getByLabelText('Type'), { target: { value: 'Merger' } })
+    fireEvent.change(screen.getByLabelText(/^Old units/), { target: { value: '3' } })
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'from broker' } })
+
+    rerender(<CorporateActionForm {...baseProps} formType="Merger" onFieldChange={onFieldChange} />)
+    fireEvent.change(screen.getByLabelText(/^Exchange ratio/), { target: { value: '0.5' } })
+    fireEvent.change(screen.getByLabelText('Cash-in-lieu amount'), { target: { value: '12' } })
+
+    rerender(<CorporateActionForm {...baseProps} formType="SpinOff" onFieldChange={onFieldChange} />)
+    fireEvent.change(screen.getByLabelText(/^Quantity received/), { target: { value: '40' } })
+    fireEvent.change(screen.getByRole('spinbutton', { name: /^Allocation %/ }), { target: { value: '25' } })
+
+    expect(onFieldChange.mock.calls).toEqual([
+      ['formEffectiveDate', '2026-07-26'],
+      ['formType', 'Merger'],
+      ['formRatioDenominator', '3'],
+      ['formNote', 'from broker'],
+      ['formExchangeRatio', '0.5'],
+      ['formCashInLieu', '12'],
+      ['formQuantityReceived', '40'],
+      ['formAllocationPercentage', '25'],
+    ])
+  })
+
+  it('locks Type while saving and on the merger confirm step, and leaves it open on the merger fields step', () => {
+    const { rerender } = render(<CorporateActionForm {...baseProps} formType="Merger" />)
+    expect(screen.getByLabelText('Type')).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Back' })).not.toBeInTheDocument()
+
+    rerender(<CorporateActionForm {...baseProps} isSaving />)
+    expect(screen.getByLabelText('Type')).toBeDisabled()
+
+    rerender(<CorporateActionForm {...baseProps} formType="Merger" formStep="confirm" />)
+    expect(screen.getByLabelText('Type')).toBeDisabled()
+    expect(screen.queryByLabelText('Note')).not.toBeInTheDocument()
+  })
+
   it('calls onSave and onCancel', async () => {
     const onSave = vi.fn()
     const onCancel = vi.fn()
@@ -214,7 +256,9 @@ describe('CorporateActionForm', () => {
       />,
     )
 
-    expect(screen.getByText(new RegExp(`Your position in KLBN4 \\(${formatN2(200)} units\\)`))).toBeInTheDocument()
+    expect(screen.getByText(new RegExp(`Your position in KLBN4 \\(${formatN2(200)} units\\)`))).toHaveTextContent(
+      `Your position in KLBN4 (${formatN2(200)} units) will close and convert into ${formatN2(100)} units of Company B, carrying over ${formatN2(2000)} of cost basis.`,
+    )
     expect(screen.getByText(`${formatN2(100)} units`)).toBeInTheDocument()
     expect(screen.getByText(formatN2(2000))).toBeInTheDocument()
 
@@ -272,6 +316,23 @@ describe('CorporateActionForm', () => {
     expect(screen.getByText(`${formatN2(250)}`, { exact: false })).toBeInTheDocument()
     expect(screen.getByText(/stays with KLBN4/)).toBeInTheDocument()
     expect(screen.getByText(/moves to Company D/)).toBeInTheDocument()
+  })
+
+  it('reads the spin-off preview as one sentence, naming the new asset generically until it is chosen', () => {
+    render(<CorporateActionForm {...baseProps} formType="SpinOff" sourceCostBasis={1000} formAllocationPercentage="25" />)
+
+    expect(screen.getByText(/stays with KLBN4/)).toHaveTextContent(`${formatN2(750)} stays with KLBN4, ${formatN2(250)} moves to the new asset.`)
+  })
+
+  it('previews no allocation for a percentage outside 0 to 100, and no units for a negative exchange ratio', () => {
+    const { rerender } = render(<CorporateActionForm {...baseProps} formType="SpinOff" sourceCostBasis={1000} formAllocationPercentage="150" />)
+    expect(screen.getByText(/stays with KLBN4/)).toHaveTextContent(`${formatN2(1000)} stays with KLBN4, ${formatN2(0)} moves to the new asset.`)
+
+    rerender(<CorporateActionForm {...baseProps} formType="SpinOff" sourceCostBasis={1000} formAllocationPercentage="-10" />)
+    expect(screen.getByText(/stays with KLBN4/)).toHaveTextContent(`${formatN2(1000)} stays with KLBN4, ${formatN2(0)} moves to the new asset.`)
+
+    rerender(<CorporateActionForm {...baseProps} formType="Merger" formStep="confirm" formExchangeRatio="-1" />)
+    expect(screen.getByText(`${formatN2(0)} units`)).toBeInTheDocument()
   })
 
   it('shows New asset as read-only text instead of the picker when editing an existing spin-off', () => {

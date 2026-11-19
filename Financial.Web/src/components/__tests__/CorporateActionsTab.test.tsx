@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { CorporateActionsData } from '../../hooks/useCorporateActions'
 import type { AssetDetailsDto, CorporateActionDto } from '../../api/types'
 import { BLANK_TARGET_ASSET_PICKER_VALUE } from '../targetAssetPickerValue'
@@ -321,6 +321,58 @@ describe('CorporateActionsTab', () => {
     const dataRows = within(table).getAllByRole('row').slice(1)
     expect(within(dataRows[0]).getByText('Merger')).toBeInTheDocument()
     expect(within(dataRows[1]).getByText('Split')).toBeInTheDocument()
+    expect(within(table).getByRole('button', { name: 'Type' }).closest('th')).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('describes a split by its ratio, trimming only trailing zeros', () => {
+    setMock({
+      corporateActions: [
+        split({ id: 'ca1', ratioFactor: 2 }),
+        split({ id: 'ca2', ratioFactor: 1.5, effectiveDate: '2026-06-01T00:00:00' }),
+        split({ id: 'ca3', ratioFactor: 10, effectiveDate: '2026-05-01T00:00:00' }),
+      ],
+    })
+
+    render(<CorporateActionsTab />)
+
+    expect(screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[3].textContent)).toEqual([
+      'Resulting change:Quantity/average cost rescaled ×2',
+      'Resulting change:Quantity/average cost rescaled ×1.5',
+      'Resulting change:Quantity/average cost rescaled ×10',
+    ])
+  })
+
+  it('names no resulting change for a merger or spin-off record without its role, and none from a ratio on a merger', () => {
+    setMock({
+      corporateActions: [
+        split({ id: 'ca1', type: 'Merger', role: null, ratioFactor: null }),
+        split({ id: 'ca2', type: 'SpinOff', role: null, ratioFactor: null, effectiveDate: '2026-06-01T00:00:00' }),
+        split({ id: 'ca3', type: 'Merger', role: 'Source', ratioFactor: 2, effectiveDate: '2026-05-01T00:00:00' }),
+      ],
+    })
+
+    render(<CorporateActionsTab />)
+
+    const changes = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[3])
+    expect(within(changes[0]).getByRole('img', { name: 'None' })).toBeInTheDocument()
+    expect(within(changes[1]).getByRole('img', { name: 'None' })).toBeInTheDocument()
+    expect(changes[2]).toHaveTextContent('Position closed and converted')
+  })
+
+  it('says units were received from a spin-off when the quantity is not known', () => {
+    setMock({ corporateActions: [split({ id: 'ca1', type: 'SpinOff', role: 'New', ratioFactor: null, convertedQuantity: null })] })
+
+    render(<CorporateActionsTab />)
+
+    expect(screen.getByText('Units received from spin-off')).toBeInTheDocument()
+  })
+
+  it('leaves the affected asset blank while the asset is not known', () => {
+    setMock({ asset: null, corporateActions: [split({ id: 'ca1' })] })
+
+    render(<CorporateActionsTab />)
+
+    expect(within(screen.getAllByRole('row')[1]).getAllByRole('cell')[2]).toHaveTextContent(/^Affected\/linked asset:$/)
   })
 
   it('focuses and highlights the row matching focusRecordId once the history has loaded', () => {
@@ -334,6 +386,61 @@ describe('CorporateActionsTab', () => {
     const row = document.querySelector('[data-corporate-action-id="ca2"]')
     expect(row?.querySelector('button')).toHaveFocus()
     expect(row).toHaveClass('corporate-actions-tab__row--highlighted')
+    expect(row).toHaveAttribute('tabindex', '-1')
+    expect(document.querySelector('[data-corporate-action-id="ca1"]')).not.toHaveClass('corporate-actions-tab__row--highlighted')
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' })
+  })
+
+  it('focuses the only record when it is the one asked for', () => {
+    setMock({ corporateActions: [split({ id: 'ca1' })] })
+    Element.prototype.scrollIntoView = vi.fn()
+
+    render(<CorporateActionsTab focusRecordId="ca1" />)
+
+    expect(document.querySelector('[data-corporate-action-id="ca1"] button')).toHaveFocus()
+  })
+
+  it('focuses the record asked for once the history finishes loading', () => {
+    setMock({ isLoading: true })
+    Element.prototype.scrollIntoView = vi.fn()
+    const { rerender } = render(<CorporateActionsTab focusRecordId="ca2" />)
+
+    setMock({ corporateActions: [split({ id: 'ca1' }), split({ id: 'ca2' })] })
+    rerender(<CorporateActionsTab focusRecordId="ca2" />)
+
+    expect(document.querySelector('[data-corporate-action-id="ca2"] button')).toHaveFocus()
+  })
+
+  describe('highlighting the record asked for', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+      Element.prototype.scrollIntoView = vi.fn()
+      setMock({ corporateActions: [split({ id: 'ca1' }), split({ id: 'ca2' })] })
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    const highlighted = (id: string) => document.querySelector(`[data-corporate-action-id="${id}"]`)
+
+    it('clears the highlight after two seconds', () => {
+      render(<CorporateActionsTab focusRecordId="ca2" />)
+
+      act(() => vi.advanceTimersByTime(2000))
+
+      expect(highlighted('ca2')).not.toHaveClass('corporate-actions-tab__row--highlighted')
+    })
+
+    it('gives a record asked for next its own two seconds', () => {
+      const { rerender } = render(<CorporateActionsTab focusRecordId="ca1" />)
+      act(() => vi.advanceTimersByTime(1500))
+
+      rerender(<CorporateActionsTab focusRecordId="ca2" />)
+      act(() => vi.advanceTimersByTime(1000))
+
+      expect(highlighted('ca2')).toHaveClass('corporate-actions-tab__row--highlighted')
+    })
   })
 
   it('does not crash or change focus when focusRecordId matches no loaded record', () => {
