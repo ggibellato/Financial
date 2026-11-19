@@ -1,0 +1,64 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/api/schema/stryker-core.json",
+  "testRunner": "vitest",
+  "checkers": [
+    "typescript"
+  ],
+  "tsconfigFile": "tsconfig.app.json",
+  "mutate": [
+    "src/components/AccountFormDialog.tsx",
+    "src/components/AccountHeader.tsx",
+    "src/components/AccountTransactionsGrid.tsx",
+    "src/components/AggregatedSummaryTab.tsx",
+    "src/components/AssetSummaryTab.tsx",
+    "src/components/CardStatementsTab.tsx",
+    "src/components/CorporateActionForm.tsx",
+    "src/components/CorporateActionsTab.tsx",
+    "src/components/CreditsTab.tsx",
+    "src/components/DisposalsTab.tsx",
+    "src/components/ExpenseForm.tsx",
+    "src/components/IncomeForm.tsx",
+    "src/components/IncomeTab.tsx",
+    "src/components/InvestmentAccountFormDialog.tsx",
+    "src/components/InvestmentTree.tsx",
+    "src/components/MonthTransactionsGrid.tsx",
+    "src/components/MoveAssetDialog.tsx",
+    "src/components/PortfolioHoldingsTab.tsx",
+    "src/components/PotDepositForm.tsx",
+    "src/components/PotWithdrawalForm.tsx",
+    "src/components/PriceHistoryTab.tsx",
+    "src/components/Sidebar.tsx",
+    "src/components/TickerCombobox.tsx",
+    "src/components/TransactionsTab.tsx",
+    "src/components/TransferForm.tsx",
+    "src/pages/AccountScreenPage.tsx",
+    "src/pages/AnnualSummaryPage.tsx",
+    "src/pages/CurrentValuesPage.tsx",
+    "src/pages/DividendCheckPage.tsx",
+    "src/pages/MensaisPage.tsx"
+  ],
+  "reporters": [
+    "html",
+    "json",
+    "progress"
+  ],
+  "htmlReporter": {
+    "fileName": "reports/mutation-components/mutation-report.html"
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation-components/mutation-report.json"
+  },
+  "incremental": true,
+  "incrementalFile": "reports/stryker-components-incremental.json",
+  "thresholds": {
+    "high": 80,
+    "low": 60,
+    "break": 90
+  },
+  "tempDirName": ".stryker-tmp",
+  "dryRunTimeoutMinutes": 20,
+  "vitest": {
+    "configFile": "vite.config.ts"
+  },
+  "ignoreStatic": true
+}
