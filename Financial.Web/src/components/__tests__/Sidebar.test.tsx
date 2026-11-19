@@ -61,7 +61,15 @@ describe('Sidebar rail', () => {
         .map((button) => button.textContent),
     ).toEqual(NAV_TREE.map((category) => category.label))
     expect(within(mainNav()).queryAllByRole('link')).toHaveLength(0)
-    expect(mainNav()).not.toHaveClass('sidebar--collapsed')
+    expect([...mainNav().classList]).toEqual(['sidebar'])
+  })
+
+  it('sets the Admin category apart with a single divider before it', () => {
+    renderSidebar()
+
+    const dividers = within(mainNav()).getAllByRole('separator')
+    expect(dividers).toHaveLength(1)
+    expect(dividers[0].nextElementSibling).toContainElement(railButton('Admin'))
   })
 
   it('hovering a category opens its flyout with that category\'s pages', () => {
@@ -72,7 +80,8 @@ describe('Sidebar rail', () => {
     const links = within(flyout()!).getAllByRole('link').map((link) => link.textContent)
     expect(links).toEqual(NAV_TREE[1].children.map((child) => child.label))
     expect(railButton('CashFlow')).toHaveAttribute('aria-expanded', 'true')
-    expect(railButton('CashFlow')).toHaveAttribute('aria-controls', flyout()!.id)
+    expect(railButton('CashFlow')).toHaveAttribute('aria-controls', 'sidebar-flyout-cashflow')
+    expect(flyout()).toHaveAttribute('id', 'sidebar-flyout-cashflow')
   })
 
   it('shows the Admin pages under plain group headings, with nothing to expand', () => {
@@ -150,7 +159,7 @@ describe('Sidebar rail', () => {
     renderSidebar('/cashflow/mensais')
 
     expect(railButton('CashFlow')).toHaveClass('sidebar__category-header--active')
-    expect(railButton('Investments')).not.toHaveClass('sidebar__category-header--active')
+    expect([...railButton('Investments').classList]).toEqual(['sidebar__category-header'])
 
     fireEvent.click(railButton('CashFlow'))
     expect(within(flyout()!).getByRole('link', { name: 'Mensais' })).toHaveAttribute('aria-current', 'page')
@@ -225,6 +234,19 @@ describe('Sidebar rail', () => {
 
     expect(flyout()).toBeNull()
     expect(document.activeElement).toBe(trigger)
+
+    fireEvent.mouseEnter(trigger)
+    expect(flyout()).not.toBeNull()
+  })
+
+  it('keeps the flyout open on keys other than Escape', () => {
+    renderSidebar()
+
+    fireEvent.focus(railButton('CashFlow'))
+    const firstLink = within(flyout()!).getAllByRole('link')[0]
+    fireEvent.keyDown(firstLink, { key: 'ArrowDown' })
+
+    expect(flyout()).not.toBeNull()
   })
 
   it('pressing Escape on the rail button closes its flyout and the next hover still opens it', () => {
@@ -242,9 +264,13 @@ describe('Sidebar rail', () => {
   it('toggling minimises the rail to icons with accessible names, and expands it again', () => {
     renderSidebar()
 
+    expect(screen.getByRole('button', { name: 'Collapse sidebar' })).toHaveAttribute('aria-label', 'Collapse sidebar')
     fireEvent.click(screen.getByRole('button', { name: 'Collapse sidebar' }))
 
     expect(mainNav()).toHaveClass('sidebar--collapsed')
+    const toggle = screen.getByRole('button', { name: 'Expand sidebar' })
+    expect(toggle).toHaveAttribute('aria-label', 'Expand sidebar')
+    expect(toggle).toHaveAttribute('title', 'Expand sidebar')
     expect(railButton('CashFlow')).toHaveAttribute('aria-label', 'CashFlow')
     expect(within(mainNav()).queryByText('CashFlow')).not.toBeInTheDocument()
 
@@ -319,6 +345,26 @@ describe('Sidebar on a phone', () => {
       expect(within(dialog).getAllByText(category.label).length).toBeGreaterThan(0)
     }
     expect(within(dialog).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual(['Close navigation'])
+  })
+
+  it('marks only the category of the current page', () => {
+    renderSidebar('/cashflow/mensais', { mobileOpen: true })
+
+    const headings = [...screen.getByRole('dialog').querySelectorAll('.sidebar__category-header')]
+    expect(headings.map((heading) => heading.textContent)).toEqual(NAV_TREE.map((category) => category.label))
+    expect(headings.map((heading) => heading.classList.contains('sidebar__category-header--active'))).toEqual(
+      NAV_TREE.map((category) => category.id === 'cashflow'),
+    )
+    expect([...headings[0].classList]).toEqual(['sidebar__category-header'])
+  })
+
+  it('reports closing when Escape dismisses the menu', () => {
+    const onMobileOpenChange = vi.fn()
+    renderSidebar(undefined, { mobileOpen: true, onMobileOpenChange })
+
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+
+    expect(onMobileOpenChange).toHaveBeenCalledWith(false)
   })
 
   it('clicking the close button calls onMobileOpenChange(false)', () => {

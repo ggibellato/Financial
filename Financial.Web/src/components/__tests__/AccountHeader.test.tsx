@@ -88,19 +88,20 @@ function renderHeader(
   { selectedAccountId = account.id, isBusy = false, hasParticipants = false } = {},
 ) {
   const handlers = { onMonthChange: vi.fn(), onAccountSelect: vi.fn() }
-  render(
+  const header = (accounts: AccountDto[]) => (
     <AccountHeader
       account={account}
       hasParticipants={hasParticipants}
-      accounts={ACCOUNTS}
+      accounts={accounts}
       selectedAccountId={selectedAccountId}
       monthInputValue="2026-10"
       isBusy={isBusy}
       onMonthChange={handlers.onMonthChange}
       onAccountSelect={handlers.onAccountSelect}
-    />,
+    />
   )
-  return handlers
+  const { rerender } = render(header(ACCOUNTS))
+  return { ...handlers, rerenderWithAccounts: (accounts: AccountDto[]) => rerender(header(accounts)) }
 }
 
 describe('AccountHeader', () => {
@@ -125,7 +126,7 @@ describe('AccountHeader', () => {
 
     const statementFigure = screen.getByText('October 2026 statement').parentElement as HTMLElement
     expect(within(statementFigure).getByText('650.10 GBP')).toBeInTheDocument()
-    expect(within(statementFigure).getByText('Unpaid')).toBeInTheDocument()
+    expect(within(statementFigure).getByText('Unpaid')).not.toBe(statementFigure)
     expect(screen.getByText('Total owed')).toBeInTheDocument()
     expect(screen.getByText('740.12 GBP')).toBeInTheDocument()
     expect(screen.queryByText('812.33 GBP')).not.toBeInTheDocument()
@@ -335,6 +336,44 @@ describe('AccountHeader', () => {
     await user.click(screen.getByRole('option', { name: 'Barclays' }))
 
     expect(onAccountSelect).not.toHaveBeenCalled()
+  })
+
+  it('dims the summary while busy', () => {
+    renderHeader(BARCLAYS, { isBusy: true })
+    expect(screen.getByRole('heading', { level: 1 }).closest('.account-screen__summary')).toHaveClass('account-screen__summary--busy')
+  })
+
+  it('leaves the summary plain when not busy, and a bank balance not top-aligned', () => {
+    renderHeader(BARCLAYS)
+    const summary = screen.getByRole('heading', { level: 1 }).closest('.account-screen__summary')!
+
+    expect([...summary.classList]).toEqual(['account-screen__summary'])
+    expect([...screen.getByText(/at end of/).parentElement!.classList]).toEqual(['account-screen__balance'])
+  })
+
+  it("top-aligns a card's statement figure", () => {
+    renderHeader(AMEX)
+    expect(screen.getByText('October 2026 statement').parentElement).toHaveClass('account-screen__balance', 'account-screen__balance--top-aligned')
+  })
+
+  it('marks the account shown as the selected picker option', async () => {
+    const user = userEvent.setup()
+    renderHeader()
+
+    await user.click(screen.getByRole('combobox', { name: 'Account' }))
+
+    expect(screen.getByRole('option', { name: 'Barclays' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('option', { name: 'Chase' })).toHaveAttribute('aria-selected', 'false')
+  })
+
+  it('lists the accounts passed in after they change', async () => {
+    const user = userEvent.setup()
+    const { rerenderWithAccounts } = renderHeader()
+
+    rerenderWithAccounts([...ACCOUNTS, { ...ACCOUNTS[0], id: 'monzo', name: 'Monzo' }])
+    await user.click(screen.getByRole('combobox', { name: 'Account' }))
+
+    expect(screen.getByRole('option', { name: 'Monzo' })).toBeInTheDocument()
   })
 
   it('shows the account being navigated to as the picker value while the header still shows the loaded one', () => {

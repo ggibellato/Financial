@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import TickerCombobox, { type TickerGroup } from '../TickerCombobox'
 
 const GROUPS: TickerGroup[] = [
@@ -16,7 +16,15 @@ function openDropdown() {
   fireEvent.focus(screen.getByLabelText('Ticker'))
 }
 
+const input = () => screen.getByLabelText('Ticker')
+const activeOptions = () => screen.queryAllByRole('option').filter((option) => option.classList.contains('ticker-combobox__option--active'))
+const pressKey = (key: string) => fireEvent.keyDown(input(), { key })
+
 describe('TickerCombobox', () => {
+  beforeEach(() => {
+    Element.prototype.scrollIntoView = vi.fn()
+  })
+
   it('displays the initial value in the input', () => {
     renderCombobox('KLBN4')
     expect(screen.getByLabelText('Ticker')).toHaveValue('KLBN4')
@@ -115,6 +123,123 @@ describe('TickerCombobox', () => {
 
     expect(onChange).toHaveBeenCalledWith('TASA4')
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('starts closed', () => {
+    renderCombobox()
+
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(input()).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('marks only the current value as selected, and only the active option as active', () => {
+    renderCombobox('TASA4')
+    pressKey('ArrowDown')
+
+    expect(screen.getByRole('option', { name: 'TASA4' })).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('option', { name: 'KLBN4' })).toHaveAttribute('aria-selected', 'false')
+    expect(activeOptions()).toEqual([screen.getByRole('option', { name: 'KLBN4' })])
+    expect([...screen.getByRole('option', { name: 'TASA4' }).classList]).toEqual(['ticker-combobox__option'])
+  })
+
+  it('pressing Enter on the first option chooses it', () => {
+    const { onChange } = renderCombobox('')
+
+    pressKey('ArrowDown')
+    pressKey('Enter')
+
+    expect(onChange).toHaveBeenCalledWith('KLBN4')
+  })
+
+  it('chooses nothing on keys other than Enter', () => {
+    const { onChange } = renderCombobox()
+
+    pressKey('ArrowDown')
+    pressKey('Tab')
+    pressKey('a')
+
+    expect(onChange).not.toHaveBeenCalled()
+  })
+
+  it('keeps the keys it handles from scrolling or submitting, and a mousedown on an option from taking focus', () => {
+    renderCombobox()
+
+    expect(pressKey('ArrowDown')).toBe(false)
+    expect(pressKey('ArrowUp')).toBe(false)
+    expect(pressKey('Enter')).toBe(false)
+    openDropdown()
+    expect(fireEvent.mouseDown(screen.getByRole('option', { name: 'TASA4' }))).toBe(false)
+  })
+
+  it('scrolls the active option into view', () => {
+    renderCombobox()
+
+    pressKey('ArrowDown')
+    pressKey('ArrowDown')
+
+    const scroll = vi.mocked(Element.prototype.scrollIntoView)
+    expect(scroll.mock.calls).toEqual([[{ block: 'nearest' }], [{ block: 'nearest' }]])
+    expect(scroll.mock.contexts).toEqual([screen.getByRole('option', { name: 'KLBN4' }), screen.getByRole('option', { name: 'TASA4' })])
+  })
+
+  it('opens an empty list and moves through nothing when there are no tickers', () => {
+    render(<TickerCombobox groups={[]} value="" onChange={vi.fn()} />)
+
+    pressKey('ArrowDown')
+    pressKey('ArrowDown')
+
+    expect(screen.getByRole('listbox')).toBeEmptyDOMElement()
+  })
+
+  it('opens the list when typing', () => {
+    renderCombobox()
+
+    fireEvent.change(input(), { target: { value: 'KL' } })
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+  })
+
+  it('stays open on a click inside it', () => {
+    renderCombobox()
+    openDropdown()
+
+    fireEvent.mouseDown(input())
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['choosing an option', () => fireEvent.mouseDown(screen.getByRole('option', { name: 'TASA4' }))],
+    ['Escape', () => pressKey('Escape')],
+    ['a click outside', () => fireEvent.mouseDown(document.body)],
+  ])('reopens with no active option after %s', (_, close) => {
+    renderCombobox()
+    pressKey('ArrowDown')
+    pressKey('ArrowDown')
+
+    close()
+    openDropdown()
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(activeOptions()).toEqual([])
+  })
+
+  it('offers the tickers and reports to the handler passed in after they change', () => {
+    const first = vi.fn()
+    const second = vi.fn()
+    const { rerender } = render(<TickerCombobox groups={GROUPS} value="" onChange={first} />)
+
+    rerender(<TickerCombobox groups={[{ label: 'Novas', tickers: ['VALE3', 'PETR4'] }]} value="" onChange={second} />)
+    fireEvent.change(input(), { target: { value: 'V' } })
+    expect(screen.queryByRole('option', { name: 'KLBN4' })).not.toBeInTheDocument()
+    fireEvent.mouseDown(screen.getByRole('option', { name: 'PETR4' }))
+    fireEvent.change(input(), { target: { value: 'P' } })
+    pressKey('ArrowDown')
+    pressKey('ArrowDown')
+    pressKey('Enter')
+
+    expect(second.mock.calls).toEqual([['V'], ['PETR4'], ['P'], ['PETR4']])
+    expect(first).not.toHaveBeenCalled()
   })
 
   it('pressing Enter with no active option does nothing', () => {
