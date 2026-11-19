@@ -162,6 +162,10 @@ describe('IncomeTab', () => {
     ])
     expect(footer()).toHaveTextContent('3 incomes · Total net 4,185.30')
     expect(within(table).getAllByRole('img', { name: 'No gross value' })).toHaveLength(2)
+    expect(within(bodyRows(table)[0]).getAllByRole('cell').slice(4, 6).map((cell) => cell.className)).toEqual([
+      expect.stringContaining('data-table__col--numeric'),
+      expect.stringContaining('data-table__col--numeric'),
+    ])
   })
 
   it('offers Clear filters only while filtered, bringing every income back and focusing the Source filter', async () => {
@@ -170,6 +174,7 @@ describe('IncomeTab', () => {
     expect(screen.queryByRole('button', { name: 'Clear filters' })).not.toBeInTheDocument()
 
     filterTo('Bank', 'No bank')
+    expect(bodyRows(table)).toHaveLength(2)
     fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }))
 
     expect(bodyRows(table)).toHaveLength(3)
@@ -183,7 +188,7 @@ describe('IncomeTab', () => {
       window.matchMedia = originalMatchMedia
     })
 
-    it('offers a single Clear filters, above the table', async () => {
+    it('offers a single Clear filters', async () => {
       mockMatchMedia(true)
       renderTab()
       await grid()

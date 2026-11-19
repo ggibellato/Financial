@@ -697,7 +697,7 @@ describe('AnnualSummaryPage', () => {
     it('sorts the Category totals by each column and marks the sorted header', async () => {
       getCategoryTotalsAnnualForYearMock.mockResolvedValue({
         ...CATEGORY_TOTALS_ANNUAL,
-        categoryTotals: [category('Mercado', 100, 300, 2000), category('Casa', 300, 100, 900), category('Lazer', 200, 200, 1200)],
+        categoryTotals: [category('Lazer', 200, 100, 2000), category('Mercado', 100, 300, 900), category('Casa', 300, 200, 1200)],
       })
       render(<AnnualSummaryPage />)
       await screen.findByText('Mercado')
@@ -707,9 +707,9 @@ describe('AnnualSummaryPage', () => {
       expect(sortBy('Jan')).toHaveAttribute('aria-sort', 'ascending')
       expect(bodyLabels('Category totals').slice(-3)).toEqual(['Mercado', 'Lazer', 'Casa'])
       expect(sortBy('Average')).toHaveAttribute('aria-sort', 'ascending')
-      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Casa', 'Lazer', 'Mercado'])
+      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Lazer', 'Casa', 'Mercado'])
       expect(sortBy('Annual total')).toHaveAttribute('aria-sort', 'ascending')
-      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Casa', 'Lazer', 'Mercado'])
+      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Mercado', 'Casa', 'Lazer'])
     })
 
     it('sorts the Investments by account and marks the sorted header', async () => {
@@ -768,7 +768,7 @@ describe('AnnualSummaryPage', () => {
     expect(await screen.findByRole('table', { name: 'Historic summary average' })).toHaveAttribute('tabindex', '-1')
   })
 
-  it('says no row matches when the Category filter hides every category, across the whole row', async () => {
+  it('says no row matches across the whole row and marks the filter active when the Category filter hides every category', async () => {
     render(<AnnualSummaryPage />)
     await screen.findByText('Mercado')
 
@@ -780,7 +780,7 @@ describe('AnnualSummaryPage', () => {
     expect(message.closest('td')).toHaveAttribute('colspan', '15')
   })
 
-  it('says no row matches when the Historic filter hides every category, across every year column', async () => {
+  it('says no row matches across every year column and marks the filter active when the Historic filter hides every category', async () => {
     render(<AnnualSummaryPage />)
     fireEvent.click(await screen.findByRole('tab', { name: 'Historic summary average' }))
     await screen.findByRole('columnheader', { name: '2025' })

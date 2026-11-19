@@ -511,6 +511,7 @@ describe('MonthTransactionsGrid', () => {
         'aria-disabled',
         'true',
       )
+      expect(screen.getByRole('button', { name: 'Deleting deposit Deposit to Reserva, 10/10/2026, Barclays, Reserva', hidden: true })).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Delete expense Tesco, 28/10/2026, Barclays, Groceries', hidden: true })).toHaveAccessibleDescription(
         'Another delete is in progress.',
       )
