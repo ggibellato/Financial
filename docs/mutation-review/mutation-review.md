@@ -182,7 +182,7 @@ uses the repo folder.
 | 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
 | 7.3 | CashFlow.Infrastructure | all | ✅ | 80.6% | 92.7% | 9 | 1 | 4 | [#1304](https://github.com/ggibellato/Financial/pull/1304) | [Notes](7.3.md); reference wire names and required flags, credentials path, dead converter code |
 | 7.4 | Investment.Infrastructure | all | ✅ | 81.1% | 93.2% | 7 | 0 | 4 | [#1305](https://github.com/ggibellato/Financial/pull/1305) | [Notes](7.4.md); two tests passed vacuously because BRL is the Currency default |
-| 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | 🔄 | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive; ranked by logic held, eight slices planned (8.1–8.8, see [8.1](8.1.md)) |
+| 8.x | Financial.Web | `src/components`, `src/pages` — only files holding logic (forms, totals, validation, filtering); presentational files skipped | ✅ | | | | | | | Trial on `CategoryTotalsGrid.tsx`: 57.1%, 6 text/label mutants survive; ranked by logic held, done in eight slices (8.1–8.8, see [8.1](8.1.md)) |
 | 8.1 | Financial.Web | `AccountFormDialog`, `InvestmentTree` | ✅ | 76.2% | 90.2% | 23 | 1 | 42 | [#1334](https://github.com/ggibellato/Financial/pull/1334) | [Notes](8.1.md); `queryByRole('dialog')` can pass while a dialog stays open; the opening balance number message can never show |
 | 8.2 | Financial.Web | `TransactionsTab`, `CreditsTab` | ✅ | 70.1% | 86.6% | 17 | 0 | 4 | [#1335](https://github.com/ggibellato/Financial/pull/1335) | [Notes](8.2.md); credit chart colours and stacking; most survivors are chart styling |
 | 8.3 | Financial.Web | `PortfolioHoldingsTab`, `AssetSummaryTab`, `PriceHistoryTab` | ✅ | 71.1% | 97.9% | 34 | 6 | 0 | [#1337](https://github.com/ggibellato/Financial/pull/1337) | [Notes](8.3.md); led to the "Current price" label ([#1338](https://github.com/ggibellato/Financial/pull/1338)) and the asset summary clean-up ([#1339](https://github.com/ggibellato/Financial/pull/1339)) |
@@ -190,6 +190,7 @@ uses the repo folder.
 | 8.5 | Financial.Web | `ExpenseForm`, `IncomeForm`, `TransferForm`, `PotDepositForm`, `PotWithdrawalForm` | ✅ | 86.5% | 97.9% | 22 | 0 | 7 | [#1342](https://github.com/ggibellato/Financial/pull/1342) | [Notes](8.5.md); the overdraft dialog loses its message while it closes, like 8.4's (not fixed yet) |
 | 8.6 | Financial.Web | `MensaisPage`, `AnnualSummaryPage`, `MonthTransactionsGrid`, `IncomeTab` | ✅ | 80.0% | 97.5% | 22 | 0 | 6 | [#1343](https://github.com/ggibellato/Financial/pull/1343) | [Notes](8.6.md); deleting the Mensais bill being edited leaves its edit form open with a blank Bill (not fixed yet) |
 | 8.7 | Financial.Web | `CorporateActionsTab`, `CorporateActionForm`, `MoveAssetDialog`, `DisposalsTab` | ✅ | 68.9% | 94.8% | 36 | 0 | 19 | [#1344](https://github.com/ggibellato/Financial/pull/1344) | [Notes](8.7.md) |
+| 8.8 | Financial.Web | `Sidebar`, `TickerCombobox`, `CurrentValuesPage`, `DividendCheckPage`, `InvestmentAccountFormDialog`, `AccountHeader`, `AggregatedSummaryTab` | ✅ | 72.6% | 97.3% | 45 | 0 | 13 | [#1346](https://github.com/ggibellato/Financial/pull/1346) | [Notes](8.8.md); a failed price fetch's message is never shown; ArrowUp on the closed ticker picker activates an option (not fixed yet) |
 | 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ✅ | 71.6% | 90.1% | 7 | 0 | 4 | [#1300](https://github.com/ggibellato/Financial/pull/1300) | [Notes](9.1.md); `Program.cs` wiring (CORS, versioning, options binding) asserted; `UseDeveloperExceptionPage` redundant |
 | 9.2 | Financial.Api | All controllers | ✅ | 78.7% | 95.6% | 1 | 0 | 1 | [#1302](https://github.com/ggibellato/Financial/pull/1302) | [Notes](9.2.md); empty-body test now requires the guard to reject before any service; blank route-value guards are dead code |
 
@@ -250,6 +251,7 @@ class, production notes) in its own file in this folder:
 - [8.5 Web components: account forms (86.5% → 97.9%)](8.5.md)
 - [8.6 Web pages: Mensais, annual summary, month transactions grid, income tab (80.0% → 97.5%)](8.6.md)
 - [8.7 Web components: corporate actions, move asset dialog, disposals (68.9% → 94.8%)](8.7.md)
+- [8.8 Web components and pages: navigation, ticker picker, prices, dividends, account header (72.6% → 97.3%)](8.8.md)
 
 ## Log
 
@@ -303,3 +305,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-19 | 8.5 | Account forms 86.5% → 97.9%; field errors asserted through `aria-invalid`; the overdraft dialog blanks its message while closing |
 | 2026-11-19 | 8.6 | Mensais, annual summary, month transactions grid and income tab 80.0% → 97.5%; deleting the bill being edited leaves its form open |
 | 2026-11-19 | 8.7 | Corporate actions, move asset dialog and disposals 68.9% → 94.8%; no product issue |
+| 2026-11-19 | 8.8 | Sidebar, ticker picker, current values, dividend check, investment account dialog, account header and aggregated summary 72.6% → 97.3%; last 8.x slice, the 8.x row is done |
