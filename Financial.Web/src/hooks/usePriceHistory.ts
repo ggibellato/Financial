@@ -5,7 +5,7 @@ import { useSelectedNode } from '../context/SelectedNodeContext'
 import { isAssetSelection } from '../utils/assetSelection'
 import { buildSelectionKey } from './useCredits'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
+import { DEFAULT_FILTER, getPeriodFilterStartDate, isOnOrAfterPeriodStart } from '../utils/periodFilter'
 import { deleteFailedMessage, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber, todayIsoDate, toInputDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
@@ -217,14 +217,12 @@ export function usePriceHistory(): PriceHistoryData {
 
   const filteredEntries = useMemo(() => {
     const start = getPeriodFilterStartDate(state.selectedFilter, new Date())
-    if (!start) return entries
-    return entries.filter((entry) => new Date(entry.date) >= start)
+    return entries.filter((entry) => isOnOrAfterPeriodStart(entry.date, start))
   }, [entries, state.selectedFilter])
 
   const filteredTransactions = useMemo(() => {
     const start = getPeriodFilterStartDate(state.selectedFilter, new Date())
-    if (!start) return state.transactions
-    return state.transactions.filter((transaction) => new Date(transaction.date) >= start)
+    return state.transactions.filter((transaction) => isOnOrAfterPeriodStart(transaction.date, start))
   }, [state.transactions, state.selectedFilter])
 
   const retry = useCallback(() => dispatch({ type: 'RETRY' }), [])
