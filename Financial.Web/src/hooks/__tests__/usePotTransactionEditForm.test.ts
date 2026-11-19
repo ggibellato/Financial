@@ -108,4 +108,13 @@ describe('usePotTransactionEditForm', () => {
     expect(result.current.isOpen).toBe(false)
     expect(updateReserveMovementMock).not.toHaveBeenCalled()
   })
+
+  it('says the pot transaction could not be updated when the save fails without a reason', async () => {
+    updateReserveMovementMock.mockRejectedValue('offline')
+    const { result } = renderForm()
+
+    act(() => result.current.submit())
+
+    await waitFor(() => expect(result.current.edit?.error).toBe('Failed to update the pot transaction.'))
+  })
 })
