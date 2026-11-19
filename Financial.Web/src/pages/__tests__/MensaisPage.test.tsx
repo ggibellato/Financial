@@ -237,6 +237,34 @@ describe('MensaisPage', () => {
     )
   })
 
+  it('disables the expense prompt while it marks the bill Paid', async () => {
+    markMensaisBillPaidMock.mockReturnValue(never())
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('Council Tax')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: /^Status: Unset/ })[1])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+    await screen.findByRole('heading', { name: 'Generate expense for this payment?', hidden: true })
+    fireEvent.change(screen.getByLabelText(/^Bank/), { target: { value: 'bank-1' } })
+    fireEvent.change(screen.getByLabelText(/^Category/), { target: { value: 'cat-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm', hidden: true }))
+
+    expect(await screen.findByRole('button', { name: 'Saving…', hidden: true })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Cancel', hidden: true })).toBeDisabled()
+  })
+
+  it("disables a bill's status menu while its status is being changed", async () => {
+    updateMensaisBillStatusMock.mockReturnValue(never())
+    render(<MensaisPage />)
+
+    await waitFor(() => expect(screen.getByText('INSS')).toBeInTheDocument())
+    fireEvent.click(screen.getAllByRole('button', { name: /^Status: Unset/ })[0])
+    fireEvent.click(await screen.findByRole('menuitem', { name: 'Paid' }))
+
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Status: Unset/, hidden: true })[0]).toBeDisabled())
+    expect(screen.getAllByRole('button', { name: /^Status: Unset/, hidden: true })[1]).toBeEnabled()
+  })
+
   it('canceling the expense prompt makes no API calls', async () => {
     render(<MensaisPage />)
 
@@ -596,7 +624,7 @@ describe('MensaisPage', () => {
 
   it('sorts the Brasil grid by Due day, Note, NIT, Min. Wage, Value and Status', async () => {
     const bills: RecurringBillDto[] = [
-      { id: 'b1', dueDay: 10, description: 'INSS', area: 'Brasil', note: 'Boleto', nitNumber: '222', minimumWageValue: 1412, value: 850, status: 'Unset' },
+      { id: 'b1', dueDay: 10, description: 'INSS', area: 'Brasil', note: 'Boleto', nitNumber: '222', minimumWageValue: 1412, value: 1500, status: 'Unset' },
       { id: 'b2', dueDay: 5, description: 'Aluguel', area: 'Brasil', note: 'Aviso', nitNumber: '111', minimumWageValue: 706, value: 1200, status: 'Paid' },
     ]
     getMensaisBillsMock.mockResolvedValue(bills)
@@ -611,22 +639,30 @@ describe('MensaisPage', () => {
         .slice(1)
         .map((r) => r.querySelectorAll('td')[1].textContent!.replace('Description:', ''))
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Due day' }))
+    const sortBy = (name: string) => {
+      fireEvent.click(within(brasilTable).getByRole('button', { name }))
+      return within(brasilTable).getByRole('button', { name }).closest('th')
+    }
+
+    expect(sortBy('Due day')).toHaveAttribute('aria-sort', 'ascending')
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Note' }))
+    expect(sortBy('Description')).toHaveAttribute('aria-sort', 'ascending')
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'NIT' }))
+    expect(sortBy('Note')).toHaveAttribute('aria-sort', 'ascending')
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Min. Wage' }))
+    expect(sortBy('NIT')).toHaveAttribute('aria-sort', 'ascending')
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Value' }))
-    expect(descriptionsOf()).toEqual(['INSS', 'Aluguel'])
+    expect(sortBy('Min. Wage')).toHaveAttribute('aria-sort', 'ascending')
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
 
-    fireEvent.click(within(brasilTable).getByRole('button', { name: 'Status' }))
+    expect(sortBy('Value')).toHaveAttribute('aria-sort', 'ascending')
+    expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
+
+    expect(sortBy('Status')).toHaveAttribute('aria-sort', 'ascending')
     expect(descriptionsOf()).toEqual(['Aluguel', 'INSS'])
   })
 
@@ -655,6 +691,29 @@ describe('MensaisPage', () => {
       expect(screen.getByLabelText('Bill')).toHaveValue('INSS · Brasil · due day 10')
       expect(screen.getByLabelText('Bill')).toHaveAttribute('readonly')
       await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
+    })
+
+    it('names a UK bill being edited', async () => {
+      render(<MensaisPage />)
+      fireEvent.click(await screen.findByRole('button', { name: 'Edit bill Council Tax' }))
+
+      await screen.findByRole('form', { name: 'Edit bill' })
+      expect(screen.getByLabelText('Bill')).toHaveValue('Council Tax · UK · due day 15')
+    })
+
+    it('returns focus to the Edit it was opened from once the edit is saved', async () => {
+      updateMensaisBillMock.mockResolvedValue({ ...BILLS[0], value: 900 })
+      render(<MensaisPage />)
+      const edit = await screen.findByRole('button', { name: 'Edit bill INSS' })
+      edit.focus()
+      fireEvent.click(edit)
+      const form = await screen.findByRole('form', { name: 'Edit bill' })
+      await waitFor(() => expect(screen.getByLabelText(/^Value/)).toHaveFocus())
+
+      fireEvent.click(within(form).getByRole('button', { name: 'Save' }))
+
+      await waitFor(() => expect(screen.queryByRole('form', { name: 'Edit bill' })).not.toBeInTheDocument())
+      expect(screen.getByRole('button', { name: 'Edit bill INSS' })).toHaveFocus()
     })
 
     it('keeps a saving Edit open and blocks New bill and the other Edits until it settles', async () => {

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountTransactionDto, ExpenseDto, MonthTransactionDto } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
-import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
+import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { accountTransactionRow } from '../../test/accountTransactionRow'
 import { mockMatchMedia } from '../../test/mockMatchMedia'
 import { requestDelete } from '../../test-utils/confirmDelete'
@@ -500,6 +500,23 @@ describe('MonthTransactionsGrid', () => {
       )
     })
 
+    it('shows a running pot operation delete on its rows only', async () => {
+      deletePotOperationMock.mockReturnValue(never())
+      renderGrid()
+
+      const dialog = await requestDelete('deposit Deposit from an income, Casa, 10/10/2026, Reserva', 'deposit')
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete', hidden: true }))
+
+      expect(await screen.findByRole('button', { name: 'Deleting deposit Deposit from an income, Casa, 10/10/2026, Reserva', hidden: true })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      )
+      expect(screen.getByRole('button', { name: 'Deleting deposit Deposit to Reserva, 10/10/2026, Barclays, Reserva', hidden: true })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Delete expense Tesco, 28/10/2026, Barclays, Groceries', hidden: true })).toHaveAccessibleDescription(
+        'Another delete is in progress.',
+      )
+    })
+
     it('keeps the dialog open with the error when the delete fails, and does not refresh', async () => {
       deleteExpenseMock.mockRejectedValue(new Error('boom'))
       const onDeleted = vi.fn()
@@ -549,6 +566,27 @@ describe('MonthTransactionsGrid', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(onRetry).toHaveBeenCalledTimes(1)
+  })
+
+  it('moves focus into the grid once a retried load arrives', async () => {
+    const grid = (error: string | null, isLoading: boolean) => (
+      <MemoryRouter initialEntries={[GRID_ADDRESS]}>
+        <MonthTransactionsGrid year={2026} month={10} rows={ROWS} isLoading={isLoading} error={error} onRetry={vi.fn()} onDeleted={vi.fn()} />
+      </MemoryRouter>
+    )
+    const { rerender } = render(grid('Unable to load the transactions', false))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    rerender(grid(null, true))
+    rerender(grid(null, false))
+
+    await waitFor(() => expect(screen.getByRole('table', { name: 'All transactions' })).toContainElement(document.activeElement as HTMLElement))
+  })
+
+  it('takes focus on the table without putting it in the tab order', () => {
+    renderGrid()
+
+    expect(screen.getByRole('table', { name: 'All transactions' })).toHaveAttribute('tabindex', '-1')
   })
 
   it('reads a single row in the singular', () => {

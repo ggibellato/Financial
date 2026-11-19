@@ -675,6 +675,141 @@ describe('AnnualSummaryPage', () => {
     expect(tbody.getByText('Salary')).toBeInTheDocument()
   })
 
+  describe('sorting every column', () => {
+    const category = (name: string, january: number, average: number, annualTotal: number) => ({
+      category: name,
+      monthlyTotals: new Array(12).fill(january),
+      average,
+      annualTotal,
+    })
+
+    const bodyLabels = (tableName: string) =>
+      within(screen.getByRole('table', { name: tableName }).querySelector('tbody')!)
+        .getAllByRole('row')
+        .map((row) => row.querySelector('td')?.textContent?.replace(/^\w+:/, '') ?? '')
+        .filter((label) => label !== '')
+
+    const sortBy = (name: string) => {
+      fireEvent.click(screen.getByRole('button', { name }))
+      return screen.getByRole('button', { name }).closest('th')
+    }
+
+    it('sorts the Category totals by each column and marks the sorted header', async () => {
+      getCategoryTotalsAnnualForYearMock.mockResolvedValue({
+        ...CATEGORY_TOTALS_ANNUAL,
+        categoryTotals: [category('Lazer', 200, 100, 2000), category('Mercado', 100, 300, 900), category('Casa', 300, 200, 1200)],
+      })
+      render(<AnnualSummaryPage />)
+      await screen.findByText('Mercado')
+
+      expect(sortBy('Category')).toHaveAttribute('aria-sort', 'ascending')
+      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Casa', 'Lazer', 'Mercado'])
+      expect(sortBy('Jan')).toHaveAttribute('aria-sort', 'ascending')
+      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Mercado', 'Lazer', 'Casa'])
+      expect(sortBy('Average')).toHaveAttribute('aria-sort', 'ascending')
+      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Lazer', 'Casa', 'Mercado'])
+      expect(sortBy('Annual total')).toHaveAttribute('aria-sort', 'ascending')
+      expect(bodyLabels('Category totals').slice(-3)).toEqual(['Mercado', 'Casa', 'Lazer'])
+    })
+
+    it('sorts the Investments by account and marks the sorted header', async () => {
+      render(<AnnualSummaryPage />)
+      fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
+      await screen.findByText('ChaseSave')
+
+      sortBy('Account')
+      expect(sortBy('Account')).toHaveAttribute('aria-sort', 'descending')
+      expect(bodyLabels('Investments')).toEqual(['PlatinumVisa8003 (-)', 'ChaseSave'])
+      expect(sortBy('Jan')).toHaveAttribute('aria-sort', 'ascending')
+    })
+
+    it('sorts the Historic summary average by a year and marks the sorted header', async () => {
+      render(<AnnualSummaryPage />)
+      fireEvent.click(await screen.findByRole('tab', { name: 'Historic summary average' }))
+      await screen.findByRole('columnheader', { name: '2025' })
+
+      expect(sortBy('2026')).toHaveAttribute('aria-sort', 'ascending')
+      expect(bodyLabels('Historic summary average')).toEqual([
+        'Reserva',
+        'Dividendo/Juros',
+        'Mercado',
+        'Tax difference',
+        'Salary after taxes',
+        'Salary',
+      ])
+      expect(sortBy('Category')).toHaveAttribute('aria-sort', 'ascending')
+    })
+  })
+
+  it('labels every cell for the stacked layout: Category or Account on rows, Total on totals, the month on values', async () => {
+    render(<AnnualSummaryPage />)
+    await screen.findByText('Mercado')
+
+    const mercado = within(screen.getByText('Mercado').closest('tr')!).getAllByRole('cell')
+    expect(mercado[0]).toHaveTextContent('Category:Mercado')
+    expect(mercado[1]).toHaveTextContent('Jan:100.00')
+    expect(within(screen.getByText('Total despesas').closest('tr')!).getAllByRole('cell')[0]).toHaveTextContent('Total:Total despesas')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Investments' }))
+    expect(within((await screen.findByText('ChaseSave')).closest('tr')!).getAllByRole('cell')[0]).toHaveTextContent('Account:ChaseSave')
+    expect(within(screen.getByText('Month result').closest('tr')!).getAllByRole('cell')[0]).toHaveTextContent('Total:Month result')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic summary average' }))
+    await screen.findByRole('columnheader', { name: '2025' })
+    expect(within(screen.getByText('Mercado').closest('tr')!).getAllByRole('cell')[0]).toHaveTextContent('Category:Mercado')
+  })
+
+  it('takes focus on its filterable tables without putting them in the tab order', async () => {
+    render(<AnnualSummaryPage />)
+    await screen.findByText('Mercado')
+    expect(screen.getByRole('table', { name: 'Category totals' })).toHaveAttribute('tabindex', '-1')
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Historic summary average' }))
+    expect(await screen.findByRole('table', { name: 'Historic summary average' })).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('says no row matches across the whole row and marks the filter active when the Category filter hides every category', async () => {
+    render(<AnnualSummaryPage />)
+    await screen.findByText('Mercado')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mercado' }))
+
+    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveClass('column-filter-menu__trigger--active')
+    const message = screen.getByText('No rows match the current filters.')
+    expect(message.closest('td')).toHaveAttribute('colspan', '15')
+  })
+
+  it('says no row matches across every year column and marks the filter active when the Historic filter hides every category', async () => {
+    render(<AnnualSummaryPage />)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Historic summary average' }))
+    await screen.findByRole('columnheader', { name: '2025' })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+    fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
+
+    expect(screen.getByRole('button', { name: 'Filter by Category' })).toHaveClass('column-filter-menu__trigger--active')
+    expect(screen.getByText('No rows match the current filters.').closest('td')).toHaveAttribute('colspan', '3')
+  })
+
+  it('spans the Historic spacer rows across every year column', async () => {
+    render(<AnnualSummaryPage />)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Historic summary average' }))
+    await screen.findByRole('columnheader', { name: '2025' })
+
+    const spacer = within(screen.getByText('Tax difference').closest('tr')!.nextElementSibling as HTMLElement).getByRole('cell')
+    expect(spacer).toHaveAttribute('colspan', '3')
+  })
+
+  it('has no Historic totals footer while there is no history', async () => {
+    getHistoricSummaryAverageFromYearMock.mockResolvedValue([])
+    render(<AnnualSummaryPage />)
+    fireEvent.click(await screen.findByRole('tab', { name: 'Historic summary average' }))
+
+    const table = await screen.findByRole('table', { name: 'Historic summary average' })
+    expect(table.querySelector('tfoot')).toBeNull()
+  })
+
   describe('in the stacked narrow layout, where the header row is clipped', () => {
     const originalMatchMedia = window.matchMedia
 
