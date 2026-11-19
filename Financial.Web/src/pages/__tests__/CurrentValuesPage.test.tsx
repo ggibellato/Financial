@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import CurrentValuesPage from '../CurrentValuesPage'
 import type { FinancialApiClient } from '../../api/financialApiClient'
@@ -321,6 +321,7 @@ describe('CurrentValuesPage', () => {
           name: 'Default',
           assets: [
             { name: 'NoTicker', ticker: '', exchange: 'BVMF' },
+            { name: 'NOEX11', ticker: 'NOEX11', exchange: '' },
             { name: 'BCIA11', ticker: 'BCIA11', exchange: 'BVMF' },
           ],
         },
@@ -372,6 +373,175 @@ describe('CurrentValuesPage', () => {
     await waitFor(() => {
       expect(getCurrentPriceMock).toHaveBeenCalledWith('', 'BTC', 'Cryptocurrency', 'Coinbase', expect.any(String), expect.any(String), expect.any(String))
     })
+  })
+
+  const checkPrices = async () => fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
+  const completed = () => screen.findByText(/Completed!/)
+  const expectOnlyHeaderShown = () =>
+    expect(screen.getByRole('heading', { name: 'Fetch current prices' }).closest('section')).toHaveTextContent(/^Fetch current pricesCheck prices$/)
+
+  it('shows Loading while the brokers load, then no progress or results before a check', async () => {
+    getBrokersMock.mockResolvedValue([makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }])])
+
+    render(<CurrentValuesPage />)
+
+    expect(screen.getByText('Loading data…')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Check prices' })).not.toBeInTheDocument()
+    await screen.findByRole('button', { name: 'Check prices' })
+    expectOnlyHeaderShown()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('says the brokers could not be loaded when the load fails without a reason', async () => {
+    getBrokersMock.mockRejectedValue('offline')
+
+    render(<CurrentValuesPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load brokers.')
+  })
+
+  it('shows Loading again while a retry runs', async () => {
+    getBrokersMock.mockRejectedValueOnce(new Error('Network error')).mockReturnValueOnce(new Promise(() => {}))
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }))
+
+    expect(screen.getByText('Loading data…')).toBeInTheDocument()
+  })
+
+  it('reads each portfolio in scope from its own broker', async () => {
+    getAssetPriceFetchScopeMock.mockResolvedValue([{ brokerName: 'XPI', portfolioName: 'Default' }])
+    getBrokersMock.mockResolvedValue([
+      makeBroker([{ name: 'Default', assets: [{ name: 'OTHR3', ticker: 'OTHR3' }] }], 'Other'),
+      makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }]),
+    ])
+    getCurrentPriceMock.mockResolvedValue(makePrice('BCIA11'))
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+    await completed()
+
+    expect(getCurrentPriceMock).toHaveBeenCalledExactlyOnceWith('BVMF', 'BCIA11', 'RealEstate', 'XPI', 'BCIA11', 'Default', 'BCIA11')
+  })
+
+  it('does nothing when there are no assets to check', async () => {
+    getBrokersMock.mockResolvedValue([makeBroker([{ name: 'Default', assets: [] }])])
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+
+    expectOnlyHeaderShown()
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(getCurrentPriceMock).not.toHaveBeenCalled()
+  })
+
+  it('moves the progress bar by each finished asset', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([
+        { name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] },
+        { name: 'Acoes', assets: [{ name: 'KLBN4', ticker: 'KLBN4' }] },
+      ]),
+    ])
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockReturnValueOnce(new Promise(() => {}))
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+    await screen.findByText('Fetching 1 of 2: BCIA11…')
+    expect(screen.getByRole('progressbar')).toHaveAttribute('value', '50')
+  })
+
+  it('starts the progress bar from zero on a second check', async () => {
+    getBrokersMock.mockResolvedValue([makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }])])
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockReturnValueOnce(new Promise(() => {}))
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+    await completed()
+    await checkPrices()
+
+    await waitFor(() => expect(screen.getByRole('progressbar')).toHaveAttribute('value', '0'))
+  })
+
+  it('names a result by the name the price lookup returns, else by the asset name', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([
+        {
+          name: 'Default',
+          assets: [
+            { name: 'Banco fund', ticker: 'BCIA11' },
+            { name: 'Klabin', ticker: 'KLBN4' },
+          ],
+        },
+      ]),
+    ])
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('BCIA11')).mockResolvedValueOnce({ ...makePrice('KLBN4'), name: '' })
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+    await completed()
+
+    const names = screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[1].textContent)
+    expect(names).toEqual([expect.stringContaining('BCIA11 Name'), expect.stringContaining('Klabin')])
+  })
+
+  it('sorts the results by Ticker and by Name, marking the sorted header', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([
+        {
+          name: 'Default',
+          assets: [
+            { name: 'KLBN4', ticker: 'KLBN4' },
+            { name: 'BCIA11', ticker: 'BCIA11' },
+            { name: 'TAEE3', ticker: 'TAEE3' },
+          ],
+        },
+      ]),
+    ])
+    const names: Record<string, string> = { KLBN4: 'Alpha paper', BCIA11: 'Zeta fund', TAEE3: 'Mid energy' }
+    getCurrentPriceMock.mockImplementation(async (_exchange, ticker) => ({ ...makePrice(ticker), name: names[ticker] }))
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+    await completed()
+    const tickers = () => screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[0].textContent)
+    const headerOf = (name: string) => screen.getByRole('button', { name }).closest('th')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Ticker' }))
+    expect(tickers()).toEqual([expect.stringContaining('BCIA11'), expect.stringContaining('KLBN4'), expect.stringContaining('TAEE3')])
+    expect(headerOf('Ticker')).toHaveAttribute('aria-sort', 'ascending')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Name' }))
+    expect(tickers()).toEqual([expect.stringContaining('KLBN4'), expect.stringContaining('TAEE3'), expect.stringContaining('BCIA11')])
+    expect(headerOf('Name')).toHaveAttribute('aria-sort', 'ascending')
+    expect(headerOf('Ticker')).toHaveAttribute('aria-sort', 'none')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Price' }))
+    expect(headerOf('Price')).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('keeps focus on a result as later results arrive and re-sort the rows', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([
+        {
+          name: 'Default',
+          assets: [
+            { name: 'ZZZ3', ticker: 'ZZZ3' },
+            { name: 'AAA3', ticker: 'AAA3' },
+          ],
+        },
+      ]),
+    ])
+    let resolveLast: (price: AssetPriceDto) => void = () => undefined
+    getCurrentPriceMock.mockResolvedValueOnce(makePrice('ZZZ3')).mockReturnValueOnce(new Promise((resolve) => { resolveLast = resolve }))
+
+    render(<CurrentValuesPage />)
+    await checkPrices()
+    fireEvent.click(await screen.findByRole('button', { name: 'Name' }))
+    screen.getByText('ZZZ3 Name').focus()
+    await act(async () => resolveLast(makePrice('AAA3')))
+
+    expect(screen.getAllByRole('row')[1]).toHaveTextContent('AAA3')
+    expect(document.activeElement).toHaveTextContent('ZZZ3 Name')
   })
 
   it('does not exclude Cryptocurrency assets with blank exchange', async () => {

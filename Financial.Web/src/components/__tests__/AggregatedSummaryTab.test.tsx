@@ -181,6 +181,28 @@ describe('AggregatedSummaryTab', () => {
     expect(valueEl).toHaveClass('aggregated-summary__value--red')
   })
 
+  it.each([
+    ['Price-only return', 'priceOnlyReturn'],
+    ['Total return (gross)', 'totalReturn'],
+    ['Total return (net of tax)', 'totalReturnNetOfTax'],
+    ['Invested (converted to GBP)', 'convertedInvested'],
+    ['Unrealised gain/loss (converted to GBP)', 'convertedUnrealisedGainLoss'],
+    ['Total return (converted to GBP)', 'convertedTotalReturn'],
+    ['Total return net of tax (converted to GBP)', 'convertedTotalReturnNetOfTax'],
+  ] as const)('colours %s green when gained, red when lost, and leaves it plain when missing', (label, key) => {
+    const valueOf = (value: number | null) => {
+      setMock({ summary: { ...SUMMARY, [key]: value } })
+      const { unmount } = renderComponent()
+      const classes = [...screen.getByText(label).nextElementSibling!.classList]
+      unmount()
+      return classes
+    }
+
+    expect(valueOf(0.05)).toEqual(['aggregated-summary__value', 'aggregated-summary__value--green'])
+    expect(valueOf(-0.05)).toEqual(['aggregated-summary__value', 'aggregated-summary__value--red'])
+    expect(valueOf(null)).toEqual(['aggregated-summary__value'])
+  })
+
   it('renders_values_formatted_to_two_decimal_places', () => {
     setMock({
       summary: {

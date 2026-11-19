@@ -107,6 +107,8 @@ describe('InvestmentAccountFormDialog', () => {
     expect(onSubmit).not.toHaveBeenCalled()
 
     fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p2' } })
+    expect(screen.queryByText('Select a Pots account.')).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /^Pots account/ })).not.toHaveAttribute('aria-invalid', 'true')
     fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Holiday savings', true, false, 'PotsAccountTotal', null, 'p2'))
@@ -137,6 +139,8 @@ describe('InvestmentAccountFormDialog', () => {
       await screen.findByText('No active Pots accounts. Add one in Admin → CashFlow → Accounts, or choose another source.'),
     ).toBeInTheDocument()
     await waitFor(() => expect(screen.getByLabelText('Source')).toHaveFocus())
+    expect(screen.queryByText('Select a Pots account.')).not.toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: /^Pots account/ })).not.toHaveAttribute('aria-invalid', 'true')
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
@@ -217,7 +221,8 @@ describe('InvestmentAccountFormDialog', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', true, false, 'CreditCard', 'cc1', null))
   })
 
-  it('editing an account with an inactive linked card still shows it selected', () => {
+  it('editing an account with an inactive linked card still shows it selected, and no other inactive card', () => {
+    const otherRetired = cardAccount({ id: 'cc3', name: 'Closed Card', isActive: false })
     render(
       <InvestmentAccountFormDialog
         investmentAccount={{
@@ -230,7 +235,7 @@ describe('InvestmentAccountFormDialog', () => {
           creditCardId: 'cc2',
           potsAccountId: null,
         }}
-        creditCards={[activeCard, inactiveCard]}
+        creditCards={[activeCard, inactiveCard, otherRetired]}
         accounts={ACCOUNTS}
         onCancel={vi.fn()}
         onSubmit={vi.fn()}
@@ -239,6 +244,42 @@ describe('InvestmentAccountFormDialog', () => {
 
     expect(screen.getByLabelText(/^Credit card/)).toHaveValue('cc2')
     expect(screen.getByRole('option', { name: 'Retired Card' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Closed Card' })).not.toBeInTheDocument()
+  })
+
+  it('closes on Cancel without asking once a chosen Pots account and source are undone', () => {
+    const onCancel = vi.fn()
+    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={onCancel} onSubmit={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'PotsAccountTotal' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: 'p1' } })
+    fireEvent.change(screen.getByRole('combobox', { name: /^Pots account/ }), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText('Source'), { target: { value: 'None' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
+  it('submits the account as inactive once Active is switched off', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Monzo Pot' } })
+    fireEvent.click(screen.getByLabelText('Active'))
+    expect(screen.getByLabelText('Active')).not.toBeChecked()
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith('Monzo Pot', false, false, 'None', null, null))
+  })
+
+  it('says the account could not be saved when the save fails without a reason', async () => {
+    const onSubmit = vi.fn().mockRejectedValue('offline')
+    render(<InvestmentAccountFormDialog investmentAccount={null} creditCards={[]} accounts={ACCOUNTS} onCancel={vi.fn()} onSubmit={onSubmit} />)
+
+    fireEvent.change(screen.getByLabelText(/^Name/), { target: { value: 'Monzo Pot' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Add investment account' }))
+
+    expect(await screen.findByText('The investment account could not be saved.')).toBeInTheDocument()
   })
 
   it('shows a duplicate name under Name and moves focus there', async () => {
