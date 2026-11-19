@@ -203,9 +203,9 @@ uses the repo folder.
 | # | Task | Status | PR | Notes |
 |---|---|---|---|---|
 | 10.1 | Add each reviewed project to the nightly `stryker-dotnet` matrix with its own break threshold | ✅ | [#1353](https://github.com/ggibellato/Financial/pull/1353), [#1355](https://github.com/ggibellato/Financial/pull/1355) | Seven projects added, each breaking 5 points below its score measured on 2026-11-19 |
-| 10.2 | Widen the nightly StrykerJS `mutate` to the reviewed components | ✅ | | Separate `Web.Components` entry over the 30 reviewed files, 95.0%, break 90; Web.Logic unchanged |
+| 10.2 | Widen the nightly StrykerJS `mutate` to the reviewed components | ✅ | [#1356](https://github.com/ggibellato/Financial/pull/1356) | Separate `Web.Components` entry over the 30 reviewed files, 95.0%, break 90; Web.Logic unchanged |
 | 10.3 | Raise the existing break thresholds once scores hold for a week (`docs/ci-affected-pipeline.md`) | ⬜ | | |
-| 10.4 | Decide on an advisory PR job mutating changed files only (`--since origin/main`) | ⬜ | | |
+| 10.4 | Decide on an advisory PR job mutating changed files only (`--since origin/main`) | ✅ | | Decided 2026-11-19: no PR job. The nightly mutates every reviewed project and component and opens the `nightly-failure` issue when one drops below its break, so a regression shows within a day without adding minutes to every PR |
 
 ## Slice notes
 
@@ -320,3 +320,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-19 | 5.16 | Smallest hooks and helpers 81.6% → 97.4%; last hooks slice, the 5.x row is done |
 | 2026-11-19 | 10.1 | Nightly `stryker-dotnet` matrix covers every reviewed .NET project, each with its own break threshold |
 | 2026-11-19 | 10.2 | Nightly StrykerJS adds a `Web.Components` entry for the 30 reviewed component and page files, 95.0% |
+| 2026-11-19 | 10.4 | No advisory PR mutation job; the nightly covers it |
