@@ -186,6 +186,10 @@ uses the repo folder.
 | 8.1 | Financial.Web | `AccountFormDialog`, `InvestmentTree` | ✅ | 76.2% | 90.2% | 23 | 1 | 42 | [#1334](https://github.com/ggibellato/Financial/pull/1334) | [Notes](8.1.md); `queryByRole('dialog')` can pass while a dialog stays open; the opening balance number message can never show |
 | 8.2 | Financial.Web | `TransactionsTab`, `CreditsTab` | ✅ | 70.1% | 86.6% | 17 | 0 | 4 | [#1335](https://github.com/ggibellato/Financial/pull/1335) | [Notes](8.2.md); credit chart colours and stacking; most survivors are chart styling |
 | 8.3 | Financial.Web | `PortfolioHoldingsTab`, `AssetSummaryTab`, `PriceHistoryTab` | ✅ | 71.1% | 97.9% | 34 | 6 | 0 | [#1337](https://github.com/ggibellato/Financial/pull/1337) | [Notes](8.3.md); led to the "Current price" label ([#1338](https://github.com/ggibellato/Financial/pull/1338)) and the asset summary clean-up ([#1339](https://github.com/ggibellato/Financial/pull/1339)) |
+| 8.4 | Financial.Web | `AccountScreenPage`, `CardStatementsTab`, `AccountTransactionsGrid` | ✅ | 81.9% | 93.8% | 26 | 0 | 15 | [#1341](https://github.com/ggibellato/Financial/pull/1341) | [Notes](8.4.md); the unmark dialog loses its message while it closes (not fixed yet) |
+| 8.5 | Financial.Web | `ExpenseForm`, `IncomeForm`, `TransferForm`, `PotDepositForm`, `PotWithdrawalForm` | ✅ | 86.5% | 97.9% | 22 | 0 | 7 | [#1342](https://github.com/ggibellato/Financial/pull/1342) | [Notes](8.5.md); the overdraft dialog loses its message while it closes, like 8.4's (not fixed yet) |
+| 8.6 | Financial.Web | `MensaisPage`, `AnnualSummaryPage`, `MonthTransactionsGrid`, `IncomeTab` | ✅ | 80.0% | 97.5% | 22 | 0 | 6 | [#1343](https://github.com/ggibellato/Financial/pull/1343) | [Notes](8.6.md); deleting the Mensais bill being edited leaves its edit form open with a blank Bill (not fixed yet) |
+| 8.7 | Financial.Web | `CorporateActionsTab`, `CorporateActionForm`, `MoveAssetDialog`, `DisposalsTab` | ✅ | 68.9% | 94.8% | 36 | 0 | 19 | [#1344](https://github.com/ggibellato/Financial/pull/1344) | [Notes](8.7.md) |
 | 9.1 | Financial.Api | `Program.cs`, `Middleware/**`, `Helpers/**` | ✅ | 71.6% | 90.1% | 7 | 0 | 4 | [#1300](https://github.com/ggibellato/Financial/pull/1300) | [Notes](9.1.md); `Program.cs` wiring (CORS, versioning, options binding) asserted; `UseDeveloperExceptionPage` redundant |
 | 9.2 | Financial.Api | All controllers | ✅ | 78.7% | 95.6% | 1 | 0 | 1 | [#1302](https://github.com/ggibellato/Financial/pull/1302) | [Notes](9.2.md); empty-body test now requires the guard to reject before any service; blank route-value guards are dead code |
 
@@ -242,6 +246,10 @@ class, production notes) in its own file in this folder:
 - [8.1 Web components: account form dialog, investment tree (76.2% → 90.2%)](8.1.md)
 - [8.2 Web components: transactions tab, credits tab (70.1% → 86.6%)](8.2.md)
 - [8.3 Web components: portfolio holdings, asset summary, price history (71.1% → 97.9%)](8.3.md)
+- [8.4 Web components: account screen, card statements, account transactions grid (81.9% → 93.8%)](8.4.md)
+- [8.5 Web components: account forms (86.5% → 97.9%)](8.5.md)
+- [8.6 Web pages: Mensais, annual summary, month transactions grid, income tab (80.0% → 97.5%)](8.6.md)
+- [8.7 Web components: corporate actions, move asset dialog, disposals (68.9% → 94.8%)](8.7.md)
 
 ## Log
 
@@ -291,3 +299,7 @@ One line per working session: date, slice, outcome.
 | 2026-11-18 | 8.1 | Account form dialog and investment tree 76.2% → 90.2%; first components slice, 8.x planned as eight slices |
 | 2026-11-18 | 8.2 | Transactions and credits tabs 70.1% → 86.6% |
 | 2026-11-18 | 8.3 | Portfolio holdings, asset summary and price history tabs 71.1% → 97.9%; asset summary label and clean-up PRs followed |
+| 2026-11-19 | 8.4 | Account screen, card statements and account transactions grid 81.9% → 93.8%; the unmark dialog blanks its message while closing |
+| 2026-11-19 | 8.5 | Account forms 86.5% → 97.9%; field errors asserted through `aria-invalid`; the overdraft dialog blanks its message while closing |
+| 2026-11-19 | 8.6 | Mensais, annual summary, month transactions grid and income tab 80.0% → 97.5%; deleting the bill being edited leaves its form open |
+| 2026-11-19 | 8.7 | Corporate actions, move asset dialog and disposals 68.9% → 94.8%; no product issue |
