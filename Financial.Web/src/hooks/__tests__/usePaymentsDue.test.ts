@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { act } from 'react'
+import { act, StrictMode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PaymentDueDto } from '../../api/types'
@@ -114,6 +114,27 @@ describe('usePaymentsDue', () => {
       await vi.advanceTimersByTimeAsync(PAYMENT_DUE_BANNER_DISMISS_MS)
     })
 
+    expect(result.current.payments).toBeNull()
+  })
+
+  it('ignores the answer to a load that was cancelled, as StrictMode does on mount', async () => {
+    let resolveStale: (payments: PaymentDueDto[]) => void = () => undefined
+    getPaymentsDueMock
+      .mockReturnValueOnce(new Promise((resolve) => { resolveStale = resolve }))
+      .mockResolvedValueOnce(SAMPLE_PAYMENTS)
+
+    const { result } = renderHook(() => usePaymentsDue(), { wrapper: StrictMode })
+    await waitFor(() => expect(result.current.payments).toEqual(SAMPLE_PAYMENTS))
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000)
+      resolveStale([{ ...SAMPLE_PAYMENTS[0], name: 'Stale' }])
+    })
+    expect(result.current.payments).toEqual(SAMPLE_PAYMENTS)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PAYMENT_DUE_BANNER_DISMISS_MS - 5000)
+    })
     expect(result.current.payments).toBeNull()
   })
 })

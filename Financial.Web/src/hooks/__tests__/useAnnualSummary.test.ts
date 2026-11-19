@@ -157,4 +157,46 @@ describe('useAnnualSummary', () => {
 
     await waitFor(() => expect(getCategoryTotalsAnnualForYearMock).toHaveBeenCalledTimes(2))
   })
+
+  it("keeps the shown year's figures while another year loads", async () => {
+    const { result } = renderHook(() => useAnnualSummary())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    const shown = result.current.categoryTotals
+    expect(shown).not.toEqual([])
+    getCategoryTotalsAnnualForYearMock.mockReturnValue(new Promise(() => undefined))
+
+    act(() => result.current.setYear(2020))
+
+    await waitFor(() => expect(result.current.isLoading).toBe(true))
+    expect(result.current.categoryTotals).toBe(shown)
+  })
+
+  it('ignores a year that is not a number', async () => {
+    const { result } = renderHook(() => useAnnualSummary())
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    const year = result.current.year
+
+    act(() => result.current.setYear(Number.NaN))
+
+    expect(result.current.year).toBe(year)
+  })
+
+  it('says the annual summary could not be loaded when the load fails without a reason', async () => {
+    getCategoryTotalsAnnualForYearMock.mockRejectedValue('offline')
+    const { result } = renderHook(() => useAnnualSummary())
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load annual summary data.'))
+  })
+
+  it('reports loading from its very first render', () => {
+    const loading: boolean[] = []
+
+    renderHook(() => {
+      const summary = useAnnualSummary()
+      loading.push(summary.isLoading)
+      return summary
+    })
+
+    expect(loading[0]).toBe(true)
+  })
 })
