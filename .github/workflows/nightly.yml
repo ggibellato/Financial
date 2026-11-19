@@ -66,7 +66,10 @@ jobs:
         MUTATE: ${{ matrix.mutate }}
         BREAK_AT: ${{ matrix.break }}
       run: |
-        $arguments = @('stryker', '--config-file', '../.config/stryker-config.json', '--output', "../TestResults/stryker/$env:NAME", '--break-at', $env:BREAK_AT)
+        $thresholds = (Get-Content ../.config/stryker-config.json -Raw | ConvertFrom-Json).'stryker-config'.thresholds
+        $low = [math]::Max($thresholds.low, [int]$env:BREAK_AT)
+        $high = [math]::Max($thresholds.high, $low)
+        $arguments = @('stryker', '--config-file', '../.config/stryker-config.json', '--output', "../TestResults/stryker/$env:NAME", '--break-at', $env:BREAK_AT, '--threshold-low', $low, '--threshold-high', $high)
         foreach ($testTarget in @($env:NAME, $env:ALSO_TESTED_BY) | Where-Object { $_ }) {
           $arguments += @('--test-project', "../Tests/Financial.$testTarget.Tests/Financial.$testTarget.Tests.csproj")
         }
