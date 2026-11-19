@@ -130,6 +130,47 @@ describe('PotDepositForm', () => {
     expect(screen.getByText('clean')).toBeInTheDocument()
   })
 
+  it('shows the pot picker only for one pot, and heads the preview amounts with the currency', async () => {
+    render(<Harness />)
+
+    const table = await screen.findByRole('table', { name: 'Split preview' })
+    expect(within(table).getByRole('columnheader', { name: 'Amount (GBP)' })).toBeInTheDocument()
+    expect(screen.queryByRole('combobox', { name: /^Pot/ })).not.toBeInTheDocument()
+  })
+
+  it('says the pots are loading until they arrive, and not once they fail', async () => {
+    let failPots: (error: Error) => void = () => undefined
+    getPotsMock.mockReturnValue(new Promise((_, reject) => (failPots = reject)))
+    render(<Harness />)
+
+    expect(screen.getByText('Loading pots…')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    failPots(new Error('offline'))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load the pots')
+    expect(screen.queryByText('Loading pots…')).not.toBeInTheDocument()
+  })
+
+  it('submits on Enter without the browser submitting the page', async () => {
+    render(<Harness />)
+    await screen.findByRole('table', { name: 'Split preview' })
+
+    expect(fireEvent.submit(screen.getByRole('form', { name: 'New deposit' }))).toBe(false)
+  })
+
+  it('brings the funding lines back when the no-bank box is unticked', async () => {
+    render(<Harness />)
+    await screen.findByRole('table', { name: 'Split preview' })
+    const noBank = screen.getByRole('checkbox', { name: 'No bank — money from outside CashFlow' })
+
+    fireEvent.click(noBank)
+    fireEvent.click(noBank)
+
+    expect(noBank).not.toBeChecked()
+    expect(screen.getByRole('group', { name: 'Funding line 1' })).toBeInTheDocument()
+  })
+
   it('previews the split once with the residual on the largest percentage', async () => {
     render(<Harness />)
     const table = await screen.findByRole('table', { name: 'Split preview' })
@@ -235,6 +276,8 @@ describe('PotDepositForm', () => {
 
     expect(await screen.findByText('Date must not be in the future.')).toBeInTheDocument()
     expect(screen.getByText('Enter a description.')).toBeInTheDocument()
+    expect(screen.getByLabelText(/^Date/)).toHaveAttribute('aria-invalid', 'true')
+    expect(screen.getByLabelText(/^Description/)).toHaveAttribute('aria-invalid', 'true')
     expect(screen.getByText('Choose a bank.')).toBeInTheDocument()
     expect(screen.getAllByText('Amount must be greater than zero.')).toHaveLength(2)
     expect(depositAmount()).toHaveFocus()

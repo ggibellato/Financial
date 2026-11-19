@@ -255,6 +255,12 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     expect(await screen.findByText('Category is required when a bank is selected.')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Category/)).toHaveFocus()
+    expect(within(screen.getByLabelText(/^Category/)).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Select a category',
+      'Ariana',
+      'Casa',
+      'Saude',
+    ])
     expect(createPotWithdrawalMock).not.toHaveBeenCalled()
 
     setThroughBank('')
@@ -369,6 +375,20 @@ describe('PotWithdrawalForm from the Pots account', () => {
     const alert = await findErrorAlert()
     expect(alert).toHaveTextContent("Category 'Saude' cannot be used")
     await waitFor(() => expect(alert).toHaveFocus())
+  })
+
+  it('labels the amount without a currency until the pots arrive', () => {
+    getPotsMock.mockReturnValue(new Promise(() => undefined))
+    render(<Harness />)
+
+    expect(screen.getByRole('spinbutton', { name: /^Amount\W*$/ })).toBeInTheDocument()
+  })
+
+  it('submits on Enter without the browser submitting the page', async () => {
+    render(<Harness />)
+    await potsLoaded()
+
+    expect(fireEvent.submit(screen.getByRole('form', { name: 'New withdrawal' }))).toBe(false)
   })
 
   it('offers a retry when the pots fail, with Save disabled', async () => {

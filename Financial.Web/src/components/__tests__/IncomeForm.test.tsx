@@ -202,6 +202,16 @@ describe('IncomeForm', () => {
     expect(onCancel).toHaveBeenCalled()
   })
 
+  it('saves on Enter without the browser submitting the page', () => {
+    const onSave = vi.fn()
+    render(<IncomeForm {...baseProps} onSave={onSave} />)
+
+    const submitted = fireEvent.submit(screen.getByRole('form', { name: 'New income' }))
+
+    expect(onSave).toHaveBeenCalledOnce()
+    expect(submitted).toBe(false)
+  })
+
   it('shows Edit income and Save when editing', () => {
     render(<IncomeForm {...baseProps} isEditing />)
 
@@ -285,6 +295,55 @@ describe('IncomeForm', () => {
     expect(onFieldChange).toHaveBeenCalledWith('splitToReserve', 'false')
   })
 
+  it('reports ticking the split checkbox via onFieldChange', () => {
+    const onFieldChange = vi.fn()
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={false} onFieldChange={onFieldChange} />)
+
+    fireEvent.click(screen.getByLabelText('Split to pots'))
+
+    expect(onFieldChange).toHaveBeenCalledWith('splitToReserve', 'true')
+  })
+
+  it('reports date and gross value changes', () => {
+    const onFieldChange = vi.fn()
+    render(<IncomeForm {...baseProps} onFieldChange={onFieldChange} />)
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-15' } })
+    fireEvent.change(screen.getByLabelText('Gross value'), { target: { value: '120' } })
+
+    expect(onFieldChange.mock.calls).toEqual([
+      ['date', '2026-07-15'],
+      ['grossValue', '120'],
+    ])
+  })
+
+  it('keeps the save error out of the alert while a funding line carries its own error', () => {
+    render(<IncomeForm {...baseProps} saveError="Check the funding lines." funding={{ ...FUNDING, errors: { 'line-0-bank': 'Choose a bank.' } }} />)
+
+    expect(screen.queryByText('Check the funding lines.')).not.toBeInTheDocument()
+  })
+
+  it('lets the Pots account be chosen once the accounts are ready', () => {
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} potsAccountId="p1" />)
+
+    expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeEnabled()
+    expect(screen.queryByText(/Pots accounts couldn.t be loaded/)).not.toBeInTheDocument()
+  })
+
+  it('offers no placeholder for a blank Pots account', () => {
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} potsAccountId="" />)
+
+    expect(optionNames(screen.getByRole('combobox', { name: /^Pots account/ }))).toEqual(['Select Pots account…', 'Holidays', 'Reserva'])
+  })
+
+  it('keeps a stored Pots account that is no longer listed', () => {
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} potsAccountId="p9" />)
+
+    const picker = screen.getByRole('combobox', { name: /^Pots account/ })
+    expect(picker).toHaveValue('p9')
+    expect(optionNames(picker)).toEqual(['Select Pots account…', 'Selected Pots account', 'Holidays', 'Reserva'])
+  })
+
   it('shows the Pots account picker only while the split is ticked', () => {
     const { rerender } = render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} potsAccountId="p1" />)
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toHaveValue('p1')
@@ -366,8 +425,21 @@ describe('IncomeForm', () => {
 
     expect(screen.getByText(/Pots accounts couldn.t be loaded/)).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled()
+    expect(screen.queryByText(/^No active Pots account/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Retry loading Pots accounts' }))
     expect(onRetryPotsAccounts).toHaveBeenCalled()
+  })
+
+  it('keeps the listed Pots accounts locked while they failed to reload', () => {
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} potsAccountId="p1" potsAccountsStatus="failed" />)
+
+    expect(screen.getByRole('combobox', { name: /^Pots account/ })).toBeDisabled()
+  })
+
+  it('says nothing about the Pots accounts failing while the split is not ticked', () => {
+    render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={false} potsAccounts={[]} potsAccountsStatus="failed" />)
+
+    expect(screen.queryByText(/Pots accounts couldn.t be loaded/)).not.toBeInTheDocument()
   })
 
   it('disables the Pots account picker while saving', () => {
