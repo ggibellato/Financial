@@ -54,4 +54,16 @@ describe('useAccountTemplateGroups', () => {
 
     await waitFor(() => expect(getAccountTemplateGroupsMock).toHaveBeenLastCalledWith(2026, 11))
   })
+
+  it('reports loading from its very first render', () => {
+    const loading: boolean[] = []
+
+    renderHook(() => {
+      const groups = useAccountTemplateGroups(2026, 10)
+      loading.push(groups.isLoading)
+      return groups
+    })
+
+    expect(loading[0]).toBe(true)
+  })
 })

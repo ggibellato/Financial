@@ -52,4 +52,16 @@ describe('useMonthTransactions', () => {
     await waitFor(() => expect(result.current.data).toEqual(ROWS))
     expect(result.current.error).toBeNull()
   })
+
+  it('reports loading from its very first render', () => {
+    const loading: boolean[] = []
+
+    renderHook(() => {
+      const transactions = useMonthTransactions(2026, 10)
+      loading.push(transactions.isLoading)
+      return transactions
+    })
+
+    expect(loading[0]).toBe(true)
+  })
 })

@@ -96,4 +96,38 @@ describe('useFocusReloadedContent', () => {
 
     await waitFor(() => expect(screen.getByRole('region', { name: 'Totals' })).toHaveFocus())
   })
+
+  it('moves focus into a region that mounts already loading after Try again, and only once it has loaded', async () => {
+    function Rows({ isLoading }: { isLoading: boolean }) {
+      const regionRef = useRef<HTMLDivElement>(null)
+      useFocusReloadedContent(regionRef, isLoading)
+      return (
+        <div ref={regionRef} aria-label="Rows" role="region">
+          {isLoading ? 'Loading' : <button>First row</button>}
+        </div>
+      )
+    }
+    function Page() {
+      const [phase, setPhase] = useState<'error' | 'loading' | 'loaded'>('error')
+      return (
+        <div>
+          {phase === 'error' ? (
+            <ErrorState message="Unable to load" onRetry={() => setPhase('loading')} />
+          ) : (
+            <Rows isLoading={phase === 'loading'} />
+          )}
+          {phase === 'loading' && <button onClick={() => setPhase('loaded')}>Finish</button>}
+        </div>
+      )
+    }
+    render(<Page />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    await act(async () => {})
+    expect(screen.getByRole('region', { name: 'Rows' })).not.toHaveFocus()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
+
+    await waitFor(() => expect(screen.getByRole('button', { name: 'First row' })).toHaveFocus())
+  })
 })
