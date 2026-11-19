@@ -119,4 +119,13 @@ describe('useAssetSearchOptions', () => {
     await waitFor(() => expect(result.current.options).toEqual([SAME_PORTFOLIO_OTHER_ASSET]))
     expect(getAdminAssetsMock).toHaveBeenCalledTimes(2)
   })
+
+  it('says the assets could not be loaded when the load fails without a reason', async () => {
+    getAdminAssetsMock.mockRejectedValue('offline')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAssetSearchOptions(), { wrapper })
+    setNode(ASSET_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load assets.'))
+  })
 })

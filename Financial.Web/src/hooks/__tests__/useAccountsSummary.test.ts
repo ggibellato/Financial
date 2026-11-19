@@ -122,4 +122,16 @@ describe('useAccountsSummary', () => {
     expect(getCategoryTotalsByMonthMock).toHaveBeenCalledWith(2026, 8)
   })
 
+
+  it('reports loading from its very first render', () => {
+    const loading: boolean[] = []
+
+    renderHook(() => {
+      const summary = useAccountsSummary(2026, 7)
+      loading.push(summary.isLoading)
+      return summary
+    })
+
+    expect(loading[0]).toBe(true)
+  })
 })
