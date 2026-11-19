@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   Button,
   Dialog,
@@ -39,6 +39,8 @@ export default function ConfirmDialog({
   const styles = useFormPanelStyles()
   const descriptionId = useId()
   const restoreFocusTarget = useRef<HTMLElement | null>(null)
+  const [shownContent, setShownContent] = useState({ message, error })
+  if (open && (shownContent.message !== message || shownContent.error !== error)) setShownContent({ message, error })
 
   useLayoutEffect(() => {
     if (open) restoreFocusTarget.current = document.activeElement as HTMLElement | null
@@ -63,8 +65,8 @@ export default function ConfirmDialog({
         <DialogBody>
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>
-            <p id={descriptionId}>{message}</p>
-            <ActionErrorAlert message={error} />
+            <p id={descriptionId}>{shownContent.message}</p>
+            <ActionErrorAlert message={shownContent.error} />
           </DialogContent>
           <div className={styles.actions}>
             {confirmLabel && (

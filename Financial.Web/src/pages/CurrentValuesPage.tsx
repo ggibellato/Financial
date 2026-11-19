@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Button, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
+import { Button, MessageBar, MessageBarBody, MessageBarTitle, Table, TableBody, TableHeader, TableRow } from '@fluentui/react-components'
 import { SearchRegular } from '@fluentui/react-icons'
 import { apiClient } from '../api/financialApiClient'
 import type { BrokerNodeDto, PortfolioReferenceDto } from '../api/types'
@@ -21,6 +21,8 @@ interface PriceResult {
   price: number | null
   error?: string
 }
+
+const resultKey = (result: PriceResult) => `${result.exchange}-${result.ticker}-${result.assetName}`
 
 export default function CurrentValuesPage() {
   const [brokers, setBrokers] = useState<BrokerNodeDto[]>([])
@@ -139,6 +141,7 @@ export default function CurrentValuesPage() {
     price: (r) => r.price,
   }
   const { sortedRows, sortState, requestSort } = useSortableRows(results, priceAccessors)
+  const failedResults = results.filter((result) => result.error)
 
   if (isLoading) {
     return <LoadingState message="Loading data…" />
@@ -172,6 +175,21 @@ export default function CurrentValuesPage() {
         <p>{progressText}</p>
       ) : null}
 
+      {failedResults.length > 0 && (
+        <MessageBar intent="warning" layout="multiline">
+          <MessageBarBody>
+            <MessageBarTitle>{failedResults.length === 1 ? 'One price could not be fetched' : `${failedResults.length} prices could not be fetched`}</MessageBarTitle>
+            <ul className="current-values__failures">
+              {failedResults.map((result) => (
+                <li key={resultKey(result)}>
+                  {result.ticker}: {result.error}
+                </li>
+              ))}
+            </ul>
+          </MessageBarBody>
+        </MessageBar>
+      )}
+
       {results.length > 0 && (
         <section className="current-values__results">
           <Table className="data-table" aria-label="Current prices">
@@ -200,7 +218,7 @@ export default function CurrentValuesPage() {
             </TableHeader>
             <TableBody>
               {sortedRows.map((result) => (
-                <TableRow key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
+                <TableRow key={resultKey(result)}>
                   <DataTableCell label="Ticker">{result.ticker}</DataTableCell>
                   <DataTableCell label="Name"><TruncatedText text={result.name} /></DataTableCell>
                   <DataTableCell label="Price" className="current-values__col--price data-table__col--numeric">

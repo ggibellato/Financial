@@ -185,8 +185,9 @@ function reducer(state: MensaisState, action: MensaisAction): MensaisState {
       return { ...state, isAdding: false, addError: action.payload.message, addErrorFields: action.payload.fields }
     case 'DELETE_START':
       return { ...state, deletingBillId: action.payload, deleteError: null }
-    case 'DELETE_SUCCESS':
-      return { ...state, deletingBillId: null }
+    case 'DELETE_SUCCESS': {
+      return { ...state, ...(state.editingId === state.deletingBillId ? CLOSED_EDIT_FORM : {}), deletingBillId: null }
+    }
     case 'DELETE_ERROR':
       return { ...state, deletingBillId: null, deleteError: action.payload }
     case 'RESET_START':

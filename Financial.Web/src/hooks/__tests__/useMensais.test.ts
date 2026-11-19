@@ -416,6 +416,20 @@ describe('useMensais', () => {
     expect([...result.current.brasilBills, ...result.current.ukBills]).toEqual(loadedBills)
   })
 
+  it.each([
+    ['closes the edit form when its bill is deleted', 'b1', null],
+    ['keeps the edit form open when another bill is deleted', 'b2', 'b1'],
+  ])('%s', async (_, deletedId, expectedEditingId) => {
+    deleteMensaisBillMock.mockResolvedValue(undefined)
+    const result = await renderLoaded()
+    act(() => result.current.showEditForm(BILLS[0]))
+
+    act(() => result.current.deleteBill(deletedId))
+
+    await waitFor(() => expect(result.current.deletingBillId).toBeNull())
+    expect(result.current.editingId).toBe(expectedEditingId)
+  })
+
   it('ignores a second delete while one is still running', async () => {
     deleteMensaisBillMock.mockReturnValue(new Promise(() => {}))
     const { result } = renderHook(() => useMensais())

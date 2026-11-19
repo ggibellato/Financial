@@ -241,6 +241,48 @@ describe('CurrentValuesPage', () => {
     expect(priceCells[1]).toHaveTextContent('20.00')
   })
 
+  it('lists each failed fetch with its reason, and nothing when every fetch succeeds', async () => {
+    getBrokersMock.mockResolvedValue([
+      makeBroker([
+        {
+          name: 'Default',
+          assets: [
+            { name: 'BCIA11', ticker: 'BCIA11' },
+            { name: 'KLBN4', ticker: 'KLBN4' },
+            { name: 'PETR4', ticker: 'PETR4' },
+          ],
+        },
+      ]),
+    ])
+    getCurrentPriceMock
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce(makePrice('KLBN4', 20.0))
+      .mockRejectedValueOnce(new Error('Ticker not found'))
+      .mockResolvedValue(makePrice('KLBN4', 20.0))
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
+    await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
+
+    expect(screen.getByText('2 prices could not be fetched')).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['BCIA11: Network error', 'PETR4: Ticker not found'])
+
+    fireEvent.click(screen.getByRole('button', { name: 'Check prices' }))
+    await waitFor(() => expect(screen.queryByText(/Completed!/)).toBeInTheDocument())
+
+    expect(screen.queryByText(/could not be fetched/)).not.toBeInTheDocument()
+  })
+
+  it('says one price could not be fetched for a single failure', async () => {
+    getBrokersMock.mockResolvedValue([makeBroker([{ name: 'Default', assets: [{ name: 'BCIA11', ticker: 'BCIA11' }] }])])
+    getCurrentPriceMock.mockRejectedValueOnce(new Error('Network error'))
+
+    render(<CurrentValuesPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Check prices' }))
+
+    expect(await screen.findByText('One price could not be fetched')).toBeInTheDocument()
+  })
+
   it('sorts results by Price ascending when the Price header button is clicked', async () => {
     getBrokersMock.mockResolvedValue([
       makeBroker([

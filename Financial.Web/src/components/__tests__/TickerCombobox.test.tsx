@@ -98,6 +98,15 @@ describe('TickerCombobox', () => {
     expect(screen.getByRole('option', { name: 'CSAN3' })).toHaveClass('ticker-combobox__option--active')
   })
 
+  it('pressing ArrowUp while closed opens the dropdown and activates the last option', () => {
+    renderCombobox()
+
+    pressKey('ArrowUp')
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(activeOptions()).toEqual([screen.getByRole('option', { name: 'CSAN3' })])
+  })
+
   it('pressing ArrowUp moves the active option back, capped at the first one', () => {
     Element.prototype.scrollIntoView = vi.fn()
     renderCombobox()
