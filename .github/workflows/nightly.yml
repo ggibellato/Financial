@@ -90,8 +90,21 @@ jobs:
         retention-days: 14
 
   stryker-js:
+    name: stryker-js (${{ matrix.name }})
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Web.Logic
+            config: stryker.config.json
+            reports: mutation
+            incremental: stryker-incremental.json
+          - name: Web.Components
+            config: stryker.components.config.json
+            reports: mutation-components
+            incremental: stryker-components-incremental.json
     defaults:
       run:
         working-directory: Financial.Web
@@ -112,25 +125,25 @@ jobs:
     - name: Restore incremental cache
       uses: actions/cache@v4
       with:
-        path: Financial.Web/reports/stryker-incremental.json
-        key: stryker-js-${{ github.run_id }}
-        restore-keys: stryker-js-
+        path: Financial.Web/reports/${{ matrix.incremental }}
+        key: stryker-js-${{ matrix.name }}-${{ github.run_id }}
+        restore-keys: stryker-js-${{ matrix.name }}-
 
     - name: Run StrykerJS
-      run: npm run test:mutation
+      run: npm run test:mutation -- ${{ matrix.config }}
 
     - name: Publish mutation score
       if: always()
       shell: pwsh
       working-directory: .
-      run: ./.github/scripts/mutation-score.ps1 -Report Financial.Web/reports/mutation/mutation-report.json -Name Web.Logic
+      run: ./.github/scripts/mutation-score.ps1 -Report Financial.Web/reports/${{ matrix.reports }}/mutation-report.json -Name ${{ matrix.name }}
 
     - name: Upload mutation report
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: stryker-js
-        path: Financial.Web/reports/mutation
+        name: stryker-js-${{ matrix.name }}
+        path: Financial.Web/reports/${{ matrix.reports }}
         retention-days: 14
 
   e2e-web:
