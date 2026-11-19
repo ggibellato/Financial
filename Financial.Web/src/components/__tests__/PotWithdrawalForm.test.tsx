@@ -10,6 +10,7 @@ import { fireEvent, render, screen, waitFor, within } from '../../test/renderWit
 import { pinDate } from '../../test-utils/pinDate'
 import PotWithdrawalForm from '../PotWithdrawalForm'
 import { findErrorAlert } from '../../test-utils/errorAlert'
+import { optionNames } from '../../test-utils/optionNames'
 
 const { createPotWithdrawalMock, updatePotWithdrawalMock, getPotsMock } = vi.hoisted(() => ({
   createPotWithdrawalMock: vi.fn<FinancialApiClient['createPotWithdrawal']>(),
@@ -255,12 +256,7 @@ describe('PotWithdrawalForm from the Pots account', () => {
 
     expect(await screen.findByText('Category is required when a bank is selected.')).toBeInTheDocument()
     expect(screen.getByLabelText(/^Category/)).toHaveFocus()
-    expect(within(screen.getByLabelText(/^Category/)).getAllByRole('option').map((option) => option.textContent)).toEqual([
-      'Select a category',
-      'Ariana',
-      'Casa',
-      'Saude',
-    ])
+    expect(optionNames(screen.getByLabelText(/^Category/))).toEqual(['Select a category', 'Ariana', 'Casa', 'Saude'])
     expect(createPotWithdrawalMock).not.toHaveBeenCalled()
 
     setThroughBank('')

@@ -130,7 +130,7 @@ describe('PotDepositForm', () => {
     expect(screen.getByText('clean')).toBeInTheDocument()
   })
 
-  it('shows the pot picker only for one pot, and heads the preview amounts with the currency', async () => {
+  it('hides the pot picker while splitting, and heads the preview amounts with the currency', async () => {
     render(<Harness />)
 
     const table = await screen.findByRole('table', { name: 'Split preview' })

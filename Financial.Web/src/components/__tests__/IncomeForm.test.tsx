@@ -318,8 +318,16 @@ describe('IncomeForm', () => {
   })
 
   it('keeps the save error out of the alert while a funding line carries its own error', () => {
-    render(<IncomeForm {...baseProps} saveError="Check the funding lines." funding={{ ...FUNDING, errors: { 'line-0-bank': 'Choose a bank.' } }} />)
+    const funding: IncomeFunding = {
+      ...FUNDING,
+      isShown: true,
+      isHandSplit: true,
+      lines: [{ key: 'l1', bankId: '', amount: '90.00' }],
+      errors: { 'line:l1:bankId': 'Choose a bank.' },
+    }
+    render(<IncomeForm {...baseProps} saveError="Check the funding lines." funding={funding} />)
 
+    expect(screen.getByText('Choose a bank.')).toBeInTheDocument()
     expect(screen.queryByText('Check the funding lines.')).not.toBeInTheDocument()
   })
 
@@ -330,7 +338,7 @@ describe('IncomeForm', () => {
     expect(screen.queryByText(/Pots accounts couldn.t be loaded/)).not.toBeInTheDocument()
   })
 
-  it('offers no placeholder for a blank Pots account', () => {
+  it('adds no Selected Pots account option when none is stored', () => {
     render(<IncomeForm {...baseProps} incomeSource="2" splitToReserve={true} potsAccountId="" />)
 
     expect(optionNames(screen.getByRole('combobox', { name: /^Pots account/ }))).toEqual(['Select Pots account…', 'Holidays', 'Reserva'])
