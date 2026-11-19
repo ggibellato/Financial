@@ -703,6 +703,36 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     await waitFor(() => expect(screen.getByText(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)).toBeInTheDocument())
   })
 
+  it('says while the deposit named in the address loads', async () => {
+    let finishLoad: (operation: PotOperationDto) => void = () => undefined
+    getPotOperationMock.mockReturnValue(new Promise((resolve) => { finishLoad = resolve }))
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
+
+    expect(await screen.findByText('Loading the deposit or withdrawal…')).toBeInTheDocument()
+
+    finishLoad(DEPOSIT)
+
+    expect(await operationForm('Edit deposit')).toBeInTheDocument()
+    expect(screen.queryByText('Loading the deposit or withdrawal…')).not.toBeInTheDocument()
+  })
+
+  it('reads the deposit named in the address only once the form options have loaded', async () => {
+    let finishCategories: (categories: CategoryDto[]) => void = () => undefined
+    getCategoriesMock.mockReturnValue(new Promise((resolve) => { finishCategories = resolve }))
+    getPotOperationMock.mockResolvedValue(DEPOSIT)
+    withPotsAccount()
+    renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10&operation=op1`)
+    await screen.findByRole('table', { name: 'Pots' })
+    await act(async () => {})
+
+    expect(getPotOperationMock).not.toHaveBeenCalled()
+
+    finishCategories(CATEGORIES)
+
+    expect(await operationForm('Edit deposit')).toBeInTheDocument()
+  })
+
   it('returns focus to the selected tab when a form opened from the address closes', async () => {
     const user = userEvent.setup()
     getPotOperationMock.mockResolvedValue(DEPOSIT)
@@ -879,6 +909,7 @@ describe('AccountScreenPage on a Pots account', () => {
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
 
     const table = await screen.findByRole('table', { name: 'Pots' })
+    expect(screen.getByRole('tablist', { name: 'Pots views' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Pots', selected: true })).toBeInTheDocument()
     expect(screen.getByRole('tabpanel', { name: 'Pots' })).toBeInTheDocument()
     expect(getPotsMock).toHaveBeenCalledWith(RESERVA_ID, 2026, 10)
@@ -1510,6 +1541,21 @@ describe('AccountScreenPage', () => {
     expect(screen.getByLabelText('Month')).toHaveValue('2026-08')
   })
 
+  it('names the transactions region by its heading, which takes focus without joining the tab order', async () => {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    const heading = await screen.findByRole('heading', { name: 'Transactions' })
+    expect(screen.getByRole('region', { name: 'Transactions' })).toContainElement(heading)
+    expect(heading).toHaveAttribute('tabindex', '-1')
+  })
+
+  it('leaves focus alone when the month first loads', async () => {
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
+
+    expect(await screen.findByText('Tesco')).toBeInTheDocument()
+    expect(document.body).toHaveFocus()
+  })
+
   it('shows skeletons for the header and grid on first load', () => {
     getAccountMock.mockReturnValue(new Promise(() => {}))
 
@@ -1561,6 +1607,7 @@ describe('AccountScreenPage', () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
 
     expect(await screen.findByText('Unable to load this account.')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Loading account')).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Barclays' })).toBeInTheDocument()
@@ -1613,6 +1660,32 @@ describe('AccountScreenPage actions', () => {
     await screen.findByRole('heading', { level: 1, name: 'Barclays' })
     await waitFor(() => expect(screen.getByRole('button', { name: 'New expense' })).toBeEnabled())
   }
+
+  it('ticks Counts toward tithe for a tithe category and lets it be unticked', async () => {
+    const user = userEvent.setup()
+    getCategoriesMock.mockResolvedValue([...CATEGORIES, { id: 'category-church', name: 'Church', active: true, isInvestment: false, isTithe: true, hasReferences: true }])
+    await openScreen()
+    await user.click(screen.getByRole('button', { name: 'New expense' }))
+    await user.selectOptions(await screen.findByLabelText(/^Category/), 'category-church')
+
+    const tithe = screen.getByRole('checkbox', { name: 'Counts toward tithe' })
+    expect(tithe).toBeChecked()
+    await user.click(tithe)
+    expect(tithe).not.toBeChecked()
+  })
+
+  it('ticks Split to pots for a source that splits and lets it be unticked', async () => {
+    const user = userEvent.setup()
+    getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, { id: 'source-bonus', name: 'Bonus', isActive: true, group: 'Other', potsAccountId: RESERVA_ID, hasReferences: true }])
+    await openScreen()
+    await user.click(screen.getByRole('button', { name: 'New income' }))
+    await user.selectOptions(await screen.findByLabelText(/^Source/), 'source-bonus')
+
+    const split = screen.getByRole('checkbox', { name: 'Split to pots' })
+    expect(split).toBeChecked()
+    await user.click(split)
+    expect(split).not.toBeChecked()
+  })
 
   it('[AC P60-F05-bank-account-screen-05] renders exactly the allowed actions: seven for a bank, a reduced list as sent, none when inactive', async () => {
     await openScreen()
@@ -2119,6 +2192,23 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
     expect(screen.queryByRole('heading', { name: 'Edit transfer' })).not.toBeInTheDocument()
   })
 
+  it('waits for the month to load before acting on the edit address it arrives with', async () => {
+    getAccountTransactionsMock.mockResolvedValue([])
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`, [`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&edit=TransferOut-t1`])
+    expect(await screen.findByText('No transactions in September 2026.')).toBeInTheDocument()
+    let finishRows: (rows: AccountTransactionDto[]) => void = () => undefined
+    getAccountTransactionsMock.mockReturnValue(new Promise((resolve) => { finishRows = resolve }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Browser back' }))
+
+    await waitFor(() => expect(getAccountTransactionsMock).toHaveBeenCalledTimes(2))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+
+    finishRows(ROWS)
+
+    expect(await screen.findByRole('heading', { name: 'Edit transfer' })).toBeInTheDocument()
+  })
+
   it('says when the edit address names a row the month no longer has, and Dismiss drops it', async () => {
     renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10&edit=Expense-gone`)
 
@@ -2225,6 +2315,24 @@ describe('AccountScreenPage transfers, reconcile and row actions', () => {
 
     await waitFor(() => expect(deleteAccountTransferMock).toHaveBeenCalledWith('t1'))
     expect(await screen.findByText('Transfer deleted')).toBeInTheDocument()
+  })
+
+  it('stops moving focus to the heading once the reload after a delete has arrived', async () => {
+    const user = userEvent.setup()
+    renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`, [`/cashflow/accounts/${BARCLAYS_ID}?month=2026-09`])
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Transfer to' })).toBeEnabled())
+    getAccountTransactionsMock.mockResolvedValue(ROWS.slice(1))
+    await user.click(within(rowOf('Tesco')).getByRole('button', { name: /^Delete expense\b/ }))
+    await user.click(await dialogButton('Delete expense', 'Delete'))
+    await waitFor(() => expect(screen.queryByText('Tesco')).not.toBeInTheDocument())
+    getAccountTransactionsMock.mockResolvedValue([accountTransactionRow({ id: 'e2', kind: 'Expense', date: '2026-09-03', description: 'Sainsbury', amount: -10, canEdit: true })])
+    act(() => screen.getByLabelText('Month').focus())
+    act(() => screen.getByLabelText('Month').blur())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Browser back' }))
+
+    expect(await screen.findByText('Sainsbury')).toBeInTheDocument()
+    expect(document.body).toHaveFocus()
   })
 
   it('deletes nothing when the delete is cancelled, and returns focus to the row Delete button', async () => {
@@ -2379,6 +2487,7 @@ describe('AccountScreenPage card screen', () => {
     renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10`)
 
     expect(await screen.findByText('Taxi')).toBeInTheDocument()
+    expect(screen.getByRole('tablist', { name: 'Card views' })).toBeInTheDocument()
     expect(screen.getByRole('tab', { name: 'Transactions', selected: true })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: /^Purchased/ })).toBeInTheDocument()
     expect(screen.getByText('Card payment')).toBeInTheDocument()

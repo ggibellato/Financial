@@ -126,6 +126,22 @@ describe('AccountTransactionsGrid', () => {
       expect(within(paidByOther).getByText('—')).toBeInTheDocument()
     })
 
+    it('sorts by note, putting entries with no note last', () => {
+      renderSettlement([
+        entryRow('Padaria', 10, 'BRL', { note: 'pão' }),
+        entryRow('Taxa', 20, 'BRL', { note: '' }),
+        entryRow('Farmácia', 30, 'BRL', { note: 'metade' }),
+      ])
+
+      fireEvent.click(screen.getByRole('button', { name: 'Note' }))
+
+      expect(bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)).toEqual([
+        'Description:Farmácia',
+        'Description:Padaria',
+        'Description:Taxa',
+      ])
+    })
+
     it('[AC P60-F12-settlement-screen-03] hides the Converted column on a one-currency account', () => {
       renderSettlement([entryRow('Taxa', 80, 'GBP', {})], false)
 
@@ -200,6 +216,19 @@ describe('AccountTransactionsGrid', () => {
     expect(screen.getByRole('columnheader', { name: 'Amount' })).toHaveClass('data-table__col--numeric')
   })
 
+  it('leaves the round-up cell blank on a row with no round-up', () => {
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    const incomeCells = within(bodyRows()[1]).getAllByRole('cell')
+    expect(incomeCells[6].textContent).toBe('Round-up:')
+  })
+
+  it('lets the table take focus without adding it to the tab order', () => {
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    expect(screen.getByRole('table', { name: 'Transactions' })).toHaveAttribute('tabindex', '-1')
+  })
+
   it('labels each kind and shows the date, category and counterpart', () => {
     render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
 
@@ -266,6 +295,31 @@ describe('AccountTransactionsGrid', () => {
 
     expect(within(bodyRows()[0]).getByRole('button', { name: /^Edit expense\b/ })).toBeDisabled()
     expect(within(bodyRows()[0]).getByRole('button', { name: /^Delete expense\b/ })).toBeEnabled()
+  })
+
+  it('disables a linked row, but not a card payment, while editing is unavailable', () => {
+    const linked = accountTransactionRow({
+      id: 'e9',
+      kind: 'Expense',
+      date: '2026-10-10',
+      description: 'Deposit to Reserva',
+      amount: -90,
+      canEdit: false,
+      operation: { operationId: 'op1', kind: 'Deposit', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null },
+    })
+    const payment = accountTransactionRow({
+      id: 'p1',
+      kind: 'CardPayment',
+      date: '2026-10-12',
+      description: 'Platinum Visa 6007 payment – Oct 2026 statement',
+      amount: -512.3,
+      canEdit: false,
+      statement: { accountId: 'visa-id', year: 2026, month: 10 },
+    })
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={[linked, payment]} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
+
+    expect(screen.getByRole('button', { name: /^Edit deposit Deposit to Reserva\b/ })).toBeDisabled()
+    expect(screen.getByRole('button', { name: /^Edit card payment\b/ })).toBeEnabled()
   })
 
   it('labels the date column as asked and card payments by their kind', () => {
@@ -473,6 +527,15 @@ describe('AccountTransactionsGrid', () => {
       filterTo('Category', 'Home')
 
       expect(shownDescriptions()).toEqual(['Description:Amazon'])
+    })
+
+    it('offers no category value for rows with no category', () => {
+      renderAccountGrid()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+
+      expect(screen.getByRole('checkbox', { name: 'Groceries' })).toBeInTheDocument()
+      expect(screen.queryByRole('checkbox', { name: 'null' })).not.toBeInTheDocument()
     })
 
     it('narrows by description text, ignoring case, combined with the type filter', () => {
