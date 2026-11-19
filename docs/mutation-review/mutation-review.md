@@ -202,7 +202,7 @@ uses the repo folder.
 
 | # | Task | Status | PR | Notes |
 |---|---|---|---|---|
-| 10.1 | Add each reviewed project to the nightly `stryker-dotnet` matrix with its own break threshold | ⬜ | | |
+| 10.1 | Add each reviewed project to the nightly `stryker-dotnet` matrix with its own break threshold | ✅ | | Seven projects added, each breaking 5 points below its score measured on 2026-11-19 |
 | 10.2 | Widen the nightly StrykerJS `mutate` to the reviewed components | ⬜ | | |
 | 10.3 | Raise the existing break thresholds once scores hold for a week (`docs/ci-affected-pipeline.md`) | ⬜ | | |
 | 10.4 | Decide on an advisory PR job mutating changed files only (`--since origin/main`) | ⬜ | | |
@@ -318,3 +318,4 @@ One line per working session: date, slice, outcome.
 | 2026-11-19 | 5.14 | Account form options, inline form slice, overview address, holding navigation, accounts summary, asset search and open lots hooks 90.0% → 96.7% |
 | 2026-11-19 | 5.15 | Summary, breakdown, dashboard, month selection, dialog and toast hooks 87.7% → 93.0% |
 | 2026-11-19 | 5.16 | Smallest hooks and helpers 81.6% → 97.4%; last hooks slice, the 5.x row is done |
+| 2026-11-19 | 10.1 | Nightly `stryker-dotnet` matrix covers every reviewed .NET project, each with its own break threshold |

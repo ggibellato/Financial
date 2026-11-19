@@ -22,11 +22,29 @@ jobs:
       matrix:
         include:
           - name: CashFlow.Domain
-            project: Financial.CashFlow.Domain.csproj
-            tests: Tests/Financial.CashFlow.Domain.Tests
+            break: 72
           - name: Investment.Domain
-            project: Financial.Investment.Domain.csproj
-            tests: Tests/Financial.Investment.Domain.Tests
+            break: 72
+          - name: CashFlow.Application
+            mutate: '!**/DependencyInjection/**'
+            break: 71
+          - name: Investment.Application
+            mutate: '!**/DependencyInjection/**'
+            also-tested-by: Investment.Infrastructure
+            break: 65
+          - name: CashFlow.Infrastructure
+            mutate: '!**/DependencyInjection/**'
+            break: 87
+          - name: Investment.Infrastructure
+            mutate: '!**/DependencyInjection/**'
+            break: 87
+          - name: Shared.Abstractions
+            break: 81
+          - name: Shared.Infrastructure
+            mutate: '!**/DependencyInjection/**'
+            break: 78
+          - name: Api
+            break: 89
     steps:
     - name: Checkout code
       uses: actions/checkout@v6
@@ -40,8 +58,21 @@ jobs:
       run: dotnet tool restore
 
     - name: Run Stryker.NET
-      working-directory: ${{ matrix.tests }}
-      run: dotnet stryker --config-file ../../.config/stryker-config.json --project ${{ matrix.project }} --output ../../TestResults/stryker/${{ matrix.name }}
+      shell: pwsh
+      working-directory: Financial.${{ matrix.name }}
+      env:
+        NAME: ${{ matrix.name }}
+        ALSO_TESTED_BY: ${{ matrix.also-tested-by }}
+        MUTATE: ${{ matrix.mutate }}
+        BREAK_AT: ${{ matrix.break }}
+      run: |
+        $arguments = @('stryker', '--config-file', '../.config/stryker-config.json', '--output', "../TestResults/stryker/$env:NAME", '--break-at', $env:BREAK_AT)
+        foreach ($testTarget in @($env:NAME, $env:ALSO_TESTED_BY) | Where-Object { $_ }) {
+          $arguments += @('--test-project', "../Tests/Financial.$testTarget.Tests/Financial.$testTarget.Tests.csproj")
+        }
+        if ($env:MUTATE) { $arguments += @('--mutate', $env:MUTATE) }
+        & dotnet @arguments
+        exit $LASTEXITCODE
 
     - name: Publish mutation score
       if: always()
