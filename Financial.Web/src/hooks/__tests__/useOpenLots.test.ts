@@ -94,4 +94,26 @@ describe('useOpenLots', () => {
     await waitFor(() => expect(result.current.error).toBe('Network down'))
     expect(result.current.isLoading).toBe(false)
   })
+
+  it("keeps the shown asset's lots while another asset's lots load", async () => {
+    getOpenLotsMock.mockResolvedValueOnce([OPEN_LOT]).mockReturnValueOnce(new Promise(() => undefined))
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useOpenLots(true), { wrapper })
+    setNode(ASSET_NODE)
+    await waitFor(() => expect(result.current.openLots).toEqual([OPEN_LOT]))
+
+    setNode({ ...ASSET_NODE, assetName: 'BBB', ticker: 'BBB' })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(true))
+    expect(result.current.openLots).toEqual([OPEN_LOT])
+  })
+
+  it('says the open lots could not be loaded when the load fails without a reason', async () => {
+    getOpenLotsMock.mockRejectedValue('offline')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useOpenLots(true), { wrapper })
+    setNode(ASSET_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load open lots.'))
+  })
 })
