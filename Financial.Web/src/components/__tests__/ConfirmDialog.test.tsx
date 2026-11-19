@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import ConfirmDialog, { type ConfirmDialogProps } from '../ConfirmDialog'
 
@@ -21,6 +21,10 @@ function renderDialog(overrides: Partial<ConfirmDialogProps> = {}) {
 }
 
 describe('ConfirmDialog', () => {
+  afterEach(() => {
+    delete (Element.prototype as Partial<Element>).animate
+  })
+
   it('names the dialog by its title and describes it by its message', () => {
     renderDialog()
 
@@ -74,6 +78,20 @@ describe('ConfirmDialog', () => {
     expect(onCancel).not.toHaveBeenCalled()
   })
 
+  it('keeps its message and error while it closes after the caller clears them', () => {
+    const dialog = (open: boolean, message: string, error: string | null) => (
+      <ConfirmDialog open={open} title="Unmark statement" message={message} cancelLabel="Cancel" error={error} onConfirm={vi.fn()} onCancel={vi.fn()} />
+    )
+    const { rerender } = render(dialog(true, 'Unmark March 2026 as paid?', 'Could not unmark.'))
+    holdAnimationsRunning()
+
+    rerender(dialog(false, '', null))
+
+    const dialogElement = screen.getByRole('dialog', { hidden: true })
+    expect(dialogElement).toHaveTextContent('Unmark March 2026 as paid?')
+    expect(dialogElement).toHaveTextContent('Could not unmark.')
+  })
+
   it('renders nothing while closed', () => {
     renderDialog({ open: false })
 
@@ -114,4 +132,10 @@ function Opener({ showOpener, showDialog }: { showOpener: boolean; showDialog: b
       )}
     </>
   )
+}
+
+function holdAnimationsRunning() {
+  Element.prototype.animate = function () {
+    return { playState: 'running', cancel() {}, pause() {}, play() {}, finish() {}, reverse() {}, persist() {} } as unknown as Animation
+  }
 }
