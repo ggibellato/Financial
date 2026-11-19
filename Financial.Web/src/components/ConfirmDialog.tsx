@@ -39,9 +39,8 @@ export default function ConfirmDialog({
   const styles = useFormPanelStyles()
   const descriptionId = useId()
   const restoreFocusTarget = useRef<HTMLElement | null>(null)
-  const [lastOpenContent, setLastOpenContent] = useState({ message, error })
-  if (open && (lastOpenContent.message !== message || lastOpenContent.error !== error)) setLastOpenContent({ message, error })
-  const content = open ? { message, error } : lastOpenContent
+  const [shownContent, setShownContent] = useState({ message, error })
+  if (open && (shownContent.message !== message || shownContent.error !== error)) setShownContent({ message, error })
 
   useLayoutEffect(() => {
     if (open) restoreFocusTarget.current = document.activeElement as HTMLElement | null
@@ -66,8 +65,8 @@ export default function ConfirmDialog({
         <DialogBody>
           <DialogTitle>{title}</DialogTitle>
           <DialogContent>
-            <p id={descriptionId}>{content.message}</p>
-            <ActionErrorAlert message={content.error} />
+            <p id={descriptionId}>{shownContent.message}</p>
+            <ActionErrorAlert message={shownContent.error} />
           </DialogContent>
           <div className={styles.actions}>
             {confirmLabel && (

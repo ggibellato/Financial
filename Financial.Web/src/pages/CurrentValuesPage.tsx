@@ -22,6 +22,8 @@ interface PriceResult {
   error?: string
 }
 
+const resultKey = (result: PriceResult) => `${result.exchange}-${result.ticker}-${result.assetName}`
+
 export default function CurrentValuesPage() {
   const [brokers, setBrokers] = useState<BrokerNodeDto[]>([])
   const [scope, setScope] = useState<PortfolioReferenceDto[]>([])
@@ -179,7 +181,7 @@ export default function CurrentValuesPage() {
             <MessageBarTitle>{failedResults.length === 1 ? 'One price could not be fetched' : `${failedResults.length} prices could not be fetched`}</MessageBarTitle>
             <ul className="current-values__failures">
               {failedResults.map((result) => (
-                <li key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
+                <li key={resultKey(result)}>
                   {result.ticker}: {result.error}
                 </li>
               ))}
@@ -216,7 +218,7 @@ export default function CurrentValuesPage() {
             </TableHeader>
             <TableBody>
               {sortedRows.map((result) => (
-                <TableRow key={`${result.exchange}-${result.ticker}-${result.assetName}`}>
+                <TableRow key={resultKey(result)}>
                   <DataTableCell label="Ticker">{result.ticker}</DataTableCell>
                   <DataTableCell label="Name"><TruncatedText text={result.name} /></DataTableCell>
                   <DataTableCell label="Price" className="current-values__col--price data-table__col--numeric">
