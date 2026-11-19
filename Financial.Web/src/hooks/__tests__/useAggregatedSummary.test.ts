@@ -170,4 +170,13 @@ describe('useAggregatedSummary', () => {
     expect(getSummaryByBrokerMock).not.toHaveBeenCalled()
     expect(result.current.summary).toBeNull()
   })
+
+  it('sets_the_fallback_error_when_the_failure_has_no_message', async () => {
+    getSummaryByBrokerMock.mockRejectedValue('offline')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useAggregatedSummary(), { wrapper })
+    setNode(BROKER_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load summary.'))
+  })
 })

@@ -146,4 +146,13 @@ describe('useBrokerBreakdown', () => {
     expect(getBrokerBreakdownMock).not.toHaveBeenCalled()
     expect(result.current.breakdown).toBeNull()
   })
+
+  it('sets_the_fallback_error_when_the_failure_has_no_message', async () => {
+    getBrokerBreakdownMock.mockRejectedValue('offline')
+    const { wrapper, setNode } = createSelectedNodeWrapper()
+    const { result } = renderHook(() => useBrokerBreakdown(), { wrapper })
+    setNode(BROKER_NODE)
+
+    await waitFor(() => expect(result.current.error).toBe('Unable to load breakdown.'))
+  })
 })
