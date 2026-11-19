@@ -402,6 +402,27 @@ describe('usePriceHistory', () => {
     expect(result.current.filteredEntries[0].date).toBe(recent.date)
   })
 
+  it('keeps a price dated on the first day of the window at a negative UTC offset', async () => {
+    const testTimeZone = process.env.TZ
+    process.env.TZ = 'America/Sao_Paulo'
+    try {
+      pinDate('2026-07-15T12:00:00-03:00')
+      const firstDay: AssetPriceSnapshotDto = { ...ENTRY_B, date: '2026-07-01' }
+      const dayBefore: AssetPriceSnapshotDto = { ...ENTRY_B, date: '2026-06-30' }
+      getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, priceSnapshots: [firstDay, dayBefore] })
+      const { wrapper, setNode } = createSelectedNodeWrapper()
+      const { result } = renderHook(() => usePriceHistory(), { wrapper })
+      setNode(ASSET_NODE)
+      await waitFor(() => expect(result.current.entries).toHaveLength(2))
+
+      act(() => result.current.setFilter('this-month'))
+
+      expect(result.current.filteredEntries.map((entry) => entry.date)).toEqual(['2026-07-01'])
+    } finally {
+      process.env.TZ = testTimeZone
+    }
+  })
+
   it('fetches_transactions_alongside_price_history', async () => {
     getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, transactions: [BUY_TRANSACTION] })
     const { wrapper, setNode } = createSelectedNodeWrapper()

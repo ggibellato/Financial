@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
-import { PERIOD_FILTER_OPTIONS, getPeriodFilterStartDate } from '../periodFilter'
+import { afterEach, describe, expect, it } from 'vitest'
+import { PERIOD_FILTER_OPTIONS, getPeriodFilterStartDate, isOnOrAfterPeriodStart } from '../periodFilter'
 
 describe('getPeriodFilterStartDate', () => {
   const referenceDate = new Date(2026, 6, 15) // 2026-07-15
@@ -37,6 +37,28 @@ describe('getPeriodFilterStartDate', () => {
   it('getPeriodFilterStartDate_AllTime_ReturnsNull', () => {
     const result = getPeriodFilterStartDate('all-time', referenceDate)
     expect(result).toBeNull()
+  })
+})
+
+describe('isOnOrAfterPeriodStart', () => {
+  const testTimeZone = process.env.TZ
+
+  afterEach(() => {
+    process.env.TZ = testTimeZone
+  })
+
+  it.each(['Europe/London', 'America/Sao_Paulo', 'Asia/Tokyo'])('keeps a date on the first day of the period and drops the day before in %s', (timeZone) => {
+    process.env.TZ = timeZone
+    const start = new Date(2026, 6, 1)
+
+    expect(isOnOrAfterPeriodStart('2026-07-01', start)).toBe(true)
+    expect(isOnOrAfterPeriodStart('2026-07-01T00:00:00', start)).toBe(true)
+    expect(isOnOrAfterPeriodStart('2026-06-30', start)).toBe(false)
+    expect(isOnOrAfterPeriodStart('2026-06-30T23:59:59', start)).toBe(false)
+  })
+
+  it('keeps every date when there is no period start', () => {
+    expect(isOnOrAfterPeriodStart('1990-01-01', null)).toBe(true)
   })
 })
 

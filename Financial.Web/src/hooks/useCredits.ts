@@ -3,7 +3,7 @@ import { apiClient } from '../api/financialApiClient'
 import type { CreditDto, SelectedNode } from '../api/types'
 import { useSelectedNode } from '../context/SelectedNodeContext'
 import type { PeriodFilterOption } from '../utils/periodFilter'
-import { DEFAULT_FILTER, getPeriodFilterStartDate } from '../utils/periodFilter'
+import { DEFAULT_FILTER, getPeriodFilterStartDate, isOnOrAfterPeriodStart } from '../utils/periodFilter'
 import { deleteFailedMessage, formatMonthKey, getDeleteErrorMessage, getErrorMessage, parseValidatedNumber, todayIsoDate, toInputDate } from '../utils/formatters'
 import { getStoredDefault, setStoredDefault } from '../utils/createFormDefaults'
 import { openInlineForm, reduceInlineForm, type InlineFormAction } from './inlineFormSlice'
@@ -317,8 +317,7 @@ export function useCredits(): CreditsData {
 
   const filteredCredits = useMemo(() => {
     const start = getPeriodFilterStartDate(state.selectedFilter, new Date())
-    if (!start) return credits
-    return credits.filter((c) => new Date(c.date) >= start)
+    return credits.filter((credit) => isOnOrAfterPeriodStart(credit.date, start))
   }, [credits, state.selectedFilter])
 
   const chartData = useMemo(() => aggregateByMonth(filteredCredits), [filteredCredits])
