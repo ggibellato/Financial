@@ -65,7 +65,12 @@ export default function TickerCombobox({ groups, value, onChange }: TickerCombob
       }
       if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setActiveIndex((prev) => Math.max(prev - 1, 0))
+        if (!isOpen) {
+          setIsOpen(true)
+          setActiveIndex(flatOptions.length - 1)
+        } else {
+          setActiveIndex((prev) => Math.max(prev - 1, 0))
+        }
         return
       }
       if (e.key === 'Enter' && isOpen && activeIndex >= 0) {
