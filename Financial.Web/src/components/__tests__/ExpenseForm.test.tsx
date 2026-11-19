@@ -182,6 +182,37 @@ describe('ExpenseForm', () => {
     expect(screen.getByLabelText(/^Value/)).not.toHaveAttribute('readonly')
   })
 
+  it('requires date and value only while the charge is not settled', () => {
+    const { rerender } = render(<ExpenseForm {...baseProps} isEditing paymentSource="bank-trading212" creditCardId="card-baamex" />)
+    expect(screen.getByLabelText(/^Date/)).toBeRequired()
+    expect(screen.getByLabelText(/^Value/)).toBeRequired()
+
+    rerender(<ExpenseForm {...baseProps} isEditing isSettled paymentSource="bank-trading212" creditCardId="card-baamex" />)
+    expect(screen.getByLabelText(/^Date/)).not.toBeRequired()
+    expect(screen.getByLabelText(/^Value/)).not.toBeRequired()
+  })
+
+  it('offers no round-up on a settled charge paid through a round-up bank', () => {
+    render(<ExpenseForm {...baseProps} isEditing isSettled paymentSource="bank-trading212" creditCardId="card-baamex" />)
+
+    expect(screen.queryByLabelText('Round-up')).not.toBeInTheDocument()
+  })
+
+  it('reports date, payment source and round-up changes', () => {
+    const onFieldChange = vi.fn()
+    render(<ExpenseForm {...baseProps} paymentSource="bank-trading212" onFieldChange={onFieldChange} />)
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-15' } })
+    fireEvent.change(screen.getByLabelText(/^Payment source/), { target: { value: 'bank-barclays' } })
+    fireEvent.change(screen.getByLabelText('Round-up'), { target: { value: '0.40' } })
+
+    expect(onFieldChange.mock.calls).toEqual([
+      ['date', '2026-07-15'],
+      ['paymentSource', 'bank-barclays'],
+      ['roundUpAmount', '0.40'],
+    ])
+  })
+
   it("defaults the invoice month to the date's month", () => {
     render(<ExpenseForm {...baseProps} paymentMode="card" date="2026-07-15" creditCardId="card-baamex" />)
 
@@ -339,9 +370,10 @@ describe('ExpenseForm with a locked bank', () => {
     const onSave = vi.fn()
     render(<ExpenseForm {...baseProps} onSave={onSave} />)
 
-    fireEvent.submit(screen.getByLabelText(/^Description/).closest('form') as HTMLFormElement)
+    const submitted = fireEvent.submit(screen.getByLabelText(/^Description/).closest('form') as HTMLFormElement)
 
     expect(onSave).toHaveBeenCalledOnce()
+    expect(submitted).toBe(false)
     expect(screen.getByRole('button', { name: 'Add expense' })).toHaveAttribute('type', 'submit')
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveAttribute('type', 'button')
   })

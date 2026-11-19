@@ -80,6 +80,38 @@ describe('TransferForm', () => {
     expect(screen.queryByText('Source and destination must be different banks.')).not.toBeInTheDocument()
   })
 
+  it('does not show the same-bank error before either bank is chosen', () => {
+    render(<TransferForm {...baseProps} sourceBank="" destinationBank="" />)
+
+    expect(screen.queryByText('Source and destination must be different banks.')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Transfer' })).toBeEnabled()
+  })
+
+  it('offers Select a bank on To even once one is chosen, and on From only until one is', () => {
+    const { rerender } = render(<TransferForm {...baseProps} />)
+
+    expect(optionNames(screen.getByLabelText(/^From/))).toEqual(['Barclays', 'Trading212', 'Chase'])
+    expect(optionNames(screen.getByLabelText(/^To/))).toEqual(['Select a bank', 'Trading212', 'Chase'])
+
+    rerender(<TransferForm {...baseProps} sourceBank="" />)
+    expect(optionNames(screen.getByLabelText(/^From/))).toEqual(['Select a bank', 'Barclays', 'Trading212', 'Chase'])
+  })
+
+  it('reports date, amount and note changes', () => {
+    const onFieldChange = vi.fn()
+    render(<TransferForm {...baseProps} onFieldChange={onFieldChange} />)
+
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-07-26' } })
+    fireEvent.change(screen.getByLabelText(/^Amount/), { target: { value: '50' } })
+    fireEvent.change(screen.getByLabelText('Note'), { target: { value: 'Rent' } })
+
+    expect(onFieldChange.mock.calls).toEqual([
+      ['date', '2026-07-26'],
+      ['amount', '50'],
+      ['note', 'Rent'],
+    ])
+  })
+
   it('calls onSave and onCancel', () => {
     const onSave = vi.fn()
     const onCancel = vi.fn()
@@ -131,6 +163,14 @@ describe('TransferForm', () => {
     expect(screen.getByLabelText(/^Amount received \(EUR\)/)).toBeInTheDocument()
   })
 
+  it('labels the amount plainly unless both currencies are known', () => {
+    const { rerender } = render(<TransferForm {...baseProps} />)
+    expect(screen.getByRole('spinbutton', { name: /^Amount\W*$/ })).toBeInTheDocument()
+
+    rerender(<TransferForm {...baseProps} destinationCurrency="EUR" />)
+    expect(screen.getByRole('spinbutton', { name: /^Amount\W*$/ })).toBeInTheDocument()
+  })
+
   it('titles the form Transfer from when this account is the destination', () => {
     render(<TransferForm {...baseProps} lockedSide={{ side: 'destination', name: 'Barclays' }} />)
 
@@ -172,9 +212,10 @@ describe('TransferForm', () => {
     const onSave = vi.fn()
     render(<TransferForm {...baseProps} onSave={onSave} />)
 
-    fireEvent.submit(screen.getByTestId('transfer-form-panel'))
+    const submitted = fireEvent.submit(screen.getByTestId('transfer-form-panel'))
 
     expect(onSave).toHaveBeenCalledOnce()
+    expect(submitted).toBe(false)
   })
 
   it('[AC P60-F06-admin-accounts-page-05] leaves an inactive bank out of From and To on a new transfer', () => {
