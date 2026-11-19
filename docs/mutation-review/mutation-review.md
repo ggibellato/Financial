@@ -176,7 +176,11 @@ uses the repo folder.
 | 5.10 | Financial.Web | Shared helpers: `useCrudResource`, `useAsyncResource`, `useSortableRows`, `useColumnFilters`, `useMediaQuery`, `useConfirmedDelete`, `useDuplicateNameField` | ✅ | 72.8% | 84.4% | 22 | 2 | 33 | [#1326](https://github.com/ggibellato/Financial/pull/1326) | [Notes](5.10.md); most survivors are stable dependency lists; three sort mutants are equivalent only on V8 |
 | 5.11 | Financial.Web | `useCalendarConnection`, `useCalendarSyncStatuses`, `useReportingCurrency`, `useSyncStatus` | ✅ | 60.4% | 76.9% | 7 | 0 | 15 | [#1327](https://github.com/ggibellato/Financial/pull/1327) | [Notes](5.11.md); the reporting currency `enabled ?? true` fallback is dead code |
 | 5.12 | Financial.Web | Admin list loaders: `useBrokers`, `useCategories`, `useIncomeSources`, `useInvestmentAccounts`, `useRecurringBills`, `usePortfolios` | ✅ | 18.4% | 18.4% | 0 | 0 | 19 | [#1328](https://github.com/ggibellato/Financial/pull/1328) | [Notes](5.12.md); notes only: thin wrappers over `useCrudResource`, the rest is wording |
-| 5.x | Financial.Web | remaining `src/hooks`: slices of a few files, worst score first; measure each with the tests that reach it (`STRYKER_TEST_INCLUDE`), not the nightly score | ⬜ | | | | | | | Nightly ranking is only a starting list (see 5.1) |
+| 5.13 | Financial.Web | `useTaxWorkbook`, `useAdminAccounts`, `useAssets`, `useAnnualSummary`, `usePotTransactionEditForm`, `usePaymentsDue` | ✅ | 73.0% | 87.7% | 13 | 0 | 15 | [#1348](https://github.com/ggibellato/Financial/pull/1348) | [Notes](5.13.md); load-cancel flags caught under StrictMode's double effect |
+| 5.14 | Financial.Web | `useAccountFormOptions`, `inlineFormSlice`, `useOverviewAddress`, `useHoldingNavigation`, `useAccountsSummary`, `useAssetSearchOptions`, `useOpenLots` | ✅ | 90.0% | 96.7% | 4 | 0 | 3 | [#1349](https://github.com/ggibellato/Financial/pull/1349) | [Notes](5.14.md) |
+| 5.15 | Financial.Web | Summaries, breakdowns, dashboard, month selection, dialogs, toasts: eleven small hooks | ✅ | 87.7% | 93.0% | 3 | 0 | 4 | [#1350](https://github.com/ggibellato/Financial/pull/1350) | [Notes](5.15.md); success toast asserted through its checkmark icon |
+| 5.16 | Financial.Web | The smallest hooks and helpers: `useFocusReloadedContent`, `useMonthTransactions`, `useAccountTemplateGroups` and seven more | ✅ | 81.6% | 97.4% | 3 | 0 | 1 | [#1351](https://github.com/ggibellato/Financial/pull/1351) | [Notes](5.16.md); last hooks slice |
+| 5.x | Financial.Web | remaining `src/hooks`: slices of a few files, worst score first; measure each with the tests that reach it (`STRYKER_TEST_INCLUDE`), not the nightly score | ✅ | | | | | | | Done in 5.13-5.16; every file in `src/hooks` reviewed |
 | 6.1 | Financial.Web | `src/utils/**` | ✅ | 80.1% | 95.4% | 51 | 0 | 21 | [#1332](https://github.com/ggibellato/Financial/pull/1332) | [Notes](6.1.md); formatters and funding lines; `signClass` shows zero in green; `holdingNavigation` node checks can never fail |
 | 7.1 | Shared.Abstractions | all | ✅ | 63.9% | 86.7% | 9 | 1 | 8 | [#1296](https://github.com/ggibellato/Financial/pull/1296) | [Notes](7.1.md); telemetry and reflection helpers had no tests in their own project |
 | 7.2 | Shared.Infrastructure | all | ✅ | 73.7% | 83.6% | 11 | 2 | 4 | [#1301](https://github.com/ggibellato/Financial/pull/1301) | [Notes](7.2.md); debounced save cycle flush and failure paths; three "equivalent" mutants were real gaps |
@@ -252,6 +256,10 @@ class, production notes) in its own file in this folder:
 - [8.6 Web pages: Mensais, annual summary, month transactions grid, income tab (80.0% → 97.5%)](8.6.md)
 - [8.7 Web components: corporate actions, move asset dialog, disposals (68.9% → 94.8%)](8.7.md)
 - [8.8 Web components and pages: navigation, ticker picker, prices, dividends, account header (72.6% → 97.3%)](8.8.md)
+- [5.13 Web hooks: tax workbook, admin accounts, assets, annual summary, pot transaction edit, payments due (73.0% → 87.7%)](5.13.md)
+- [5.14 Web hooks: account form options, inline form slice, overview address, holding navigation, accounts summary, asset search, open lots (90.0% → 96.7%)](5.14.md)
+- [5.15 Web hooks: summaries, breakdowns, dashboard, month selection, dialogs, toasts (87.7% → 93.0%)](5.15.md)
+- [5.16 Web hooks: the smallest hooks and helpers (81.6% → 97.4%)](5.16.md)
 
 ## Log
 
@@ -306,3 +314,7 @@ One line per working session: date, slice, outcome.
 | 2026-11-19 | 8.6 | Mensais, annual summary, month transactions grid and income tab 80.0% → 97.5%; deleting the bill being edited leaves its form open |
 | 2026-11-19 | 8.7 | Corporate actions, move asset dialog and disposals 68.9% → 94.8%; no product issue |
 | 2026-11-19 | 8.8 | Sidebar, ticker picker, current values, dividend check, investment account dialog, account header and aggregated summary 72.6% → 97.3%; last 8.x slice, the 8.x row is done |
+| 2026-11-19 | 5.13 | Tax workbook, admin accounts, assets, annual summary, pot transaction edit and payments due hooks 73.0% → 87.7%; load-cancel flags tested under StrictMode |
+| 2026-11-19 | 5.14 | Account form options, inline form slice, overview address, holding navigation, accounts summary, asset search and open lots hooks 90.0% → 96.7% |
+| 2026-11-19 | 5.15 | Summary, breakdown, dashboard, month selection, dialog and toast hooks 87.7% → 93.0% |
+| 2026-11-19 | 5.16 | Smallest hooks and helpers 81.6% → 97.4%; last hooks slice, the 5.x row is done |
