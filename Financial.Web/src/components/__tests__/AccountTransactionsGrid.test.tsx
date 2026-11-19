@@ -32,6 +32,10 @@ function bodyRows() {
   return rows
 }
 
+function shownDescriptions() {
+  return bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)
+}
+
 describe('AccountTransactionsGrid', () => {
   describe('a credit refund row', () => {
     const CREDIT_REFUND = accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', amount: -35, canEdit: false })
@@ -126,6 +130,22 @@ describe('AccountTransactionsGrid', () => {
       expect(within(paidByOther).getByText('—')).toBeInTheDocument()
     })
 
+    it('sorts by note, putting entries with no note last', () => {
+      renderSettlement([
+        entryRow('Padaria', 10, 'BRL', { note: 'pão' }),
+        entryRow('Taxa', 20, 'BRL', { note: '' }),
+        entryRow('Farmácia', 30, 'BRL', { note: 'metade' }),
+      ])
+
+      fireEvent.click(screen.getByRole('button', { name: 'Note' }))
+
+      expect(shownDescriptions()).toEqual([
+        'Description:Farmácia',
+        'Description:Padaria',
+        'Description:Taxa',
+      ])
+    })
+
     it('[AC P60-F12-settlement-screen-03] hides the Converted column on a one-currency account', () => {
       renderSettlement([entryRow('Taxa', 80, 'GBP', {})], false)
 
@@ -198,6 +218,19 @@ describe('AccountTransactionsGrid', () => {
     expect(roundUpCell).toHaveClass('data-table__col--numeric')
     expect(within(bodyRows()[1]).getByText('+2,500.00').closest('td')).toHaveClass('data-table__col--numeric')
     expect(screen.getByRole('columnheader', { name: 'Amount' })).toHaveClass('data-table__col--numeric')
+  })
+
+  it('leaves the round-up cell blank on a row with no round-up', () => {
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    const incomeCells = within(bodyRows()[1]).getAllByRole('cell')
+    expect(incomeCells[6].textContent).toBe('Round-up:')
+  })
+
+  it('lets the table take focus without adding it to the tab order', () => {
+    render(<AccountTransactionsGrid accountId="bank-1" transactions={ROWS} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
+
+    expect(screen.getByRole('table', { name: 'Transactions' })).toHaveAttribute('tabindex', '-1')
   })
 
   it('labels each kind and shows the date, category and counterpart', () => {
@@ -355,6 +388,22 @@ describe('AccountTransactionsGrid', () => {
     const potLine = (amount: number, incomeId: string | null = null, description = 'Deposit to Reserva', kind = 'Deposit') =>
       accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description, counterpart: 'Home', amount, canEdit: false, operation: { ...OPERATION, incomeId, kind } })
 
+    it('disables a linked row, but not a card payment, while editing is unavailable', () => {
+      const payment = accountTransactionRow({
+        id: 'p1',
+        kind: 'CardPayment',
+        date: '2026-10-12',
+        description: 'Platinum Visa 6007 payment – Oct 2026 statement',
+        amount: -512.3,
+        canEdit: false,
+        statement: { accountId: 'visa-id', year: 2026, month: 10 },
+      })
+      render(<AccountTransactionsGrid accountId="bank-1" transactions={[linkedExpense(null), payment]} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
+
+      expect(screen.getByRole('button', { name: /^Edit deposit Deposit to Reserva\b/ })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /^Edit card payment\b/ })).toBeEnabled()
+    })
+
     function renderLinked(accountId: string, row: AccountTransactionDto) {
       const handlers = { onOpenOperation: vi.fn(), onDeleteOperation: vi.fn() }
       render(<AccountTransactionsGrid accountId={accountId} transactions={[row]} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} {...handlers} />)
@@ -445,10 +494,6 @@ describe('AccountTransactionsGrid', () => {
       render(<AccountTransactionsGrid accountId="bank-1" transactions={transactions} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
     }
 
-    function shownDescriptions() {
-      return bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)
-    }
-
     function filterTo(label: string, value: string) {
       fireEvent.click(screen.getByRole('button', { name: `Filter by ${label}` }))
       fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
@@ -473,6 +518,17 @@ describe('AccountTransactionsGrid', () => {
       filterTo('Category', 'Home')
 
       expect(shownDescriptions()).toEqual(['Description:Amazon'])
+    })
+
+    it('offers no category value for rows with no category', () => {
+      renderAccountGrid()
+
+      fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
+
+      expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+      expect(screen.getByRole('checkbox', { name: '(All)' })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: 'Groceries' })).toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: 'Home' })).toBeInTheDocument()
     })
 
     it('narrows by description text, ignoring case, combined with the type filter', () => {

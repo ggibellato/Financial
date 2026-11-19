@@ -99,6 +99,10 @@ function rowOf(month: string) {
   return screen.getByRole('cell', { name: new RegExp(month) }).closest('tr') as HTMLElement
 }
 
+function shownMonths() {
+  return screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
+}
+
 describe('CardStatementsTab', () => {
   it('[AC P60-F08-statement-payment-and-card-screen-11] lists each month with its total, due date and status, highlighting the viewed month', () => {
     renderTab()
@@ -115,17 +119,49 @@ describe('CardStatementsTab', () => {
   it('lists the newest month first and sorts by a header', async () => {
     renderTab()
 
-    const months = () => screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
+    expect(shownMonths()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
 
     await userEvent.click(screen.getByRole('button', { name: /^Total/ }))
 
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
+    expect(shownMonths()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
     expect(screen.getByRole('columnheader', { name: /^Total/ })).toHaveAttribute('aria-sort', 'ascending')
 
     await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
 
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('September'), expect.stringContaining('October')])
+    expect(shownMonths()).toEqual([expect.stringContaining('November'), expect.stringContaining('September'), expect.stringContaining('October')])
+  })
+
+  it('orders months across a year end and marks only the viewed year’s month', () => {
+    renderTab({ statements: [{ ...NOVEMBER, year: 2025, month: 10 }, OCTOBER, { ...NOVEMBER, year: 2027, month: 1 }] })
+
+    expect(shownMonths()).toEqual([expect.stringContaining('January 2027'), expect.stringContaining('October 2026'), expect.stringContaining('October 2025')])
+    expect(screen.getAllByRole('row', { current: true })).toEqual([rowOf('October 2026')])
+  })
+
+  it('sorts paid statements by the day they were paid, an unknown day first', async () => {
+    const august = { ...SEPTEMBER, id: 's-aug', month: 8, paidOn: '2026-10-20' }
+    const july = { ...SEPTEMBER, id: 's-jul', month: 7, paidOn: null }
+    renderTab({ statements: [SEPTEMBER, august, july] })
+
+    await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
+
+    expect(shownMonths()).toEqual([expect.stringContaining('July'), expect.stringContaining('September'), expect.stringContaining('August')])
+  })
+
+  it('scrolls the viewed month into view once the statements arrive', () => {
+    Element.prototype.scrollIntoView = vi.fn()
+    const statements = renderTab({ statements: [], isLoading: true })
+
+    statements.rerenderWith({ statements: [NOVEMBER, OCTOBER, SEPTEMBER], isLoading: false })
+
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalledWith({ block: 'nearest' })
+    expect(vi.mocked(Element.prototype.scrollIntoView).mock.contexts).toContain(rowOf('October 2026'))
+  })
+
+  it('lets the Statements heading take focus without adding it to the tab order', () => {
+    renderTab()
+
+    expect(screen.getByRole('heading', { name: 'Statements' })).toHaveAttribute('tabindex', '-1')
   })
 
   it('[AC P60-F15-card-refunds-and-credit-03] shows Total, Credit in and To pay in that order, and an empty month as Nothing due', () => {
@@ -166,6 +202,15 @@ describe('CardStatementsTab', () => {
     statements.rerenderWith({ payForm: payFormFor({ ...OCTOBER, id: 's-dec', month: 12 }) })
 
     expect(screen.getByLabelText(/^Bank/)).toHaveFocus()
+  })
+
+  it('moves focus to the due date field when the due date form opens on another statement', () => {
+    const statements = renderTab({ dueDateForm: dueDateHandle({ form: dueDateFormState() }) })
+    screen.getByRole('button', { name: 'Cancel' }).focus()
+
+    statements.rerenderWith({ dueDateForm: dueDateHandle({ form: dueDateFormState({ statement: NOVEMBER, date: '' }) }) })
+
+    expect(screen.getByLabelText(/^Due date/)).toHaveFocus()
   })
 
   it('offers no Pay on an unpaid row with no stored statement', () => {
@@ -296,9 +341,46 @@ describe('CardStatementsTab', () => {
     expect(screen.getByLabelText(/^Date/)).toHaveFocus()
   })
 
+  it('moves focus back to the Bank field when a submit fails for want of a bank', () => {
+    const payForm = { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: { bankId: 'Select a bank.' } }
+    const statements = renderTab({ payForm })
+    screen.getByRole('button', { name: 'Pay statement' }).focus()
+
+    statements.rerenderWith({ payForm, failedSubmit: { firstInvalidField: 'bankId' } })
+
+    expect(screen.getByLabelText(/^Bank/)).toHaveFocus()
+  })
+
+  it('submits the pay form without leaving the page', () => {
+    const statements = renderTab({ payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+
+    const notPrevented = fireEvent.submit(screen.getByRole('form', { name: 'Pay October 2026 statement' }))
+
+    expect(notPrevented).toBe(false)
+    expect(statements.submitPayForm).toHaveBeenCalled()
+  })
+
+  it('says when the banks fail to load and retries them', async () => {
+    const statements = renderTab({
+      payersError: 'Unable to load the banks',
+      payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} },
+    })
+
+    expect(screen.getByText('Unable to load the banks')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: /try again/i }))
+    expect(statements.retryPayers).toHaveBeenCalled()
+  })
+
+  it('shows no bank load error while the banks are fine', () => {
+    renderTab({ payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
+
+    expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument()
+  })
+
   it('offers only active banks in the pay form', () => {
     renderTab({ payForm: { statement: OCTOBER, bankId: '', date: '2026-10-15', isSaving: false, error: null, fieldErrors: {} } })
 
+    expect(screen.getByRole('option', { name: 'Select a bank' })).toBeInTheDocument()
     expect(screen.getByRole('option', { name: 'Barclays' })).toBeInTheDocument()
     expect(screen.queryByRole('option', { name: 'Closed' })).not.toBeInTheDocument()
   })
@@ -338,6 +420,14 @@ describe('CardStatementsTab', () => {
     expect(screen.getByLabelText(/^Bank/)).toBeDisabled()
   })
 
+  it('disables every row action while a payment saves', () => {
+    renderTab({ payForm: { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} } })
+
+    expect(screen.getByRole('button', { name: 'Pay October 2026 statement' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Set the November 2026 due date' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Unmark September 2026 statement' })).toBeDisabled()
+  })
+
   it('moves focus to the server message when the payment fails', () => {
     const payForm = { statement: OCTOBER, bankId: 'barclays', date: '2026-10-15', isSaving: true, error: null, fieldErrors: {} }
     const statements = renderTab({ payForm })
@@ -354,10 +444,12 @@ describe('CardStatementsTab', () => {
     })
 
     await userEvent.selectOptions(screen.getByLabelText(/^Bank/), 'barclays')
+    fireEvent.change(screen.getByLabelText(/^Date/), { target: { value: '2026-10-14' } })
     await userEvent.click(screen.getByRole('button', { name: 'Pay statement' }))
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(statements.setPayField).toHaveBeenCalledWith('bankId', 'barclays')
+    expect(statements.setPayField).toHaveBeenCalledWith('date', '2026-10-14')
     expect(statements.submitPayForm).toHaveBeenCalled()
     expect(statements.closeForms).toHaveBeenCalled()
   })
@@ -367,6 +459,14 @@ describe('CardStatementsTab', () => {
 
     expect(await screen.findByText('Unmark September 2026 as paid? The payment will be deleted.')).toBeInTheDocument()
     expect(screen.getByText('The payment for this statement was changed elsewhere. Reload and try again.')).toBeInTheDocument()
+  })
+
+  it('disables the unmark dialog’s buttons while it unmarks', async () => {
+    renderTab({ unmark: { statement: SEPTEMBER, isBusy: true, error: null } })
+
+    const dialog = (await screen.findByText('Unmark September 2026 as paid? The payment will be deleted.')).closest('[role="dialog"]') as HTMLElement
+    expect(within(dialog).getByText('Unmark', { selector: 'button' })).toBeDisabled()
+    expect(within(dialog).getByText('Cancel', { selector: 'button' })).toBeDisabled()
   })
 
   describe('due date', () => {
