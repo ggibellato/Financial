@@ -235,6 +235,8 @@ const BILLS: RecurringBillDto[] = [
 
 const RESERVA_ID = '8f3b1c1a-2e3a-4b1a-9a7f-700000000001'
 
+const BONUS_SOURCE: IncomeSourceDto = { id: 'source-bonus', name: 'Bonus', isActive: true, group: 'Other', potsAccountId: RESERVA_ID, hasReferences: true }
+
 const POTS_SUMMARY: PotsSummaryDto = {
   potsAccountId: RESERVA_ID,
   currency: 'GBP',
@@ -491,7 +493,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
 
   it('[AC P60-F10-linked-deposit-withdrawal-and-pots-screen-07] Deposit from an income opens the shared income form with the split ticked, this Pots account and an unlocked bank, and closes after saving', async () => {
     const user = userEvent.setup()
-    getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, { id: 'source-bonus', name: 'Bonus', isActive: true, group: 'Other', potsAccountId: RESERVA_ID, hasReferences: true }])
+    getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, BONUS_SOURCE])
     createIncomeMock.mockResolvedValue({ id: 'i1', date: '2026-10-15', incomeSourceId: 'source-bonus', incomeSourceName: 'Bonus', grossValue: null, netValue: 100, bankId: BARCLAYS_ID, bankName: 'Barclays', description: null, potsAccountId: RESERVA_ID, hasLinkedDeposit: true, fundingLines: [] })
     withPotsAccount()
     renderScreen(`/cashflow/accounts/${RESERVA_ID}?month=2026-10`)
@@ -791,7 +793,7 @@ describe('AccountScreenPage deposit and withdrawal forms', () => {
     it("opens the income's edit form on the bank screen for an income's deposit from its Edit icon, and takes the operation out of the address on Cancel", async () => {
       const user = userEvent.setup()
       withPotsAccount([bankRow('i1')])
-      getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, { id: 'source-bonus', name: 'Bonus', isActive: true, group: 'Other', potsAccountId: RESERVA_ID, hasReferences: true }])
+      getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, BONUS_SOURCE])
       getPotOperationMock.mockResolvedValue({ ...DEPOSIT, incomeId: 'i1' })
       getIncomesByMonthMock.mockResolvedValue([INCOME])
       renderScreen(`/cashflow/accounts/${BARCLAYS_ID}?month=2026-10`)
@@ -1676,7 +1678,7 @@ describe('AccountScreenPage actions', () => {
 
   it('ticks Split to pots for a source that splits and lets it be unticked', async () => {
     const user = userEvent.setup()
-    getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, { id: 'source-bonus', name: 'Bonus', isActive: true, group: 'Other', potsAccountId: RESERVA_ID, hasReferences: true }])
+    getIncomeSourcesMock.mockResolvedValue([...INCOME_SOURCES, BONUS_SOURCE])
     await openScreen()
     await user.click(screen.getByRole('button', { name: 'New income' }))
     await user.selectOptions(await screen.findByLabelText(/^Source/), 'source-bonus')
@@ -2501,6 +2503,18 @@ describe('AccountScreenPage card screen', () => {
     expect(getAccountStatementsMock).not.toHaveBeenCalled()
   })
 
+  it('leaves focus alone when browser back leaves the Statements tab', async () => {
+    renderScreen(`/cashflow/accounts/${AMEX_ID}?month=2026-10&tab=statements`, [`/cashflow/accounts/${AMEX_ID}?month=2026-10`])
+    const pay = await screen.findByRole('button', { name: 'Pay October 2026 statement' })
+    act(() => pay.focus())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Browser back' }))
+
+    expect(await screen.findByText('Taxi')).toBeInTheDocument()
+    await act(async () => {})
+    expect(document.body).toHaveFocus()
+  })
+
   it('adds a charge with the card locked and the invoice month from the date', async () => {
     const user = userEvent.setup()
     withActions(['AddCharge'])
@@ -3197,6 +3211,27 @@ describe('AccountScreenPage bank side card payments', () => {
 
     await waitFor(() => expect(getPayableStatementsMock).toHaveBeenCalledTimes(2))
     expect(payForm()).toBeInTheDocument()
+  })
+
+  it('keeps an open Pay card statement form as it is when another kind of row is deleted', async () => {
+    const user = userEvent.setup()
+    getAccountTransactionsMock.mockResolvedValue([
+      accountTransactionRow({ id: 'a1', kind: 'Adjustment', date: '2026-10-01', description: 'Bank fee', amount: -1.5, canEdit: true, adjustment: { id: 'a1', bankId: BARCLAYS_ID } as AccountTransactionDto['adjustment'] }),
+    ])
+    await openBank()
+    await user.click(screen.getByRole('button', { name: 'Pay card statement' }))
+    const card = await screen.findByRole('combobox', { name: /^Card/ })
+    await waitFor(() => expect(within(card).getAllByRole('option')).toHaveLength(3))
+    await user.selectOptions(card, AMEX_ID)
+    getAccountTransactionsMock.mockResolvedValue([])
+
+    await user.click(screen.getByRole('button', { name: /^Delete balance adjustment\b/ }))
+    await user.click(await dialogButton('Delete balance adjustment', 'Delete'))
+
+    await waitFor(() => expect(deleteBalanceAdjustmentMock).toHaveBeenCalledWith(BARCLAYS_ID, 'a1'))
+    expect(await screen.findByText('No transactions in October 2026.')).toBeInTheDocument()
+    expect(getPayableStatementsMock).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('combobox', { name: /^Card/ })).toHaveValue(AMEX_ID)
   })
 
   it('[AC P60-F08-statement-payment-and-card-screen-04] Pay card statement chooses a card and statement and pays it with this bank', async () => {

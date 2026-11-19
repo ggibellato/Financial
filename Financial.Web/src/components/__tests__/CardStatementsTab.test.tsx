@@ -99,6 +99,10 @@ function rowOf(month: string) {
   return screen.getByRole('cell', { name: new RegExp(month) }).closest('tr') as HTMLElement
 }
 
+function shownMonths() {
+  return screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
+}
+
 describe('CardStatementsTab', () => {
   it('[AC P60-F08-statement-payment-and-card-screen-11] lists each month with its total, due date and status, highlighting the viewed month', () => {
     renderTab()
@@ -115,36 +119,33 @@ describe('CardStatementsTab', () => {
   it('lists the newest month first and sorts by a header', async () => {
     renderTab()
 
-    const months = () => screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
+    expect(shownMonths()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
 
     await userEvent.click(screen.getByRole('button', { name: /^Total/ }))
 
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
+    expect(shownMonths()).toEqual([expect.stringContaining('November'), expect.stringContaining('October'), expect.stringContaining('September')])
     expect(screen.getByRole('columnheader', { name: /^Total/ })).toHaveAttribute('aria-sort', 'ascending')
 
     await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
 
-    expect(months()).toEqual([expect.stringContaining('November'), expect.stringContaining('September'), expect.stringContaining('October')])
+    expect(shownMonths()).toEqual([expect.stringContaining('November'), expect.stringContaining('September'), expect.stringContaining('October')])
   })
 
   it('orders months across a year end and marks only the viewed year’s month', () => {
     renderTab({ statements: [{ ...NOVEMBER, year: 2025, month: 10 }, OCTOBER, { ...NOVEMBER, year: 2027, month: 1 }] })
 
-    const months = screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
-    expect(months).toEqual([expect.stringContaining('January 2027'), expect.stringContaining('October 2026'), expect.stringContaining('October 2025')])
+    expect(shownMonths()).toEqual([expect.stringContaining('January 2027'), expect.stringContaining('October 2026'), expect.stringContaining('October 2025')])
     expect(screen.getAllByRole('row', { current: true })).toEqual([rowOf('October 2026')])
   })
 
   it('sorts paid statements by the day they were paid, an unknown day first', async () => {
-    const august = { ...SEPTEMBER, id: 's-aug', month: 8, paidOn: '2026-09-05' }
+    const august = { ...SEPTEMBER, id: 's-aug', month: 8, paidOn: '2026-10-20' }
     const july = { ...SEPTEMBER, id: 's-jul', month: 7, paidOn: null }
     renderTab({ statements: [SEPTEMBER, august, july] })
 
     await userEvent.click(screen.getByRole('button', { name: /^Status/ }))
 
-    const months = screen.getAllByRole('row').slice(1).map((row) => (row as HTMLTableRowElement).cells[0].textContent)
-    expect(months).toEqual([expect.stringContaining('July'), expect.stringContaining('August'), expect.stringContaining('September')])
+    expect(shownMonths()).toEqual([expect.stringContaining('July'), expect.stringContaining('September'), expect.stringContaining('August')])
   })
 
   it('scrolls the viewed month into view once the statements arrive', () => {

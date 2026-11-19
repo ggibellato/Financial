@@ -32,6 +32,10 @@ function bodyRows() {
   return rows
 }
 
+function shownDescriptions() {
+  return bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)
+}
+
 describe('AccountTransactionsGrid', () => {
   describe('a credit refund row', () => {
     const CREDIT_REFUND = accountTransactionRow({ id: 'cr1', kind: 'CardCreditRefund', date: '2026-10-15', description: 'BA Amex credit refund', amount: -35, canEdit: false })
@@ -135,7 +139,7 @@ describe('AccountTransactionsGrid', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Note' }))
 
-      expect(bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)).toEqual([
+      expect(shownDescriptions()).toEqual([
         'Description:Farmácia',
         'Description:Padaria',
         'Description:Taxa',
@@ -297,31 +301,6 @@ describe('AccountTransactionsGrid', () => {
     expect(within(bodyRows()[0]).getByRole('button', { name: /^Delete expense\b/ })).toBeEnabled()
   })
 
-  it('disables a linked row, but not a card payment, while editing is unavailable', () => {
-    const linked = accountTransactionRow({
-      id: 'e9',
-      kind: 'Expense',
-      date: '2026-10-10',
-      description: 'Deposit to Reserva',
-      amount: -90,
-      canEdit: false,
-      operation: { operationId: 'op1', kind: 'Deposit', potsAccountId: 'pots-1', year: 2026, month: 10, incomeId: null },
-    })
-    const payment = accountTransactionRow({
-      id: 'p1',
-      kind: 'CardPayment',
-      date: '2026-10-12',
-      description: 'Platinum Visa 6007 payment – Oct 2026 statement',
-      amount: -512.3,
-      canEdit: false,
-      statement: { accountId: 'visa-id', year: 2026, month: 10 },
-    })
-    render(<AccountTransactionsGrid accountId="bank-1" transactions={[linked, payment]} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
-
-    expect(screen.getByRole('button', { name: /^Edit deposit Deposit to Reserva\b/ })).toBeDisabled()
-    expect(screen.getByRole('button', { name: /^Edit card payment\b/ })).toBeEnabled()
-  })
-
   it('labels the date column as asked and card payments by their kind', () => {
     render(
       <AccountTransactionsGrid accountId="bank-1"
@@ -408,6 +387,22 @@ describe('AccountTransactionsGrid', () => {
       accountTransactionRow({ id: 'e1', kind: 'Expense', date: '2026-10-10', description: 'Deposit to Reserva', amount: -90, canEdit: false, operation: { ...OPERATION, incomeId } })
     const potLine = (amount: number, incomeId: string | null = null, description = 'Deposit to Reserva', kind = 'Deposit') =>
       accountTransactionRow({ id: 'm1', kind: 'PotTransaction', date: '2026-10-10', description, counterpart: 'Home', amount, canEdit: false, operation: { ...OPERATION, incomeId, kind } })
+
+    it('disables a linked row, but not a card payment, while editing is unavailable', () => {
+      const payment = accountTransactionRow({
+        id: 'p1',
+        kind: 'CardPayment',
+        date: '2026-10-12',
+        description: 'Platinum Visa 6007 payment – Oct 2026 statement',
+        amount: -512.3,
+        canEdit: false,
+        statement: { accountId: 'visa-id', year: 2026, month: 10 },
+      })
+      render(<AccountTransactionsGrid accountId="bank-1" transactions={[linkedExpense(null), payment]} emptyMessage={EMPTY_MESSAGE} isEditDisabled={() => true} {...NO_ROW_ACTIONS} />)
+
+      expect(screen.getByRole('button', { name: /^Edit deposit Deposit to Reserva\b/ })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /^Edit card payment\b/ })).toBeEnabled()
+    })
 
     function renderLinked(accountId: string, row: AccountTransactionDto) {
       const handlers = { onOpenOperation: vi.fn(), onDeleteOperation: vi.fn() }
@@ -499,10 +494,6 @@ describe('AccountTransactionsGrid', () => {
       render(<AccountTransactionsGrid accountId="bank-1" transactions={transactions} emptyMessage={EMPTY_MESSAGE} {...NO_ROW_ACTIONS} />)
     }
 
-    function shownDescriptions() {
-      return bodyRows().map((row) => within(row).getAllByRole('cell')[1].textContent)
-    }
-
     function filterTo(label: string, value: string) {
       fireEvent.click(screen.getByRole('button', { name: `Filter by ${label}` }))
       fireEvent.click(screen.getByRole('checkbox', { name: '(All)' }))
@@ -534,8 +525,10 @@ describe('AccountTransactionsGrid', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'Filter by Category' }))
 
+      expect(screen.getAllByRole('checkbox')).toHaveLength(3)
+      expect(screen.getByRole('checkbox', { name: '(All)' })).toBeInTheDocument()
       expect(screen.getByRole('checkbox', { name: 'Groceries' })).toBeInTheDocument()
-      expect(screen.queryByRole('checkbox', { name: 'null' })).not.toBeInTheDocument()
+      expect(screen.getByRole('checkbox', { name: 'Home' })).toBeInTheDocument()
     })
 
     it('narrows by description text, ignoring case, combined with the type filter', () => {
