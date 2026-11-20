@@ -1,6 +1,5 @@
 using System.Net.Http.Json;
 using Financial.CashFlow.Application.DTOs;
-using Financial.Shared.Abstractions.Currencies;
 using Financial.Shared.Abstractions.Currencies.FxRates;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;

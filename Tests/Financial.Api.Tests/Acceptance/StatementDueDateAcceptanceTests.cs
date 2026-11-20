@@ -17,7 +17,6 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
     private const string MercadoId = "8f3b1c1a-2e3a-4b1a-9a7f-200000000001";
     private const string AmexId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000001";
     private const string OldVisaId = "8f3b1c1a-2e3a-4b1a-9a7f-500000000002";
-    private const string UnknownId = "8f3b1c1a-2e3a-4b1a-9a7f-999999999999";
     private static readonly TimeSpan SyncTimeout = TimeSpan.FromSeconds(10);
 
     private const string SeededData = $$"""
@@ -129,16 +128,6 @@ public class StatementDueDateAcceptanceTests : ApiEndpointTests
         december.Id.Should().NotBeNull();
         december.DueDate.Should().Be(new DateOnly(2026, 12, 18));
     }
-
-    public static TheoryData<string, int, int, string?, HttpStatusCode, string> Refusals => new()
-    {
-        { UnknownId, 2026, 10, null, HttpStatusCode.NotFound, $"Account '{UnknownId}' was not found." },
-        { BarclaysId, 2026, 10, null, HttpStatusCode.BadRequest, "Barclays is not a card account." },
-        { OldVisaId, 2026, 10, null, HttpStatusCode.BadRequest, "Old Visa is inactive." },
-        { AmexId, 2027, 1, null, HttpStatusCode.NotFound, "Card statement '2027-01' was not found." },
-        { AmexId, 2026, 9, "2026-09-25", HttpStatusCode.BadRequest, "The September 2026 statement is paid, so its due date can't change." },
-        { AmexId, 2026, 10, "2026-11-01", HttpStatusCode.BadRequest, "The due date must be in October 2026." }
-    };
 
     [Fact]
     public async Task MissingDueDateField_Returns400AndChangesNothing()
