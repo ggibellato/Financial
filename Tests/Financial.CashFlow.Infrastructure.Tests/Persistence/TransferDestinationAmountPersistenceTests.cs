@@ -9,7 +9,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
-[Trait("Category", "Integration")]
+[Trait("Category", "Unit")]
 public class TransferDestinationAmountPersistenceTests
 {
     private readonly CashFlowSerializerAdapter _serializer = new();

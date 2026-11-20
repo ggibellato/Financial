@@ -6,7 +6,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
-[Trait("Category", "Integration")]
+[Trait("Category", "Unit")]
 public class BondFinanceServicesTests
 {
     public sealed record BondService(string Provider, Func<Func<string, AssetValueSnapshot>?, IFinanceService> Create, string Name, decimal Price)
