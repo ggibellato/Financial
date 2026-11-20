@@ -71,6 +71,20 @@ public partial class CategoryTraitCoverageTests
         FindViolations(sources).Should().ContainSingle().Which.Should().Contain("Inner");
     }
 
+    [Theory]
+    [InlineData("    [GeneratedRegex(@\"\\{(?<name>\\w+)[^}]*\\}\")]\n")]
+    [InlineData("    private const string Open = \"{\";\n")]
+    [InlineData("    private const char Close = '}';\n")]
+    [InlineData("    // a stray } in a comment\n")]
+    [InlineData("    private const string Raw = \"\"\"\n        }\n        \"\"\";\n")]
+    [InlineData("    private const string Quote = @\"\"\"\";\n    private const string Close = \"}\";\n")]
+    public void Scanner_Ignores_Braces_Inside_Literals_And_Comments(string member)
+    {
+        var sources = Sources(("A/FooTests.cs", $"public class FooTests\n{{\n{member}\n    [Fact]\n    public void Works() {{ }}\n}}\n"));
+
+        FindViolations(sources).Should().ContainSingle().Which.Should().Contain("FooTests");
+    }
+
     [Fact]
     public void Scanner_Ignores_Classes_Without_Tests()
     {
@@ -179,17 +193,77 @@ public partial class CategoryTraitCoverageTests
         var depth = 0;
         for (var i = openIndex; i < source.Length; i++)
         {
-            if (source[i] == '{')
+            switch (source[i])
             {
-                depth++;
+                case '{':
+                    depth++;
+                    break;
+                case '}' when --depth == 0:
+                    return i;
+                case '/' when i + 1 < source.Length && source[i + 1] == '/':
+                    i = EndOf(source, "\n", i + 2);
+                    break;
+                case '/' when i + 1 < source.Length && source[i + 1] == '*':
+                    i = EndOf(source, "*/", i + 2);
+                    break;
+                case '\'':
+                    i = EndOfQuoted(source, i, '\'', verbatim: false);
+                    break;
+                case '"':
+                    i = EndOfStringLiteral(source, i);
+                    break;
             }
-            else if (source[i] == '}' && --depth == 0)
+        }
+
+        return source.Length;
+    }
+
+    private static int EndOfStringLiteral(string source, int openQuote)
+    {
+        var prefix = source[Math.Max(openQuote - 2, 0)..openQuote];
+        if (prefix.EndsWith('@') || prefix is "@$")
+        {
+            return EndOfQuoted(source, openQuote, '"', verbatim: true);
+        }
+
+        var quotes = 0;
+        while (openQuote + quotes < source.Length && source[openQuote + quotes] == '"')
+        {
+            quotes++;
+        }
+
+        return quotes >= 3
+            ? EndOf(source, new string('"', quotes), openQuote + quotes)
+            : EndOfQuoted(source, openQuote, '"', verbatim: false);
+    }
+
+    private static int EndOfQuoted(string source, int openQuote, char quote, bool verbatim)
+    {
+        for (var i = openQuote + 1; i < source.Length; i++)
+        {
+            if (!verbatim && source[i] == '\\')
             {
+                i++;
+            }
+            else if (source[i] == quote)
+            {
+                if (verbatim && i + 1 < source.Length && source[i + 1] == quote)
+                {
+                    i++;
+                    continue;
+                }
+
                 return i;
             }
         }
 
         return source.Length;
+    }
+
+    private static int EndOf(string source, string terminator, int from)
+    {
+        var end = source.IndexOf(terminator, from, StringComparison.Ordinal);
+        return end < 0 ? source.Length : end + terminator.Length - 1;
     }
 
     private static List<string> BaseTypes(string header)

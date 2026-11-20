@@ -10,7 +10,7 @@ using FluentAssertions;
 
 namespace Financial.Investment.Infrastructure.Tests.Services;
 
-[Trait("Category", "Integration")]
+[Trait("Category", "Unit")]
 public class AssetPriceServiceTests
 {
     /// <summary>The fetcher-less service the guard-clause tests exercise; the dispatch tests build their own over specific fetchers.</summary>

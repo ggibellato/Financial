@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Financial.Api.Tests;
 
+[Trait("Category", "Integration")]
 public partial class EmptyBodyEndpointsTests : ApiEndpointTests
 {
     private static readonly HashSet<string> BodyMethods = ["POST", "PUT", "PATCH", "DELETE"];

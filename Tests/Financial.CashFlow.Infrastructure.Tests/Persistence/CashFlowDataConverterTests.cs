@@ -7,7 +7,7 @@ using FluentAssertions.Execution;
 
 namespace Financial.CashFlow.Infrastructure.Tests.Persistence;
 
-[Trait("Category", "Integration")]
+[Trait("Category", "Unit")]
 public class CashFlowDataConverterTests
 {
     private const string BarclaysId = "5db5c88d-0000-0000-0000-000000000001";
