@@ -1,9 +1,13 @@
 using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
+using Financial.Api.Controllers;
+using Financial.TestUtilities;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Mvc.Testing;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -67,7 +71,8 @@ public class DividendEndpointsTests
     [Fact]
     public async Task GetDividendSummary_WhenServiceThrows_ReturnsNotFoundWithFriendlyDetail()
     {
-        await using var factory = CreateFactory(throwOnLookup: true);
+        var logs = new RecordingLoggerProvider();
+        await using var factory = CreateFactory(throwOnLookup: true, logs);
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/dividends/ASDF/summary?exchange=BVMF");
 
@@ -76,12 +81,14 @@ public class DividendEndpointsTests
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("detail").GetString().Should().Contain("ASDF");
+        ShouldHaveWarnedWithTheErrorTypeOnly(logs);
     }
 
     [Fact]
     public async Task GetDividendHistory_WhenServiceThrows_ReturnsNotFoundWithFriendlyDetail()
     {
-        await using var factory = CreateFactory(throwOnLookup: true);
+        var logs = new RecordingLoggerProvider();
+        await using var factory = CreateFactory(throwOnLookup: true, logs);
         using var client = factory.CreateClient();
         var response = await client.GetAsync("/api/v1/financial/dividends/ASDF/history?exchange=BVMF");
 
@@ -90,18 +97,24 @@ public class DividendEndpointsTests
         var json = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(json);
         doc.RootElement.GetProperty("detail").GetString().Should().Contain("ASDF");
+        ShouldHaveWarnedWithTheErrorTypeOnly(logs);
     }
 
-    private static WebApplicationFactory<Program> CreateFactory(bool throwOnLookup = false)
+    private static void ShouldHaveWarnedWithTheErrorTypeOnly(RecordingLoggerProvider logs)
     {
-        return new ApiTestFactory().WithWebHostBuilder(builder =>
+        var warning = logs.Entries.Should().ContainSingle(entry =>
+            entry.Category == typeof(DividendsController).FullName && entry.Level == LogLevel.Warning).Subject;
+        warning.Message.Should().Contain(nameof(InvalidOperationException)).And.NotContain("Ticker not found");
+    }
+
+    private static WebApplicationFactory<Program> CreateFactory(bool throwOnLookup = false, RecordingLoggerProvider? logs = null)
+    {
+        var factory = new ApiTestFactory(dividendServiceOverride: new DividendServiceStub(throwOnLookup));
+        return logs is null ? factory : factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
         {
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IDividendService>();
-                services.AddSingleton<IDividendService>(new DividendServiceStub(throwOnLookup));
-            });
-        });
+            services.RemoveAll<ILoggerFactory>();
+            services.AddSingleton(LoggerFactory.Create(logging => logging.AddProvider(logs)));
+        }));
     }
 
     private sealed class DividendServiceStub(bool throwOnLookup = false) : IDividendService
