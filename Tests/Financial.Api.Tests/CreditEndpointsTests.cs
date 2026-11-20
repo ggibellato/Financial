@@ -9,27 +9,25 @@ namespace Financial.Api.Tests;
 public class CreditEndpointsTests : ApiEndpointTests
 {
     [Fact]
-    public async Task GetCreditsByBroker_ReturnsOk()
+    public async Task GetCreditsByBroker_ScopeOmitted_ReturnsTheActiveAssetsCredits()
     {
         var response = await Client.GetAsync("/api/v1/financial/credits/broker/XPI");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
-        credits.Should().NotBeNull();
-        credits!.Length.Should().BeGreaterThan(0);
+        credits!.Select(credit => credit.Value).Should().BeEquivalentTo([5m, 6m]);
     }
 
     [Fact]
-    public async Task GetCreditsByPortfolio_ReturnsOk()
+    public async Task GetCreditsByPortfolio_ScopeOmitted_ReturnsThePortfoliosCredits()
     {
         var response = await Client.GetAsync("/api/v1/financial/credits/portfolio/XPI/Default");
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var credits = await response.Content.ReadFromJsonAsync<CreditDTO[]>();
-        credits.Should().NotBeNull();
-        credits!.Length.Should().BeGreaterThan(0);
+        credits!.Select(credit => credit.Value).Should().BeEquivalentTo([5m, 6m]);
     }
 
     [Fact]

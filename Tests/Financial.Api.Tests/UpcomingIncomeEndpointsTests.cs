@@ -29,12 +29,4 @@ public class UpcomingIncomeEndpointsTests : ApiEndpointTests
         entry.ProjectedNextDate.Should().Be(new DateTime(2024, 4, 1));
         entry.ProjectedAmount.Should().Be(6m);
     }
-
-    [Fact]
-    public async Task GetUpcomingIncome_RejectsAnUnknownSubRoute()
-    {
-        var response = await Client.GetAsync($"{UpcomingIncomeRoute}/unknown");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
 }

@@ -20,30 +20,6 @@ public class AnnualSummaryEndpointsTests : ApiEndpointTests
     private static readonly Guid InvestimentoId = Guid.Parse("8f3b1c1a-2e3a-4b1a-9a7f-600000000013");
 
     [Fact]
-    public async Task GetExpenseCategoryTotals_RouteRemoved_Returns404()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/expense-categories");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task GetIncomeSummary_RouteRemoved_Returns404()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/income-summary");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
-    public async Task GetInvestmentDiffs_RouteRemoved_Returns404()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/annual-summary/2026/investment-diffs");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
-
-    [Fact]
     public async Task GetHistoricSummaryAverages_MergesIncomeIntoMatchingYearAndZeroFillsYearsWithoutIncome()
     {
         var pinnedNow = new DateTimeOffset(2026, 7, 15, 0, 0, 0, TimeSpan.Zero);

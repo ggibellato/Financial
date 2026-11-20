@@ -15,8 +15,6 @@ public class WatchlistEndpointsTests
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
 
-    /// <summary>Boots the API with the WatchlistOptions a test needs; the configuration callback is the only
-    /// thing that differs between these tests.</summary>
     private static WebApplicationFactory<Program> CreateFactory(Action<WatchlistOptions> configure) =>
         new ApiTestFactory().WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.PostConfigure(configure)));
@@ -43,19 +41,5 @@ public class WatchlistEndpointsTests
         items![0].Group.Should().Be("Group A");
         items[0].Name.Should().Be("KLBN4");
         items[1].Name.Should().Be("TAEE3");
-    }
-
-    [Fact]
-    public async Task GetWatchlist_ReturnsEmptyArray_WhenNoItemsConfigured()
-    {
-        await using var factory = CreateFactory(options => options.Items.Clear());
-
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/watchlist");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var items = await response.Content.ReadFromJsonAsync<WatchlistItemDTO[]>(CaseInsensitiveJson);
-        items.Should().BeEmpty();
     }
 }

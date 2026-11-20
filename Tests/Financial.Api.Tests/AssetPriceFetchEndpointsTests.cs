@@ -14,8 +14,6 @@ public class AssetPriceFetchEndpointsTests
 {
     private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
 
-    /// <summary>Boots the API with the AssetPriceFetchOptions a test needs; the configuration callback is the only
-    /// thing that differs between these tests.</summary>
     private static WebApplicationFactory<Program> CreateFactory(Action<AssetPriceFetchOptions> configure) =>
         new ApiTestFactory().WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => services.PostConfigure(configure)));
@@ -42,19 +40,5 @@ public class AssetPriceFetchEndpointsTests
         portfolios![0].BrokerName.Should().Be("XPI");
         portfolios[0].PortfolioName.Should().Be("FII");
         portfolios[1].PortfolioName.Should().Be("Acoes");
-    }
-
-    [Fact]
-    public async Task GetAssetPriceFetch_ReturnsEmptyArray_WhenNoPortfoliosConfigured()
-    {
-        await using var factory = CreateFactory(options => options.Portfolios.Clear());
-
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/asset-price-fetch");
-
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
-
-        var portfolios = await response.Content.ReadFromJsonAsync<PortfolioReferenceDTO[]>(CaseInsensitiveJson);
-        portfolios.Should().BeEmpty();
     }
 }

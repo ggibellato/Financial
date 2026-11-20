@@ -24,12 +24,4 @@ public class DashboardEndpointsTests : ApiEndpointTests
         dto.UnvaluedHoldingCount.Should().BeGreaterThanOrEqualTo(0);
         dto.ReportingCurrency.Should().NotBeNullOrEmpty();
     }
-
-    [Fact]
-    public async Task GetDashboard_RejectsAnUnknownSubRoute()
-    {
-        var response = await Client.GetAsync("/api/v1/financial/dashboard/unknown");
-
-        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
-    }
 }

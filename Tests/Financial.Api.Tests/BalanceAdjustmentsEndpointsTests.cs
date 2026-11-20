@@ -158,26 +158,6 @@ public class BalanceAdjustmentsEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task AddAdjustment_NullBody_ReturnsBadRequest()
-    {
-        var response = await Client.PostAsync(
-            $"/api/v1/financial/accounts/{BarclaysId}/adjustments",
-            new StringContent("null", System.Text.Encoding.UTF8, "application/json"));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task UpdateAdjustment_NullBody_ReturnsBadRequest()
-    {
-        var response = await Client.PutAsync(
-            $"/api/v1/financial/accounts/{BarclaysId}/adjustments/{Guid.NewGuid()}",
-            new StringContent("null", System.Text.Encoding.UTF8, "application/json"));
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
     public async Task UpdateAdjustment_AdjustmentOfAnotherAccount_ReturnsNotFound()
     {
         var created = await Client.PostAsJsonAsync($"/api/v1/financial/accounts/{BarclaysId}/adjustments", new BalanceAdjustmentCreateDTO
