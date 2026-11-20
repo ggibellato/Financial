@@ -77,6 +77,7 @@ public partial class CategoryTraitCoverageTests
     [InlineData("    private const char Close = '}';\n")]
     [InlineData("    // a stray } in a comment\n")]
     [InlineData("    private const string Raw = \"\"\"\n        }\n        \"\"\";\n")]
+    [InlineData("    private const string Quote = @\"\"\"\";\n    private const string Close = \"}\";\n")]
     public void Scanner_Ignores_Braces_Inside_Literals_And_Comments(string member)
     {
         var sources = Sources(("A/FooTests.cs", $"public class FooTests\n{{\n{member}\n    [Fact]\n    public void Works() {{ }}\n}}\n"));
@@ -219,19 +220,21 @@ public partial class CategoryTraitCoverageTests
 
     private static int EndOfStringLiteral(string source, int openQuote)
     {
+        var prefix = source[Math.Max(openQuote - 2, 0)..openQuote];
+        if (prefix.EndsWith('@') || prefix is "@$")
+        {
+            return EndOfQuoted(source, openQuote, '"', verbatim: true);
+        }
+
         var quotes = 0;
         while (openQuote + quotes < source.Length && source[openQuote + quotes] == '"')
         {
             quotes++;
         }
 
-        if (quotes >= 3)
-        {
-            return EndOf(source, new string('"', quotes), openQuote + quotes);
-        }
-
-        var verbatim = openQuote > 0 && (source[openQuote - 1] == '@' || (openQuote > 1 && source[openQuote - 2] == '@'));
-        return EndOfQuoted(source, openQuote, '"', verbatim);
+        return quotes >= 3
+            ? EndOf(source, new string('"', quotes), openQuote + quotes)
+            : EndOfQuoted(source, openQuote, '"', verbatim: false);
     }
 
     private static int EndOfQuoted(string source, int openQuote, char quote, bool verbatim)
