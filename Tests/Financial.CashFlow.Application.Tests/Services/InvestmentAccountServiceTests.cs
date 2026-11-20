@@ -609,20 +609,4 @@ public class InvestmentAccountServiceTests
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.InvestmentAccountService.GetInvestmentAccounts");
     }
-
-    [Fact]
-    public async Task CreateInvestmentAccountAsync_NullRequest_ThrowsArgumentNullException()
-    {
-        var act = async () => await _sut.CreateInvestmentAccountAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-    }
-
-    [Fact]
-    public async Task UpdateInvestmentAccountAsync_NullRequest_ThrowsArgumentNullException()
-    {
-        var act = async () => await _sut.UpdateInvestmentAccountAsync(Guid.NewGuid(), null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-    }
 }

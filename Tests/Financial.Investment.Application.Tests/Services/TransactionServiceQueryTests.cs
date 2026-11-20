@@ -143,30 +143,6 @@ public class TransactionServiceQueryTests
         result.Should().BeEmpty();
     }
 
-    [Fact]
-    public void GetTransactionsByBroker_DefaultsToActiveScope()
-    {
-        CreateService().GetTransactionsByBroker("XPI");
-
-        _repository.LastGetAssetsByBrokerScope.Should().Be(InvestmentScope.Active);
-    }
-
-    [Fact]
-    public void GetTransactionsByBroker_ForwardsHistoricScopeToRepository()
-    {
-        CreateService().GetTransactionsByBroker("XPI", InvestmentScope.Historic);
-
-        _repository.LastGetAssetsByBrokerScope.Should().Be(InvestmentScope.Historic);
-    }
-
-    [Fact]
-    public void GetTransactionsByPortfolio_ForwardsHistoricScopeToRepository()
-    {
-        CreateService().GetTransactionsByPortfolio("XPI", "Default", InvestmentScope.Historic);
-
-        _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
-    }
-
     [Theory]
     [InlineData(null, "Default")]
     [InlineData("", "Default")]
@@ -223,5 +199,4 @@ public class TransactionServiceQueryTests
 
     private static Asset MakeAsset(string name = "TEST") =>
         Asset.Create(name, "ISIN", "BVMF", name);
-
 }

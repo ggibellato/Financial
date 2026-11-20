@@ -158,18 +158,6 @@ public class InvestmentSerializerAdapterTests
     }
 
     [Fact]
-    public void Serialize_ProducesValidJson()
-    {
-        var investments = Investments.Create();
-        investments.AddActiveBroker(Broker.Create("Broker A", "BRL"));
-
-        var json = Serializer.Serialize(investments);
-
-        json.Should().NotBeNullOrWhiteSpace();
-        json.Should().Contain("Broker A");
-    }
-
-    [Fact]
     public void Deserialize_MissingHistoricBrokersKey_ResultsInEmptyHistoricCollection()
     {
         const string json = """

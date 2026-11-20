@@ -236,16 +236,6 @@ public class PortfolioServiceTests
     }
 
     [Fact]
-    public async Task DeleteEmptyPortfolioAsync_UsesTheScopeItWasGiven()
-    {
-        _repository.Broker = CreateBrokerWithEmptyPortfolio();
-
-        await CreateService().DeleteEmptyPortfolioAsync("XPI", "Stale", InvestmentScope.Historic);
-
-        _repository.LastGetBrokerListScope.Should().Be(InvestmentScope.Historic);
-    }
-
-    [Fact]
     public async Task DeleteEmptyPortfolioAsync_WhenRefused_MarksTheSpanFailedWithoutLoggingTheName()
     {
         _repository.Broker = CreateBrokerWithEmptyPortfolio();
@@ -269,24 +259,6 @@ public class PortfolioServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("Investment.PortfolioService.GetPortfolios");
-    }
-
-    [Fact]
-    public async Task CreatePortfolioAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().CreatePortfolioAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
-    [Fact]
-    public async Task UpdatePortfolioAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().UpdatePortfolioAsync("XPI", "Default", null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]

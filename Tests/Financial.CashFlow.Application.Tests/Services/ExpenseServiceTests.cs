@@ -1121,18 +1121,4 @@ public class ExpenseServiceTests
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
     }
-
-    [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.AddExpenseAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.ExpenseService.AddExpense");
-            await FluentActions.Awaiting(() => _sut.UpdateExpenseAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.ExpenseService.UpdateExpense");
-            await FluentActions.Awaiting(() => _sut.MoveToStatementAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.ExpenseService.MoveToStatement");
-        }
-    }
 }

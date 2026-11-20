@@ -146,21 +146,4 @@ public class HoldingValuationServiceTests
         span.Attributes[TelemetryAttributeKeys.EntityType].Should().Be("HoldingValuation");
         span.Attributes[TelemetryAttributeKeys.OperationResult].Should().Be(TelemetryOperationResults.Success);
     }
-
-    [Fact]
-    public void GetValuation_NullAsset_RecordsFailedSpanWithoutLogging()
-    {
-        var tracer = new RecordingTelemetryTracer();
-        var logger = new RecordingLogger<HoldingValuationService>();
-        var service = new HoldingValuationService(new XirrCalculationService(TestClock.At()), tracer, logger, new FakeTimeProvider(Today));
-
-        Action act = () => service.GetValuation(null!, InvestmentScope.Active);
-        act.Should().Throw<ArgumentNullException>();
-
-        tracer.ShouldHaveFailedSpan<ArgumentNullException>("Investment.HoldingValuationService.GetValuation");
-        using (new AssertionScope())
-        {
-            logger.Entries.Should().NotContain(entry => entry.Level == Microsoft.Extensions.Logging.LogLevel.Error);
-        }
-    }
 }

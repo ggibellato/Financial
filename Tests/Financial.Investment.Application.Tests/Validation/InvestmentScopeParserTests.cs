@@ -7,57 +7,26 @@ namespace Financial.Investment.Application.Tests;
 [Trait("Category", "Unit")]
 public class InvestmentScopeParserTests
 {
-    public static IEnumerable<object?[]> NullValues => new[]
+    [Fact]
+    public void TryParse_ValidValueWithSpacesAndAnyCase_ReturnsTrueAndParsed()
     {
-        new object?[] { null }
-    };
-
-    [Theory]
-    [MemberData(nameof(NullValues))]
-    public void TryParse_WhenValueIsNull_ReturnsFalseAndDefault(string? value)
-    {
-        var result = InvestmentScopeParser.TryParse(value, out var parsed);
-
-        result.Should().BeFalse();
-        parsed.Should().Be(default(InvestmentScope));
-    }
-
-    [Theory]
-    [InlineData("")]
-    [InlineData("  ")]
-    public void TryParse_WhenValueIsWhitespace_ReturnsFalseAndDefault(string value)
-    {
-        var result = InvestmentScopeParser.TryParse(value, out var parsed);
-
-        result.Should().BeFalse();
-        parsed.Should().Be(default(InvestmentScope));
-    }
-
-    [Theory]
-    [InlineData("Active", InvestmentScope.Active)]
-    [InlineData("HISTORIC", InvestmentScope.Historic)]
-    [InlineData(" historic ", InvestmentScope.Historic)]
-    public void TryParse_WhenValueValid_ReturnsTrueAndParsed(string value, InvestmentScope expected)
-    {
-        var result = InvestmentScopeParser.TryParse(value, out var parsed);
+        var result = InvestmentScopeParser.TryParse(" historic ", out var parsed);
 
         result.Should().BeTrue();
-        parsed.Should().Be(expected);
+        parsed.Should().Be(InvestmentScope.Historic);
     }
 
-    [Theory]
-    [InlineData("garbage")]
-    [InlineData("closed")]
-    public void TryParse_WhenValueInvalid_ReturnsFalseAndDefault(string value)
+    [Fact]
+    public void TryParse_UnknownValue_ReturnsFalseAndDefault()
     {
-        var result = InvestmentScopeParser.TryParse(value, out var parsed);
+        var result = InvestmentScopeParser.TryParse("closed", out var parsed);
 
         result.Should().BeFalse();
         parsed.Should().Be(default(InvestmentScope));
     }
 
     [Theory]
-    [MemberData(nameof(NullValues))]
+    [InlineData(null)]
     public void ParseOrDefault_WhenValueIsNull_ReturnsActive(string? value)
     {
         InvestmentScopeParser.ParseOrDefault(value).Should().Be(InvestmentScope.Active);

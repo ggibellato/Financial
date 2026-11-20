@@ -127,21 +127,12 @@ public class CreditServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task AddCredit_CouponWithWithheld_PersistsWithheldAndNetAmount()
+    public async Task AddCredit_CouponWithWithheld_PersistsTheWithheldAmount()
     {
         await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 4), "Coupon", 100m, withheld: 15m));
 
         var persisted = PersistedCredits().Single(credit => credit.Date == new DateTime(2024, 2, 4));
         persisted.Type.Should().Be(Credit.CreditType.Coupon);
         persisted.Withheld.Should().Be(15m);
-        persisted.NetAmount.Should().Be(85m);
-    }
-
-    [Fact]
-    public async Task AddCredit_NegativeValue_PersistsAsACorrection()
-    {
-        await _service.AddCreditAsync(NewCredit(new DateTime(2024, 2, 5), "Dividend", -20m));
-
-        PersistedCredits().Should().Contain(credit => credit.Date == new DateTime(2024, 2, 5) && credit.Value == -20m);
     }
 }

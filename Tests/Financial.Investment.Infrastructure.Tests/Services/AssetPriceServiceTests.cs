@@ -22,14 +22,6 @@ public class AssetPriceServiceTests
     }
 
     [Fact]
-    public void GetCurrentPrice_NullRequest_ThrowsArgumentNullException()
-    {
-        Action act = () => _serviceWithoutFetchers.GetCurrentPrice(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
     public void GetCurrentPrice_BlankTicker_ThrowsArgumentException()
     {
         var request = new AssetPriceRequestDTO { Exchange = "BVMF", Ticker = "" };

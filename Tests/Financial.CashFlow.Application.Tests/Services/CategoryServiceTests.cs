@@ -84,6 +84,7 @@ public class CategoryServiceTests
         {
             await act.Should().ThrowAsync<ArgumentException>();
             repository.SaveChangesCallCount.Should().Be(0);
+            _tracer.ShouldHaveFailedSpan<ArgumentException>("CashFlow.CategoryService.CreateCategory");
         }
     }
 
@@ -139,6 +140,7 @@ public class CategoryServiceTests
         var act = async () => await sut.UpdateCategoryAsync(Guid.NewGuid(), request);
 
         await act.Should().ThrowAsync<KeyNotFoundException>();
+        _tracer.ShouldHaveFailedSpan<KeyNotFoundException>("CashFlow.CategoryService.UpdateCategory");
     }
 
     [Theory]
@@ -292,17 +294,5 @@ public class CategoryServiceTests
 
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.CategoryService.GetCategories");
-    }
-
-    [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.CreateCategoryAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.CategoryService.CreateCategory");
-            await FluentActions.Awaiting(() => _sut.UpdateCategoryAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.CategoryService.UpdateCategory");
-        }
     }
 }

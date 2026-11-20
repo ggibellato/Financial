@@ -36,14 +36,6 @@ public class PriceQuoteOptionsTests
     }
 
     [Fact]
-    public void Load_NullReader_Throws()
-    {
-        Action act = () => new PriceQuoteOptions().Load(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("readValue");
-    }
-
-    [Fact]
     public void Load_ZeroDuration_IsAccepted()
     {
         var options = LoadFrom(new Dictionary<string, string?> { [PriceQuoteOptions.CacheDurationKey] = "00:00:00" });

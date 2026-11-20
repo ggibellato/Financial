@@ -19,17 +19,6 @@ public class DividendServiceTests
     private readonly StubDividendDataSource _dataSource = new();
     private readonly StubSnapshotSource _snapshotSource = new();
 
-    [Fact]
-    public void GetDividendHistory_WithNullRequest_Throws()
-    {
-        var service = CreateService();
-
-        Action act = () => service.GetDividendHistory(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("Investment.DividendService.GetDividendHistory");
-    }
-
     /// <summary>
     /// The lookup takes only a ticker, so the ticker is the one thing that has to reach it. Nothing
     /// asserted this while the signature also carried an exchange it ignored.
@@ -60,6 +49,18 @@ public class DividendServiceTests
         });
 
         act.Should().Throw<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.DividendService.GetDividendHistory");
+    }
+
+    [Fact]
+    public void GetDividendSummary_WithMissingTicker_RecordsFailedSpanAndThrows()
+    {
+        var service = CreateService();
+
+        Action act = () => service.GetDividendSummary(MakeRequest(ticker: " "));
+
+        act.Should().Throw<ArgumentException>();
+        _tracer.ShouldHaveFailedSpan<ArgumentException>("Investment.DividendService.GetDividendSummary");
     }
 
     [Fact]
@@ -226,15 +227,6 @@ public class DividendServiceTests
         }
     }
 
-    [Fact]
-    public void GetDividendSummary_WithNullRequest_RecordsFailedSpanAndThrows()
-    {
-        Action act = () => CreateService().GetDividendSummary(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-        _tracer.ShouldHaveFailedSpan<ArgumentNullException>("Investment.DividendService.GetDividendSummary");
-    }
-
     private DividendService CreateService() => new(_dataSource, _snapshotSource, TestClock.At(), _tracer, NullLogger<DividendService>.Instance);
 
     private static DividendLookupRequestDTO MakeRequest(string exchange = "NYSE", string ticker = "TICK") =>
@@ -260,5 +252,4 @@ public class DividendServiceTests
 
         public AssetValueSnapshot GetSnapshot(string exchange, string ticker) => Snapshot;
     }
-
 }

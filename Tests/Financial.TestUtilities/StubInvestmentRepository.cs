@@ -32,9 +32,7 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
     /// <summary>Counts persisted writes, not calls: a mutation that reports no change
     /// still enters <see cref="ApplyAndSaveAsync"/> but must not write.</summary>
     public int WriteCallCount { get; private set; }
-    public InvestmentScope? LastGetAssetsByBrokerScope { get; private set; }
     public InvestmentScope? LastGetAssetsByBrokerPortfolioScope { get; private set; }
-    public InvestmentScope? LastGetBrokerListScope { get; private set; }
 
     /// <summary>When set, the matching method throws this instead of returning - simulates an
     /// unexpected repository failure so a caller's outer catch/rethrow can be exercised.</summary>
@@ -57,7 +55,6 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
 
     public IEnumerable<Asset> GetAssetsByBroker(string name, InvestmentScope scope = InvestmentScope.Active)
     {
-        LastGetAssetsByBrokerScope = scope;
         if (ThrowOnGetAssetsByBroker is not null)
         {
             throw ThrowOnGetAssetsByBroker;
@@ -91,7 +88,6 @@ public sealed class StubInvestmentRepository : IInvestmentRepository
 
     public IEnumerable<Broker> GetBrokerList(InvestmentScope scope = InvestmentScope.Active)
     {
-        LastGetBrokerListScope = scope;
         if (ThrowOnGetBrokerList is not null)
         {
             throw ThrowOnGetBrokerList;

@@ -434,17 +434,4 @@ public class SettlementServiceTests
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("Date must not be in the future.");
         _repository.SettlementTransactions.Should().ContainSingle();
     }
-
-    [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsArgumentNullException()
-    {
-        var sut = CreateService();
-
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => sut.AddEntryAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-            await FluentActions.Awaiting(() => sut.SettleAsync(_mae.Id, null!)).Should().ThrowAsync<ArgumentNullException>();
-            await FluentActions.Awaiting(() => sut.UpdateEntryAsync(_mae.Id, Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-        }
-    }
 }

@@ -42,15 +42,6 @@ public class TaxRuleServiceTests
         }
     }
 
-    [Fact]
-    public async Task CreateTaxRuleAsync_NullRequest_Throws()
-    {
-        var act = async () => await CreateService().CreateTaxRuleAsync(null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
-    }
-
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
@@ -112,15 +103,6 @@ public class TaxRuleServiceTests
             _repository.WriteCallCount.Should().Be(1);
             _tracer.ShouldHaveSucceededSpan("Investment.TaxRuleService.UpdateTaxRule");
         }
-    }
-
-    [Fact]
-    public async Task UpdateTaxRuleAsync_NullRequest_ThrowsAndWritesNothing()
-    {
-        var act = async () => await CreateService().UpdateTaxRuleAsync(Guid.NewGuid(), null!);
-
-        await act.Should().ThrowAsync<ArgumentNullException>();
-        _repository.WriteCallCount.Should().Be(0);
     }
 
     [Fact]

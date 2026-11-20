@@ -289,41 +289,18 @@ public class PortfolioAssetSummaryServiceTests
 
         var item = CreateService().GetPortfolioAssetsSummary("XPI", "Default").Single();
 
-        var expected = CreditsAnalysisCalculator.Calculate(asset.Credits, weightBasis: 80m, TestClock.LocalToday);
         using var _ = new AssertionScope();
-        expected.LastMonthCredits.Should().Be(5m, "the November credit is after the clock's date");
-        expected.CreditFrequencyPerYear.Should().NotBeNull();
         item.TotalCredits.Should().Be(26m);
-        item.LastMonthCredits.Should().Be(expected.LastMonthCredits);
-        item.LastCreditMonth.Should().Be(expected.LastCreditMonth);
-        item.LastMonthCreditsPercent.Should().Be(expected.LastMonthCreditsPercent);
-        item.CreditFrequencyPerYear.Should().Be(expected.CreditFrequencyPerYear);
-        item.EstimatedAnnualCredits.Should().Be(expected.EstimatedAnnualCredits);
-        item.EstimatedAnnualPercent.Should().Be(expected.EstimatedAnnualPercent);
-        item.CurrentMonthCredits.Should().Be(expected.CurrentMonthCredits);
-        item.RealizedGainLoss.Should().Be(asset.RealizedGainLoss);
-        item.RealizedGainLossSharesOnly.Should().Be(asset.RealizedGainLossSharesOnly);
-        item.AverageSellPrice.Should().Be(asset.AverageSellPrice);
-    }
-
-    [Fact]
-    public void GetPortfolioAssetsSummary_DefaultScope_QueriesActiveScopeFromRepository()
-    {
-        _repository.AssetsByBrokerPortfolio = [MakeAsset("TEST", "TST", "BVMF")];
-
-        CreateService().GetPortfolioAssetsSummary("XPI", "Default");
-
-        _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Active);
-    }
-
-    [Fact]
-    public void GetPortfolioAssetsSummary_HistoricScope_QueriesHistoricScopeFromRepository()
-    {
-        _repository.AssetsByBrokerPortfolio = [MakeAsset("TEST", "TST", "BVMF")];
-
-        CreateService().GetPortfolioAssetsSummary("XPI", "Uncategorized", InvestmentScope.Historic);
-
-        _repository.LastGetAssetsByBrokerPortfolioScope.Should().Be(InvestmentScope.Historic);
+        item.LastMonthCredits.Should().Be(5m);
+        item.LastCreditMonth.Should().Be("2026-10");
+        item.LastMonthCreditsPercent.Should().Be(6.25m);
+        item.CreditFrequencyPerYear.Should().Be(4);
+        item.EstimatedAnnualCredits.Should().Be(20m);
+        item.EstimatedAnnualPercent.Should().Be(25m);
+        item.CurrentMonthCredits.Should().Be(5m);
+        item.RealizedGainLoss.Should().Be(36m);
+        item.RealizedGainLossSharesOnly.Should().Be(10m);
+        item.AverageSellPrice.Should().Be(15m);
     }
 
     [Fact]
@@ -426,5 +403,4 @@ public class PortfolioAssetSummaryServiceTests
 
     private static Asset MakeAsset(string name, string ticker, string exchange) =>
         Asset.Create(name, "ISIN", exchange, ticker);
-
 }

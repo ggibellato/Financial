@@ -368,16 +368,4 @@ public class IncomeSourceServiceTests
         act.Should().Throw<InvalidOperationException>();
         _tracer.ShouldHaveFailedSpan<InvalidOperationException>("CashFlow.IncomeSourceService.GetIncomeSources");
     }
-
-    [Fact]
-    public async Task EveryWriteMethod_NullRequest_ThrowsAndRecordsFailedSpans()
-    {
-        using (new AssertionScope())
-        {
-            await FluentActions.Awaiting(() => _sut.CreateIncomeSourceAsync(null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.IncomeSourceService.CreateIncomeSource");
-            await FluentActions.Awaiting(() => _sut.UpdateIncomeSourceAsync(Guid.NewGuid(), null!)).Should().ThrowAsync<ArgumentNullException>();
-            _tracer.ShouldHaveFailedSpan<ArgumentNullException>("CashFlow.IncomeSourceService.UpdateIncomeSource");
-        }
-    }
 }

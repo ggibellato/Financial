@@ -23,15 +23,14 @@ public class XirrCalculationServiceTests
     }
 
     [Fact]
-    public void Calculate_TwoArgOverload_MatchesTheAsOfOverloadCalledWithToday()
+    public void Calculate_WithoutAnAsOfDate_MeasuresUpToToday()
     {
         var oneYearAgo = TestClock.LocalToday.AddYears(-1);
         var cashFlows = new List<AssetCashFlowDTO> { new() { Date = oneYearAgo, Amount = -1000m } };
 
-        var twoArgResult = _sut.Calculate(cashFlows, 1100m);
-        var asOfResult = _sut.Calculate(cashFlows, 1100m, TestClock.LocalToday);
+        var result = _sut.Calculate(cashFlows, 1100m);
 
-        twoArgResult.Should().NotBeNull();
-        asOfResult.Should().Be(twoArgResult);
+        result.Should().NotBeNull();
+        result!.Value.Should().BeApproximately(0.10m, 0.01m);
     }
 }
