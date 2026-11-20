@@ -1,7 +1,9 @@
+using Financial.Investment.Application.Configuration;
 using Financial.Investment.Application.Interfaces;
 using Financial.Investment.Infrastructure.DependencyInjection;
 using Financial.Investment.Infrastructure.Interfaces;
 using Financial.Investment.Infrastructure.Services;
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
@@ -10,6 +12,7 @@ using FluentAssertions;
 using FluentAssertions.Execution;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace Financial.Investment.Infrastructure.Tests.DependencyInjection;
 
@@ -39,9 +42,23 @@ public class InvestmentInfrastructureServiceCollectionExtensionsTests
             ["Investment:DataJsonFile"] = TestDataPaths.DataJsonFile
         });
 
-        var repository = provider.GetRequiredService<IInvestmentRepository>();
+        var selection = provider.GetRequiredService<IOptions<InvestmentRepositorySettingsOptions>>().Value.ToSelection();
 
-        repository.Should().NotBeNull();
+        selection.Should().Be(new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, TestDataPaths.DataJsonFile, null, null));
+        provider.GetRequiredService<IInvestmentRepository>();
+    }
+
+    [Fact]
+    public void AddFinancialInfrastructure_GoogleDriveProviderWithoutCredentials_FailsNamingTheInvestmentCredentialsKey()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["Investment:Repository:Provider"] = "GoogleDriveJson"
+        });
+
+        Action act = () => provider.GetRequiredService<IInvestmentRepository>();
+
+        act.Should().Throw<FileNotFoundException>().WithMessage("*Investment:GoogleDrive:CredentialsPath*");
     }
 
     [Fact]

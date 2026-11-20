@@ -1,6 +1,8 @@
+using Financial.CashFlow.Application.Configuration;
 using Financial.CashFlow.Application.Interfaces;
 using Financial.CashFlow.Infrastructure.DependencyInjection;
 using Financial.Integrations.GoogleCalendar;
+using Financial.Shared.Abstractions.Configuration;
 using Financial.Shared.Abstractions.Persistence;
 using Financial.Shared.Infrastructure.DependencyInjection;
 using Financial.Shared.Infrastructure.Persistence;
@@ -40,9 +42,23 @@ public class CashFlowInfrastructureServiceCollectionExtensionsTests
             ["CashFlow:DataJsonFile"] = missingPath
         });
 
-        var repository = provider.GetRequiredService<ICashFlowRepository>();
+        var selection = provider.GetRequiredService<IOptions<CashFlowRepositorySettingsOptions>>().Value.ToSelection();
 
-        repository.Should().NotBeNull();
+        selection.Should().Be(new JsonRepositorySelection(JsonRepositoryProvider.LocalJson, missingPath, null, null));
+        provider.GetRequiredService<ICashFlowRepository>();
+    }
+
+    [Fact]
+    public void AddFinancialCashFlowInfrastructure_GoogleDriveProviderWithoutCredentials_FailsNamingTheCashFlowCredentialsKey()
+    {
+        var provider = BuildServiceProvider(new Dictionary<string, string?>
+        {
+            ["CashFlow:Repository:Provider"] = "GoogleDriveJson"
+        });
+
+        Action act = () => provider.GetRequiredService<ICashFlowRepository>();
+
+        act.Should().Throw<FileNotFoundException>().WithMessage("*CashFlow:GoogleDrive:CredentialsPath*");
     }
 
     [Fact]

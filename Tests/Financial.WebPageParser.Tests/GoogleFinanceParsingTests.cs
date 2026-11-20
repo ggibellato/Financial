@@ -77,6 +77,16 @@ public class GoogleFinanceParsingTests
     }
 
     [Theory]
+    [InlineData("N/A")]
+    [InlineData("")]
+    public void ParsePriceValue_TextThatIsNotAPrice_IsRefused(string raw)
+    {
+        var act = () => GoogleFinanceParsing.ParsePriceValue(raw);
+
+        act.Should().Throw<FormatException>();
+    }
+
+    [Theory]
     [InlineData("R$ 9.40", 9.40)]
     [InlineData("£1,234.50", 1234.50)]
     [InlineData("GBX1250.5", 12.505)]
