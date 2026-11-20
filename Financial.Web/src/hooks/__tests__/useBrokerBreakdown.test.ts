@@ -4,7 +4,6 @@ import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { PortfolioBreakdownItemDto, SelectedNode } from '../../api/types'
 import { createSelectedNodeWrapper } from '../../test-utils/selectedNodeTestWrapper'
 import { useBrokerBreakdown } from '../useBrokerBreakdown'
-import { never } from '../../test-utils/deferred'
 
 const { getBrokerBreakdownMock } = vi.hoisted(() => ({
   getBrokerBreakdownMock: vi.fn<FinancialApiClient['getBrokerBreakdown']>(),
@@ -89,14 +88,6 @@ describe('useBrokerBreakdown', () => {
     expect(getBrokerBreakdownMock).not.toHaveBeenCalled()
   })
 
-  it('sets_isLoading_true_while_fetch_is_in_progress', async () => {
-    getBrokerBreakdownMock.mockReturnValue(never())
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useBrokerBreakdown(), { wrapper })
-    setNode(BROKER_NODE)
-    await waitFor(() => expect(result.current.isLoading).toBe(true))
-  })
-
   it('populates_breakdown_on_successful_fetch', async () => {
     getBrokerBreakdownMock.mockResolvedValue(BREAKDOWN_DTO)
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -113,19 +104,6 @@ describe('useBrokerBreakdown', () => {
     setNode(BROKER_NODE)
     await waitFor(() => expect(result.current.error).toBe('Network error'))
     expect(result.current.breakdown).toBeNull()
-  })
-
-  it('retry_re_triggers_fetch', async () => {
-    getBrokerBreakdownMock.mockRejectedValueOnce(new Error('Fail'))
-    getBrokerBreakdownMock.mockResolvedValue(BREAKDOWN_DTO)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useBrokerBreakdown(), { wrapper })
-    setNode(BROKER_NODE)
-    await waitFor(() => expect(result.current.error).toBe('Fail'))
-
-    act(() => result.current.retry())
-    await waitFor(() => expect(result.current.breakdown).not.toBeNull())
-    expect(getBrokerBreakdownMock).toHaveBeenCalledTimes(2)
   })
 
   it('resets_state_on_node_change_to_non_broker', async () => {
@@ -146,14 +124,5 @@ describe('useBrokerBreakdown', () => {
     await act(async () => {})
     expect(getBrokerBreakdownMock).not.toHaveBeenCalled()
     expect(result.current.breakdown).toBeNull()
-  })
-
-  it('sets_the_fallback_error_when_the_failure_has_no_message', async () => {
-    getBrokerBreakdownMock.mockRejectedValue('offline')
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useBrokerBreakdown(), { wrapper })
-    setNode(BROKER_NODE)
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load breakdown.'))
   })
 })

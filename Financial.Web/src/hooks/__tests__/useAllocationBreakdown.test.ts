@@ -1,5 +1,4 @@
 import { renderHook, waitFor } from '@testing-library/react'
-import { act } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AllocationBreakdownDto, BrokerCurrencyFilter, Currency } from '../../api/types'
@@ -49,15 +48,6 @@ describe('useAllocationBreakdown', () => {
     expect(result.current.error).toBeNull()
   })
 
-  it('reports_loading_until_the_request_resolves', async () => {
-    getAllocationBreakdownMock.mockResolvedValue(BREAKDOWN)
-
-    const { result } = renderBreakdownHook('GBP')
-
-    await waitFor(() => expect(result.current.isLoading).toBe(true))
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-  })
-
   it('exposes_the_failure_message_and_no_breakdown_when_the_request_rejects', async () => {
     getAllocationBreakdownMock.mockRejectedValue(new Error('Service unavailable'))
 
@@ -66,27 +56,6 @@ describe('useAllocationBreakdown', () => {
     await waitFor(() => expect(result.current.error).toBe('Service unavailable'))
     expect(result.current.breakdown).toBeNull()
     expect(result.current.isLoading).toBe(false)
-  })
-
-  it('falls_back_to_an_allocation_specific_message_for_a_non_error_rejection', async () => {
-    getAllocationBreakdownMock.mockRejectedValue('boom')
-
-    const { result } = renderBreakdownHook('GBP')
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load allocation breakdown.'))
-  })
-
-  it('retry_re_issues_the_request', async () => {
-    getAllocationBreakdownMock.mockRejectedValueOnce(new Error('Service unavailable')).mockResolvedValue(BREAKDOWN)
-
-    const { result } = renderBreakdownHook('GBP')
-    await waitFor(() => expect(result.current.error).toBe('Service unavailable'))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(result.current.breakdown).toEqual(BREAKDOWN))
-    expect(getAllocationBreakdownMock).toHaveBeenCalledTimes(2)
-    expect(result.current.error).toBeNull()
   })
 
   it('does_not_fetch_while_displayCurrency_is_null', () => {

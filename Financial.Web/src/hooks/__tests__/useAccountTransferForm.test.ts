@@ -191,6 +191,7 @@ describe('useAccountTransferForm', () => {
 
     expect(result.current.saveErrorFields).toEqual({ [field]: message })
     expect(result.current.isOpen).toBe(true)
+    expect(result.current.amount).toBe('10')
   })
 
   it('shows an amount-received message in the banner when that field is not shown', async () => {
@@ -200,16 +201,6 @@ describe('useAccountTransferForm', () => {
 
     expect(result.current.saveErrorFields).toEqual({})
     expect(result.current.saveError).toBe('Enter the amount received in EUR.')
-  })
-
-  it('shows the connection message and keeps the values when the save cannot reach the server', async () => {
-    createAccountTransferMock.mockRejectedValue(new ApiError('Failed to fetch', 0))
-
-    const result = await submitTransferToChase()
-
-    expect(result.current.saveError).toBe('Could not save. Check the connection and try again.')
-    expect(result.current.saveErrorFields).toEqual({})
-    expect(result.current.amount).toBe('10')
   })
 
   const EUR_TRANSFER: AccountTransferDto = {

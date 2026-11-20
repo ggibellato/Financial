@@ -101,6 +101,7 @@ describe('useTaxWorkbook', () => {
     const { result } = renderHook(() => useTaxWorkbook())
 
     await waitFor(() => expect(result.current.optionsError).toBe('boom'))
+    expect(result.current.isLoadingOptions).toBe(false)
 
     result.current.retryOptions()
 
@@ -116,6 +117,7 @@ describe('useTaxWorkbook', () => {
     const { result } = renderHook(() => useTaxWorkbook())
 
     await waitFor(() => expect(result.current.workbookError).toBe('workbook failed'))
+    expect(result.current.isLoadingWorkbook).toBe(false)
 
     result.current.retryWorkbook()
 
@@ -182,15 +184,6 @@ describe('useTaxWorkbook', () => {
     )
   })
 
-  it('stops loading the tax years when they fail, naming a failure without a reason', async () => {
-    getTaxWorkbookOptionsMock.mockRejectedValue('offline')
-
-    const { result } = renderHook(() => useTaxWorkbook())
-
-    await waitFor(() => expect(result.current.optionsError).toBe('Unable to load tax years.'))
-    expect(result.current.isLoadingOptions).toBe(false)
-  })
-
   it('reports the workbook loading only while it loads', async () => {
     let resolveWorkbook: (workbook: TaxWorkbookDto) => void = () => undefined
     getTaxWorkbookOptionsMock.mockResolvedValue(OPTIONS)
@@ -202,16 +195,6 @@ describe('useTaxWorkbook', () => {
     await waitFor(() => expect(result.current.isLoadingWorkbook).toBe(true))
     resolveWorkbook(buildWorkbook())
     await waitFor(() => expect(result.current.workbook).not.toBeNull())
-    expect(result.current.isLoadingWorkbook).toBe(false)
-  })
-
-  it('stops loading the workbook when it fails, naming a failure without a reason', async () => {
-    getTaxWorkbookOptionsMock.mockResolvedValue(OPTIONS)
-    getTaxWorkbookMock.mockRejectedValue('offline')
-
-    const { result } = renderHook(() => useTaxWorkbook())
-
-    await waitFor(() => expect(result.current.workbookError).toBe('Unable to load the tax workbook.'))
     expect(result.current.isLoadingWorkbook).toBe(false)
   })
 })

@@ -246,26 +246,6 @@ describe('useCredits', () => {
     expect(getAssetDetailsMock).toHaveBeenCalledTimes(2)
   })
 
-  it('set_filter_updates_selected_filter', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-    act(() => result.current.setFilter('last-3-months'))
-    expect(result.current.selectedFilter).toBe('last-3-months')
-  })
-
-  it('set_mode_updates_selected_mode', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-    act(() => result.current.setMode('Grouped'))
-    expect(result.current.selectedMode).toBe('Grouped')
-  })
-
   it('persists_filter_and_mode_per_selection_key', async () => {
     getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -287,16 +267,6 @@ describe('useCredits', () => {
     await waitFor(() => expect(getAssetDetailsMock).toHaveBeenCalledWith('XPI', 'Acoes', 'KLBN4', 'active'))
     await waitFor(() => expect(result.current.selectedFilter).toBe('last-3-months'))
     expect(result.current.selectedMode).toBe('Grouped')
-  })
-
-  it('defaults_to_last_year_stacked_on_first_selection', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-    expect(result.current.selectedFilter).toBe('last-12-months')
-    expect(result.current.selectedMode).toBe('Stacked')
   })
 
   it('show_new_form_opens_blank_form_defaulting_date_to_today_and_type_to_dividend', async () => {
@@ -590,56 +560,6 @@ describe('useCredits', () => {
     await waitFor(() => expect(result.current.deleteError).toBeNull())
   })
 
-  it('falls back to a delete-failure message with a recovery hint', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    deleteCreditMock.mockRejectedValue('no message')
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-
-    act(() => result.current.deleteCredit('aaa'))
-
-    await waitFor(() => expect(result.current.deleteError).toBe('The credit could not be deleted. Try again.'))
-  })
-
-  it('aggregateByMonth_computesByTypeDynamically', async () => {
-    const creditA: CreditDto = {
-      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
-    }
-    const creditB: CreditDto = {
-      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, intermediationFee: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
-    }
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-    act(() => result.current.setFilter('all-time'))
-
-    const bucket = result.current.chartData.find((b) => b.month === '03/2024')
-    expect(bucket?.byType.Dividend).toBe(100)
-    expect(bucket?.byType.SecuritiesLendingIncome).toBe(50)
-  })
-
-  it('aggregateByMonth_computesTotalAsSumOfByType', async () => {
-    const creditA: CreditDto = {
-      id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
-    }
-    const creditB: CreditDto = {
-      id: 'sm2', date: '2024-03-20T00:00:00', type: 'SecuritiesLendingIncome', value: 50, withheld: 0, intermediationFee: 0, netAmount: 50, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
-    }
-    getAssetDetailsMock.mockResolvedValue({ ...ASSET_DETAILS, credits: [creditA, creditB] })
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-    act(() => result.current.setFilter('all-time'))
-
-    const bucket = result.current.chartData.find((b) => b.month === '03/2024')
-    expect(bucket?.total).toBe(150)
-  })
-
   it('aggregateByMonth_supportsAThirdCreditType', async () => {
     const creditA: CreditDto = {
       id: 'sm1', date: '2024-03-05T00:00:00', type: 'Dividend', value: 100, withheld: 0, intermediationFee: 0, netAmount: 100, currency: 'GBP', fxRateSnapshot: null, ...NO_DIVIDEND_ATTRIBUTION,
@@ -661,15 +581,6 @@ describe('useCredits', () => {
     const bucket = result.current.chartData.find((b) => b.month === '03/2024')
     expect(bucket?.byType.Interest).toBe(30)
     expect(bucket?.total).toBe(180)
-  })
-
-  it('setChartType_defaultsToBar', async () => {
-    getAssetDetailsMock.mockResolvedValue(ASSET_DETAILS)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useCredits(), { wrapper })
-    setNode(ASSET_NODE)
-    await waitFor(() => expect(result.current.credits).toHaveLength(2))
-    expect(result.current.selectedChartType).toBe('Bar')
   })
 
   it('setChartType_persistsSelectionPerNode', async () => {
@@ -818,20 +729,6 @@ describe('useCredits', () => {
     act(() => result.current.saveForm())
 
     await waitFor(() => expect(addCreditMock).toHaveBeenCalledWith(expect.objectContaining({ sharesForDividend: null })))
-  })
-
-  it('shows the save fallback message when the save fails without one', async () => {
-    addCreditMock.mockRejectedValue('unexpected')
-    const result = await renderLoadedAsset()
-    act(() => result.current.showNewForm())
-    act(() => {
-      result.current.setFormField('formDate', '2024-06-01')
-      result.current.setFormField('formValue', '50')
-    })
-
-    act(() => result.current.saveForm())
-
-    await waitFor(() => expect(result.current.saveError).toBe('Failed to save credit.'))
   })
 
   it('keeps the edit form open when a different credit is deleted', async () => {

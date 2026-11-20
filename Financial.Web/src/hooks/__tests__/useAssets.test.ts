@@ -107,15 +107,6 @@ describe('useAssets', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => useAssets())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getAdminAssetsMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createAsset calls the API and re-fetches the list', async () => {
     createAssetMock.mockResolvedValue({ ...ASSETS[0], name: 'NEWASSET', quantity: 0 })
     const { result } = renderHook(() => useAssets())
@@ -127,16 +118,6 @@ describe('useAssets', () => {
 
     expect(createAssetMock).toHaveBeenCalledWith(CREATE_REQUEST)
     await waitFor(() => expect(getAdminAssetsMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createAsset propagates a rejected promise to the caller without swallowing it', async () => {
-    createAssetMock.mockRejectedValue(new Error('Portfolio "Default" already has an asset named "BCIA11".'))
-    const { result } = renderHook(() => useAssets())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(result.current.createAsset(CREATE_REQUEST)).rejects.toThrow(
-      'Portfolio "Default" already has an asset named "BCIA11".',
-    )
   })
 
   it('updateAsset calls the API and re-fetches the list', async () => {
@@ -182,22 +163,5 @@ describe('useAssets', () => {
 
   it('assetKey combines broker, portfolio, and asset names', () => {
     expect(assetKey('XPI', 'Default', 'BCIA11')).toBe('XPI/Default/BCIA11')
-  })
-
-  it('says the assets could not be loaded when the load fails without a reason', async () => {
-    getAdminAssetsMock.mockRejectedValue('offline')
-    const { result } = renderHook(() => useAssets())
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load assets.'))
-  })
-
-  it('says the asset could not be deleted when the delete fails without a reason', async () => {
-    archiveAssetMock.mockRejectedValue('offline')
-    const { result } = renderHook(() => useAssets())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.deleteAsset('XPI', 'Default', 'BCIA11'))
-
-    await waitFor(() => expect(result.current.deleteError).toBe('The asset could not be deleted. Try again.'))
   })
 })

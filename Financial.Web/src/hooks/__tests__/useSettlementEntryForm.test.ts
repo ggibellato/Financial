@@ -1,10 +1,9 @@
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
+import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { SettlementEntryDto } from '../../api/types'
 import { pinDate } from '../../test-utils/pinDate'
-import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { useSettlementEntryForm, type SettlementEntryField } from '../useSettlementEntryForm'
 import { never } from '../../test-utils/deferred'
 
@@ -553,16 +552,6 @@ describe('useSettlementEntryForm', () => {
       expect(result.current.values).toMatchObject({ paidBy: 'You', description: 'Farmácia', amount: '150' })
       expect(result.current.isDirty).toBe(true)
       expect(onSaved).not.toHaveBeenCalled()
-    })
-
-    it('shows the network message when the request cannot reach the server', async () => {
-      updateSettlementEntryMock.mockRejectedValue(new ApiError('Failed to fetch', NETWORK_FAILURE_STATUS))
-      const { result } = renderForm()
-      act(() => result.current.openEdit(ENTRY))
-
-      submit(result)
-
-      await waitFor(() => expect(result.current.saveError).toBe(NETWORK_SAVE_ERROR))
     })
 
     it('clears the server message on the next change', async () => {

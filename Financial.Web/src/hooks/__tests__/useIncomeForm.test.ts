@@ -1210,6 +1210,7 @@ describe('useIncomeForm account settings', () => {
     expect(onNotFound).not.toHaveBeenCalled()
     expect(result.current.saveIncomeError).toBe('Bank not found.')
     expect(result.current.isIncomeFormOpen).toBe(true)
+    expect(result.current.incomeDescription).toBe('Bonus')
   })
 
   it('starts on the remembered bank without the No bank default', () => {
@@ -1269,17 +1270,6 @@ describe('useIncomeForm account settings', () => {
     await act(async () => result.current.submitIncome())
 
     expect(result.current.isIncomeFormOpen).toBe(false)
-  })
-
-  it('keeps the values and shows the connection message when the save cannot reach the server', async () => {
-    createIncomeMock.mockRejectedValue(new ApiError('Failed to fetch.', 0))
-    const { result } = renderHook(() => useIncomeForm(INCOME_SOURCES, BANKS, onSaved, { lockedBank: LOCKED_CHASE }))
-
-    await addIncome(result)
-
-    expect(result.current.saveIncomeError).toBe('Could not save. Check the connection and try again.')
-    expect(result.current.incomeDescription).toBe('Bonus')
-    expect(result.current.isIncomeFormOpen).toBe(true)
   })
 
   it('reports dirty only while the values differ from those the form opened with', () => {

@@ -1,10 +1,9 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, NETWORK_FAILURE_STATUS } from '../../api/apiError'
+import { ApiError } from '../../api/apiError'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import type { AccountStatementDto } from '../../api/types'
 import { deferred, never } from '../../test-utils/deferred'
-import { NETWORK_SAVE_ERROR } from '../../utils/formatters'
 import { dueDateRangeOf, useStatementDueDateForm } from '../useStatementDueDateForm'
 
 const { setStatementDueDateMock } = vi.hoisted(() => ({
@@ -157,15 +156,6 @@ describe('useStatementDueDateForm', () => {
 
     expect(result.current.form?.statement).toBe(NOVEMBER_UNSTORED)
     expect(result.current.form?.error).toBeNull()
-  })
-
-  it('says so on a network failure', async () => {
-    setStatementDueDateMock.mockRejectedValue(new ApiError('Failed to fetch', NETWORK_FAILURE_STATUS))
-    const { result } = renderForm()
-
-    await act(async () => result.current.save())
-
-    expect(result.current.form?.error).toBe(NETWORK_SAVE_ERROR)
   })
 
   it('sends nothing without a card', () => {

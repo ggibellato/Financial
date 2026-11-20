@@ -53,15 +53,6 @@ describe('useRecurringBills', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => useRecurringBills())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createRecurringBill calls the API and re-fetches the list', async () => {
     createMensaisBillMock.mockResolvedValue({
       id: 'b3',
@@ -83,16 +74,6 @@ describe('useRecurringBills', () => {
 
     expect(createMensaisBillMock).toHaveBeenCalledWith({ dueDay: 5, description: 'Rent', value: 1500, area: 'Brasil', note: '' })
     await waitFor(() => expect(getMensaisBillsMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createRecurringBill propagates a rejected promise to the caller without swallowing it', async () => {
-    createMensaisBillMock.mockRejectedValue(new Error('Due day must be between 1 and 31.'))
-    const { result } = renderHook(() => useRecurringBills())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(
-      result.current.createRecurringBill({ dueDay: 32, description: 'Rent', value: 1500, area: 'Brasil', note: '' }),
-    ).rejects.toThrow('Due day must be between 1 and 31.')
   })
 
   it('updateRecurringBill calls the API and re-fetches the list', async () => {

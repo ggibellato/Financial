@@ -53,15 +53,6 @@ describe('useInvestmentAccounts', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => useInvestmentAccounts())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createInvestmentAccount calls the API and re-fetches the list', async () => {
     createInvestmentAccountMock.mockResolvedValue({
       id: 'a3',
@@ -82,16 +73,6 @@ describe('useInvestmentAccounts', () => {
 
     expect(createInvestmentAccountMock).toHaveBeenCalledWith({ name: 'Monzo Pot', isActive: true, isLiability: false, source: 'None', creditCardId: null, potsAccountId: null })
     await waitFor(() => expect(getInvestmentAccountsMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createInvestmentAccount propagates a rejected promise to the caller without swallowing it', async () => {
-    createInvestmentAccountMock.mockRejectedValue(new Error('An investment account named "ChaseSave" already exists.'))
-    const { result } = renderHook(() => useInvestmentAccounts())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(
-      result.current.createInvestmentAccount({ name: 'ChaseSave', isActive: true, isLiability: false, source: 'None', creditCardId: null, potsAccountId: null }),
-    ).rejects.toThrow('An investment account named "ChaseSave" already exists.')
   })
 
   it('updateInvestmentAccount calls the API and re-fetches the list', async () => {

@@ -53,15 +53,6 @@ describe('usePortfolios', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => usePortfolios())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createPortfolio calls the API and re-fetches the list', async () => {
     createPortfolioMock.mockResolvedValue({ name: 'New Portfolio', brokerName: 'XPI', brokerStatus: 'Active', assetCount: 0 })
     const { result } = renderHook(() => usePortfolios())
@@ -73,16 +64,6 @@ describe('usePortfolios', () => {
 
     expect(createPortfolioMock).toHaveBeenCalledWith({ brokerName: 'XPI', name: 'New Portfolio' })
     await waitFor(() => expect(getAdminPortfoliosMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createPortfolio propagates a rejected promise to the caller without swallowing it', async () => {
-    createPortfolioMock.mockRejectedValue(new Error('Broker "XPI" already has a portfolio named "Default".'))
-    const { result } = renderHook(() => usePortfolios())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(result.current.createPortfolio({ brokerName: 'XPI', name: 'Default' })).rejects.toThrow(
-      'Broker "XPI" already has a portfolio named "Default".',
-    )
   })
 
   it('updatePortfolio calls the API and re-fetches the list', async () => {

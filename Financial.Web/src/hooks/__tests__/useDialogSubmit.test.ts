@@ -47,9 +47,12 @@ describe('useDialogSubmit', () => {
 
     await act(() => result.current.submit(() => Promise.reject(rejection)))
     expect(result.current.failure).toBe(rejection)
+    expect(result.current.error).toBe('That name is taken.')
 
     act(() => { void result.current.submit(() => never()) })
     expect(result.current.failure).toBeNull()
+    expect(result.current.error).toBeNull()
+    expect(result.current.isSaving).toBe(true)
   })
 
   it('falls back to the given message when the rejection is not an Error', async () => {
@@ -58,15 +61,5 @@ describe('useDialogSubmit', () => {
     await act(() => result.current.submit(() => Promise.reject('network down')))
 
     expect(result.current.error).toBe('The bank could not be saved.')
-  })
-
-  it('clears the previous error when a new save starts', async () => {
-    const { result } = renderHook(() => useDialogSubmit('The bank could not be saved.'))
-    await act(() => result.current.submit(() => Promise.reject(new Error('Server unavailable.'))))
-
-    act(() => { void result.current.submit(() => never()) })
-
-    expect(result.current.error).toBeNull()
-    expect(result.current.isSaving).toBe(true)
   })
 })

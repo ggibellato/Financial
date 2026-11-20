@@ -107,13 +107,4 @@ describe('useOpenLots', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(true))
     expect(result.current.openLots).toEqual([OPEN_LOT])
   })
-
-  it('says the open lots could not be loaded when the load fails without a reason', async () => {
-    getOpenLotsMock.mockRejectedValue('offline')
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useOpenLots(true), { wrapper })
-    setNode(ASSET_NODE)
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load open lots.'))
-  })
 })

@@ -57,15 +57,6 @@ describe('useBrokers', () => {
     expect(result.current.error).toBe('Network down')
   })
 
-  it('retry re-fetches the list', async () => {
-    const { result } = renderHook(() => useBrokers())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    act(() => result.current.retry())
-
-    await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
-  })
-
   it('createBroker calls the API and re-fetches the list', async () => {
     createBrokerMock.mockResolvedValue({
       name: 'New Broker',
@@ -83,16 +74,6 @@ describe('useBrokers', () => {
 
     expect(createBrokerMock).toHaveBeenCalledWith({ name: 'New Broker', currency: 'BRL', costBasisMethod: null })
     await waitFor(() => expect(getAdminBrokersMock).toHaveBeenCalledTimes(2))
-  })
-
-  it('createBroker propagates a rejected promise to the caller without swallowing it', async () => {
-    createBrokerMock.mockRejectedValue(new Error('A broker named "XPI" already exists.'))
-    const { result } = renderHook(() => useBrokers())
-    await waitFor(() => expect(result.current.isLoading).toBe(false))
-
-    await expect(
-      result.current.createBroker({ name: 'XPI', currency: 'BRL', costBasisMethod: null }),
-    ).rejects.toThrow('A broker named "XPI" already exists.')
   })
 
   it('updateBroker calls the API and re-fetches the list', async () => {

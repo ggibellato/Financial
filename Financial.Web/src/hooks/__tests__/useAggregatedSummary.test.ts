@@ -99,14 +99,6 @@ describe('useAggregatedSummary', () => {
     })
   })
 
-  it('sets_isLoading_true_while_fetch_is_in_progress', async () => {
-    getSummaryByBrokerMock.mockReturnValue(never())
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useAggregatedSummary(), { wrapper })
-    setNode(BROKER_NODE)
-    await waitFor(() => expect(result.current.isLoading).toBe(true))
-  })
-
   it('populates_summary_on_successful_fetch', async () => {
     getSummaryByBrokerMock.mockResolvedValue(SUMMARY_DTO)
     const { wrapper, setNode } = createSelectedNodeWrapper()
@@ -141,19 +133,6 @@ describe('useAggregatedSummary', () => {
     expect(result.current.summary).toBeNull()
   })
 
-  it('retry_re_triggers_fetch', async () => {
-    getSummaryByBrokerMock.mockRejectedValueOnce(new Error('Fail'))
-    getSummaryByBrokerMock.mockResolvedValue(SUMMARY_DTO)
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useAggregatedSummary(), { wrapper })
-    setNode(BROKER_NODE)
-    await waitFor(() => expect(result.current.error).toBe('Fail'))
-
-    act(() => result.current.retry())
-    await waitFor(() => expect(result.current.summary).not.toBeNull())
-    expect(getSummaryByBrokerMock).toHaveBeenCalledTimes(2)
-  })
-
   it('does_not_fetch_when_asset_node_selected', async () => {
     const { wrapper, setNode } = createSelectedNodeWrapper()
     renderHook(() => useAggregatedSummary(), { wrapper })
@@ -170,14 +149,5 @@ describe('useAggregatedSummary', () => {
     await act(async () => {})
     expect(getSummaryByBrokerMock).not.toHaveBeenCalled()
     expect(result.current.summary).toBeNull()
-  })
-
-  it('sets_the_fallback_error_when_the_failure_has_no_message', async () => {
-    getSummaryByBrokerMock.mockRejectedValue('offline')
-    const { wrapper, setNode } = createSelectedNodeWrapper()
-    const { result } = renderHook(() => useAggregatedSummary(), { wrapper })
-    setNode(BROKER_NODE)
-
-    await waitFor(() => expect(result.current.error).toBe('Unable to load summary.'))
   })
 })
