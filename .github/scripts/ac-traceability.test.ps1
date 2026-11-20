@@ -36,6 +36,7 @@ New-File 'prd/P90-prd-alpha/prd-alpha.md' @'
 - [ ] **P90-F01-alpha-01** unticked, traced by a Trait
 - [x] **P90-F01-alpha-02** ticked, traced by a web title
 - [ ] **P90-F01-alpha-03** untraced
+- [ ] **P90-CF-cross-feature-01** cross-feature, traced by a Trait
 - [ ] not an id'd criterion
 '@
 New-File 'prd/P91-prd-beta/prd-beta.md' @'
@@ -48,18 +49,24 @@ New-File 'Tests/Acceptance/AlphaTests.cs' @'
 public void Works() { }
 [Trait("AC", "P99-F01-ghost-01")]
 public void Ghost() { }
+[Trait("AC", "P90-CF-cross-feature-01")]
+public void Across() { }
 '@
 New-File 'Tests/bin/Debug/Stale.cs' '[Trait("AC", "P90-F01-alpha-03")]'
 New-File 'web/components/Alpha.test.tsx' "it('[AC P90-F01-alpha-02] shows the value', () => {})"
+New-File 'web/components/Beta.test.tsx' "it('P90-F01-alpha-03: shows the other value', () => {})"
 
 $result = Invoke-Report
 Check 'an id with a Trait tag is traced' ($result.Summary -notmatch 'P90-F01-alpha-01') $result
 Check 'an id with a web test title is traced' ($result.Summary -notmatch 'P90-F01-alpha-02') $result
-Check 'an id with no tag is listed under its PRD' ($result.Summary -match 'P90-prd-alpha\*\*: 1 of 3 untraced' -and $result.Summary -match 'P90-F01-alpha-03') $result
+Check 'an id with no tag is listed under its PRD' ($result.Summary -match 'P90-prd-alpha\*\*: 1 of 4 untraced' -and $result.Summary -match 'P90-F01-alpha-03') $result
+Check 'a cross-feature id is read from the PRD and traced' ($result.Summary -notmatch '- `P90-CF-cross-feature-01`') $result
+Check 'an id written outside an AC tag is reported as malformed' ($result.Summary -match 'Malformed tags[^
+]*: 1' -and $result.Summary -match 'Beta.test.tsx: P90-F01-alpha-03') $result
 Check 'tags under bin are ignored' ($result.Summary -match 'P90-F01-alpha-03') $result
 Check 'a PRD without ids yields one line with its criteria count' ($result.Summary -match 'P91-prd-beta: 2 criteria, no ids' -and $result.Summary -match '1 PRDs have no criterion ids') $result
 Check 'a tag naming an unknown id is an orphan' ($result.Summary -match 'Orphan tags[^\n]*: 1' -and $result.Summary -match 'P99-F01-ghost-01') $result
-Check 'the totals count ticked and unticked criteria' ($result.Summary -match '1 PRDs carry criterion ids: 1 of 3 criteria') $result
+Check 'the totals count ticked and unticked criteria' ($result.Summary -match '1 PRDs carry criterion ids: 1 of 4 criteria') $result
 Check 'the run exits 0 when criteria are untraced' ($result.Exit -eq 0) $result
 
 Remove-Item -Recurse -Force $work
