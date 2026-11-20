@@ -1,14 +1,11 @@
-import { FluentProvider, Toaster } from '@fluentui/react-components'
 import { act, renderHook, screen, waitFor } from '@testing-library/react'
-import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
 import { ApiError } from '../../api/apiError'
 import type { IncomeDto } from '../../api/types'
 import { account, cardAccount } from '../../test/account'
-import { financialLightTheme } from '../../theme/fluentTheme'
 import { setStoredDefault } from '../../utils/createFormDefaults'
-import { APP_TOASTER_ID } from '../useSuccessToast'
+import { WithAppToaster } from '../../test/withAppToaster'
 import { useIncomeTab } from '../useIncomeTab'
 
 const { getIncomesByMonthMock, getIncomeSourcesMock, getAccountsMock, deleteIncomeMock } = vi.hoisted(() => ({
@@ -48,17 +45,8 @@ const ACCOUNTS = [
   cardAccount({ id: 'amex', name: 'Amex' }),
 ]
 
-function WithToaster({ children }: { children: ReactNode }) {
-  return (
-    <FluentProvider theme={financialLightTheme}>
-      <Toaster toasterId={APP_TOASTER_ID} />
-      {children}
-    </FluentProvider>
-  )
-}
-
 async function renderLoaded(year = 2026, month = 10) {
-  const rendered = renderHook(({ y, m }) => useIncomeTab(y, m), { initialProps: { y: year, m: month }, wrapper: WithToaster })
+  const rendered = renderHook(({ y, m }) => useIncomeTab(y, m), { initialProps: { y: year, m: month }, wrapper: WithAppToaster })
   await waitFor(() => expect(rendered.result.current.isLoading).toBe(false))
   return rendered
 }

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { TreeNodeDto } from '../../api/types'
+import { EMPTY_TREE, treeWithAsset as makeTree } from '../../test/navigationTree'
 import { findAssetInTree, readPendingCorporateActionId, readPendingSelection, resolveHoldingLocation } from '../holdingNavigation'
 
 const { getNavigationTreeMock } = vi.hoisted(() => ({
@@ -12,43 +12,6 @@ vi.mock('../../api/financialApiClient', () => ({
     getNavigationTree: getNavigationTreeMock,
   } as Partial<FinancialApiClient>,
 }))
-
-function makeTree(brokerName: string, portfolioName: string, assetName: string): TreeNodeDto {
-  return {
-    nodeType: 'Investments',
-    displayName: 'Investments',
-    metadata: {},
-    children: [
-      {
-        nodeType: 'Broker',
-        displayName: brokerName,
-        metadata: { BrokerName: brokerName },
-        children: [
-          {
-            nodeType: 'Portfolio',
-            displayName: portfolioName,
-            metadata: { PortfolioName: portfolioName },
-            children: [
-              {
-                nodeType: 'Asset',
-                displayName: assetName,
-                metadata: { AssetName: assetName },
-                children: [],
-              },
-            ],
-          },
-        ],
-      },
-    ],
-  }
-}
-
-const EMPTY_TREE: TreeNodeDto = {
-  nodeType: 'Investments',
-  displayName: 'Investments',
-  metadata: {},
-  children: [],
-}
 
 describe('resolveHoldingLocation', () => {
   beforeEach(() => {

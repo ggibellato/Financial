@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { FinancialApiClient } from '../../api/financialApiClient'
-import type { TreeNodeDto } from '../../api/types'
+import { EMPTY_TREE, treeWithAsset } from '../../test/navigationTree'
 import { useHoldingNavigation } from '../useHoldingNavigation'
 
 const { getNavigationTreeMock } = vi.hoisted(() => ({
@@ -15,27 +15,6 @@ vi.mock('../../api/financialApiClient', () => ({
   } as Partial<FinancialApiClient>,
 }))
 
-const EMPTY_TREE: TreeNodeDto = { nodeType: 'Investments', displayName: 'Investments', metadata: {}, children: [] }
-
-const TREE_WITH_VUSA: TreeNodeDto = {
-  ...EMPTY_TREE,
-  children: [
-    {
-      nodeType: 'Broker',
-      displayName: 'Trading212',
-      metadata: { BrokerName: 'Trading212' },
-      children: [
-        {
-          nodeType: 'Portfolio',
-          displayName: 'ISA',
-          metadata: { PortfolioName: 'ISA' },
-          children: [{ nodeType: 'Asset', displayName: 'VUSA', metadata: { AssetName: 'VUSA' }, children: [] }],
-        },
-      ],
-    },
-  ],
-}
-
 function renderNavigation() {
   return renderHook(() => ({ navigation: useHoldingNavigation(), location: useLocation() }), { wrapper: MemoryRouter })
 }
@@ -46,7 +25,7 @@ describe('useHoldingNavigation', () => {
   })
 
   it('navigates_to_the_resolved_route_carrying_the_pending_selection', async () => {
-    getNavigationTreeMock.mockResolvedValue(TREE_WITH_VUSA)
+    getNavigationTreeMock.mockResolvedValue(treeWithAsset('Trading212', 'ISA', 'VUSA'))
     const { result } = renderNavigation()
 
     let navigated = false
@@ -56,20 +35,20 @@ describe('useHoldingNavigation', () => {
 
     expect(navigated).toBe(true)
     expect(result.current.location.pathname).toBe('/investments/active-investments')
-    expect(result.current.location.state).toEqual({
+    expect(result.current.location.state).toStrictEqual({
       pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' },
     })
   })
 
   it('carries_the_corporate_action_id_in_the_router_state_when_given', async () => {
-    getNavigationTreeMock.mockResolvedValue(TREE_WITH_VUSA)
+    getNavigationTreeMock.mockResolvedValue(treeWithAsset('Trading212', 'ISA', 'VUSA'))
     const { result } = renderNavigation()
 
     await act(async () => {
       await result.current.navigation.navigateToHolding('Trading212', 'ISA', 'VUSA', 'ca-123')
     })
 
-    expect(result.current.location.state).toEqual({
+    expect(result.current.location.state).toStrictEqual({
       pendingSelection: { brokerName: 'Trading212', portfolioName: 'ISA', assetName: 'VUSA' },
       pendingCorporateActionId: 'ca-123',
     })
