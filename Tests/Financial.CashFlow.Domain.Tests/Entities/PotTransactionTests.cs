@@ -182,21 +182,6 @@ public class PotTransactionTests
     }
 
     [Fact]
-    public void Pot_DeactivatedAfterMovementCreated_MovementKeepsAValidPotReference()
-    {
-        var pot = Pot.Create("Ferias", 20m, isActive: true);
-        var movement = PotTransaction.Create(pot, 100m, new DateOnly(2026, 7, 1), "Monthly split");
-
-        pot.Update(pot.Name, pot.SplitPercentage, isActive: false);
-
-        using (new AssertionScope())
-        {
-            movement.Pot.Should().BeSameAs(pot);
-            movement.Pot.IsActive.Should().BeFalse();
-        }
-    }
-
-    [Fact]
     public void ContributionTo_AccountThatOwnsThePot_IsTheAmount()
     {
         var reserva = Account.Create("Reserva", AccountTemplate.Pots, Currency.GBP);

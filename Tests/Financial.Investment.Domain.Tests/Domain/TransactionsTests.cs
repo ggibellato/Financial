@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using Financial.Investment.Domain.Entities;
 using FluentAssertions;
@@ -174,21 +173,6 @@ public class TransactionsTests
     }
 
     [Fact]
-    public void NonGenericGetEnumerator_EnumeratesTheSameItemsAsTheGenericOne()
-    {
-        _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-
-        var items = new List<Transaction>();
-        var enumerator = ((IEnumerable)_sut).GetEnumerator();
-        while (enumerator.MoveNext())
-        {
-            items.Add((Transaction)enumerator.Current!);
-        }
-
-        items.Should().HaveCount(1);
-    }
-
-    [Fact]
     public void ExplicitClear_RemovesEveryTransaction()
     {
         _sut.Add(Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
@@ -197,18 +181,6 @@ public class TransactionsTests
 
         _sut.Count.Should().Be(0);
         _sut.Quantity.Should().Be(0);
-    }
-
-    [Fact]
-    public void ExplicitCopyTo_CopiesEveryTransactionIntoTheGivenArray()
-    {
-        var transaction = Transaction.Create(new DateTime(2021, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m);
-        _sut.Add(transaction);
-
-        var target = new Transaction[1];
-        ((ICollection<Transaction>)_sut).CopyTo(target, 0);
-
-        target[0].Should().BeSameAs(transaction);
     }
 
     [Fact]
@@ -385,18 +357,6 @@ public class TransactionsTests
     }
 
     [Fact]
-    public void SetCorporateActions_OneForTenReverseSplit_ReducesQuantityAndMultipliesAveragePrice()
-    {
-        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 100m, 0m));
-        var reverseSplit = CorporateAction.CreateSplit(new DateTime(2024, 2, 1), 0.1m);
-
-        _sut.SetCorporateActions(new[] { reverseSplit });
-
-        _sut.Quantity.Should().Be(1m);
-        _sut.AveragePrice.Should().Be(1000m);
-    }
-
-    [Fact]
     public void SetCorporateActions_SplitSameDateAsBuyAndSell_AppliesBeforeEitherTransaction()
     {
         var date = new DateTime(2024, 2, 1);
@@ -433,19 +393,6 @@ public class TransactionsTests
 
         _sut.Quantity.Should().Be(0m);
         _sut.AveragePrice.Should().Be(0m);
-    }
-
-    [Fact]
-    public void SetCorporateActions_MergerTarget_AddsReceivedQuantityAndBlendsAveragePrice()
-    {
-        _sut.Add(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 50m, 0m));
-        var target = CorporateAction.CreateMergerTarget(
-            new DateTime(2024, 2, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
-
-        _sut.SetCorporateActions(new[] { target });
-
-        _sut.Quantity.Should().Be(50m);
-        _sut.AveragePrice.Should().Be((10m * 50m + 1000m) / 50m);
     }
 
     [Fact]

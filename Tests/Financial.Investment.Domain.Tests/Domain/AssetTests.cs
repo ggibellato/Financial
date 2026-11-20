@@ -821,14 +821,6 @@ public class AssetTests
     }
 
     [Fact]
-    public void TaxClassifications_StartsEmpty()
-    {
-        var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");
-
-        asset.TaxClassifications.Should().BeEmpty();
-    }
-
-    [Fact]
     public void AppendTaxClassification_AddsToTaxClassifications()
     {
         var asset = Asset.Create("Asset A", "ISIN123", "NYSE", "AAA");

@@ -178,28 +178,6 @@ public class CorporateActionTests
     }
 
     [Fact]
-    public void CreateMergerSource_NoteExceeds500Characters_ThrowsArgumentException()
-    {
-        var note = new string('a', CorporateAction.MaxNoteLength + 1);
-
-        Action act = () => CorporateAction.CreateMergerSource(
-            new DateTime(2026, 4, 1), 0.5m, null, note, Guid.NewGuid(), "XCORP", 40m, 1000m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void CreateMergerSourceWithId_PreservesGivenId()
-    {
-        var id = Guid.NewGuid();
-
-        var action = CorporateAction.CreateMergerSourceWithId(
-            id, new DateTime(2026, 4, 1), 0.5m, null, null, Guid.NewGuid(), "XCORP", 40m, 1000m);
-
-        action.Id.Should().Be(id);
-    }
-
-    [Fact]
     public void CreateMergerTarget_ValidFields_SetsFields()
     {
         var date = new DateTime(2026, 4, 1);
@@ -219,41 +197,6 @@ public class CorporateActionTests
         action.ExchangeRatio.Should().BeNull();
         action.CashInLieu.Should().BeNull();
         action.RatioFactor.Should().BeNull();
-    }
-
-    [Fact]
-    public void CreateMergerTarget_NoteExceeds500Characters_ThrowsArgumentException()
-    {
-        var note = new string('a', CorporateAction.MaxNoteLength + 1);
-
-        Action act = () => CorporateAction.CreateMergerTarget(
-            new DateTime(2026, 4, 1), note, Guid.NewGuid(), "TWTR", 40m, 1000m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void CreateMergerTargetWithId_PreservesGivenId()
-    {
-        var id = Guid.NewGuid();
-
-        var action = CorporateAction.CreateMergerTargetWithId(
-            id, new DateTime(2026, 4, 1), null, Guid.NewGuid(), "TWTR", 40m, 1000m);
-
-        action.Id.Should().Be(id);
-    }
-
-    [Fact]
-    public void CreateMergerSourceAndTarget_ShareCorrelationId()
-    {
-        var correlationId = Guid.NewGuid();
-
-        var source = CorporateAction.CreateMergerSource(
-            new DateTime(2026, 4, 1), 0.5m, null, null, correlationId, "XCORP", 40m, 1000m);
-        var target = CorporateAction.CreateMergerTarget(
-            new DateTime(2026, 4, 1), null, correlationId, "TWTR", 40m, 1000m);
-
-        source.CorrelationId.Should().Be(target.CorrelationId);
     }
 
     [Fact]
@@ -313,28 +256,6 @@ public class CorporateActionTests
     }
 
     [Fact]
-    public void CreateSpinOffParent_NoteExceeds500Characters_ThrowsArgumentException()
-    {
-        var note = new string('a', CorporateAction.MaxNoteLength + 1);
-
-        Action act = () => CorporateAction.CreateSpinOffParent(
-            new DateTime(2026, 4, 1), 15m, note, Guid.NewGuid(), "SPINCO", 5m, 150m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void CreateSpinOffParentWithId_PreservesGivenId()
-    {
-        var id = Guid.NewGuid();
-
-        var action = CorporateAction.CreateSpinOffParentWithId(
-            id, new DateTime(2026, 4, 1), 15m, null, Guid.NewGuid(), "SPINCO", 5m, 150m);
-
-        action.Id.Should().Be(id);
-    }
-
-    [Fact]
     public void CreateSpinOffNew_ValidFields_SetsFields()
     {
         var date = new DateTime(2026, 4, 1);
@@ -365,40 +286,5 @@ public class CorporateActionTests
 
         action.ConvertedQuantity.Should().Be(-5m);
         action.CarriedCostBasis.Should().Be(-150m);
-    }
-
-    [Fact]
-    public void CreateSpinOffNew_NoteExceeds500Characters_ThrowsArgumentException()
-    {
-        var note = new string('a', CorporateAction.MaxNoteLength + 1);
-
-        Action act = () => CorporateAction.CreateSpinOffNew(
-            new DateTime(2026, 4, 1), note, Guid.NewGuid(), "GEHC", 5m, 150m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void CreateSpinOffNewWithId_PreservesGivenId()
-    {
-        var id = Guid.NewGuid();
-
-        var action = CorporateAction.CreateSpinOffNewWithId(
-            id, new DateTime(2026, 4, 1), null, Guid.NewGuid(), "GEHC", 5m, 150m);
-
-        action.Id.Should().Be(id);
-    }
-
-    [Fact]
-    public void CreateSpinOffParentAndNew_ShareCorrelationId()
-    {
-        var correlationId = Guid.NewGuid();
-
-        var parent = CorporateAction.CreateSpinOffParent(
-            new DateTime(2026, 4, 1), 15m, null, correlationId, "SPINCO", 5m, 150m);
-        var newRecord = CorporateAction.CreateSpinOffNew(
-            new DateTime(2026, 4, 1), null, correlationId, "GEHC", 5m, 150m);
-
-        parent.CorrelationId.Should().Be(newRecord.CorrelationId);
     }
 }

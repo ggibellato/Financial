@@ -35,13 +35,12 @@ public class OpenPositionCostCalculatorTests
     }
 
     [Fact]
-    public void CostOfUnitsHeld_ScalarOverload_MatchesTheAssetOverload()
+    public void CostOfUnitsHeld_ForAnAsset_IsItsQuantityTimesItsAveragePrice()
     {
         var asset = Asset.Create("Asset A", "ISIN", "NYSE", "AAA");
         asset.AddTransaction(Transaction.Create(new DateTime(2024, 1, 1), Transaction.TransactionType.Buy, 10m, 5m, 0m));
 
-        OpenPositionCostCalculator.CostOfUnitsHeld(asset.Quantity, asset.AveragePrice)
-            .Should().Be(OpenPositionCostCalculator.CostOfUnitsHeld(asset));
+        OpenPositionCostCalculator.CostOfUnitsHeld(asset).Should().Be(50m);
     }
 
     [Fact]

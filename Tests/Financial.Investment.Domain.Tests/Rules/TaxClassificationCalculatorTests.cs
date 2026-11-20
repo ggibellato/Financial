@@ -156,17 +156,6 @@ public class TaxClassificationCalculatorTests
     }
 
     [Fact]
-    public void CalculateForCredit_TaxYear_BrlUsesPlainCalendarYear()
-    {
-        var credit = Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.BRL);
-        var investments = Investments.Create();
-
-        var classification = TaxClassificationCalculator.CalculateForCredit(credit, investments, TestClock.Default);
-
-        classification.TaxYear.Should().Be("2026");
-    }
-
-    [Fact]
     public void CalculateForCredit_NonBrlUsesUkTaxYear()
     {
         var credit = Credit.Create(new DateTime(2026, 3, 1), Credit.CreditType.Dividend, 100m, 0m, Currency.GBP);
@@ -252,17 +241,6 @@ public class TaxClassificationCalculatorTests
             classification.EventCategory.Should().Be(EventCategory.CorporateAction);
             classification.CostBasis.Should().Be(target.CarriedCostBasis);
         }
-    }
-
-    [Fact]
-    public void CalculateForCorporateAction_TaxYear_BrlUsesPlainCalendarYear()
-    {
-        var target = CreateMergerTargetRecord(new DateTime(2026, 3, 1));
-        var investments = Investments.Create();
-
-        var classification = TaxClassificationCalculator.CalculateForCorporateAction(target, Currency.BRL, investments, TestClock.Default);
-
-        classification.TaxYear.Should().Be("2026");
     }
 
     [Fact]

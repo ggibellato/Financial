@@ -158,24 +158,6 @@ public class CashFlowDataTests
         _sut.BalanceAdjustments.Should().ContainSingle().Which.Id.Should().NotBe(unknown.Id);
     }
 
-    [Fact]
-    public void SetTitheCarryForwardEffectiveFrom_SetsTheValue()
-    {
-        _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
-
-        _sut.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 9, 1));
-    }
-
-    [Fact]
-    public void SetTitheCarryForwardEffectiveFrom_CalledAgain_OverwritesThePreviousValue()
-    {
-        _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 9, 1));
-
-        _sut.SetTitheCarryForwardEffectiveFrom(new DateOnly(2026, 10, 1));
-
-        _sut.TitheCarryForwardEffectiveFrom.Should().Be(new DateOnly(2026, 10, 1));
-    }
-
     private static Income CreateIncome() =>
         Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
 

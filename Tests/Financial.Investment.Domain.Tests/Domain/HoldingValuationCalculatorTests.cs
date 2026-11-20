@@ -30,13 +30,13 @@ public class HoldingValuationCalculatorTests
     }
 
     [Fact]
-    public void Calculate_CostOfUnitsHeld_UsesOpenPositionCostCalculator()
+    public void Calculate_CostOfUnitsHeld_IsQuantityTimesAveragePrice()
     {
         var price = CreatePrice(new DateOnly(2026, 9, 10), 8m);
 
         var result = HoldingValuationCalculator.Calculate(10m, 5m, price, new DateOnly(2026, 9, 10));
 
-        result.CostOfUnitsHeld.Should().Be(OpenPositionCostCalculator.CostOfUnitsHeld(10m, 5m));
+        result.CostOfUnitsHeld.Should().Be(50m);
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class HoldingValuationCalculatorTests
     {
         var result = HoldingValuationCalculator.NotMarkedToMarket(28m, 71.5m);
 
-        result.CostOfUnitsHeld.Should().Be(OpenPositionCostCalculator.CostOfUnitsHeld(28m, 71.5m));
+        result.CostOfUnitsHeld.Should().Be(2002m);
     }
 
     [Fact]

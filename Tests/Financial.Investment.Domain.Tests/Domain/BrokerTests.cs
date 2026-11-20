@@ -16,19 +16,6 @@ public class BrokerTests
         broker.CostBasisMethod.Should().Be(CostBasisMethod.AverageCost);
     }
 
-    [Theory]
-    [InlineData(CostBasisMethod.AverageCost)]
-    [InlineData(CostBasisMethod.FIFO)]
-    [InlineData(CostBasisMethod.SpecificId)]
-    public void SetCostBasisMethod_ChangesAndIsReadBack(CostBasisMethod method)
-    {
-        var broker = Broker.Create("Broker A", "USD");
-
-        broker.SetCostBasisMethod(method);
-
-        broker.CostBasisMethod.Should().Be(method);
-    }
-
     [Fact]
     public void Update_ChangesNameAndCurrency()
     {

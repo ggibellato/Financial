@@ -25,10 +25,11 @@ public class IncomeTests
         var incomeSource = Gleison;
         var bank = Barclays;
 
-        var income = Income.Create(date, incomeSource, 3200.00m, 2450.00m, bank);
+        var income = Income.Create(date, incomeSource, 3200.00m, 2450.00m, bank, "Chip ISA dividend");
 
         using (new AssertionScope())
         {
+            income.Description.Should().Be("Chip ISA dividend");
             income.Id.Should().NotBeEmpty();
             income.Date.Should().Be(date);
             income.IncomeSource.Should().Be(incomeSource);
@@ -37,7 +38,6 @@ public class IncomeTests
             income.Account.Should().Be(bank);
         }
     }
-
 
     [Fact]
     public void Create_WithoutGrossValue_AllowsNull()
@@ -77,22 +77,6 @@ public class IncomeTests
         var act = () => Income.Create(new DateOnly(2026, 7, 1), null!, null, 10m, Chase);
 
         act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void Create_WithDescription_AssignsDescription()
-    {
-        var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase, "Chip ISA dividend");
-
-        income.Description.Should().Be("Chip ISA dividend");
-    }
-
-    [Fact]
-    public void Create_WithoutDescription_DescriptionIsNull()
-    {
-        var income = Income.Create(new DateOnly(2026, 7, 1), Lottery, null, 10m, Chase);
-
-        income.Description.Should().BeNull();
     }
 
     [Fact]

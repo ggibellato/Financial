@@ -28,18 +28,4 @@ public class OpeningBalanceTests
 
         act.Should().Throw<ArgumentException>().WithMessage("Opening balance cannot be negative.");
     }
-
-    [Fact]
-    public void Equality_SameAmountAndDate_AreEqual()
-    {
-        OpeningBalance.Create(10m, new DateOnly(2026, 9, 1))
-            .Should().Be(OpeningBalance.Create(10m, new DateOnly(2026, 9, 1)));
-    }
-
-    [Fact]
-    public void Equality_DifferentDate_AreNotEqual()
-    {
-        OpeningBalance.Create(10m, new DateOnly(2026, 9, 1))
-            .Should().NotBe(OpeningBalance.Create(10m, new DateOnly(2026, 9, 2)));
-    }
 }

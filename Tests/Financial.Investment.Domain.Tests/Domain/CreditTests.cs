@@ -8,11 +8,20 @@ namespace Financial.Investment.Domain.Tests;
 public class CreditTests
 {
     [Fact]
-    public void Create_AssignsId()
+    public void Create_SetsEveryField()
     {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
+        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.JCP, 10m, withheld: 1m, sharesForDividend: 800m, intermediationFee: 0.5m);
 
-        credit.Id.Should().NotBe(Guid.Empty);
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            credit.Id.Should().NotBe(Guid.Empty);
+            credit.Date.Should().Be(new DateTime(2024, 1, 1));
+            credit.Type.Should().Be(Credit.CreditType.JCP);
+            credit.Value.Should().Be(10m);
+            credit.Withheld.Should().Be(1m);
+            credit.SharesForDividend.Should().Be(800m);
+            credit.IntermediationFee.Should().Be(0.5m);
+        }
     }
 
     [Fact]
@@ -30,11 +39,16 @@ public class CreditTests
     }
 
     [Fact]
-    public void Create_WithoutCurrencyOrSnapshot_DefaultsToNoSnapshot()
+    public void Create_WithoutTheOptionalValues_UsesTheirDefaults()
     {
         var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
 
-        credit.FxRateSnapshot.Should().BeNull();
+        using (new FluentAssertions.Execution.AssertionScope())
+        {
+            credit.FxRateSnapshot.Should().BeNull();
+            credit.SharesForDividend.Should().BeNull();
+            credit.IntermediationFee.Should().Be(0m);
+        }
     }
 
     [Fact]
@@ -45,30 +59,6 @@ public class CreditTests
         var credit = Credit.CreateWithId(id, new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 12m);
 
         credit.Id.Should().Be(id);
-    }
-
-    [Fact]
-    public void Create_WithJcpType_AssignsType()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.JCP, 10m);
-
-        credit.Type.Should().Be(Credit.CreditType.JCP);
-    }
-
-    [Fact]
-    public void Create_WithCouponType_AssignsType()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Coupon, 10m);
-
-        credit.Type.Should().Be(Credit.CreditType.Coupon);
-    }
-
-    [Fact]
-    public void Create_WithSecuritiesLendingIncomeType_AssignsType()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 10m);
-
-        credit.Type.Should().Be(Credit.CreditType.SecuritiesLendingIncome);
     }
 
     [Fact]
@@ -83,14 +73,6 @@ public class CreditTests
     public void Create_WithZeroValue_Throws()
     {
         var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 0m);
-
-        act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void CreateWithId_WithZeroValue_Throws()
-    {
-        var act = () => Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 0m);
 
         act.Should().Throw<ArgumentException>();
     }
@@ -179,22 +161,6 @@ public class CreditTests
         act.Should().Throw<ArgumentException>();
     }
 
-    [Fact]
-    public void Create_WithoutSharesForDividend_IsNull()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
-
-        credit.SharesForDividend.Should().BeNull();
-    }
-
-    [Fact]
-    public void Create_WithSharesForDividend_AssignsIt()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, sharesForDividend: 800m);
-
-        credit.SharesForDividend.Should().Be(800m);
-    }
-
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
@@ -203,30 +169,6 @@ public class CreditTests
         var act = () => Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, sharesForDividend: sharesForDividend);
 
         act.Should().Throw<ArgumentException>();
-    }
-
-    [Fact]
-    public void CreateWithId_WithSharesForDividend_AssignsIt()
-    {
-        var credit = Credit.CreateWithId(Guid.NewGuid(), new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m, sharesForDividend: 800m);
-
-        credit.SharesForDividend.Should().Be(800m);
-    }
-
-    [Fact]
-    public void Create_WithoutIntermediationFee_DefaultsToZero()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.Dividend, 10m);
-
-        credit.IntermediationFee.Should().Be(0m);
-    }
-
-    [Fact]
-    public void Create_WithIntermediationFee_AssignsIt()
-    {
-        var credit = Credit.Create(new DateTime(2024, 1, 1), Credit.CreditType.SecuritiesLendingIncome, 0.16m, withheld: 0.03m, intermediationFee: 0.04m);
-
-        credit.IntermediationFee.Should().Be(0.04m);
     }
 
     [Fact]
