@@ -1,4 +1,4 @@
-import { act } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -24,7 +24,6 @@ import type {
   ReserveMovementDto,
 } from '../../api/types'
 import { APP_TOASTER_ID } from '../../hooks/useSuccessToast'
-import { fireEvent, render, screen, waitFor, within } from '../../test/renderWithFluent'
 import { pinDate } from '../../test-utils/pinDate'
 import AccountScreenPage from '../AccountScreenPage'
 import { accountTransactionRow } from '../../test/accountTransactionRow'

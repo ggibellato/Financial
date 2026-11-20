@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { describe, expect, it } from 'vitest'
 import IncomingGrid from '../IncomingGrid'
 import type { IncomeSourceTotalDto } from '../../api/types'

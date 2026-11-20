@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TaxWorkbookData } from '../../hooks/useTaxWorkbook'
 import type { TaxWorkbookDto } from '../../api/types'

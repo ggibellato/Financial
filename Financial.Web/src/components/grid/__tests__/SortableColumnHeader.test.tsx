@@ -1,6 +1,5 @@
-import { act, fireEvent, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '../../../test/renderWithFluent'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render } from '../../../test/renderWithFluent'
 import { mockMatchMedia } from '../../../test/mockMatchMedia'
 import SortableColumnHeader from '../SortableColumnHeader'
 

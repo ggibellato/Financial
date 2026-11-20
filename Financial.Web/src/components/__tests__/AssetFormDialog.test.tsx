@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import AssetFormDialog from '../AssetFormDialog'
 import type { AssetAdminDto, BrokerDto, PortfolioDto } from '../../api/types'

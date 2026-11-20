@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AssetSummaryData } from '../../hooks/useAssetSummary'
 import type { AssetDetailsDto, AssetPriceDto, InvestmentScope } from '../../api/types'

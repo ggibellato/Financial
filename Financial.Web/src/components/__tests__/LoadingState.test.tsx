@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it } from 'vitest'
 import { awaitRetryOutcome } from '../../utils/retryOutcomeFocus'
 import LoadingState from '../LoadingState'

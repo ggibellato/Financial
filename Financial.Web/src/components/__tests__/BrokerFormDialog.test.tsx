@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import BrokerFormDialog from '../BrokerFormDialog'
 import { duplicateNameRejection, expectDuplicateUnderName, saveFromTheSaveButton } from '../../test-utils/duplicateName'

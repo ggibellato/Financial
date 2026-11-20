@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
 import InvestmentAccountFormDialog from '../InvestmentAccountFormDialog'
 import { account, cardAccount, potsAccount } from '../../test/account'

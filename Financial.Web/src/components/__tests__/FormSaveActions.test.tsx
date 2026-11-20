@@ -1,7 +1,6 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '../../test/renderWithFluent'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
-import { render } from '../../test/renderWithFluent'
 import FormSaveActions from '../FormSaveActions'
 
 function renderInForm(props: { isSaving: boolean; isSaveDisabled?: boolean }, onSubmit = vi.fn()) {

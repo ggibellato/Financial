@@ -1,6 +1,5 @@
-import { fireEvent, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '../../../test/renderWithFluent'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render } from '../../../test/renderWithFluent'
 import { mockMatchMedia } from '../../../test/mockMatchMedia'
 import ColumnFilterMenu from '../ColumnFilterMenu'
 

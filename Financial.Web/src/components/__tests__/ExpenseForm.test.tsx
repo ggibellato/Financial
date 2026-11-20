@@ -1,6 +1,5 @@
-import { fireEvent, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '../../test/renderWithFluent'
 import { describe, expect, it, vi } from 'vitest'
-import { render } from '../../test/renderWithFluent'
 import ExpenseForm from '../ExpenseForm'
 import type { BankOption, CategoryDto } from '../../api/types'
 import { optionNames } from '../../test-utils/optionNames'

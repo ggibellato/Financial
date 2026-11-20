@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render as rtlRender, screen, waitFor } from '../../test/renderWithFluent'
 import { MemoryRouter, useLocation, useNavigationType } from 'react-router-dom'
 import { deferred, never } from '../../test-utils/deferred'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
