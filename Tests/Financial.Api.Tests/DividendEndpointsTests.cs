@@ -2,8 +2,6 @@ using Financial.Investment.Application.DTOs;
 using Financial.Investment.Application.Interfaces;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -94,14 +92,7 @@ public class DividendEndpointsTests
 
     private static WebApplicationFactory<Program> CreateFactory(bool throwOnLookup = false)
     {
-        return new ApiTestFactory().WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IDividendService>();
-                services.AddSingleton<IDividendService>(new DividendServiceStub(throwOnLookup));
-            });
-        });
+        return new ApiTestFactory(dividendServiceOverride: new DividendServiceStub(throwOnLookup));
     }
 
     private sealed class DividendServiceStub(bool throwOnLookup = false) : IDividendService

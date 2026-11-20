@@ -40,8 +40,9 @@ contradicts it and does not repeat it beyond what a recipe needs.
 - **One mock boundary: the third party.** Frankfurter, Yahoo, scraped pages, Google Drive / Sheets /
   Calendar and the OTLP collector are faked; everything we own stays real above Unit. In ASP.NET
   Core 10 that boundary is a `ConfigureTestServices` + `RemoveAll<T>()` swap, and `ApiTestFactory`
-  accepts exactly four: `IExchangeRateProvider` (a stub by default), `TimeProvider` (always
-  `TestClock.At()` unless overridden), `ICalendarProvider`, and opting back into real FX. For HTTP
+  accepts exactly these: `IExchangeRateProvider` (a stub by default), `TimeProvider` (always
+  `TestClock.At()` unless overridden), `ICalendarProvider`, the market-data services over scraped
+  pages (`IAssetPriceService`, `IDividendService`), and opting back into real FX. For HTTP
   providers the seam is the transport: a real `HttpClient` over `FakeHttpMessageHandler`, so URL
   building and JSON parsing run for real — never a mocked `HttpClient`.
 - **No mocking framework, on purpose.** There is no Moq/NSubstitute/MSW. Doubles are hand-written

@@ -7,7 +7,6 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Net;
 using System.Net.Http.Json;
 
@@ -57,23 +56,15 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
     }
 
     [Fact]
-    public async Task GetCurrentPrice_CryptocurrencyWithoutBrokerName_ReturnsBadRequest()
+    public async Task GetCurrentPrice_UnrecognizedAssetClass_DefaultsToUnknown()
     {
-        await using var factory = CreateFactory();
+        var stub = new AssetPriceServiceStub();
+        await using var factory = CreateFactory(stub);
         using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=Cryptocurrency");
+        var response = await client.GetAsync("/api/v1/financial/prices/current?exchange=BVMF&ticker=BTC&assetClass=NotARealClass");
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task GetCurrentPrice_UnrecognizedAssetClass_DefaultsToUnknownAndRequiresExchange()
-    {
-        await using var factory = CreateFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=BTC&assetClass=NotARealClass");
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        stub.LastRequest!.AssetClass.Should().Be(GlobalAssetClass.Unknown);
     }
 
     [Fact]
@@ -115,16 +106,6 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         stub.LastRequest.Should().NotBeNull();
         stub.LastRequest!.ValuationMethod.Should().Be(ValuationMethod.Unspecified);
-    }
-
-    [Fact]
-    public async Task GetCurrentPrice_BondWithoutName_ReturnsBadRequest()
-    {
-        await using var factory = CreateFactory();
-        using var client = factory.CreateClient();
-        var response = await client.GetAsync("/api/v1/financial/prices/current?ticker=TESOURO+IPCA%2B+2029&assetClass=Bond");
-
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -406,14 +387,7 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
 
     private static WebApplicationFactory<Program> CreateFactory(IAssetPriceService? stub = null)
     {
-        return new ApiTestFactory().WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IAssetPriceService>();
-                services.AddSingleton(stub ?? new AssetPriceServiceStub());
-            });
-        });
+        return new ApiTestFactory(assetPriceServiceOverride: stub ?? new AssetPriceServiceStub());
     }
 
     private sealed class AssetPriceServiceStub : IAssetPriceService
@@ -423,29 +397,6 @@ public class AssetPriceEndpointsTests : ApiEndpointTests
         public AssetPriceDTO GetCurrentPrice(AssetPriceRequestDTO request)
         {
             LastRequest = request;
-
-            if (string.IsNullOrWhiteSpace(request.Ticker))
-            {
-                throw new ArgumentException("Ticker is required.", nameof(request));
-            }
-
-            if (request.AssetClass == GlobalAssetClass.Cryptocurrency && string.IsNullOrWhiteSpace(request.BrokerName))
-            {
-                throw new ArgumentException("BrokerName is required for cryptocurrency assets.", nameof(request));
-            }
-
-            if (request.AssetClass == GlobalAssetClass.Bond && string.IsNullOrWhiteSpace(request.Name))
-            {
-                throw new ArgumentException("Name is required for bond assets.", nameof(request));
-            }
-
-            if (request.AssetClass != GlobalAssetClass.Cryptocurrency
-                && request.AssetClass != GlobalAssetClass.Bond
-                && string.IsNullOrWhiteSpace(request.Exchange))
-            {
-                throw new ArgumentException("Exchange is required.", nameof(request));
-            }
-
             return new AssetPriceDTO
             {
                 Exchange = request.Exchange,

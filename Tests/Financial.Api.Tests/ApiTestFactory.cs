@@ -1,4 +1,5 @@
 using Financial.CashFlow.Application.Interfaces;
+using Financial.Investment.Application.Interfaces;
 using Financial.Shared.Abstractions.Currencies;
 using Financial.TestUtilities;
 using Microsoft.AspNetCore.Hosting;
@@ -21,6 +22,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
     private readonly IExchangeRateProvider? _exchangeRateProvider;
     private readonly TimeProvider _timeProvider;
     private readonly ICalendarProvider? _calendarProviderOverride;
+    private readonly IAssetPriceService? _assetPriceServiceOverride;
+    private readonly IDividendService? _dividendServiceOverride;
     private readonly string? _webRootPath;
     private bool _disposed;
 
@@ -29,7 +32,9 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
         TimeProvider? timeProviderOverride = null,
         ICalendarProvider? calendarProviderOverride = null,
         bool useRealExchangeRates = false,
-        IReadOnlyDictionary<string, string>? webRootFiles = null)
+        IReadOnlyDictionary<string, string>? webRootFiles = null,
+        IAssetPriceService? assetPriceServiceOverride = null,
+        IDividendService? dividendServiceOverride = null)
     {
         if (webRootFiles is not null)
         {
@@ -50,6 +55,8 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             : exchangeRateProviderOverride ?? new StubExchangeRateProvider(DefaultExchangeRate);
         _timeProvider = timeProviderOverride ?? TestClock.At();
         _calendarProviderOverride = calendarProviderOverride;
+        _assetPriceServiceOverride = assetPriceServiceOverride;
+        _dividendServiceOverride = dividendServiceOverride;
     }
 
     public void ReplaceCashFlowData(string json) => File.WriteAllText(_cashFlowDataFilePath, json);
@@ -99,6 +106,24 @@ internal sealed class ApiTestFactory : WebApplicationFactory<Program>
             {
                 services.RemoveAll<ICalendarProvider>();
                 services.AddSingleton(_calendarProviderOverride);
+            });
+        }
+
+        if (_assetPriceServiceOverride is not null)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IAssetPriceService>();
+                services.AddSingleton(_assetPriceServiceOverride);
+            });
+        }
+
+        if (_dividendServiceOverride is not null)
+        {
+            builder.ConfigureTestServices(services =>
+            {
+                services.RemoveAll<IDividendService>();
+                services.AddSingleton(_dividendServiceOverride);
             });
         }
     }
