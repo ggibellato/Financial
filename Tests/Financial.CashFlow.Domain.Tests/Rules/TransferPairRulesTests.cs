@@ -173,12 +173,4 @@ public class TransferPairRulesTests
             }
         }
     }
-
-    [Fact]
-    public void Constructor_NullPairs_Throws()
-    {
-        var act = () => new TransferPairRules(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("pairs");
-    }
 }

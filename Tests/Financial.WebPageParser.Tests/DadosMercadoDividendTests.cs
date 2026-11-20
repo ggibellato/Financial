@@ -51,6 +51,28 @@ public class DadosMercadoDividendTests
         result.Date.Should().Be(new DateTime(2026, 8, 19));
     }
 
+    [Fact]
+    public void ParseDividendRow_RowWithFewerThanFiveColumns_IsRefused()
+    {
+        var cells = BuildCells("<tr><td>Dividendo</td><td>1,00</td><td>x</td><td>19/08/2026</td></tr>");
+
+        var act = () => DadosMercadoDividend.ParseDividendRow(cells);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("Dividend row does not contain expected columns.");
+    }
+
+    [Theory]
+    [InlineData("abc", "19/08/2026")]
+    [InlineData("1,00", "2026-08-19")]
+    public void ParseDividendRow_UnreadableValueOrDate_IsRefused(string value, string date)
+    {
+        var cells = BuildCells($"<tr><td>Dividendo</td><td>{value}</td><td>x</td><td>y</td><td>{date}</td></tr>");
+
+        var act = () => DadosMercadoDividend.ParseDividendRow(cells);
+
+        act.Should().Throw<FormatException>();
+    }
+
     private static IReadOnlyList<HtmlNode> BuildCells(string rowHtml)
     {
         var document = new HtmlDocument();

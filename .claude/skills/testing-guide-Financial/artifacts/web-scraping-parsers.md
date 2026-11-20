@@ -79,5 +79,5 @@ parsed `WebAssetQuote` / `WebDividendRecord`.
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceParsingTests.cs` — Unit.
 - `Tests/Financial.WebPageParser.Tests/TesouroDiretoSlugTests.cs` — Unit; slug families.
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceCryptocurrencyUrlTests.cs` — Unit.
-- `Tests/Financial.WebPageParser.Tests/DadosMercadoDividendTests.cs` — Integration (site faked by inline HTML).
+- `Tests/Financial.WebPageParser.Tests/DadosMercadoDividendTests.cs` — Unit (rows built from inline HTML).
 - `Tests/Financial.WebPageParser.Tests/GoogleFinanceVerificationTests.cs`, `StatusInvestVerificationTests.cs`, `RedentiaVerificationTests.cs`, `TesouroTransparenteVerificationTests.cs` — `Category=Live`, nightly.
