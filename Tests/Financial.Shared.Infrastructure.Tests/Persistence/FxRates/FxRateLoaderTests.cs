@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Financial.Shared.Infrastructure.Persistence.FxRates;
 using Financial.Shared.Infrastructure.Tests.Persistence;
-using Financial.TestUtilities;
 using Microsoft.Extensions.Logging;
 
 namespace Financial.Shared.Infrastructure.Tests.Persistence.FxRates;

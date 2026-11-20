@@ -38,6 +38,7 @@ public class TransientRetryPolicyTests
     {
         var callCount = 0;
         var waits = new List<TimeSpan>();
+        var logMessages = new List<string>();
 
         var result = await TransientRetryPolicy.ExecuteWithRetryAsync(
             () =>
@@ -49,6 +50,7 @@ public class TransientRetryPolicyTests
                 }
                 return Task.FromResult(7);
             },
+            logger: logMessages.Add,
             delay: (wait, _) =>
             {
                 waits.Add(wait);
@@ -58,6 +60,7 @@ public class TransientRetryPolicyTests
         result.Should().Be(7);
         callCount.Should().Be(2);
         waits.Should().ContainSingle();
+        logMessages.Should().ContainSingle().Which.Should().Contain("Retry 1/5").And.Contain(failure.GetType().Name);
     }
 
     [Fact]
